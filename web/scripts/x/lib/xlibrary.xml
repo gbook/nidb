@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xLibrary'>
+
+<sources>
+  <src><file>xlibrary.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Misc</grp>
+</groups>
+
+<type>Var</type>
+
+<description><![CDATA[The version property of this object gives the X Library version string for the distribution in which this file was included. Each X symbol's XML file documents its own revisions. This file (xlibrary.xml) will have summary notes for each X release.]]></description>
+
+<syntax></syntax>
+
+<properties>
+  <prop><name>version</name><note><![CDATA[string]]></note></prop>
+  <prop><name>license</name><note><![CDATA[string, default: "GNU LGPL"]]></note></prop>
+  <prop><name>url</name><note><![CDATA[string, default: "http://cross-browser.com/"]]></note></prop>
+</properties>
+
+<revisions>
+
+<rev><num>4.23</num><date>14May2011</date><author>mf</author><note><![CDATA[
+<ul>
+<li>xDef r2, xStr r2, xNum r3, xGetElementsByClassName r7, xGetElementsByAttribute r3, xAddHandlers r2 - Minor improvements. See revision notes for each function.
+<li>xTableHeaderFixed r12 - Added the "clean" method.
+<li>xInA r1, xFlGet r1, xFlWrite r1 - Added to X.
+<li>xFenster r21 - Added support for a "control menu".
+<li>xHttpRequest r11 - If (r) rand param is added even for POST and the full Math.random() value is used.
+<li>xPersistentDisplay r1 - Added to X.
+</ul>
+]]></note></rev>
+
+<rev><num>4.22</num><date>26Nov2010</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Removed xDisableDrag and xDisableDrop. They were no longer needed since xEnableDrag rev 7 and xEnableDrop rev 3. Renamed xEnableDrag2 to xDragInFence.
+<li>xCen r2
+<li>xAnimation r5 - Unlimited number of axes! Updated all animation methods.
+<li>xAnimation.sizeLine r1 - Added to X.
+<li>xFenster r20 - New features and big improvements! Thanks very much to everyone who contributed!
+<li>xTableHeaderFixed r11 - Just keeps getting better. Thanks very much to everyone who contributed!
+<li>xWidth r8
+<li>xHeight r8
+<li>xTrim r2
+<li>xCalendar r4 - Added to X.
+<li>xAddHandlers r1 - Added to X.
+<li>xStrRepeat r1 - Added to X.
+<li>xStyle r2
+</ul>
+]]></note></rev>
+
+<rev><num>4.21</num><date>11Feb2010</date><author>mf</author><note><![CDATA[
+<ul>
+<li>XAG 1.0 and XPP 1.0 - improvements and bug fixes.
+<li>xTextArea r1 - Added to X. Contributed by krumpet. This is awesome. Thanks very much!
+<li>Added more comments to "x_symbol_template.xml" and made it available in the "cross-browser.com/templates" directory.
+<li>A few improvements to "view.php" to support optional nodes.
+</ul>
+]]></note></rev>
+
+<rev><num>4.20</num><date>28Jan2010</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Renamed xEachId to xEachE, r2.
+<li>Renamed xEachNum to xEachN, r2.
+<li>xParent r2 - rewritten.
+<li>Renamed xParentNode to xParentN, r2.
+<li>Added comments in xwidth.xml regarding problem with border-collapse.
+<li>Improvements to the Ant build files.
+<li>X Tools directory is now "x/tools/" for the executables and "x/tools/prj" for the source and project files. Open "xtools.workspace" in Code::Blocks. Executable files are provided for both Windows and Linux.
+<li>xTableHeaderFixed r8 - The experimental version has now been moved into its official library file.
+</ul>
+]]></note></rev>
+
+<rev><num>4.19</num><date>23Dec2009</date><author>mf</author><note><![CDATA[
+<ul>
+<li>xTableHeaderFixed r7 - Adapted to work with Ajax apps! See revision notes.
+<li>Both 'x_core.js' and 'x_event.js' are deprecated. Temporarily, I am still including them in the download package. Instead of those files, please just use 'x.js'. Thanks!
+<li>Added three functions to 'x.js': xEachId, xEachNum and xOffset.
+<li>xEachId r1 - Added to X.
+<li>The following have been removed from the X Library: xHttpRequest2, xOffsetLeft, xOffsetTop, xCreateElement, xAddEventListener2, xAddEventListener3, xRemoveEventListener2, xAppendChild, xBackground, xColor, xGetCookie, xSetCookie, xDeleteCookie, xEvalTextarea, xGetElePropsArray, xGetElePropsString, xInnerHtml, xShow, xHide, xTimer, xVisibility and xZIndex. These files will now be in "x/lib/old".
+<li>xOffset r1 - Added to X.
+<li>xAnimation.rgbByClass r1 - Added to X.
+<li>xTableHeaderFixed r6 - See revision notes. xTableHeaderFixed2 has been removed.
+<li>Updated license file to GNU LGPL v3.
+<li>xConsole r1 - Added to X.
+<li>xAnimation r4 - See revision notes.
+<li>xTableHeaderFixed2 r1 - Added to X.
+<li>xTagStyle r1 - Contributed by Charles Belov. Thanks!
+<li>xCookie r2: See revision history.
+<li>xTableHeaderFixed r4: See revision history.
+<li>xResizeTo r2: now returns an object with w and h properties. Thanks, Vic!
+<li>Improved documentation for xWidth and xHeight.
+<li>xCookie r1 - Added to X. xGetCookie, xSetCookie and xDeleteCookie are now deprecated.
+<li>xFenster r19.1: See revision history.
+<li>xSplitter r4 - I added iframe support. See the demo.
+<li>xTableHeaderFixed r3 - Generated id of fixed table was not unique with multiple xTableHeaderFixed objects on a page.
+<li>xCen r1 - Added to X.
+<li>xAniWH r1 - Contributed by Thomas. Thanks!
+<li>xHttpRequest r10 - Combined multiple var statements into one.
+<li>xCamelize r2 - Combined multiple var statements into one.
+<li>xGetCookie r2 - Combined multiple var statements into one.
+<li>xGetElementsByClassName r6 - Combined multiple var statements into one and use array literal instead of new Array.
+<li>xHeight r7 - Combined multiple var statements into one.
+<li>xScrollLeft r4 - Combined multiple var statements into one.
+<li>xScrollTop r4 - Combined multiple var statements into one.
+<li>xWidth r7 - Combined multiple var statements into one.
+</ul>
+]]></note></rev>
+
+<rev><num>4.18</num><date>16Feb2009</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Including another precompiled library, "x.js", which is "x_core.js" and "x_event.js" combined.
+<li>Added xEachNum.
+<li>xGetElementsByClassName: Improved documentation.
+<li>xGetURLArguments r3: Used shorter local variable names.
+<li>Added xCenter, contributed by Arthur Blake.
+<li>xFenster r18, r19: See revision history.
+<li>xSetCookie r4 and xDeleteCookie r5: Added the 'domain' parameter.
+<li>xClientHeight r6: Commented out "&& !w.opera" because of a difference with Opera 9.5.1. Does this change need to be made for xClientWidth as well?
+<li>xFenster r17: Major improvements! See revision histories for revs 15.1 and 16.
+<li>XC now runs on Linux (and possibly other *nix)! Thanks very much to everyone at the forums who helped! See the XC Reference for details.
+<li>Added xModalDialog and xAnimation.imgSize to X.
+<li>xModalDialog r2: Made some changes to support having a Confirm dialog (see the demo). Please note that this object is likely to get re-implemented at some time.
+<li>xHttpRequest r9: Major improvements! See revision histories for revs 5 through 9.
+<li>Added xTableCursor2, gebura's enhancement of xTableCursor.
+<li>Added xRound, suggested by ChrisNelson.
+<li>xTabPanelGroup r12: Removed unload method - now adds its own unload listener. Added the instances object so your app does not have to keep a reference to the tpg object: xTabPanelGroup.instances['outerContainerID']
+<li>xHasPoint: Improved documentation.
+<li>Added xLoadLink.
+<li>xEnableDrag r8, xGetEleAtPoint r3, xGetElementsByTagName r5 (See revision histories).
+</ul>
+]]></note></rev>
+
+<rev><num>4.17</num><date>10Jul2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>xFenster: When the client is an iframe, assign clientId to the iframe's "name" property. This makes the iframe accessible like this: window.frames["MyFensterId"].
+<li>xFenster: Added a window resize listener which resizes the fenster if it is maximized. Made "maximized" property public. Renamed "xFenster.z" to "xFenster.nextZ". The following change may require changes in your application code: All callback functions, if provided, are called before their event occurs and must return true or false to allow or cancel the event's default action. The documentation has been updated to explain these changes.
+<li>xMenu6: Unload is no longer public. Added the static 'instances' object, indexed by the UL's ID.
+<li>xInsertRule: If idx is -1 the rule is appended to the end.
+<li>xEnableDrag and xEnableDrop: Reimplemented (see http://cross-browser.com/forums/viewtopic.php?id=62). Note that "this" is now invalid in the callback functions. Removed "limits" feature (see xEnableDrag2).
+<li>xDisableDrag and xDisableDrop: These functions are no longer needed because of reimplementation of xEnableDrag and xEnableDrop.
+<li>xEnableDrag2: Initial release. This function is backwards compatible with rev 6 of xEnableDrag.
+</ul>
+]]></note></rev>
+<rev><num>4.16</num><date>03Jul2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>All "/x/x_*.js" files have been deleted except for "x_core.js" and "x_event.js". Files with "*_nn4.js" also were not deleted but were moved to the "old" folder. Updated all affected demos.
+<li>The following functions have been removed from "/x/x_core.js" but not from "/x/lib/". These functions remain in X only for backwards-compatibility. Access the native properties directly instead of using these functions: xOffsetLeft, xOffsetTop, xColor, xBackground, xZIndex, xParent, xShow, xHide, xVisibility, xDisplay, xAppendChild, xCreateElement and xInnerHtml. I've updated all demos and other X symbols to not use these functions.
+<li>xStyle has been added to "x_core.js". It can be use instead of xColor, xBackground, xZIndex, xShow, xHide, xVisibility and xDisplay - and has other uses.
+<li>xClip has been removed from "/x/x_core.js" but not from "/x/lib/".
+<li>xEvent: Erik Kangas discovered a strange situation where e.type does not exist (as reported by FF). So I added "if (typeof e.type == 'string')". Thanks, Erik!
+<li>xMenu6: Added sLblAClass, sItmAClass and sActiveItmId parameters. Added the "open" method which provides for an auto-open feature.
+<li>xSmartLoad has been contributed by Chris Nelson - thanks! I also added xSmartLoad2.
+<li>xSmartLoadScript now just calls xSmartLoad.
+<li>xInclude has been completely removed from X. Use xSmartLoad.
+<li>xFenster: CC'd code in paint method now includes IE7 because IE7 needs it in quirks mode. Added the static property "focused" which is used to focus the appropriate fenster when some other fenster closes.
+<li>xFenster: Check the updates to the public properties available. I apologize for the frequent changes - but I anticipate more.
+<li>xFenster: gebura caught some problems: (1) a typo ("me.con.style.display = 'none'" had no terminating semicolon). It was causing errors when compressed. (2) The use of "for...in" conflicted with code such as "json.js" which adds properties to "Object.prototype". I'm now using "hasOwnProperty()" in those loops. Thanks, gebura!
+<li>XC 1.06 is released with this distribution. There was a bug fix. See the <a href='http://cross-browser.com/x/docs/xc_reference.php#revs'>XC Revision History</a>.
+<li>xStrStartsWith: KevinPrudhomme spotted a bug. "if( r == l )" should have been "if( r < l )". Thanks, Kevin!
+</ul>
+]]></note></rev>
+<rev><num>4.15</num><date>04Jun2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>This release includes a big update to XC! See the <a href='http://cross-browser.com/x/docs/xc_reference.php#revs'>XC Revision History</a>.
+<li>The <a href='http://cross-browser.com/x/docs/x_quickstart.php'>X Quick-Start</a> document has been improved and a tutorial added.
+<li>The sniffer variables have been completely removed from the X Library.
+<li>xEnableDrag: I commented-out the line added in rev 2, restricting the drag to the left mouse button, because I'm still uncertain about the values assigned to event.button by Safair/WebKit.
+<li>xEvent: Reduced size by 322 bytes but retained same functionality except for: The button property is only valid for W3C-compliant browsers and IE (currently the button property is invalid for Safari/WebKit). The button property is 'undefined' for non-mouse events.
+<li>xFenster r7: I think it was a bad idea to use "_i" as a local var equivalent for "this" - I'm now using "me". Now a dblclick on the titlebar will maximize/restore (Thanks to Patrick for this suggestion).
+<li>xFenster r8: Added 'en' and 'fn' parameters and implemented those features. Removed 'unload' method and added an unload handler via xAddEventListener - but it needs to be implemented. Started z-index at 100 instead of 0.
+<li>xFenster r9: There were quite a few changes based on my testing in Apollo/Scout. xFenster now looks and works the same for me in Opera 9.20 (WinXP), FF 2.0.0.3 (WinXP), Apollo 1.0.Alpha1 (WinXP), IE6 (WinNT) and IE7 (WinXP). The xFenster prototype's interface has changed substantially so be sure to review the documentation. All the xFenster demos have been updated to work with this revision. Note that the static "xFenster.instances" is no longer an array, it is now an object. The unload listener has now been implemented.
+<li>xClientWidth: In my tests with Apollo I found that "document.compatMode" is undefined. If this code branch isn't taken then Apollo returns some strange values for d.body.clientHeight. So I added the check for "!d.compatMode ||". Since d.compatMode was not supported in IE5 I tested this in IE5 and it works fine because "d.documentElement" also does not exist in IE5. The same change was made in xClientWidth altho the only strage results were seen in xClientHeight.
+<li>xSplitter: Now you can set separate bar limits for both the left (or top) and right (or bottom) panes.
+<li>I've added <a href='view.php?s=xGetElementsByClassName'>xGetElementsByClassName</a> to the file "x_core.js".
+<li>The file "x/x.js" is no longer included in the distribution file. That file contained "all" X symbols, and I intended for it to be a convenience while developing offline (although I never used it myself). But I've noticed many people using it online - and I absolutely don't want that. I've went to a lot of trouble to provide you with ways to optimize your library files. The file "x.js" is huge (77KB) and to use it online just makes X look bad.
+<li><b>Important Notice</b> of upcoming changes to the X Library! For details and to post your comments visit <a href='http://cross-browser.com/forums/viewtopic.php?id=29'>this topic</a> at the forums.
+</ul>
+]]></note></rev>
+<rev><num>4.14</num><date>21May2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>I found a typo in xFenster ('ifrm' should be 'client') left over from the r4 changes. It wasn't causing a problem and so I didn't spot it in my r4 testing. xFenster has also been updated with new features. See the docs for xFenster for details.
+<li>In xWalkUL, added the 'level' feature and reduced size by 17 bytes. This change does not affect backwards compatibility.
+<li>This release includes a revision to XC (v1.04). The <a href='http://cross-browser.com/x/docs/xc_reference.php'>XC Reference</a> now has all revision history for XC. This X release was made mainly because of a bug found in XC 1.03.
+<li>In xTableHeaderFixed, the loop adding tables to the 'tables' array was starting on the wrong index. Thanks very much to Thiago for finding this bug and submitting a fix.
+</ul>
+]]></note></rev>
+<rev><num>4.13</num><date>27Apr2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>I've made a change to xTooltipGroup based on an awesome 'tip' ;-) from Michael Hodgins. If grpClassOrIdList is a class then all trigger elements' titles are saved in the element's xTooltipText property. The element's title attribute is then set to "" so it will not cause a system tooltip. Thanks, Michael!
+<li>With the above change, I will start putting the rev number (from the xml file) at the top of all symbol src files.
+<li>In xWidth and xHeight: This rev reverses the first part of r4. Now it does not reference xClientWidth/xClientHeight.
+<li>I added the following functions: xAniXY, xAniLine, xAniOpacity, xAniRgb.
+<li>I made an important update to XC, which is now v1.03 (the documents 'x_structure' and 'xc_reference' have been updated accordingly):
+  I caused problems by trying to have xAnimation methods as separate symbols. Now those methods will have symbols like this: "xAnimation.methodName". I modified get_symbol_index and wrote str_tok. This is not a solution, but just a quick bandaid because to get, for example, "xAnimation.css" included in the output library XC must find the symbol "xAnimation.css" somewhere in the source. It can be put in a comment for this purpose.
+  After this I saw that methods could possibly be ouput before their object. I used qsort and wrote compare_fn. Symbols are sorted by type and then by id. The type precedence is: V, O, P, M, F.
+<li>Alexander has submitted a brilliant new velocity function for xAnimation. It is a 'combination' of accel types 1 and 2. Thanks very much, Alexander! Here's a graph of the current velocity functions: http://cross-browser.com/images/animation_vf_graph.gif
+<li>For xWidth and xHeight, I went back to r4. I would like to make the r5 change, but it breaks too many demos. When you need the width/height of an element's parent, if that parent happens to be document/html/body then what you really want is clientWidth/clientHeight. I'll have to revisit this later.
+</ul>
+]]></note></rev>
+<rev><num>4.12</num><date>17Apr2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>xFenster has been re-implemented. It now supports containing a DIV or an IFRAME, and there is a demo for each.
+<li>xAnimation has been re-implemented (based on 'x/examples/animation_impl.html'), and there are demos for the new methods: line, arc, para, size, corner, css, rgb, opacity and scroll.
+<li>Changed xGetComputedStyle to use xGetElementById like most X functions.
+<li>In xEnableDrag, added xEvent object as last argument in calls to callback functions.
+<li>The sniffers have been removed from "x_core.js". They haven't been in use by X for some time. You should consider all symbols from the file "xsniffer.js" to be deprecated. I may remove that file from X soon.
+</ul>
+]]></note></rev>
+<rev><num>4.11</num><date>26Mar2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Added xRgbToHex.
+<li>In xEvent: I forgot to remove " @end" from the rev 8 change. It was causing a syntax error in IE.
+<li>Added animation_tech to the demos.
+</ul>
+]]></note></rev>
+<rev><num>4.10</num><date>23Mar2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>'X Viewer' PHP code is now included in the distribution. It's nothing special - but many people have asked for it. The two files (view.php and view_lib.php) are in "/x/lib/".
+<li>xTreeMenu renamed to xMenu6. Added bLblIsItm feature.
+<li>Added new features to xTooltipGroup.
+<li>Re-implemented xTableCursor to support Stephen Hulme's idea using xAddClass and xRemoveClass. xTableCursor2 has been removed from X.
+<li>Made bug-fixes and improvements to xAddClass, xHasClass and xRemoveClass.
+<li>In xEvent, set button=null for non-mouse event - was 3.
+<li>Added xTrim, xParseColor, xCamelize.
+<li>For xAddEventListener, added the closure for DOM0 handlers.
+<li>Experimental change to xHttpRequest: Set "_r.onreadystatechange = function(){}" before calling abort (needs more testing). Ref: "http://www.quirksmode.org/blog/archives/2005/09/xmlhttp_notes_a_1.html".
+<li>xEvent: I don't like adding a sniff but I don't know of any other way to support the button prop for Safari. Thanks very much for everyones help on this bug!
+</ul>
+]]></note></rev>
+<rev><num>4.09</num><date>10Feb2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Changed format of first conditional compilation statement in xHttpRequest2. XC was giving this: /*@cc_onvar _x=null;@*/. It was causing 'x.js' to throw errors in IE.
+<li>No changes to XC for now.
+</ul>
+]]></note></rev>
+<rev><num>4.08</num><date>30Jan2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Bug fix for xEditable submitted by HFT member ohvayha. Thanks!
+<li>Mark submitted a fix/improvement for xEnableDrag. It now only drags on a "left" click. Thanks!
+<li>Added the 'button' property to xEvent. Supports all IEs and other W3C-compatible browsers (FF, Opera8+, Safari, etc).
+<li>XC update (v1.02) - When removing comments, JScript conditional compilation comments are not removed.
+<li>Added xTableCursor2, a more unobtrusive version of xTableCursor, submitted by Stephen Hulme. Thanks!
+<li>Added xGetEleAtPoint, xTableHeaderFixed and xTable.
+<li>Added bounding rectangle support to xEnableDrag.
+<li>Made another xHttpRequest demo which resulted in an update to xHttpRequest.
+</ul>
+]]></note></rev>
+<rev><num>4.07 z2</num><date>10Jan2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Modified xTableSync. It was also missing a ';'.
+<li>Made general updates to several files in the distro, and added several more demos.
+<li>Made updates to xPageX and xPageY.
+</ul>
+]]></note></rev>
+<rev><num>4.07</num><date>09Jan2007</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Added xTableSync, xTreeMenu, xDocSize, xHttpRequest, xHttpRequest2, xWalkUL, xEnableDrop and xDisableDrop.
+<li>Added xDialog (contributed by Aaron Throckmorton).
+<li>In xTimer, added xTimer.tick() for setting the timing resolution. Changed default resolution to 25 (it was 250). Thanks for the great suggestion by Dmitry!
+<li>Thanks very much to Kravvitz at SPF who pointed out a problem with xGetElementsByClassName. I have modified the function.
+<li>Christian has pointed out an IE bug in getElementById and I've been doing some testing on it.
+<li>Removed the simulated events (window resize and scroll) from xAddEventListener. xAddEventListener2.js is now the original implementation. Also added xAddEventListener3 which has Ivan Pepelnjak's enhancements for multiple scroll and resize listeners and multiple DOM0 listeners. Thanks Ivan! If you use xAddEventListener 2 or 3 then use xRemoveEventListener2.
+<li>This may be the first time I've ever done this: I renamed xWalkEleTree to xWalkTree3.
+<li>Made updates to xSelect to better support form submissions.
+<li>Reimplemented xFirstChild, xPrevSib and xNextSib to be smaller and more robust.
+<li>Made a small improvement to xGetElementsByTagName.
+</ul>
+]]></note></rev>
+<rev><num>4.06</num><date>01Nov2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Released XC 1.01! New option: objprefix, will prefix all X functions with an object name you specify. The xSplitter demo is now using this feature.
+<li>Fixed a bug that was in XC 1.0 which prevented a symbol file from being included if there was an app file with the same name and option +app was set.
+<li>In xPrevSib, xNextSib and xFirstChild the tag comparison is now case-insensitive. xGetElementById is now called for e so the first argument can be an element or id string.
+<li>In xDisplay, using try/catch since IE6dn doesn't support the table css properties. Thanks very much to Edward Glowacki.
+<li>xTooltipGroup now uses createElement to create the tooltip element.
+<li>Made improvement and fixed a typo in xFenster.
+<li>Improved documentation for xGetElementsByTagName, xGetElementsByClassName and a few others.
+<li>Added a new X function: xInsertRule.
+</ul>
+]]></note></rev>
+<rev><num>4.05</num><date>27Oct2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Fawn caught a careless mistake I made in xClientWidth on 3Oct06, and caught a major bug in xTooltipGroup. Thanks very much, Fawn!
+</ul>
+]]></note></rev>
+<rev><num>4.04</num><date>27Oct2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Thanks very much to Setemkia (Fawn) FallingTree for spotting a typo in xWalkTreeRev and a missing file (symbol_index.php in x/lib) in the 4.03 distribution.
+</ul>
+]]></note></rev>
+<rev><num>4.03</num><date>26Oct2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>There have been reports of a problem with xGetElementsByTagName, but I can't reproduce the problem. If you see the problem please let me know.
+<li>In xGetComputedStyle the variable 'c' was global, but should have been local. Thanks very much to Nicolas Le for spotting this.
+<li>In xLeft if ele.style.left=="" then use xGetComputedStyle.
+<li>In xTop if ele.style.top=="" then use xGetComputedStyle.
+</ul>
+]]></note></rev>
+<rev><num>4.02</num><date>24Oct2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>Released XC 1.0!
+<li>X no longer uses the browser-sniffer variables - they are still available if you need them. As a result, removed support for Opera 5/6 quirks.
+<li>Added xAnimation, xAniLine, xAniOpacity, xAniEllipse, xAniScroll and xAniSize.
+<li>Added missing semicolons to xFenster.
+<li>Small change to xGetElementById.
+<li>Added xOpacity.
+<li>Improved xTabPanelGroup.
+<li>moi contributed xColEqualizer.
+<li>Jerod Venema contributed xEditable.
+<li>Olivier Spinelli contributed xStrReplaceEnd, xStrEndsWith, xStrStartsWith, xWalkTree2, xWalkTreeRev, xWalkToFirst, xWalkToLast, xFindAfterByClassName, xFindBeforeByClassName and xParentNode.
+<li>Brendan Richards contributed xSmartLoadScript.
+</ul>
+]]></note></rev>
+<rev><num>4.02</num><date>04Oct2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>This version is not yet released but will be soon. (this file was previously named 'xversion.xml')
+</ul>
+]]></note></rev>
+<rev><num>4.01</num><date>22Sep2006</date><author>mf</author><note><![CDATA[
+<ul>
+<li>This release adds functions contributed by Daniel Frechette: xHasClass, xAddClass, xRemoveClass, xToggleClass, xEach, xEachUntilReturn, xTimes, and functions contributed by Ivan Pepelnjak: xGetStyleSheetFromLink, xGetCSSRules, xHasStyleSheets, xTraverseStyleSheet, xTraverseDocumentStyleSheets and xHasStyleSelector. There have been other code contributions and I'm working on adding them ASAP. This release includes a small change to XC: it will now accept a project filename that includes the '.xcp' extension. Now '.xcp' files can be associated with 'xc.exe' and you can run XC on a project file just by double-clicking it.
+</ul>
+]]></note></rev>
+<rev><num>4.0</num><date>30May2005</date><author>mf</author><note><![CDATA[
+<ul>
+<li>New X functions/objects: xCapitalize, xDeleteCookie, xTableCursor, xTabPanelGroup, xMenu5, xWalkEleTree, xPrevSib, xNextSib, xFirstChild, xCollapsible, xDisableDrag, xMenu1, xMenu1A, xMenu1B, xFenster, xSelect, xSlideCornerTo.
+<li>xWidth and xHeight now use xGetComputedStyle
+<li>Bug-fixes to xWinScrollTo - as a result of adding frame/ext.window support, I made changes to xScrollLeft and xScrollTop
+<li>Need to fix xCardinalPosition for Moz. I'd really like to rename this function... ?
+<li>Updates to xEvent
+<li>Modified xTableIterate
+<li>Modified xWalkTree
+<li>Thanks to Daniel FAIVRE for a bug-fix for xGetElementsByClassName
+<li>Fixed a bug for when xNum is passed NaN
+<li>Fixed a Moz/FF problem with xparaeq.php, but as a result, modified xscrollleft/top and xwidth/height with possibly experimental changes
+<li>xInnerHtml has returned
+<li>Removed the following files from '/x', their demos now use the files in '/x/lib': x_bar.js, x_load.js, x_popup.js, x_timer.js, x_tip.js, xcollapsible.js
+</ul>
+]]></note></rev>
+</revisions>
+
+</x_symbol>

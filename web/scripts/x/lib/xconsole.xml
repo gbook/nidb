@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xConsole'>
+
+<sources>
+  <src><file>xconsole.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Debug</grp>
+</groups>
+
+<type>Var</type>
+
+<description><![CDATA[A debugging utility.]]></description>
+
+<syntax>xConsole.log(msg, win)</syntax>
+
+<methods>
+  <meth><name>log</name><note><![CDATA[Passes msg to win.console.log or win.opera.postError or appends it to the innerHTML of element with id "xConsoleElement" or assigns it to win.status. Uses window if win is undefined.]]></note></meth>
+</methods>
+
+<revisions>
+  <rev><num>1</num><date>26Oct09</date><author>mf</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

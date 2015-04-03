@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xHeight'>
+
+<sources>
+  <src><file>xheight.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Size</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Return and optionally set the element's height. It attempts to return and/or set the equivalent of offsetHeight. xHeight provides, effectively, a read/write version of offsetHeight. The border is included, as well as the padding, in the calculations. When returning the existing height, xHeight returns offsetHeight, which is the sum of the border, padding and style.height values. When setting a new height, xHeight finds the current border and padding values of the element and then subtracts those from the height you have specified before assigning the result to style.height.]]></description>
+
+<syntax>xHeight(ele[, uH])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or object reference]]></note>
+  </par>
+  <par>
+    <name>uH</name>
+    <note><![CDATA[unsigned integer height; it is rounded to an integer]]></note>
+  </par>
+</parameters>
+
+<return>integer</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xNum</dep>
+  <dep>xDef</dep>
+  <dep>xStr</dep>
+  <dep>xGetComputedStyle</dep>
+</dependencies>
+
+<comments>
+  <comment><date>24Nov10</date><author>mf</author><note><![CDATA[Please Note! Refer to the comments and discussions for xWidth.]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>8</num><date>31Oct10</date><author>mf</author><note><![CDATA[Removed variable 'gcs', which was used as an alias for xGetComputedStyle. Using compression does away with any need to do this type of thing.]]></note></rev>
+  <rev><num>7</num><date>6Mar09</date><author>mf</author><note><![CDATA[Combined multiple var statements into one.]]></note></rev>
+  <rev><num>6</num><date>27Apr07</date><author>mf</author><note><![CDATA[I went back to r4. I would like to make the r5 change, but it breaks too many demos. When you need the width/height of an element's parent, if that parent happens to be document/html/body then what you really want is clientWidth/clientHeight. I'll have to revisit this later.]]></note></rev>
+  <rev><num>5</num><date>23Apr07</date><author>mf</author><note><![CDATA[This rev reverses the first part of r4. Now it does not reference xClientHeight.]]></note></rev>
+  <rev><num>4</num><date>7Apr05</date><author>mf</author><note><![CDATA[If ele is document or html or body then return xClientHeight. This needs testing and is somewhat experimental. Also, use (pt !== null) instead of !=]]></note></rev>
+  <rev><num>3</num><date>12Mar05</date><author>mf</author><note><![CDATA[Changed xSetCH to use xGetComputedStyle and removed xGetCS. Made xSetCH inline. Reduces width/height funtions about 200 bytes.]]></note></rev>
+  <rev><num>2</num><date>14May04</date><author>mf</author><note><![CDATA[now accepts zero as valid]]></note></rev>
+  <rev><num>1</num><date>31Mar04</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note></rev>
+</revisions>
+
+</x_symbol>

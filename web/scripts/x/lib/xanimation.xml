@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAnimation'>
+
+<sources>
+<src><file>xanimation.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[
+Using xAnimation is easy. Create an xAnimation object and call one of the animation methods. You can then use the pause/resume methods. The other methods and properties are documented here to help you write your own animation methods. xAnimation provides an animation "engine" which supports unlimited axes of animation, multiple acceleration types and an onEnd handler. The onEnd handler can return true to cause the animation to repeat. It supports a bounce-back feature. Acceleration is implemented as an array of functions so it is easy to add custom acceleration types.
+]]></description>
+
+<syntax>obj = new xAnimation(res);</syntax>
+
+<parameters>
+<par><name>res</name><note><![CDATA[Timer resolution in milliseconds. Unsigned integer. Default is 10. Frames-per-sec = 1000/res. Objects can be created before onload. Animation methods should not be called until after onload if animating an Element.]]></note></par>
+</parameters>
+
+<properties>
+<prop><name>e</name><note><![CDATA[element]]></note></prop>
+<prop><name>t</name><note><![CDATA[total time]]></note></prop>
+<prop><name>or</name><note><![CDATA[onRun]]></note></prop>
+<prop><name>ot</name><note><![CDATA[onTarget]]></note></prop>
+<prop><name>oe</name><note><![CDATA[onEnd]]></note></prop>
+<prop><name>at</name><note><![CDATA[Acceleration type: 0=none(constant velocity), 1=sine(fast start, slow end), 2=cosine(slow start, fast end), 3=combined(slow start, fast mid, slow end). This is optional, the default is 0.]]></note></prop>
+<prop><name>a</name><note><![CDATA[axis array]]></note></prop>
+<prop><name>qc</name><note><![CDATA[quarter-cycles (qc=b+1)]]></note></prop>
+<prop><name>f</name><note><![CDATA[animation factor]]></note></prop>
+<prop><name>a[n].v</name><note><![CDATA[instantaneous value for axis n]]></note></prop>
+<prop><name>a[n].i</name><note><![CDATA[initial value for axis n]]></note></prop>
+<prop><name>a[n].t</name><note><![CDATA[target value for axis n]]></note></prop>
+<prop><name>a[n].d</name><note><![CDATA[displacement for axis n]]></note></prop>
+<prop><name>vf</name><note><![CDATA[static velocity-function array]]></note></prop>
+<prop><name>v</name><note><![CDATA[velocity function]]></note></prop>
+<prop><name>res</name><note><![CDATA[timer resolution]]></note></prop>
+<prop><name>fq</name><note><![CDATA[frequency]]></note></prop>
+<prop><name>tmr</name><note><![CDATA[interval timer]]></note></prop>
+<prop><name>t1</name><note><![CDATA[start time]]></note></prop>
+<prop><name>et</name><note><![CDATA[elapsed time]]></note></prop>
+<!--
+<prop><name>-</name><note><![CDATA[Created as needed by animation methods:]]></note></prop>
+<prop><name>xc,yc, xr,yr</name><note><![CDATA[arc center point and ellipse radii (arc)]]></note></prop>
+<prop><name>win</name><note><![CDATA[is window (scroll)]]></note></prop>
+<prop><name>par</name><note><![CDATA[expression parameter (para)]]></note></prop>
+<prop><name>inc</name><note><![CDATA[parameter increment (para)]]></note></prop>
+<prop><name>xe, ye</name><note><![CDATA[expression strings (para)]]></note></prop>
+<prop><name>cornerStr</name><note><![CDATA[corner string (corner)]]></note></prop>
+<prop><name>prop</name><note><![CDATA[css property (css,rgb)]]></note></prop>
+-->
+</properties>
+
+<methods>
+<meth><name>-</name><note><![CDATA[Control Methods:]]></note></meth>
+<meth><name>axes(n)</name><note><![CDATA[Set the number of axes to be animated.]]></note></meth>
+<meth><name>init(e,t,or,ot,oe,a,b)</name><note><![CDATA[Prepare for an animation.]]></note></meth>
+<meth><name>run(r)</name><note><![CDATA[Run the animation. r=resume.]]></note></meth>
+<meth><name>pause()</name><note><![CDATA[Pause/stop the animation.]]></note></meth>
+<meth><name>resume(fs)</name><note><![CDATA[Resume a paused animation, fs=fromStart.]]></note></meth>
+<meth><name>-</name><note><![CDATA[Animation Methods:]]></note></meth>
+<meth><name>alphaArc(e,o,xr,yr,a1,a2,t,a,b,oe)</name><sym>xAnimation.alphaArc</sym><note><![CDATA[Animate an element's opacity and its position over an elliptical arc.]]></note></meth>
+<meth><name>arc(e,xr,yr,a1,a2,t,a,b,oe)</name><sym>xAnimation.arc</sym><note><![CDATA[Animate an element's position over an elliptical arc.]]></note></meth>
+<meth><name>corner(e,c,x,y,t,a,b,oe)</name><sym>xAnimation.corner</sym><note><![CDATA[Animate an element's corner over a line segment.]]></note></meth>
+<meth><name>css(e,p,v,t,a,b,oe)</name><sym>xAnimation.css</sym><note><![CDATA[Animate an element's CSS property that accepts integer pixel values.]]></note></meth>
+<meth><name>imgSize(e,w,h,t,a,b,oe)</name><sym>xAnimation.imgSize</sym><note><![CDATA[Animate an image's width and height.]]></note></meth>
+<meth><name>line(e,x,y,t,a,b,oe)</name><sym>xAnimation.line</sym><note><![CDATA[Animate an element's position over a line segment.]]></note></meth>
+<meth><name>opacity(e,o,t,a,b,oe)</name><sym>xAnimation.opacity</sym><note><![CDATA[Animate an element's opacity.]]></note></meth>
+<meth><name>para(e,xe,ye,inc,t,oe)</name><sym>xAnimation.para</sym><note><![CDATA[Animate an element's position over parametric equations.]]></note></meth>
+<meth><name>rgb(e,p,v,t,a,b,oe)</name><sym>xAnimation.rgb</sym><note><![CDATA[Animate an element's CSS property that accepts color values.]]></note></meth>
+<meth><name>rgbByClass(cls,p,v,t,a,b,oe)</name><sym>xAnimation.rgbByClass</sym><note><![CDATA[Animate a CSS property that accepts color values, for all elements with the given className.]]></note></meth>
+<meth><name>scroll(e,x,y,t,a,b,oe)</name><sym>xAnimation.scroll</sym><note><![CDATA[Animate the scroll position of a window or element.]]></note></meth>
+<meth><name>size(e,w,h,t,a,b,oe)</name><sym>xAnimation.size</sym><note><![CDATA[Animate an element's width and height.]]></note></meth>
+<meth><name>sizeLine(e,s,a,b,oe)</name><sym>xAnimation.sizeLine</sym><note><![CDATA[Perform a sequence of animations of an element's position and size.]]></note></meth>
+</methods>
+
+<dependencies>
+<dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+<demo><url>http://cross-browser.com/x/examples/xanimation.php</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<comments>
+<comment><date>27Apr07</date><author>mf</author><note><![CDATA[
+[code]
+init
+  0:   fq = 1/t
+  1&2: fq = 1/t * qc * PI/2
+  3:   fq = 1/t * qc * PI
+
+run
+  function(r){return r;},
+  function(r){return Math.abs(Math.sin(r));},
+  function(r){return 1-Math.abs(Math.cos(r));},
+  function(r){return (1-Math.cos(r))/2;},
+  function(r) {return (1.0 - Math.exp(-r * 6));} // r4
+
+Here's a graph of the above velocity functions:
+http://cross-browser.com/images/animation_vf_graph2.gif
+[/code]
+]]></note></comment>
+</comments>
+
+<revisions>
+<rev><num>5</num><date>23Nov10</date><author>mf</author><note><![CDATA[Now supports any number of axes.]]></note></rev>
+<rev><num>4</num><date>25Oct09</date><author>mf</author><note><![CDATA[EricJ has submitted an awesome velocity function. It is a 'decay' function. Thanks very much, Eric! See http://cross-browser.com/forums/viewtopic.php?id=667]]></note></rev>
+<rev><num>3</num><date>27Apr07</date><author>mf</author><note><![CDATA[Alexander has submitted a brilliant new velocity function. It is a 'combination' of accel types 1 and 2. Thanks very much, Alexander!]]></note></rev>
+<rev><num>2</num><date>15Apr07</date><author>mf</author><note><![CDATA[xAnimation object re-implemented.]]></note></rev>
+<rev><num>1</num><date>25Sep06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

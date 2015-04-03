@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWidth'>
+
+<sources>
+  <src><file>xwidth.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Size</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Return and optionally set the element's width. It attempts to return and/or set the equivalent of offsetWidth. xWidth provides, effectively, a read/write version of offsetWidth. The border is included, as well as the padding, in the calculations. When returning the existing width, xWidth returns offsetWidth, which is the sum of the border, padding and style.width values. When setting a new width, xWidth finds the current border and padding values of the element and then subtracts those from the width you have specified before assigning the result to style.width.]]></description>
+
+<syntax>xWidth(ele[, uW])</syntax>
+
+<parameters>
+  <par><name>ele</name><note><![CDATA[id string or object reference]]></note></par>
+  <par><name>uW</name><note><![CDATA[unsigned integer width; it is rounded to an integer]]></note></par>
+</parameters>
+
+<return>integer</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xNum</dep>
+  <dep>xDef</dep>
+  <dep>xStr</dep>
+  <dep>xGetComputedStyle</dep>
+</dependencies>
+
+<tests>
+  <test><date>24Nov2010</date><author>mf</author><url>http://cross-browser.com/forums/viewtopic.php?id=822</url><note><![CDATA[Element has no size with "display:none".]]></note></test>
+  <test><date>04May2009</date><author>mf</author><url>http://cross-browser.com/forums/viewtopic.php?id=529</url><note><![CDATA[Discussion and demo on "box model".]]></note></test>
+</tests>
+
+<comments>
+  <comment><date>27Jan2010</date><author>mf</author><note><![CDATA[There are problems with this function in regards to setting the width of table elements with borders and "border-collapse:collapse". xTableHeaderFixed used an experimental version of xWidth which attempted to solve the problem but it is not used as of rev 11, so here it is for reference:
+[code]
+xTableHeaderFixed.xWidth = function(e,w)
+{
+  var pl=0, pr=0, b=0;
+  if (!(e = xGetElementById(e))) return false;
+  if (xNum(w)) {
+    if (w < 0) w = 0; // return false ???
+    else w = Math.round(w);
+  }
+  else w = -1;
+  if (xDef(e.style, e.offsetWidth, e.clientWidth)) {
+    if (w >= 0) {
+      if (document.compatMode=='CSS1Compat') {
+        pl = xGetComputedStyle(e, 'padding-left', 1);
+        pr = xGetComputedStyle(e, 'padding-right', 1);
+        b = e.offsetWidth - e.clientWidth;
+        if (window.opera && e.tagName.toLowerCase() != 'table') {
+          b = Math.round(b / 2); // possibly only for TDs and THs !!! haven't yet finished testing in Opera !!!
+        }
+        w -= (pl + pr + b);
+        if (isNaN(w) || w < 0) return false;
+      }
+      e.style.width = w + 'px';
+    }
+    w = e.offsetWidth;
+  }
+  else  {
+    return false;
+  }
+  return w;
+};
+[/code]
+]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>8</num><date>31Oct10</date><author>mf</author><note><![CDATA[Removed variable 'gcs', which was used as an alias for xGetComputedStyle. Using compression does away with any need to do this type of thing.]]></note></rev>
+  <rev><num>7</num><date>6Mar09</date><author>mf</author><note><![CDATA[Combined multiple var statements into one.]]></note></rev>
+  <rev><num>6</num><date>27Apr07</date><author>mf</author><note><![CDATA[I went back to r4. I would like to make the r5 change, but it breaks too many demos. When you need the width/height of an element's parent, if that parent happens to be document/html/body then what you really want is clientWidth/clientHeight. I'll have to revisit this later.]]></note></rev>
+  <rev><num>5</num><date>23Apr07</date><author>mf</author><note><![CDATA[This rev reverses the first part of r4. Now it does not reference xClientWidth.]]></note></rev>
+  <rev><num>4</num><date>7Apr05</date><author>mf</author><note><![CDATA[If ele is document or html or body then return xClientWidth. This needs testing and is somewhat experimental. Also, use (pl !== null) instead of !=]]></note></rev>
+  <rev><num>3</num><date>12Mar05</date><author>mf</author><note><![CDATA[Changed xSetCW to use xGetComputedStyle and removed xGetCS. Made xSetCW inline. Reduces width/height funtions about 200 bytes.]]></note></rev>
+  <rev><num>2</num><date>14May04</date><author>mf</author><note><![CDATA[xWidth now accepts zero as valid]]></note></rev>
+  <rev><num>1</num><date>31Mar04</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note></rev>
+</revisions>
+
+</x_symbol>

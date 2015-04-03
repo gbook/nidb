@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEachUntilReturn'>
+
+<sources>
+  <src><file>xeachuntilreturn.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Access each element of a collection sequentially (by its numeric index) and do something with it. Stop when the called function returns a value.]]></description>
+
+<syntax>xEachUntilReturn(c, f, s)</syntax>
+
+<parameters>
+  <par><name>c</name><note><![CDATA[Array/Obj - A collection of elements]]></note></par>
+  <par><name>f</name><note><![CDATA[Func      - Function to execute for each element. Arguments: item, index, number of items]]></note></par>
+  <par><name>s</name><note><![CDATA[Start index. A number between 0 and collection size - 1. (optional)]]></note></par>
+</parameters>
+
+<return><![CDATA[Any]]></return>
+
+<dependencies>
+  <dep></dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>8Sep2006</date><author>df</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

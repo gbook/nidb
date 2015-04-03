@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pick A Card Demo 2</title>
+<style type="text/css">
+* {
+  margin: 0;
+  padding: 0;
+}
+/* for the demo */
+.card-table {
+  position: relative;
+  width: 500px;
+  height: 100px;
+  padding: 10px;
+  background-color: #CCC;
+}
+.card {
+  position: absolute;
+  top: 10px;
+  width: 50px;
+  height: 100px;
+  color: #CCC;
+  background-color: #003;
+  border: 1px solid #CCC;
+  overflow: hidden;
+  padding: 2px;
+}
+.top-card {
+  top: 12px;
+  color: #FFF;
+  background-color: #009;
+  border: 1px solid #FFF;
+}
+#dbg-msg {
+  text-align: left;
+  width: 750px;
+  height: 200px;
+  overflow: auto;
+}
+/* for the page template */
+html, body {
+  color:#000;
+  background:#fff;
+  font-size:small;
+  font-family:verdana,arial,helvetica,sans-serif;
+}
+body {
+  min-width:750px;
+  text-align:center; /* to center Page in IE6 */
+}
+a {
+  color:#339;
+  text-decoration:none;
+}
+a:hover {
+  color:#fff;
+  background-color:#339;
+  text-decoration:none;
+}
+h1 {
+  color:#009;
+  font-size:225%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h2 {
+  font-size:166%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h3 {
+  font-size:133%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h4 {
+  font-size:100%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+#Page {
+  margin:1em auto; /* to center Page in modern browsers */
+  width:750px;
+  text-align:left; /* to keep body's "text-align:center" from being inherited */
+}
+#Header {
+  padding:.5em 2em;
+  background:#ccc;
+}
+#Header h1 {
+}
+#Header p {
+  padding:.2em 0;
+}
+#NavBar {
+  background:#ddd;
+  padding:.2em 2em;
+}
+#NavBar ul {
+  list-style:none;
+}
+#NavBar li {
+  display:inline;
+  margin:0 .6em 0 0;
+}
+#NavBar li a {
+  font-size:smaller;
+}
+#Main {
+  padding:1em 2em;
+  background:#eee;
+}
+#Footer {
+  padding:.2em 2em;
+  background:#ccc;
+}
+</style>
+<script type="text/javascript" src="../x.js"></script>
+<script type="text/javascript" src="../lib/xaddclass.js"></script>
+<script type="text/javascript" src="../lib/xremoveclass.js"></script>
+<script type="text/javascript" src="../lib/xhasclass.js"></script>
+<script type="text/javascript">
+
+var pac1, pac2;
+xAddEventListener(window, 'load',
+  function() {
+    pac1 = new PickACard('card-table-1', 20, true);
+    pac2 = new PickACard('card-table-2', 20, false);
+  }, false
+);
+
+function PickACard(containerId, numCards, onClick) // object prototype
+{
+  // "private" properties
+  var cardXOffset = 20, topZ = numCards + 1, topCard;
+  // "private" method
+  function cardToTop(card)
+  {
+    if (topCard != card && xNum(card._original_z)) {
+      if (topCard) {
+        topCard.style.zIndex = topCard._original_z;
+        xRemoveClass(topCard, 'top-card');
+      }
+      card.style.zIndex = topZ;
+      xAddClass(card, 'top-card');
+      topCard = card;
+    }
+    dbg('container: ' + containerId + ', card: ' + card._original_z);
+  }
+  /* event handlers
+   Note that, in each of the event handlers, "this" does not point to the
+   PickACard instance, rather it points to the event target.
+  */
+  function cardOnClick()
+  {
+    cardToTop(this);
+  }
+  function cardOnMouseover()
+  {
+    cardToTop(this);
+  }
+  // constructor code
+  function ctor()
+  {
+    var i, e, p = xGetElementById(containerId);
+    for (i = 1; i < topZ; ++i) {
+      e = document.createElement('div');
+      e.className = 'card';
+      p.appendChild(e);
+      e.style.left = (i * cardXOffset) + 'px';
+      e.innerHTML = e.style.zIndex = e._original_z = i;
+      if (onClick) e.onclick = cardOnClick;
+      else e.onmouseover = cardOnMouseover;
+    }
+    cardToTop(e); // bring last card to top
+  }
+  ctor();
+}
+//
+function dbg(s)
+{
+  var e = xGetElementById('dbg-msg');
+  if (e) e.innerHTML += '<p>' + s + '</p>';
+}
+</script>
+</head>
+<body>
+
+<div id="Page">
+  <div id="Header">
+    <h1>Pick A Card Demo 2</h1>
+  </div>
+  <div id="NavBar">
+    <ul>
+      <li><a href="">Option 1</a></li>
+      <li><a href="">Option 2</a></li>
+      <li><a href="">Option 3</a></li>
+    </ul>
+  </div>
+  <div id="Main">
+    <h2>Pick A Card!</h2>
+    <div>
+      <h3>Intro</h3>
+      <div>
+        <p>This is a quick demo I threw together for <a href='http://cross-browser.com/forums/viewtopic.php?id=832'>shaun1258</a>. Click (or mouseover) a card to bring it to the top.</p>
+        <p>Also see <a href='pick-a-card.html'>Pick A Card Demo 1</a></p>
+      </div>
+      <h3>Demos</h3>
+      <div>
+        <h4>Demo 1: onclick</h4>
+        <div>
+          <div id='card-table-1' class='card-table'></div>
+        </div>
+        <h4>Demo 2: onmouseover</h4>
+        <div>
+          <div id='card-table-2' class='card-table'></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="Footer">
+    <p><a href='http://cross-browser.com/'>Cross-Browser.com</a></p>
+  </div>
+
+  <div id='dbg-msg'></div>
+
+</div>
+
+</body>
+</html>

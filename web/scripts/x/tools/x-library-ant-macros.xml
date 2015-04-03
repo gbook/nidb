@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<!--
+  x-library-ant-macros.xml v1.1
+  Copyright 2009-2011 Michael Foster (Cross-Browser.com)
+  Distributed under the terms of the GNU LGPL
+-->
+
+<project name="x-library-ant-macros">
+
+  <description>Ant macros for building X Library projects.</description>
+
+  <!-- In your build script, "x.dir" must be defined, and these properties may be overridden. -->
+  <property name="x.tmp.dir" value="tmp"/> <!-- Directory for intermediate files. -->
+  <property name="x.xag.exe" value="${x.dir}/tools/xag.exe"/> <!-- Pathname of XAG executable file. -->
+  <property name="x.xag.lib" value="${x.dir}/lib/"/> <!-- Directory containing X Library files. Requires a trailing slash. -->
+  <property name="x.xpp.exe" value="${x.dir}/tools/xpp.exe"/> <!-- Pathnames of XPP  and YUICompressor executable files. -->
+  <property name="x.cmp.jar" value="/Program Files/yuicompressor/yuicompressor-2.4.2/build/yuicompressor-2.4.2.jar"/>
+
+  <!-- Initialize - prepare to build a project.
+    This macro creates project-specific properties, creates the tmp directory
+    if not present, and deletes old tmp files for the current project if present.
+  -->
+  <macrodef name="x-initialize">
+    <attribute name="prj" default="default"/>
+    <sequential>
+      <!-- Create project-specific file name properties. They must not be overridden. -->
+      <property name="x.@{prj}.xag.out" value="${x.tmp.dir}/@{prj}.xago"/>
+      <property name="x.@{prj}.xpp.out" value="${x.tmp.dir}/@{prj}.xppo"/>
+      <echo message="Building @{prj} ..."/>
+      <!-- Prepare the tmp directory. -->
+      <mkdir dir="${x.tmp.dir}"/>
+      <delete>
+        <fileset dir="${x.tmp.dir}" includes="@{prj}.*"/>
+      </delete>
+    </sequential>
+  </macrodef>
+
+  <!-- Aggregate - create a custom X Library file.
+    Prerequsite: x-initialize.
+    This macro creates a XAG configuration file using the values of its attributes.
+    An optional list of symbols can be provided as the contents of the x-aggregate
+    element. This text is saved in a file and fed to XAG as another app file.
+    The default XAG options are for building application-specific libraries with
+    application code not included ("-app +dep"). When building general purpose
+    libraries, use options="-app -dep".
+  -->
+  <macrodef name="x-aggregate">
+    <attribute name="prj" default="default"/>
+    <attribute name="input" default="empty-filelist"/> <!-- refid -->
+    <attribute name="output" default="${x.@{prj}.xag.out}"/>
+    <attribute name="options" default="-app +dep"/>
+    <attribute name="libpath" default="${x.xag.lib}"/>
+    <text name="symbols" optional="true"/>
+    <sequential>
+      <!-- Create project-specific file name properties. They must not be overridden. -->
+      <property name="x.@{prj}.xag.cfg" value="${x.tmp.dir}/@{prj}.xag"/>
+      <property name="x.@{prj}.xag.sym" value="${x.tmp.dir}/@{prj}.sym"/>
+      <!-- Create config file. -->
+      <pathconvert refid="@{input}" property="x.@{input}.xag.files" setonempty="true" pathsep="${line.separator}"/>
+      <echo file="${x.@{prj}.xag.cfg}" append="false">
+; @{prj}
+options @{options}
+output @{output}
+libpath @{libpath}
+appfiles
+${x.@{prj}.xag.sym}
+${x.@{input}.xag.files}</echo>
+      <!-- Create symbols file. -->
+      <echo file="${x.@{prj}.xag.sym}" append="false">@{symbols}</echo>
+      <!-- Run XAG. -->
+      <apply executable="${x.xag.exe}" relative="true" parallel="true" failonerror="true">
+        <srcfile/>
+        <filelist dir="." files="${x.@{prj}.xag.cfg}"/> 
+      </apply>
+    </sequential>
+  </macrodef>
+
+  <!-- Preprocess - preprocess the project with XPP.
+    The input to this stage is the optional output from x-aggregate as well as
+    an optional file-type resource collection.
+  -->
+  <macrodef name="x-preprocess">
+    <attribute name="prj" default="default"/>
+    <attribute name="input" default="empty-filelist"/> <!-- refid -->
+    <attribute name="output" default="${x.@{prj}.xpp.out}"/>
+    <sequential>
+      <!-- If XAG output exists, use it as input. -->
+      <condition property="x.@{prj}.xpp.xag" value="${x.@{prj}.xag.out}" else="">
+        <available file="${x.@{prj}.xag.out}"/>
+      </condition>
+      <!-- Run XPP. -->
+      <apply executable="${x.xpp.exe}" relative="true" parallel="true" failonerror="true">
+        <!-- output -->
+        <arg value="@{output}"/>
+        <!-- input -->
+        <srcfile/>
+        <resources refid="@{input}"/>
+        <arg value="${x.@{prj}.xpp.xag}"/>
+      </apply>
+    </sequential>
+  </macrodef>
+
+  <!-- Compress. - compress the project with YUICompressor.
+    The input to this stage is either: the input attribute or the x-preprocess
+    output or the x-aggregate output.
+  -->
+  <macrodef name="x-compress">
+    <attribute name="prj" default="default"/>
+    <attribute name="type" default="js"/> <!-- 'js' or 'css'. -->
+    <attribute name="input" default=""/> <!-- filename -->
+    <attribute name="output" default="@{prj}.@{type}"/>
+    <attribute name="options" default=""/>
+    <sequential>
+      <echo message="Compressing to @{output}"/>
+      <!-- If input is "" and XPP output exists, use it as input. -->
+      <condition property="x.@{prj}.cmp.xpp" value="${x.@{prj}.xpp.out}" else="">
+        <and>
+          <equals arg1="@{input}" arg2=""/>
+          <available file="${x.@{prj}.xpp.out}"/>
+        </and>
+      </condition>
+      <!-- If input is "" and cmp.xpp is "" and XAG output exists, use it as input. -->
+      <condition property="x.@{prj}.cmp.xag" value="${x.@{prj}.xag.out}" else="">
+        <and>
+          <equals arg1="@{input}" arg2=""/>
+          <equals arg1="${x.@{prj}.cmp.xpp}" arg2=""/>
+          <available file="${x.@{prj}.xag.out}"/>
+        </and>
+      </condition>
+      <!-- Run YUICompressor. -->
+      <apply executable="java" relative="true" parallel="true" failonerror="true">
+        <arg value="-jar"/>
+        <arg value="${x.cmp.jar}"/>
+        <arg line="--type @{type} @{options} -o"/>
+        <!-- output -->
+        <arg value="@{output}"/>
+        <!-- input -->
+        <srcfile/>
+        <filelist dir="." files="@{input}"/>
+        <arg line="${x.@{prj}.cmp.xpp} ${x.@{prj}.cmp.xag}"/>
+      </apply>
+    </sequential>
+  </macrodef>
+
+  <!--
+    This empty filelist is used as a default input attribute in the above macros.
+  -->
+  <filelist id="empty-filelist" files=""/>
+
+<!-- Notes:
+
+1. These macros can be ran separately, or chained into a 3 stage build process:
+  - Resolve library dependencies and aggregate them into one file with XAG.
+  - Preprocess the file with XPP.
+  - Compress the file with YUICompressor.
+
+2. You can pass the ID of any file-type resource collection (<resources>, <files>,
+<filelist> or <fileset>) as the input attribute to x-aggregate or x-preprocess
+However, <fileset> and <files> do not allow you to control the order in which
+the files are included. Using <resources> (and it seems,  <filelist> also),
+you can control the order in which the files are included.
+    
+
+v1.1, 24Jan2011: Added default values for 'prj' attributes.
+-->
+</project>

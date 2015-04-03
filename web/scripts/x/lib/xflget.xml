@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id="xFlGet">
+
+<sources>
+  <src><file>xflget.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Returns a reference to a Flash object or null if not found.]]></description>
+
+<syntax>xFlGet(id[, win])</syntax>
+
+<parameters>
+  <par><name>id</name><note><![CDATA[id string]]></note></par>
+  <par><name>win</name><note><![CDATA[optional window object]]></note></par>
+</parameters>
+
+<revisions>
+  <rev><num>2</num><date>26Apr2011</date><author>mf</author><note><![CDATA[added win parameter and check embeds first like I had originally]]></note></rev>
+  <rev><num>1</num><date>14Mar2011</date><author>mf</author><note><![CDATA[been using something like this for a long time]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWalkToFirst'>
+
+<sources>
+  <src><file>xwalktofirst.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Starts from a node and applies fnVisit up to the very first element (or up to a non-null returned value from 'fnVisit'). Children of starting node are not processed since children are consider to be "after" their parent. Optional 'data' and 'skip' work like in xWalkTree2.]]></description>
+
+<syntax>xWalkToFirst( oNode, fnVisit, skip, data )</syntax>
+
+<parameters>
+  <par><name>oNode</name><note><![CDATA[]]></note></par>
+  <par><name>fnVisit</name><note><![CDATA[]]></note></par>
+  <par><name>skip</name><note><![CDATA[]]></note></par>
+  <par><name>data</name><note><![CDATA[]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns the return from fnVisit.]]></return>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks very much to Olivier!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>2005</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSplitter'>
+
+<sources>
+  <src><file>xsplitter.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[This object is a nestable, dual-pane splitter. It can be horizontal or vertical. Each xSplitter has two panes. Pane1 is the left (or top) pane, and pane2 is the right (or bottom) pane. An xSplitter can be nested inside any pane of any other xSplitter. xSplitter makes no assumptions about classnames or id strings - the only requirement is that the xSplitter DIV contain 3 child DIVs in this order: pane1, pane2, and dragBar.]]></description>
+
+<syntax>new xSplitter(sSplId, uSplX, uSplY, uSplW, uSplH, bHorizontal, uBarW, uBarPos, uBarLimit1, uBarLimit2, bBarEnabled, uSplBorderW[, oSplChild1[, oSplChild2]])</syntax>
+
+<parameters>
+  <par><name>sSplId</name><note><![CDATA[splitter element's id string]]></note></par>
+  <par><name>uSplX</name><note><![CDATA[splitter element's x position relative to its container]]></note></par>
+  <par><name>uSplY</name><note><![CDATA[splitter element's y position relative to its container]]></note></par>
+  <par><name>uSplW</name><note><![CDATA[splitter element's initial width (use 0 if splitter is nested)]]></note></par>
+  <par><name>uSplH</name><note><![CDATA[splitter element's initial height (use 0 if splitter is nested)]]></note></par>
+  <par><name>bHorizontal</name><note><![CDATA[true = horizontal, false = vertical]]></note></par>
+  <par><name>uBarW</name><note><![CDATA[dragbar size]]></note></par>
+  <par><name>uBarPos</name><note><![CDATA[dragbar initial position measured from left (or top) edge of splitter]]></note></par>
+  <par><name>uBarLimit1</name><note><![CDATA[dragbar limit for left (or top) pane]]></note></par>
+  <par><name>uBarLimit2</name><note><![CDATA[dragbar limit for right (or bottom) pane]]></note></par>
+  <par><name>bBarEnabled</name><note><![CDATA[true = pane resizing enabled, false = pane resizing disabled]]></note></par>
+  <par><name>uSplBorderW</name><note><![CDATA[splitter element's border size set via css]]></note></par>
+  <par><name>oSplChild1</name><note><![CDATA[optional xSplitter object nested in left (or top) pane]]></note></par>
+  <par><name>oSplChild2</name><note><![CDATA[optional xSplitter object nested in right (or bottom) pane]]></note></par>
+</parameters>
+
+<methods>
+  <meth><name>paint(uNewW, uNewH[, uNewBarPos[, uNewBarLim1[, uNewBarLim2]]])</name><note><![CDATA[Resizes and redraws the object.]]></note></meth>
+  <meth><name>setDragEnd(deCallbackFn)</name><note><![CDATA[deCallbackFn will be called at the end of a bar-drag. It will be passed two arguments: 'splEle' and 'barPos'.]]></note></meth>
+</methods>
+
+<dependencies>
+  <dep>xWidth</dep>
+  <dep>xLeft</dep>
+  <dep>xHeight</dep>
+  <dep>xTop</dep>
+  <dep>xMoveTo</dep>
+  <dep>xResizeTo</dep>
+  <dep>xGetElementById</dep>
+  <dep>xFirstChild</dep>
+  <dep>xNextSib</dep>
+  <dep>xEnableDrag</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xsplitter.html</url><note><![CDATA[Demonstrates different configurations of xSplitter.]]></note></demo>
+</demos>
+
+<tests>
+  <test><date>1Sep06</date><author>mf</author><url>http://cross-browser.com/x/examples/xsplitter.html</url><note><![CDATA[Tested on Win XP Pro with Opera 9.01, Firefox 1.0.2 and IE 6.0.]]></note></test>
+</tests>
+
+<comments>
+  <comment><date></date><author>mf</author><note><![CDATA[The overall width and height of the splitter is set with the uSplW and uSplH arguments to the constructor. But if the splitter is to be nested then you should pass 0 for width and height.
+The way to control the sizes of the individual panes is to set the drag-bar's initial position with the uBarPos argument. uBarPos is measured from the left (or top) edge of the splitter. Basically, for horizontal splitters uBarPos defines the width of pane1 (the left pane). For vertical splitters uBarPos defines the height of pane1 (the top pane).
+You can restrict the drag-bar's movement with uBarLimit. The bar can never be dragged so that either pane is less than uBarLimit.
+uBarPos - dragbar initial position measured from left (or top) edge of splitter.
+uBarLimit - dragbar limit, uBarLimit <= BarPosition <= (uSplW - uBarLimit), or uSplH if vertical
+]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>5</num><date>18Aug10</date><author>mf</author><note><![CDATA[I added a public method, setDragEnd. See the demo.]]></note></rev>
+  <rev><num>4</num><date>3Apr09</date><author>mf</author><note><![CDATA[I added iframe support. See the demo.]]></note></rev>
+  <rev><num>3</num><date>31May07</date><author>mf</author><note><![CDATA[Now you can set separate bar limits for both the left (or top) and right (or bottom) panes.]]></note></rev>
+  <rev><num>2</num><date>1Sep06</date><author>mf</author><note><![CDATA[Fixed a bug. When an xSplitter is nested in a pane, that pane needs overflow changed to 'hidden'.]]></note></rev>
+  <rev><num>1</num><date>27Aug06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

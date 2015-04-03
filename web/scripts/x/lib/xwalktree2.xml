@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWalkTree2'>
+
+<sources>
+  <src><sym>xWalkTree2</sym><file>xwalktree2.js</file><note><![CDATA[Olivier Spinelli's implementation, which is an enhanced version of xWalkTree3.]]></note></src>
+  <src><sym>xWalkTree3</sym><file>xwalktree3.js</file><note><![CDATA[An enhanced version of xWalkTree.]]></note></src>
+  <src><sym>xWalkTree</sym><file>xwalktree.js</file><note><![CDATA[The default implementation.]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Traverse a sub-tree.]]></description>
+
+<syntax>xWalkTree2( oNode, fnVisit, skip, data )</syntax>
+
+<parameters>
+  <par><name>oNode</name><note><![CDATA[]]></note></par>
+  <par><name>fnVisit</name><note><![CDATA[]]></note></par>
+  <par><name>skip</name><note><![CDATA[]]></note></par>
+  <par><name>data</name><note><![CDATA[]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns the return from fnVisit.]]></return>
+
+<dependencies>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<tests>
+</tests>
+
+<comments>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks very much to Olivier!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>2005</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

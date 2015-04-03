@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTableCursor2'>
+
+<sources>
+  <src><sym>xTableCursor2</sym><file>xtablecursor2.js</file><note><![CDATA[Click to select a cell.]]></note></src>
+  <src><sym>xTableCursor</sym><file>xtablecursor.js</file><note><![CDATA[Default implementation.]]></note></src>
+</sources>
+
+<groups>
+  <grp>Table</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[Mouseover highlight on rows and cells. Click to select a cell.]]></description>
+
+<syntax>new xTableCursor2(tblId, rowStyle, cellStyle, rowClicStyle, cellClicStyle)</syntax>
+
+<parameters>
+  <par><name>tblId</name><note><![CDATA[string, table id]]></note></par>
+  <par><name>rowStyle</name><note><![CDATA[string, row style]]></note></par>
+  <par><name>cellStyle</name><note><![CDATA[string, cell style]]></note></par>
+  <par><name>rowClicStyle</name><note><![CDATA[string, row style when selected]]></note></par>
+  <par><name>cellClicStyle</name><note><![CDATA[string, cell style when selected]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xTableIterate</dep>
+  <dep>xAddClass</dep>
+  <dep>xRemoveClass</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xtablecursor.html</url><note><![CDATA[Demo for this object.]]></note></demo>
+</demos>
+
+<tests>
+  <test><date>24Jul07</date><author>mf</author><url>http://cross-browser.com/forums/viewtopic.php?id=83</url><note><![CDATA[Forum topic]]></note></test>
+</tests>
+
+<revisions>
+  <rev>
+    <num>1</num><date>24Jul07</date><author>mf</author>
+    <note><![CDATA[gebura's enhancement of xTableCursor]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

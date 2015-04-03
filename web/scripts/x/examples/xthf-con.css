@@ -1,0 +1,80 @@
+/*
+  CSS for xTableHeaderFixed demos.
+*/
+
+/* xthf-no-print is set on all header tables as a
+   convenience for the following no-print rule. */
+
+@media print {
+  table.xthf-no-print {
+    display: none;
+  }
+}
+
+/* When the header is wide it may cause a
+   horizontal scrollbar on the window.
+   The following is a work-around. */
+
+body {
+  overflow-x: hidden;
+}
+
+/* For demos where "window" is the container. */
+
+.demo-container {
+  overflow: hidden;
+  padding: 1px;
+}
+
+/* The scrollable containers.
+   position can be absolute or relative.
+   width can be auto or a pixel value. */
+
+#demo2-container {
+  position: relative;
+  width: auto;
+  height: 350px;
+  overflow: auto;
+  background-color: #FFF;
+  border: 1px solid #596380;
+  padding: 10px;
+}
+
+#demo3-tbl1-container {
+  position: relative;
+  width: auto;
+  height: 300px;
+  overflow: auto;
+  background-color: #FFF;
+  border: 1px solid #596380;
+  padding: 0 10px 0 0;
+}
+#demo3-tbl2-container {
+  position: relative;
+  width: auto;
+  height: 300px;
+  overflow: auto;
+  background-color: #FFF;
+  border: 1px solid #663;
+  padding: 0 0 0 10px;
+}
+#demo3-tbl3-container {
+  position: relative;
+  width: auto;
+  height: 400px;
+  overflow: auto;
+  background-color: #FFF;
+  border: 1px solid #366;
+  padding: 0 10px 0 10px;
+}
+
+#demo-ajax-container {
+  position: relative;
+  width: auto;
+  height: 350px;
+  background-color: #ddd;
+  border: 1px solid #999999;
+  overflow: auto;
+  padding: 0;
+}
+

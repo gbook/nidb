@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!--
+  build.xml v1.0
+  Copyright 2009-2010 Michael Foster (Cross-Browser.com)
+  Distributed under the terms of the GNU LGPL
+-->
+
+<project name="x-library-ant-build" default="help" basedir=".">
+
+  <property name="x.dir" value="."/>
+  <import file="tools/x-library-ant-macros.xml"/>
+
+                                   <!-- * -->
+
+  <!-- Build all library files. -->
+  <target name="all" depends="lib, app" description="Build all library files."/>
+
+  <!-- Build all general-purpose library files. -->
+  <target name="lib" depends="x" description="Build all general-purpose library files."/>
+
+  <!-- Build all application-specific library files. -->
+  <target name="app" depends="xf-demo-xlib" description="Build all application-specific library files."/>
+
+  <target name="help">
+    <fail message="You must specify a target. Try 'ant -p'."/>
+  </target>
+
+                                   <!-- * -->
+
+  <!--
+    The "x.js" general-purpose library file contains some of the most used X functions.
+  -->
+  <target name="x" description="Build 'x.js'.">
+    <x-initialize prj="x"/>
+    <x-aggregate prj="x" options="-app -dep">
+      xGetElementById, xGetElementsByTagName, xGetElementsByClassName,
+      xMoveTo, xLeft, xTop, xPageX, xPageY, xScrollLeft, xScrollTop, xHasPoint,
+      xResizeTo, xWidth, xHeight, xClientWidth, xClientHeight,
+      xStyle, xOpacity, xGetComputedStyle, xCamelize,
+      xDef, xStr, xNum, xLibrary,
+      xEachE, xEachN, xOffset,
+      xAddEventListener, xRemoveEventListener, xEvent, xStopPropagation, xPreventDefault
+    </x-aggregate>
+    <x-compress prj="x"/>
+  </target>
+
+  <!--
+    As an example of building an application-specific library file, this task
+    builds a library file for use by the xFenster demos. It also is an
+    example of using x-preprocess to implement obfuscation.
+  -->
+  <target name="xf-demo-xlib" description="Build 'examples/xfenster-xlib.js'.">
+    <x-initialize prj="xf-demo-xlib"/>
+    <filelist id="xfenster-xag-files" dir="${basedir}/examples">
+      <file name="xfenster1.js"/> 
+    </filelist>
+    <x-aggregate prj="xf-demo-xlib" input="xfenster-xag-files" options="+app +dep"/>
+    <x-preprocess prj="xf-demo-xlib" input="obf-demo"/>
+    <x-compress prj="xf-demo-xlib" output="examples/xf-demo-xlib.js"/>
+  </target>
+
+                                   <!-- * -->
+
+  <!--
+    This is used as an example of using x-preprocess to implement obfuscation.
+  -->
+  <filelist id="obf-demo" dir="${basedir}" files="obf-demo.xpp"/>
+
+</project>

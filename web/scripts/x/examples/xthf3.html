@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>xTableHeaderFixed Demo 3</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<meta http-equiv='X-UA-Compatible' content='IE=7'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='xthf-con.css'>
+<link rel='stylesheet' type='text/css' href='xthf-bor-sep.css'>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xtableheaderfixed.js'></script>
+<script type='text/javascript'>
+xAddEventListener(window, 'load',
+  function() {
+    new xTableHeaderFixed('xthf-site', 'demo3-tbl1-container', 0);
+    new xTableHeaderFixed('xthf-green', 'demo3-tbl2-container', 0);
+    new xTableHeaderFixed('xthf-blue', 'demo3-tbl3-container', 0);
+  }, false
+);
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xTableHeaderFixed Demo 3</h2>
+
+<h3>Description</h3>
+<div>
+<p>There are more <a href='http://cross-browser.com/x/examples/xthf-demo.php'>xTableHeaderFixed demos</a> available online.</p>
+</div>
+
+<h3>Demo</h3>
+
+<h4>Table 1</h4>
+<div id='demo3-tbl1-container'>
+<script type='text/javascript'>insert_xthf_tables(1);</script>
+</div>
+
+<h4>Table 2</h4>
+<div id='demo3-tbl2-container'>
+<script type='text/javascript'>insert_xthf_tables(2);</script>
+</div>
+
+<h4>Table 3</h4>
+<div id='demo3-tbl3-container'>
+<script type='text/javascript'>insert_xthf_tables(3);</script>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

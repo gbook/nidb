@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xHttpRequest'>
+
+<sources>
+  <src><sym>xHttpRequest</sym><file>xhttprequest.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[An asynchronous HTTP request object. Features a 'timeout' event, an optional random parameter to prevent caching, detailed error reporting, a 'busy' property for serialization, and more.]]></description>
+
+<syntax>var req = new xHttpRequest();</syntax>
+
+<parameters>
+</parameters>
+
+<properties>
+  <prop><name>busy</name><note><![CDATA[True if a response is pending.]]></note></prop>
+  <prop><name>error</name><note><![CDATA[The Error object from an exception.]]></note></prop>
+  <prop><name>status</name><note><![CDATA[Integer. One of the following bitmapped values:]]></note></prop>
+  <prop><name>OK</name><note><![CDATA[0 - No error.]]></note></prop>
+  <prop><name>NOXMLOBJ</name><note><![CDATA[1 - Browser doesn't support an XmlHttp object.]]></note></prop>
+  <prop><name>REQERR</name><note><![CDATA[2 - An exception occurred during a request. See the 'error' property.]]></note></prop>
+  <prop><name>TIMEOUT</name><note><![CDATA[4 - A timeout occurred while waiting for a response. The request was aborted.]]></note></prop>
+  <prop><name>RSPERR</name><note><![CDATA[8 - Response status is not 200, or access to _r.status failed.]]></note></prop>
+  <prop><name>NOXMLCT</name><note><![CDATA[16 - Response content-type is not XML.]]></note></prop>
+  <prop><name>ABORTED</name><note><![CDATA[32 - Request was aborted by a call to the public 'abort' method.]]></note></prop>
+</properties>
+
+<methods>
+  <meth><name>reinit</name><note><![CDATA[Clean and reinitialize the object. This creates a new native request object.]]></note></meth>
+  <meth><name>abort</name><note><![CDATA[Aborts the current 'send' request.]]></note></meth>
+  <meth><name>ret = xhr.send(sMethod, sUrl, sData, uTimeout, sRndVar, bXml, oUData, fnCallback, bClean);</name><note><![CDATA[
+[code]  ret        - True if the request was sent, else false. 
+  xhr        - An xHttpRequest object.
+  sMethod    - Case-insensitive string: 'GET', 'POST', etc.
+  sUrl       - String. URL to which the request will be sent.
+  sData      - String. The data sent in the request. It should be in the form
+               "name1=value1&name2=value2&etc..." and values be encoded.
+  uTimeout   - Unsigned integer. If a response is not received within
+               uTimeout milliseconds the request will be aborted.
+               If (!uTimeout) there will be no timeout.
+  sRndVar    - If (sRndVar) the following will be appended to sData:
+               '&' + sRndVar + '=' + a_random_number.
+  bXml       - Boolean. When sMethod=='GET': if bXml is true the response is
+               expected to be XML and the Content-Type request header will be
+               set to 'text/xml'; if bXml is false it will be set to 'text/plain'.
+               When sMethod=='POST': the Content-Type request header will be
+               set to 'application/x-www-form-urlencoded'.
+  oUData     - A user data object which will be passed to the callback function.
+  fnCallback - A reference to the function which will be called when a response
+               is received or when the timeout period has elapsed. The callback
+               function will receive three arguments:
+               fnCallback(req, status, data);
+               req - The XMLHttpRequest object.
+               status - The xhr.status property.
+               data - The oUData object that was passed to the send method.
+  bClean     - .[/code]
+  ]]></note></meth>
+</methods>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xthf3.php</url><note><![CDATA[xTableHeaderFixed Demo 3.]]></note></demo>
+</demos>
+
+<tests>
+  <test><date>19Jul07</date><author></author><url>http://cross-browser.com/forums/viewtopic.php?id=76</url><note><![CDATA[Forum discussion on xHttpRequest.]]></note></test>
+  <test><date>14Jul07</date><author></author><url>http://cross-browser.com/forums/viewtopic.php?id=78</url><note><![CDATA[Forum discussion on xHttpRequest.]]></note></test>
+</tests>
+
+<comments>
+  <comment><date>17Jan2011</date><author>mf</author><note><![CDATA[This shows the changes from r10 to r11:
+[code]this.send = function(m, u, d, t, r, x, o, f, c)
+  {
+    var q, ct; // r11
+    if (!_r || _i.busy) { return false; }
+    _c = (c ? true : false);
+    m = m.toUpperCase();
+    /* r10
+    if (m != 'POST') {
+      if (d) {
+        d = '?' + d;
+        if (r) { d += '&' + r + '=' + Math.round(10000*Math.random()); }
+      }
+      else { d = ''; }
+    }
+    */
+    // [r11
+    q = (u.indexOf('?') >= 0);
+    if (m != 'POST') {
+      if (d) {
+        u += (q ? '&' : '?') + d;
+        q = true;
+      }
+      d = null;
+    }
+    if (r) {
+      u += (q ? '&' : '?') + r + '=' + Math.random();
+    }
+    // r11]
+    _x = (x ? true : false);
+    _o = o;
+    _f = f;
+    _i.busy = true;
+    _i.status = _i.OK;
+    _i.error = null;
+    if (t) { _t = setTimeout(_ot, t); }
+    try {
+      _r.open(m, u, true); // r11
+      if (m == 'GET') {
+        /* r10
+        _r.open(m, u + d, true);
+        d = null;
+        */
+        _r.setRequestHeader('Cache-Control', 'no-cache');
+        ct = 'text/' + (_x ? 'xml':'plain');
+        if (_r.overrideMimeType) {_r.overrideMimeType(ct);}
+        _r.setRequestHeader('Content-Type', ct);
+      }
+      else if (m == 'POST') {
+        /* r10
+        _r.open(m, u, true);
+        */
+        _r.setRequestHeader('Method', 'POST ' + u + ' HTTP/1.1');
+        _r.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      }
+      /* r10
+      else {
+        _r.open(m, u + d, true);
+        d = null;
+      }
+      */
+      _r.onreadystatechange = _oc;
+      _r.send(d);
+    }
+    catch(e) {
+      _clrTimer();
+      _f = null; _x = false; _o = null;
+      _i.busy = false;
+      _i.status |= _i.REQERR;
+      _i.error = e;
+      if (_c) {
+        _clean();
+      }
+      return false;
+    }
+    return true;
+  };[/code]
+  ]]></note></comment>
+</comments>
+
+<revisions>
+<rev><num>11</num><date>17Jan2011</date><author>mf</author><note><![CDATA[If (r) rand param is added even for POST and the full Math.random() value is used.]]></note></rev>
+  <rev><num>10</num><date>6Mar09</date><author>mf</author><note><![CDATA[Combined multiple var statements into one.]]></note></rev>
+  <rev><num>9</num><date>20Aug07</date><author>sm</author><note><![CDATA[SteveMatSML contributed these improvements. Thanks, Steve! ref: http://cross-browser.com/forums/viewtopic.php?id=124]]></note></rev>
+  <rev><num>8</num><date>25Jul07</date><author>mf</author><note><![CDATA[Set _t = null after clearTimeout in _oc and send. Set _t = null in _ot before calling _abort. Moved clearTimeout from abort to _abort.]]></note></rev>
+  <rev><num>7</num><date>19Jul07</date><author>mf</author><note><![CDATA[SteveMatSML noticed that a clearTimeout was needed in the public abort method. Steve also added to clowncoder's suggestion in r6 - a try block around access to _r in _abort. Thanks very much to Steve and clowncoder for all their testing of this object!]]></note></rev>
+  <rev><num>6</num><date>14Jul07</date><author>mf</author><note><![CDATA[clowncoder found a problem on Linux/Firefox in _oc: "In firefox, it seems that you cannot read _r.status for a broken socket." I put a "try" block around code accessing _r.status. Thanks, clowncoder!]]></note></rev>
+  <rev><num>5</num><date>13Jul07</date><author>mf</author><note><![CDATA[SteveMatSML suggested a public "abort" method and provided an excellent implementation for it. Thanks, Steve!]]></note></rev>
+  <rev><num>4</num><date>17Mar07</date><author>mf</author><note><![CDATA[Experimental change: set "_r.onreadystatechange = function(){}" before calling abort (needs more testing). Ref: "http://www.quirksmode.org/blog/archives/2005/09/xmlhttp_notes_a_1.html".]]></note></rev>
+  <rev><num>3</num><date>30Jan07</date><author>mf</author><note><![CDATA[Did more testing and made an improvement: It seemed that FF was not clearing previously set request headers after open(). So now it sets either 'text/xml' or 'text/plain'. Also moved "_i.busy = false" to after the callback is called.]]></note></rev>
+  <rev><num>2</num><date>16Nov06</date><author>mf</author><note><![CDATA[Removed 'data island' code. See xHttpRequest2. Also made some other improvements.]]></note></rev>
+  <rev><num>1</num><date>12Nov06</date><author>mf</author><note><![CDATA[Initial implementation based loosely on XHConn (http://xkr.us/code/javascript/XHConn/).]]></note></rev>
+</revisions>
+
+</x_symbol>

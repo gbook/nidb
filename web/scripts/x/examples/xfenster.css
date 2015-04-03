@@ -1,0 +1,148 @@
+/* 
+ xFenster, rev 20 and above
+ These styles are dynamically assigned by xFenster.
+*/
+
+.xfContainer { /* outer container */
+  background:#eee;
+  border:1px solid #394360;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  color:#000;
+  cursor:default;
+  font-size:x-small;
+  margin:0;
+  overflow:hidden;
+  padding:0;
+  position:absolute;
+  visibility:hidden;
+}
+
+.xfClient { /* The 'client area' can be an IFRAME or a DIV */
+  border:1px solid #394360;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  margin:0 !important;
+  overflow:auto;
+  padding:0 !important;
+  position:absolute !important;
+  z-index:5;
+}
+
+.xfMask { /* iframe mask */
+  background-color: #99a3c0;
+  display: none;
+  margin:0;
+  opacity: .2;
+  overflow:hidden;
+  padding:0;
+  position:absolute;
+  z-index: 6;
+}
+
+.xfMenu { /* menu element */
+  background-color: #99a3c0;
+  border-right: 1px solid #596380;
+  border-bottom: 1px solid #596380;
+  display: none;
+  margin:0;
+  overflow:hidden;
+  padding: 2px 4px;
+  position:absolute;
+  z-index: 7;
+}
+.xfMenu a {
+  background-color: transparent;
+  color: #ffffff;
+  display: block;
+  font-size: 11px;
+  margin: 2px 0;
+  padding: 1px;
+  text-decoration:none;
+  width: 100%;
+}
+.xfMenu a:hover {
+  background-color: #BF8660;
+  color: #000000;
+}
+
+.xfTBar, .xfTBarF, .xfSBar, .xfSBarF {
+  font-size:x-small;
+  height:1.2em;
+  margin:0;
+  overflow:hidden;
+  padding:1px 4px;
+  position:absolute;
+  z-index:9;
+}
+
+.xfTBar, .xfTBarF {
+  cursor: move;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+}
+
+.xfTBar { /* titlebar default */
+  background:#99a3c0;
+  color:#000;
+  font-weight:normal;
+}
+.xfTBarF { /* titlebar focused */
+  background:#596380;
+  color:#fff;
+  font-weight:bold;
+}
+
+.xfSBar, .xfSBarF {
+  color:#000;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -khtml-border-radius: 3px;
+}
+
+.xfSBar { /* statusbar default */
+  background:#99a3c0;
+}
+.xfSBarF { /* statusbar focused */
+  background:#596380;
+}
+
+.xfMnuIco, .xfMinIco, .xfMaxIco, .xfRstIco, .xfCloIco, .xfRszIco {
+  background:transparent;
+  cursor:pointer;
+  height:12px;
+  margin:0;
+  overflow:hidden;
+  padding:0;
+  position:absolute;
+  width:12px;
+  z-index:10;
+}
+.xfMnuIco { /* menu icon */
+  background-image:url(../../images/xf_menu_icon.gif);
+}
+.xfMinIco { /* minimize icon */
+  background-image:url(../../images/xf_minimize_icon.gif);
+}
+.xfMaxIco { /* maximize icon */
+  background-image:url(../../images/xf_maximize_icon.gif);
+}
+.xfRstIco { /* restore icon */
+  background-image:url(../../images/xf_restore_icon.gif);
+}
+.xfCloIco { /* close icon */
+  background-image:url(../../images/xf_close_icon.gif);
+}
+.xfRszIco { /* resize icon */
+  background:transparent;
+  background-image:url(../../images/xf_resize_icon.gif);
+  cursor: se-resize;
+  height:12px;
+  margin:0;
+  padding:0;
+  width:12px;
+}
+

@@ -1,0 +1,107 @@
+# NiDB configuration file
+
+# ------------------------------------------------------------------------------
+# NIDB nidb.cfg
+# Copyright (C) 2004-2015
+# Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
+# Olin Neuropsychiatry Research Center, Hartford Hospital
+# ------------------------------------------------------------------------------
+# GPLv3 License:
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ------------------------------------------------------------------------------
+
+# database variables
+[mysqlhost] = localhost
+[mysqldatabase] = nidb
+[mysqluser] = username
+[mysqlpassword] = password
+
+[mysqldevhost] = localhost
+[mysqldevdatabase] = nidb
+[mysqldevuser] = username
+[mysqldevpassword] = password
+
+# email parameters (SMTP through TLS)
+[emailusername] = username@gmail.com
+[emailpassword] = password
+[emailserver] = smtp.gmail.com
+[emailport] = 587
+[emailfrom] = username@gmail.com
+[adminemail] = example@domain.com
+
+# site specific information
+[siteurl] = http://your.domain.com
+# setting 'usecluster' to 1 will tell the system to use qsub to submit QC jobs to a job queuing system
+[usecluster] = 1
+[queuename] = thequeuename.q
+[queueuser] = username
+[clustersubmithost] = submithostname
+# full path to the qsub executable
+[qsubpath] = /sge/sge-root/bin/lx24-amd64/./qsub
+# NiDB version
+[version] = 5.0.1
+[sitename] = NiDB
+[sitenamedev] = NiDB&nbsp;(DEV)
+[ispublic] = 0
+# possible site types: local, public, commercial
+[sitetype] = local
+
+# local FTP info
+[localftphostname] = ftphostname
+[localftpusername] = ftpusername
+[localftppassword] = ftppassword
+
+# setup the directories to be used (alphabetical list)
+
+# analysis root location
+[analysisdir] = /home/pipeline/pipeline
+# group analysis root location
+[groupanalysisdir] = /home/pipeline/pipelinegroup
+# this is the final place for zipped/recon/formatted subject directories
+[archivedir] = /nidb/archive
+# backup directory. all handled data is copied here, usually mounted to another server
+[backupdir] = /nidb/backup
+# local FTP directory
+[ftpdir] = /nidb/ftp
+# dicom data to be imported is placed in this directory
+[importdir] = /nidb/dicomimport
+# data is pulled from the dicom server and placed in this directory
+[incomingdir] = /nidb/dicomincoming
+# data is pulled from the dicom server and placed in this directory
+[incoming2dir] = /nidb/nondicomincoming
+# where the lock files are
+[lockdir] = /nidb/programs/lock
+# where the log files are kept
+[logdir] = /nidb/programs/logs
+# directory in which all NFS directories are mounted
+[mountdir] = /mount
+# data packages to be imported is placed in this directory
+[packageimportdir] = /nidb/packageimport
+# QC module directory
+[qcmoduledir] = /nidb/programs/qcmodules
+# place to dump non-dicom, unreadble or corrupt dicom files
+[problemdir] = /nidb/problem
+# where this program and others are run from
+[scriptdir] = /nidb/programs
+# location for apache based downloads
+[webdir] = /var/www/html/download
+# downloading from the webpage
+[downloadpath] = /nidb/download
+# upload layover directory
+[uploadedpath] = /nidb/uploaded
+# tmp directory... sometimes the temp directory can get a few hundred GB of data
+[tmpdir] = /tmp
+# subjects that have been deleted
+[deletedpath] = /nidb/deleted

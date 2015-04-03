@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Tutorial</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>X Tutorial: Collapsible Sections</h2>
+
+<p>Let's develop an unobtrusive page-enhancement using the X Library.</p>
+
+<h3>Enhance What?</h3>
+<div>
+  <p>First we need a web page to work with. You can't develop a page-enhancement without a page, LOL! When I am starting a new demo I usually start with a copy of one of these templates: <a href='../../templates/html4_strict_template.html'>html4_strict_template.html</a> or <a href='../../templates/html5_template.html'>html5_template.html</a>. There are other template files in that same directory. We will start this project with the following HTML file. Its name will be "demo1.html". It has a very simple, CSS-controlled layout.</p>
+  <pre>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;title&gt;X Quick-Start Demo&lt;/title&gt;
+&lt;meta name='author' content='Mike Foster (Cross-Browser.com)'&gt;
+&lt;meta name='description' content='This is the HTML for the tutorial.'&gt;
+&lt;link rel='stylesheet' type='text/css' href='demo1.css'&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id="layout-container"&gt;
+  &lt;div id="layout-header"&gt;
+    &lt;h1&gt;Cross-Browser.com&lt;/h1&gt;
+    &lt;p&gt;X Quick-Start Demo&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div id="layout-hmenu"&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href="http://cross-browser.com/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href="http://cross-browser.com/x/docs/x_quickstart.php"&gt;X Quick-Start&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href="http://cross-browser.com/x/lib/"&gt;X Viewer&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+  &lt;div id="layout-main-col"&gt;
+    &lt;h2 class='collapsible'&gt;H2 Heading&lt;/h2&gt;
+    &lt;div&gt;
+      &lt;h3 class='collapsible'&gt;H3 Heading&lt;/h3&gt;
+      &lt;div&gt;
+        &lt;p&gt;Lorem ipsum dolor sit amet...&lt;/p&gt;
+        &lt;p&gt;Nam ornare, felis non fauc...&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;h3 class='collapsible'&gt;H3 Heading&lt;/h3&gt;
+      &lt;div&gt;
+        &lt;h4 class='collapsible'&gt;H4 Heading&lt;/h4&gt;
+        &lt;div&gt;
+          &lt;p&gt;Aenean tempor. Mauris to...&lt;/p&gt;
+          &lt;p&gt;Nulla feugiat hendrerit ...&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;h4 class='collapsible'&gt;H4 Heading&lt;/h4&gt;
+        &lt;div&gt;
+          &lt;p&gt;Nulla a lacus. Nulla fac...&lt;/p&gt;
+          &lt;p&gt;Suspendisse dapibus, mag...&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id="layout-footer"&gt;
+    &lt;p&gt;Footer&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+  </pre>
+</div>
+
+<h3>Design</h3>
+<div>
+  <p>Let's come up with a brief description of what we want our enhancement to do.</p>
+  <ul>
+  <li>We want the script to place an icon to the left of heading elements. When the icon is clicked the section under the heading should collapse. When the icon is clicked again the section should expand.</li>
+  <li>We don't want this enhancement on all headings, just the ones we specify - and we will specify them by adding 'collapsible' to their <code>class</code> attribute.</li>
+  <li>The enhancement should be very easy to add to a web page. We don't want to have to modify Javascript every time we use this on a new page.</li>
+  </ul>
+</div>
+
+<h3>Implementation</h3>
+<div>
+  <p>After a browser completely loads a web page, as well as all CSS, Javascript and image files included by the page, the <code>load</code> event will then occur. This is when we will initialize our enhancement. We will use <a href='http://cross-browser.com/x/lib/view.php?sym=xAddEventListener'>xAddEventListener</a> to register a function which will be called when the <code>load</code> event occurs. Like all X functions, xAddEventListener is in the directory <code>x/lib</code> and we must now add a SCRIPT element to the HTML file which will cause that function's code to be loaded when the HTML file loads. However, in the <code>x</code> directory there is a prebuilt library file, "x.js". This file does not contain the entire X Library but it contains some of the most used functions. So we will add a SCRIPT element to cause the "x.js" file to be loaded when the HTML file loads.</p>
+  <p>Now we are ready to start writing the code for our enhancement - but where will we put this code? Let's put it in its own file and name it "demo1.js". So we need to add one more SCRIPT element to our HTML file to cause "demo1.js" to be loaded when the HTML file loads.</p>
+  <p>The following is the HEAD element from the "demo1.html" file, showing the SCRIPT elements that have been added. These files reside in the <code>x/examples</code> directory.</p>
+  <pre>
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;title&gt;X Quick-Start Demo&lt;/title&gt;
+&lt;meta name='author' content='Mike Foster (Cross-Browser.com)'&gt;
+&lt;meta name='description' content='This is the HTML for the tutorial.'&gt;
+&lt;link rel='stylesheet' type='text/css' href='demo1.css'&gt;
+&lt;script type='text/javascript' src='../x.js'&gt;&lt;/script&gt;
+&lt;script type='text/javascript' src='demo1.js'&gt;&lt;/script&gt;
+&lt;/head&gt;
+  </pre>
+  <p>In the file "demo1.js" let's register a function to be called when the <code>load</code> event occurs. Use the X Viewer to see descriptions of the arguments we must provide to xAddEventListener.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  //
+}
+  </pre>
+  <p>Looking back at our design requirements we see that we need to get a list of all elements that have "collapsible" in their <code>className</code> property. Looking in the DOM section of the <a href='../lib/'>X Viewer Index</a> we find <a href='http://cross-browser.com/x/lib/view.php?s=xGetElementsByClassName'>xGetElementsByClassName</a>, and that's just what we need.</p>
+  <p>So, using xGetElementsByClassName, we will get an array of elements and then loop through the array, as shown in the following.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  var i, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    //
+  }
+}
+  </pre>
+  <p>Looking back at our design requirements we see that we need to create an "icon" element for each element in the array. So let's create a DIV for the icon element and define two CSS classes for it, one for the collapse icon and one for the expand icon. These CSS classes can set a background image and also set the icon element's size to be the same as the image.</p>
+  <p>But how are we going to position the icon to the left of the heading itself? We could do it the hard way or the easy way. I like easy!</p>
+  <p>Let's back up for a minute and talk about the CSS <code>position</code> property. The default value for this property is "static" and it means the element will be positioned according to <em>the flow</em> of HTML. This is how all HTML elements are normally rendered, but if the <code>position</code> property has any other value then the element is considered to be <em>positioned</em>. If the element's <code>position</code> property has the value "relative" then the element will be rendered exactly as if its <code>position</code> property had been "static" but now the <code>left</code> and <code>top</code> properties will offset the element from its default (static) position. If the element's <code>position</code> property has the value "absolute" then the element will be positioned with respect to its nearest <em>positioned</em> ancestor. It is no longer in <em>the flow</em>.</p>
+  <p>We will use this to our advantage. We will insert the icon element into the heading element. We will give the heading element <code>position:relative</code> and give the icon element <code>position:absolute</code>. Now the browser will position the heading in <em>the flow</em> and position the icon with respect to the heading and all we have to do is move it to the left (a negative value) by a few pixels, and we can easily do that in the CSS. So let's look at the CSS for this project in the following.</p>
+  <pre>
+.collapsible {
+  position:relative;
+}
+.CollapseIcon, .ExpandIcon {
+  position:absolute;
+  left:-16px;
+  top:5px;
+  width:9px;
+  height:9px;
+  cursor:pointer;
+}
+.CollapseIcon {
+  background-image:url("../../images/minus9x9.gif");
+}
+.ExpandIcon {
+  background-image:url("../../images/plus9x9.gif");
+}
+  </pre>
+  <p>Now we have a firm grasp on how this thing is going to work and the remaining Javascript should just fall right into place. In the following we create the icon element and insert it into the heading element.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  var i, icon, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    icon = document.createElement('div');
+    headings[i].appendChild(icon);
+  }
+}
+  </pre>
+  <p>We've completed most of our enhancement's initialization. Now from the design requirements we see that a click on the icon must collapse or expand the icon's corresponding section. We will define a "section" to be the first element following the heading. Looking at the HTML we see that a section is the <em>next sibling</em> of its heading. Go to the X Viewer and look in the DOM section and you will find a function named <a href='http://cross-browser.com/x/lib/view.php?s=xNextSib'>xNextSib</a>. This is what we need to find a section element which follows a heading element. This function is not in the "x.js" file so we must add another SCRIPT element to the HTML file which causes the xNextSib code to get loaded. The following is the HEAD element from the "demo1.html" file, showing the SCRIPT elements that have been added.</p>
+  <pre>
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;title&gt;X Quick-Start Demo&lt;/title&gt;
+&lt;meta name='author' content='Mike Foster (Cross-Browser.com)'&gt;
+&lt;meta name='description' content='This is the HTML for the tutorial.'&gt;
+&lt;link rel='stylesheet' type='text/css' href='demo1.css'&gt;
+&lt;script type='text/javascript' src='../x.js'&gt;&lt;/script&gt;
+&lt;script type='text/javascript' src='../lib/xnextsib.js'&gt;&lt;/script&gt;
+&lt;script type='text/javascript' src='demo1.js'&gt;&lt;/script&gt;
+&lt;/head&gt;
+  </pre>
+  <p>An icon element must <em>remember</em> which section element it is associated with so that the section can be collapsed or expanded when the icon is clicked. We find the section element with xNextSib and then we assign it to a custom property on the icon element. We will name the custom property <code>collapsibleSection</code>, as follows.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  var i, icon, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    icon = document.createElement('div');
+    icon.collapsibleSection = xNextSib(headings[i]);
+    headings[i].appendChild(icon);
+  }
+}
+  </pre>
+  <p>Now we need to <em>listen</em> for a click event on an icon element. We will use the DOM0 instead of the DOM2 event interface. The DOM2 event interface (addEventListener) has the advantage of allowing more than one listener for the same event on the same element, but that is not an issue here because our code creates the icon elements. The DOM0 event interface has an advantage which we will see shortly.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  var i, icon, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    icon = document.createElement('div');
+    icon.collapsibleSection = xNextSib(headings[i]);
+    icon.onclick = iconOnClick;
+    headings[i].appendChild(icon);
+  }
+}
+
+function iconOnClick()
+{
+  //
+}
+  </pre>
+  <p>So now the function <code>iconOnClick</code> will be called whenever an icon element is clicked. We will now see the advantage to using the DOM0 event interface here. In <code>iconOnClick</code> our code can refer to the keyword <code>this</code> which will reference the specific icon element that was clicked!</p>
+  <p>The listener's task is to either collapse or expand its associated section element. To accomplish collapsing and expanding we will simply set the section element's <code>display</code> property to "none" or "block". We will first look at the value of <code>display</code> to determine if we need to expand or collapse the section. We know which section to collapse or expand because, in the initialization loop, we saved a reference to it in the icon element's <code>collapsibleSection</code> property.
+  <pre>
+function iconOnClick()
+{
+  var section = this.collapsibleSection;
+  if (section.style.display != 'block') {
+    section.style.display = 'block';
+  }
+  else {
+    section.style.display = 'none';
+  }
+}
+  </pre>
+  <p>If we just collapsed the section then we want to change the icon's class to "ExpandIcon". If we just expanded the section then we want to change the icon's class to "CollapseIcon". Also, it would be a nice touch to change the icon's <code>title</code> property to correspond to its class, so the user would get an appropriate tooltip when the mouse is over the icon.</p>
+  <pre>
+function iconOnClick()
+{
+  var section = this.collapsibleSection;
+  if (section.style.display != 'block') {
+    section.style.display = 'block';
+    this.className = 'CollapseIcon';
+    this.title = 'Click to collapse';
+  }
+  else {
+    section.style.display = 'none';
+    this.className = 'ExpandIcon';
+    this.title = 'Click to expand';
+  }
+}
+  </pre>
+  <p>It looks like we are finished - but we are not. Look closely at the initialization function as well as the CSS. Did I forget something?</p>
+  <p>What image will be initially displayed for the icons? What CSS class do the icons have initially? What is the initial value of an icon's <code>title</code> property? There is none! When the icons are first created (when the page first loads) they will have no background image and no value for the <code>title</code> property.</p>
+  <p>We could just add some code to the initialization loop that sets an icon's inital CSS class and <code>title</code> property... but notice that our code in the <code>iconOnClick</code> function does exactly that! So the initialization function can just call the icon's <code>iconOnClick</code> function to initialize its CSS class and <code>title</code> property.
+  <pre>
+function initializeCollapsible()
+{
+  var i, icon, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    icon = document.createElement('div');
+    icon.collapsibleSection = xNextSib(headings[i]);
+    icon.onclick = iconOnClick;
+    icon.onclick();
+    headings[i].appendChild(icon);
+  }
+}
+  </pre>
+  <p>Look at the following, which is the second line in the <code>iconOnClick</code> function.</p>
+  <pre>
+  if (section.style.display != 'block') {
+  </pre>
+  <p>Did I make a mistake here? What will be the value of a section element's initial <code>display</code> property? It will be an <em>empty string</em>! But obviously the section gets rendered, so its real <code>display</code> property must actually have the value "block" - and it does. However, the properties of <code>element.style</code> correspond to the HTML element's inline STYLE attribute - NOT to any styles applied by its id or class attributes. Therefore the value of a section element's initial <code>display</code> property will be an <em>empty string</em>. Now that <code>if</code> statement should make more sense.</p>
+  <p>This <code>if</code> statement is important although it appears to be trivial. If I were not also using <code>iconOnClick</code> to initialize the icon then I would have tested for <code>!= 'none'</code> instead of testing for <code>!= 'block'</code> and swapped the code blocks following the <code>if</code> statement.</p>
+  <p>We could stop here, but let's add one more feature. When the mouse is over an icon we can change the background of its section to give a visual indication of what will get collapsed if they click the icon.</p>
+  <p>The following is our entire "demo1.js" file.</p>
+  <pre>
+xAddEventListener(window, 'load', initializeCollapsible, false);
+
+function initializeCollapsible()
+{
+  var i, icon, headings = xGetElementsByClassName('collapsible');
+  for (i = 0; i < headings.length; i++) {
+    icon = document.createElement('div');
+    icon.collapsibleSection = xNextSib(headings[i]);
+    icon.onclick = iconOnClick;
+    icon.onclick();
+    icon.onmouseover = iconOnMouseover;
+    icon.onmouseout = iconOnMouseout;
+    headings[i].appendChild(icon);
+  }
+}
+
+function iconOnClick()
+{
+  var section = this.collapsibleSection;
+  if (section.style.display != 'block') {
+    section.style.display = 'block';
+    this.className = 'CollapseIcon';
+    this.title = 'Click to collapse';
+  }
+  else {
+    section.style.display = 'none';
+    this.className = 'ExpandIcon';
+    this.title = 'Click to expand';
+  }
+}
+
+function iconOnMouseover()
+{
+  this.collapsibleSection.style.backgroundColor = '#cccccc';
+}
+
+function iconOnMouseout()
+{
+  this.collapsibleSection.style.backgroundColor = 'transparent';
+}
+  </pre>
+</div> <!-- end Implementation section -->
+
+<h3>The Demo</h3>
+<div>
+  <p>You can try out this enhancement and see all the source code <a href='../examples/demo1.html'>here</a>.</p>
+</div>
+
+<h3>Conclusion</h3>
+<div>
+  <p>There is more we could do to this demo. You know that saying... software is never done ;-).</p>
+  <p>There is a more efficient way to utilize <code>xGetElementsByClassName</code> with its function call-back parameter.</p>
+  <p>We could put all the Javascript in one file instead of it being in separate files (XC automates this process).</p>
+  <p>This is a fun project and I'm sure you can think of more features to add.</p>
+  <p>Did you like this tutorial? Did you hate it? Did you add some more cool features to the demo? Come to <a href='http://cross-browser.com/forums/'>the forums</a> and tell us about it.</p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

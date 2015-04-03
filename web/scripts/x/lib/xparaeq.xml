@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xParaEq'>
+
+<sources>
+  <src><file>xparaeq.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Parametric Equation Animation.
+
+X(t) and Y(t) are expressions that generate the x and y coordinates during the slide. These expressions are evaluated with the javascript eval() function. Within the expression you may use any valid sub-expression that eval allows and that is in scope. For example, you may call methods of the Math object such as Math.sin(), Math.cos(), and Math.tan(). You may also reference any global variables or functions.
+
+One variable that is within scope for your expression is the parameter t. That is, t is the argument to the equations you provide. At each iteration, the variable t increments by .008 (default value).
+
+The Time argument to parametricEquation() specifies the total time for the slide in milliseconds. If the value is zero, the slide will not timeout. You can stop any slide, at any time, by this assignment: element.stop = true;.
+
+The values from your expressions are plotted on a coordinate system with it's origin at the center of the sliding element's container. The coordinates are then translated by the element's container's scrollLeft and scrollTop values. So the animation will remain visible if the user scrolls or resizes the element's container.]]></description>
+
+<syntax>xParaEq(ele, xExpr, yExpr, totalTime)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or element reference]]></note>
+  </par>
+  <par>
+    <name>xExpr</name>
+    <note><![CDATA[string]]></note>
+  </par>
+  <par>
+    <name>yExpr</name>
+    <note><![CDATA[string]]></note>
+  </par>
+  <par>
+    <name>totalTime</name>
+    <note><![CDATA[unsigned integer, 0 means no timeout]]></note>
+  </par>
+</parameters>
+
+<properties>
+  <prop>
+    <name>stop</name>
+    <note><![CDATA[read/write - the stop property on the element itself, when true, will stop animation]]></note>
+  </prop>
+  <prop>
+    <name>moving</name>
+    <note><![CDATA[read-only - the moving property on the element itself, when true, indicates animation is active]]></note>
+  </prop>
+  <prop>
+    <name>timeout</name>
+    <note><![CDATA[read/write - the timeout property on the element itself, determines frequency of iterations, default is 25]]></note>
+  </prop>
+  <prop>
+    <name>tStep</name>
+    <note><![CDATA[read/write - default is .008]]></note>
+  </prop>
+
+  <prop>
+    <name>xExpr, yExpr</name>
+    <note><![CDATA[read/write - strings]]></note>
+  </prop>
+  <prop>
+    <name>onslideend</name>
+    <note><![CDATA[read/write - the onslideend property on the element itself, if defined, will be called at the end of the slide. It does not get called if ele.stop becomes true. It is not reset - the listener can set this.onslideend=null for a 'one-shot'. In the slideEnd listener 'this' points to ele, and you have access to the properties listed here.]]></note>
+  </prop>
+</properties>
+
+<dependencies>
+  <dep>xgetelementbyid</dep>
+  <dep>xwidth</dep>
+  <dep>xheight</dep>
+  <dep>xscrollleft</dep>
+  <dep>xscrolltop</dep>
+  <dep>xmoveto</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xparaeq.php</url>
+    <note><![CDATA[xParaEq demo]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>4</num><date>5Jun07</date><author>mf</author><note><![CDATA[Removed use of xParent.]]></note>
+  </rev>
+  <rev>
+    <num>3</num><date>31May05</date><author>mf</author><note><![CDATA[Added support for onslideend event.]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>6Apr05</date>
+    <author>mf</author>
+    <note><![CDATA[Added missing semicolon to support XC compression]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>21Jun04</date>
+    <author>mf</author>
+    <note><![CDATA[Ported from CBE to X]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,66 @@
+/*
+  xTabPanelGroup Demo
+  dynamic css
+  Contributed by José Ignacio
+*/
+
+.tabPanelGroup {
+  position:relative;
+  overflow:hidden;
+}
+.tabPanel {
+  position:absolute; overflow:auto;
+  display:none;
+}
+.tabGroup {
+  position:absolute; overflow:hidden;
+}
+
+.tabGroup a.tabDefault:link,
+.tabGroup a.tabDefault:visited,
+.tabGroup a.tabDefault:active,
+.tabDefault {
+  position:absolute; overflow:hidden;
+  cursor:pointer;
+  text-align:center;
+  border-top:2px solid #FFFFFF;
+  border-left:1px solid #EBEBEB;
+  border-right:1px solid #EBEBEB;
+  border-bottom:1px solid rgb( 145, 155, 156 );
+  background:#fffaf4;
+  text-decoration:none;
+}
+.tabGroup a.tabDefault:hover,
+.tabDefault:hover {
+  position:absolute; overflow:hidden;
+  cursor:pointer;
+  text-align:center;
+  border-top:2px solid #FF9900;
+  border-left:1px solid rgb( 145, 155, 156 );
+  border-right:1px solid rgb( 145, 155, 156 );
+  border-bottom:1px solid rgb( 145, 155, 156 );
+  background:#fffaf4;
+  font-weight: bold;
+  text-decoration:none;
+}
+
+.tabGroup a.tabSelected:link,
+.tabGroup a.tabSelected:visited,
+.tabGroup a.tabSelected:active,
+.tabGroup a.tabSelected:hover,
+.tabSelected {
+  position:absolute; overflow:hidden;
+  cursor:pointer;
+  text-align:center;
+  border-top:4px solid #FF9900;
+  border-right:1px solid rgb( 145, 155, 156 );
+  border-bottom:none;
+  border-left:1px solid rgb( 145, 155, 156 );
+  background: rgb( 252, 252, 254 );
+  text-decoration:none;
+}
+
+span.linkDelim {
+  display:none;
+}
+

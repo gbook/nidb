@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xGetElementById'>
+
+<sources>
+  <src><file>xgetelementbyid.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Get an object reference to the element object with the passed ID.]]></description>
+
+<syntax>xGetElementById(ele)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or object reference]]></note>
+  </par>
+</parameters>
+
+<return>object reference or null</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[xGetElementById is used in almost all the demos]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>2</num>
+    <date>3Sep06</date>
+    <author>mf</author>
+    <note><![CDATA[Cosiu Ronaldo pointed out that there was no need for two return statements - he was right! Thanks!]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

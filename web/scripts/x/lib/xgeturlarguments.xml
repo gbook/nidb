@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xGetURLArguments'>
+
+<sources>
+  <src><file>xgeturlarguments.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Misc</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Parses the name/value pairs on the url.]]></description>
+
+<syntax>xGetURLArguments()</syntax>
+
+<return>an array of name/value pairs, can be indexed by name</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>3</num>
+    <date>6Feb09</date>
+    <author>mf</author>
+    <note><![CDATA[Used shorter local variable names.]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>11Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date></date>
+    <author>mf</author>
+    <note><![CDATA[Original implementation based on Netscape JavaScript Guide.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>
+

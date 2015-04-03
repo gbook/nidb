@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xMenu6'>
+
+<sources>
+  <src><sym>xMenu6</sym><file>xmenu6.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[A UL-based menu with unlimited levels and many other features.]]></description>
+
+<syntax>xMenu6(sUlId, sMainUlClass, sSubUlClass, sLblLiClass, sItmLiClass, sLblAClass, sItmAClass[, sPlusImg, sMinusImg, sImgClass, sItmPadLeft, bLblIsItm, sActiveItmId])</syntax>
+        
+<parameters>
+  <par><name>sUlId</name><note><![CDATA[The ID string of the outermost UL.]]></note></par>
+  <par><name>sMainUlClass</name><note><![CDATA[The className string that will be applied to the sUlId element.]]></note></par>
+  <par><name>sSubUlClass</name><note><![CDATA[The className string that will be applied to all nested ULs.]]></note></par>
+  <par><name>sLblLiClass</name><note><![CDATA[The className string that will be applied to all LIs which precede a nested UL (submenu). These are called 'labels'.]]></note></par>
+  <par><name>sItmLiClass</name><note><![CDATA[The className string that will be applied to all LIs which do not precede a nested UL. These are called 'items'.]]></note></par>
+  <par><name>sLblAClass</name><note><![CDATA[The className string that will be applied to all A elements in label LIs.]]></note></par>
+  <par><name>sItmAClass</name><note><![CDATA[The className string that will be applied to all A elements in item LIs.]]></note></par>
+  <par><name>sPlusImg</name><note><![CDATA[Optional. The URL string of the 'plus' image file.]]></note></par>
+  <par><name>sMinusImg</name><note><![CDATA[Optional. The URL string of the 'minus' image file.]]></note></par>
+  <par><name>sImgClass</name><note><![CDATA[Optional. The className string that will be applied to all plus/minus image elements.]]></note></par>
+  <par><name>sItmPadLeft</name><note><![CDATA[Optional. This should be a string, including units, suitable for assigning to 'style.paddingLeft' (for example: "2px"). If plus/minus images are being used, then sItmPadLeft can be used to control the 'indent' of 'A' items under their labels.]]></note></par>
+  <par><name>bLblIsItm</name><note><![CDATA[Optional. Boolean. If true, only a click on a plus/minus image will open/close sub-menus. The label's 'A' becomes a regular link. If false or undefined, a click on either the image or the label's 'A' will open/close a sub-menu and the label does not become a link.]]></note></par>
+  <par><name>sActiveItmId</name><note><![CDATA[Optional. String ID of A element which is the "active" item for the current page. If this is valid the menu will be auto-opened to this item.]]></note></par>
+</parameters>
+
+<properties>
+  <prop><name>ul</name><note><![CDATA[The outermost UL element reference.]]></note></prop>
+</properties>
+
+<methods>
+  <meth><name>open(id)</name><note><![CDATA[Opens the menu to the A element whose ID is given.]]></note></meth>
+</methods>
+
+<dependencies>
+  <dep>xWalkUL</dep>
+  <dep>xFirstChild</dep>
+  <dep>xGetElementById</dep>
+  <dep>xAddEventListener</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/menus/xmenu6.html</url><note><![CDATA[xMenu6 demo.]]></note></demo>
+  <demo><url>http://cross-browser.com/forums/viewtopic.php?id=484</url><note><![CDATA[A simple but effective technique for "auto open".]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>5Jul07</date><author>mf</author><note><![CDATA[You don't have to keep your own references to xMenu6 objects, they are stored in the static xMenu6.instances object.]]></note></comment>
+  <comment><date>5Jan07</date><author>mf</author><note><![CDATA[See the demo for development notes.]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>5</num><date>5Jul07</date><author>mf</author><note><![CDATA[Unload is no longer public. Added the static 'instances' object, indexed by the UL's ID.]]></note></rev>
+  <rev><num>4</num><date>3Jul07</date><author>mf</author><note><![CDATA[Added sLblAClass, sItmAClass and sActiveItmId parameters. Added the "open" method which provides for an auto-open feature.]]></note></rev>
+  <rev><num>3</num><date>19Feb07</date><author>mf</author><note><![CDATA[Added bLblIsItm feature. Improved demo and docs.]]></note></rev>
+  <rev><num>2</num><date>13Feb07</date><author>mf</author><note><![CDATA[Name changed from "xTreeMenu" to "xMenu6".]]></note></rev>
+  <rev><num>1</num><date>5Dec06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

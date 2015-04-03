@@ -1,0 +1,124 @@
+/*
+  CSS for xTableHeaderFixed demos using the
+  "separate borders with no cellspacing" technique.
+*/
+
+/* Table with site theme. */
+
+table.xthf-site {
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+  border-left: 1px solid #596380;
+  border-top: 1px solid #596380;
+}
+/*
+*/
+table.xthf-site caption {
+  padding: 3px 10px;
+  font-size: larger;
+  font-weight: bold;
+  color: #FFF;
+  background: #BF8660;
+  border: 1px solid #596380;
+  border-top-width: 3px;
+  border-left-width: 5px;
+}
+table.xthf-site thead {
+  background: #CFD4E6;
+}
+table.xthf-site thead td,
+table.xthf-site thead th {
+  color: #000;
+  font-weight: bold;
+}
+table.xthf-site td,
+table.xthf-site th {
+  padding: 6px 10px;
+  text-align: center;
+  border-right: 1px solid #596380;
+  border-bottom: 1px solid #596380;
+}
+
+/* Table with green theme.
+   663, 996, CC9, FFC */
+
+table.xthf-green {
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+  border-left: 1px solid #663;
+  border-top: 1px solid #663;
+}
+/*
+table.xthf-green caption {
+  padding: 3px 10px;
+  font-size: larger;
+  font-weight: bold;
+  color: #663;
+  background: #FFC;
+  border: 1px solid #663;
+}
+*/
+table.xthf-green thead {
+  background: #CC9;
+}
+table.xthf-green thead td,
+table.xthf-green thead th {
+  color: #663;
+  font-weight: bold;
+}
+table.xthf-green td,
+table.xthf-green th {
+  padding: 6px 10px;
+  text-align: center;
+  border-right: 1px solid #663;
+  border-bottom: 1px solid #663;
+}
+
+/* Table with blue theme.
+   366, 699, 9CC, CFF */
+
+table.xthf-blue {
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+  border-left: 1px solid #366;
+  border-top: 1px solid #366;
+}
+/*
+table.xthf-blue caption {
+  padding: 3px 10px;
+  font-size: larger;
+  font-weight: bold;
+  color: #366;
+  background: #CFF;
+  border: 1px solid #366;
+}
+*/
+table.xthf-blue thead {
+  background: #9CC;
+}
+table.xthf-blue thead td,
+table.xthf-blue thead th {
+  color: #366;
+  font-weight: bold;
+}
+table.xthf-blue td,
+table.xthf-blue th {
+  padding: 6px 10px;
+  text-align: center;
+  border-right: 1px solid #366;
+  border-bottom: 1px solid #366;
+}
+
+/* Overrides for testing. */
+
+/*
+table.xthf-site,
+table.xthf-green,
+table.xthf-blue {
+  border-top-width: 3px;
+  border-left-width: 5px;
+}
+*/

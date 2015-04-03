@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSequence'>
+
+<sources>
+  <src><file>xsequence.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[xSequence is an experiment with time and event based sequences.]]></description>
+
+<syntax>obj = new xSequence(seq)</syntax>
+
+<parameters>
+  <par><name>seq</name><note><![CDATA[A Sequence is an array of Action arrays. See the demo for details.]]></note></par>
+</parameters>
+
+<properties>
+</properties>
+
+<methods>
+  <meth><name>run(seqIndex)</name><note><![CDATA[]]></note></meth>
+  <meth><name>stop</name><note><![CDATA[]]></note></meth>
+  <meth><name>onUnload</name><note><![CDATA[]]></note></meth>
+</methods>
+
+<dependencies>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xsequence.php</url><note><![CDATA[This demo illustrates usage.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>19Oct06</date><author>mf</author><note><![CDATA[
+A Sequence is an array of Action arrays:
+
+seq[0]       = first action
+seq[i][0]    = time to next action, or if -1 then wait for onslideend
+seq[i][1]    = function ref
+seq[i][2]    = array of args
+seq[i][2][0] = first arg
+
+The event based feature is a result of adding onslideend support
+to all the X animation functions (this is the only event supported for now).
+The current technique has an advantage in that it does not call eval -
+but this creates a disadvantage in that values in the action array are
+resolved when the array is initialized, not when the action is executed.
+The current technique has another disadvantage in that 'function.apply'
+requires JavaScript 1.3 (IE 5.5+). 
+  ]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>31May05</date><author>mf</author><note><![CDATA[initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

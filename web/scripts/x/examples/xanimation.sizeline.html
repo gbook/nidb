@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Library Demo</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<style type='text/css'>
+#anim-ele {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #596380;
+  background-color: #CFD4E6;
+}
+#btn-start {
+  margin-right: 20px;
+}
+</style>
+
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xanimation.js'></script>
+<script type='text/javascript' src='../lib/xanimation.sizeline.js'></script>
+<script type='text/javascript'>
+
+xAddEventListener(window, 'load',
+  function() {
+    xGetElementById('btn-start').onclick = demo;
+    xGetElementById('btn-stop').onclick = demoStop;
+  }, false
+);
+
+function demo()
+{
+  var
+    s = 10,      // size 1
+    sx = 20 * s,  // size 2
+    s2 = sx / 2,
+    cw = xClientWidth(),
+    cw2 = cw / 2,
+    ch = xClientHeight(),
+    ch2 = ch / 2;
+    cm = [cw2-s2,ch2-s2, sx,sx, 750],
+    cp = [cw2-s2,ch2-s2, sx,sx, 250],
+    seq = [
+      [0,0, cw,ch, 500],  // goto 0,0 and resize to cw,ch in 500 ms
+      [0,0, cw,ch, 1500], // pause 2000 ms (I'm gonna have to come up with something better than this for "pause")
+      cm,
+      cp,
+      [cw-s,0, s,s, 750],
+      [cw-s,0, s,s, 250],
+      cm,
+      cp,
+      [0,ch-s, s,s, 750],
+      [0,ch-s, s,s, 250],
+      cm,
+      cp,
+      [cw-s,ch-s, s,s, 750],
+      [cw-s,ch-s, s,s, 250],
+      cm,
+      cp,
+      [0,0, cw,ch, 500],
+      [0,0, cw,ch, 1500],
+      [0,0, 10,10, 500]
+    ];
+
+  demo.xa.pause();
+  xStyle('visibility', 'hidden', 'btn-start');
+  demo.xa.sizeLine('anim-ele', seq, 3, 0, demoEnd);
+}
+
+demo.xa = new xAnimation();
+
+function demoStop()
+{
+  demo.xa.pause();
+  xStyle('visibility', 'visible', 'btn-start');
+}
+
+function demoEnd()
+{
+  xStyle('visibility', 'visible', 'btn-start');
+  setTimeout(demo2, 1);
+  return false;
+}
+
+function demo2()
+{
+  var
+    a = 10, b = 2*a, c = 3*a, t = 500,
+    seq = [
+      [0,0,c,a,t],
+      [b,0,a,a,t],
+      [b,0,a,c,t],
+      [b,b,a,a,t],
+      [0,b,c,a,t],
+      [0,b,a,a,t],
+      [0,0,a,c,t],
+      [0,0,a,a,t]
+    ];
+
+  demo.xa.sizeLine('anim-ele', seq, 1, 0, demo2End);
+}
+
+function demo2End()
+{
+  return true;
+}
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xAnimation Experiment</h2>
+
+<h3>Overview</h3>
+<div>
+<p>This demo began as an experiment in combining <a title='online' href='http://cross-browser.com/x/lib/view.php?s=xAnimation.size'>xAnimation.size</a> and <a title='online' href='http://cross-browser.com/x/lib/view.php?s=xAnimation.line'>xAnimation.line</a> into a single animation function (<a title='online' href='http://cross-browser.com/x/lib/view.php?s=xAnimation.sizeLine'>xAnimation.sizeLine</a>). I knew <a title='online' href='http://cross-browser.com/x/lib/view.php?s=xAnimation'>xAnimation</a> only supported three animation axes, whereas sizeLine was going to need four axes: two for position and two for size. So this demo resulted in xAnimation supporting <i>any number of axes</i>! While I was having so much fun I also threw in the sequence feature I first experimented with <a href='xanimation-sequence-1.php'>here</a>. I'm thinking this sequence feature could be incorporated into xAnimation itself. This is too much fun!</p>
+<p>Mike Foster<br>25 Nov 2009</p>
+</div>
+
+<h3>Demo</h3>
+<div>
+<p>
+  <button id='btn-start'>Start Demo</button>
+  <button id='btn-stop'>Stop Demo</button>
+</p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+<div id='anim-ele'>
+</div>
+
+</body>
+</html>

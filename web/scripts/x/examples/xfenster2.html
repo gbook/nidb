@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>xFenster Demo 2</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='xfenster.css'>
+<style type='text/css'>
+.fenster-content {
+  padding:1em;
+}
+.vspace {
+  padding: 20px 0;
+}
+.clk {
+  cursor: pointer;
+  border-bottom: 1px dotted #596380;
+}
+</style>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xenabledrag.js'></script>
+<script type='text/javascript' src='../lib/xdocsize.js'></script>
+<script type='text/javascript' src='../lib/xfenster.js'></script>
+<script type='text/javascript'>
+document.write("<style type='text/css'>.xFenster {display:none}</style>");
+/*@cc_on
+@if (@_jscript)
+  document.write("<style type='text/css'>.xfMask {filter: alpha(opacity=20);}</style>");
+@end @*/
+var args = [
+  { title: 'lineoflight.com',   url: 'http://lineoflight.com/', x:100, y:100, w:500, h:300, minW: 170, conBor: 1, conPad: 2, cliBor: 1 },
+  { title: 'mfoster.com',       url: 'http://mfoster.com/',     x:125, y:130, w:500, h:300, minW: 150, conBor: 1, conPad: 1, cliBor: 0 },
+  { title: 'xTableHeaderFixed', url: 'http://cross-browser.com/x/examples/xthf-ajax.php', x:150, y:160, w:500, h:300, minW: 175, conBor: 1, conPad: 0, cliBor: 0 }
+];
+xAddEventListener(window, 'load',
+  function() {
+    for (var i = 0; i < args.length; ++i) {
+      args[i].clientId = 'xf' + (i + 1);
+      args[i].noFixed = true;
+      new xFenster(args[i]);
+    }
+    xGetElementById('clk1').onclick=function(){xFenster.paintAll();};
+    xGetElementById('clk2').onclick=function(){xFenster.showAll();};
+    xGetElementById('clk3').onclick=function(){xFenster.hideAll();};
+    xGetElementById('clk4').onclick=function(){xFenster.minimizeAll();};
+    xGetElementById('clk5').onclick=function(){xFenster.maximizeAll();};
+    xGetElementById('clk6').onclick=function(){xFenster.restoreAll();};
+  }, false
+);
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xFenster Demo 2</h2>
+
+<h3>Intro</h3>
+
+<div>
+<p>This demo illustrates...</p>
+<ul>
+<li>Creating fensters from dynamic IFRAMEs.</li>
+<li>Absolute fensters instead of fixed</li>
+<li>Different border styles.</li>
+<li>The IFRAME "mask" feature.</li>
+</ul>
+</div> <!-- end Intro -->
+
+<h3>Code &amp; Docs</h3>
+<div>
+<p><a href='http://cross-browser.com/x/lib/view.php?sym=xFenster'>xFenster rev 21</a> (online) - view source code, documentation, revision history and more.</p>
+</div>
+
+<h3>The "all" Methods</h3>
+<div>
+
+<p>
+<span id='clk1' class='clk'>paintAll()</span>,
+<span id='clk2' class='clk'>showAll()</span>,
+<span id='clk3' class='clk'>hideAll()</span>,
+<span id='clk4' class='clk'>minimizeAll()</span>,
+<span id='clk5' class='clk'>maximizeAll()</span>,
+<span id='clk6' class='clk'>restoreAll()</span>
+</p>
+</div>
+
+<h3>Demos</h3>
+
+<div>
+<ul>
+<li><a href='xfenster1.html'>Demo 1</a> - fixed fensters from DIVs</li>
+<li><a href='xfenster2.html'>Demo 2</a> - absolute fensters from IFRAMEs</li>
+<li><a href='xfenster3.html'>Demo 3</a> - absolute fensters from DIVs, in a fence</li>
+<li><a href='xfenster4.html'>Demo 4</a> - with a "control menu"</li>
+</ul>
+</div>
+
+<div class='vspace'></div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

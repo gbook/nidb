@@ -1,0 +1,46 @@
+/*
+  xTabPanelGroup Demo
+  default css
+  Contributed by José Ignacio
+*/
+
+.tabPanelGroup {
+  margin:10px; padding:0;
+  border:1px solid #EBEBEB;
+}
+.tabPanel {
+  margin:0;
+  padding:10px;
+  color:#000000;
+  background: rgb( 252, 252, 254 );
+/* filter is IE only. Uncomment if you want it.
+  filter:			progid:DXImageTransform.Microsoft.Gradient(StartColorStr=#fffcfcfe, EndColorStr=#fff4f3ee, GradientType=0)
+					progid:DXImageTransform.Microsoft.Shadow(Color=#ff919899, Strength=2, Direction=135);
+*/
+  border-left:			1px solid rgb( 145, 155, 156 );
+  border-bottom:		1px solid rgb( 145, 155, 156 );
+  border-right:			1px solid rgb( 145, 155, 156 );
+
+}
+.tabGroup {
+  margin:0; padding:0;
+}
+.tabDefault {
+  margin:0;
+  padding:2px;
+  font-family: Tahoma, Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: normal;
+  color:#012E58;
+  background: #ff9198;
+}
+.tabSelected {
+  margin:0;
+  padding:2px;
+  font-family: Tahoma, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color:#012E58;
+  background: rgb( 252, 252, 254 );
+}
+

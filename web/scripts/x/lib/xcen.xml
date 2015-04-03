@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xCen'>
+
+<sources>
+  <src><file>xcen.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Position</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Center an absolute-positioned element.]]></description>
+
+<syntax>xCen(ele, rel)</syntax>
+
+<parameters>
+  <par><name>ele</name><note><![CDATA[Required. An Element reference or an ID string of the element to be centered. It must have absolute position.]]></note></par>
+  <par><name>rel</name><note><![CDATA[Optional. If !rel then ele will be centered relative to the viewport. If rel===true then ele will be centered relative to its offsetParent (which should have either relative or absolute position). Else rel is assumed to be an Element reference (or an ID string of an element) relative to which ele will be centered.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xClientWidth</dep>
+  <dep>xClientHeight</dep>
+  <dep>xScrollLeft</dep>
+  <dep>xScrollTop</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+  <dep>xMoveTo</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>24Mar09</date><author>mf</author><note><![CDATA[Also see xCenter]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>24Nov10</date><author>mf</author><note><![CDATA[I had a better xCen implementation in one of the demo files so I used it here. This function is backwards-compatible.]]></note></rev>
+  <rev><num>1</num><date>24Mar09</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>
