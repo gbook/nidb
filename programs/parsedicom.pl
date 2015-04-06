@@ -1017,7 +1017,7 @@ sub InsertSeries {
 			
 			#my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime.dcm";
 			my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime" . "_$SOPInstance.dcm";
-			WriteLog("Renaming [$file] to [$newname]");
+			#WriteLog("Renaming [$file] to [$newname]");
 			
 			move("$outdir/$file","$outdir/$newname");
 			$filecnt++;
