@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminsites.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -201,14 +201,14 @@
 			function decision(message, url){
 				if(confirm(message)) location.href = url;
 			}
-			$(function() {
-				$('.completedatetime').datetimepicker({
-					timeFormat: "hh:mm",
-					dateFormat: "yy-mm-dd",
-					ampm: false,
-					showOtherMonths: true
-				});
-			});
+			//$(function() {
+			//	$('.completedatetime').datetimepicker({
+			///		timeFormat: "hh:mm",
+			//		dateFormat: "yy-mm-dd",
+			//		ampm: false,
+			//		showOtherMonths: true
+			//	});
+			//});
 		// --->
 		</SCRIPT>
 		

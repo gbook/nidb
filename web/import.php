@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB import.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 	session_start();
 
-	/* to allow files created on a MAc to be read */
+	/* to allow files created on a MAC to be read */
 	ini_set("auto_detect_line_endings", true);
  
 	require "functions.php";
@@ -38,6 +38,7 @@
 	$fileformat = GetVariable("fileformat");
 	$importdirs = GetVariable("importdirs");
 	$idlist = GetVariable("idlist");
+	$displayonlymatches = GetVariable("displayonlymatches");
 	
 	/* check for API actions that don't require the HTML page output as a response */
 	if (trim($apiaction) != '') {
@@ -98,7 +99,7 @@
 			DisplayImportMenu();
 			break;
 		case 'mapids':
-			MapIDs($idlist);
+			MapIDs($idlist, $displayonlymatches);
 			break;
 		default:
 			DisplayMenu();
@@ -219,7 +220,9 @@
 				</td>
 			</tr>
 			<tr>
-				<td><input type="submit" value="Map IDs"></td>
+				<td>
+				<input type="checkbox" value="1" name="displayonlymatches">Display only matches<br>
+				<input type="submit" value="Map IDs"></td>
 			</tr>
 		</table>
 		</div>
@@ -230,7 +233,7 @@
 	/* -------------------------------------------- */
 	/* ------- MapIDs ----------------------------- */
 	/* -------------------------------------------- */
-	function MapIDs($idlist) {
+	function MapIDs($idlist, $displayonlymatches) {
 	
 		$urllist['Home'] = "index.php";
 		$urllist['Import'] = "import.php";
@@ -297,12 +300,14 @@
 					}
 					else {
 						$numNotFound++;
-						?>
-						<tr>
-							<td><?=$altid?></td>
-							<td colspan="2">Not found</td>
-						</tr>
-						<?
+						if (!$displayonlymatches) {
+							?>
+							<tr>
+								<td><?=$altid?></td>
+								<td colspan="2">Not found</td>
+							</tr>
+							<?
+						}
 					}
 				}
 			}

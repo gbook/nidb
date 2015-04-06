@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB pipelines.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -2277,9 +2277,9 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		?>
 		<div id="dialogbox" title="Dialog Box" style="display:none;">Loading...</div>
 		<script type="text/javascript">
-			$(document).ready(function() {
-				$(".fancybox").fancybox();
-			});
+			//$(document).ready(function() {
+			//	$(".fancybox").fancybox();
+			//});
 		</script>
 		<script type="text/javascript">
 		$(function() {
@@ -2454,7 +2454,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 								}
 								?>
 								<!--<a class="fancybox" title="SGE status" href="pipelines.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>-->
-								<a class="fancybox" href="<?=$GLOBALS['cfg']['siteurl']?>/pipelines.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>
+								<a href="<?=$GLOBALS['cfg']['siteurl']?>/pipelines.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>
 								<?
 							}
 							else {
@@ -2647,15 +2647,15 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		if ($pagenum > $numpages) { $pagenum = $numpages; }
 		?>
 		<script type="text/javascript">
-		$(window).load(function(){
-			$("a.fancybox").fancybox({
-				openEffect: 'none',
-				closeEffect: 'none',
-				iframe: {
-					preload: false
-				}
-			});
-		});
+		//$(window).load(function(){
+		//	$("a.fancybox").fancybox({
+		//		openEffect: 'none',
+		//		closeEffect: 'none',
+		//		iframe: {
+		//			preload: false
+		//		}
+		//	});
+		//});
 		$(function() {
 			//$('.fancybox').fancybox({type: "iframe", iframe: {preload: false}});
 			

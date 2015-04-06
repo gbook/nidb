@@ -3,7 +3,7 @@
 	//ini_set('display_errors', '1');
  // ------------------------------------------------------------------------------
  // NiDB search.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -1450,7 +1450,7 @@
 				//$('a.basic').cluetip({width: 275});
 				//$('a.wide').cluetip({width: 800, clickThrough:true});
 				//$('a.iframe').fancybox({width:1100, height: 1000, transitionIn: 'none', transitionOut: 'none', speedIn: 0, speedOut: 0});
-				$(".ifancybox").fancybox({
+				/*$(".ifancybox").fancybox({
 					maxWidth	: 800,
 					maxHeight	: 600,
 					fitToView	: false,
@@ -1460,7 +1460,7 @@
 					closeClick	: false,
 					openEffect	: 'none',
 					closeEffect	: 'none'
-				});
+				});*/
 			});
 		-->
 		</script>

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB index.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -733,7 +733,7 @@
 			$(document).ready(function() {
 				//$('a.basic').cluetip({width: 275});
 				//$('a.wide').cluetip({width: 800, clickThrough:true});
-				$('a.iframe').fancybox({width:1100, height: 1000, transitionIn: 'none', transitionOut: 'none', speedIn: 0, speedOut: 0, type: 'iframe'});
+				//$('a.iframe').fancybox({width:1100, height: 1000, transitionIn: 'none', transitionOut: 'none', speedIn: 0, speedOut: 0, type: 'iframe'});
 			});
 		</script>
 
@@ -1548,13 +1548,13 @@
 										bg_over: "white",
 										bg_out: "lightyellow",
 									});
-									$('#pop<? echo $mrseries_id; ?>').click(function(){
-										$('#popup').bPopup({loadUrl:'ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr'});
-									});
-									$(document).ready(function() {
-										$(".fancybox").fancybox();
-									});
-									$(".various").fancybox({
+									//$('#pop<? echo $mrseries_id; ?>').click(function(){
+									//	$('#popup').bPopup({loadUrl:'ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr'});
+									//});
+									//$(document).ready(function() {
+									//	$(".fancybox").fancybox();
+									//});
+									/*$(".various").fancybox({
 										maxWidth	: 800,
 										maxHeight	: 600,
 										fitToView	: false,
@@ -1564,7 +1564,7 @@
 										closeClick	: false,
 										openEffect	: 'none',
 										closeEffect	: 'none'
-									});								
+									});	*/
 								});
 							</script>
 							<script type="text/javascript">

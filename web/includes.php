@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB includes.php
- // Copyright (C) 2004 - 2014
+ // Copyright (C) 2004 - 2015
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -28,17 +28,17 @@
 <script type="text/javascript" src="scripts/js/jquery-ui-1.10.3.custom.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
-<script type="text/javascript" src="scripts/jquery.sparkline.js"></script>
+<!--<script type="text/javascript" src="scripts/jquery.sparkline.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.validate.js"></script>
-<script type="text/javascript" src="scripts/jquery.tablehover.pack.js"></script>
+<!--<script type="text/javascript" src="scripts/jquery.tablehover.pack.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
-<script type="text/javascript" src="scripts/jquery.uitableedit.js"></script>
-<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
+<!--<script type="text/javascript" src="scripts/jquery.uitableedit.js"></script>-->
+<!--<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <script type="text/javascript" src="scripts/jquery.details.js"></script>
-<script type="text/javascript" src="scripts/jquery-ui-timepicker-addon.js"></script>
-<script type="text/javascript" src="scripts/jquery.bpopup.min.js"></script>
+<!--<script type="text/javascript" src="scripts/jquery-ui-timepicker-addon.js"></script>-->
+<!--<script type="text/javascript" src="scripts/jquery.bpopup.min.js"></script>-->
 
 <!--<link rel="stylesheet" type="text/css" href="scripts/style.min.css">-->
 
@@ -53,22 +53,22 @@
 -->
 
 <!-- Add mousewheel plugin (this is optional) -->
-<script type="text/javascript" src="scripts/fancybox/jquery.mousewheel-3.0.6.pack.js"></script>
+<!--<script type="text/javascript" src="scripts/fancybox/jquery.mousewheel-3.0.6.pack.js"></script>-->
 
 <!-- Add fancyBox main JS and CSS files -->
-<script type="text/javascript" src="scripts/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>
+<!--<script type="text/javascript" src="scripts/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>
 <link rel="stylesheet" type="text/css" href="scripts/fancybox/jquery.fancybox.css?v=2.1.3" media="screen" />
 
 <!-- Add fancyBox - button helper (this is optional) -->
-<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-buttons.css?v=2.1.3" />
+<!--<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-buttons.css?v=2.1.3" />
 <script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-buttons.js?v=2.1.3"></script>
 
 <!-- Add fancyBox - thumbnail helper (this is optional) -->
-<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-thumbs.css?v=2.1.3" />
-<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-thumbs.js?v=2.1.3"></script>
+<!--<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-thumbs.css?v=2.1.3" />
+<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-thumbs.js?v=2.1.3"></script> -->
 
 <!-- Add fancyBox - media helper (this is optional) -->
-<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-media.js?v=1.0.0"></script>
+<!--<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-media.js?v=1.0.0"></script>
 	
 	
 	

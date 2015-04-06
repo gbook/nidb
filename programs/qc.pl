@@ -271,7 +271,7 @@ sub QC() {
 			#	last;
 			#}
 			
-			sleep(15);
+			sleep(10);
 		}
 	}
 	else {
