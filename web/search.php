@@ -1021,14 +1021,13 @@
 							case "h": $thevalue = $filename; break;
 							case "i": $thevalue = $filename; break;
 						}
-						$tables[$uid][$name] = $thevalue;
-						$tables[$uid]['subjectid'] = $subject_id;
-						$tables[$uid]['studyid'] = $study_id;
-						$tables[$uid]['studynum'] = $study_num;
+						$tables["$uid$study_num"][$name] = $thevalue;
+						$tables["$uid$study_num"]['subjectid'] = $subject_id;
+						$tables["$uid$study_num"]['studyid'] = $study_id;
+						$tables["$uid$study_num"]['studynum'] = $study_num;
 						$names[$name] = "blah";
-						
-						//PrintVariable($tables,'Tables');
 					}
+					//PrintVariable($tables,'Tables');
 					?>
 					<table cellspacing="0" class="multicoltable">
 						<thead>
@@ -1050,7 +1049,7 @@
 							foreach ($tables as $uid => $valuepair) {
 								?>
 								<tr style="font-weight: <?=$bold?>">
-									<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a></td>
+									<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
 									<?
 									foreach ($names as $name => $blah) {
 										if ($tables[$uid][$name] == "") { $dispval = "-"; }
@@ -1435,7 +1434,6 @@
 		/* ---------------- regular search --------------- */
 		$s_studymodality = strtolower($s_studymodality);
 		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
-		//$result3 = mysql_query($sqlstring3) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring3</i><br>");
 		$result3 = MySQLQuery($sqlstring3,__FILE__,__LINE__);
 		while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
 			//$ratingseriesids[] = $row3['data_id'];
@@ -1444,26 +1442,6 @@
 		}
 		?>
 		<br><br>
-		<script type="text/javascript">
-		<!--
-			$(document).ready(function() {
-				//$('a.basic').cluetip({width: 275});
-				//$('a.wide').cluetip({width: 800, clickThrough:true});
-				//$('a.iframe').fancybox({width:1100, height: 1000, transitionIn: 'none', transitionOut: 'none', speedIn: 0, speedOut: 0});
-				/*$(".ifancybox").fancybox({
-					maxWidth	: 800,
-					maxHeight	: 600,
-					fitToView	: false,
-					width		: '70%',
-					height		: '70%',
-					autoSize	: false,
-					closeClick	: false,
-					openEffect	: 'none',
-					closeEffect	: 'none'
-				});*/
-			});
-		-->
-		</script>
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="<?=$s_studymodality?>">
 		<input type="hidden" name="action" value="submit">
@@ -1473,7 +1451,6 @@
 			/* get the movement & SNR stats by sequence name */
 			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
 			//echo "$sqlstring2<br>";
-			//$result2 = mysql_query($sqlstring2) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
 			$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
 			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
 				$sequence = $row2['series_sequencename'];
@@ -1525,7 +1502,6 @@
 
 		/* get the users id */
 		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		//$resultC = mysql_query($sqlstringC) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstringC</i><br>");
 		$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
 		$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
 		$userid = $rowC['user_id'];
@@ -1533,13 +1509,10 @@
 		/* check to see which projects this user has access to view */
 		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = $userid and (a.view_data = 1 or a.view_phi = 1)";
 		//print "$sqlstringC<br>";
-		//$resultC = mysql_query($sqlstringC) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstringC</i><br>");
 		$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
 		while ($rowC = mysql_fetch_array($resultC, MYSQL_ASSOC)) {
 			$projectids[] = $rowC['projectid'];
 		}
-		
-		//PrintVariable($projectids, 'projectids');
 		
 		/* tell the user if there are results for projects they don't have access to */
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {

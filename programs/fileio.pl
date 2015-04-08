@@ -159,8 +159,12 @@ sub DoIO {
 				}
 				case 'rearchive' {
 					switch ($data_type) {
-						case 'study' { $found = RearchiveStudy($data_id); }
-						case 'subject' { $found = RearchiveSubject($data_id); }
+						case 'study' {
+							#$found = RearchiveStudy($data_id);
+						}
+						case 'subject' {
+							#$found = RearchiveSubject($data_id);
+						}
 					}
 				}
 			}
@@ -403,6 +407,9 @@ sub DeleteAnalysis() {
 			
 			return 1;
 		}
+		else {
+			WriteLog("Attempting to delete invalid directory [$d]");
+		}
 	}
 	else {
 		# check to see if anything isn't valid or is blank
@@ -523,53 +530,57 @@ sub DeleteSubject() {
 	my $sqlstring = "select uid from subjects where subject_id = $id";
 	WriteLog($sqlstring);
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	my %row = $result->fetchhash;
-	my $uid = $row{'uid'};
-	
-	# move all archive data to the deleted directory
-	my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
-	mkpath($newpath, { verbose => 1, mode => 0777 });
-	my $systemstring = "mv " . $cfg{'archivedir'} . "/$uid $newpath/";
-	WriteLog("Running [$systemstring]");
-	WriteLog(`$systemstring 2>&1`);
-	
-	# remove all database entries about this subject:
-	# TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent
-	$sqlstring = "delete from mostrecent where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	$sqlstring = "delete from family_members where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	$sqlstring = "delete from subject_relation where subjectid1 = $id or subjectid2 = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		my $uid = $row{'uid'};
+		
+		if ($uid ne "") {
+			# move all archive data to the deleted directory
+			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
+			mkpath($newpath, { verbose => 1, mode => 0777 });
+			my $systemstring = "mv " . $cfg{'archivedir'} . "/$uid $newpath/";
+			WriteLog("Running [$systemstring]");
+			WriteLog(`$systemstring 2>&1`);
+			
+			# remove all database entries about this subject:
+			# TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent
+			$sqlstring = "delete from mostrecent where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			$sqlstring = "delete from family_members where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			$sqlstring = "delete from subject_relation where subjectid1 = $id or subjectid2 = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 
-	$sqlstring = "delete from subject_altuid where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all series
-	$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all studies
-	$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all enrollments
-	$sqlstring = "delete from enrollment where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete the subject
-	$sqlstring = "delete from subjects where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			$sqlstring = "delete from subject_altuid where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all series
+			$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all studies
+			$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all enrollments
+			$sqlstring = "delete from enrollment where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete the subject
+			$sqlstring = "delete from subjects where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+		}
+	}
 }
 
 
@@ -580,6 +591,33 @@ sub DeleteStudy() {
 	my ($id) = @_;
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
 	WriteLog("In DeleteStudy()");
+	
+	my $sqlstring = "select c.uid, a.study_num, b.project_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $id";
+	my $result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		my $uid = trim($row{'uid'});
+		my $studynum = trim($row{'study_num'});
+		
+		if (($uid ne "") && ($studynum ne "")) {
+			# move all archive data to the deleted directory
+			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
+			mkpath($newpath, { verbose => 1, mode => 0777 });
+			my $systemstring = "mv " . $cfg{'archivedir'} . "/$uid/$studynum $newpath/";
+			WriteLog("Running [$systemstring]");
+			#WriteLog(`$systemstring 2>&1`);
+			
+			# delete all series
+			$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
+			WriteLog($sqlstring);
+			#$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all studies
+			$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
+			WriteLog($sqlstring);
+			#$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+		}
+	}
 }
 
 
@@ -604,53 +642,64 @@ sub RearchiveStudy() {
 	# get path info
 	my $sqlstring = "select c.uid, a.study_num, b.project_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
 	my $result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	my %row = $result->fetchhash;
-	my $uid = $row{'uid'};
-	my $studynum = $row{'study_num'};
-	my $projectRowID = $row{'project_id'};
-	my $studypath = $cfg{'archivedir'} . "/$uid/$studynum";
-	
-	# get instanceID
-	$sqlstring = "select instance_id from projects where project_id = '$projectRowID'";
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	%row = $result->fetchhash;
-	my $instanceRowID = $row{'instance_id'};
-	
-	# create an import request, based on the current instance, project, and site & get next import ID
-	$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	my $uploadID = $result->insertid;
-	my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
-	mkpath($outpath, { verbose => 1, mode => 0777 });
-	
-	# move all DICOM, par/rec, nifti files to the /dicomincoming directory
-	# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
-	WriteLog("Calling find($studypath)");
-	find(sub{MoveDICOMs($outpath);}, $studypath);
-	
-	# move the study directory to the deleted directory
-	my $newpath = $cfg{'deletedpath'} . "/$uid-$studynum-" . GenerateRandomString(10);
-	mkpath($newpath, { verbose => 1, mode => 0777 });
-	my $systemstring = "mv $studypath $newpath";
-	WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		my $uid = trim($row{'uid'});
+		my $studynum = trim($row{'study_num'});
+		my $projectRowID = $row{'project_id'};
+		my $studypath = $cfg{'archivedir'} . "/$uid/$studynum";
+		
+		if (($uid ne "") && ($studynum ne "") && ($studypath ne $cfg{'archivedir'} . "/")) {
+			# get instanceID
+			$sqlstring = "select instance_id from projects where project_id = '$projectRowID'";
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			%row = $result->fetchhash;
+			my $instanceRowID = $row{'instance_id'};
+			
+			# create an import request, based on the current instance, project, and site & get next import ID
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			my $uploadID = $result->insertid;
+			my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
+			mkpath($outpath, { verbose => 1, mode => 0777 });
+			
+			# move all DICOM, par/rec, nifti files to the /dicomincoming directory
+			# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
+			WriteLog("Calling find($studypath)");
+			find(sub{MoveDICOMs($outpath);}, $studypath);
+			
+			# move the study directory to the deleted directory
+			my $newpath = $cfg{'deletedpath'} . "/$uid-$studynum-" . GenerateRandomString(10);
+			mkpath($newpath, { verbose => 1, mode => 0777 });
+			my $systemstring = "mv $studypath $newpath";
+			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
 
-	$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	
-	# remove any reference to this study from the (enrollment, study) tables
-	# delete all series
-	$sqlstring = "delete from mr_series where study_id = $studyid";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all studies
-	$sqlstring = "delete from studies where study_id = $studyid";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	return 1;
+			$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			
+			# remove any reference to this study from the (enrollment, study) tables
+			# delete all series
+			$sqlstring = "delete from mr_series where study_id = $studyid";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all studies
+			$sqlstring = "delete from studies where study_id = $studyid";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			return 1;
+		}
+		else {
+			WriteLog("Something was wrong: UID [$uid] StudyNum [$studynum] StudyPath [$studypath]");
+			return 0;
+		}
+	}
+	else {
+		WriteLog("Found no information for StudyID [$studyid]");
+		return 0;
+	}
 }
 
 
@@ -665,79 +714,88 @@ sub RearchiveSubject() {
 	# get path info
 	my $sqlstring = "select c.uid, a.study_num, b.project_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = $id";
 	my $result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	my %row = $result->fetchhash;
-	my $uid = $row{'uid'};
-	my $projectRowID = $row{'project_id'};
-	
-	if (trim($uid) eq "") { return; }
-	my $subjectpath = $cfg{'archivedir'} . "/$uid";
-	
-	# get instanceID
-	$sqlstring = "select instance_id from projects where project_id = '$projectRowID'";
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	%row = $result->fetchhash;
-	my $instanceRowID = $row{'instance_id'};
-	
-	# create an import request, based on the current instance, project, and site & get next import ID
-	$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	my $uploadID = $result->insertid;
-	my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
-	mkpath($outpath, { verbose => 1, mode => 0777 });
-	
-	# move all DICOM, par/rec, nifti files to the /dicomincoming directory
-	# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
-	WriteLog("Calling find($subjectpath)");
-	find(sub{MoveDICOMs($outpath);}, $subjectpath);
-	
-	# move the study directory to the deleted directory
-	my $newpath = $cfg{'deletedpath'} . "/$uid-" . GenerateRandomString(10);
-	mkpath($newpath, { verbose => 1, mode => 0777 });
-	my $systemstring = "mv $subjectpath $newpath";
-	WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		my $uid = $row{'uid'};
+		my $projectRowID = $row{'project_id'};
+		
+		if (trim($uid) eq "") {
+			WriteLog("Blank UID");
+		}
+		else {
+			my $subjectpath = $cfg{'archivedir'} . "/$uid";
+			
+			# get instanceID
+			$sqlstring = "select instance_id from projects where project_id = '$projectRowID'";
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			%row = $result->fetchhash;
+			my $instanceRowID = $row{'instance_id'};
+			
+			# create an import request, based on the current instance, project, and site & get next import ID
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			my $uploadID = $result->insertid;
+			my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
+			mkpath($outpath, { verbose => 1, mode => 0777 });
+			
+			# move all DICOM, par/rec, nifti files to the /dicomincoming directory
+			# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
+			WriteLog("Calling find($subjectpath)");
+			find(sub{MoveDICOMs($outpath);}, $subjectpath);
+			
+			# move the study directory to the deleted directory
+			my $newpath = $cfg{'deletedpath'} . "/$uid-" . GenerateRandomString(10);
+			mkpath($newpath, { verbose => 1, mode => 0777 });
+			my $systemstring = "mv $subjectpath $newpath";
+			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
 
-	$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	
-	# remove all database entries about this subject:
-	# TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent
-	$sqlstring = "delete from mostrecent where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	$sqlstring = "delete from family_members where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	$sqlstring = "delete from subject_relation where subjectid1 = $id or subjectid2 = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			
+			# remove all database entries about this subject:
+			# TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent
+			$sqlstring = "delete from mostrecent where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			$sqlstring = "delete from family_members where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			$sqlstring = "delete from subject_relation where subjectid1 = $id or subjectid2 = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 
-	$sqlstring = "delete from subject_altuid where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all series
-	$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all studies
-	$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete all enrollments
-	$sqlstring = "delete from enrollment where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	
-	# delete the subject
-	$sqlstring = "delete from subjects where subject_id = $id";
-	WriteLog($sqlstring);
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			$sqlstring = "delete from subject_altuid where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all series
+			$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all studies
+			$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete all enrollments
+			$sqlstring = "delete from enrollment where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			
+			# delete the subject
+			$sqlstring = "delete from subjects where subject_id = $id";
+			WriteLog($sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+		}
+	}
+	else {
+		WriteLog("Found no information for SubjectID [$id]");
+	}
 }
 
 
@@ -775,28 +833,37 @@ sub AnonymizeSeries() {
 	my $sqlstring = "select a.*, b.*, e.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects e on e.subject_id = c.subject_id left join fileio_requests f on f.data_id = a.$modality" . "series_id where f.fileiorequest_id = $fileioid";
 	WriteLog("$sqlstring");
 	my $result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
-	my %row = $result->fetchhash;
-	my $uid = $row{'uid'};
-	my $datatype = $row{'data_type'};
-	my $studynum = $row{'study_num'};
-	my $seriesnum = $row{'series_num'};
-	
-	my $indir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
-	WriteLog("Working on [$indir]");
-	
-	# find all dicom files
-	chdir($indir);
-	my @files = <*.dcm>;
-	
-	# anonymize the files
-	foreach my $f(@files) {
-		my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $f";
-		foreach my $tag(@tags) {
-			$tag = trim($tag);
-			$systemstring .= " --replace $tag";
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		my $uid = $row{'uid'};
+		my $datatype = $row{'data_type'};
+		my $studynum = $row{'study_num'};
+		my $seriesnum = $row{'series_num'};
+		
+		my $indir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
+		WriteLog("Working on [$indir]");
+		if (-e $indir) {
+			# find all dicom files
+			chdir($indir);
+			my @files = <*.dcm>;
+			
+			# anonymize the files
+			foreach my $f(@files) {
+				my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $f";
+				foreach my $tag(@tags) {
+					$tag = trim($tag);
+					$systemstring .= " --replace $tag";
+				}
+				$systemstring .= " -o $f";
+				WriteLog("Anonymizing (" . `$systemstring  2>&1` . ")");
+				#WriteLog("Anonymizing ($systemstring)");
+			}
 		}
-		$systemstring .= " -o $f";
-		WriteLog("Anonymizing (" . `$systemstring  2>&1` . ")");
-		#WriteLog("Anonymizing ($systemstring)");
+		else {
+			WriteLog("Indir [$indir] does not exist");
+		}
+	}
+	else {
+		WriteLog("In AnonymizeSeries(). Could not build path");
 	}
 }

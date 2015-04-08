@@ -67,8 +67,12 @@
 			ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames);
 			DisplayUniqueSeries($id);
 			break;
-		case 'obliterate':
-			Obliterate($studyids);
+		case 'obliteratesubject':
+			ObliterateSubject($studyids);
+			DisplayProjectList();
+			break;
+		case 'obliteratestudy':
+			ObliterateStudy($studyids);
 			DisplayProjectList();
 			break;
 		case 'rearchivestudies':
@@ -336,7 +340,8 @@
 			</tr>
 			<tr>
 				<td align="right">
-					<input type="submit" value="Obliterate Subjects" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliterate'" style="color: red; font-size:10pt">
+					<input type="submit" value="Obliterate Subjects" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'" style="color: red; font-size:10pt"> &nbsp; &nbsp;
+					<input type="submit" value="Obliterate Studies" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'" style="color: red; font-size:10pt">
 				</td>
 			</tr>
 		</table>
@@ -555,9 +560,9 @@
 	
 
 	/* -------------------------------------------- */
-	/* ------- Obliterate ------------------------- */
+	/* ------- ObliterateSubject ------------------ */
 	/* -------------------------------------------- */
-	function Obliterate($studyids) {
+	function ObliterateSubject($studyids) {
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -566,13 +571,37 @@
 			$uids[] = $row['uid'];
 		}
 		
-		/* delete all information about this subject from the database */
+		/* delete all information about this SUBJECT from the database */
 		foreach ($ids as $id) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
 		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ObliterateStudy -------------------- */
+	/* -------------------------------------------- */
+	function ObliterateStudy($studyids) {
+		/* get list of subjects from the studyids */
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$ids[] = $row['subject_id'];
+			$uids[] = $row['uid'];
+			$uidstudynums[] = $row['uid'] . $row['subject_id'];
+		}
+		
+		/* delete all information about this SUBJECT from the database */
+		foreach ($ids as $id) {
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="message">Studies [<?=implode(', ',$uidstudynums)?>] queued for obliteration</div>
 		<?
 	}
 

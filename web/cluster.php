@@ -62,7 +62,8 @@
 	/* ------- GetClusterStats -------------------- */
 	/* -------------------------------------------- */
 	function GetClusterStats() {
-		$statsoutput = explode("\n",shell_exec("SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; /sge/sge-root/bin/lx24-amd64/./qstat -f -u '*'"));
+		//$statsoutput = explode("\n",shell_exec("SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; /sge/sge-root/bin/lx24-amd64/./qstat -f -u '*'"));
+		$statsoutput = explode("\n",shell_exec("ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'"));
 		
 		//print_r($statsoutput);
 
@@ -81,11 +82,11 @@
 				}
 
 				//echo "$line\n";
-				if (strstr($line, '.q@')) {
+				if (strstr($line, '@')) {
 					list($queuehost, $unk, $usage, $cpu, $arch) = preg_split('/\s+/', $line);
 					list($queue, $hostname) = explode('@',$queuehost);
 					//echo "[$usage]\n";
-					list($slotsused,$slotsavailable) = explode('/',$usage);
+					list($slotsres,$slotsused,$slotsavailable) = explode('/',$usage);
 					//echo "Queue: [$queue], Host: [$hostname], [$slotsused] of [$slotsavailable], CPU: [$cpu]\n";
 					$report[$hostname]['queues'][$queue] = null;
 					$report[$hostname]['cpu'] = $cpu;

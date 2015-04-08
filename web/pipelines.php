@@ -3281,9 +3281,9 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		a { color: #224ea5; }
 	</style>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
-	<details>
+	<!--<details>-->
 	<!-- display the cluster load -->
-	<summary style="font-size:10pt; color:#666">View cluster load</summary>
+	<!--<summary style="font-size:10pt; color:#666">View cluster load</summary>
 		<?
 		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		
@@ -3320,7 +3320,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			?>
 		</table>
 		<br><br>
-	</details>
+	</details> -->
 	
 	<table class="smallgraydisplaytable" width="100%">
 		<thead>
@@ -3719,9 +3719,10 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	/* ------- GetClusterStats -------------------- */
 	/* -------------------------------------------- */
 	function GetClusterStats() {
-		$statsoutput = explode("\n",shell_exec("SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; /sge/sge-root/bin/lx24-amd64/./qstat -f -u '*'"));
+		//$statsoutput = explode("\n",shell_exec("ssh $pipeline_submithost qstat -f -u '*'"));
+		$statsoutput = explode("\n",shell_exec("ssh compute01 qstat -f -u '*'"));
 		
-		//print_r($statsoutput);
+		PrintVariable($statsoutput);
 
 		$hostname = $queue = "";
 		$hostnames = $queues = null;
@@ -3738,11 +3739,11 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				}
 
 				//echo "$line\n";
-				if (strstr($line, '.q@')) {
+				if (strstr($line, '@')) {
 					list($queuehost, $unk, $usage, $cpu, $arch) = preg_split('/\s+/', $line);
 					list($queue, $hostname) = explode('@',$queuehost);
 					//echo "[$usage]\n";
-					list($slotsused,$slotsavailable) = explode('/',$usage);
+					list($slotsres,$slotsused,$slotsavailable) = explode('/',$usage);
 					//echo "Queue: [$queue], Host: [$hostname], [$slotsused] of [$slotsavailable], CPU: [$cpu]\n";
 					$report[$hostname]['queues'][$queue] = null;
 					$report[$hostname]['cpu'] = $cpu;
