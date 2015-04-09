@@ -115,6 +115,10 @@ sub DoParse {
 
 	WriteLog("Connected to database");
 	
+	# before starting things off, delete any rows older than 30 days from the importlogs table
+	my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
+	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	
 	# ----- parse all files in the main directory -----
 	if (ParseDirectory($cfg{'incomingdir'}, '')) {
 		$ret = 1;
@@ -196,6 +200,10 @@ sub ParseDirectory {
 		#WriteLog("Processing [$runningCount] [$file]");
 		if ($runningCount%1000 == 0) {
 			WriteLog("Processed $runningCount files...");
+		}
+		if ($runningCount >= 10000) {
+			WriteLog("Reached [$runningCount] files, going to archive them now");
+			last;
 		}
 		if ( ($file ne ".") && ($file ne "..") ) {
 			#WriteLog("File is not a . or ..");
@@ -893,11 +901,12 @@ sub InsertSeries {
 			# delete the mr_qa row
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesRowID";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-			
+			WriteLog("Deleted from mr_qa... about to delete from qc_results");
 			# ... and delete the qc module rows
 			$sqlstring = "delete from qc_results where qcmoduleseries_id in (select qcmoduleseries_id from qc_moduleseries where series_id = $seriesRowID and modality = 'mr')";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 			
+			WriteLog("Deleted from qc_results... about to delete from qc_moduleseries");
 			$sqlstring = "delete from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 		}
@@ -966,7 +975,7 @@ sub InsertSeries {
 	}
 	
 	# copy the file to the archive, update db info
-	WriteLog("$seriesRowID");
+	WriteLog("SeriesRowID: [$seriesRowID]");
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/dicom";
@@ -1045,7 +1054,7 @@ sub InsertSeries {
 		#WriteLog("$file: SliceNumber: $SliceNumber, InstanceNumber: $InstanceNumber, SliceLocation: $SliceLocation, Acquisition Time: $AcquisitionTime");
 		
 		my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime" . "_$SOPInstance.dcm";
-		WriteLog("  [$newname]");
+		#WriteLog("  [$newname]");
 
 		# check if a file with the same name already exists
 		if (-e "$outdir/$newname") {
@@ -1072,10 +1081,6 @@ sub InsertSeries {
 		# insert an import log record
 		my $sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
 		my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-		
-		# delete any rows older than 30 days from the import log
-		$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 	}
 	
 	# get the size of the dicom files and update the DB

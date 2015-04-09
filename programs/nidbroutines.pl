@@ -40,6 +40,12 @@ sub LoadConfig {
 	elsif (-e '../../../../prod/programs/nidb.cfg') {
 		$file = '../../../../prod/programs/nidb.cfg';
 	}
+	elsif (-e '../programs/nidb.cfg') {
+		$file = '../programs/nidb.cfg';
+	}
+	elsif (-e '/nidb/programs/nidb.cfg') {
+		$file = '/nidb/programs/nidb.cfg';
+	}
 	print "Using config file [$file]\n";
 	open(CFG, $file) || die "Can't open $file: $!\n";
 	while ($line = <CFG>) {

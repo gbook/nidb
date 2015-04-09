@@ -1084,14 +1084,9 @@
 				while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
 					$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
 				}
-				
-				//PrintVariable($resultnames,'resultnames');
-				//exit(0);
 
 				/* load the data into a useful table */
 				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-					
-					//PrintVariable($row,'row');
 					
 					$step = $row['analysis_step'];
 					$pipelinename = $row['pipeline_name'];
@@ -1104,14 +1099,12 @@
 					$study_datetime = $row['study_datetime'];
 					$type = $row['result_type'];
 					$size = $row['result_size'];
-					//$name = $row['result_name'];
 					$name = $resultnames[$row['result_nameid']];
 					$name2 = $resultnames[$row['result_nameid']];
 					$unit = $resultunit[$row['result_unitid']];
 					$unit2 = $resultunit[$row['result_unitid']];
 					$text = $row['result_text'];
 					$value = $row['result_value'];
-					//$unit = $row['result_unit'];
 					$filename = $row['result_filename'];
 					$swversion = $row['result_softwareversion'];
 					$important = $row['result_isimportant'];
@@ -1158,9 +1151,7 @@
 					if (($thevalue > $names2[$name2]['max']) || ($names2[$name2]['max'] == "")) { $names2[$name2]['max'] = $thevalue; }
 					if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
 				}
-				//echo "<pre>";
-				//print_r($names);
-				//echo "</pre>";
+
 				if ($s_resultorder == "pipelinecsv") {
 					$csv = "uid,studynum,sex,age";
 					foreach ($names2 as $name2 => $blah) {
