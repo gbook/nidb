@@ -942,8 +942,7 @@ CREATE TABLE `importlogs` (
   PRIMARY KEY (`importlog_id`),
   KEY `importstartdate` (`importstartdate`),
   KEY `stationname_orig` (`stationname_orig`),
-  KEY `studydatetime_orig` (`studydatetime_orig`),
-  KEY `importstartdate_2` (`importstartdate`)
+  KEY `studydatetime_orig` (`studydatetime_orig`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 --
@@ -1692,7 +1691,7 @@ CREATE TABLE `qc_results` (
   PRIMARY KEY (`qcresults_id`),
   UNIQUE KEY `qcmoduleseries_id` (`qcmoduleseries_id`,`qcresultname_id`),
   KEY `qcmoduleseries_id_2` (`qcmoduleseries_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ratings`
@@ -1833,7 +1832,7 @@ CREATE TABLE `studies` (
   KEY `subject_id` (`study_num`),
   KEY `study_modality` (`study_modality`),
   KEY `study_datetime` (`study_datetime`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `subject_altuid`
@@ -2100,4 +2099,4 @@ CREATE TABLE `xa_series` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 
--- Dump completed on 2015-04-03 11:35:43
+-- Dump completed on 2015-04-09 14:23:05
