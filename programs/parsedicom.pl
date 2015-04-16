@@ -132,8 +132,8 @@ sub DoParse {
 	closedir(DIR);
 	foreach my $dir (@dirs) {
 		my $fulldir = $cfg{'incomingdir'} . "/$dir";
-		WriteLog("Checking on [$fulldir]");
 		if ((-d $fulldir) && ($dir ne '.') && ($dir ne '..')) {
+			WriteLog("Checking on [$fulldir]");
 			WriteLog("Calling ParseDirectory($fulldir,$dir)");
 			if (ParseDirectory($fulldir, $dir)) {
 				# rmdir will always fail if the directory contains files, so try to run it
@@ -897,14 +897,23 @@ sub InsertSeries {
 			WriteLog("This MR series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
 			
-			# if the series is being updated, the QA information might be incorrect or be based on the wrong number of files, so
-			# delete the mr_qa row
+			# if the series is being updated, the QA information might be incorrect or be based on the wrong number of files, so delete the mr_qa row
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesRowID";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			
 			WriteLog("Deleted from mr_qa... about to delete from qc_results");
+			
 			# ... and delete the qc module rows
-			$sqlstring = "delete from qc_results where qcmoduleseries_id in (select qcmoduleseries_id from qc_moduleseries where series_id = $seriesRowID and modality = 'mr')";
+			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my @qcidlist;
+			if ($result->numrows > 0) {
+				my %row = $result->fetchhash;
+				push @qcidlist,$row{'qcmoduleseries_id'};
+
+				$sqlstring = "delete from qc_results where qcmoduleseries_id in (" . join(',',@qcidlist) . ")";
+				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			}
 			
 			WriteLog("Deleted from qc_results... about to delete from qc_moduleseries");
 			$sqlstring = "delete from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";

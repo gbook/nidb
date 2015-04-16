@@ -117,7 +117,7 @@ sub ProcessPipelines() {
 	# we're only going to run 1 pipeline per instance of pipeline.pl
 	my $sqlstring = "select * from pipelines where pipeline_status <> 'running' and (pipeline_enabled = 1 or pipeline_testing = 1) order by pipeline_laststart asc";
 	WriteLog($sqlstring);
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows < 1) {
 		WriteLog("No pipelines need to be run. Exiting module");
 		# update the stop time
@@ -126,12 +126,6 @@ sub ProcessPipelines() {
 	}
 	# get the new pipeline status run number
 	my $newrunnum = 0;
-	#my $sqlstringA = "select max(pipeline_modulerunnum) 'maxnum' from pipeline_status";
-	#my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
-	#if ($resultA->numrows > 1) {
-	#	my %rowA = $resultA->fetchhash;
-	#	$newrunnum = $rowA{'maxnum'} + 1;
-	#}
 	# populate the pipeline_status table so we know what order these pipelines will run in
 	my $i = 0;
 	my @pipelinerows;
@@ -140,8 +134,6 @@ sub ProcessPipelines() {
 		my $pid = $row{'pipeline_id'};
 		my $pipelinename = $row{'pipeline_name'};
 		$i++;
-		#my $sqlstringB = "insert into pipeline_status (pipeline_modulerunnum, pipeline_modulestarttime, pipeline_id, pipelinestatus_order, pipelinestatus_status) values ($newrunnum, now(), $pid, $i, 'pending')";
-		#my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
 	}
 	# go back to the beginning of the dataset
 	#$result->dataseek();
@@ -158,8 +150,10 @@ sub ProcessPipelines() {
 		my $pipelineversion = $row{'pipeline_version'};
 		my $pipelinedataand = $row{'pipeline_dataand'};
 		my $pipelinedependency = $row{'pipeline_dependency'};
-		my $pipelinegroupids = $row{'pipeline_groupid'};
+		my $pipelinegroupids = $row{'pipeline_groupid'} . '';
 		my $pipelinedirectory = $row{'pipeline_directory'};
+		my $usetmpdir = $row{'pipeline_usetmpdir'};
+		my $tmpdir = $row{'pipeline_tmpdir'};
 		my $pipelinequeue = $row{'pipeline_queue'};
 		my $pipelinesubmithost;
 		if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
@@ -176,12 +170,7 @@ sub ProcessPipelines() {
 		
 		# mark the pipeline as having been checked
 		my $sqlstringC = "update pipelines set pipeline_lastcheck = now() where pipeline_id = '$pid'";
-		my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
-
-		# update the start time in the pipeline_status table
-		#$sqlstringC = "update pipeline_status set pipelinestatus_starttime = now(), pipelinestatus_status = 'running' where pipeline_id = '$pid' and pipeline_modulerunnum = $newrunnum";
-		#print "[$sqlstringC]";
-		#$resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+		my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 		
 		if (trim($pipelinequeue) eq "") {
 			WriteLog("No queue specified");
@@ -194,7 +183,7 @@ sub ProcessPipelines() {
 	
 		# check if the pipeline is running, if so, go on to the next one
 		my $sqlstringX = "select pipeline_status from pipelines where pipeline_id = $pid";
-		my $resultX = $db->query($sqlstringX) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringX);
+		my $resultX = SQLQuery($sqlstringX, __FILE__, __LINE__);
 		my %rowX = $resultX->fetchhash;
 		my $status = trim($rowX{'pipeline_status'});
 		if ($status eq 'running') {
@@ -240,17 +229,16 @@ sub ProcessPipelines() {
 		}
 		my @pipelinesteps = @$ps;
 		
-		# this file will record any events during setup
-		my $setuplog = "/mount$pipelinedirectory/$pipelinename/pipeline/analysisSetup.log";
+		# connect to the DB (in case it became disconnected)
+		DatabaseConnect();
 		
 		# determine which analysis level this is
 		if ($pipelinelevel == 0) {
-			# connect to the DB (in case it became disconnected)
-			$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
+			#$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 			
 			# check if this module should be running now or not
 			$sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows < 1) {
 				WriteLog("Module disabled. Stopping execution. Exiting module");
 				print "Module disabled. Stopping execution\n";
@@ -262,8 +250,7 @@ sub ProcessPipelines() {
 			# only 1 analysis should ever be run with the oneshot level, so if 1 already exists, regardless of state or pipeline version, then
 			# leave this function without running the analysis
 			my $sqlstring = "select * from analysis where pipeline_id = $pid";
-			#WriteLog($sqlstring);
-			my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows > 0) {
 				WriteLog("An analysis already exists for this one-shot level pipeline, exiting");
 				SetPipelineStatusMessage($pid, 'An analysis already exists for this one-shot pipeline. Skipping');
@@ -282,21 +269,25 @@ sub ProcessPipelines() {
 			
 			if (-d "$analysispath/pipeline") {
 				WriteLog("Directory [$analysispath/pipeline] exists!");
-				AppendLog($setuplog, "Directory [$analysispath/pipeline] exists!");
 			}
+			
+			# this file will record any events during setup
+			my $setuplog = "/mount$analysispath/pipeline/analysisSetup.log";
+			AppendLog($setuplog, "Beginning recording");
+			WriteLog("Should have created this analysis setup log [$setuplog]");
+			
 			# insert a temporary row, to be updated later, in the analysis table as a placeholder
 			# so that no other processes end up running it
 			$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values ($pid,$pipelineversion,'','','processing',now())";
 			#WriteLog($sqlstring);
 			AppendLog($setuplog, $sqlstring);
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-			# $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			my $analysisRowID = $result->insertid;
 			
 			# create the SGE job file
 			#my $pseudoanalysispath = $analysispath;
 			#$pseudoanalysispath =~ s/\/mount//;
-			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
+			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
 		
 			$systemstring = "chmod -Rf 777 $analysispath";
 			WriteLog("[$systemstring]");
@@ -327,22 +318,25 @@ sub ProcessPipelines() {
 			AppendLog($setuplog, $sgeresult);
 			
 			$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
-			#WriteLog($sqlstring);
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			#$numsubmitted = $numsubmitted + 1;
 			$jobsWereSubmitted = 1;
 		}
+		# ======================= LEVEL 1 =======================
 		elsif ($pipelinelevel == 1) {
-			if ($pipelinedependency eq "") {
-				$pipelinedependency = "0";
-			}
+			my $setuplog = "";
+		
 			# fix the directory if its special
 			if ($pipelinedirectory eq "") {
 				$pipelinedirectory = $cfg{'analysisdir'};
 			}
 			else {
 				$pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory;
+			}
+
+			if ($pipelinedependency eq "") {
+				$pipelinedependency = "0";
 			}
 			
 			# if there are multiple dependencies, we'll need to loop through all of them separately
@@ -364,7 +358,7 @@ sub ProcessPipelines() {
 					WriteLog("Checking if this module should be running");
 					# check if this module should be running now or not
 					$sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-					$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($result->numrows < 1) {
 						WriteLog("Module disabled. Stopping execution. Exiting module");
 						print "Module disabled. Stopping execution\n";
@@ -388,15 +382,17 @@ sub ProcessPipelines() {
 					}
 					
 					WriteLog("Checking if this analysis already exists");
+					$setuplog .= "Checking if this analysis already exists\n";
 					# check if the analysis has an entry in the analysis table
 					my $sqlstring = "select * from analysis where pipeline_id = $pid and study_id = $sid";
 					WriteLog($sqlstring);
-					my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					my %row = $result->fetchhash;
 					my $r = 0;
 					my $analysisRowID = trim($row{'analysis_id'});
 					my $rerunresults = trim($row{'analysis_rerunresults'});
 					WriteLog("analysisRowID [$analysisRowID]  rerunresults [$rerunresults]");
+					$setuplog .= "analysisRowID [$analysisRowID]  rerunresults [$rerunresults]\n";
 					# only continue through this section if there is no analysis, or there is an analysis and it needs the results rerun
 					if (($rerunresults eq "1") || ($analysisRowID eq "")) {
 						SetPipelineStatusMessage($pid, "Checking analysis $r of " . $result->numrows);
@@ -407,15 +403,14 @@ sub ProcessPipelines() {
 						if ($analysisRowID eq "") {
 							$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values ($pid,$pipelineversion,$pipelinedep,$sid,'processing',now())";
 							WriteLog($sqlstring);
-							$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							$analysisRowID = $result->insertid;
 						}
 						
 						# get information about the study
 						$sqlstring = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
-						WriteLog($sqlstring);
-						$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-						# $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+						$setuplog .= WriteLog($sqlstring) . "\n";
+						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						my %row = $result->fetchhash;
 						my $uid = $row{'uid'};
 						my $studynum = $row{'study_num'};
@@ -425,30 +420,71 @@ sub ProcessPipelines() {
 						my $datalog;
 						my $datareport;
 						if (defined($uid)) {
-							WriteLog("StudyDateTime: $studydatetime");
-							WriteLog("Working on: $uid$studynum");
+							WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
 							print "StudyDateTime: $studydatetime\n";
 							my $analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
 							
+							# this file will record any events during setup
+							my $setuplogF = "/mount" . $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename/pipeline/analysisSetup.log";
+							$setuplog .= "Beginning recording\n";
+							WriteLog("Should have created this analysis setup log [$setuplogF]");
+							
 							# get the nearest study for this subject that has the dependency
 							my $sqlstringA = "select study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = $subjectid and a.pipeline_id = '$pipelinedep' and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, '$studydatetime')) limit 1";
-							WriteLog($sqlstringA);
-							my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+							$setuplog .= WriteLog($sqlstringA) . "\n";
+							my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 							my %rowA = $resultA->fetchhash;
 							my $studynum_nearest = $rowA{'study_num'};
 							
 							my $deppath;
 							if ($deplevel eq "subject") {
 								WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
+								$setuplog .= "Dependency is a subject level (will match dep for same subject, any study)\n";
 								$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
 							}
 							else {
 								WriteLog("Dependency is a study level (will match dep for same subject, same study)");
+								$setuplog .= "Dependency is a study level (will match dep for same subject, same study)";
 								$deppath = "$pipelinedirectory/$uid/$studynum";
+								
+								# check if this study actually has this dependency
+								my $sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep'";
+								my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+								if ($resultB->numrows < 1) {
+									# this study has no dependencies within the same study
+									my $datalog2 = EscapeMySQLString($datalog);
+									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'NoMatchingStudyDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+									next;
+								}
+								
+								# check if the dependency is complete
+								$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_status = 'complete'";
+								my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+								if ($resultB->numrows < 1) {
+									# this study has no dependencies within the same study
+									my $datalog2 = EscapeMySQLString($datalog);
+									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'IncompleteDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+									next;
+								}
+								
+								# check if the dependency is not bad
+								$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_isbad <> 1";
+								my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+								if ($resultB->numrows < 1) {
+									# this study has no dependencies within the same study
+									my $datalog2 = EscapeMySQLString($datalog);
+									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'BadDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+									next;
+								}
 							}
 							WriteLog("Dependency path is [$deppath]");
+							$setuplog .= "Dependency path is [$deppath]\n";
 							
 							WriteLog("This will be the analysis path [$analysispath]. If data exists for it");
+							$setuplog .= "This will be the analysis path [$analysispath]. If data exists for it\n";
 							
 							# download the data for the study, if there is any that satisfies the search criteria
 							if ($pipelinedataand == -1) {
@@ -462,66 +498,74 @@ sub ProcessPipelines() {
 							if (($numseries > 0) || ($rerunresults eq "1")) {
 								#print "11\n";
 								WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- ");
+								$setuplog .= " ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- \n";
 
 								my $dependencyname;
 								if ($rerunresults ne "1") {
 									if ($pipelinedep != 0) {
-										WriteLog("There is a pipeline dependency [$pipelinedep]");
+										$setuplog .= WriteLog("There is a pipeline dependency [$pipelinedep]") . "\n";
 										my $sqlstring = "select pipeline_name from pipelines where pipeline_id = $pipelinedep";
-										WriteLog($sqlstring);
-										my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+										$setuplog .= WriteLog($sqlstring) . "\n";
+										my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 										if ($result->numrows > 0) {
 											my %row = $result->fetchhash;
 											$dependencyname = $row{'pipeline_name'};
 											WriteLog("Found " . $result->numrows . " pipeline dependency [$dependencyname]");
+											$setuplog .= "Found " . $result->numrows . " pipeline dependency [$dependencyname]\n";
 										}
 										else {
 											WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
+											$setuplog .= "Pipeline dependency ($pipelinedep) does not exist!\n";
 											SetPipelineStatusMessage($pid, "Pipeline dependency ($pipelinedep) does not exist!");
 											SetPipelineStopped($pid, $newrunnum);
-											#SetModuleStopped();
 											next PIPELINE;
 										}
 									}
 									else {
 										WriteLog("No pipeline dependencies [$pipelinedep]");
+										$setuplog .= "No pipeline dependencies [$pipelinedep]\n";
 									}
 								
-									#WriteLog("Creating '$analysispath/pipeline': [" . `mkdir -p $analysispath/pipeline` . "]");
 									MakePath("$analysispath/pipeline");
 									chmod(0777,"$analysispath/pipeline");
 									if ($pipelinedep != 0) {
 										#chdir($deppath);
-										if (-e $deppath) {
-											WriteLog("Dependency path [$deppath] exists");
+										if (-e "$deppath/$dependencyname") {
+											$setuplog .= WriteLog("Full dependency path [$deppath/$dependencyname] exists") . "\n";
 										}
 										else {
-											WriteLog("Dependency path [$deppath] does NOT exist");
+											$setuplog .= WriteLog("Full dependency path [$deppath/$dependencyname] does NOT exist") . "\n";
 										}
 										
 										my $systemstring;
 										if ($depdir eq "subdir") {
-											#chdir($deppath);
-											WriteLog("Dependency will be copied to a subdir");
+											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
 											$systemstring = "cp -rl $deppath/$dependencyname $analysispath/";
 										}
 										else { # root dir
-											WriteLog("Dependency will be copied to the root dir");
-											#chdir("$deppath/$dependencyname");
+											$setuplog .= WriteLog("Dependency will be copied to the root dir") . "\n";
 											$systemstring = "cp -rl $deppath/$dependencyname/* $analysispath/";
-											#$systemstring = "cp -al $deppath/$dependencyname $pipelinename";
 										}
-										WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . `$systemstring 2>&1`);
+										# copy any dependencies
+										$setuplog .= WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . `$systemstring 2>&1`) . "\n";
+										
+										# delete any log files and SGE files that came with the dependency
 										$systemstring = "rm --preserve-root $analysispath/pipeline/* $analysispath/origfiles.log $analysispath/sge.job";
-										WriteLog("[$systemstring] " . __LINE__ . " :" . `$systemstring 2>&1`);
+										$setuplog .= WriteLog("[$systemstring] " . __LINE__ . " :" . `$systemstring 2>&1`) . "\n";
+										
+										# make sure the whole tree is writeable
 										$systemstring = "chmod -R 777 $analysispath";
 										WriteLog("pwd: [" . getcwd . "], [$systemstring]");
 										`$systemstring 2>&1`;
 									}
 									else {
-										WriteLog("Pipelinedep was 0 [$pipelinedep]");
+										$setuplog .= WriteLog("Pipelinedep was 0 [$pipelinedep]") . "\n";
 									}
 									
+									# now safe to write out the setuplog 
+									AppendLog($setuplogF, $setuplog);
+									
+									# and safe to write out the datalog
 									open DATALOG, "> $analysispath/pipeline/data.log" or die("[Line: " . __LINE__ . "] Could not create $analysispath/pipeline/data.log");
 									print DATALOG $datalog;
 									close DATALOG;
@@ -531,7 +575,7 @@ sub ProcessPipelines() {
 								$realanalysispath =~ s/\/mount//g;
 								
 								# create the SGE job file
-								my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, $uid, $studynum, $realanalysispath, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
+								my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
 							
 								`chmod -Rf 777 $analysispath`;
 								#WriteLog($sgebatchfile);
@@ -557,12 +601,11 @@ sub ProcessPipelines() {
 								my @parts = split(' ', $sgeresult);
 								my $jobid = $parts[2];
 								WriteLog(join('|',@parts));
-								WriteLog("[$systemstring]: " . $sgeresult);
-								AppendLog($setuplog, $sgeresult);
+								AppendLog($setuplogF, WriteLog("[$systemstring]: " . $sgeresult));
 								
 								$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
-								WriteLog($sqlstring);
-								$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+								AppendLog($setuplogF, WriteLog($sqlstring));
+								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 								
 								$numsubmitted = $numsubmitted + 1;
 								$jobsWereSubmitted = 1;
@@ -571,20 +614,20 @@ sub ProcessPipelines() {
 								
 								# check if this module should be running now or not
 								if (!ModuleCheckIfActive($scriptname, $db)) {
-									WriteLog("Not supposed to be running right now. Exiting module");
+									AppendLog($setuplogF, WriteLog("Not supposed to be running right now. Exiting module"));
 									# update the stop time
 									ModuleDBCheckOut($scriptname, $db);
 									return 0;
 								}
 							}
 							else {
-								WriteLog("GetData() returned 0 series");
+								AppendLog($setuplogF, WriteLog("GetData() returned 0 series"));
 								# update the analysis table with the datalog to people can check later on why something didn't process
 								my $datalog2 = EscapeMySQLString($datalog);
 								my $sqlstringC = "update analysis set analysis_datalog = '$datalog2' where analysis_id = $analysisRowID";
-								my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 							}
-							WriteLog("Submitted $numsubmitted jobs so far");
+							AppendLog($setuplogF, WriteLog("Submitted $numsubmitted jobs so far"));
 							print "Submitted $numsubmitted jobs so far\n";
 						}
 						
@@ -597,15 +640,12 @@ sub ProcessPipelines() {
 							else {
 								$sqlstring = "update analysis set analysis_status = 'pending', analysis_numseries = $numseries, analysis_enddate = now() where analysis_id = $analysisRowID";
 							}
-								#WriteLog($sqlstring);
-								$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
 						else {
 							# save some database space, since most entries will be blank
 							$sqlstring = "update analysis set analysis_status = 'NoMatchingStudies', analysis_startdate = null where analysis_id = $analysisRowID";
-							#WriteLog($sqlstring);
-							$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-							# $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
 					}
 					else {
@@ -630,6 +670,7 @@ sub ProcessPipelines() {
 				}
 			}
 		}
+		# ======================= LEVEL 2 =======================
 		elsif ($pipelinelevel == 2) {
 			# --- process second level pipeline ---
 			WriteLog("Level 2");
@@ -637,14 +678,11 @@ sub ProcessPipelines() {
 			# only 1 analysis should ever be run with the second level, so if 1 already exists, regardless of state or pipeline version, then
 			# leave this function without running the analysis
 			my $sqlstring = "select * from analysis where pipeline_id = $pid";
-			#WriteLog($sqlstring);
-			my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows > 0) {
 				WriteLog("An analysis already exists for this second level pipeline, exiting pipeline");
 				SetPipelineStatusMessage($pid, 'An analysis already exists for this second level pipeline. Delete the analysis if you want to re-run it');
 				SetPipelineStopped($pid, $newrunnum);
-				#SetModuleStopped();
-				#return 0;
 				next PIPELINE;
 			}
 		
@@ -667,8 +705,7 @@ sub ProcessPipelines() {
 				my $dependencylevel;
 				if ($pipelinedep != 0) {
 					my $sqlstring = "select pipeline_name, pipeline_level from pipelines where pipeline_id = $pipelinedep";
-					#WriteLog($sqlstring);
-					my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($result->numrows > 0) {
 						WriteLog("Found " . $result->numrows . " series for second level pipeline");
 						my %row = $result->fetchhash;
@@ -705,7 +742,6 @@ sub ProcessPipelines() {
 					print "2 [$pipelinedirectory] --> [$realpipelinedirectory]\n";
 				}
 				
-				#$groupanalysispath = "$cfg{'groupanalysisdir'}/$pipelinename/$dependencyname";
 				#WriteLog(`mkdir -p $pipelinedirectory/$pipelinename/$dependencyname`);
 				MakePath("$pipelinedirectory/$pipelinename/$dependencyname");
 				$groupanalysispath = "$pipelinedirectory/$pipelinename";
@@ -722,16 +758,13 @@ sub ProcessPipelines() {
 				
 				# check if the groupanalysis has an entry in the analysis_group table
 				my $sqlstring = "select * from analysis where pipeline_id = $pid and pipeline_version = $pipelineversion";
-				#WriteLog($sqlstring);
-				my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-				# my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows < 1) {
 					#print "9\n";
 					# insert a temporary row, to be updated later, in the analysis_group table as a placeholder
 					# so that no other processes end up running it
 					$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, analysis_status, analysis_startdate) values ($pid,$pipelineversion,$pipelinedep,'processing',now())";
-					#WriteLog($sqlstring);
-					$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					$analysisRowID = $result->insertid;
 				}
 				else {
@@ -741,17 +774,16 @@ sub ProcessPipelines() {
 				
 				# loop through the groups
 				$sqlstring = "select * from groups where group_id in ($pipelinegroupids)";
-				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-				#WriteLog($sqlstring);
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 					while (my %row = $result->fetchhash) {
 						my $groupname = $row{'group_name'};
 						my $groupid = $row{'group_id'};
 						# get a list of subjects in the group that have the dependency
 						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
-						my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						WriteLog($sqlstringA);
-						AppendLog($setuplog, $sqlstringA);
+						#AppendLog($setuplog, $sqlstringA);
 						my @studyids = ();
 						if ($resultA->numrows > 0) {
 							while (my %rowA = $resultA->fetchhash) {
@@ -761,7 +793,7 @@ sub ProcessPipelines() {
 						}
 						else {
 							WriteLog("No studies found [$sqlstringA]");
-							AppendLog($setuplog, "No studies found [$sqlstringA]");
+							#AppendLog($setuplog, "No studies found [$sqlstringA]");
 							SetPipelineStatusMessage($pid, "No studies found (Maybe 1st/2nd level group mismatch?)");
 							SetPipelineStopped($pid, $newrunnum);
 							SetModuleStopped();
@@ -773,7 +805,7 @@ sub ProcessPipelines() {
 							# get information about the study
 							my $sqlstringB = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
 							WriteLog($sqlstringB);
-							my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+							my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 							my %rowB = $resultB->fetchhash;
 							my $uid = $rowB{'uid'};
 							my $studynum = $rowB{'study_num'};
@@ -804,7 +836,8 @@ sub ProcessPipelines() {
 								
 								my $cpresults = `$systemstring 2>&1`;
 								if (($cpresults =~ /cannot stat/) || ($cpresults =~ /No such file or/) || ($cpresults =~ /error/)) {
-									AppendLog($setuplog, $cpresults);
+									WriteLog($cpresults);
+									#AppendLog($setuplog, $cpresults);
 								}
 								WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . $cpresults);
 							}
@@ -814,30 +847,16 @@ sub ProcessPipelines() {
 			}
 
 			$sqlstring = "select date_format(now(),'%Y%m%d_%H%i%s') 'studydatetime'";
-			#WriteLog($sqlstring);
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			%row = $result->fetchhash;
 			my $studydatetime = $row{'studydatetime'};
 				
 			# create the SGE job file
-			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
+			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
 		
 			`chmod -Rf 777 $groupanalysispath`;
 			WriteLog($sgebatchfile);
-			# my $realpipelinedirectory;
-			# if ($pipelinedirectory eq "") {
-				# $pipelinedirectory = $cfg{'groupanalysisdir'};
-				# $realpipelinedirectory =~ $pipelinedirectory;
-				# $realpipelinedirectory =~ s/\/mount//;
-				# WriteLog("1 [$pipelinedirectory] --> [$realpipelinedirectory]");
-				# print "1 [$pipelinedirectory] --> [$realpipelinedirectory]\n";
-			# }
-			# else {
-				# $pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory;
-				# $realpipelinedirectory = $pipelinedirectory;
-				# WriteLog("2 [$pipelinedirectory] --> [$realpipelinedirectory]");
-				# print "2 [$pipelinedirectory] --> [$realpipelinedirectory]\n";
-			# }
+			
 			# submit the SGE job
 			open SGEFILE, "> $pipelinedirectory/$pipelinename/pipeline/sge.job";
 			print SGEFILE $sgebatchfile;
@@ -856,7 +875,7 @@ sub ProcessPipelines() {
 			my $jobid = $parts[2];
 			WriteLog(join('|',@parts));
 			WriteLog("[$systemstring]: " . $sgeresult);
-			AppendLog($setuplog, $sgeresult);
+			#AppendLog($setuplog, $sgeresult);
 			
 			if ($sgeresult =~ /error/) {
 				$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'error', analysis_statusmessage = 'Error submitting to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
@@ -865,8 +884,7 @@ sub ProcessPipelines() {
 				$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
 			}
 			$jobsWereSubmitted = 1;
-			#WriteLog($sqlstring);
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			# check if this module should be running now or not
 			if (!ModuleCheckIfActive($scriptname, $db)) {
@@ -920,7 +938,7 @@ sub IsQueueFilled() {
 
 	# check if this module should be running now or not
 	my $sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows < 1) {
 		WriteLog("Module disabled. Stopping execution");
 		print "Module disabled. Stopping execution\n";
@@ -933,7 +951,7 @@ sub IsQueueFilled() {
 	# find out how many processes are allowed to run
 	my $numprocallowed = 0;
 	$sqlstring = "select pipeline_enabled, pipeline_numproc from pipelines where pipeline_id = $pid";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$numprocallowed = $row{'pipeline_numproc'};
@@ -943,7 +961,7 @@ sub IsQueueFilled() {
 	# find out how many processes are actually running
 	my $numprocrunning = 0;
 	$sqlstring = "select count(*) 'count' from analysis where pipeline_id = $pid and (analysis_status = 'processing' or analysis_status = 'started' or analysis_status = 'submitted' or analysis_status = 'pending')";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$numprocrunning = $row{'count'};
@@ -964,14 +982,14 @@ sub IsQueueFilled() {
 # --------- CreateSGEJobFile -------------------------------
 # ----------------------------------------------------------
 sub CreateSGEJobFile() {
-	my ($analysisid, $isgroup, $uid, $studynum, $analysispath, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, @pipelinesteps) = @_;
+	my ($analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, @pipelinesteps) = @_;
 
 	# (re)connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	# check if this analysis only needs part of it rerun, and not the whole thing
 	my $sqlstring = "select * from analysis where analysis_id = $analysisid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $rerunresults = trim($row{'analysis_rerunresults'});
 	WriteLog("ReRunResults: [$rerunresults]");
@@ -980,8 +998,12 @@ sub CreateSGEJobFile() {
 	my $jobfile = "";
 	my $realanalysispath = "$analysispath";
 	
+	my $workinganalysispath = "$tmpdir/$pipelinename-$analysisid";
+	
 	WriteLog("Analysis path: $analysispath");
 	print "Analysis path: $analysispath\n";
+	WriteLog("Working Analysis path (temp directory): $workinganalysispath");
+	print "Working Analysis path (temp dir): $workinganalysispath\n";
 	
 	$jobfile .= "#!/bin/sh\n";
 	$jobfile .= "#\$ -N $pipelinename\n";
@@ -999,9 +1021,16 @@ sub CreateSGEJobFile() {
 		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid started 'Cluster processing started'\n";
 	}
 	$jobfile .= "cd $analysispath;\n";
+	if ($usetmpdir) {
+		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid started 'Beginning data copy to /tmp'\n";
+		$jobfile .= "mkdir -pv $workinganalysispath\n";
+		$jobfile .= "cp -Rv $analysispath/* $workinganalysispath/\n";
+		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid started 'Done copying data to /tmp'\n";
+	}
 
 	# check if any of the variables might be blank
 	if (trim($analysispath) eq "") { return ""; }
+	if (trim($workinganalysispath) eq "") { return ""; }
 	if (trim($analysisid) eq "") { return ""; }
 	if (trim($uid) eq "") { return ""; }
 	if (trim($studynum) eq "") { return ""; }
@@ -1022,8 +1051,12 @@ sub CreateSGEJobFile() {
 			if (($command =~ m/\{NOLOG\}/) || ($description =~ m/\{NOLOG\}/)) { $logged = 0; }
 			
 			# format the command (replace pipeline variables, etc)
-			$command = FormatCommand($pipelineid, $realanalysispath, $command, $analysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, $workingdir, $description);
-			
+			if ($usetmpdir) {
+				$command = FormatCommand($pipelineid, $realanalysispath, $command, $workinganalysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, $workingdir, $description);
+			}
+			else {
+				$command = FormatCommand($pipelineid, $realanalysispath, $command, $analysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, $workingdir, $description);
+			}
 			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { }
 			else {
 				$jobfile .= "\nperl /opt/pipeline/$checkinscript $analysisid processing 'processing step " . ($i + 1) . " of " . ($#pipelinesteps + 1) . "'\n# $description\necho Running $command\n";
@@ -1037,6 +1070,12 @@ sub CreateSGEJobFile() {
 			
 			$jobfile .= "$command\n";
 		}
+	}
+	if ($usetmpdir) {
+		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid started 'Copying data from temp dir'\n";
+		$jobfile .= "cp -Ruv $workinganalysispath/* $analysispath/\n";
+		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid started 'Deleting temp dir'\n";
+		$jobfile .= "rm --preserve-root -rv $workinganalysispath\n";
 	}
 	
 	if ((trim($resultscript) ne "") && ($rerunresults)) {
@@ -1112,9 +1151,9 @@ sub FormatCommand() {
 			push(@alluidstudynums,@uidStudyNums);
 			my $uidlist = join(' ',@uidStudyNums);
 			my $numuids = $#uidStudyNums+1;
-			WriteLog("Replacing '{uidstudynums_$group}' with '$uidlist'");
+			#WriteLog("Replacing '{uidstudynums_$group}' with '$uidlist'");
 			$command =~ s/\{uidstudynums_$group\}/$uidlist/g;
-			WriteLog("Replacing '{numsubjects_$group}' with '$numuids'");
+			#WriteLog("Replacing '{numsubjects_$group}' with '$numuids'");
 			$command =~ s/\{numsubjects_$group\}/$numuids/g;
 		}
 		my $alluidlist = join(' ',@alluidstudynums);
@@ -1185,20 +1224,19 @@ sub GetGroupList() {
 	
 	# get list of groups associated with this pipeline
 	my $sqlstring = "select pipeline_groupid from pipelines where pipeline_id = $pid";
-	#WriteLog($sqlstring);
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		my $groupid = trim($row{'pipeline_groupid'});
 		
 		if ($groupid ne '') {
 			my $sqlstringA = "select group_name from groups where group_id in ($groupid)";
-			WriteLog($sqlstringA);
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+			#WriteLog($sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			if ($resultA->numrows > 0) {
 				while (my %rowA = $resultA->fetchhash) {
 					my $groupname = trim($rowA{'group_name'});
-					WriteLog("Pushing $groupname onto @grouplist");
+					#WriteLog("Pushing $groupname onto @grouplist");
 					push(@grouplist,$groupname);
 				}
 			}
@@ -1222,8 +1260,7 @@ sub GetUIDStudyNumListByGroup() {
 	
 	# get list of groups associated with this pipeline
 	my $sqlstring = "select concat(uid,cast(study_num as char)) 'uidstudynum' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = (select group_id from groups where group_name = '$group') group by d.uid order by d.uid,b.study_num";
-	#WriteLog($sqlstring);
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			my $uidstudynum = trim($row{'uidstudynum'});
@@ -1250,8 +1287,7 @@ sub GetData() {
 	
 	# get list of series for this study
 	my $sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
-	#WriteLog($sqlstring);
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("Found " . $result->numrows . " studies matching studyid [$studyid]");
 		$datalog .= "Found " . $result->numrows . " studies matching studyid [$studyid]\n";
@@ -1299,17 +1335,14 @@ sub GetData() {
 					$modality = lc($modality);
 					# make sure the requested modality table exists
 					$sqlstring = "show tables like '$modality"."_series'";
-					#WriteLog($sqlstring);
-					my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($result->numrows > 0) {
 					
 						# get a list of series satisfying the search criteria, if it exists
 						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols)) and image_type like '%$imagetype%'";
-						#$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc = '$protocol' or series_protocol = '$protocol') and image_type like '%$imagetype%'";
 						WriteLog($sqlstring);
 						$datalog .= "[$sqlstring]\n";
-						#$datalog .= "Searching for data using SQL [$sqlstring]\n";
-						my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						if ($result->numrows < 1) {
 							$datalog .= "This study did NOT contain step [$i]: [$protocol] [$modality] [$imagetype]\n";
 							WriteLog("This study did NOT contain step [$i]: [$protocol] [$modality] [$imagetype]");
@@ -1369,17 +1402,14 @@ sub GetData() {
 					$modality = lc($modality);
 					# make sure the requested modality table exists
 					$sqlstring = "show tables like '$modality"."_series'";
-					#WriteLog($sqlstring);
-					my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($result->numrows > 0) {
 					
 						# get a list of series satisfying the search criteria, if it exists
 						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
-						#$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc = '$protocol' or series_protocol = '$protocol') and image_type like '%$imagetype%'";
-						#$datalog .= "[$sqlstring]\n";
 						WriteLog($sqlstring);
 						$datalog .= "[$sqlstring]\n";
-						my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						if ($result->numrows > 0) {
 							WriteLog("This study contained step [$i]: [$protocol] [$modality] [$imagetype]");
 							$datalog .= "This study contained [$protocol]\n";
@@ -1449,8 +1479,7 @@ sub GetData() {
 				$modality = lc($modality);
 				# make sure the requested modality table exists
 				$sqlstring = "show tables like '$modality"."_series'";
-				#WriteLog($sqlstring);
-				my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 				
 					# get a list of series satisfying the search criteria, if it exists
@@ -1482,7 +1511,7 @@ sub GetData() {
 						WriteLog("This data step is ASSOCIATED [$protocol], association type [$assoctype]");
 						# get the subject ID and study type, based on the current study ID
 						my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
-						my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						WriteLog($sqlstringA);
 						if ($resultA->numrows > 0) {
 							my %rowA = $resultA->fetchhash;
@@ -1511,24 +1540,13 @@ sub GetData() {
 					}
 					WriteLog($sqlstring);
 					my $newseriesnum = 1;
-					my $resultC = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {
 					
 						WriteLog("Found " . $resultC->numrows . " matching associated series");
 						$datalog .= "$type data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
 						# in theory, data for this analysis exists for this study, so lets now create the analysis directory
 						MakePath($analysispath);
-						#mkpath($analysispath, {mode => 0777, error => \my $err});
-						#if (@$err) {
-						#	for my $diag (@$err) {
-						#		my ($file, $message) = %$diag;
-						#		if ($file eq '') { print "general error creating [$analysispath]: $message\n"; }
-						#		else { print "problem unlinking $file: $message\n"; }
-						#	}
-						#}
-						#else { print "No error encountered when creating [$analysispath]\n"; }						
-						#chmod(0777,$analysispath);
-					
 						while (my %rowC = $resultC->fetchhash) {
 							$numdownloaded = $numdownloaded+1;
 							my $localstudynum;
@@ -1635,10 +1653,6 @@ sub GetData() {
 							WriteLog("Done writing data to $newanalysispath");
 							
 							$datalog .= "Done writing data to $newanalysispath\n";
-							# update the DB to record which data was downloaded
-							#my $sqlstringA = "insert into analysis_data (analysis_id, data_id, modality) values ($analysisid, $seriesid, '$modality')";
-							#WriteLog($sqlstringA);
-							#my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
 						}
 					}
 					else {
@@ -1677,7 +1691,7 @@ sub GetPipelineList() {
 	
 	# get list of enabled pipelines
 	my $sqlstring = "select * from pipelines where pipeline_enabled = 1 order by pipeline_createdate asc";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my @list;
 		while (my %row = $result->fetchhash) {
@@ -1700,6 +1714,9 @@ sub GetPipelineList() {
 sub GetStudyToDoList() {
 	my ($pipelineid, $modality, $depend, $groupids) = @_;
 
+	# make the WriteLog()s happy:
+	$groupids = $groupids . "";
+	$modality = $modality . "";
 	WriteLog("In GetStudyToDoList($pipelineid, $modality, $depend, $groupids). This step simply checks for studies that have not already been flagged as being 'checked'");
 	# connect to the database
 	DatabaseConnect();
@@ -1748,8 +1765,8 @@ sub GetStudyToDoList() {
 			my $studyid = $row->{study_id};
 			
 			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid";
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
-			WriteLog($sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			#WriteLog($sqlstringA);
 			my %rowA = $resultA->fetchhash;
 			my $uid = $rowA{'uid'};
 			my $studynum = $rowA{'study_num'};
@@ -1791,8 +1808,7 @@ sub GetPipelineDataDef() {
 	
 	# get data definition
 	my $sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = $pipelineversion order by pdd_type, pdd_order asc";
-	#WriteLog($sqlstring);
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my @list;
 		while (my %row = $result->fetchhash) {
@@ -1838,7 +1854,7 @@ sub GetPipelineSteps() {
 	
 	# get data definition
 	my $sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion order by ps_order asc";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my @list;
 		while (my %row = $result->fetchhash) {
@@ -1872,7 +1888,7 @@ sub IsPipelineEnabled() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "select * from pipelines where pipeline_id = $pid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		if ($row{'pipeline_enabled'}) {
@@ -1894,10 +1910,7 @@ sub SetPipelineStopped() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "update pipelines set pipeline_status = 'stopped', pipeline_lastfinish = now() where pipeline_id = '$pid'";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-	
-	#$sqlstring = "update pipeline_status set pipelinestatus_stoptime = now(), pipelinestatus_status = 'complete' where pipeline_id = '$pid' and pipeline_modulerunnum = $newrunnum";
-	#$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 
@@ -1911,7 +1924,7 @@ sub SetPipelineTestingOff() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "update pipelines set pipeline_testing = 0, pipeline_status = 'stopped', pipeline_lastfinish = now() where pipeline_id = $pid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 
@@ -1925,7 +1938,7 @@ sub SetPipelineDisabled() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $pid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 
@@ -1939,7 +1952,7 @@ sub SetPipelineRunning() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "update pipelines set pipeline_status = 'running', pipeline_laststart = now() where pipeline_id = $pid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 
@@ -1953,10 +1966,7 @@ sub SetPipelineStatusMessage() {
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
 	my $sqlstring = "update pipelines set pipeline_statusmessage = '$msg' where pipeline_id = '$pid'";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-	
-	#$sqlstring = "update pipeline_status set pipelinestatus_result = concat(pipelinestatus_result,'$msg\n') where pipeline_id = '$pid' and pipeline_modulerunnum = $newrunnum";
-	#$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 

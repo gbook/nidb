@@ -43,6 +43,9 @@ sub LoadConfig {
 	elsif (-e '../programs/nidb.cfg') {
 		$file = '../programs/nidb.cfg';
 	}
+	elsif (-e '/home/nidb/programs/nidb.cfg') {
+		$file = '/home/nidb/programs/nidb.cfg';
+	}
 	elsif (-e '/nidb/programs/nidb.cfg') {
 		$file = '/nidb/programs/nidb.cfg';
 	}
@@ -467,6 +470,8 @@ sub WriteLog {
 			print $log "[" . CreateCurrentDate() . "][pid $$] $msg\n";
 		}
 	}
+	
+	return $msg;
 }
 
 
@@ -475,12 +480,22 @@ sub WriteLog {
 # ----------------------------------------------------------
 sub AppendLog {
 	my ($f,$msg) = @_;
-
-	$msg = "[" . CreateCurrentDate() . "] $msg\n";
 	
-	open (F, ">> $f");
-	print $msg;
+	open (F, ">>", $f) || WriteLog("Could not open [$f] for appending. Could not write [$msg]");
+	print F "[" . CreateCurrentDate() . "][pid $$] $msg\n";
 	close(F);
+}
+
+
+# ----------------------------------------------------------
+# --------- SQLQuery ---------------------------------------
+# ----------------------------------------------------------
+sub SQLQuery {
+	my ($sql,$F,$L) = @_;
+	
+	my $result = $db->query($sql) || SQLError("[File: $F Line: $L]" . $db->errmsg(),$sql);
+
+	return $result;
 }
 
 
@@ -492,8 +507,8 @@ sub Error {
 	
 	WriteLog("FATAL ERROR: $error");
 
-	SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error", "The following error occurred: $error");
-	SendHTMLEmail($cfg{'adminemail'}, "$scriptname Fatal Error", "The following error occurred: $error");
+	SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	SendHTMLEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
 	
 	exit(0);
 }

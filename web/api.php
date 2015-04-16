@@ -328,6 +328,7 @@
 					$numfilestotal++;
 					$filemd5 = "";
 					$filesize = 0;
+					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
 						//echo "RECEIVED $name\n";
 						$numfilessuccess++;
@@ -339,7 +340,7 @@
 						$success = 1;
 					}
 					else {
-						echo "ERROR $name\n";
+						echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 						$success = 0;
 					}
 					

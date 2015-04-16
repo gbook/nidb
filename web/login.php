@@ -306,7 +306,7 @@
 									<ul>
 										<li><b>Share data on olinnidb.org</b> <span style="font-size:8pt">Data hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> at <a href="http://www.harthosp.org">Hartford Hospital</a></span>
 										<li><b>Use NiDB as a primary database</b> <span style="font-size:8pt">Commercial hosting provided by <a href="http://neuroinfodb.com">NeuroInfoDB.com LLC</a></span>
-										<li><b>Obtain NiDB source code</b> <span style="font-size:8pt">Run NiDB on your own servers. Source currently being migrated to <a href="https://github.com/NeuroInfoDB/nidb">github</a></span>
+										<li><b>Obtain NiDB source code</b> <span style="font-size:8pt">Run NiDB on your own servers. Source currently being migrated to <a href="https://github.com/gbook/nidb">github</a></span>
 									</ul>
 									</span>
 								</td>
