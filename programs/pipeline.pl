@@ -212,7 +212,6 @@ sub ProcessPipelines() {
 					next PIPELINE;
 				}
 				@datadef = @$dd;
-				#print Dumper(@datadef);
 			}
 		}
 
@@ -234,8 +233,6 @@ sub ProcessPipelines() {
 		
 		# determine which analysis level this is
 		if ($pipelinelevel == 0) {
-			#$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
-			
 			# check if this module should be running now or not
 			$sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
 			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -281,19 +278,16 @@ sub ProcessPipelines() {
 			$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values ($pid,$pipelineversion,'','','processing',now())";
 			#WriteLog($sqlstring);
 			AppendLog($setuplog, $sqlstring);
-			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			my $analysisRowID = $result->insertid;
 			
 			# create the SGE job file
-			#my $pseudoanalysispath = $analysispath;
-			#$pseudoanalysispath =~ s/\/mount//;
 			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, @pipelinesteps);
 		
 			$systemstring = "chmod -Rf 777 $analysispath";
 			WriteLog("[$systemstring]");
 			`$systemstring 2>&1`;
 			
-			#WriteLog($sgebatchfile);
 			# submit the SGE job
 			if (-d $analysispath) {
 				WriteLog("[$analysispath] exists!");
@@ -306,7 +300,6 @@ sub ProcessPipelines() {
 			chmod(0777,$analysispath);
 			
 			# submit the sucker to the cluster
-			#$systemstring = "/sge/sge-root/bin/lx24-amd64/./qsub -u onrc -q $pipelinequeue \"$analysispath/sge.job\"";
 			$systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$analysispath/sge.job\"";
 			my $sgeresult = `$systemstring 2>&1`;
 			print "SGE submit result [$sgeresult]\n";
@@ -318,9 +311,8 @@ sub ProcessPipelines() {
 			AppendLog($setuplog, $sgeresult);
 			
 			$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
-			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
-			#$numsubmitted = $numsubmitted + 1;
 			$jobsWereSubmitted = 1;
 		}
 		# ======================= LEVEL 1 =======================
@@ -343,7 +335,7 @@ sub ProcessPipelines() {
 			my @deps = split(',', $pipelinedependency);
 			foreach my $pipelinedep(@deps) {
 				# --- first level pipeline ---
-				WriteLog("Calling GetStudyToDoList($pid, " . $datadef[0]{'modality'} . ", $pipelinedep, $pipelinegroupids)");
+				#WriteLog("Calling GetStudyToDoList($pid, " . $datadef[0]{'modality'} . ", $pipelinedep, $pipelinegroupids)");
 				my @studyids = GetStudyToDoList($pid, $datadef[0]{'modality'}, $pipelinedep, $pipelinegroupids);
 				
 				my $numsubmitted = 0;
@@ -386,7 +378,7 @@ sub ProcessPipelines() {
 					# check if the analysis has an entry in the analysis table
 					my $sqlstring = "select * from analysis where pipeline_id = $pid and study_id = $sid";
 					WriteLog($sqlstring);
-					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					my %row = $result->fetchhash;
 					my $r = 0;
 					my $analysisRowID = trim($row{'analysis_id'});
@@ -397,7 +389,6 @@ sub ProcessPipelines() {
 					if (($rerunresults eq "1") || ($analysisRowID eq "")) {
 						SetPipelineStatusMessage($pid, "Checking analysis $r of " . $result->numrows);
 						$r++;
-						#print "9\n";
 						# insert a temporary row, to be updated later, in the analysis table as a placeholder
 						# so that no other processes end up running it
 						if ($analysisRowID eq "") {
@@ -437,48 +428,53 @@ sub ProcessPipelines() {
 							my $studynum_nearest = $rowA{'study_num'};
 							
 							my $deppath;
-							if ($deplevel eq "subject") {
-								WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
-								$setuplog .= "Dependency is a subject level (will match dep for same subject, any study)\n";
-								$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
+							if (($pipelinedep != 0) && ($pipelinedep ne "")) {
+								if ($deplevel eq "subject") {
+									WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
+									$setuplog .= "Dependency is a subject level (will match dep for same subject, any study)\n";
+									$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
+								}
+								else {
+									WriteLog("Dependency is a study level (will match dep for same subject, same study)");
+									$setuplog .= "Dependency is a study level (will match dep for same subject, same study)";
+									$deppath = "$pipelinedirectory/$uid/$studynum";
+									
+									# check if this study actually has this dependency
+									my $sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep'";
+									my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+									if ($resultB->numrows < 1) {
+										# this study has no dependencies within the same study
+										my $datalog2 = EscapeMySQLString($setuplog);
+										my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'NoMatchingStudyDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+										my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+										next;
+									}
+									
+									# check if the dependency is complete
+									$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_status = 'complete'";
+									$resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+									if ($resultB->numrows < 1) {
+										# this study has no dependencies within the same study
+										my $datalog2 = EscapeMySQLString($setuplog);
+										my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'IncompleteDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+										my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+										next;
+									}
+									
+									# check if the dependency is not bad
+									$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_isbad <> 1";
+									$resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+									if ($resultB->numrows < 1) {
+										# this study has no dependencies within the same study
+										my $datalog2 = EscapeMySQLString($setuplog);
+										my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'BadDependency', analysis_startdate = null where analysis_id = $analysisRowID";
+										my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+										next;
+									}
+								}
 							}
 							else {
-								WriteLog("Dependency is a study level (will match dep for same subject, same study)");
-								$setuplog .= "Dependency is a study level (will match dep for same subject, same study)";
-								$deppath = "$pipelinedirectory/$uid/$studynum";
 								
-								# check if this study actually has this dependency
-								my $sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep'";
-								my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
-								if ($resultB->numrows < 1) {
-									# this study has no dependencies within the same study
-									my $datalog2 = EscapeMySQLString($datalog);
-									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'NoMatchingStudyDependency', analysis_startdate = null where analysis_id = $analysisRowID";
-									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
-									next;
-								}
-								
-								# check if the dependency is complete
-								$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_status = 'complete'";
-								my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
-								if ($resultB->numrows < 1) {
-									# this study has no dependencies within the same study
-									my $datalog2 = EscapeMySQLString($datalog);
-									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'IncompleteDependency', analysis_startdate = null where analysis_id = $analysisRowID";
-									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
-									next;
-								}
-								
-								# check if the dependency is not bad
-								$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_isbad <> 1";
-								my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
-								if ($resultB->numrows < 1) {
-									# this study has no dependencies within the same study
-									my $datalog2 = EscapeMySQLString($datalog);
-									my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = 'BadDependency', analysis_startdate = null where analysis_id = $analysisRowID";
-									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
-									next;
-								}
 							}
 							WriteLog("Dependency path is [$deppath]");
 							$setuplog .= "Dependency path is [$deppath]\n";
@@ -661,12 +657,6 @@ sub ProcessPipelines() {
 					if (($numchecked%1000) == 0) {
 						WriteLog("$numchecked studies checked");
 					}
-					#if (($numsubmitted >=10) && ($testing)) {
-					#	WriteLog("10 jobs submitted, testing complete. Exiting module");
-					#	SetPipelineStopped($pid, $newrunnum);
-					#	SetModuleStopped();
-					#	return 1;
-					#}
 				}
 			}
 		}
@@ -720,14 +710,7 @@ sub ProcessPipelines() {
 					}
 				}
 				
-				# create the groupanalysis directory
-				#if ($pipelinedirectory eq '') {
-				#	$pipelinedirectory = $cfg{'groupanalysisdir'};
-				#}
-				#else {
-				#	$pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory;
-				#}
-				
+				# build the path
 				if ($pipelinedirectory eq "") {
 					$pipelinedirectory = $cfg{'groupanalysisdir'};
 					$realpipelinedirectory = $pipelinedirectory;
@@ -751,16 +734,13 @@ sub ProcessPipelines() {
 				$pseudogroupanalysispath = $groupanalysispath;
 				$pseudogroupanalysispath =~ s/\/mount//;
 
-				#WriteLog(`mkdir -p $groupanalysispath/pipeline`);
 				MakePath("$groupanalysispath/pipeline");
-				#mkdir("$realanalysispath/pipeline");
 				chmod(0777,"$groupanalysispath/pipeline");
 				
 				# check if the groupanalysis has an entry in the analysis_group table
 				my $sqlstring = "select * from analysis where pipeline_id = $pid and pipeline_version = $pipelineversion";
 				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows < 1) {
-					#print "9\n";
 					# insert a temporary row, to be updated later, in the analysis_group table as a placeholder
 					# so that no other processes end up running it
 					$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, analysis_status, analysis_startdate) values ($pid,$pipelineversion,$pipelinedep,'processing',now())";
@@ -774,7 +754,7 @@ sub ProcessPipelines() {
 				
 				# loop through the groups
 				$sqlstring = "select * from groups where group_id in ($pipelinegroupids)";
-				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 					while (my %row = $result->fetchhash) {
 						my $groupname = $row{'group_name'};
@@ -783,7 +763,6 @@ sub ProcessPipelines() {
 						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						WriteLog($sqlstringA);
-						#AppendLog($setuplog, $sqlstringA);
 						my @studyids = ();
 						if ($resultA->numrows > 0) {
 							while (my %rowA = $resultA->fetchhash) {
@@ -793,11 +772,9 @@ sub ProcessPipelines() {
 						}
 						else {
 							WriteLog("No studies found [$sqlstringA]");
-							#AppendLog($setuplog, "No studies found [$sqlstringA]");
 							SetPipelineStatusMessage($pid, "No studies found (Maybe 1st/2nd level group mismatch?)");
 							SetPipelineStopped($pid, $newrunnum);
 							SetModuleStopped();
-							#$jobsWereSubmitted = 1;
 							next PIPELINE;
 						}
 
@@ -823,7 +800,6 @@ sub ProcessPipelines() {
 								$studypath = "$pipelinedirectory/$uid/$studynum";
 								WriteLog("$analysispath");
 								
-								#WriteLog(`mkdir -p $pipelinedirectory/$pipelinename/$groupname/$dependencyname`);
 								MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname");
 								# create hard link in the analysis directory
 								my $systemstring;
@@ -837,7 +813,6 @@ sub ProcessPipelines() {
 								my $cpresults = `$systemstring 2>&1`;
 								if (($cpresults =~ /cannot stat/) || ($cpresults =~ /No such file or/) || ($cpresults =~ /error/)) {
 									WriteLog($cpresults);
-									#AppendLog($setuplog, $cpresults);
 								}
 								WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . $cpresults);
 							}
@@ -847,7 +822,7 @@ sub ProcessPipelines() {
 			}
 
 			$sqlstring = "select date_format(now(),'%Y%m%d_%H%i%s') 'studydatetime'";
-			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			%row = $result->fetchhash;
 			my $studydatetime = $row{'studydatetime'};
 				
@@ -875,7 +850,6 @@ sub ProcessPipelines() {
 			my $jobid = $parts[2];
 			WriteLog(join('|',@parts));
 			WriteLog("[$systemstring]: " . $sgeresult);
-			#AppendLog($setuplog, $sgeresult);
 			
 			if ($sgeresult =~ /error/) {
 				$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'error', analysis_statusmessage = 'Error submitting to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
@@ -884,7 +858,7 @@ sub ProcessPipelines() {
 				$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
 			}
 			$jobsWereSubmitted = 1;
-			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			# check if this module should be running now or not
 			if (!ModuleCheckIfActive($scriptname, $db)) {
@@ -900,11 +874,6 @@ sub ProcessPipelines() {
 		else {
 			WriteLog("Pipeline level invalid");
 		}
-
-		# if we're just testing, we'd want this pipeline to be disabled after the 10 analyses are run
-		#if ($testing) {
-		#	SetPipelineTestingOff($pid);
-		#}
 		
 		print "Done with pipeline [$pid] - [$pipelinename]\n";
 		WriteLog("Done with pipeline [$pid] - [$pipelinename]");
@@ -917,13 +886,11 @@ sub ProcessPipelines() {
 			return 1;
 		}
 	}
+	
+	# end the module and return the code
 	SetModuleStopped();
-	if ($jobsWereSubmitted) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
+	if ($jobsWereSubmitted) { return 1; }
+	else { return 0; }
 }
 
 
@@ -951,11 +918,10 @@ sub IsQueueFilled() {
 	# find out how many processes are allowed to run
 	my $numprocallowed = 0;
 	$sqlstring = "select pipeline_enabled, pipeline_numproc from pipelines where pipeline_id = $pid";
-	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$numprocallowed = $row{'pipeline_numproc'};
-		#$enabled = $row{'pipeline_enabled'};
 	}
 	
 	# find out how many processes are actually running
@@ -966,8 +932,6 @@ sub IsQueueFilled() {
 		my %row = $result->fetchhash;
 		$numprocrunning = $row{'count'};
 	}
-	
-	#print "Processing: $numprocrunning, Allowed: $numprocallowed\n";
 	
 	if ($numprocrunning >= $numprocallowed) {
 		return 1;
@@ -1488,23 +1452,18 @@ sub GetData() {
 						$datalog .= "This data step is PRIMARY [$protocol] criteria: [$criteria]\n";
 						if ($criteria eq 'first') {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
-							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc = '$protocol' and image_type like '%$imagetype%' order by series_num asc limit 1";
 						}
 						elsif ($criteria eq 'last') {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num desc limit 1";
-							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc = '$protocol' and image_type like '%$imagetype%' order by series_num desc limit 1";
 						}
 						elsif ($criteria eq 'largestsize') {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
-							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc = '$protocol' and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
 						}
 						elsif ($criteria eq 'smallestsize') {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
-							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc = '$protocol' and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
 						}
 						else {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc";
-							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc = '$protocol' and image_type like '%$imagetype%' order by series_num asc";
 						}
 					}
 					else {
@@ -1992,9 +1951,7 @@ sub ConvertDicom() {
 	#my $outdir;
 	my $fileext;
 	
-	#mkpath($outdir, {mode => 0777});
-	# delete any files that may already be in the output directory.. example, an incomplete series was put in the output directory
-	# remove any stuff and start from scratch to ensure proper file numbering
+	# delete any files that may already be in the output directory.. example, an incomplete series was put in the output directory. Remove any stuff and start from scratch to ensure proper file numbering
 	if (($outdir ne "") && ($outdir ne "/") ) {
 		my $systemstring1 = `rm --preserve-root -f $outdir/*.hdr $outdir/*.img $outdir/*.nii $outdir/*.gz`;
 		WriteLog("Running [$systemstring1]");

@@ -83,7 +83,7 @@ else {
 	$log->autoflush;
 	my $x = DoParse();
 	close $log;
-	if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
+	#if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
 	print "Done. Deleting $lockfile\n";
 	unlink $lockfile;
 }

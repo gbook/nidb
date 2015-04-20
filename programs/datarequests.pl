@@ -37,7 +37,7 @@ use Mysql;
 use Image::ExifTool;
 use Net::SMTP::TLS;
 use File::Find;
-use File::Path;
+use File::Path qw(make_path remove_tree rmtree);
 use Switch;
 use Sort::Naturally;
 use Date::Parse;
@@ -117,7 +117,7 @@ sub ProcessDataRequests {
 	my %serieswritten = ();
 	my $headerwritten = 0;
 	my $req_destinationtype;
-	my $publicdownloadid;
+	my $publicdownloadid = 0;
 	my $groupid = 0;
 	
 	# loop through all groups of data requests. each request in a group should have the same the modality
@@ -162,7 +162,7 @@ sub ProcessDataRequests {
 			}
 			
 			# needed to know the modality before we can get the actual series information
-			$sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
+			$sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.subject_id, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
 			WriteLog("$sqlstringA");
 			$resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
 			my $currentstudyid;
@@ -208,6 +208,7 @@ sub ProcessDataRequests {
 				my $series_num = $rowA{'series_num'};
 				my $data_type = $rowA{'data_type'};
 				my $uid = $rowA{'uid'};
+				my $subjectid = $rowA{'subject_id'};
 				my $uuid = $rowA{'uuid2'};
 				my $sha1name = $rowA{'sha1name'};
 				my $sha1dob = $rowA{'sha1dob'};
@@ -268,14 +269,34 @@ sub ProcessDataRequests {
 					case "shortid" { $newdir = $uid . $study_num; }
 					case "longid" { $newdir = $uid . "_$project_costcenter" . "_$study_num"; }
 					case "longitudinal" { $newdir = "$uid/time$req_timepoint"; }
+					case "altuid" {
+						# get the primary (or first) alternate UID
+						$sqlstringB = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc limit 1";
+						my $resultB = $db->query($sqlstringB) || SQLError($sqlstringB, $db->errmsg());
+						my %rowB = $resultB->fetchhash;
+						my $altuid = trim($rowB{'altuid'});
+						if ($altuid eq "") { $altuid = $uid; }
+						
+						$newdir = $altuid;
+					}
 				}
 				#WriteLog('E');
 
 				# create the new series number
-				if ($req_preserveseries) {
+				if ($req_preserveseries == 1) {
 					$newseriesnum = $series_num;
 				}
-				else {
+				if ($req_preserveseries == 2) {
+					# get the protocol name to be used in place of the series number
+					my $sqlstringC = "select series_desc from $modality" . "_series where $modality" . "series_id = $series_id";
+					WriteLog($sqlstringC);
+					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringB, $db->errmsg());
+					my %rowC = $resultC->fetchhash;
+					$newseriesnum = trim($rowC{'series_desc'});
+					WriteLog("NewSeriesNum: [$newseriesnum]");
+					$newseriesnum =~ s/ /\_/gi;
+				}
+				if ($req_preserveseries == 0) {
 					WriteLog("current: $currentstudyid... last: $laststudyid");
 					if ($laststudyid ne $currentstudyid) {
 						$newseriesnum = 1;
@@ -288,63 +309,7 @@ sub ProcessDataRequests {
 				#WriteLog('F');
 			
 				# determine what the actual export directory should be
-				switch ($req_destinationtype) {
-					case "localftp" {
-						$fullexportdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum";
-						$qcoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum/qa";
-						switch ($req_behformat) {
-							case "behroot" { $behoutdir = "$cfg{'ftpdir'}/$newdir"; }
-							case "behrootdir" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$req_behdirrootname"; }
-							case "behseries" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum"; }
-							case "behseriesdir" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum/$req_behdirseriesname"; }
-							else { $behoutdir = "$cfg{'ftpdir'}/$newdir"; }
-						}
-					}
-					case "web" {
-						$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
-						$qcoutdir = "$tmpwebdir/$newdir/$newseriesnum/qa";
-						switch ($req_behformat) {
-							case "behroot" { $behoutdir = "$tmpwebdir/$newdir"; }
-							case "behrootdir" { $behoutdir = "$tmpwebdir/$newdir/$req_behdirrootname"; }
-							case "behseries" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum"; }
-							case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
-							else { $behoutdir = "$tmpwebdir/$newdir"; }
-						}
-					}
-					case "publicdownload" {
-						$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
-						$qcoutdir = "$tmpwebdir/$newdir/$newseriesnum/qa";
-						switch ($req_behformat) {
-							case "behroot" { $behoutdir = "$tmpwebdir/$newdir"; }
-							case "behrootdir" { $behoutdir = "$tmpwebdir/$newdir/$req_behdirrootname"; }
-							case "behseries" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum"; }
-							case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
-							else { $behoutdir = "$tmpwebdir/$newdir"; }
-						}
-					}
-					case "nfs" {
-						$fullexportdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum";
-						$qcoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum/qa";
-						switch ($req_behformat) {
-							case "behroot" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir"; }
-							case "behrootdir" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$req_behdirrootname"; }
-							case "behseries" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum"; }
-							case "behseriesdir" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
-							else { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir"; }
-						}
-					}
-					case "remoteftp" {
-						$fullexportdir = "$req_nfsdir/$newdir/$newseriesnum";
-						$qcoutdir = "$req_nfsdir/$newdir/$newseriesnum/qa";
-						switch ($req_behformat) {
-							case "behroot" { $behoutdir = "$req_nfsdir/$newdir"; }
-							case "behrootdir" { $behoutdir = "$req_nfsdir/$newdir/$req_behdirrootname"; }
-							case "behseries" { $behoutdir = "$req_nfsdir/$newdir/$newseriesnum"; }
-							case "behseriesdir" { $behoutdir = "$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
-							else { $behoutdir = "$req_nfsdir/$newdir"; }
-						}
-					}
-				}
+				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir);
 
 				my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
@@ -357,7 +322,7 @@ sub ProcessDataRequests {
 					# try to create the path
 					if (!-d $fullexportdir) {
 						WriteLog("Point 1");
-						if (!mkpath($fullexportdir, {mode => 0777})) {
+						if (!MakePath($fullexportdir)) {
 							$newstatus = "problem";
 							$results = "$fullexportdir not created. Check permissions on destination directory.";
 						}
@@ -393,7 +358,7 @@ sub ProcessDataRequests {
 							}
 							else {
 								$tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-								mkpath($tmpdir, {mode => 0777});
+								MakePath($tmpdir);
 								WriteLog("Point 2");
 							
 								WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num)");
@@ -409,7 +374,7 @@ sub ProcessDataRequests {
 						
 						# copy the beh data
 						if ($req_downloadbeh) {
-							mkpath($behoutdir, {mode => 0777});
+							MakePath($behoutdir);
 							$systemstring = "cp -R $behindir/* $behoutdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							
@@ -419,7 +384,7 @@ sub ProcessDataRequests {
 						
 						# copy the QC data
 						if ($req_downloadqc) {
-							mkpath($qcoutdir, {mode => 0777});
+							MakePath($qcoutdir);
 							$systemstring = "cp -R $qcindir/* $qcoutdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							
@@ -478,7 +443,7 @@ sub ProcessDataRequests {
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/dicom";
 					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 					my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-					mkpath($tmpdir, {mode => 0777});
+					MakePath($tmpdir);
 					$systemstring = "cp $indir/* $tmpdir/";
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 					Anonymize($tmpdir,4,uc($sha1name),uc($sha1dob));
@@ -544,7 +509,7 @@ sub ProcessDataRequests {
 					# try to create the path
 					if (!-d $fullexportdir) {
 						WriteLog("Point 1");
-						if (!mkpath($fullexportdir, {mode => 0777})) {
+						if (!MakePath($fullexportdir)) {
 							$newstatus = "problem";
 							$results = "$fullexportdir not created. Check permissions on destination directory.";
 						}
@@ -597,7 +562,7 @@ sub ProcessDataRequests {
 					# try to create the path
 					if (!-d $fullexportdir) {
 						WriteLog("Point 1");
-						if (!mkpath($fullexportdir, {mode => 0777})) {
+						if (!MakePath($fullexportdir)) {
 							$newstatus = "problem";
 							$results = "$fullexportdir not created. Check permissions on destination directory.";
 						}
@@ -609,7 +574,7 @@ sub ProcessDataRequests {
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 					
 						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-						mkpath($tmpdir, {mode => 0777});
+						MakePath($tmpdir);
 						if ($modality eq "mr") {
 							$systemstring = "find $indir -iname '*.dcm' -exec cp -v {} $tmpdir \\;";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -778,6 +743,78 @@ sub ProcessDataRequests {
 
 
 # ----------------------------------------------------------
+# --------- GetOutputDirectories ---------------------------
+# ----------------------------------------------------------
+sub GetOutputDirectories() {
+	my ($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir) = @_;
+	
+	my $fullexportdir;
+	my $qcoutdir;
+	my $behoutdir;
+	
+	switch ($req_destinationtype) {
+		case "localftp" {
+			$fullexportdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum";
+			$qcoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$cfg{'ftpdir'}/$newdir"; }
+				case "behrootdir" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$cfg{'ftpdir'}/$newdir"; }
+			}
+		}
+		case "web" {
+			$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
+			$qcoutdir = "$tmpwebdir/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$tmpwebdir/$newdir"; }
+				case "behrootdir" { $behoutdir = "$tmpwebdir/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$tmpwebdir/$newdir"; }
+			}
+		}
+		case "publicdownload" {
+			$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
+			$qcoutdir = "$tmpwebdir/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$tmpwebdir/$newdir"; }
+				case "behrootdir" { $behoutdir = "$tmpwebdir/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$tmpwebdir/$newdir"; }
+			}
+		}
+		case "nfs" {
+			$fullexportdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum";
+			$qcoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir"; }
+				case "behrootdir" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir"; }
+			}
+		}
+		case "remoteftp" {
+			$fullexportdir = "$req_nfsdir/$newdir/$newseriesnum";
+			$qcoutdir = "$req_nfsdir/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$req_nfsdir/$newdir"; }
+				case "behrootdir" { $behoutdir = "$req_nfsdir/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$req_nfsdir/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$req_nfsdir/$newdir"; }
+			}
+		}
+	}
+	
+	return ($fullexportdir, $behoutdir, $qcoutdir);
+}
+
+
+# ----------------------------------------------------------
 # --------- SendToRemoteFTP --------------------------------
 # ----------------------------------------------------------
 sub SendToRemoteFTP() {
@@ -786,7 +823,7 @@ sub SendToRemoteFTP() {
 	my $origDir = getcwd;
 	my $systemstring;
 	my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-	mkpath($tmpdir, {mode => 0777});
+	MakePath($tmpdir);
 
 	if (!$req_behonly) {
 		if ($data_type ne "dicom") {
@@ -802,7 +839,7 @@ sub SendToRemoteFTP() {
 	# copy the beh data
 	if ($req_behformat ne "behnone") {
 		unless(-d "$tmpdir$behoutdir"){
-			mkpath("$tmpdir$behoutdir", {mode => 0777}) or die ("Could not create $tmpdir$behoutdir because [$!]");
+			MakePath("$tmpdir$behoutdir") or die ("Could not create $tmpdir$behoutdir because [$!]");
 		}
 		$systemstring = "cp -R $behindir/* $tmpdir$behoutdir";
 		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -977,7 +1014,7 @@ sub ConvertDicom() {
 	
 	WriteLog("Systemstring: $systemstring");
 
-	mkpath($outdir, {mode => 0777});
+	MakePath($outdir);
 	# delete any files that may already be in the output directory.. example, an incomplete series was put in the output directory
 	# remove any stuff and start from scratch to ensure proper file numbering
 	if (($outdir ne "") && ($outdir ne "/") ) {
@@ -1153,10 +1190,6 @@ sub WriteNDARHeader() {
 	
 		print F "eeg_sub_files,1\n";
 		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,capused,ofc,experiment_id,experiment_notes,experiment_terminated,experiment_validity,data_behavioralperformance_acc,data_behavioralperformance_rt,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type,data_includedtrials,data_validity\n";
-	
-		# old method of EEG upload
-		#print F "eeg_subjectexp,1\n";
-		#print F "subjectkey,src_subject_id,interview_date,interview_age,gender,eeg_expcondid,comments_misc,capused,ofc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_validity,data_includedtrials,data_behavioralperformance_rt,data_behavioralperformance_acc,data_physiologyfile,data_physiologyfile_notes,data_physiologyfile2,data_physiologyfile_notes2\n";
 	}
 	
 	close(F);

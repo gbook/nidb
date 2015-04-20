@@ -650,11 +650,21 @@ sub MakePath {
 	if (@$err) {
 		for my $diag (@$err) {
 			my ($file, $message) = %$diag;
-			if ($file eq '') { print "general error creating [$p]: $message\n"; }
-			else { print "problem unlinking $file: $message\n"; }
+			if ($file eq '') {
+				print "general error creating [$p]: $message\n";
+				WriteLog("general error creating [$p]: $message");
+			}
+			else {
+				print "problem unlinking $file: $message\n";
+				WriteLog("problem unlinking $file: $message");
+			}
 		}
+		return 0;
 	}
-	else { print "No error encountered when creating [$p]\n"; }						
+	else {
+		print "No error encountered when creating [$p]\n";
+		return 1;
+	}
 }
 
 # must return 1 for this file to be included correctly
