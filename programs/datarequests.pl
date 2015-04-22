@@ -334,6 +334,7 @@ sub ProcessDataRequests {
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						
 						my $tmpdir;
+						$tmpdir = "";
 						if ($req_downloadimaging) {
 							WriteLog("Download Imaging option selected");
 							# output the correct file type
@@ -430,7 +431,7 @@ sub ProcessDataRequests {
 						
 						$newstatus = "complete";
 						#$results = "$results";
-						if ($tmpdir ne "") {
+						if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
 							rmtree($tmpdir);
 						}
 					}
@@ -697,6 +698,7 @@ sub ProcessDataRequests {
 			WriteLog("Changing directory to [$pwd]");
 			chdir($pwd);
 			$systemstring = "unzip -vl $zipfile";
+			WriteLog("Running [$systemstring]");
 			my $filecontents = `$systemstring`;
 			my @lines = split(/\n/, $filecontents);
 			my $lastline = $lines[-1];
@@ -707,7 +709,7 @@ sub ProcessDataRequests {
 			
 			# update status, size, expire date, etc in the public download table
 			$sqlstringC = "update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval $expiredays day), pd_zippedsize = '$zippedsize', pd_unzippedsize = '$unzippedsize', pd_filename = '$filename', pd_filecontents = '$filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = $publicdownloadid";
-			WriteLog("SQL: $sqlstringC");
+			#WriteLog("SQL: $sqlstringC");
 			$resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
 		}
 		

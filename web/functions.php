@@ -385,7 +385,13 @@
 		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$altuids[] = $row['altuid'];
+			$isprimary = $row['isprimary'];
+			if ($isprimary) {
+				$altuids[] = '*'. $row['altuid'];
+			}
+			else {
+				$altuids[] = $row['altuid'];
+			}
 		}
 		
 		return $altuids;

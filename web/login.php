@@ -300,13 +300,19 @@
 					<td align="center">
 						<table>
 							<tr>
-								<td width="400px">
+								<td align="center">
+									View publicly available <a href="downloads.php">downloads</a>
+									<br><br><br><br><br>
+								</td>
+							</tr>
+							<tr>
+								<td width="500px">
 									<span style="font-size:10pt; color: #444">
-									<b>Interested in NiDB?</b><br>
+									<b>Interested in NeuroInformatics Database?</b> <span style="font-size:8pt">This instance of NiDB is hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> and <a href="http://www.harthosp.org">Hartford Hospital</a><br></span>
 									<ul>
-										<li><b>Share data on olinnidb.org</b> <span style="font-size:8pt">Data hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> at <a href="http://www.harthosp.org">Hartford Hospital</a></span>
-										<li><b>Use NiDB as a primary database</b> <span style="font-size:8pt">Commercial hosting provided by <a href="http://neuroinfodb.com">NeuroInfoDB.com LLC</a></span>
-										<li><b>Obtain NiDB source code</b> <span style="font-size:8pt">Run NiDB on your own servers. Source currently being migrated to <a href="https://github.com/gbook/nidb">github</a></span>
+										<li><b>Want to share data?</b> <span style="font-size:8pt">Contact gregory.book@hhchealth.org</span>
+										<!--<li><b>Use NiDB as a primary database</b> <span style="font-size:8pt">Commercial hosting provided by <a href="http://neuroinfodb.com">NeuroInfoDB.com LLC</a></span>-->
+										<li><b>NiDB is open source</b> <span style="font-size:8pt">Download on <a href="https://github.com/gbook/nidb">github</a></span>
 									</ul>
 									</span>
 								</td>

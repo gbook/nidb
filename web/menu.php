@@ -84,6 +84,7 @@
 					<li><a href="projects.php">Projects</a></li>
 					<li><a href="pipelines.php" rel="analysis_menu">Analysis</a></li>
 					<li><a href="import.php">Import</a></li>
+					<li><a href="downloads.php">Downloads</a></li>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<li><a href="admin.php" rel="admin_menu">Admin</a></li>
 					<? } ?>

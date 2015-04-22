@@ -2710,6 +2710,43 @@
 											<td valign="top" align="right">Destination</td>
 											<td valign="top">
 										<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web <span class="tiny">Download zipped file via webpage</span><br>
+										
+										<? if ($GLOBALS['isadmin']) { ?>
+										<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
+										<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
+												<td><input type="text" name="publicdownloaddesc" maxlength="255"><span class="tiny">Max 255 chars</span></td>
+											</tr>
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Release&nbsp;notes</td>
+												<td><textarea name="publicdownloadreleasenotes"></textarea></td>
+											</tr>
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></td>
+												<td><input type="password" name="publicdownloadpassword"></td>
+											</tr>
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Share download within this system<img src="images/help.gif" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></td>
+												<td><input type="checkbox" name="publicdownloadshareinternal" value="1"></td>
+											</tr>
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Require registration<img src="images/help.gif" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></td>
+												<td><input type="checkbox" name="publicdownloadregisterrequired" value="1" checked></td>
+											</tr>
+											<tr>
+												<td align="right" valign="top" width="30%" style="font-size:10pt">Expiration Date<img src="images/help.gif" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></td>
+												<td>
+													<input type="radio" name="publicdownloadexpire" value="7" checked>7 days<br>
+													<input type="radio" name="publicdownloadexpire" value="30">30 days<br>
+													<input type="radio" name="publicdownloadexpire" value="90">90 days<br>
+													<input type="radio" name="publicdownloadexpire" value="0">No expiration<br>
+												</td>
+											</tr>
+										</table>
+										<br>
+										<? } ?>
+										
 										<?
 											if (!$GLOBALS['cfg']['ispublic']) {
 												if ($s_resultorder != 'subject') {
@@ -2736,47 +2773,14 @@
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Site&nbsp;ID</b></td><td><input type="text" name="remotesiteid" value="0"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Project&nbsp;ID</b></td><td><input type="text" name="remoteprojectid" value="0"></td></tr>
 														</table>
-														<br>
-														<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
-														<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
-																<td><input type="text" name="publicdownloaddesc" maxlength="255"><span class="tiny">Max 255 chars</span></td>
-															</tr>
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Release&nbsp;notes</td>
-																<td><textarea name="publicdownloadreleasenotes"></textarea></td>
-															</tr>
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></td>
-																<td><input type="password" name="publicdownloadpassword"></td>
-															</tr>
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Share download within this system<img src="images/help.gif" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></td>
-																<td><input type="checkbox" name="publicdownloadshareinternal" value="1"></td>
-															</tr>
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Require registration<img src="images/help.gif" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></td>
-																<td><input type="checkbox" name="publicdownloadregisterrequired" value="1" checked></td>
-															</tr>
-															<tr>
-																<td align="right" valign="top" width="30%" style="font-size:10pt">Expiration Date<img src="images/help.gif" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></td>
-																<td>
-																	<input type="radio" name="publicdownloadexpire" value="7" checked>7 days<br>
-																	<input type="radio" name="publicdownloadexpire" value="30">30 days<br>
-																	<input type="radio" name="publicdownloadexpire" value="90">90 days<br>
-																	<input type="radio" name="publicdownloadexpire" value="0">No expiration<br>
-																</td>
-															</tr>
-														</table>
-														<br>
 														<?
 													}
 												}
 												if (!$GLOBALS['isguest']) {
 													if ($s_resultorder != 'subject') {
 														?>
-														<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" name="nfsdir" size="50"><br>
+														<br>
+														<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" name="nfsdir" size="50">
 														<?
 													}
 												}
@@ -2830,7 +2834,9 @@
 								<td class="main">
 									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>Imaging<br>
 									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>Behavioral<br>
-									<input type="checkbox" name="downloadqc" id="downloadqc" value="1">QC
+									<span title="Includes all QC metrics computed on the data"><input type="checkbox" name="downloadqc" id="downloadqc" value="1">QC</span>
+									<br>
+									<span title="Includes age at scan, sex, and other demographics. This is places in a demographics.txt file in the root of the download directory"><input type="checkbox" name="downloadqc" id="downloadqc" value="1">Demographics</span>
 								</td>
 							</tr>
 						</table>
@@ -2868,17 +2874,17 @@
 									<table cellpadding="5">
 										<tr>
 											<td valign="top">
+												<span class="tiny">Conversion to other formats applies only to data stored originally in DICOM format</span><br>
 												<input type="radio" name="filetype" id="filetype" value="nifti3d" checked>Nifti 3D<br>
 												<input type="radio" name="filetype" id="filetype" value="nifti4d">Nifti 4D<br>
 												<input type="radio" name="filetype" id="filetype" value="analyze3d">Analyze 3D<br>
 												<input type="radio" name="filetype" id="filetype" value="analyze4d">Analyze 4D<br>
 												<input type="radio" name="filetype" id="filetype" value="dicom">DICOM<br>
-													<div class="dicom" style="padding-left: 15px;">
-													<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
-													<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
-													<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
-													</div>
-												<!--<input type="radio" name="filetype" value="qc">QC data only-->
+												<div class="dicom" style="padding-left: 15px;">
+												<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
+												<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
+												<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
+												</div>
 											</td>
 										</tr>
 										<tr>
@@ -2966,6 +2972,10 @@
 														<td><input type="radio" name="dirformat" value="longid">Project and study ID</td>
 														<td style="color:#333"><tt>S1234ABC_999999_1</tt></td>
 													</tr>
+													<tr>
+														<td><input type="radio" name="dirformat" value="altuid">Primary alternate subject ID<br><span class="tiny">With incremental study numbers</span></td>
+														<td style="color:#333"><tt>M234821/1<br>M234821/2</tt></td>
+													</tr>
 													<? if ($s_resultorder == 'long') { ?>
 													<tr>
 														<td valign="top"><input type="radio" name="dirformat" value="longitudinal">Longitudinal</td>
@@ -2975,7 +2985,7 @@
 												</table>
 
 												<br>
-												<b>Series Numbers</b><br>
+												<b>Series Directories</b><br>
 												<table>
 													<tr>
 														<td><input type="radio" name="preserveseries" value="1">Preserve series number</td>
@@ -2986,8 +2996,8 @@
 														<td style="color:#333"><tt>8 9 10 &rarr; 1 2 3</tt></td>
 													</tr>
 													<tr>
-														<td><input type="radio" name="preserveseries" value="2">Use protocol name in place of series number</td>
-														<td style="color:#333"><tt>1 2 3 &rarr; localizer resting task_A</tt></td>
+														<td><input type="radio" name="preserveseries" value="2">Use alternate protocol name</td>
+														<td style="color:#333"><tt>1 2 3 &rarr; Localizer Resting TaskA</tt></td>
 													</tr>
 												</table>
 												

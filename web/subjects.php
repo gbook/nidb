@@ -197,7 +197,13 @@
 		/* ... and insert the new rows into the altuids table */
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
-			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($id, '$altuid')";
+			if (strpos($altuid, '*') !== FALSE) {
+				$altuid = str_replace('*','',$altuid);
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($id, '$altuid',1)";
+			}
+			else {
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($id, '$altuid',0)";
+			}
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
@@ -2222,7 +2228,8 @@
 			<tr>
 				<td class="requiredlabel">Alternate UIDs<br><span class="tiny">comma separated list</span></td>
 				<td>
-					<input type="text" size="50" name="altuid" value="<?=implode2(',',$altuids)?>" required style="background-color: lightyellow; border: 1px solid gray">
+					<input type="text" size="50" name="altuid" value="<?=implode2(',',$altuids)?>" required style="background-color: lightyellow; border: 1px solid gray"><br><span class="tiny">
+					Use asterisk next to primary alternate ID. Example: [*PrimaryID1, otherID1, otherID23]</span>
 				</td>
 			</tr>
 			<tr>
@@ -2260,12 +2267,6 @@
 					</select>
 				</td>
 			</tr>
-			<!--<tr>
-				<td class="label">Weight<br><span class="tiny">kg</span></td>
-				<td>
-					<input type="text" size="6" maxsize="10" name="weight" title="Kilograms" value="<?=$weight?>">
-				</td>
-			</tr>-->
 			<tr>
 				<td class="label">Handedness</td>
 				<td>

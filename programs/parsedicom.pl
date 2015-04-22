@@ -83,7 +83,7 @@ else {
 	$log->autoflush;
 	my $x = DoParse();
 	close $log;
-	#if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
+	if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
 	print "Done. Deleting $lockfile\n";
 	unlink $lockfile;
 }
@@ -1764,7 +1764,7 @@ sub InsertEEG {
 	WriteLog("$PatientID - $StudyDescription");
 	
 	# check if subject exists and get the rowID
-	$sqlstring = "select b.subject_id, b.uid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
+	$sqlstring = "select b.subject_id, b.uid from subject_altuid a right join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
 	WriteLog("SQL: [$sqlstring]");
 	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {

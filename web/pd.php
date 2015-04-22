@@ -36,14 +36,23 @@
 <body>
 <link rel="stylesheet" type="text/css" href="style.css">
 <div style="text-align: left; background-color: #eee; border-bottom: 2px solid #666; padding: 20px;">
-<span style="font-weight:bold; font-size:16pt; color: #35486D">Neuroinformatics Database public downloads</span>
-<br><br>
-<? if ($_SESSION['username'] == "") { ?>
-<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
-<? } else {?>
-<span style="font-size:9pt">You are logged into NiDB as <?=$_SESSION['username'];?><br>
-Go to your <a href="index.php">home</a> page
-<? } ?>
+	<table width="100%">
+		<tr>
+			<td>
+				<span style="font-weight:bold; font-size:18pt; color: #35486D">NeuroInformatics Database public downloads</span>
+				<br><br>
+				<? if ($_SESSION['username'] == "") { ?>
+				<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
+				<? } else {?>
+				<span style="font-size:9pt">You are logged into NiDB as <?=$_SESSION['username'];?><br>
+				Go to your <a href="index.php">home</a> page
+				<? } ?>
+			</td>
+			<td align="right">
+				<a href="downloads.php">Back to downloads</a>
+			</td>
+		</tr>
+	</table>
 </div>
 <div style="margin:20px">
 <?
@@ -138,9 +147,9 @@ Go to your <a href="index.php">home</a> page
 		Release notes:
 		<details>
 		<summary style="font-size:9pt">View</summary>
-		<pre style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
-<?=$releasenotes?>
-		</pre>
+		<div style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
+<tt><?=$releasenotes?></tt>
+		</div>
 		</details>
 		<br>
 		Download contents:

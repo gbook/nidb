@@ -56,7 +56,7 @@
 	$matchidonly = GetVariable("matchidonly");
 	
 	switch($action) {
-		case 'UploadNonDICOM': UploadNonDICOM($equipmentid, $siteid, $projectid, $instanceid, $dataformat, $matchidonly,$transactionid); break;
+		case 'UploadNonDICOM': UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
 		case 'UploadDICOM': UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
@@ -270,6 +270,9 @@
 	/* ------- UploadDICOM ------------------------ */
 	/* -------------------------------------------- */
 	function UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
+		
+		print_r($_POST);
+		
 		$uuid = mysql_real_escape_string($uuid);
 		$anonymize = mysql_real_escape_string($anonymize);
 		$dataformat = mysql_real_escape_string($dataformat);
@@ -330,7 +333,7 @@
 					$filesize = 0;
 					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-						//echo "RECEIVED $name\n";
+						echo "RECEIVED $savepath/$name\n";
 						$numfilessuccess++;
 						chmod("$savepath/$name", 0777);
 						//echo date('c') . "\n";
@@ -346,6 +349,7 @@
 					
 					/* record this received file in the import_received table */
 					$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
+					echo "$sqlstring\n";
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
@@ -364,7 +368,7 @@
 							$success = 1;
 						}
 						else {
-							echo "ERROR [$name]\n";
+							echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 							$success = 0;
 						}
 						/* record this received file in the import_received table */
@@ -473,7 +477,12 @@
 			}
 		}
 		
-		echo "NiDB: Successfully received $numfiles files";
+		$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		
+		
+
+		echo "NiDB: Successfully received $numfilessuccess of $numfilestotal files and $numbehsuccess of $numbehtotal beh files";
 	}
 	
 ?>
