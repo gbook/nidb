@@ -100,7 +100,7 @@
 		</thead>
 		<tbody>
 			<?
-				$sqlstring = "select * from public_downloads where pd_status = 'complete' order by pd_desc asc";
+				$sqlstring = "select * from public_downloads where pd_status = 'complete' and pd_ispublic = 1 order by pd_desc asc";
 				//PrintSQL($sqlstring);
 				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {

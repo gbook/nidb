@@ -309,7 +309,7 @@ sub ProcessDataRequests {
 				#WriteLog('F');
 			
 				# determine what the actual export directory should be
-				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir);
+				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir);
 
 				my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";

@@ -384,7 +384,7 @@ sub ProcessPipelines() {
 					my $analysisRowID = trim($row{'analysis_id'});
 					my $rerunresults = trim($row{'analysis_rerunresults'});
 					WriteLog("analysisRowID [$analysisRowID]  rerunresults [$rerunresults]");
-					$setuplog .= "analysisRowID [$analysisRowID]  rerunresults [$rerunresults]\n";
+					#$setuplog .= "analysisRowID [$analysisRowID]  rerunresults [$rerunresults]\n";
 					# only continue through this section if there is no analysis, or there is an analysis and it needs the results rerun
 					if (($rerunresults eq "1") || ($analysisRowID eq "")) {
 						SetPipelineStatusMessage($pid, "Checking analysis $r of " . $result->numrows);
@@ -400,7 +400,7 @@ sub ProcessPipelines() {
 						
 						# get information about the study
 						$sqlstring = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
-						$setuplog .= WriteLog($sqlstring) . "\n";
+						#$setuplog .= WriteLog($sqlstring) . "\n";
 						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						my %row = $result->fetchhash;
 						my $uid = $row{'uid'};
@@ -422,7 +422,7 @@ sub ProcessPipelines() {
 							
 							# get the nearest study for this subject that has the dependency
 							my $sqlstringA = "select study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = $subjectid and a.pipeline_id = '$pipelinedep' and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, '$studydatetime')) limit 1";
-							$setuplog .= WriteLog($sqlstringA) . "\n";
+							#$setuplog .= WriteLog($sqlstringA) . "\n";
 							my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 							my %rowA = $resultA->fetchhash;
 							my $studynum_nearest = $rowA{'study_num'};
@@ -477,10 +477,10 @@ sub ProcessPipelines() {
 								
 							}
 							WriteLog("Dependency path is [$deppath]");
-							$setuplog .= "Dependency path is [$deppath]\n";
+							#$setuplog .= "Dependency path is [$deppath]\n";
 							
 							WriteLog("This will be the analysis path [$analysispath]. If data exists for it");
-							$setuplog .= "This will be the analysis path [$analysispath]. If data exists for it\n";
+							#$setuplog .= "This will be the analysis path [$analysispath]. If data exists for it\n";
 							
 							# download the data for the study, if there is any that satisfies the search criteria
 							if ($pipelinedataand == -1) {

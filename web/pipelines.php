@@ -2313,7 +2313,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		NavigationBar("Analysis", $urllist);
 		
 		/* prep the pagination */
-		if ($numperpage == "") { $numperpage = 1000; }
+		if ($numperpage == "") { $numperpage = 500; }
 		if (($pagenum == "") || ($pagenum < 1)) { $pagenum = 1; }
 		$limitstart = ($pagenum-1)*$numperpage;
 		$limitcount = $numperpage;
