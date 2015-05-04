@@ -87,7 +87,7 @@ sub CheckNumLockFiles {
 	my ($lockfileprefix, $lockdir) = @_;
 	
 	my @lockfiles = ();
-	@lockfiles = glob("$lockdir/$lockfileprefix.[0-9]*");
+	@lockfiles = glob("$lockdir/$lockfileprefix.*");
 	
 	my $numlocks = @lockfiles;
 	
@@ -104,22 +104,22 @@ sub CreateLockFile {
 	
 	my ($lockfile, $logfile);
 	
-	for (my $i=0; $i<=$numinstances+1; $i++) {
-		$lockfile = "$lockdir/$lockfileprefix.$i";
-		$logfile = "$lockdir/$lockfileprefix.log.$i";
-		if (-e "$lockdir/$lockfileprefix.$i") {
-			print "$lockfile exists\n";
-		}
-		else {
+	#for (my $i=0; $i<=$numinstances+1; $i++) {
+		$lockfile = "$lockdir/$lockfileprefix.$$";
+		$logfile = "$lockdir/$lockfileprefix.log.$$";
+		#if (-e "$lockdir/$lockfileprefix.$i") {
+		#	print "$lockfile exists\n";
+		#}
+		#else {
 			print "Creating $lockfile.\n";
 			open LOCKFILE, ("> $lockfile");
 			my $datetime = CreateCurrentDate();
 			print LOCKFILE $datetime;
 			close LOCKFILE;
-			last;
+			#last;
 			chmod(0777,$lockfile);
-		}
-	}
+		#}
+	#}
 	
 	return ($lockfile, $logfile);
 }

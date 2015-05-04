@@ -603,19 +603,19 @@ sub DeleteStudy() {
 			# move all archive data to the deleted directory
 			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
 			mkpath($newpath, { verbose => 1, mode => 0777 });
-			my $systemstring = "mv " . $cfg{'archivedir'} . "/$uid/$studynum $newpath/";
+			my $systemstring = "mv -v " . $cfg{'archivedir'} . "/$uid/$studynum $newpath/";
 			WriteLog("Running [$systemstring]");
 			#WriteLog(`$systemstring 2>&1`);
 			
 			# delete all series
-			$sqlstring = "delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id))";
+			$sqlstring = "delete from mr_series where study_id = $id";
 			WriteLog($sqlstring);
-			#$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 			
 			# delete all studies
-			$sqlstring = "delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = $id)";
+			$sqlstring = "delete from studies where study_id = $id";
 			WriteLog($sqlstring);
-			#$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 		}
 	}
 }

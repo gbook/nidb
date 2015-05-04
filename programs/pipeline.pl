@@ -104,6 +104,7 @@ sub ProcessPipelines() {
 
 	# update the start time
 	SetModuleRunning();
+	SetPipelineProcessStatus('started',0,0);
 	
 	# check if this module should be running now or not
 	if (!ModuleCheckIfActive($scriptname, $db)) {
@@ -167,6 +168,7 @@ sub ProcessPipelines() {
 		print "Working on pipeline [$pid] - [$pipelinename] Submitting to queue [$pipelinequeue] through host [$pipelinesubmithost]\n";
 		WriteLog("Working on pipeline [$pid] - [$pipelinename] Submitting to queue [$pipelinequeue] through host [$pipelinesubmithost]");
 
+		SetPipelineProcessStatus('running',$pid,0);
 		
 		# mark the pipeline as having been checked
 		my $sqlstringC = "update pipelines set pipeline_lastcheck = now() where pipeline_id = '$pid'";
@@ -341,6 +343,8 @@ sub ProcessPipelines() {
 				my $numsubmitted = 0;
 				foreach my $sid(@studyids) {
 
+					SetPipelineProcessStatus('running',$pid,$sid);
+
 					$numchecked = $numchecked + 1;
 					WriteLog("--------------------- Working on study [$sid] for [$pipelinename] --------------------");
 					
@@ -417,7 +421,7 @@ sub ProcessPipelines() {
 							
 							# this file will record any events during setup
 							my $setuplogF = "/mount" . $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename/pipeline/analysisSetup.log";
-							$setuplog .= "Beginning recording\n";
+							#$setuplog .= "Beginning recording\n";
 							WriteLog("Should have created this analysis setup log [$setuplogF]");
 							
 							# get the nearest study for this subject that has the dependency
@@ -431,12 +435,12 @@ sub ProcessPipelines() {
 							if (($pipelinedep != 0) && ($pipelinedep ne "")) {
 								if ($deplevel eq "subject") {
 									WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
-									$setuplog .= "Dependency is a subject level (will match dep for same subject, any study)\n";
+									#$setuplog .= "Dependency is a subject level (will match dep for same subject, any study)\n";
 									$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
 								}
 								else {
 									WriteLog("Dependency is a study level (will match dep for same subject, same study)");
-									$setuplog .= "Dependency is a study level (will match dep for same subject, same study)";
+									#$setuplog .= "Dependency is a study level (will match dep for same subject, same study)";
 									$deppath = "$pipelinedirectory/$uid/$studynum";
 									
 									# check if this study actually has this dependency
@@ -886,6 +890,8 @@ sub ProcessPipelines() {
 			return 1;
 		}
 	}
+
+	SetPipelineProcessStatus('complete',0,0);
 	
 	# end the module and return the code
 	SetModuleStopped();
@@ -1926,6 +1932,31 @@ sub SetPipelineStatusMessage() {
 	
 	my $sqlstring = "update pipelines set pipeline_statusmessage = '$msg' where pipeline_id = '$pid'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+}
+
+
+# ----------------------------------------------------------
+# --------- SetPipelineProcessStatus -----------------------
+# ----------------------------------------------------------
+sub SetPipelineProcessStatus() {
+	my ($status, $pipelineid, $studyid) = @_;
+
+	# connect to the database
+	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
+	
+	my $sqlstring;
+	my $result;
+	
+	if ($status eq 'started') {
+		$sqlstring = "insert into pipeline_procs (pp_processid, pp_status, pp_startdate, pp_lastcheckin, pp_currentpipeline, pp_currentsubject, pp_currentstudy) values ($$,'started',now(),now(),0,0,0)";
+	}
+	elsif ($status eq 'complete') {
+		$sqlstring = "delete from pipeline_procs where pp_processid = $$";
+	}
+	else {
+		$sqlstring = "update pipeline_procs set pp_status = 'running', pp_lastcheckin = now(), pp_currentpipeline = '$pipelineid', pp_currentstudy = '$studyid' where pp_processid = '$$'";
+	}
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 

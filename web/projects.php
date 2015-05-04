@@ -586,22 +586,18 @@
 	/* ------- ObliterateStudy -------------------- */
 	/* -------------------------------------------- */
 	function ObliterateStudy($studyids) {
-		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$ids[] = $row['subject_id'];
-			$uids[] = $row['uid'];
-			$uidstudynums[] = $row['uid'] . $row['subject_id'];
-		}
 		
 		/* delete all information about this SUBJECT from the database */
-		foreach ($ids as $id) {
+		foreach ($studyids as $id) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
+			PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
+		//PrintVariable($ids,'ids');
+		//PrintVariable($uids,'uids');
+		//PrintVariable($uidstudynums,'uidstudynums');
 		?>
-		<div align="center" class="message">Studies [<?=implode(', ',$uidstudynums)?>] queued for obliteration</div>
+		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
 		<?
 	}
 
