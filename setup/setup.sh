@@ -83,14 +83,17 @@ echo "------ Installing PHP ------"
 #yum install -y php-mysql
 yum install -y php-gd
 yum install -y php-process
-echo "------ Installing PHP ------"
+yum install pear
+pear install Mail
+pear install Mail_Mime
+echo "------ Installing http ------"
 yum install -y httpd
 #yum install -y httpd*
 #yum install -y httpd-*
 echo "------ Installing mysql ------"
 yum install -y mysql
 #yum install -y mysql*
-yum install -y mysql-bench
+#yum install -y mysql-bench
 yum install -y mysql-server
 echo "------ Installing ImageMagick ------"
 #yum install -y ImageMagick
@@ -116,7 +119,7 @@ yum install -y vorbis-tools
 #yum install -y vorbis*
 yum install -y theora-tools
 #yum install -y theora*
-yum install -y ffmpeg
+#yum install -y ffmpeg
 #yum install -y ffmpeg*
 
 # --------- Perl/CPAN based installs ----------
