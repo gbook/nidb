@@ -64,20 +64,35 @@
 		$urllist['System Status'] = "status.php";
 		NavigationBar("System", $urllist);
 
+		# connect to DB and get status
 		$dbconnect = true;
 		$devdbconnect = true;
 		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
 		$dbStatus = explode("  ", mysql_stat());
 		
+		# get number of fileio operations pending
 		$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$numiopending = $row['numiopending'];
 		
-		$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
+		# get number of directories in dicomincoming directory
+		$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
+		$numdicomdirs = count($dirs);
+		
+		# get number of files in dicomincoming directory
+		$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
+		$numdicomfiles = count($files);
+		
+		# get number of import requests
+		$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		$numiopending = $row['numiopending'];
+		$numimportpending = $row['numimportpending'];
+		
+		# get number of directories in dicomincoming directory
+		$dirs = glob($GLOBALS['cfg']['uploadedpath'].'/*', GLOB_ONLYDIR);
+		$numimportdirs = count($dirs);
 		
 		?>
 		<table class="entrytable">
@@ -100,6 +115,20 @@
 echo $value . "\n";
 				}
 				?></pre></td>
+			</tr>
+			<tr>
+				<td class="label">Parse DICOM module</td>
+				<td>
+					<?=$numdicomfiles?> queued files<br>
+					<?=$numdicomdirs?> queued directories<br>
+				</td>
+			</tr>
+			<tr>
+				<td class="label">Import module</td>
+				<td>
+					<?=$numimportpending?> requests pending<br>
+					<?=$numimportdirs?> queued directories<br>
+				</td>
 			</tr>
 			<tr>
 				<td class="label">File IO module</td>
