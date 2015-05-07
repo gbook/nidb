@@ -41,6 +41,7 @@ use File::Copy;
 use Cwd;
 use String::CRC32;
 use Date::Manip;
+use Scalar::Util qw(looks_like_number);
 
 require 'nidbroutines.pl';
 our %cfg;
@@ -117,7 +118,7 @@ sub DoParse {
 	
 	# before starting things off, delete any rows older than 30 days from the importlogs table
 	my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# ----- parse all files in the main directory -----
 	if (ParseDirectory($cfg{'incomingdir'}, '')) {
@@ -166,7 +167,7 @@ sub ParseDirectory {
 	my $importStatus = '';
 	# if there is an importRowID, check to see how that thing is doing
 	my $sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -181,7 +182,7 @@ sub ParseDirectory {
 	}
 	
 	$sqlstring = "update import_requests set import_status = 'archiving' where importrequest_id = '$importRowID'";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	my %dicomfiles;
 	my $ret = 0;
@@ -233,7 +234,7 @@ sub ParseDirectory {
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'EEG', '$importRowID', now(), '[$ret], moving to the problem directory')";
-							my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 						}
 						$i++;
@@ -245,7 +246,7 @@ sub ParseDirectory {
 							if (trim($tags->{'Warning'}) eq "Error reading DICOM file (corrupted? still being copied?)") {
 								WriteLog("Dicom file [$file] corrupted or not valid DICOM syntax");
 								my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Corrupted DICOM or not valid DICOM file, moving to the problem directory')";
-								my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 								move("$dir/$file","$cfg{'problemdir'}/$file");
 							}
 							else {
@@ -259,7 +260,7 @@ sub ParseDirectory {
 						else {
 							WriteLog("File [$file] is most likely not a dicom file");
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Not a DICOM file, moving to the problem directory')";
-							my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 						}
 					}
@@ -334,7 +335,7 @@ sub ParseDirectory {
 	}
 	
 	$sqlstring = "update import_requests set import_status = 'archived', import_enddate = now() where importrequest_id = '$importRowID'";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	if ($i > 0) {
 		WriteLog("Finished extracting data for [$dir]");
@@ -459,7 +460,7 @@ sub InsertSeries {
 	my $importUUID = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -638,7 +639,7 @@ sub InsertSeries {
 	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid = '$PatientID' or a.uid = SHA1('$PatientID') or b.altuid = '$PatientID' or b.altuid = SHA1('$PatientID')) 'subjectcount'";
 	#WriteLog("[$sqlstring]");
 	WriteLog("Checking if the subject exists by UID [$PatientID] or AltUID [$PatientID]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $projectcount = $row{'projectcount'};
 	my $subjectcount = $row{'subjectcount'};
@@ -652,7 +653,7 @@ sub InsertSeries {
 			$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = left('$PatientSex',1) and birthdate = '$PatientBirthDate' and isactive = 1";
 			#WriteLog("[$sqlstring]");
 			WriteLog("Subject not found by UID. Checking if the subject exists using PatientName [$PatientName] PatientSex [$PatientSex] PatientBirthDate [$PatientBirthDate]");
-			my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows > 0) {
 				my %row = $result->fetchhash;
 				$subjectRealUID = uc($row{'uid'});
@@ -673,7 +674,7 @@ sub InsertSeries {
 				$subjectRealUID = CreateUID('S');
 				$sqlstring = "SELECT * FROM `subjects` WHERE uid = '$subjectRealUID'";
 				#WriteLog("[$sqlstring]");
-				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				$count = $result->numrows;
 			} while ($count > 0);
 			
@@ -683,7 +684,7 @@ sub InsertSeries {
 			$sqlstring = "insert into subjects (name, birthdate, gender, weight, height, uid, uuid, uuid2) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$PatientSize', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))), ucase($uuid) )";
 			#WriteLog("[$sqlstring]");
 			WriteLog("Adding new subject [$subjectRealUID]");
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
 			
 			# insert the PatientID as an alternate UID
@@ -691,7 +692,7 @@ sub InsertSeries {
 				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$PatientID')";
 				#WriteLog("[$sqlstring]");
 				WriteLog("Adding alternate UID [$PatientID]");
-				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$IL_subjectcreated = 1;
 		}
@@ -699,7 +700,7 @@ sub InsertSeries {
 	else {
 		# get the existing subject ID, and UID! (the PatientID may be an alternate UID)
 		$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid = '$PatientID' or a.uid = SHA1('$PatientID') or b.altuid = '$PatientID' or b.altuid = SHA1('$PatientID')";
-		my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($row{'uid'});
@@ -709,14 +710,14 @@ sub InsertSeries {
 			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$PatientID')";
 			#WriteLog("[$sqlstring]");
 			WriteLog("Adding alternate UID [$PatientID]");
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		$IL_subjectcreated = 0;
 	}
 	
 	# check if the subject is part of a family, if not create a family for it
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
 	if ($result->numrows > 0) {
 		#WriteLog("[$sqlstring]");
@@ -735,7 +736,7 @@ sub InsertSeries {
 			$familyRealUID = CreateUID('F');
 			$sqlstring = "SELECT * FROM `families` WHERE family_uid = '$familyRealUID'";
 			#WriteLog("[$sqlstring]");
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$count = $result->numrows;
 		} while ($count > 0);
 		#$familyRealUID = CreateUID('F');
@@ -744,13 +745,13 @@ sub InsertSeries {
 		$sqlstring = "insert into families (family_uid, family_createdate, family_name) values ('$familyRealUID', now(), 'Proband-$subjectRealUID')";
 		#WriteLog("[$sqlstring]");
 		WriteLog("Create a family [$familyRealUID] for this subject");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$familyRowID = $result2->insertid;
 		
 		$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())";
 		#WriteLog("[$sqlstring]");
 		WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]");
-		my $result3 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result3 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_familycreated = 1;
 	}
 	
@@ -762,7 +763,7 @@ sub InsertSeries {
 	# get the projectRowID
 	$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
 	#WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "] " . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
 	if (($importProjectID eq '') || ($importProjectID eq '0') || ($importProjectID == 0)) {
 		$projectRowID = $row{'project_id'};
@@ -775,7 +776,7 @@ sub InsertSeries {
 	
 	# check if the subject is enrolled in the project
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		#WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -787,7 +788,7 @@ sub InsertSeries {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 		#WriteLog("[$sqlstring]");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
 		WriteLog("Subject was not enrolled in this project. New enrollment [$enrollmentRowID]");
 		$IL_enrollmentcreated = 1;
@@ -801,7 +802,7 @@ sub InsertSeries {
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_num = '$AccessionNumber' or ((study_datetime between date_sub('$StudyDateTime', interval 30 second) and date_add('$StudyDateTime', interval 30 second)) and study_modality = '$Modality' and study_site = '$StationName'))";
 	WriteLog("[$sqlstring]");
 	WriteLog("Checking if this study exists: enrollmentID [$enrollmentRowID] study(accession)Number [$AccessionNumber] StudyDateTime [$StudyDateTime] Modality [$Modality] StationName [$StationName]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			my $study_id = $row{'study_id'};
@@ -810,7 +811,7 @@ sub InsertSeries {
 			# check which instance this study is enrolled in
 			my $sqlstringB = "select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = $study_id))";
 			WriteLog("[$sqlstringB]");
-			my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+			my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 			WriteLog("SQL returned [" . $resultB->numrows . "] rows");
 			my %rowB = $resultB->fetchhash;
 			$foundInstanceRowID = $rowB{'instance_id'};
@@ -823,7 +824,7 @@ sub InsertSeries {
 				my $sqlstringA = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_ageatscan = $patientage, study_height = '$PatientSize', study_weight = '$PatientWeight', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_nidbsite = '$importSiteID', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
 				WriteLog("[$sqlstringA]");
 				WriteLog("StudyID [$study_id] exists, updating");
-				my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 				$IL_studycreated = 0;
 				last;
 			}
@@ -833,13 +834,12 @@ sub InsertSeries {
 		# create studyRowID if it doesn't exist
 		$sqlstring = "SELECT max(a.study_num) 'study_num' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id WHERE b.subject_id = $subjectRowID";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$study_num = $row{'study_num'} + 1;
-		#$study_num = $result->numrows + 1;
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname')";
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		WriteLog("[$sqlstring]");
 		WriteLog("Study did not exist, creating");
@@ -887,44 +887,44 @@ sub InsertSeries {
 		$dbModality = "mr";
 		$sqlstring = "select mrseries_id from mr_series where study_id = $studyRowID and series_num = $SeriesNumber";
 		#WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'mrseries_id'};
 			
 			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_status = 'complete' where mrseries_id = $seriesRowID";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			WriteLog("This MR series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
 			
 			# if the series is being updated, the QA information might be incorrect or be based on the wrong number of files, so delete the mr_qa row
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesRowID";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			WriteLog("Deleted from mr_qa... about to delete from qc_results");
 			
 			# ... and delete the qc module rows
 			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			my @qcidlist;
 			if ($result->numrows > 0) {
 				my %row = $result->fetchhash;
 				push @qcidlist,$row{'qcmoduleseries_id'};
 
 				$sqlstring = "delete from qc_results where qcmoduleseries_id in (" . join(',',@qcidlist) . ")";
-				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			
 			WriteLog("Deleted from qc_results... about to delete from qc_moduleseries");
 			$sqlstring = "delete from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
 			
 			# create seriesRowID if it doesn't exist
 			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, image_type, image_comments, bold_reps, numfiles, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', 'dicom', 'complete', '$scriptname')";
 			#print "[$sqlstring]\n";
-			my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
 			WriteLog("MR series [$SeriesNumber] did not exist, creating");
 			$IL_seriescreated = 1;
@@ -934,13 +934,13 @@ sub InsertSeries {
 		$dbModality = "ct";
 		$sqlstring = "select ctseries_id from ct_series where study_id = $studyRowID and series_num = $SeriesNumber";
 		#WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'ctseries_id'};
 			
 			$sqlstring = "update ct_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_spacingx = '$pixelX', series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_imgrows = '$Rows', series_imgcols = '$Columns', series_imgslices = '$zsize', series_numfiles = '$numfiles', series_contrastbolusagent = '$ContrastBolusAgent', series_bodypartexamined = '$BodyPartExamined', series_scanoptions = '$ScanOptions', series_kvp = '$KVP', series_datacollectiondiameter = '$DataCollectionDiameter', series_contrastbolusroute = '$ContrastBolusRoute', series_rotationdirection = '$RotationDirection', series_exposuretime = '$ExposureTime', series_xraytubecurrent = '$XRayTubeCurrent', series_filtertype = '$FilterType', series_generatorpower = '$GeneratorPower', series_convolutionkernel = '$ConvolutionKernel', series_status = 'complete' where ctseries_id = $seriesRowID";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			WriteLog("This CT series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
 		}
@@ -950,7 +950,7 @@ sub InsertSeries {
 			) values (
 			$studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SeriesNumber', '$ContrastBolusAgent', '$BodyPartExamined', '$ScanOptions', '$KVP', '$DataCollectionDiameter', '$ContrastBolusRoute', '$RotationDirection', '$ExposureTime', '$XRayTubeCurrent', '$FilterType', '$GeneratorPower', '$ConvolutionKernel', '$pixelX', '$pixelY', '$SliceThickness', '$Rows', '$Columns', '$zsize', '$numfiles', 'dicom', 'complete', '$scriptname')";
 			#print "[$sqlstring]\n";
-			my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
 			WriteLog("CT series [$SeriesNumber] did not exist, creating");
 			$IL_seriescreated = 1;
@@ -961,13 +961,13 @@ sub InsertSeries {
 		$dbModality = "ot";
 		$sqlstring = "select otseries_id from ot_series where study_id = $studyRowID and series_num = $SeriesNumber";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'otseries_id'};
 			
 			$sqlstring = "update ot_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_sequencename = '$SequenceName', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', numfiles = '$numfiles', series_status = 'complete' where otseries_id = $seriesRowID";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			WriteLog("This OT series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
 		}
@@ -976,7 +976,7 @@ sub InsertSeries {
 			# create seriesRowID if it doesn't exist
 			$sqlstring = "insert into ot_series (study_id, series_datetime, series_desc, series_sequencename, series_num, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols, img_slices, numfiles, modality, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$pixelX', '$pixelY', '$SliceThickness', '$Rows', '$Columns', '$zsize', '$numfiles', '$Modality', 'dicom', 'complete', '$scriptname')";
 			#print "[$sqlstring]\n";
-			my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
 			WriteLog("OT series [$SeriesNumber] did not exist, creating");
 			$IL_seriescreated = 1;
@@ -1089,7 +1089,7 @@ sub InsertSeries {
 		
 		# insert an import log record
 		my $sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-		my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
 	
 	# get the size of the dicom files and update the DB
@@ -1122,7 +1122,7 @@ sub InsertSeries {
 	if (lc($dbModality) eq "mr") {
 		$sqlstring = "update " . lc($dbModality) . "_series set series_size = $dirsize, numfiles = $numfiles, bold_reps = $boldreps where " . lc($dbModality) . "series_id = $seriesRowID";
 		WriteLog($sqlstring);
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	# create a thumbnail of the middle slice in the dicom directory (after getting the size, so the thumbnail isn't included in the size)
@@ -1141,7 +1141,7 @@ sub InsertSeries {
 		
 		my ($behdirsize, $behnumfiles) = GetDirectorySize("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh");
 		$sqlstring = "update " . lc($dbModality) . "_series set beh_size = '$behdirsize', numfiles_beh = '$behnumfiles' where " . lc($dbModality) . "series_id = $seriesRowID";
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
 	
 	# change the permissions to 777 so the webpage can read/write the directories
@@ -1243,7 +1243,7 @@ sub InsertParRec {
 	my $importUUID = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -1409,7 +1409,7 @@ sub InsertParRec {
 	# check if project and subject exist
 	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` WHERE uid = '$PatientID') 'subjectcount'";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
 	my $projectcount = $row{'projectcount'};
 	my $subjectcount = $row{'subjectcount'};
@@ -1421,7 +1421,7 @@ sub InsertParRec {
 		# search for an existing subject by name, dob, gender
 		$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = '$PatientSex' and birthdate = '$PatientBirthDate'";
 		WriteLog("[$sqlstring]");
-		my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
 			$subjectRealUID = uc($row{'uid'});
@@ -1437,13 +1437,13 @@ sub InsertParRec {
 			do {
 				$subjectRealUID = CreateUID('S');
 				$sqlstring = "SELECT * FROM `subjects` WHERE uid = '$subjectRealUID'";
-				$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				$count = $result->numrows;
 			} while ($count > 0);
 			
 			WriteLog("New subject ID: $subjectRealUID");
 			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))) )";
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
 			$IL_subjectcreated = 1;
 		}
@@ -1451,7 +1451,7 @@ sub InsertParRec {
 	else {
 		# get the existing subject ID
 		$sqlstring = "select subject_id from subjects where uid = '$PatientID'";
-		my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($PatientID);
@@ -1460,7 +1460,7 @@ sub InsertParRec {
 	
 	# check if the subject is part of a family, if not create a family for it
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
 	if ($result->numrows > 0) {
 		#WriteLog("[$sqlstring]");
@@ -1479,7 +1479,7 @@ sub InsertParRec {
 			$familyRealUID = CreateUID('F');
 			$sqlstring = "SELECT * FROM `families` WHERE family_uid = '$familyRealUID'";
 			#WriteLog("[$sqlstring]");
-			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$count = $result->numrows;
 		} while ($count > 0);
 		#$familyRealUID = CreateUID('F');
@@ -1488,13 +1488,13 @@ sub InsertParRec {
 		$sqlstring = "insert into families (family_uid, family_createdate, family_name) values ('$familyRealUID', now(), 'Proband-$subjectRealUID')";
 		#WriteLog("[$sqlstring]");
 		WriteLog("Create a family [$familyRealUID] for this subject");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$familyRowID = $result2->insertid;
 		
 		$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())";
 		#WriteLog("[$sqlstring]");
 		WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]");
-		my $result3 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result3 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_familycreated = 1;
 	}
 	
@@ -1507,7 +1507,7 @@ sub InsertParRec {
 		# get the projectRowID
 		$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "] " . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$projectRowID = $row{'project_id'};
 	}
@@ -1517,7 +1517,7 @@ sub InsertParRec {
 	
 	# check if the subject is enrolled in the project
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -1528,7 +1528,7 @@ sub InsertParRec {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 		WriteLog("[$sqlstring]");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
 		$IL_enrollmentcreated = 1;
 	}
@@ -1538,7 +1538,7 @@ sub InsertParRec {
 	# also checks the accession number against the study_num to see if this study was pre-registered
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_num = '$AccessionNumber' or (study_datetime = '$StudyDateTime' and study_modality = '$Modality' and study_site = '$StationName'))";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$studyRowID = $row{'study_id'};
@@ -1546,20 +1546,20 @@ sub InsertParRec {
 		
 		$sqlstring = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_studycreated = 0;
 	}
 	else {
 		# create studyRowID if it doesn't exist
 		$sqlstring = "SELECT max(a.study_num) 'study_num' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $subjectRowID";
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$study_num = $row{'study_num'} + 1;
 		#$study_num = $result->numrows + 1;
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$IL_studycreated = 1;
 	}
@@ -1567,20 +1567,20 @@ sub InsertParRec {
 	# ----- insert or update the series -----
 	$sqlstring = "select mrseries_id from mr_series where study_id = $studyRowID and series_num = $SeriesNumber";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$seriesRowID = $row{'mrseries_id'};
 		$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime',series_desc = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', bold_reps = '$boldreps', numfiles = '$numfiles', series_status = 'complete' where mrseries_id = $seriesRowID";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
 		$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_sequencename, series_num, series_tr, series_te, series_flip, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, bold_reps, numfiles, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', $boldreps, '$numfiles', 'parrec', 'complete', 'parsedicom.pl')";
 		WriteLog("[$sqlstring]");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
 		$IL_seriescreated = 0;
 	}
@@ -1603,21 +1603,21 @@ sub InsertParRec {
 
 	# insert an import log record (.par file)
 	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$parfile', 'PARREC', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	# inser an import log record (.rec file)
 	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$recfile', 'PARREC', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log
 	$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);	
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# get the size of the files and update the DB
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
 	$sqlstring = "update mr_series set series_size = $dirsize where mrseries_id = $seriesRowID";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
 	#my $origDir = getcwd;
@@ -1707,7 +1707,7 @@ sub InsertEEG {
 	my $importEquipment = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -1718,6 +1718,9 @@ sub InsertEEG {
 		$importAnonymize = $row{'import_anonymize'};
 		$importUUID = $row{'import_uuid'};
 		$importEquipment = $row{'import_equipment'};
+	}
+	else {
+		WriteLog("ImportID [$importRowID] not found. Using default import parameters");
 	}
 	WriteLog($file);
 	# split the filename into the appropriate fields
@@ -1740,7 +1743,7 @@ sub InsertEEG {
 	if ($SeriesDescription eq "") { $SeriesDescription = "Unknown"; }
 	if ($ProtocolName eq "") { $ProtocolName = "Unknown"; }
 	if ($OperatorsName eq "") { $OperatorsName = "Unknown"; }
-	if ($SeriesNumber eq "") { $SeriesNumber = 0; }
+	if (($SeriesNumber eq "") || (!looks_like_number($SeriesNumber))) { $SeriesNumber = 0; }
 	if ($FileNumber eq "") { $FileNumber = 0; }
 	
 	WriteLog("After fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]");
@@ -1766,7 +1769,7 @@ sub InsertEEG {
 	# check if subject exists and get the rowID
 	$sqlstring = "select b.subject_id, b.uid from subject_altuid a right join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
 	WriteLog("SQL: [$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		%row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
@@ -1777,21 +1780,18 @@ sub InsertEEG {
 		return "Subject [$PatientID] does not exist";
 	}
 	
-	# if project doesn't exist, use the generic project
-	#if ($projectcount < 1) {
-	#	$costcenter = "999999";
-	#}
-	
-	# get the projectRowID
-	#$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
-	#WriteLog("[$sqlstring]");
-	#$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "] " . $db->errmsg(),$sqlstring);
-	#%row = $result->fetchhash;
-	#$projectRowID = $row{'project_id'};
+	# get the generic projectRowID if the requested one is empty
+	if ((!defined($projectRowID)) || ($projectRowID eq "")) {
+		$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
+		#WriteLog("[$sqlstring]");
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+		%row = $result->fetchhash;
+		$projectRowID = $row{'project_id'};
+	}
 	
 	# check if the subject is enrolled in the project
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
@@ -1802,7 +1802,7 @@ sub InsertEEG {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 		WriteLog("[$sqlstring]");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
 		$IL_enrollmentcreated = 1;
 	}
@@ -1812,7 +1812,7 @@ sub InsertEEG {
 	# also checks the accession number against the study_num to see if this study was pre-registered
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_datetime = '$StudyDateTime' and study_modality = '$Modality' and study_site = '$StationName')";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$studyRowID = $row{'study_id'};
@@ -1820,20 +1820,20 @@ sub InsertEEG {
 		
 		$sqlstring = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_studycreated = 0;
 	}
 	else {
 		# create studyRowID if it doesn't exist
 		$sqlstring = "SELECT max(a.study_num) 'study_num' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $subjectRowID";
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$study_num = $row{'study_num'} + 1;
 		#$study_num = $result->numrows + 1;
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$IL_studycreated = 1;
 	}
@@ -1841,20 +1841,20 @@ sub InsertEEG {
 	# ----- insert or update the series -----
 	$sqlstring = "select eegseries_id from eeg_series where study_id = $studyRowID and series_num = $SeriesNumber";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$seriesRowID = $row{'eegseries_id'};
 		$sqlstring = "update eeg_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_status = 'complete' where eegseries_id = $seriesRowID";
 		WriteLog("[$sqlstring]");
-		$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
 		$sqlstring = "insert into eeg_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', 'complete', 'parsedicom.pl')";
 		WriteLog("[$sqlstring]");
-		my $result2 = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
 		$IL_seriescreated = 0;
 	}
@@ -1875,28 +1875,24 @@ sub InsertEEG {
 
 	# insert an import log record
 	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', 'EEG', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log
 	$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);	
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# get the size of the files and update the DB
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
 	$sqlstring = "update eeg_series set series_size = $dirsize where eegseries_id = $seriesRowID";
 	WriteLog("[$sqlstring]");
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
-	#my $origDir = getcwd;
-	#chdir("$cfg{'archivedir'}");
 	WriteLog("Current directory: " . getcwd);
 	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
 	WriteLog("$systemstring (" . `$systemstring` . ")");
 	# change back to original directory before leaving
-	#WriteLog("Changing back to $origDir");
-	#chdir($origDir);
 	WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID");
 	
 	# copy everything to the backup directory

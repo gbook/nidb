@@ -3337,6 +3337,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		a { color: #224ea5; }
 	</style>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
+	<br>
 	<!--<details>-->
 	<!-- display the cluster load -->
 	<!--<summary style="font-size:10pt; color:#666">View cluster load</summary>
@@ -3408,7 +3409,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$group = $row['pipeline_group'];
-					$imgdata[$group] = CreatePipelineGraph($group);
+					//$imgdata[$group] = CreatePipelineGraph($group);
 				}
 				GetPipelineInfo();
 				PrintTree($pipelinetree,0);

@@ -56,7 +56,7 @@ our $scriptname = "pipeline";
 our $lockfileprefix = "pipeline";	# lock files will be numbered lock.1, lock.2 ...
 our $lockfile = "";					# lockfile name created for this instance of the program
 our $log;							# logfile handle created for this instance of the program
-our $numinstances = 10;				# number of times this program can be run concurrently
+our $numinstances = 6;				# number of times this program can be run concurrently
 # debugging
 our $debug = 0;
 
@@ -110,6 +110,7 @@ sub ProcessPipelines() {
 	if (!ModuleCheckIfActive($scriptname, $db)) {
 		WriteLog("Not supposed to be running right now. Exiting module");
 		print "Module disabled. Stopping execution\n";
+		SetPipelineProcessStatus('complete',0,0);
 		SetModuleStopped();
 		return 0;
 	}
@@ -122,6 +123,7 @@ sub ProcessPipelines() {
 	if ($result->numrows < 1) {
 		WriteLog("No pipelines need to be run. Exiting module");
 		# update the stop time
+		SetPipelineProcessStatus('complete',0,0);
 		SetModuleStopped();
 		return 0;
 	}
@@ -242,6 +244,7 @@ sub ProcessPipelines() {
 				WriteLog("Module disabled. Stopping execution. Exiting module");
 				print "Module disabled. Stopping execution\n";
 				SetPipelineStopped($pid, $newrunnum);
+				SetPipelineProcessStatus('complete',0,0);
 				SetModuleStopped();
 				return 1;
 			}
@@ -359,6 +362,7 @@ sub ProcessPipelines() {
 						WriteLog("Module disabled. Stopping execution. Exiting module");
 						print "Module disabled. Stopping execution\n";
 						SetPipelineStopped($pid, $newrunnum);
+						SetPipelineProcessStatus('complete',0,0);
 						SetModuleStopped();
 						return 1;
 					}
@@ -709,7 +713,7 @@ sub ProcessPipelines() {
 					else {
 						WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
 						SetPipelineStopped($pid, $newrunnum);
-						SetModuleStopped();
+						#SetModuleStopped();
 						next PIPELINE;
 					}
 				}
@@ -778,7 +782,7 @@ sub ProcessPipelines() {
 							WriteLog("No studies found [$sqlstringA]");
 							SetPipelineStatusMessage($pid, "No studies found (Maybe 1st/2nd level group mismatch?)");
 							SetPipelineStopped($pid, $newrunnum);
-							SetModuleStopped();
+							#SetModuleStopped();
 							next PIPELINE;
 						}
 
@@ -886,6 +890,7 @@ sub ProcessPipelines() {
 		SetPipelineStopped($pid, $newrunnum);
 		
 		if ($jobsWereSubmitted) {
+			SetPipelineProcessStatus('complete',0,0);
 			SetModuleStopped();
 			return 1;
 		}
@@ -1017,8 +1022,10 @@ sub CreateSGEJobFile() {
 			my $description = trim($pipelinesteps[$i]{'description'});
 			my $logged = $pipelinesteps[$i]{'logged'};
 			my $enabled = $pipelinesteps[$i]{'enabled'};
+			my $checkedin = 1;
 
 			if (($command =~ m/\{NOLOG\}/) || ($description =~ m/\{NOLOG\}/)) { $logged = 0; }
+			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { $checkedin = 0; }
 			
 			# format the command (replace pipeline variables, etc)
 			if ($usetmpdir) {
@@ -1027,8 +1034,8 @@ sub CreateSGEJobFile() {
 			else {
 				$command = FormatCommand($pipelineid, $realanalysispath, $command, $analysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, $workingdir, $description);
 			}
-			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { }
-			else {
+			
+			if ($checkedin) {
 				$jobfile .= "\nperl /opt/pipeline/$checkinscript $analysisid processing 'processing step " . ($i + 1) . " of " . ($#pipelinesteps + 1) . "'\n# $description\necho Running $command\n";
 			}
 			
@@ -1094,6 +1101,7 @@ sub FormatCommand() {
 	my ($pipelineid, $realanalysispath, $command, $analysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, $workingdir, $description) = @_;
 
 		$command =~ s/\{NOLOG\}//g; # remove any {NOLOG} commands
+		$command =~ s/\{NOCHECKIN\}//g; # remove any {NOCHECKIN} commands
 		$command =~ s/\x0D//g; # remove any ^M characters
 		$command =~ s/\{analysisrootdir\}/$analysispath/g;
 		$command =~ s/\{analysisid\}/$analysisid/g;
