@@ -176,6 +176,18 @@
 		echo "</pre>";
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- Debug ------------------------------ */
+	/* -------------------------------------------- */
+	function Debug($F, $L, $msg) {
+		if ($GLOBALS['cfg']['debug'] == 1) {
+		?>
+		<tt style="color:#444; font-size:8pt">[<?=$F?> @ line <?=$L?>] <?=$msg?></tt><br>
+		<?
+		}
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- SendGmail -------------------------- */
@@ -315,6 +327,7 @@
 	/* ------- MySQLQuery ------------------------- */
 	/* -------------------------------------------- */
 	function MySQLQuery($sqlstring,$file,$line,$error="") {
+		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 		$result = mysql_query($sqlstring);
 		if ($result == false) {
 			$datetime = date('r');

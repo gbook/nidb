@@ -25,7 +25,6 @@
 	
 	$nologin = true;
  	require "functions.php";
-	//ob_start();
 ?>
 
 <html>
@@ -77,6 +76,7 @@
 		
 		if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
 		
+			Debug(__FILE__, __LINE__,"This is a Unix user account");
 			/* check if they are an admin */
 			$sqlstring = "select user_isadmin from users where username = '$username'";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -122,7 +122,7 @@
 			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$instancename = $row['instance_name'];
-			//echo "[$sqlstring] - [$instancename]<br>";
+			Debug(__FILE__, __LINE__,"[$sqlstring] - [$instancename]");
 			
 			$_SESSION['instanceid'] = $instanceid;
 			$_SESSION['instancename'] = $instancename;
@@ -131,7 +131,7 @@
 			return true;
 		}
 		else {
-			//echo "Not a UNIX account, trying standard account";
+			Debug(__FILE__, __LINE__,"Not a unix user account");
 			if (AuthenticateStandardUser($username, $password)) {
 			
 				/* check if they are an admin */
@@ -208,6 +208,7 @@
 			return false;
 			
 		$sqlstring = "select user_id from users where username = '$username' and password = sha1('$password') and user_enabled = 1";
+		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser(): [$sqlstring]");
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0)
 			return true;

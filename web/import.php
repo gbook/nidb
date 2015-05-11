@@ -269,34 +269,36 @@
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numFound++;
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$subjectid = $row['subject_id'];
-					$uid = $row['uid'];
-					$altuid = $row['altuid'];
-					?>
-					<tr>
-						<td><?=$altid?></td>
-						<td><?=$altuid?></td>
-						<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-					</tr>
-					<?
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$subjectid = $row['subject_id'];
+						$uid = $row['uid'];
+						$altuid = $row['altuid'];
+						?>
+						<tr>
+							<td><?=$altid?></td>
+							<td><?=$altuid?></td>
+							<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+						</tr>
+						<?
+					}
 				}
 				else {
 					$sqlstring = "select c.subject_id, c.uid, a.study_alternateid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_alternateid = '$altid' or a.study_alternateid = sha1('$altid') or a.study_alternateid = sha1('$altid ') or a.study_alternateid = sha1(' $altid') or a.study_alternateid = sha1(' $altid ') or a.study_alternateid = sha1(upper('$altid')) or a.study_alternateid = sha1(lower('$altid'))";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					if (mysqli_num_rows($result) > 0) {
 						$numFound++;
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$subjectid = $row['subject_id'];
-						$uid = $row['uid'];
-						$altuid = $row['study_alternateid'];
-						?>
-						<tr>
-							<td><?=$altid?></td>
-							<td style="color:red"><?=$altuid?></td>
-							<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-						</tr>
-						<?
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$subjectid = $row['subject_id'];
+							$uid = $row['uid'];
+							$altuid = $row['study_alternateid'];
+							?>
+							<tr>
+								<td><?=$altid?></td>
+								<td style="color:red"><?=$altuid?></td>
+								<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+							</tr>
+							<?
+						}
 					}
 					else {
 						$numNotFound++;
