@@ -39,6 +39,7 @@
 	require "menu.php";
 
 	//PrintVariable($_POST, "POST");
+	//exit();
 	//PrintVariable($_GET, "GET");
 	
 	/* ----- setup variables ----- */
@@ -85,36 +86,25 @@
 	$newuserid = GetVariable("newuserid");
 	
 	$commandlist = GetVariable("commandlist");
+
+	$dd_enabled = GetVariable("dd_enabled");
+	$dd_order = GetVariable("dd_order");
+	$dd_protocol = GetVariable("dd_protocol");
+	$dd_modality = GetVariable("dd_modality");
+	$dd_datalevel = GetVariable("dd_datalevel");
+	$dd_studyassoc = GetVariable("dd_studyassoc");
+	$dd_dataformat = GetVariable("dd_dataformat");
+	$dd_imagetype = GetVariable("dd_imagetype");
+	$dd_gzip = GetVariable("dd_gzip");
+	$dd_location = GetVariable("dd_location");
+	$dd_seriescriteria = GetVariable("dd_seriescriteria");
+	$dd_numboldreps = GetVariable("dd_numboldreps");
+	$dd_behformat = GetVariable("dd_behformat");
+	$dd_behdir = GetVariable("dd_behdir");
+	$dd_useseriesdirs = GetVariable("dd_useseriesdirs");
+	$dd_optional = GetVariable("dd_optional");
+	$dd_preserveseries = GetVariable("dd_preserveseries");
 	
-	$primarydataorder = GetVariable("primarydataorder");
-	$primaryprotocol = GetVariable("primaryprotocol");
-	$primarymodality = GetVariable("primarymodality");
-	$primarydataformat = GetVariable("primarydataformat");
-	$primaryimagetype = GetVariable("primaryimagetype");
-	$primarygzip = GetVariable("primarygzip");
-	$primarylocation = GetVariable("primarylocation");
-	$primaryseriescriteria = GetVariable("primaryseriescriteria");
-	$primaryuseseriesdirs = GetVariable("primaryuseseriesdirs");
-	$primarypreserveseries = GetVariable("primarypreserveseries");
-	$primarybehformat = GetVariable("primarybehformat");
-	$primarybehdir = GetVariable("primarybehdir");
-	$primarydataenabled = GetVariable("primarydataenabled");
-
-	$assocdataorder = GetVariable("assocdataorder");
-	$assocprotocol = GetVariable("assocprotocol");
-	$assocmodality = GetVariable("assocmodality");
-	$assoctype = GetVariable("assoctype");
-	$assocdataformat = GetVariable("assocdataformat");
-	$associmagetype = GetVariable("associmagetype");
-	$assocgzip = GetVariable("assocgzip");
-	$assoclocation = GetVariable("assoclocation");
-	$assocseriescriteria = GetVariable("assocseriescriteria");
-	$assocuseseriesdirs = GetVariable("assocuseseriesdirs");
-	$assocpreserveseries = GetVariable("assocpreserveseries");
-	$assocbehformat = GetVariable("assocbehformat");
-	$assocbehdir = GetVariable("assocbehdir");
-	$assocdataenabled = GetVariable("assocdataenabled");
-
 	$analysisnotes = GetVariable("analysisnotes");
 	$fileviewtype = GetVariable("fileviewtype");
 	
@@ -125,17 +115,18 @@
 		case 'viewpipeline': DisplayPipeline($id, $version); break;
 		case 'addform': DisplayPipelineForm("add", ""); break;
 		case 'updatepipelinedef':
-			UpdatePipelineDef($id, $commandlist, $steporder, $primarydataorder, $primaryprotocol, $primarymodality, $primarydataformat, $primaryimagetype, $primarygzip, $primarylocation, $primaryseriescriteria, $primaryuseseriesdirs, $primarypreserveseries, $primarybehformat, $primarybehdir, $primarydataenabled, $assocdataorder, $assocprotocol, $assoctype, $assocmodality, $assocdataformat, $associmagetype, $assocgzip, $assoclocation, $assocseriescriteria, $assocuseseriesdirs, $assocpreserveseries, $assocbehformat, $assocbehdir, $assocdataenabled);
+			UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
 			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
-			
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineForm("edit", $id);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
 			break;
 		case 'add':
 			AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
+			DisplayPipelineForm("edit", $id);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
 		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
@@ -452,7 +443,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipelineDef ------------------ */
 	/* -------------------------------------------- */
-	function UpdatePipelineDef($id, $commandlist, $steporder, $primarydataorder, $primaryprotocol, $primarymodality, $primarydataformat, $primaryimagetype, $primarygzip, $primarylocation, $primaryseriescriteria, $primaryuseseriesdirs, $primarypreserveseries, $primarybehformat, $primarybehdir, $primarydataenabled, $assocdataorder, $assocprotocol, $assoctype, $assocmodality, $assocdataformat, $associmagetype, $assocgzip, $assoclocation, $assocseriescriteria, $assocuseseriesdirs, $assocpreserveseries, $assocbehformat, $assocbehdir, $assocdataenabled) {
+	function UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries) {
 		
 		/* determine the current and next pipeline version # */
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
@@ -524,53 +515,71 @@
 		?><div align="center"><span class="message">Pipeline steps [<?=$id?>] updated</span></div><?
 		
 		/* insert all the new PRIMARY data fields with NEW version # */
-		for($i=0; $i<=count($primaryprotocol); $i++) {
-			if (trim($primaryprotocol[$i]) != "") {
+		for($i=0; $i<=count($dd_protocol); $i++) {
+			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$primarydataorder[$i] = mysql_real_escape_string($primarydataorder[$i]);
-				$primaryprotocol[$i] = mysql_real_escape_string($primaryprotocol[$i]);
-				$primarymodality[$i] = mysql_real_escape_string($primarymodality[$i]);
-				$primarydataformat[$i] = mysql_real_escape_string($primarydataformat[$i]);
-				$primaryimagetype[$i] = mysql_real_escape_string($primaryimagetype[$i]);
-				$primarygzip[$i] = mysql_real_escape_string($primarygzip[$i]);
-				$primarylocation[$i] = mysql_real_escape_string($primarylocation[$i]);
-				$primaryseriescriteria[$i] = mysql_real_escape_string($primaryseriescriteria[$i]);
-				$primaryuseseriesdirs[$i] = mysql_real_escape_string($primaryuseseriesdirs[$i]);
-				$primarypreserveseries[$i] = mysql_real_escape_string($primarypreserveseries[$i]);
-				$primarybehformat[$i] = mysql_real_escape_string($primarybehformat[$i]);
-				$primarybehdir[$i] = mysql_real_escape_string($primarybehdir[$i]);
-				$primarydataenabled[$i] = mysql_real_escape_string($primarydataenabled[$i]);
+				//$primarydataorder[$i] = mysql_real_escape_string($primarydataorder[$i]);
+				//$primaryprotocol[$i] = mysql_real_escape_string($primaryprotocol[$i]);
+				//$primarymodality[$i] = mysql_real_escape_string($primarymodality[$i]);
+				//$primarydataformat[$i] = mysql_real_escape_string($primarydataformat[$i]);
+				//$primaryimagetype[$i] = mysql_real_escape_string($primaryimagetype[$i]);
+				//$primarygzip[$i] = mysql_real_escape_string($primarygzip[$i]);
+				//$primarylocation[$i] = mysql_real_escape_string($primarylocation[$i]);
+				//$primaryseriescriteria[$i] = mysql_real_escape_string($primaryseriescriteria[$i]);
+				//$primaryuseseriesdirs[$i] = mysql_real_escape_string($primaryuseseriesdirs[$i]);
+				//$primarypreserveseries[$i] = mysql_real_escape_string($primarypreserveseries[$i]);
+				//$primarybehformat[$i] = mysql_real_escape_string($primarybehformat[$i]);
+				//$primarybehdir[$i] = mysql_real_escape_string($primarybehdir[$i]);
+				//$primarydataenabled[$i] = mysql_real_escape_string($primarydataenabled[$i]);
 
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_type, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled) values ($id, $newversion, '$primarydataorder[$i]', '$primaryseriescriteria[$i]', 'primary', '$primaryprotocol[$i]', '$primarymodality[$i]', '$primarydataformat[$i]', '$primaryimagetype[$i]', '$primarygzip[$i]', '$primarylocation[$i]', '$primaryuseseriesdirs[$i]', '$primarypreserveseries[$i]', '$primarybehformat[$i]', '$primarybehdir[$i]', '$primarydataenabled[$i]')";
-				//printSQL($sqlstring);
+				$dd_enabled[$i] = mysql_real_escape_string($dd_enabled[$i]);
+				$dd_order[$i] = mysql_real_escape_string($dd_order[$i]);
+				$dd_protocol[$i] = mysql_real_escape_string($dd_protocol[$i]);
+				$dd_modality[$i] = mysql_real_escape_string($dd_modality[$i]);
+				$dd_datalevel[$i] = mysql_real_escape_string($dd_datalevel[$i]);
+				$dd_studyassoc[$i] = mysql_real_escape_string($dd_studyassoc[$i]);
+				$dd_dataformat[$i] = mysql_real_escape_string($dd_dataformat[$i]);
+				$dd_imagetype[$i] = mysql_real_escape_string($dd_imagetype[$i]);
+				$dd_gzip[$i] = mysql_real_escape_string($dd_gzip[$i]);
+				$dd_location[$i] = mysql_real_escape_string($dd_location[$i]);
+				$dd_seriescriteria[$i] = mysql_real_escape_string($dd_seriescriteria[$i]);
+				$dd_numboldreps[$i] = mysql_real_escape_string($dd_numboldreps[$i]);
+				$dd_behformat[$i] = mysql_real_escape_string($dd_behformat[$i]);
+				$dd_behdir[$i] = mysql_real_escape_string($dd_behdir[$i]);
+				$dd_useseriesdirs[$i] = mysql_real_escape_string($dd_useseriesdirs[$i]);
+				$dd_optional[$i] = mysql_real_escape_string($dd_optional[$i]);
+				$dd_preserveseries[$i] = mysql_real_escape_string($dd_preserveseries[$i]);
+				
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
 		}
 
-		/* insert all the new ASSOC data fields with NEW version # */
-		for($i=0; $i<=count($assocprotocol); $i++) {
-			if (trim($assocprotocol[$i]) != "") {
-				/* perform data checks */
-				$assocdataorder[$i] = mysql_real_escape_string($assocdataorder[$i]);
-				$assocprotocol[$i] = mysql_real_escape_string($assocprotocol[$i]);
-				$assocmodality[$i] = mysql_real_escape_string($assocmodality[$i]);
-				$assoctype[$i] = mysql_real_escape_string($assoctype[$i]);
-				$assocdataformat[$i] = mysql_real_escape_string($assocdataformat[$i]);
-				$associmagetype[$i] = mysql_real_escape_string($associmagetype[$i]);
-				$assocgzip[$i] = mysql_real_escape_string($assocgzip[$i]);
-				$assoclocation[$i] = mysql_real_escape_string($assoclocation[$i]);
-				$assocseriescriteria[$i] = mysql_real_escape_string($assocseriescriteria[$i]);
-				$assocuseseriesdirs[$i] = mysql_real_escape_string($assocuseseriesdirs[$i]);
-				$assocpreserveseries[$i] = mysql_real_escape_string($assocpreserveseries[$i]);
-				$assocbehformat[$i] = mysql_real_escape_string($assocbehformat[$i]);
-				$assocbehdir[$i] = mysql_real_escape_string($assocbehdir[$i]);
-				$assocdataenabled[$i] = mysql_real_escape_string($assocdataenabled[$i]);
+		// /* insert all the new ASSOC data fields with NEW version # */
+		// for($i=0; $i<=count($assocprotocol); $i++) {
+			// if (trim($assocprotocol[$i]) != "") {
+				// /* perform data checks */
+				// $assocdataorder[$i] = mysql_real_escape_string($assocdataorder[$i]);
+				// $assocprotocol[$i] = mysql_real_escape_string($assocprotocol[$i]);
+				// $assocmodality[$i] = mysql_real_escape_string($assocmodality[$i]);
+				// $assoctype[$i] = mysql_real_escape_string($assoctype[$i]);
+				// $assocdataformat[$i] = mysql_real_escape_string($assocdataformat[$i]);
+				// $associmagetype[$i] = mysql_real_escape_string($associmagetype[$i]);
+				// $assocgzip[$i] = mysql_real_escape_string($assocgzip[$i]);
+				// $assoclocation[$i] = mysql_real_escape_string($assoclocation[$i]);
+				// $assocseriescriteria[$i] = mysql_real_escape_string($assocseriescriteria[$i]);
+				// $assocuseseriesdirs[$i] = mysql_real_escape_string($assocuseseriesdirs[$i]);
+				// $assocpreserveseries[$i] = mysql_real_escape_string($assocpreserveseries[$i]);
+				// $assocbehformat[$i] = mysql_real_escape_string($assocbehformat[$i]);
+				// $assocbehdir[$i] = mysql_real_escape_string($assocbehdir[$i]);
+				// $assocdataenabled[$i] = mysql_real_escape_string($assocdataenabled[$i]);
 
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_type, pdd_assoctype, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled) values ($id, $newversion, '$assocdataorder[$i]', '$assocseriescriteria[$i]', 'associated', '$assoctype[$i]', '$assocprotocol[$i]', '$assocmodality[$i]', '$assocdataformat[$i]', '$associmagetype[$i]', '$assocgzip[$i]', '$assoclocation[$i]', '$assocuseseriesdirs[$i]', '$assocpreserveseries[$i]', '$assocbehformat[$i]', '$assocbehdir[$i]', '$assocdataenabled[$i]')";
-				//printSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			}
-		}
+				// $sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_type, pdd_assoctype, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled) values ($id, $newversion, '$assocdataorder[$i]', '$assocseriescriteria[$i]', 'associated', '$assoctype[$i]', '$assocprotocol[$i]', '$assocmodality[$i]', '$assocdataformat[$i]', '$associmagetype[$i]', '$assocgzip[$i]', '$assoclocation[$i]', '$assocuseseriesdirs[$i]', '$assocpreserveseries[$i]', '$assocbehformat[$i]', '$assocbehdir[$i]', '$assocdataenabled[$i]')";
+				// //printSQL($sqlstring);
+				// $result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			// }
+		// }
 		
 		/* update pipeline with new version */
 		$sqlstring = "update pipelines set pipeline_version = $newversion where pipeline_id = $id";
@@ -1140,18 +1149,18 @@
 							<td valign="top"><input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>> <input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="56"><br>
 							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 						</tr>
-						<tr class="level1">
+						<!--<tr class="level1">
 							<td class="label" valign="top">Data download</td>
 							<td valign="top">
 								<input type="radio" name="dataand" value="0" <?=$disabled?> <? if ($dataand == 0) echo "checked"; ?>>or <span class="tiny">download any of the data specified below</span><br>
 								<input type="radio" name="dataand" value="1" <?=$disabled?> <? if ($dataand == 1) echo "checked"; ?>>and <span class="tiny">only download data if all of the series specified exist in the study</span><br>
 								<input type="radio" name="dataand" value="-1" <?=$disabled?> <? if ($dataand == -1) echo "checked"; ?>>none <span class="tiny">no data download. only use if the pipeline has a dependency</span>
 							</td>
-						</tr>
-						<tr class="level1">
+						</tr>-->
+						<!--<tr class="level1">
 							<td class="label" valign="top">Remove downloaded data?</td>
 							<td valign="top" title="<b>Remove downloaded data</b><br><br>Deletes all downloaded (raw) data after analysis is complete. Assumes that the analsysis will have copied or converted the necessary data and no longer needs it"><input type="checkbox" name="pipelineremovedata" value="1" <? if ($remove) { echo "checked"; } ?>></td>
-						</tr>
+						</tr>-->
 						<tr>
 							<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful"></td>
 							<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
@@ -1442,186 +1451,234 @@
 		<input type="hidden" name="id" value="<?=$id?>">
 		<? if (($level == 1) || (($level == 2) && ($dependency == ''))) { ?>
 		<br>
-		<table width="100%">
+		<style>
+			td.dataheader { padding: 5px; border-bottom: 2px solid #999; background-color: #eee; text-align: center }
+		</style>
+		<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;" class="level1">Data</div>
+		<br>
+		<table class="level1" cellspacing="0" cellpadding="0">
+			<tr style="color:#444; font-size:10pt;">
+				<td class="dataheader"><b>Enabled</b></td>
+				<td class="dataheader"><b>Optional</b></td>
+				<td class="dataheader"><b>Order</b></td>
+				<td class="dataheader"><b>Protocol</b></td>
+				<td class="dataheader"><b>Modality</b></td>
+				<td class="dataheader"><b>Data level</b> <img src="images/help.gif" title="<b>Data Level</b><br>All analyses are based at the study level. If you want to pull data from the same subject, but the data was collected in a different study, select the Subject data level."></td>
+				<td class="dataheader"><b>Study link</b> <img src="images/help.gif" title="<b>Data Level</b><br>If you are looking for data in other studies (within the same subject) you can choose either the nearest in time, or the same study type."></td>
+				<td class="dataheader"><b>Options</b></td>
+			</tr>
+		<?
+		$neworder = 1;
+		/* display all other rows, sorted by order */
+		$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$pipelinedatadef_id = $row['pipelinedatadef_id'];
+			$dd_order = $row['pdd_order'];
+			$dd_seriescriteria = $row['pdd_seriescriteria'];
+			$dd_protocol = $row['pdd_protocol'];
+			$dd_modality = $row['pdd_modality'];
+			$dd_dataformat = $row['pdd_dataformat'];
+			$dd_imagetype = $row['pdd_imagetype'];
+			$dd_gzip = $row['pdd_gzip'];
+			$dd_location = $row['pdd_location'];
+			$dd_useseries = $row['pdd_useseries'];
+			$dd_preserveseries = $row['pdd_preserveseries'];
+			$dd_behformat = $row['pdd_behformat'];
+			$dd_behdir = $row['pdd_behdir'];
+			$dd_enabled = $row['pdd_enabled'];
+			$dd_assoctype = $row['pdd_assoctype'];
+			$dd_optional = $row['pdd_optional'];
+			$dd_datalevel = $row['pdd_level'];
+			$dd_numimagescriteria = $row['pdd_numimagescriteria'];
+			
+			//PrintVariable($row);
+			?>
 			<tr>
-				<td valign="top" width="50%">
-				<!-- ************* primary data spec *************** -->
-					<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;" class="level1">Primary Data</div>
-					<table class="level1" cellspacing="0" cellpadding="0">
-						<tr style="color:#444; font-size:10pt">
-							<td width="60px"><b>Enabled</b></td>
-							<td width="50px"><b>Order</b></td>
-							<td width="245px"><b>Protocol</b></td>
-							<td width="60px"><b>Modality</b></td>
-						</tr>
-					</table>
+				<td width="10" valign="top" style="padding: 5px;" align="center">
+					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>>
+				</td>
+				<td valign="top" style="padding: 5px" align="center">
+					<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>>
+				</td>
+				<td style="padding: 5px" valign="top">
+					<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
+				</td>
+				<td valign="top" style="padding: 5px">
+					<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+				</td>
+				<td valign="top" style="padding: 5px">
+					<select class="small" name="dd_modality[<?=$neworder?>]">
+						<option value="">(Select modality)</option>
 					<?
-						$neworder = 1;
-						/* display all other rows, sorted by order */
-						$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version and pdd_type = 'primary' order by pdd_order + 0";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$pipelinedatadef_id = $row['pipelinedatadef_id'];
-							$pdd_order = $row['pdd_order'];
-							$pdd_seriescriteria = $row['pdd_seriescriteria'];
-							$pdd_protocol = $row['pdd_protocol'];
-							$pdd_modality = $row['pdd_modality'];
-							$pdd_dataformat = $row['pdd_dataformat'];
-							$pdd_imagetype = $row['pdd_imagetype'];
-							$pdd_gzip = $row['pdd_gzip'];
-							$pdd_location = $row['pdd_location'];
-							$pdd_useseries = $row['pdd_useseries'];
-							$pdd_preserveseries = $row['pdd_preserveseries'];
-							$pdd_behformat = $row['pdd_behformat'];
-							$pdd_behdir = $row['pdd_behdir'];
-							$pdd_enabled = $row['pdd_enabled'];
-							?>
-							<details class="level1" style="padding:0px">
-								<summary>
-									<input class="small" type="checkbox" name="primarydataenabled[<?=$neworder?>]" value="1" <? if ($pdd_enabled) {echo "checked";} ?>>
-									<input class="small" type="text" name="primarydataorder[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>">
-									<input class="small" type="text" name="primaryprotocol[<?=$neworder?>]" size="40" value='<?=$pdd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-									<select class="small" name="primarymodality[<?=$neworder?>]">
-										<option value="">(Select modality)</option>
-									<?
-										$sqlstringA = "select * from modalities order by mod_desc";
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$mod_code = $rowA['mod_code'];
-											$mod_desc = $rowA['mod_desc'];
-											
-											/* check if the modality table exists */
-											$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-											//echo $sqlstring2;
-											$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-											if (mysqli_num_rows($result2) > 0) {
-											
-												/* if the table does exist, allow the user to search on it */
-												if ($mod_code == $pdd_modality) {
-													$selected = "selected";
-												}
-												else {
-													$selected = "";
-												}
-												?>
-												<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
-												<?
-											}
-										}
-									?>
-									</select>
-									
-								</summary>
-								<table class="entrytable" style="background-color: #EEE; border-radius:9px; border: 1px solid #999">
-									<tr>
-										<td class="label">Data format</td>
-										<td>
-											<select class="small" name="primarydataformat[<?=$neworder?>]">
-												<option value="native" <? if ($pdd_dataformat == "native") { echo "selected"; } ?>>Native</option>
-												<option value="dicom" <? if ($pdd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
-												<option value="nifti3d" <? if ($pdd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
-												<option value="nifti4d" <? if ($pdd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
-												<option value="analyze3d" <? if ($pdd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
-												<option value="analyze4d" <? if ($pdd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Image type</td>
-										<td><input class="small" type="text" name="primaryimagetype[<?=$neworder?>]" size="30" value="<?=$pdd_imagetype?>"></td>
-									</tr>
-									<tr>
-										<td class="label">g-zip</td>
-										<td><input class="small" type="checkbox" name="primarygzip[<?=$neworder?>]" value="1" <? if ($pdd_gzip) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
-										<td title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><input class="small" type="text" name="primarylocation[<?=$neworder?>]" size="30" value="<?=$pdd_location?>"></td>
-									</tr>
-									<tr>
-										<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
-										<td>
-											<select class="small" name="primaryseriescriteria[<?=$neworder?>]">
-												<option value="all" <? if ($pdd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
-												<option value="first" <? if ($pdd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
-												<option value="last" <? if ($pdd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
-												<option value="largestsize" <? if ($pdd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
-												<option value="smallestsize" <? if ($pdd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Use series directories</td>
-										<td title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"><input class="small" type="checkbox" name="primaryuseseriesdirs[<?=$neworder?>]" value="1" <? if ($pdd_useseries) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
-										<td><input class="small" type="checkbox" name="primarypreserveseries[<?=$neworder?>]" value="1" <? if ($pdd_preserveseries) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Behavioral data directory format</td>
-										<td>
-											<select class="small" name="primarybehformat[<?=$neworder?>]">
-												<option value="behnone" <? if ($pdd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
-												<option value="behroot" <? if ($pdd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
-												<option value="behrootdir" <? if ($pdd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
-												<option value="behseries" <? if ($pdd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
-												<option value="behseriesdir" <? if ($pdd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Behavioral data directory name</td>
-										<td><input class="small" type="text" name="primarybehdir[<?=$neworder?>]" size="30" value="<?=$pdd_behdir?>"></td>
-									</tr>
-								</table>
-								<br>
-							</details>
-							<?
-							$neworder++;
-						}
-						
-					for ($ii=0;$ii<5;$ii++) {
-					?>
-					<details class="level1" style="padding:0px">
-					<summary>
-						<input class="small" type="checkbox" name="primarydataenabled[<?=$neworder?>]" value="1">
-						<input class="small" type="text" name="primarydataorder[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>">
-						<input class="small" type="text" name="primaryprotocol[<?=$neworder?>]" size="40" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-						<select class="small" name="primarymodality[<?=$neworder?>]">
-							<option value="">(Select modality)</option>
-						<?
-							$sqlstring = "select * from modalities order by mod_desc";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$mod_code = $row['mod_code'];
-								$mod_desc = $row['mod_desc'];
-								
-								/* check if the modality table exists */
-								$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-								//echo $sqlstring2;
-								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-								if (mysqli_num_rows($result2) > 0) {
-									if ($mod_code == $pdd_modality) {
-										$selected = "selected";
-									}
-									else {
-										$selected = "";
-									}
-									?>
-									<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
-									<?
+						$sqlstringA = "select * from modalities order by mod_desc";
+						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+							$mod_code = $rowA['mod_code'];
+							$mod_desc = $rowA['mod_desc'];
+							
+							/* check if the modality table exists */
+							$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
+							//echo $sqlstring2;
+							$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+							if (mysqli_num_rows($result2) > 0) {
+							
+								/* if the table does exist, allow the user to search on it */
+								if ($mod_code == $dd_modality) {
+									$selected = "selected";
 								}
+								else {
+									$selected = "";
+								}
+								?>
+								<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
+								<?
 							}
-						?>
-						</select>
-					</summary>
-						<table class="entrytable" style="background-color: #EEE; border-radius:9px; border: 1px solid #999">
+						}
+					?>
+					</select>
+				</td>
+				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
+					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="study" style="padding:0px" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "checked"; } ?>>Study<br>
+					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="subject" style="padding:0px" <? if ($dd_datalevel == "subject") { echo "checked"; } ?>>Subject
+				</td>
+				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
+					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="nearestintime" style="padding:0px" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "checked"; } ?>>Nearest in time<br>
+					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="samestudytype" style="padding:0px" <? if ($dd_assoctype == "samestudytype") { echo "checked"; } ?>>Same study type
+				</td>
+				<td valign="top">
+					<details class="level1" style="padding:0px;margin:0px">
+						<summary style="padding:0px; font-size:9pt">Options</summary>
+						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">
 							<tr>
 								<td class="label">Data format</td>
 								<td>
-									<select class="small" name="primarydataformat[<?=$neworder?>]">
-										<option value="native">Native</option>
+									<select class="small" name="dd_dataformat[<?=$neworder?>]">
+										<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
+										<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
+										<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
+										<option value="nifti4d" <? if ($dd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
+										<option value="analyze3d" <? if ($dd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
+										<option value="analyze4d" <? if ($dd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">Image type</td>
+								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
+							</tr>
+							<tr>
+								<td class="label">g-zip</td>
+								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
+							</tr>
+							<tr>
+								<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
+								<td title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
+							</tr>
+							<tr>
+								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+								<td>
+									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
+										<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
+										<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
+										<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
+										<option value="largestsize" <? if ($dd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
+										<option value="smallestsize" <? if ($dd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
+										<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use size criteria below</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
+								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
+							</tr>
+							<tr>
+								<td class="label">Use series directories</td>
+								<td title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>></td>
+							</tr>
+							<tr>
+								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
+								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>></td>
+							</tr>
+							<tr>
+								<td class="label">Behavioral data directory format</td>
+								<td>
+									<select class="small" name="dd_behformat[<?=$neworder?>]">
+										<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
+										<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
+										<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
+										<option value="behseries" <? if ($dd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
+										<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">Behavioral data directory name</td>
+								<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>"></td>
+							</tr>
+						</table>
+						<br>
+					</details>
+				</td>
+			</tr>
+			<?
+			$neworder++;
+		}
+		for ($ii=0;$ii<5;$ii++) {
+		?>
+			<tr>
+				<td width="10" valign="top" style="padding: 5px;" align="center">
+					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1">
+				</td>
+				<td valign="top" style="padding: 5px" align="center">
+					<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1">
+				</td>
+				<td style="padding: 5px" valign="top">
+					<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
+				</td>
+				<td valign="top" style="padding: 5px">
+					<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+				</td>
+				<td valign="top" style="padding: 5px">
+					<select class="small" name="dd_modality[<?=$neworder?>]">
+						<option value="">(Select modality)</option>
+					<?
+						$sqlstringA = "select * from modalities order by mod_desc";
+						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+							$mod_code = $rowA['mod_code'];
+							$mod_desc = $rowA['mod_desc'];
+							
+							/* check if the modality table exists */
+							$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
+							//echo $sqlstring2;
+							$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+							if (mysqli_num_rows($result2) > 0) {
+								?>
+								<option value="<?=$mod_code?>"><?=$mod_code?></option>
+								<?
+							}
+						}
+					?>
+					</select>
+				</td>
+				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
+					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="study" style="padding:0px" checked>Study<br>
+					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="subject" style="padding:0px">Subject
+				</td>
+				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
+					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="nearestintime" style="padding:0px" checked>Nearest in time<br>
+					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="samestudytype" style="padding:0px">Same study type
+				</td>
+				<td valign="top">
+					<details class="level1" style="padding:0px;margin:0px">
+						<summary style="padding:0px; font-size:9pt">Options</summary>
+						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">
+							<tr>
+								<td class="label">Data format</td>
+								<td>
+									<select class="small" name="dd_dataformat[<?=$neworder?>]">
+										<option value="native" selected>Native</option>
 										<option value="dicom">DICOM</option>
 										<option value="nifti3d">Nifti 3D</option>
 										<option value="nifti4d">Nifti 4D</option>
@@ -1632,41 +1689,46 @@
 							</tr>
 							<tr>
 								<td class="label">Image type</td>
-								<td><input class="small" type="text" name="primaryimagetype[<?=$neworder?>]" size="30"></td>
+								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30"></td>
 							</tr>
 							<tr>
 								<td class="label">g-zip</td>
-								<td><input class="small" type="checkbox" name="primarygzip[<?=$neworder?>]" value="1"></td>
+								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
-								<td class="label">Location</td>
-								<td><input class="small" type="text" name="primarylocation[<?=$neworder?>]" size="30"></td>
+								<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
+								<td title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
 							</tr>
 							<tr>
 								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
 								<td>
-									<select class="small" name="primaryseriescriteria[<?=$neworder?>]">
-										<option value="all">All</option>
+									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
+										<option value="all" selected>All</option>
 										<option value="first">First</option>
 										<option value="last">Last</option>
 										<option value="largestsize">Largest</option>
 										<option value="smallestsize">Smallest</option>
+										<option value="usesizecriteria">Use size criteria below</option>
 									</select>
 								</td>
 							</tr>
 							<tr>
+								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
+								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]"></td>
+							</tr>
+							<tr>
 								<td class="label">Use series directories</td>
-								<td><input class="small" type="checkbox" name="primaryuseseriesdirs[<?=$neworder?>]" value="1"></td>
+								<td title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
 								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
-								<td><input class="small" type="checkbox" name="primarypreserveseries[<?=$neworder?>]" value="1"></td>
+								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
 								<td class="label">Behavioral data directory format</td>
 								<td>
-									<select class="small" name="primarybehformat[<?=$neworder?>]">
-										<option value="behnone">Don't download behavioral data</option>
+									<select class="small" name="dd_behformat[<?=$neworder?>]">
+										<option value="behnone" selected>Don't download behavioral data</option>
 										<option value="behroot">Place in root (file.log)</option>
 										<option value="behrootdir">Place in directory in root (beh/file.log)</option>
 										<option value="behseries">Place in series (2/file.log)</option>
@@ -1676,295 +1738,15 @@
 							</tr>
 							<tr>
 								<td class="label">Behavioral data directory name</td>
-								<td><input class="small" type="text" name="primarybehdir[<?=$neworder?>]" size="30"></td>
+								<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]"></td>
 							</tr>
 						</table>
 						<br>
 					</details>
-					<?
-						$neworder++;
-					}
-					?>
-				</td>
-				<td valign="top" width="50%">
-				<!-- ************* associated data spec *************** -->
-					<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;" class="level1">Associated Data</div>
-					<span class="tiny level1">...will be downloaded from any other <u>studies</u> (imaging session) from the same subject if the adjacent primary data is found</span>
-					<br class="level1">
-					<table class="level1" cellspacing="0" cellpadding="0">
-						<tr style="color:#444; font-size:10pt">
-							<td width="60px">Enabled</td>
-							<td width="50px">Order</td>
-							<td width="250px">Protocol</td>
-							<td width="215px">Data Association</td>
-						</tr>
-					</table>
-					<?
-						$neworder = 1;
-						/* display all other rows, sorted by order */
-						$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version and pdd_type = 'associated' order by pdd_order + 0";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							//PrintVariable($row);
-							$pipelinedatadef_id = $row['pipelinedatadef_id'];
-							$pdd_order = $row['pdd_order'];
-							$pdd_protocol = $row['pdd_protocol'];
-							$pdd_modality = $row['pdd_modality'];
-							$pdd_assoctype = $row['pdd_assoctype'];
-							$pdd_seriescriteria = $row['pdd_seriescriteria'];
-							$pdd_dataformat = $row['pdd_dataformat'];
-							$pdd_imagetype = $row['pdd_imagetype'];
-							$pdd_gzip = $row['pdd_gzip'];
-							$pdd_location = $row['pdd_location'];
-							$pdd_useseries = $row['pdd_useseries'];
-							$pdd_preserveseries = $row['pdd_preserveseries'];
-							$pdd_behformat = $row['pdd_behformat'];
-							$pdd_behdir = $row['pdd_behdir'];
-							$pdd_enabled = $row['pdd_enabled'];
-							?>
-							<details class="level1" style="padding:0px">
-								<summary>
-									<input class="small" type="checkbox" name="assocdataenabled[<?=$neworder?>]" value="1" <? if ($pdd_enabled) {echo "checked";} ?>>
-									<input class="small" type="text" name="assocdataorder[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>">
-									<input class="small" type="text" name="assocprotocol[<?=$neworder?>]" size="30" value='<?=$pdd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-									<select class="small" name="assoctype[<?=$neworder?>]">
-										<option value="">(Select association)</option>
-										<option value="nearesttime" <? if ($pdd_assoctype == "nearesttime") { echo "selected"; } ?>>Nearest in time</option>
-										<option value="samestudytype" <? if ($pdd_assoctype == "samestudytype") { echo "selected"; } ?>>Same visit type</option>
-									</select>
-								</summary>
-								<table class="entrytable" style="background-color: #EEE; border-radius:9px; border: 1px solid #999">
-									<tr>
-										<td class="label">Modality</td>
-										<td>
-											<select class="small" name="assocmodality[<?=$neworder?>]">
-												<option value="">(Select modality)</option>
-											<?
-												$sqlstringA = "select * from modalities order by mod_desc";
-												$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-												while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-													$mod_code = $rowA['mod_code'];
-													$mod_desc = $rowA['mod_desc'];
-													
-													/* check if the modality table exists */
-													$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-													//echo $sqlstring2;
-													$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-													if (mysqli_num_rows($result2) > 0) {
-													
-														/* if the table does exist, allow the user to search on it */
-														//if (($mod_code == "MR") && ($pdd_modality == "")) {
-														//	$selected = "selected";
-														//}
-														//else {
-															if ($mod_code == $pdd_modality) {
-																$selected = "selected";
-															}
-															else {
-																$selected = "";
-															}
-														//}
-														?>
-														<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
-														<?
-													}
-												}
-											?>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Data format</td>
-										<td>
-											<select class="small" name="assocdataformat[<?=$neworder?>]">
-												<option value="native" <? if ($pdd_dataformat == "native") { echo "selected"; } ?>>Native</option>
-												<option value="dicom" <? if ($pdd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
-												<option value="nifti3d" <? if ($pdd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
-												<option value="nifti4d" <? if ($pdd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
-												<option value="analyze3d" <? if ($pdd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
-												<option value="analyze4d" <? if ($pdd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Image type</td>
-										<td><input class="small" type="text" name="associmagetype[<?=$neworder?>]" size="30" value="<?=$pdd_imagetype?>"></td>
-									</tr>
-									<tr>
-										<td class="label">g-zip</td>
-										<td><input class="small" type="checkbox" name="assocgzip[<?=$neworder?>]" value="1" <? if ($pdd_gzip) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
-										<td><input class="small" type="text" name="assoclocation[<?=$neworder?>]" size="30" value="<?=$pdd_location?>"></td>
-									</tr>
-									<tr>
-										<td class="label">Criteria</td>
-										<td>
-											<select class="small" name="assocseriescriteria[<?=$neworder?>]">
-												<option value="all" <? if ($pdd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
-												<option value="first" <? if ($pdd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
-												<option value="last" <? if ($pdd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
-												<option value="largestsize" <? if ($pdd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
-												<option value="smallestsize" <? if ($pdd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Use series directories</td>
-										<td><input class="small" type="checkbox" name="assocuseseriesdirs[<?=$neworder?>]" value="1" <? if ($pdd_useseries) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Preserve series numbers</td>
-										<td><input class="small" type="checkbox" name="assocpreserveseries[<?=$neworder?>]" value="1" <? if ($pdd_preserveseries) {echo "checked";} ?>></td>
-									</tr>
-									<tr>
-										<td class="label">Behavioral data directory format</td>
-										<td>
-											<select class="small" name="assocbehformat[<?=$neworder?>]">
-												<option value="behnone" <? if ($pdd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
-												<option value="behroot" <? if ($pdd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
-												<option value="behrootdir" <? if ($pdd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
-												<option value="behseries" <? if ($pdd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
-												<option value="behseriesdir" <? if ($pdd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
-											</select>
-										</td>
-									</tr>
-									<tr>
-										<td class="label">Behavioral data directory name</td>
-										<td><input class="small" type="text" name="assocbehdir[<?=$neworder?>]" size="30" value="<?=$pdd_behdir?>"></td>
-									</tr>
-								</table>
-								<br>
-							</details>
-							<?
-							$neworder++;
-						}
-
-						/* display rows for new data */
-						for ($ii=0;$ii<5;$ii++) {
-						?>
-						<details class="level1" style="padding:0px">
-							<summary>
-								<input class="small" type="checkbox" name="assocdataenabled[<?=$neworder?>]" value="1">
-								<input class="small" type="text" name="assocdataorder[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>">
-								<input class="small" type="text" name="assocprotocol[<?=$neworder?>]" size="30" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-								<select class="small" name="assoctype[<?=$neworder?>]">
-									<option value="">(Select association)</option>
-									<option value="nearesttime">Nearest in time</option>
-									<option value="samestudytype">Same visit type</option>
-								</select>
-							</summary>
-							<table class="entrytable" style="background-color: #EEE; border-radius:9px; border: 1px solid #999">
-								<tr>
-									<td class="label">Modality</td>
-									<td>
-										<select class="small" name="assocmodality[<?=$neworder?>]">
-											<option value="">(Select modality)</option>
-										<?
-											$sqlstring = "select * from modalities order by mod_desc";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$mod_code = $row['mod_code'];
-												$mod_desc = $row['mod_desc'];
-												
-												/* check if the modality table exists */
-												$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-												//echo $sqlstring2;
-												$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-												if (mysqli_num_rows($result2) > 0) {
-												
-													/* if the table does exist, allow the user to search on it */
-													//if (($mod_code == "MR") && ($pdd_modality == "")) {
-													//	$selected = "selected";
-													//}
-													//else {
-														if ($mod_code == $pdd_modality) {
-															$selected = "selected";
-														}
-														else {
-															$selected = "";
-														}
-													//}
-													?>
-													<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
-													<?
-												}
-											}
-										?>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">Data format</td>
-									<td>
-										<select class="small" name="assocdataformat[<?=$neworder?>]">
-											<option value="native">Native</option>
-											<option value="dicom">DICOM</option>
-											<option value="nifti3d">Nifti 3D</option>
-											<option value="nifti4d">Nifti 4D</option>
-											<option value="analyze3d">Analyze 3D</option>
-											<option value="analyze4d">Analyze 4D</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">Image type</td>
-									<td><input class="small" type="text" name="associmagetype[<?=$neworder?>]" size="30"></td>
-								</tr>
-								<tr>
-									<td class="label">g-zip</td>
-									<td><input class="small" type="checkbox" name="assocgzip[<?=$neworder?>]" value="1"></td>
-								</tr>
-								<tr>
-									<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
-									<td><input class="small" type="text" name="assoclocation[<?=$neworder?>]" size="30"></td>
-								</tr>
-								<tr>
-									<td class="label">Criteria</td>
-									<td>
-										<select class="small" name="assocseriescriteria[<?=$neworder?>]">
-											<option value="all">All</option>
-											<option value="first">First</option>
-											<option value="last">Last</option>
-											<option value="largestsize">Largest</option>
-											<option value="smallestsize">Smallest</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">Use series directories</td>
-									<td><input class="small" type="checkbox" name="assocuseseriesdirs[<?=$neworder?>]" value="1"></td>
-								</tr>
-								<tr>
-									<td class="label">Preserve series numbers</td>
-									<td><input class="small" type="checkbox" name="assocpreserveseries[<?=$neworder?>]" value="1"></td>
-								</tr>
-								<tr>
-									<td class="label">Behavioral data directory format</td>
-									<td>
-										<select class="small" name="assocbehformat[<?=$neworder?>]">
-											<option value="behnone">Don't download behavioral data</option>
-											<option value="behroot">Place in root (file.log)</option>
-											<option value="behrootdir">Place in directory in root (beh/file.log)</option>
-											<option value="behseries">Place in series (2/file.log)</option>
-											<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<td class="label">Behavioral data directory name</td>
-									<td><input class="small" type="text" name="assocbehdir[<?=$neworder?>]" size="30"></td>
-								</tr>
-							</table>
-							<br>
-						</details>
-						<? 
-							$neworder++;
-						}
-					?>
 				</td>
 			</tr>
+			<? $neworder++; ?>
+			<? } ?>
 		</table>
 		<?
 		} /* end of the check to display the data specs */ ?>

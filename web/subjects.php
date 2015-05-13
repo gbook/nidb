@@ -2393,6 +2393,12 @@
 	/* -------------------------------------------- */
 	function DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive) {
 	
+		$searchuid = mysql_real_escape_string($searchuid);
+		$searchaltuid = mysql_real_escape_string($searchaltuid);
+		$searchname = mysql_real_escape_string($searchname);
+		$searchgender = mysql_real_escape_string($searchgender);
+		$searchdob = mysql_real_escape_string($searchdob);
+		$searchactive = mysql_real_escape_string($searchactive);
 	?>
 	<script>
 		$(document).ready(function() {

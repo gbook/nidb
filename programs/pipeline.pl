@@ -56,7 +56,7 @@ our $scriptname = "pipeline";
 our $lockfileprefix = "pipeline";	# lock files will be numbered lock.1, lock.2 ...
 our $lockfile = "";					# lockfile name created for this instance of the program
 our $log;							# logfile handle created for this instance of the program
-our $numinstances = 6;				# number of times this program can be run concurrently
+our $numinstances = 7;				# number of times this program can be run concurrently
 # debugging
 our $debug = 0;
 
@@ -1274,150 +1274,123 @@ sub GetData() {
 		my $studynum = $row{'study_num'};
 		
 		WriteLog("Study modality is [$modality]");
-		WriteLog("Data AND: $pipelinedataand");
-		$datalog .= "Study modality is [$modality]\nData AND: $pipelinedataand";
-		# if this data specification is an 'and', check it first. if this study doesn't have at least 1 of each of the protocols specified
-		# in the steps, then leave the function and don't download any data
-		if ($pipelinedataand == 1) {
-			$datalog .= "This is an AND data specification... checking to see if all required primary data exists in the study.\n";
-			WriteLog("This is an AND data spec. Checking to see if ALL data is found for this study");
-			#$datareport .= "This pipeline uses an AND data specification\n";
-			foreach my $i(0..$#datadef) {
-				my $protocol = $datadef[$i]{'protocol'};
-				my $modality = $datadef[$i]{'modality'};
-				my $imagetype = $datadef[$i]{'imagetype'};
-				my $enabled = $datadef[$i]{'enabled'};
-				my $type = $datadef[$i]{'type'};
-				# seperate any protocols that have multiples
-				my $protocols;
-				if ($protocol =~ /\"/) {
-					my @prots = shellwords($protocol);
-					$protocols = "'" . join("','", @prots) . "'";
-				}
-				else {
-					$protocols = "'$protocol'";
-				}
+		#WriteLog("Data AND: $pipelinedataand");
+		#$datalog .= "Study modality is [$modality]\nData AND: $pipelinedataand";
+		
+		# ------------------------------------------------------------------------
+		# check all of the steps to see if this data spec is valid
+		# ------------------------------------------------------------------------
+		my $stepIsInvalid = 0;
+		foreach my $i(0..$#datadef) {
+			my $protocol = $datadef[$i]{'protocol'};
+			my $modality = lc($datadef[$i]{'modality'});
+			my $imagetype = $datadef[$i]{'imagetype'};
+			my $enabled = $datadef[$i]{'enabled'};
+			my $type = $datadef[$i]{'type'};
+			my $level = $datadef[$i]{'level'};
+			my $assoctype = $datadef[$i]{'assoctype'};
+			my $optional = $datadef[$i]{'optional'};
+			my $numboldreps = trim($datadef[$i]{'numboldreps'});
+			
+			$datalog .= "Checking data spec step [$i]: protocol [$protocol], modality [$modality], imagetype [$imagetype], enabled [$enabled], type [$type], level [$level], assoctype [$assoctype], optional [$optional], numboldreps [$numboldreps]\n";
+			
+			# check if the step is enabled
+			if (!$enabled) { $datalog .= "Data specification step [$i] is NOT enabled\n"; next; }
+			
+			# check if the step is optional
+			if ($optional) { $datalog .= "Data steo [$i] is optional. Ignoring the check\n"; next; }
 				
-				WriteLog("Checking data spec, step [$i]");
-				$datalog .= "Checking data spec, step [$i]\n";
-				if (!$enabled) {
-					WriteLog("Data specification is NOT enabled");
-					$datalog .= "Data specification step is not enabled\n";
-					next;
-				}
-				else {
-					WriteLog("Data specification is enabled");
-				}
-				
-				if ($type eq 'primary') {
-					$modality = lc($modality);
-					# make sure the requested modality table exists
-					$sqlstring = "show tables like '$modality"."_series'";
-					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-					if ($result->numrows > 0) {
-					
-						# get a list of series satisfying the search criteria, if it exists
-						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols)) and image_type like '%$imagetype%'";
-						WriteLog($sqlstring);
-						$datalog .= "[$sqlstring]\n";
-						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-						if ($result->numrows < 1) {
-							$datalog .= "This study did NOT contain step [$i]: [$protocol] [$modality] [$imagetype]\n";
-							WriteLog("This study did NOT contain step [$i]: [$protocol] [$modality] [$imagetype]");
-							return (0, $datalog);
-						}
-						else {
-							WriteLog("This study contained step [$i]: [$protocol] [$modality] [$imagetype]");
-							$datalog .= "This study contained step [$i]: [$protocol] [$modality] [$imagetype]\n";
-						}
-					}
-					else {
-						WriteLog("The [$modality"."_series] table does not exist");
-						$datalog .= "The [$modality"."_series] table does not exist\n";
-					}
-				}
+			# make sure the requested modality table exists
+			$sqlstring = "show tables like '$modality"."_series'";
+			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			if ($result->numrows < 1) {
+				$datalog .= "Modality [$modality] not found\n";
+				$stepIsInvalid = 1;
+				last;
 			}
-			WriteLog("All protocols were found in this study");
-			$datalog .= "All protocols were found in this study\n";
-		}
-		else {
-			WriteLog("This is a data OR spec. Checking to see if at least one of the data steps exists");
-			$datalog .= "This is a data OR specification\n";
-			# check to make sure at least some of the primary data exists
-			my $primaryDataFound = 0;
-			foreach my $i(0..$#datadef) {
-				my $protocol = $datadef[$i]{'protocol'};
-				my $modality = $datadef[$i]{'modality'};
-				my $imagetype = $datadef[$i]{'imagetype'};
-				my $enabled = $datadef[$i]{'enabled'};
-				my $type = $datadef[$i]{'type'};
-				# seperate any protocols that have multiples
-				my $protocols;
-				if ($protocol =~ /\"/) {
-					my @prots = shellwords($protocol);
-					$protocols = "'" . join("','", @prots) . "'";
-				}
-				else {
-					$protocols = "'$protocol'";
-				}
-				
-				WriteLog("Checking data spec, step [$i]");
-				
-				if (!$enabled) {
-					WriteLog("Data specification is NOT enabled");
-					$datalog .= "Data specification step [$] is NOT enabled\n";
-					next;
-				}
-				else {
-					WriteLog("Data specification is enabled");
-				}
-				
-				WriteLog("This protocol [$protocol] is type [$type], modality [$modality]");
-				$datalog .= "This protocol [$protocol] is type [$type], modality [$modality]\n";
-				if ($type eq 'primary') {
-					WriteLog("This protocol [$protocol] is primary. type: [$type]");
-					$datalog .= "This protocol [$protocol] is primary. type: [$type]\n";
-					$modality = lc($modality);
-					# make sure the requested modality table exists
-					$sqlstring = "show tables like '$modality"."_series'";
-					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-					if ($result->numrows > 0) {
-					
-						# get a list of series satisfying the search criteria, if it exists
-						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
-						WriteLog($sqlstring);
-						$datalog .= "[$sqlstring]\n";
-						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-						if ($result->numrows > 0) {
-							WriteLog("This study contained step [$i]: [$protocol] [$modality] [$imagetype]");
-							$datalog .= "This study contained [$protocol]\n";
-							$primaryDataFound = 1;
-							last;
-						}
-						else {
-							$datalog .= "This study did not contain [$protocol]\n";
-							WriteLog("This study did NOT contain step [$i]: [$protocol] [$modality] [$imagetype]");
-						}
-					}
-					else {
-						$datalog .= "Modality [$modality] not found\n";
-						WriteLog("Modality [$modality] not found");
-					}
-				}
-				else {
-					$datalog .= "This type [$type] is not primary\n";
-					WriteLog("This type [$type] is not primary");
-				}
-			}
-			if (!$primaryDataFound) {
-				return (0, $datalog, $datareport);
+			
+			# seperate any protocols that have multiples
+			my $protocols;
+			if ($protocol =~ /\"/) {
+				my @prots = shellwords($protocol);
+				$protocols = "'" . join("','", @prots) . "'";
 			}
 			else {
-				WriteLog("Primary data was found for study [$studyid]");
+				$protocols = "'$protocol'";
+			}
+			
+			# expand the comparison into SQL
+			my ($comparison, $num) = GetSQLComparison($numboldreps);
+			
+			# if its a subject level, check the subject for the protocol(s)
+			if ($level eq "subject") {
+				$datalog .= "This data step is subject level [$protocol], association type [$assoctype]\n";
+				# get the subject ID and study type, based on the current study ID
+				my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+				WriteLog($sqlstringA);
+				if ($resultA->numrows > 0) {
+					my %rowA = $resultA->fetchhash;
+					my $subjectid = $rowA{'subject_id'};
+					my $studytype = $rowA{'study_type'};
+					my $studydate = $rowA{'study_datetime'};
+					
+					if ($assoctype eq 'nearesttime') {
+						# find the data from the same subject and modality that has the nearest (in time) matching scan
+						#WriteLog("Searching for subject-level data nearest in time...");
+						$datalog .= "    Searching for subject-level data nearest in time\n";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
+					}
+					elsif ($assoctype eq 'all') {
+						#WriteLog("Searching for all subject-level data...");
+						$datalog .= "    Searching for all subject-level data\n";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%'";
+					}
+					else {
+						# find the data from the same subject and modality that has the same study_type
+						#WriteLog("Searching for subject-level data with same study type...");
+						$datalog .= "    Searching for subject-level data with same study type\n";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%' and `studies`.study_type = '$studytype'";
+					}
+				}
+				WriteLog($sqlstring);
+				my $newseriesnum = 1;
+				my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
+				if ($resultC->numrows > 0) {
+					$datalog .= "Found " . $resultC->numrows . " matching subject-level series\n";
+				}
+				else {
+					$datalog .= "Found 0 rows matching the subject-level required protocol(s)\n";
+					$stepIsInvalid = 1;
+					last;
+				}
+			}
+			# otherwise, check the study for the protocol(s)
+			else {
+				# get a list of series satisfying the search criteria, if it exists
+				$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
+				#WriteLog($sqlstring);
+				$datalog .= "[$sqlstring]\n";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				if ($result->numrows > 0) {
+					$datalog .= "This study contained step [$i]: [$protocol] [$modality] [$imagetype] [$numboldreps]\n";
+				}
+				else {
+					$datalog .= "This study did NOT contain this required step [$i]: [$protocol] [$modality] [$imagetype] [$numboldreps]\n";
+					$stepIsInvalid = 1;
+					last;
+				}
 			}
 		}
 		
-		# by this point we can assume primary data exists, so associated data will downloaded just like regular data
+		# ------ end checking the data steps -------------
+		
+		if ($stepIsInvalid) {
+			# bail out of this function, the data spec didn't work out for this subject
+			return (0,$datalog, $datareport);
+		}
+		
+		# by this point we can assume all of the data exists
 		
 		WriteLog("Modality: $modality");
 		
@@ -1439,6 +1412,10 @@ sub GetData() {
 			my $behformat = $datadef[$i]{'behformat'};
 			my $behdir = $datadef[$i]{'behdir'};
 			my $enabled = $datadef[$i]{'enabled'};
+			my $level = $datadef[$i]{'level'};
+			my $optional = $datadef[$i]{'optional'};
+			my $numboldreps = trim($datadef[$i]{'numboldreps'});
+			
 			# seperate any protocols that have multiples
 			my $protocols;
 			if ($protocol =~ /\"/) {
@@ -1461,7 +1438,7 @@ sub GetData() {
 				if ($result->numrows > 0) {
 				
 					# get a list of series satisfying the search criteria, if it exists
-					if ($type eq 'primary') {
+					if ($level eq 'study') {
 						WriteLog("This data step is PRIMARY [$protocol], criteria: [$criteria]");
 						$datalog .= "This data step is PRIMARY [$protocol] criteria: [$criteria]\n";
 						if ($criteria eq 'first') {
@@ -1481,7 +1458,7 @@ sub GetData() {
 						}
 					}
 					else {
-						WriteLog("This data step is ASSOCIATED [$protocol], association type [$assoctype]");
+						WriteLog("This data step is subject level [$protocol], association type [$assoctype]");
 						# get the subject ID and study type, based on the current study ID
 						my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -1494,19 +1471,19 @@ sub GetData() {
 							
 							if ($assoctype eq 'nearesttime') {
 								# find the data from the same subject and modality that has the nearest (in time) matching scan
-								WriteLog("Searching for associated data nearest in time...");
-								$datalog .= "    Searching for associated data nearest in time\n";
+								WriteLog("Searching for subject-level data nearest in time...");
+								$datalog .= "    Searching for subject-level data nearest in time\n";
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
 							}
 							elsif ($assoctype eq 'all') {
-								WriteLog("Searching for all associated data...");
-								$datalog .= "    Searching for all associated data\n";
+								WriteLog("Searching for all subject-level data...");
+								$datalog .= "    Searching for all subject-level data\n";
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%'";
 							}
 							else {
 								# find the data from the same subject and modality that has the same study_type
-								WriteLog("Searching for associated data with same study type...");
-								$datalog .= "    Searching for associated data with same study type\n";
+								WriteLog("Searching for subject-level data with same study type...");
+								$datalog .= "    Searching for subject-level data with same study type\n";
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc = '$protocol' and `$modality" . "_series`.image_type like '%$imagetype%' and `studies`.study_type = '$studytype'";
 							}
 						}
@@ -1516,7 +1493,7 @@ sub GetData() {
 					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {
 					
-						WriteLog("Found " . $resultC->numrows . " matching associated series");
+						WriteLog("Found " . $resultC->numrows . " matching subject-level series");
 						$datalog .= "$type data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
 						# in theory, data for this analysis exists for this study, so lets now create the analysis directory
 						MakePath($analysispath);
@@ -1629,8 +1606,8 @@ sub GetData() {
 						}
 					}
 					else {
-						WriteLog("Found no matching associated [$protocol] series. SQL: [$sqlstring]");
-						$datalog .= "Found no matching associated data [$protocol]. SQL: [$sqlstring]\n";
+						WriteLog("Found no matching subject-level [$protocol] series. SQL: [$sqlstring]");
+						$datalog .= "Found no matching subject-level data [$protocol]. SQL: [$sqlstring]\n";
 					}
 				}
 				else {
@@ -1802,6 +1779,10 @@ sub GetPipelineDataDef() {
 			$rec->{'behformat'} = $row{'pdd_behformat'};
 			$rec->{'behdir'} = $row{'pdd_behdir'};
 			$rec->{'enabled'} = $row{'pdd_enabled'};
+			$rec->{'optional'} = $row{'pdd_optional'};
+			$rec->{'numboldreps'} = $row{'pdd_numboldreps'};
+			$rec->{'level'} = $row{'pdd_level'};
+			
 			if (!defined($rec->{'modality'})) {
 				$rec->{'modality'} = '';
 			}

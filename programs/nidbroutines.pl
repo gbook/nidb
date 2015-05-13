@@ -493,7 +493,12 @@ sub AppendLog {
 sub SQLQuery {
 	my ($sql,$F,$L) = @_;
 	
-	my $result = $db->query($sql) || SQLError("[File: $F Line: $L]" . $db->errmsg(),$sql);
+	#if ($dirOnError) {
+		my $result = $db->query($sql) || SQLError("[File: $F Line: $L]" . $db->errmsg(),$sql);
+	#}
+	#else {
+	#	my $result = $db->query($sql) || WriteLog("[File: $F Line: $L]" . $db->errmsg(),$sql);
+	#}
 
 	return $result;
 }
@@ -632,6 +637,45 @@ sub IsDICOMFile {
 		return 0;
 	}
 	return 1;
+}
+
+
+# ----------------------------------------------------------
+# --------- GetSQLComparison -------------------------------
+# ----------------------------------------------------------
+sub GetSQLComparison {
+	my ($c) = @_;
+
+	$c =~ s/\s*//g; # remove all whitespace
+	
+	my $comp;
+	my $num;
+	if (substr($c,0,2) eq "<=") {
+		$comp = "<=";
+		$num = substr($c,2);
+	}
+	elsif (substr($c,0,2) eq ">=") {
+		$comp = ">=";
+		$num = substr($c,2);
+	}
+	elsif (substr($c,0,1) eq "<") {
+		$comp = "<";
+		$num = substr($c,1);
+	}
+	elsif (substr($c,0,1) eq ">") {
+		$comp = ">";
+		$num = substr($c,1);
+	}
+	elsif (substr($c,0,1) eq "~") {
+		$comp = "<>";
+		$num = substr($c,1);
+	}
+	else {
+		$num = "=";
+		$num = $c;
+	}
+	
+	return ($comp, $num);
 }
 
 
