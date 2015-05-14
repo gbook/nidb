@@ -71,7 +71,6 @@
 	$pipelinetmpdir = GetVariable("pipelinetmpdir");
 	$pipelinenotes = GetVariable("pipelinenotes");
 	$version = GetVariable("version");
-	$dataand = GetVariable("dataand");
 	$completefiles = GetVariable("completefiles");
 	$dependency = GetVariable("dependency");
 	$deplevel = GetVariable("deplevel");
@@ -119,12 +118,12 @@
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
 			break;
 		case 'add':
-			AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
@@ -209,7 +208,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
 		/* perform data checks */
 		$pipelinetitle = mysql_real_escape_string($pipelinetitle);
@@ -245,7 +244,7 @@
 		}
 
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_queue = '$pipelinequeue', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_dataand = $dataand, pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_queue = '$pipelinequeue', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		//PrintSQL($sqlstring);
 		//return;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -277,7 +276,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $dataand, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		/* perform data checks */
 		$pipelinetitle = mysql_real_escape_string($pipelinetitle);
 		$pipelinedesc = mysql_real_escape_string($pipelinedesc);
@@ -313,7 +312,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_queue, pipeline_removedata, pipeline_resultsscript, pipeline_dataand, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinequeue', '$pipelineremovedata', '$pipelineresultsscript', '$dataand', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', '$ishidden')";
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_queue, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinequeue', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', '$ishidden')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
@@ -933,11 +932,9 @@
 			$pipelinenotes = $row['pipeline_notes'];
 			$pipelinegroup = $row['pipeline_group'];
 			$resultscript = $row['pipeline_resultsscript'];
-			$dataand = $row['pipeline_dataand'];
 			$deplevel = $row['pipeline_dependencylevel'];
 			$depdir = $row['pipeline_dependencydir'];
 			$deplinktype = $row['pipeline_deplinktype'];
-			if ($dataand == "") { $dataand = 0; }
 			$completefiles = $row['pipeline_completefiles'];
 			$dependency = $row['pipeline_dependency'];
 			$groupid = $row['pipeline_groupid'];
@@ -1051,7 +1048,6 @@
 				else
 					return false;
 			}
-
 		</script>
 	
 		<fieldset style="border: 3px solid #999; border-radius:5px">
@@ -1465,7 +1461,6 @@
 				<td class="dataheader"><b>Modality</b></td>
 				<td class="dataheader"><b>Data level</b> <img src="images/help.gif" title="<b>Data Level</b><br>All analyses are based at the study level. If you want to pull data from the same subject, but the data was collected in a different study, select the Subject data level."></td>
 				<td class="dataheader"><b>Study link</b> <img src="images/help.gif" title="<b>Data Level</b><br>If you are looking for data in other studies (within the same subject) you can choose either the nearest in time, or the same study type."></td>
-				<td class="dataheader"><b>Options</b></td>
 			</tr>
 		<?
 		$neworder = 1;
@@ -1494,7 +1489,17 @@
 			
 			//PrintVariable($row);
 			?>
-			<tr>
+			<script>
+				$(document).ready(function() {
+					$('.row<?=$neworder?>').mouseover(function() {
+						$('.row<?=$neworder?>').css('background-color','#eee');
+					})
+					.mouseout(function() {
+						$('.row<?=$neworder?>').css('background-color','');
+					});
+				});
+			</script>
+			<tr class="row<?=$neworder?>">
 				<td width="10" valign="top" style="padding: 5px;" align="center">
 					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>>
 				</td>
@@ -1507,7 +1512,7 @@
 				<td valign="top" style="padding: 5px">
 					<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 				</td>
-				<td valign="top" style="padding: 5px">
+				<td id="row<?=$neworder?>" valign="top" style="padding: 5px">
 					<select class="small" name="dd_modality[<?=$neworder?>]">
 						<option value="">(Select modality)</option>
 					<?
@@ -1539,14 +1544,22 @@
 					</select>
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="study" style="padding:0px" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "checked"; } ?>>Study<br>
-					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="subject" style="padding:0px" <? if ($dd_datalevel == "subject") { echo "checked"; } ?>>Subject
+					<select name="dd_datalevel[<?=$neworder?>]">
+						<option value="">(select data level)
+						<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
+						<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
+					</select>
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="nearestintime" style="padding:0px" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "checked"; } ?>>Nearest in time<br>
-					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="samestudytype" style="padding:0px" <? if ($dd_assoctype == "samestudytype") { echo "checked"; } ?>>Same study type
+					<select name="dd_studyassoc[<?=$neworder?>]">
+						<option value="">(select study link)
+						<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
+						<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
+					</select>
 				</td>
-				<td valign="top">
+			</tr>
+			<tr class="row<?=$neworder?>">
+				<td valign="top" colspan="7" style="padding-left:25px">
 					<details class="level1" style="padding:0px;margin:0px">
 						<summary style="padding:0px; font-size:9pt">Options</summary>
 						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">
@@ -1626,7 +1639,17 @@
 		}
 		for ($ii=0;$ii<5;$ii++) {
 		?>
-			<tr>
+			<script>
+				$(document).ready(function() {
+					$('.row<?=$neworder?>').mouseover(function() {
+						$('.row<?=$neworder?>').css('background-color','#eee');
+					})
+					.mouseout(function() {
+						$('.row<?=$neworder?>').css('background-color','');
+					});
+				});
+			</script>
+			<tr class="row<?=$neworder?>">
 				<td width="10" valign="top" style="padding: 5px;" align="center">
 					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1">
 				</td>
@@ -1663,14 +1686,22 @@
 					</select>
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="study" style="padding:0px" checked>Study<br>
-					<input type="radio" name="dd_datalevel[<?=$neworder?>]" value="subject" style="padding:0px">Subject
+					<select name="dd_datalevel[<?=$neworder?>]">
+						<option value="">(select data level)
+						<option value="study" selected>Study
+						<option value="subject">Subject
+					</select>
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="nearestintime" style="padding:0px" checked>Nearest in time<br>
-					<input type="radio" name="dd_studyassoc[<?=$neworder?>]" value="samestudytype" style="padding:0px">Same study type
+					<select name="dd_studyassoc[<?=$neworder?>]">
+						<option value="">(select study link)
+						<option value="nearestintime" selected>Nearest in time
+						<option value="samestudytype">Same study type
+					</select>
 				</td>
-				<td valign="top">
+			</tr>
+			<tr class="row<?=$neworder?>">
+				<td valign="top" colspan="7" style="padding-left:25px">
 					<details class="level1" style="padding:0px;margin:0px">
 						<summary style="padding:0px; font-size:9pt">Options</summary>
 						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">

@@ -152,15 +152,6 @@ sub ProcessDataRequests {
 				next;
 			}
 			
-			# if this is sent remotely to an NiDB server, get a transaction ID
-			if ($req_destinationtype eq "remotenidb") {
-				# build a cURL string to start the transaction
-				my $systemstring = "curl -g -F 'action=startTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' $remotenidbserver/api.php";
-				WriteLog("[$systemstring] --> " . `$systemstring 2>&1`);
-				$transactionid = trim(`$systemstring`);
-				WriteLog("TransactionID: [$transactionid]");
-			}
-			
 			# needed to know the modality before we can get the actual series information
 			$sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.subject_id, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
 			WriteLog("$sqlstringA");
@@ -168,6 +159,17 @@ sub ProcessDataRequests {
 			my $currentstudyid;
 			my $laststudyid = 0;
 			my $newseriesnum = 0;
+			# only create a transaction if there is something to send
+			if ($resultA->numrows > 0) {
+				# if this is sent remotely to an NiDB server, get a transaction ID
+				if ($req_destinationtype eq "remotenidb") {
+					# build a cURL string to start the transaction
+					my $systemstring = "curl -g -F 'action=startTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' $remotenidbserver/api.php";
+					WriteLog("[$systemstring] --> " . `$systemstring 2>&1`);
+					$transactionid = trim(`$systemstring`);
+					WriteLog("TransactionID: [$transactionid]");
+				}
+			}
 			while (my %rowA = $resultA->fetchhash) {
 				#WriteLog('C');
 				my $request_id = $rowA{'request_id'};

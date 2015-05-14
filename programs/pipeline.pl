@@ -72,7 +72,6 @@ if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {
 else {
 	my $logfilename;
 	($lockfile, $logfilename) = CreateLockFile($lockfileprefix, $cfg{'lockdir'}, $numinstances);
-	#my $logfilename = "$lockfile";
 	$logfilename = "$cfg{'logdir'}/$scriptname" . CreateLogDate() . ".log";
 	open $log, '> ', $logfilename;
 	my $x = &ProcessPipelines();
@@ -127,9 +126,8 @@ sub ProcessPipelines() {
 		SetModuleStopped();
 		return 0;
 	}
-	# get the new pipeline status run number
-	my $newrunnum = 0;
-	# populate the pipeline_status table so we know what order these pipelines will run in
+
+	# create a list of pipelines to be run
 	my $i = 0;
 	my @pipelinerows;
 	while (my %row = $result->fetchhash) {
@@ -138,11 +136,8 @@ sub ProcessPipelines() {
 		my $pipelinename = $row{'pipeline_name'};
 		$i++;
 	}
-	# go back to the beginning of the dataset
-	#$result->dataseek();
-	#print Dumper(@pipelinerows);
-	#exit(0);
-	#PIPELINE: while (my %row = $result->fetchhash) {
+	# loop through all the pipelines. Allow the program to return to this point
+	# and continue running the other pipelines if something happens to a particular pipeline
 	PIPELINE: for my $i (0 .. $#pipelinerows) {
 		#print Dumper($pipelinerows[$i]);
 		my %row = %{$pipelinerows[$i]};
@@ -179,7 +174,7 @@ sub ProcessPipelines() {
 		if (trim($pipelinequeue) eq "") {
 			WriteLog("No queue specified");
 			SetPipelineStatusMessage($pid, 'No queue specified.');
-			SetPipelineStopped($pid, $newrunnum);
+			SetPipelineStopped($pid);
 			next PIPELINE;
 		}
 		my $analysisRowID;
@@ -212,7 +207,7 @@ sub ProcessPipelines() {
 					
 					# update the statuses, and stop the modules
 					SetPipelineStatusMessage($pid, 'Pipeline has no data definition. Skipping');
-					SetPipelineStopped($pid, $newrunnum);
+					SetPipelineStopped($pid);
 					next PIPELINE;
 				}
 				@datadef = @$dd;
@@ -227,7 +222,7 @@ sub ProcessPipelines() {
 
 			# update the statuses and stop the modules
 			SetPipelineStatusMessage($pid, 'Pipeline has no steps. Skipping');
-			SetPipelineStopped($pid, $newrunnum);
+			SetPipelineStopped($pid);
 			next PIPELINE;
 		}
 		my @pipelinesteps = @$ps;
@@ -243,7 +238,7 @@ sub ProcessPipelines() {
 			if ($result->numrows < 1) {
 				WriteLog("Module disabled. Stopping execution. Exiting module");
 				print "Module disabled. Stopping execution\n";
-				SetPipelineStopped($pid, $newrunnum);
+				SetPipelineStopped($pid);
 				SetPipelineProcessStatus('complete',0,0);
 				SetModuleStopped();
 				return 1;
@@ -256,7 +251,7 @@ sub ProcessPipelines() {
 			if ($result->numrows > 0) {
 				WriteLog("An analysis already exists for this one-shot level pipeline, exiting");
 				SetPipelineStatusMessage($pid, 'An analysis already exists for this one-shot pipeline. Skipping');
-				SetPipelineStopped($pid, $newrunnum);
+				SetPipelineStopped($pid);
 				#SetModuleStopped();
 				next PIPELINE;
 			}			
@@ -361,7 +356,7 @@ sub ProcessPipelines() {
 					if ($result->numrows < 1) {
 						WriteLog("Module disabled. Stopping execution. Exiting module");
 						print "Module disabled. Stopping execution\n";
-						SetPipelineStopped($pid, $newrunnum);
+						SetPipelineStopped($pid);
 						SetPipelineProcessStatus('complete',0,0);
 						SetModuleStopped();
 						return 1;
@@ -521,7 +516,7 @@ sub ProcessPipelines() {
 											WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
 											$setuplog .= "Pipeline dependency ($pipelinedep) does not exist!\n";
 											SetPipelineStatusMessage($pid, "Pipeline dependency ($pipelinedep) does not exist!");
-											SetPipelineStopped($pid, $newrunnum);
+											SetPipelineStopped($pid);
 											next PIPELINE;
 										}
 									}
@@ -657,7 +652,7 @@ sub ProcessPipelines() {
 					}
 					if (!IsPipelineEnabled($pid)) {
 						SetPipelineStatusMessage($pid, 'Pipeline disabled while running. Normal stop.');
-						SetPipelineStopped($pid, $newrunnum);
+						SetPipelineStopped($pid);
 						#SetModuleStopped();
 						next PIPELINE;
 					}
@@ -680,7 +675,7 @@ sub ProcessPipelines() {
 			if ($result->numrows > 0) {
 				WriteLog("An analysis already exists for this second level pipeline, exiting pipeline");
 				SetPipelineStatusMessage($pid, 'An analysis already exists for this second level pipeline. Delete the analysis if you want to re-run it');
-				SetPipelineStopped($pid, $newrunnum);
+				SetPipelineStopped($pid);
 				next PIPELINE;
 			}
 		
@@ -712,7 +707,7 @@ sub ProcessPipelines() {
 					}
 					else {
 						WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
-						SetPipelineStopped($pid, $newrunnum);
+						SetPipelineStopped($pid);
 						#SetModuleStopped();
 						next PIPELINE;
 					}
@@ -781,7 +776,7 @@ sub ProcessPipelines() {
 						else {
 							WriteLog("No studies found [$sqlstringA]");
 							SetPipelineStatusMessage($pid, "No studies found (Maybe 1st/2nd level group mismatch?)");
-							SetPipelineStopped($pid, $newrunnum);
+							SetPipelineStopped($pid);
 							#SetModuleStopped();
 							next PIPELINE;
 						}
@@ -887,7 +882,7 @@ sub ProcessPipelines() {
 		WriteLog("Done with pipeline [$pid] - [$pipelinename]");
 		WriteLog("Done");
 		SetPipelineStatusMessage($pid, 'Normal stop.');
-		SetPipelineStopped($pid, $newrunnum);
+		SetPipelineStopped($pid);
 		
 		if ($jobsWereSubmitted) {
 			SetPipelineProcessStatus('complete',0,0);
@@ -920,7 +915,7 @@ sub IsQueueFilled() {
 	if ($result->numrows < 1) {
 		WriteLog("Module disabled. Stopping execution");
 		print "Module disabled. Stopping execution\n";
-		SetPipelineStopped($pid, 0);
+		SetPipelineStopped($pid);
 		# update the stop time
 		SetModuleStopped();
 		return 2;
@@ -1368,7 +1363,8 @@ sub GetData() {
 			# otherwise, check the study for the protocol(s)
 			else {
 				# get a list of series satisfying the search criteria, if it exists
-				$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
+				#$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
+				$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
 				#WriteLog($sqlstring);
 				$datalog .= "[$sqlstring]\n";
 				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1674,22 +1670,38 @@ sub GetStudyToDoList() {
 	
 	my $sqlstring;
 	
-	# get list of studies which do not have an entry in the analysis table
+	#WriteLog("Checkin A");
+	# get list of studies which do not have an entry in the analysis table for this pipeline
 	if (($depend ne '') && ($depend != 0)) {
 		# there is a dependency
 		# need to check if ANY of the subject's studies have the dependency...
 		# step 1) get list of SUBJECTs who have completed the dependency 
-		my $studyidlist = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id in ($depend) and analysis_status = 'complete' and analysis_isbad <> 1))";
+		$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id in ($depend) and analysis_status = 'complete' and analysis_isbad <> 1))";
+		WriteLog("StudyIDList SQL [$sqlstring]");
+		#WriteLog("Checkin B.1");
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+		#WriteLog("Checkin K");
+		my @list;
+		while (my %row = $result->fetchhash) {
+			push @list,$row{'study_id'};
+		}
+		my $studyidlist = join(',',@list);
+		
+		if ($studyidlist eq "") { $studyidlist = "0"; }
+		
+		#WriteLog("Checkin B.2");
 		# step 2) then find all STUDIES that those subjects have completed
 		if ($groupids eq "") {
 			# with no groupids
 			$sqlstring = "select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = $pipelineid) and study_id in ($studyidlist) and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc";
 			WriteLog("GetStudyToDoList(): dependency and no groupids [$sqlstring]");
+			#WriteLog("Checkin C");
 		}
 		else {
 			# with groupids
 			$sqlstring = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = $pipelineid) and a.study_id in ($studyidlist) and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in ($groupids) order by a.study_datetime desc";
 			WriteLog("GetStudyToDoList(): dependency and groupids [$sqlstring]");
+			#WriteLog("Checkin D");
 		}
 	}
 	else {
@@ -1698,28 +1710,38 @@ sub GetStudyToDoList() {
 			# with no groupids
 			$sqlstring = "select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = $pipelineid) and (study_datetime < date_sub(now(), interval 6 hour)) and study_modality = '$modality' order by study_datetime desc";
 			WriteLog("GetStudyToDoList(): No dependency and no groupids [$sqlstring]");
+			#WriteLog("Checkin E");
 		}
 		else {
 			# with groupids
 			$sqlstring = "SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = $pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality =  '$modality' and b.group_id in ($groupids) ORDER BY a.study_datetime DESC";
 			WriteLog("GetStudyToDoList(): No dependency and groupids [$sqlstring]");
+			#WriteLog("Checkin F");
 		}
 	}
 	
 	my @list = ();
-	my $result = $dbh->prepare($sqlstring);
-	$result->execute();
+	#WriteLog("Checkin G");
+	#my $result = $dbh->prepare($sqlstring);
+	#WriteLog("Checkin H");
+	#$result->execute();
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#WriteLog("Checkin I");
 	WriteLog("Pushing all the studyids onto an array");
 	if ($result->rows > 0) {
+		#WriteLog("Checkin J");
 		while (my $row = $result->fetchrow_hashref()) {
+			#WriteLog("Checkin K");
 			my $studyid = $row->{study_id};
 			
 			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			#WriteLog("Checkin L");
 			#WriteLog($sqlstringA);
 			my %rowA = $resultA->fetchhash;
 			my $uid = $rowA{'uid'};
 			my $studynum = $rowA{'study_num'};
+			#WriteLog("Checkin M");
 			
 			WriteLog("Found study [" . $studyid . "] [$uid$studynum]");
 			push @list,$studyid;
@@ -1858,7 +1880,7 @@ sub IsPipelineEnabled() {
 # --------- SetPipelineStopped -----------------------------
 # ----------------------------------------------------------
 sub SetPipelineStopped() {
-	my ($pid, $newrunnum) = @_;
+	my ($pid) = @_;
 
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
