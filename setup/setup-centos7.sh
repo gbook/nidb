@@ -56,6 +56,7 @@ yum install -y gcc-c++
 yum install -y gedit*
 yum install -y iptraf*
 yum install -y java
+yum install -y ImageMagick
 
 # --------- Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
@@ -70,25 +71,25 @@ echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
 
-wget http://www.imagemagick.org/download/linux/CentOS/x86_64/ImageMagick-6.8.0-4.x86_64.rpm
-rpm -U ImageMagick-6.8.0-4.x86_64.rpm
+#wget http://www.imagemagick.org/download/linux/CentOS/x86_64/ImageMagick-6.8.0-4.x86_64.rpm
+#rpm -U ImageMagick-6.8.0-4.x86_64.rpm
 
 cp -r Mysql* /usr/lib64/perl5/
 
 # compile ImageMagick with fft support
-wget http://www.fftw.org/fftw-3.3.2.tar.gz
-tar -xvzf fftw-3.3.2.tar.gz
-cd fftw3
-./configure CXXFLAGS=-fPIC CFLAGS=-fPIC
-make
-make install
-cd ..
-wget http://www.imagemagick.org/download/ImageMagick.tar.gz
-tar -xvzf ImageMagick.tar.gz
-cd ImageMagick
-./configure --enable-hdri -with-fftw
-make
-make install
+#wget http://www.fftw.org/fftw-3.3.2.tar.gz
+#tar -xvzf fftw-3.3.2.tar.gz
+#cd fftw3
+#./configure CXXFLAGS=-fPIC CFLAGS=-fPIC
+#make
+#make install
+#cd ..
+#wget http://www.imagemagick.org/download/ImageMagick.tar.gz
+#tar -xvzf ImageMagick.tar.gz
+#cd ImageMagick
+#./configure --enable-hdri -with-fftw
+#make
+#make install
 
 # ---------- configure system based services ----------
 echo "----------------- Configuring system services -----------------"
@@ -152,9 +153,9 @@ mysql -uroot -ppassword < ~/tempsql.txt
 rm ~/tempsql.txt
 
 echo "------ Install phpMyAdmin ------"
-wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/3.5.3/phpMyAdmin-3.5.3-english.zip
-unzip phpMyAdmin-3.5.3-english.zip
-mv phpMyAdmin-3.5.3-english /var/www/html/phpMyAdmin
+wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
+unzip phpMyAdmin-4.4.7-english.zip
+mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
 chmod 777 /var/www/html
 chown -R nidb:nidb /var/www/html
 #echo "Edit the /var/www/html/phpMyAdmin/config.sample.inc.php file and add:"
