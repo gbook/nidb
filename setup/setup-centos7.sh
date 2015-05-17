@@ -30,13 +30,8 @@ echo "----------------- Installing YUM based packages -----------------"
 yum install -y -q vim
 yum install -y -q perl
 yum install -y -q perl-File-Copy-Recursive
-yum install -y -q perl-Sort-Naturally
-yum install -y -q perl-Net-SMTP-TLS
+yum install -y -q perl-Net-SMTP*
 yum install -y -q perl-Data-Dumper
-yum install -y -q perl-Math-Round
-yum install -y -q perl-Math-Derivative
-yum install -y -q perl-Math-MatrixReal
-yum install -y -q perl-Math-Combinatorics
 yum install -y -q cpan
 yum install -y -q perl-YAML
 yum install -y -q php
@@ -70,9 +65,6 @@ cpan Image::ExifTool
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
-
-#wget http://www.imagemagick.org/download/linux/CentOS/x86_64/ImageMagick-6.8.0-4.x86_64.rpm
-#rpm -U ImageMagick-6.8.0-4.x86_64.rpm
 
 cp -r Mysql* /usr/lib64/perl5/
 
@@ -118,9 +110,9 @@ echo "Done setting up port forwarding and disabling the firewall"
 
 # ---------- Web based installs ----------
 echo "----------------- Web based installs (Webmin, phpMyAdmin) -----------------"
-echo "------ Installing Webmin... ------"
-wget http://prdownloads.sourceforge.net/webadmin/webmin-1.750-1.noarch.rpm
-rpm -U webmin-1.750-1.noarch.rpm
+#echo "------ Installing Webmin... ------"
+#wget http://prdownloads.sourceforge.net/webadmin/webmin-1.750-1.noarch.rpm
+#rpm -U webmin-1.750-1.noarch.rpm
 
 echo "------ Enabling services at boot ------"
 systemctl enable httpd.service
@@ -129,20 +121,21 @@ echo "------ Starting services ------"
 systemctl start httpd.service
 systemctl start mariadb.service
 
-echo "------ Manually configure PHP variables ------"
-echo "Go to https://$HOSTNAME:10000"
-echo "then go to Others -> PHP Configuration -> Manage -> Other Settings ... change PHP Timezone to your timezone"
-echo "then go to Others -> PHP Configuration -> Manage -> Error Logging ... change Expression for error types = E_ALL & ~E_DEPRECATED & ~E_NOTICE"
+#echo "------ Manually configure PHP variables ------"
+#echo "Go to https://$HOSTNAME:10000"
+#echo "then go to Others -> PHP Configuration -> Manage -> Other Settings ... change PHP Timezone to your timezone"
 
 sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php.ini
 sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php.ini
-sed -i 's/^memory_limit = .*/memory_limit = 1000M/g' /etc/php.ini
+sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php.ini
 sed -i 's/^upload_tmp_dir = .*/upload_tmp_dir = \/${NIDBROOT}\/uploadtmp/g' /etc/php.ini
-sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 1000M/g' /etc/php.ini
-sed -i 's/^max_input_time = .*/max_input_time = 360/g' /etc/php.ini
-sed -i 's/^max_execution_time = .*/max_execution_time = 360/g' /etc/php.ini
-sed -i 's/^post_max_size = .*/post_max_size = 1000M/g' /etc/php.ini
+sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 5000M/g' /etc/php.ini
+sed -i 's/^max_file_uploads = .*/max_file_uploads = 1000/g' /etc/php.ini
+sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php.ini
+sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php.ini
+sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/g' /etc/php.ini
 
 read -p "Press [enter] to continue"
 
@@ -195,23 +188,23 @@ mkdir -pv ${NIDBROOT}/programs
 mkdir -pv ${NIDBROOT}/programs/lock
 mkdir -pv ${NIDBROOT}/programs/logs
 mkdir -pv ${NIDBROOT}/uploadtmp
+mkdir -pv ${NIDBROOT}/uploaded
 
 cd ${NIDBROOT}
 svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
-cp -R programs/* ${NIDBROOT}/programs
-cp -R web/* /var/www/html/
-chown -R nidb:nidb ${NIDBROOT}
-chown -R nidb:nidb /var/www/html
+cp -Rv programs/* ${NIDBROOT}/programs
+cp -Rv web/* /var/www/html/
+chown -Rv nidb:nidb ${NIDBROOT}
+chown -Rv nidb:nidb /var/www/html
 
-sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("${NIDBROOT}/programs/nidb.cfg");!g' /var/www/html/functions.php
+sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!g' /var/www/html/functions.php
 
 # create default database from .sql file
 echo "Creating default database"
 cd ${NIDBROOT}/install/setup
 mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by 'password'; flush privileges;"
 mysql -uroot -ppassword nidb < nidb.sql
-
 
 # ---------- dcm4che ----------
 echo "----------------- Installing DICOM receiver -----------------"
@@ -253,13 +246,13 @@ chkconfig --add dcmrcv
 # ---------- setup cron jobs ----------
 echo "----------------- Setup scheduled cron jobs -----------------"
 echo "Setting up cron jobs for nidb"
-echo "#* * * * * cd ${NIDBROOT}/programs; perl parsedicom.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl parsedicom.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#* * * * * cd ${NIDBROOT}/programs; perl parseincoming.pl > /dev/null 2>&1" >> tempcron.txt
-echo "#* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mriqa.pl > /dev/null 2>&1" >> tempcron.txt
-echo "#* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mriqa.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
-echo "#@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
+echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
 crontab -u nidb tempcron.txt
 #rm ~/tempcron.txt
 
@@ -267,6 +260,7 @@ crontab -u nidb tempcron.txt
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
 echo "Install FSL to the default path [/usr/local/fsl]"
+echo "Edit /etc/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
-echo "Edit ${NIDBROOT}/programs/nidb.cfg to reflect your paths, usernames, and passwords"
-echo "All processes specified by cron jobs are disabled. Go to Webmin -> System -> Scheduled Cron Jobs, to enable the cron jobs "
+echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Save the file as nidb.cfg"
+echo "Some modules are disabled in cron. Use crontab -e to enable them"
