@@ -2,6 +2,7 @@
 # this script will download additional programs and features specific to nidb
 # additional configuration steps are noted below
 
+# if you change the default path, NiDB is not guaranteed to work correctly
 NIDBROOT="/nidb"
 
 clear
@@ -26,42 +27,41 @@ read -p "Press [enter] to continue"
 
 # ---------- yum based installs ----------
 echo "----------------- Installing YUM based packages -----------------"
-yum install -y system* vnc* vim emacs
-yum install -y vnc*
-yum install -y perl
-yum install -y perl-File-Copy-Recursive
-yum install -y perl-Sort-Naturally
-yum install -y perl-Net-SMTP-TLS
-yum install -y perl-Data-Dumper
-yum install -y perl-Math-Round
-yum install -y perl-Math-Derivative
-yum install -y perl-Math-MatrixReal
-yum install -y perl-Math-Combinatorics
-yum install -y cpan
-yum install -y perl-YAML
-yum install -y php
-yum install -y php-mysql
-yum install -y php-gd
-yum install -y php-process
-yum install pear
-yum install -y httpd
-yum install -y mysql
-yum install -y mysql-server
-yum install -y mariadb
-yum install -y mariadb-server
-yum install -y subversion*
-yum install -y git
-yum install -y gcc
-yum install -y gcc-c++
-yum install -y gedit*
-yum install -y iptraf*
-yum install -y java
-yum install -y ImageMagick
+yum install -y -q vim
+yum install -y -q perl
+yum install -y -q perl-File-Copy-Recursive
+yum install -y -q perl-Sort-Naturally
+yum install -y -q perl-Net-SMTP-TLS
+yum install -y -q perl-Data-Dumper
+yum install -y -q perl-Math-Round
+yum install -y -q perl-Math-Derivative
+yum install -y -q perl-Math-MatrixReal
+yum install -y -q perl-Math-Combinatorics
+yum install -y -q cpan
+yum install -y -q perl-YAML
+yum install -y -q php
+yum install -y -q php-mysql
+yum install -y -q php-gd
+yum install -y -q php-process
+yum install -y -q php-pear
+yum install -y -q php-mcrypt
+yum install -y -q php-mbstring
+yum install -y -q httpd
+yum install -y -q mysql
+yum install -y -q mysql-server
+yum install -y -q mariadb
+yum install -y -q mariadb-server
+yum install -y -q subversion*
+yum install -y -q git
+yum install -y -q gcc
+yum install -y -q gcc-c++
+yum install -y -q gedit*
+yum install -y -q iptraf*
+yum install -y -q java
+yum install -y -q ImageMagick
 
 # --------- Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
-cpan File::Copy
-cpan File::Find
 cpan File::Path
 cpan List::Util
 cpan Date::Parse
@@ -99,12 +99,6 @@ setenforce 0
 #echo "This step must be done manually. edit /etc/selinux/config and change SELINUX=enforcing to SELINUX=disabled"
 sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
 #read -p "Press [enter] to continue"
-echo "------ Enabling services at boot ------"
-systemctl enable httpd.service
-systemctl enable mariadb.service
-echo "------ Starting services ------"
-systemctl start httpd.service
-systemctl start mariadb.service
 
 echo "Setting up port forwarding to forward 8104 to 104"
 # configure the firewall to accept everything, and still forward port 104 to 8104
@@ -128,6 +122,13 @@ echo "------ Installing Webmin... ------"
 wget http://prdownloads.sourceforge.net/webadmin/webmin-1.750-1.noarch.rpm
 rpm -U webmin-1.750-1.noarch.rpm
 
+echo "------ Enabling services at boot ------"
+systemctl enable httpd.service
+systemctl enable mariadb.service
+echo "------ Starting services ------"
+systemctl start httpd.service
+systemctl start mariadb.service
+
 echo "------ Manually configure PHP variables ------"
 echo "Go to https://$HOSTNAME:10000"
 echo "then go to Others -> PHP Configuration -> Manage -> Other Settings ... change PHP Timezone to your timezone"
@@ -144,6 +145,9 @@ sed -i 's/^post_max_size = .*/post_max_size = 1000M/g' /etc/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
 
 read -p "Press [enter] to continue"
+
+echo "------ Restarting httpd ------"
+systemctl restart httpd.service
 
 echo "------ Setting up MySQL database - default password is 'password' ------"
 mysqladmin -u root password 'password'
@@ -199,6 +203,8 @@ cp -R programs/* ${NIDBROOT}/programs
 cp -R web/* /var/www/html/
 chown -R nidb:nidb ${NIDBROOT}
 chown -R nidb:nidb /var/www/html
+
+
 # create default database from .sql file
 echo "Creating default database"
 cd ${NIDBROOT}/install/setup
@@ -261,6 +267,5 @@ crontab -u nidb tempcron.txt
 echo "----------------- Remaining items to be done by you -----------------"
 echo "Install FSL to the default path [/usr/local/fsl]"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
-echo "Edit /nidb/programs/config.pl to reflect the paths , usernames, and passwords of your installation"
-echo "Edit /var/www/html/config.php to reflect your paths, usernames, and passwords"
+echo "Edit ${NIDBROOT}/programs/nidb.cfg to reflect your paths, usernames, and passwords"
 echo "All processes specified by cron jobs are disabled. Go to Webmin -> System -> Scheduled Cron Jobs, to enable the cron jobs "

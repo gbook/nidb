@@ -3231,29 +3231,29 @@ INSERT INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numr
 (1, 'parsedicom', 'stopped', 0, now(), now(), 1),
 (2, 'datarequests', 'stopped', 0, now(), now(), 1),
 (3, 'mriqa', 'stopped', 1, now(), now(), 1),
-(4, 'pipeline', 'stopped', 14, now(), now(), 1),
-(5, 'dailyreport', 'stopped', 0, now(), now(), 1),
-(6, 'dailybackup', 'stopped', 0, now(), now(), 1),
-(7, 'import', 'stopped', 0, now(), now(), 1),
+(4, 'pipeline', 'stopped', 14, now(), now(), 0),
+(5, 'dailyreport', 'stopped', 0, now(), now(), 0),
+(6, 'dailybackup', 'stopped', 0, now(), now(), 0),
+(7, 'import', 'stopped', 0, now(), now(), 0),
 (8, 'qc', 'stopped', 0, now(), now(), 0),
 (9, 'fileio', 'stopped', 0, now(), now(), 1),
 (10, 'importuploaded', 'stopped', 0, now(), now(), 1),
-(11, 'usage', 'stopped', 0, now(), now(), 1),
-(12, 'audit', 'stopped', 0, now(), now(), 1),
-(13, 'notifications', 'stopped', 0, now(), now(), 1);
+(11, 'usage', 'stopped', 0, now(), now(), 0),
+(12, 'audit', 'stopped', 0, now(), now(), 0),
+(13, 'notifications', 'stopped', 0, now(), now(), 0);
 
 INSERT INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
-(1, uuid(), 'Site name', 'site address', 'site contact');
+(1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
 
-INSERT INTO `projects` (`project_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
-(1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
-(2, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
+INSERT INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
+(1, 1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
+(2, 1, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
 
 INSERT INTO `user_instance` (`userinstance_id`, `user_id`, `instance_id`, `isdefaultinstance`, `instance_joinrequest`) VALUES
 (1, 1, 1, 1, 0);
 
 INSERT INTO `users` (`user_id`, `username`, `password`, `login_type`, `user_instanceid`, `user_fullname`, `user_firstname`, `user_midname`, `user_lastname`, `user_institution`, `user_country`, `user_email`, `user_email2`, `user_address1`, `user_address2`, `user_city`, `user_state`, `user_zip`, `user_phone1`, `user_phone2`, `user_website`, `user_dept`, `user_lastlogin`, `user_logincount`, `user_enabled`, `user_isadmin`, `user_issiteadmin`, `user_canimport`, `sendmail_dailysummary`, `user_enablebeta`, `lastupdate`) VALUES
-(1, 'admin', crc32('password'), 'Standard', 1, 'Administrator', '', '', '', '', '', 'email@email.com', '', '', '', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, 1, 1, 0, 0, 0, 0, '0000-00-00 00:00:00');
+(1, 'admin', crc32('password'), 'Standard', 1, 'Administrator', '', '', '', '', '', 'email@email.com', '', '', '', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, 1, 1, 1, 0, 0, 0, '0000-00-00 00:00:00');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
