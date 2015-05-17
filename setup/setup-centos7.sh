@@ -204,6 +204,7 @@ cp -R web/* /var/www/html/
 chown -R nidb:nidb ${NIDBROOT}
 chown -R nidb:nidb /var/www/html
 
+sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("${NIDBROOT}/programs/nidb.cfg");!g' /var/www/html/functions.php
 
 # create default database from .sql file
 echo "Creating default database"
