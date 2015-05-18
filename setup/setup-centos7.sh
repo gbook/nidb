@@ -221,7 +221,7 @@ echo "Installing dcm4che receiver to listen on port 8104"
 #read -p "Press [enter] to continue"
 
 # add dcmrcv service at boot
-cp dcmrcv /etc/init.d
+cp ${NIDBROOT}/install/programs/dcmrcv /etc/init.d
 chmod 755 /etc/init.d/dcmrcv
 chkconfig --add dcmrcv
 
