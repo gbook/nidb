@@ -58,6 +58,7 @@ yum install -y -q ImageMagick
 # --------- Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
 cpan File::Path
+cpan Net::SMTP::TLS
 cpan List::Util
 cpan Date::Parse
 cpan Image::ExifTool

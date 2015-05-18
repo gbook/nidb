@@ -1382,18 +1382,18 @@
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
-				SearchStudy(&$result);
+				SearchStudy($result);
 			}
 			elseif ($s_resultorder == 'uniquesubject') {
 				/* display only unique subject data */
-				SearchSubject(&$result);
+				SearchSubject($result);
 			}
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
-				SearchLongitudinal(&$result);
+				SearchLongitudinal($result);
 			}
 			else {
-				SearchDefault(&$result, $s, $colors, $colors2);
+				SearchDefault($result, $s, $colors, $colors2);
 			}
 		}
 		else {
@@ -1412,7 +1412,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchDefault ---------------------- */
 	/* -------------------------------------------- */
-	function SearchDefault($result, $s, $colors, $colors2) {
+	function SearchDefault(&$result, $s, $colors, $colors2) {
 		error_reporting(-1);
 		ini_set('display_errors', '1');
 	
@@ -2162,8 +2162,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchSubject ---------------------- */
 	/* -------------------------------------------- */
-	function SearchSubject($result) {
-		//PrintSQLTable(&$result);
+	function SearchSubject(&$result) {
 		?>
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
@@ -2205,7 +2204,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchStudy ------------------------ */
 	/* -------------------------------------------- */
-	function SearchStudy($result) {
+	function SearchStudy(&$result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2285,7 +2284,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchLongitudinal ----------------- */
 	/* -------------------------------------------- */
-	function SearchLongitudinal($result) {
+	function SearchLongitudinal(&$result) {
 		//PrintSQLTable(&$result);
 		
 		$modality = '';
