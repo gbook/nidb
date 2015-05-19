@@ -127,7 +127,7 @@ sub DoReport {
 	my $str = "";
 	
 	my $uptime = `uptime`;
-	my $df = `df -h /ado2`;
+	my $df = `df -h`;
 	
 	my @colors = GenerateColorGradient();
 	my %pstats = GetGlobalQAStats();
