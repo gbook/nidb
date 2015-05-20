@@ -128,6 +128,7 @@ sub DoIO {
 			my $modality = $row{'modality'};
 			my $dicomtags = $row{'anonymize_fields'};
 			
+			WriteLog("Performing the following fileio operation [$fileio_operation] on the datatype [$data_type]");
 			my $found = 0;
 			switch ($fileio_operation) {
 				case 'createlinks' {
@@ -160,10 +161,20 @@ sub DoIO {
 				case 'rearchive' {
 					switch ($data_type) {
 						case 'study' {
-							#$found = RearchiveStudy($data_id);
+							$found = RearchiveStudy($data_id,0);
 						}
 						case 'subject' {
-							#$found = RearchiveSubject($data_id);
+							$found = RearchiveSubject($data_id,0);
+						}
+					}
+				}
+				case 'rearchiveidonly' {
+					switch ($data_type) {
+						case 'study' {
+							$found = RearchiveStudy($data_id,1);
+						}
+						case 'subject' {
+							$found = RearchiveSubject($data_id,1);
 						}
 					}
 				}
@@ -635,7 +646,7 @@ sub DeleteSeries() {
 # --------- RearchiveStudy ---------------------------------
 # ----------------------------------------------------------
 sub RearchiveStudy() {
-	my ($studyid) = @_;
+	my ($studyid, $matchidonly) = @_;
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
 	WriteLog("In RearchiveStudy()");
 	
@@ -657,7 +668,7 @@ sub RearchiveStudy() {
 			my $instanceRowID = $row{'instance_id'};
 			
 			# create an import request, based on the current instance, project, and site & get next import ID
-			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','','$matchidonly')";
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
@@ -707,7 +718,7 @@ sub RearchiveStudy() {
 # --------- RearchiveSubject -------------------------------
 # ----------------------------------------------------------
 sub RearchiveSubject() {
-	my ($id) = @_;
+	my ($id, $matchidonly) = @_;
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
 	WriteLog("In DeleteSubject()");
 	
@@ -718,13 +729,13 @@ sub RearchiveSubject() {
 		my %row = $result->fetchhash;
 		my $uid = $row{'uid'};
 		my $projectRowID = $row{'project_id'};
+		my $subjectpath = $cfg{'archivedir'} . "/$uid";
 		
-		if (trim($uid) eq "") {
-			WriteLog("Blank UID");
+		if (($uid ne "") && ($subjectpath ne $cfg{'archivedir'} . "/")) {
+			WriteLog("Something was wrong: UID [$uid] StudyPath [$subjectpath]");
+			return 0;
 		}
 		else {
-			my $subjectpath = $cfg{'archivedir'} . "/$uid";
-			
 			# get instanceID
 			$sqlstring = "select instance_id from projects where project_id = '$projectRowID'";
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
@@ -732,7 +743,7 @@ sub RearchiveSubject() {
 			my $instanceRowID = $row{'instance_id'};
 			
 			# create an import request, based on the current instance, project, and site & get next import ID
-			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','')";
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','','$matchidonly')";
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
@@ -791,10 +802,12 @@ sub RearchiveSubject() {
 			$sqlstring = "delete from subjects where subject_id = $id";
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+			return 1;
 		}
 	}
 	else {
 		WriteLog("Found no information for SubjectID [$id]");
+		return 0;
 	}
 }
 

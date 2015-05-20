@@ -648,6 +648,9 @@ sub GetSQLComparison {
 
 	$c =~ s/\s*//g; # remove all whitespace
 	
+	# check if there is anything to format
+	if ($c eq "") { return (0,0); }
+	
 	my $comp;
 	my $num;
 	if (substr($c,0,2) eq "<=") {

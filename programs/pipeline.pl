@@ -580,11 +580,14 @@ sub ProcessPipelines() {
 								#WriteLog($sgebatchfile);
 								# submit the SGE job
 								my $sgejobfilename = "";
+								my $sgeshortfilename = "";
 								if ($rerunresults eq "1") {
 									$sgejobfilename = "$analysispath/sgererunresults.job";
+									$sgeshortfilename = "sgererunresults.job";
 								}
 								else {
 									$sgejobfilename = "$analysispath/sge.job";
+									$sgeshortfilename = "sge.job";
 								}
 								open SGEFILE, "> $sgejobfilename";
 								print SGEFILE $sgebatchfile;
@@ -593,7 +596,7 @@ sub ProcessPipelines() {
 								chmod(0777,$analysispath);
 								
 								# submit the sucker to the cluster
-								my $systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$realanalysispath/sge.job\"";
+								my $systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$realanalysispath/$sgeshortfilename\"";
 								my $sgeresult = `$systemstring 2>&1`;
 								print "SGE submit result [$sgeresult]\n";
 								WriteLog("SGE submit result [$sgeresult]");
@@ -1061,7 +1064,7 @@ sub CreateSGEJobFile() {
 		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid completererun 'Results re-run complete'\n";
 		$jobfile .= "chmod -Rf 777 $analysispath";
 	}
-	if (!$rerunresults) {
+	else {
 		# run the results import script
 		my $resultcommand = FormatCommand($pipelineid, $realanalysispath, $resultscript, $analysispath, $analysisid, $uid, $studynum, $studydatetime, $pipelinename, '', '');
 		$resultcommand .= " > $analysispath/pipeline/stepResultScript.log 2>&1";
@@ -1076,10 +1079,10 @@ sub CreateSGEJobFile() {
 		$jobfile .= "perl /opt/pipeline/CheckCompleteResults.pl -a $analysisid -d $analysispath\n";
 		
 		# check if the downloaded data should be deleted upon script completion
-		if ($removedata == 1) {
-			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'deleting downloaded data...'\n";
-			$jobfile .= "rm --preserve-root -r $analysispath/data\n";
-		}
+		#if ($removedata == 1) {
+		#	$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'deleting downloaded data...'\n";
+		#	$jobfile .= "rm --preserve-root -r $analysispath/data\n";
+		#}
 			
 		$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'Cluster processing complete'\n";
 		$jobfile .= "chmod -Rf 777 $analysispath";
@@ -1263,14 +1266,14 @@ sub GetData() {
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("Found " . $result->numrows . " studies matching studyid [$studyid]");
-		$datalog .= "Found " . $result->numrows . " studies matching studyid [$studyid]\n";
+		$datalog .= "===== Found " . $result->numrows . " studies matching studyid [$studyid] =====\n";
 		my %row = $result->fetchhash;
 		my $modality = $row{'study_modality'};
 		my $studynum = $row{'study_num'};
 		
 		WriteLog("Study modality is [$modality]");
 		#WriteLog("Data AND: $pipelinedataand");
-		#$datalog .= "Study modality is [$modality]\nData AND: $pipelinedataand";
+		$datalog .= "----- Begin checking data steps -----\n";
 		
 		# ------------------------------------------------------------------------
 		# check all of the steps to see if this data spec is valid
@@ -1293,7 +1296,7 @@ sub GetData() {
 			if (!$enabled) { $datalog .= "Data specification step [$i] is NOT enabled\n"; next; }
 			
 			# check if the step is optional
-			if ($optional) { $datalog .= "Data steo [$i] is optional. Ignoring the check\n"; next; }
+			if ($optional) { $datalog .= "Data step [$i] is optional. Ignoring the check\n"; next; }
 				
 			# make sure the requested modality table exists
 			$sqlstring = "show tables like '$modality"."_series'";
@@ -1319,7 +1322,7 @@ sub GetData() {
 			
 			# if its a subject level, check the subject for the protocol(s)
 			if ($level eq "subject") {
-				$datalog .= "This data step is subject level [$protocol], association type [$assoctype]\n";
+				$datalog .= "    This data step is subject level [$protocol], association type [$assoctype]\n";
 				# get the subject ID and study type, based on the current study ID
 				my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
 				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -1363,33 +1366,40 @@ sub GetData() {
 			# otherwise, check the study for the protocol(s)
 			else {
 				# get a list of series satisfying the search criteria, if it exists
-				#$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
-				$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
-				#WriteLog($sqlstring);
-				$datalog .= "[$sqlstring]\n";
-				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-				if ($result->numrows > 0) {
-					$datalog .= "This study contained step [$i]: [$protocol] [$modality] [$imagetype] [$numboldreps]\n";
+				if (($comparison == 0) && ($num == 0)) {
+					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
 				}
 				else {
-					$datalog .= "This study did NOT contain this required step [$i]: [$protocol] [$modality] [$imagetype] [$numboldreps]\n";
+					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
+				}
+				#WriteLog($sqlstring);
+				#$datalog .= "[$sqlstring]\n";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				if ($result->numrows > 0) {
+					$datalog .= "    This study contained step [$i]\n";
+				}
+				else {
+					$datalog .= "    This study did NOT contain this required step [$i]\n";
 					$stepIsInvalid = 1;
 					last;
 				}
 			}
 		}
-		
-		# ------ end checking the data steps -------------
+		$datalog .= "----- Done checking data steps -----\n";
 		
 		if ($stepIsInvalid) {
 			# bail out of this function, the data spec didn't work out for this subject
 			return (0,$datalog, $datareport);
 		}
 		
-		# by this point we can assume all of the data exists
+		# ------ end checking the data steps --------------------------------------
+		# if we get to here, the data spec is valid for this study
+		# so we can assume all of the data exists, and start copying it
+		# -------------------------------------------------------------------------
 		
 		WriteLog("Modality: $modality");
 		
+		$datalog .= "----- Required data for this study exists, beginning data copy -----\n";
 		# go through list of data search criteria
 		foreach my $i(0..$#datadef) {
 			my $id = $datadef[$i]{'id'};
@@ -1425,8 +1435,8 @@ sub GetData() {
 
 			# check to see if we should even run this step
 			if ($enabled) {
-				WriteLog("---------- Checking for $protocol for $modality ----------");
-				$datalog .= "---------- Checking for protocol [$protocol] modality [$modality] imagetype [$imagetype] ----------\n";
+				#WriteLog("---------- Checking for $protocol for $modality ----------");
+				#$datalog .= "---------- Checking for protocol [$protocol] modality [$modality] imagetype [$imagetype] ----------\n";
 				$modality = lc($modality);
 				# make sure the requested modality table exists
 				$sqlstring = "show tables like '$modality"."_series'";
@@ -1435,8 +1445,8 @@ sub GetData() {
 				
 					# get a list of series satisfying the search criteria, if it exists
 					if ($level eq 'study') {
-						WriteLog("This data step is PRIMARY [$protocol], criteria: [$criteria]");
-						$datalog .= "This data step is PRIMARY [$protocol] criteria: [$criteria]\n";
+						#WriteLog("This data step is PRIMARY [$protocol], criteria: [$criteria]");
+						$datalog .= "This data step is study-level [$protocol] criteria: [$criteria]\n";
 						if ($criteria eq 'first') {
 							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
 						}
@@ -1454,7 +1464,7 @@ sub GetData() {
 						}
 					}
 					else {
-						WriteLog("This data step is subject level [$protocol], association type [$assoctype]");
+						$datalog .= "This data step is subject-level [$protocol], association type [$assoctype]\n";
 						# get the subject ID and study type, based on the current study ID
 						my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
