@@ -2151,6 +2151,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			//});
 		</script>
 		<script type="text/javascript">
+		//$(document).ready(function() {
 		$(function() {
 			$("#studiesall").click(function() {
 				var checked_status = this.checked;
@@ -2164,12 +2165,41 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					this.checked = checked_status;
 				});
 			});
+			$("a.viewlog").click(function(e) {
+				var id = jQuery(this).attr("id");
+				e.preventDefault();
+				$("#dialogbox").load("viewanalysis.php?action=viewlogs&analysisid=" + id).dialog({height:800, width:1200});
+			});
+			$("a.viewfiles").click(function(e) {
+				var id = jQuery(this).attr("id");
+				e.preventDefault();
+				$("#dialogbox").load("viewanalysis.php?action=viewfiles&analysisid=" + id).dialog({height:800, width:1200});
+			});
+			$("a.viewresults").click(function(e) {
+				var id = jQuery(this).attr("id");
+				e.preventDefault();
+				$("#dialogbox").load("viewanalysis.php?action=viewresults&analysisid=" + id + "&studyid=<?=$study_id?>").dialog({height:800, width:1200});
+			});
 		});
 		</script>
 		<table width="100%" class="tablepage">
+			<form method="post" action="pipelines.php" id="numperpageform">
+			<input type="hidden" name="action" value="viewanalyses">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
 				<td class="label"><?=$numrows?> analyses</td>
-				<td class="pagenum">Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span></td>
+				<td class="pagenum">
+					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
+					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()">
+						<option value="100" <?if ($numperpage == 100) { echo "selected"; } ?>>100
+						<option value="500" <?if ($numperpage == 500) { echo "selected"; } ?>>500
+						<option value="1000" <?if ($numperpage == 1000) { echo "selected"; } ?>>1,000
+						<option value="2000" <?if ($numperpage == 2000) { echo "selected"; } ?>>2,000
+						<option value="5000" <?if ($numperpage == 5000) { echo "selected"; } ?>>5,000
+						<option value="10000" <?if ($numperpage == 10000) { echo "selected"; } ?>>10,000
+						<option value="50000" <?if ($numperpage == 50000) { echo "selected"; } ?>>50,000
+					</select>
+				</td>
 				<td class="middle">&nbsp;</td>
 				<td class="firstpage" title="First page"><a href="pipelines.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1">&#171;</a></td>
 				<td class="previouspage" title="Previous page"><a href="pipelines.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>">&lsaquo;</a></td>
@@ -2177,6 +2207,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				<td class="nextpage" title="Next page"><a href="pipelines.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>">&rsaquo;</a></td>
 				<td class="lastpage" title="Last page"><a href="pipelines.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>">&#187;</a></td>
 			</tr>
+			</form>
 		</table>
 		<form method="post" name="studieslist" action="pipelines.php">
 		<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
@@ -2338,51 +2369,16 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					</td>
 					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
 					<? if ($analysis_status != "") { ?>
-					<td>
-						<a href="#" id="viewlog<?=$analysis_id?>"><img src="images/preview.gif"></a>
-						<script>
-							$(document).ready(function() {
-								$("a#viewlog<?=$analysis_id?>").click(function(e) {
-									e.preventDefault();
-									$("#dialogbox").load("viewanalysis.php?action=viewlogs&analysisid=<?=$analysis_id?>").dialog({height:800, width:1200});
-								});
-							});
-						</script>
-					</td>
-					<td>
-						<a href="#" id="viewfiles<?=$analysis_id?>"><img src="images/folder.gif"></a>
-						<script>
-							$(document).ready(function() {
-								$("a#viewfiles<?=$analysis_id?>").click(function(e) {
-									e.preventDefault();
-									$("#dialogbox").load("viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>").dialog({height:800, width:1200});
-								});
-							});
-						</script>
-					</td>
-					<td>
-						<a href="#" id="viewresults<?=$analysis_id?>"><img src="images/chart-vertical.png"></a>
-						<script>
-							$(document).ready(function() {
-								$("a#viewresults<?=$analysis_id?>").click(function(e) {
-									e.preventDefault();
-									$("#dialogbox").load("viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>").dialog({height:800, width:1200});
-								});
-							});
-						</script>
-					</td>
+					<td><a href="#" class="viewlog" id="<?=$analysis_id?>"><img src="images/preview.gif"></a></td>
+					<td><a href="#" class="viewfiles" id="<?=$analysis_id?>"><img src="images/folder.gif"></a></td>
+					<td><a href="#" class="viewresults" id="<?=$analysis_id?>"><img src="images/chart-vertical.png"></a></td>
 					<? } else { ?>
 					<td></td>
 					<td></td>
 					<? } ?>
-					<!--<form action="pipelines.php" method="post" name="setanalysisnotes<?=$analysis_id?>">
-					<input type="hidden" name="action" value="setanalysisnotes">
-					<input type="hidden" name="id" value="<?=$analysis_id?>">
-					<input type="hidden" name="analysisnotes" id="analysisnotes" value="<?=$notestitle?>">-->
 					<td>
 						<span onClick="GetAnalysisNotes<?=$analysis_id?>();" style="cursor:hand; font-size:14pt; color: <?=$notescolor?>" title="<?=$notestitle?>">&#9998;</span>
 					</td>
-					<!--</form>-->
 					<td style="font-size:9pt; white-space:nowrap">
 						<?=$analysis_statusmessage?><br>
 						<?

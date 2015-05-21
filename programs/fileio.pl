@@ -731,8 +731,8 @@ sub RearchiveSubject() {
 		my $projectRowID = $row{'project_id'};
 		my $subjectpath = $cfg{'archivedir'} . "/$uid";
 		
-		if (($uid ne "") && ($subjectpath ne $cfg{'archivedir'} . "/")) {
-			WriteLog("Something was wrong: UID [$uid] StudyPath [$subjectpath]");
+		if (($uid eq "") || ($subjectpath eq $cfg{'archivedir'} . "/")) {
+			WriteLog("Something was wrong: UID [$uid] SubjectPath [$subjectpath]");
 			return 0;
 		}
 		else {
