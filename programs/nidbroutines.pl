@@ -462,16 +462,21 @@ sub SendHTMLEmail {
 sub WriteLog {
 	my ($msg) = @_;
 
-	if ($debug) {
-		print "$msg\n";
+	if (defined($msg)) {
+		if ($debug) {
+			print "$msg\n";
+		}
+		else {
+			if (trim($msg) ne '') {
+				print $log "[" . CreateCurrentDate() . "][pid $$] $msg\n";
+			}
+		}
+		
+		return $msg;
 	}
 	else {
-		if (trim($msg) ne '') {
-			print $log "[" . CreateCurrentDate() . "][pid $$] $msg\n";
-		}
+		return 0;
 	}
-	
-	return $msg;
 }
 
 
@@ -512,8 +517,8 @@ sub Error {
 	
 	WriteLog("FATAL ERROR: $error");
 
-	SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
-	SendHTMLEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal Error: $error", "The following error occurred: $error");
 	
 	exit(0);
 }
@@ -526,8 +531,10 @@ sub SQLError {
 	my ($sql, $error) = @_;
 	
 	WriteLog("SQL Error: '$error' in statement [$sql]");
-	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
-	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
+	
+	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error] in statement [$sql]");
+	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error] in statement [$sql]");
+	
 	exit(0);
 }
 
@@ -690,8 +697,9 @@ sub MakePath {
 	
 	WriteLog("Creating path [$p]");
 	print "Creating path [$p]\n";
-	#my $systemstring = "mkdir -p $p";
-	#WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
+	my $systemstring = "mkdir -pv $p";
+	WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
+	return 1;
 	
 	make_path($p, {mode => 0777, verbose => 1, error => \my $err});
 	if (@$err) {
@@ -710,6 +718,7 @@ sub MakePath {
 	}
 	else {
 		print "No error encountered when creating [$p]\n";
+		WriteLog("No error encountered when creating [$p]");
 		return 1;
 	}
 }

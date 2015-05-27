@@ -63,6 +63,9 @@
 		case 'viewaltseriessummary':
 			DisplayAltSeriesSummary($id);
 			break;
+		case 'viewinstancesummary':
+			DisplayInstanceSummary($id);
+			break;
 		case 'changealternatenames':
 			ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames);
 			DisplayUniqueSeries($id);
@@ -557,6 +560,126 @@
 
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayInstanceSummary ------------- */
+	/* -------------------------------------------- */
+	function DisplayInstanceSummary($id) {
+		
+		//$sqlstring = "select * from projects where project_id = $id";
+		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		//$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		//$name = $row['project_name'];
+		
+		//$urllist['Project List'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		//$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
+		//NavigationBar("Projects", $urllist,0,'','','','');
+		
+		/* get all studies associated with this project */
+		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.birthdate, e.altuid  FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		//PrintSQL($sqlstring);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$studyid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$uid = $row['uid'];
+			$age = $row['study_ageatscan'];
+			$dob = $row['birthdate'];
+			$altuid = $row['altuid'];
+			$modality = strtolower($row['study_modality']);
+			$enrollmentid = $row['enrollment_id'];
+			
+			if (($modality != "") && ($studyid != "")) {
+				/* get the series */
+				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid'";
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+					$seriesaltdesc = $rowA['series_altdesc'];
+					if ($seriesaltdesc != "") {
+						$seriesdescs[$uid][$modality][$seriesaltdesc]++;
+						$uniqueseries[$modality][$seriesaltdesc]++;
+						$seriesdescs[$uid]['age'] = $age;
+						$seriesdescs[$uid]['dob'] = $dob;
+						$seriesdescs[$uid]['altuid'] = $altuid;
+					}
+				}
+				
+				/* get the measures */
+				$sqlstringA = "select c.instrument_name, b.measure_name, a.* from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id where a.enrollment_id = '$enrollmentid'";
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+					$measurename = "[" . $rowA['instrument_name'] . "] - " . $rowA['measure_name'];
+					if ($rowA['measure_type'] == 's') {	$measurevalue = $rowA['measure_valuestring']; }
+					else { $measurevalue = $rowA['measure_valuenum']; }
+					if ($seriesaltdesc != "") {
+						$seriesdescs[$uid]['measures'][$measurename] = $measurevalue;
+						$uniqueseries['measures'][$measurename]++;
+					}
+				}
+			}
+		}
+		//PrintVariable($seriesdescs, 'seriesdesc');
+		//PrintVariable($uniqueseries, 'uniqueseries');
+		
+		?>
+		<table class="smallgraydisplaytable">
+			<thead>
+				<tr>
+					<th></th>
+					<th></th>
+					<th></th>
+					<?
+						foreach ($uniqueseries as $modality => $series) {
+							$count = count($series);
+							echo "<th colspan='$count'>$modality</th>";
+						}
+					?>
+				</tr>
+				<tr>
+					<th>UID</th>
+					<th>Age</th>
+					<th>DOB</th>
+					<?
+						foreach ($uniqueseries as $modality => $series) {
+							foreach ($series as $ser => $count) {
+								echo "<th>$ser ($count)</th>";
+							}
+						}
+					?>
+				</tr>
+			</thead>
+		<?
+
+		foreach ($seriesdescs as $uid => $modalities) {
+			$age = $seriesdescs[$uid]['age'];
+			$dob = $seriesdescs[$uid]['dob'];
+			?>
+			<tr>
+				<td><?=$uid?></td>
+				<td><?=$age?></td>
+				<td><?=$dob?></td>
+				<?
+				foreach ($uniqueseries as $modality => $series) {
+					foreach ($series as $ser => $count) {
+						$localcount = $seriesdescs[$uid][$modality][$ser];
+						if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
+						?>
+							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
+						<?
+					}
+				}
+				?>
+			</tr><?
+		}
+		?>
+		</table>
+
+		<?
+	}
 	
 
 	/* -------------------------------------------- */
@@ -659,6 +782,8 @@
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
 		?>
+		View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
+		<br><br>
 		<table class="graydisplaytable" width="100%">
 			<thead>
 				<tr>

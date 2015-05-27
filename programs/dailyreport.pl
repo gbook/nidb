@@ -127,7 +127,7 @@ sub DoReport {
 	my $str = "";
 	
 	my $uptime = `uptime`;
-	my $df = `df -h`;
+	my $df = `df -lh`;
 	
 	my @colors = GenerateColorGradient();
 	my %pstats = GetGlobalQAStats();
@@ -136,7 +136,7 @@ sub DoReport {
 	$email = qq^
 	<body style='font-family: arial, helvetica, sans-serif'>
 	<div align='center' width='100%' style="background-color: lightyellow; border: solid 1pt orange">
-		<b><span style='font-size: 14pt;'>ADO2 MRI daily report</span></b>
+		<b><span style='font-size: 14pt;'>NiDB MRI daily report</span></b>
 	</div>
 	<br>
 	<div align="center">$starttime <i>to</i> $endtime</div><br><br>
@@ -390,9 +390,9 @@ sub DoReport {
 	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 	while (my %row = $result->fetchhash) {
 		my $toemail = $row{'user_email'};
-		WriteLog("Calling SendHTMLEmail($toemail, 'ADO Server daily report', $email)");
-		SendHTMLEmail($toemail, 'ADO Server daily report', $email);
-		WriteLog("Done calling SendHTMLEmail($toemail, 'ADO Server daily report', $email)");
+		WriteLog("Calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
+		SendHTMLEmail($toemail, 'NiDB Server daily report', $email);
+		WriteLog("Done calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
 	}
 	
 	# update the stop time

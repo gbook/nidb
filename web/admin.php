@@ -76,6 +76,7 @@
 		<li><a href="cleanup.php">Clean-up</a>
 		<li><a href="system.php">System info</a>
 		<li><a href="stats.php">Usage stats</a>
+		<li><a href="longqc.php">Longitudinal QC</a>
 		</ul>
 		<?
 	}

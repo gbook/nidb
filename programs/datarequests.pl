@@ -410,24 +410,24 @@ sub ProcessDataRequests {
 						}
 						
 						# if its to be downloaded via the web, zip it
-						if ($req_destinationtype eq "web") {
-							my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
-							my $outdir;
-							if (!defined($tmpdir)) { $tmpdir = ''; }
-							if ($tmpdir eq "") { $outdir = $tmpwebdir; }
-							else { $outdir = $tmpdir; }
+						# if ($req_destinationtype eq "web") {
+							# my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
+							# my $outdir;
+							# if (!defined($tmpdir)) { $tmpdir = ''; }
+							# if ($tmpdir eq "") { $outdir = $tmpwebdir; }
+							# else { $outdir = $tmpdir; }
 							
-							my $pwd = getcwd;
-							WriteLog("Changing directory to [$outdir]");
-							chdir($outdir);
-							if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
-							else { $systemstring = "zip -1rq $zipfile ."; }
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							WriteLog("Changing directory to [$pwd]");
-							chdir($pwd);
-						}
+							# my $pwd = getcwd;
+							# WriteLog("Changing directory to [$outdir]");
+							# chdir($outdir);
+							# if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
+							# else { $systemstring = "zip -1rq $zipfile ."; }
+							# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							# WriteLog("Changing directory to [$pwd]");
+							# chdir($pwd);
+						# }
 						# if its a public download, zip it and update the entry in the public downloads table
-						elsif ($req_destinationtype eq "publicdownload") {
+						if (($req_destinationtype eq "publicdownload") || ($req_destinationtype eq "web")) {
 							$systemstring = "cp $tmpdir/* $tmpwebdir";
 						}
 						
@@ -714,10 +714,28 @@ sub ProcessDataRequests {
 			#WriteLog("SQL: $sqlstringC");
 			$resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
 		}
+		# if its a web download, do the zipping at the end
+		if ($req_destinationtype eq "web") {
+			my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
+			my $outdir;
+			#if (!defined($tmpdir)) { $tmpdir = ''; }
+			#if ($tmpdir eq "") { $outdir = $tmpwebdir; }
+			#else { $outdir = $tmpdir; }
+			$outdir = $tmpwebdir;
+			
+			my $pwd = getcwd;
+			WriteLog("Changing directory to [$outdir]");
+			chdir($outdir);
+			if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
+			else { $systemstring = "zip -1rq $zipfile ."; }
+			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			WriteLog("Changing directory to [$pwd]");
+			chdir($pwd);
+		}
 		
 		# if the tmpwebdir was created, delete it
 		if (-e $tmpwebdir) {
-			if (trim($tmpwebdir) ne '') {
+			if (trim($tmpwebdir) ne "") {
 				#rmtree($tmpwebdir);
 			}
 		}

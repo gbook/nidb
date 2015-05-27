@@ -215,11 +215,11 @@ sub ParseDirectory {
 				my $todaydate = time;
 				#WriteLog("now: $todaydate -- file:$mtime");
 
-				if (-d "$dir/$file") { }
+				if (-d "$dir/$file") { WriteLog("[$dir/$file] is a directory"); }
 				else {
-					#WriteLog("Working on [$dir/$file]");
+					WriteLog("Working on [$dir/$file]");
 					chdir($dir);
-					if ($file =~ /\.par$/) {
+					if (lc($file) =~ /\.par$/) {
 						WriteLog("Filetype is .par");
 						my $ret = InsertParRec($file, $importRowID);
 						if ($ret ne "") {
@@ -227,7 +227,7 @@ sub ParseDirectory {
 						}
 						$i++;
 					}
-					elsif ($file =~ /\.rec$/) {}
+					elsif (lc($file) =~ /\.rec$/) { WriteLog("Filetype is a .rec"); }
 					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/)) {
 						WriteLog("Filetype is .cnt .3dd or .dat");
 						my $ret = InsertEEG($file, $importRowID);
@@ -240,7 +240,7 @@ sub ParseDirectory {
 						$i++;
 					}
 					else {
-						#WriteLog("Filetype is not specified, so probably DICOM");
+						WriteLog("Filetype is not specified, so maybe DICOM");
 						my ($tags,$newfilename,$filetype) = ParseDICOMFile("$dir/$file");
 						if ($tags != 0) {
 							if (trim($tags->{'Warning'}) eq "Error reading DICOM file (corrupted? still being copied?)") {
@@ -261,7 +261,7 @@ sub ParseDirectory {
 							WriteLog("File [$file] is most likely not a dicom file");
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Not a DICOM file, moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-							move("$dir/$file","$cfg{'problemdir'}/$file");
+							#move("$dir/$file","$cfg{'problemdir'}/$file");
 						}
 					}
 				}
@@ -321,16 +321,19 @@ sub ParseDirectory {
 		}
 	}
 	
-	my $uploaddir = "$cfg{'incomingdir'}/$importRowID";
-	if (-d $uploaddir) {
-		# delete the uploaded directory
-		WriteLog("Attempting to remove [$uploaddir]");
-		my $mode = (stat($uploaddir))[2];
-		WriteLog(sprintf "permissions are %04o\n", $mode &07777);
-		if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*') && ($importRowID ne '')) {
-			my $systemstring = "rm -rf $uploaddir";
-			WriteLog("We'll attempt to run this [$systemstring]");
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+	if ($importRowID ne "") {
+		my $uploaddir = "$cfg{'incomingdir'}/$importRowID";
+		if (-d $uploaddir) {
+			# delete the uploaded directory
+			WriteLog("Attempting to remove [$uploaddir]");
+			my $mode = (stat($uploaddir))[2];
+			WriteLog(sprintf "permissions are %04o\n", $mode &07777);
+			if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*') && ($importRowID ne '')) {
+				#my $systemstring = "rm -rf $uploaddir";
+				my $systemstring = "rmdir $uploaddir";
+				WriteLog("We'll attempt to run this [$systemstring]");
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			}
 		}
 	}
 	
@@ -475,7 +478,7 @@ sub InsertSeries {
 	}
 	
 	WriteLog("Parsing $files[0]");
-	if (-e ) {
+	if (-e $files[0]) {
 		WriteLog($files[0] . " exists");
 	}
 	else {
@@ -872,10 +875,8 @@ sub InsertSeries {
 	}
 	else {
 		$zsize = $numfiles;
-		
-	my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'});
-	my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
-		
+		my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'});
+		my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
 	}
 	# if any of the DICOM fields were populated, use those instead
 	if ($ImagesInAcquisition > 0) { $zsize = $ImagesInAcquisition; }
@@ -988,14 +989,15 @@ sub InsertSeries {
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/dicom";
-	WriteLog("$outdir");
-	mkpath($outdir, {mode => 0777});
+	WriteLog("OutDir: $outdir");
+	#mkpath($outdir, {mode => 0777});
+	MakePath($outdir);
 	
 	# rename the files and move them to the archive
 	# SubjectUID_EnrollmentRowID_SeriesNum_FileNum
 	# S1234ABC_SP1_5_0001.dcm
 	
-	#WriteLog("CWD: " . getcwd);
+	WriteLog("CWD: " . getcwd);
 	# check if there are .dcm files already in the archive
 	my $cwd = getcwd;
 	chdir($outdir);
@@ -1004,6 +1006,7 @@ sub InsertSeries {
 	@existingdcmfiles = sort @existingdcmfiles;
 	my $numexistingdcmfiles = @existingdcmfiles;
 	# rename EXISTING files in the output directory
+	WriteLog("Checking for existing files in the outputdir [$outdir]");
 	if ($numexistingdcmfiles > 0) {
 	
 		# check all files to see if its the same study datetime, patient name, dob, gender, series #
@@ -1043,6 +1046,7 @@ sub InsertSeries {
 		WriteLog("Done renaming [$filecnt] files");
 	}
 	
+	WriteLog("Beginning renumbering of new files");
 	# renumber the NEWLY added files to make them unique
 	foreach my $file (sort @files) {
 		my $tags3 = $exifTool->ImageInfo($file);
@@ -1091,11 +1095,12 @@ sub InsertSeries {
 		my $sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
+	WriteLog("Done renaming files");
 	
 	# get the size of the dicom files and update the DB
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
-	#WriteLog("CWD: " . getcwd);
+	WriteLog("CWD: " . getcwd);
 	
 	# check if its an EPI sequence, but not a perfusion sequence
 	if (($SequenceName =~ m/^epfid2d1_/) || ($SequenceName =~ m/^epfid2d1_64/) || ($SequenceName =~ m/^epfid2d1_128/)) {
@@ -1118,6 +1123,8 @@ sub InsertSeries {
 		$zsize = $numfiles;
 	}
 	
+	WriteLog("zsize [$zsize]");
+	
 	# update the database with the correct number of files/BOLD reps
 	if (lc($dbModality) eq "mr") {
 		$sqlstring = "update " . lc($dbModality) . "_series set series_size = $dirsize, numfiles = $numfiles, bold_reps = $boldreps where " . lc($dbModality) . "series_id = $seriesRowID";
@@ -1132,7 +1139,7 @@ sub InsertSeries {
 	WriteLog("Checking for [$cfg{'incomingdir'}/$importID/beh]");
 	if (-d "$cfg{'incomingdir'}/$importID/beh") {
 		WriteLog("Attempting to mkpath($cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh)");
-		mkpath("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh");
+		MakePath("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh");
 		my $systemstring = "mv -v $cfg{'incomingdir'}/$importID/beh/* $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh/";
 		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 		
@@ -1157,7 +1164,8 @@ sub InsertSeries {
 	}
 	else {
 		WriteLog("Directory [$backdir] does not exist. About to create it...");
-		mkpath($backdir, { verbose => 1, mode => 0777} );
+		#mkpath($backdir, { verbose => 1, mode => 0777} );
+		MakePath($backdir);
 		WriteLog("Finished creating [$backdir]");
 	}
 	WriteLog("About to copy to the backup directory");
@@ -1188,7 +1196,7 @@ sub InsertSeries {
 sub InsertParRec {
 	my ($file, $importRowID) = @_;
 	
-	WriteLog("$file");
+	WriteLog("In InsertParRec($file, $importRowID)");
 	#exit(0);
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
@@ -1591,9 +1599,9 @@ sub InsertParRec {
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/parrec";
 	WriteLog("$outdir");
-	mkpath($outdir, {mode => 0777});
+	#mkpath($outdir, {mode => 0777});
+	MakePath($outdir);
 	
-	WriteLog();
 	# move the files into the outdir
 	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$parfile -> $outdir/$parfile");
 	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$recfile -> $outdir/$recfile");
@@ -1637,7 +1645,8 @@ sub InsertParRec {
 	}
 	else {
 		WriteLog("Directory [$backdir] does not exist. About to create it...");
-		mkpath($backdir, { verbose => 1, mode => 0777} );
+		#mkpath($backdir, { verbose => 1, mode => 0777} );
+		MakePath($backdir);
 		WriteLog("Finished creating [$backdir]");
 	}
 	WriteLog("About to copy to the backup directory");
@@ -1865,7 +1874,8 @@ sub InsertEEG {
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/eeg";
 	WriteLog("$outdir");
-	mkpath($outdir, {mode => 0777});
+	#mkpath($outdir, {mode => 0777});
+	MakePath($outdir);
 	
 	WriteLog();
 	# move the files into the outdir
@@ -1902,7 +1912,8 @@ sub InsertEEG {
 	}
 	else {
 		WriteLog("Directory [$backdir] does not exist. About to create it...");
-		mkpath($backdir, { verbose => 1, mode => 0777} );
+		#mkpath($backdir, { verbose => 1, mode => 0777} );
+		MakePath($backdir);
 		WriteLog("Finished creating [$backdir]");
 	}
 	WriteLog("About to copy to the backup directory");

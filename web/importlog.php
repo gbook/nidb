@@ -401,7 +401,9 @@
 				<td align="right"><?=$numblocks?></td>
 				<td><a href="importlog.php?action=viewuploadblocks&transactionid=<?=$transactionid?>">summary</a> / 
 				<a href="importlog.php?action=viewsingletransaction&transactionid=<?=$transactionid?>">detail</a></td>
-				<td align="right"><?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>%</td>
+				<td align="left">
+					<img src="horizontalchart.php?b=yes&w=100&h=12&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>%
+				</td>
 			</tr>
 			<?
 		}
