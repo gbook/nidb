@@ -167,9 +167,9 @@ chmod 755 /var/www/html/phpMyAdmin/config.inc.php
 echo "You should be able to see this" >> /var/www/html/index.php
 echo "Check to make sure you can see http://$HOSTNAME/index.php"
 read -p "Press [enter] to continue"
-echo "phpMyAdmin installed, but must be configured"
-echo "Go to http://$HOSTNAME/phpMyAdmin/setup to add the local DB server"
-read -p "Press [enter] to continue"
+#echo "phpMyAdmin installed, but must be configured"
+#echo "Go to http://$HOSTNAME/phpMyAdmin/setup to add the local DB server"
+#read -p "Press [enter] to continue"
 
 
 # --------- install all nidb files and db ----------
