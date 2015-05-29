@@ -236,7 +236,7 @@
 <?		
 		
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id and d.isactive = 1 order by a.study_site, a.study_desc";
+		$sqlstring = "select a.*, c.*, d.uid, d.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id and d.isactive = 1 order by a.study_site, a.study_desc";
 		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$numstudies = mysql_num_rows($result);
 		?>
@@ -252,6 +252,7 @@
 		<table class="smallgraydisplaytable" id='table1'>
 			<tr>
 				<th>Study ID</th>
+				<th>Subject ID</th>
 				<th>Study Date</th>
 				<th>Modality</th>
 				<th>Study Desc</th>
@@ -283,13 +284,25 @@
 				$study_site = $row['study_site'];
 				$study_altid = $row['study_alternateid'];
 				$uid = $row['uid'];
+				$subjectid = $row['subject_id'];
 				$project_name = $row['project_name'];
 				$project_costcenter = $row['project_costcenter'];
+				
+				$sqlstringA = "select altuid from subject_altuid where subject_id = $subjectid order by isprimary desc";
+				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+				$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+				$isprimary = $rowA['isprimary'];
+				$altuid = $rowA['altuid'];
+				
+				if ($isprimary) {
+					$altuid = "<b>$altuid</b>";
+				}
 				?>
 				<tr>
 					<td>
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
+					<td><?=$altuid?></td>
 					<td><?=$study_datetime?></td>
 					<td><?=$modality?></td>
 					<td><?=$study_desc?></td>
@@ -567,29 +580,29 @@
 	/* -------------------------------------------- */
 	function DisplayInstanceSummary($id) {
 		
-		//$sqlstring = "select * from projects where project_id = $id";
-		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		//$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		//$name = $row['project_name'];
-		
-		//$urllist['Project List'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displayproject&id=$id";
-		//$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
-		//NavigationBar("Projects", $urllist,0,'','','','');
+		$urllist['Project List'] = "projects.php";
+		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
 		/* get all studies associated with this project */
-		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.birthdate, e.altuid  FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id";
+		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid  FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$studyid = $row['study_id'];
 			$studynum = $row['study_num'];
 			$uid = $row['uid'];
+			$subjectid = $row['subject_id'];
 			$age = $row['study_ageatscan'];
 			$dob = $row['birthdate'];
-			$altuid = $row['altuid'];
+			//$altuid = $row['altuid'];
 			$modality = strtolower($row['study_modality']);
 			$enrollmentid = $row['enrollment_id'];
+			
+			$sqlstringA = "select altuid from subject_altuid where subject_id = $subjectid order by isprimary desc";
+			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$isprimary = $rowA['isprimary'];
+			$altuid = $rowA['altuid'];
 			
 			if (($modality != "") && ($studyid != "")) {
 				/* get the series */
@@ -604,6 +617,7 @@
 						$seriesdescs[$uid]['age'] = $age;
 						$seriesdescs[$uid]['dob'] = $dob;
 						$seriesdescs[$uid]['altuid'] = $altuid;
+						$seriesdescs[$uid]['subjectid'] = $subjectid;
 					}
 				}
 				
@@ -641,6 +655,7 @@
 				</tr>
 				<tr>
 					<th>UID</th>
+					<th>Subject ID</th>
 					<th>Age</th>
 					<th>DOB</th>
 					<?
@@ -657,9 +672,12 @@
 		foreach ($seriesdescs as $uid => $modalities) {
 			$age = $seriesdescs[$uid]['age'];
 			$dob = $seriesdescs[$uid]['dob'];
+			$altuid = $seriesdescs[$uid]['altuid'];
+			$subjectid = $seriesdescs[$uid]['subjectid'];
 			?>
 			<tr>
-				<td><?=$uid?></td>
+				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+				<td><?=$altuid?></td>
 				<td><?=$age?></td>
 				<td><?=$dob?></td>
 				<?

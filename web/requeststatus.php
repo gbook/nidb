@@ -171,7 +171,7 @@
 			<tr style="font-size:9pt">
 				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="requeststatus.php?action=showgroup&groupid=<?=$groupid?>"><?=$requestdate?></a>&nbsp;
 				<?
-					if ($GLOBALS['username'] == $username) {
+					if (($GLOBALS['username'] == $username) || ($GLOBALS['issiteadmin'])) {
 						?>
 						<a href="requeststatus.php?action=cancelgroup&groupid=<?=$groupid?>" style="color:darkred; font-weight:bold" title="Cancel download">X</a>
 						<?
@@ -220,10 +220,15 @@
 						else {
 							$filesize = 0;
 						}
-					?>
-					<a href="download/<?="NIDB-$groupid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span>
-					<?
-					} else {
+						
+						if ($filesize == 0) {
+							echo "Zipping download...";
+						}
+						else {
+							?><a href="download/<?="NIDB-$groupid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+						}
+					}
+					else {
 						echo "Preparing download...";
 					}
 				}

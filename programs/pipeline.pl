@@ -932,6 +932,11 @@ sub IsQueueFilled() {
 		my %row = $result->fetchhash;
 		$numprocallowed = $row{'pipeline_numproc'};
 	}
+	# if this is 0, the pipeline may have disappeared, or someone set the concurrent limit to 0
+	# in which case this check will never be valid, so exit the look with a return code of 2
+	if ($numprocallowed == 0) {
+		return 2;
+	}
 	
 	# find out how many processes are actually running
 	my $numprocrunning = 0;

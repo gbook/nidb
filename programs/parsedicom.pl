@@ -67,9 +67,9 @@ use IO::Handle;
 # -----------------------------------------------------------------------------
 	
 # no idea why, but perl is buffering output to the screen, and these 3 statements turn off buffering
-#my $old_fh = select(STDOUT);
-#$| = 1;
-#select($old_fh);
+my $old_fh = select(STDOUT);
+$| = 1;
+select($old_fh);
 
 # check if this program can run or not
 if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {

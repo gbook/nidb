@@ -137,113 +137,111 @@ sub DoImportUploaded {
 			
 			if ($datatype eq '') { $datatype = "dicom"; }
 			
-			switch ($datatype) {
-				case 'dicom' {
-					# ----- get list of files in directory -----
-					$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
-					
-					my @files;
-					if (!opendir (DIR, $uploaddir)) {
-						WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
-						next;
+			if (($datatype eq "dicom") || ($datatype eq "parrec")) {
+				# ----- get list of files in directory -----
+				$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
+				
+				my @files;
+				if (!opendir (DIR, $uploaddir)) {
+					WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
+					next;
+				}
+				while (my $file = readdir(DIR)) {
+					#WriteLog($file);
+					if ((trim($file) ne '.') && (trim($file) ne '..')) {
+						push(@files,$file);
 					}
-					while (my $file = readdir(DIR)) {
-						#WriteLog($file);
-						if ((trim($file) ne '.') && (trim($file) ne '..')) {
-							push(@files,$file);
-						}
-					}
-					closedir(DIR);
-					my $numfiles = $#files + 1;
-					WriteLog("Found $numfiles files in $uploaddir");
+				}
+				closedir(DIR);
+				my $numfiles = $#files + 1;
+				WriteLog("Found $numfiles files in $uploaddir");
 					
-					# go through the files
-					foreach my $file(@files) {
-						my $filepath = "$uploaddir/$file";
-						if (IsDICOMFile($filepath)) {
-							# anonymize, replace project and site, rename, and dump to incoming
-							#WriteLog("$filepath is a DICOM file");
-							PrepareDICOM($importrequest_id,$filepath,$anonymize);
-						}
-						elsif ($filepath =~ m/\.par/) {
-							PreparePARREC($importrequest_id,$filepath,$anonymize);
-						}
-						elsif ($filepath =~ m/\.rec/) {
-							# .par/.rec are pairs, and only the .par contains meta-info, so leave the .rec alone
-						}
-						else {
-							WriteLog("$filepath not a DICOM file");
-							my ($ext) = $filepath =~ /(\..*)$/;
+				# go through the files
+				foreach my $file(@files) {
+					my $filepath = "$uploaddir/$file";
+					if (IsDICOMFile($filepath)) {
+						# anonymize, replace project and site, rename, and dump to incoming
+						#WriteLog("$filepath is a DICOM file");
+						PrepareDICOM($importrequest_id,$filepath,$anonymize);
+					}
+					elsif ($filepath =~ m/\.par/) {
+						PreparePARREC($importrequest_id,$filepath,$anonymize);
+					}
+					elsif ($filepath =~ m/\.rec/) {
+						# .par/.rec are pairs, and only the .par contains meta-info, so leave the .rec alone
+					}
+					else {
+						WriteLog("$filepath not a DICOM file");
+						my ($ext) = $filepath =~ /(\..*)$/;
 
-							my $tmppath = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-							my $systemstring = "";
-							WriteLog("$filepath -> [$ext]");
-							switch ($ext) {
-								case /\.tar\.gz$/ { $systemstring = "tar -xvzf '$filepath' -C $tmppath"; }
-								case /\.gz$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
-								case /\.z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
-								case /\.Z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
-								case /\.zip$/ { $systemstring = "unzip '$filepath' -d $tmppath"; }
-								case /\.tar\.bz2$/ { $systemstring = "tar -xvjf '$filepath' -C $tmppath"; }
-								case /\.tar$/ { $systemstring = "tar -xvf '$filepath' -C $tmppath"; }
-							}
-							if ($systemstring ne '') {
-								mkpath($tmppath);
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							
-								# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
-								find(sub{FindDICOMs($importrequest_id,$anonymize);}, $tmppath);
-							
-								# delete the tmp directory
-								if (($tmppath ne '') && ($tmppath ne '.') && ($tmppath ne '..')) {
-									rmtree($tmppath);
-								}
+						my $tmppath = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+						my $systemstring = "";
+						WriteLog("$filepath -> [$ext]");
+						switch ($ext) {
+							case /\.tar\.gz$/ { $systemstring = "tar -xvzf '$filepath' -C $tmppath"; }
+							case /\.gz$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
+							case /\.z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
+							case /\.Z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
+							case /\.zip$/ { $systemstring = "unzip '$filepath' -d $tmppath"; }
+							case /\.tar\.bz2$/ { $systemstring = "tar -xvjf '$filepath' -C $tmppath"; }
+							case /\.tar$/ { $systemstring = "tar -xvf '$filepath' -C $tmppath"; }
+						}
+						if ($systemstring ne '') {
+							mkpath($tmppath);
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						
+							# find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming)
+							find(sub{FindDICOMs($importrequest_id,$anonymize);}, $tmppath);
+						
+							# delete the tmp directory
+							if (($tmppath ne '') && ($tmppath ne '.') && ($tmppath ne '..')) {
+								rmtree($tmppath);
 							}
 						}
 					}
-					
-					# move the beh directory if it exists
-					if (-d "$uploaddir/beh") {
-						mkpath("$cfg{'incomingdir'}/$importrequest_id");
-						my $systemstring = "mv -v $uploaddir/beh $cfg{'incomingdir'}/$importrequest_id/";
-						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				}
+				
+				# move the beh directory if it exists
+				if (-d "$uploaddir/beh") {
+					mkpath("$cfg{'incomingdir'}/$importrequest_id");
+					my $systemstring = "mv -v $uploaddir/beh $cfg{'incomingdir'}/$importrequest_id/";
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				}
+			}
+			elsif ($datatype eq 'eeg') {
+				WriteLog("Encountered eeg import");
+				# ----- get list of files in directory -----
+				$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
+				
+				my @files;
+				if (!opendir (DIR, $uploaddir)) {
+					WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
+					next;
+				}
+				while (my $file = readdir(DIR)) {
+					if ((trim($file) ne '.') && (trim($file) ne '..')) {
+						WriteLog("Found [$file]");
+						push(@files,$file);
 					}
 				}
-				case 'eeg' {
-					WriteLog("Encountered eeg import");
-					# ----- get list of files in directory -----
-					$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
-					
-					my @files;
-					if (!opendir (DIR, $uploaddir)) {
-						WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
-						next;
-					}
-					while (my $file = readdir(DIR)) {
-						if ((trim($file) ne '.') && (trim($file) ne '..')) {
-							WriteLog("Found [$file]");
-							push(@files,$file);
-						}
-					}
-					closedir(DIR);
-					my $numfiles = $#files + 1;
-					WriteLog("Found $numfiles files in $uploaddir");
-					
-					# go through the files
-					foreach my $file(@files) {
-						my $filepath = "$uploaddir/$file";
-						#PreparePARREC($importrequest_id,$filepath,$anonymize);
-						WriteLog("Attempting mkpath(". $cfg{'incomingdir'} . "/$importrequest_id)");
-						#WriteLog("[Long Listing 1] " . `ls -l $filepath`);
-						mkpath("$cfg{'incomingdir'}/$importrequest_id",0777);
-						my $systemstring = "touch $filepath; mv -v $filepath $cfg{'incomingdir'}/$importrequest_id/";
-						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-						#WriteLog("[Long Listing 2] " . `ls -l $cfg{'incomingdir'}/$importrequest_id/$file`);
-					}
+				closedir(DIR);
+				my $numfiles = $#files + 1;
+				WriteLog("Found $numfiles files in $uploaddir");
+				
+				# go through the files
+				foreach my $file(@files) {
+					my $filepath = "$uploaddir/$file";
+					#PreparePARREC($importrequest_id,$filepath,$anonymize);
+					WriteLog("Attempting mkpath(". $cfg{'incomingdir'} . "/$importrequest_id)");
+					#WriteLog("[Long Listing 1] " . `ls -l $filepath`);
+					mkpath("$cfg{'incomingdir'}/$importrequest_id",0777);
+					my $systemstring = "touch $filepath; mv -v $filepath $cfg{'incomingdir'}/$importrequest_id/";
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					#WriteLog("[Long Listing 2] " . `ls -l $cfg{'incomingdir'}/$importrequest_id/$file`);
 				}
-				else {
-					WriteLog("Datatype not recognized [$datatype]");
-				}
+			}
+			else {
+				WriteLog("Datatype not recognized [$datatype]");
 			}
 			
 			my $sqlstringB = "update import_requests set import_status = 'received' where importrequest_id = $importrequest_id";
