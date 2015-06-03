@@ -5,4 +5,6 @@
 PATH=/opt/afni:/opt/fbirn_qa/bin:${PATH};
 export PATH;
 
+echo "About to run MRAdvancedStatsHuman.pl $1";
 perl MRAdvancedStatsHuman.pl $1
+echo "Done running MRAdvancedStatsHuman.pl $1";

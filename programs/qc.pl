@@ -120,6 +120,7 @@ sub DoQC {
 	my $sqlstring = "select * from qc_modules where qcm_isenabled = 1";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
+		my $numdone = 0;
 		while (my %row = $result->fetchhash) {
 			my $moduleid = $row{'qcmodule_id'};
 			my $modality = lc($row{'qcm_modality'});
@@ -131,8 +132,10 @@ sub DoQC {
 			my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 			if ($result->numrows > 0) {
 				while (my %row = $result->fetchhash) {
+					$ret = 1;
 					my $series_id = $row{$modality . 'series_id'};
 					QC($moduleid, $series_id, $modality);
+					$numdone++;
 					
 					# check if this module should be running now or not
 					if (!ModuleCheckIfActive($scriptname, $db)) {
@@ -142,10 +145,14 @@ sub DoQC {
 						return 0;
 					}
 					
-					sleep(0.75);
+					# give this thing a break every so often
+					if ($numdone >= 100) {
+						last;
+					}
+					
+					sleep(1);
 				}
-				WriteLog("Finished reconstructing data");
-				$ret = 1;
+				WriteLog("Finished checking data");
 			}
 			else {
 				WriteLog("Nothing to do");
@@ -247,14 +254,15 @@ sub QC() {
 				WriteLog("Submitting to cluster: [ssh $cfg{'clustersubmithost'} $cfg{'qsubpath'} -u $cfg{'queueuser'} -q $cfg{'queuename'} \"$qcpath/$sgefile\"]");
 				
 				# submit the sucker to the cluster
-				WriteLog(`ssh $cfg{'clustersubmithost'} $cfg{'qsubpath'} -u $cfg{'queueuser'} -q $cfg{'queuename'} "$qcpath/$sgefile"`);
+				WriteLog(`ssh $cfg{'clustersubmithost'} $cfg{'qsubpath'} -u $cfg{'queueuser'} -q $cfg{'queuename'} "$qcpath/$sgefile" 2>&1`);
 			}
 			else {
 				chdir("$cfg{'qcmoduledir'}/$modulename");
 				WriteLog("Running the following file: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
 				my $systemstring = "$cfg{'qcmoduledir'}/$modulename/./$modulename.sh $qcmoduleseriesid";
-				print "$systemstring\n";
-				WriteLog("$systemstring (" . `$systemstring` . ")");
+				print "About to run [$systemstring]\n";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				WriteLog("Should be done running: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
 			}
 
 			# calculate the total time running

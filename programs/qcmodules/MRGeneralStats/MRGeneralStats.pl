@@ -33,19 +33,15 @@ use strict;
 use warnings;
 use Mysql;
 use Image::ExifTool;
-#use Net::SMTP::TLS;
 use Data::Dumper;
 use File::Path;
 use File::Copy;
 use Switch;
 use Sort::Naturally;
-#use Math::Derivative qw(Derivative1 Derivative2);
 use List::Util qw(first max maxstr min minstr reduce shuffle sum);
-#use File::Slurp;
 use Cwd;
 require '../../nidbroutines.pl';
 
-#my %config = do 'config.pl';
 our %cfg;
 LoadConfig();
 
@@ -118,7 +114,7 @@ sub QC() {
 					print "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/meanIntensityOverTime.txt does NOT exist!\n";
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -m > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/meanIntensityOverTime.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/meanIntensityOverTime.txt", $moduleseriesid, 'fMRIMeanIntensityOverTime','graph','intensity','intensity');
 				}
 				
@@ -131,7 +127,7 @@ sub QC() {
 					print "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/stdevIntensityOverTime.txt does NOT exist!\n";
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -s > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/stdevIntensityOverTime.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/stdevIntensityOverTime.txt", $moduleseriesid, 'fMRIStdevIntensityOverTime','graph','intensity','intensity');
 				}
 				
@@ -142,7 +138,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -e > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/entropyOverTime.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/entropyOverTime.txt", $moduleseriesid, 'fMRIEntropyOverTime','graph','entropy','entropy');
 				}
 
@@ -153,7 +149,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -c > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/centerOfGravityOverTimeMM.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/centerOfGravityOverTimeMM.txt", $moduleseriesid, 'fMRICenterOfGravityOverTimeMM','graph','mm','Center of graivty over time');
 				}
 
@@ -164,7 +160,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -C > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/centerOfGravityOverTimeVox.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/centerOfGravityOverTimeVox.txt", $moduleseriesid, 'fMRICenterOfGravityOverTimeVox','graph','voxels','Center of graivty over time');
 				}
 				
@@ -175,7 +171,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/mc4D -h 100 > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/histogramOverTime.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/histogramOverTime.txt", $moduleseriesid, 'fMRIHistogramOverTime','histogram','intensity','histogram');
 				}
 
@@ -186,7 +182,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/Tmean -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxMean.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxMean.txt", $moduleseriesid, 'fMRIMinMaxMean','minmax','intensity','Mean');
 				}
 
@@ -197,7 +193,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/Tsigma -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxSigma.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxSigma.txt", $moduleseriesid, 'fMRIMinMaxSigma','minmax','intensity','Sigma');
 				}
 
@@ -208,7 +204,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/Tvariance -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxVariance.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxVariance.txt", $moduleseriesid, 'fMRIMinMaxVariance','minmax','intensity','Variance');
 				}
 
@@ -219,7 +215,7 @@ sub QC() {
 				else {
 					ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 					my $systemstring = "fslstats -t $tmpdir/Tvariance -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt", $moduleseriesid, 'fMRIMotionCorrection','graph','mm','Pitch,Roll,Yaw,X,Y,Z');
 				}
 				
@@ -257,10 +253,10 @@ sub QC() {
 					unless (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz") {
 						ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 						my $systemstring = "fslstats -t $tmpdir/Tmean -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
-						print("$systemstring (" . `$systemstring` . ")");
+						print("$systemstring (" . `$systemstring 2>&1` . ")");
 					}
 					$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCImageFile("Tmean.png",$moduleseriesid, 'fMRITmean','image');
 				}
 
@@ -272,10 +268,10 @@ sub QC() {
 					unless (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz") {
 						ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 						my $systemstring = "fslstats -t $tmpdir/Tsigma -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
-						print("$systemstring (" . `$systemstring` . ")");
+						print("$systemstring (" . `$systemstring 2>&1` . ")");
 					}
 					$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.png";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCImageFile("Tsigma.png",$moduleseriesid, 'fMRITsigma','image');
 				}
 
@@ -287,17 +283,17 @@ sub QC() {
 					unless (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz") {
 						ConvertToNifti("$cfg{'archivedir'}/$uid/$study_num/$series_num/nifti", $tmpdir,$is_derived,$datatype);
 						my $systemstring = "fslstats -t $tmpdir/Tvariance -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
-						print("$systemstring (" . `$systemstring` . ")");
+						print("$systemstring (" . `$systemstring 2>&1` . ")");
 					}
 					$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.png";
-					print("$systemstring (" . `$systemstring` . ")");
+					print("$systemstring (" . `$systemstring 2>&1` . ")");
 					InsertQCImageFile("Tvariance.png",$moduleseriesid, 'fMRITvariance','image');
 				}
 			}
 			# delete the 4D file and temp directory
 			if (trim($tmpdir) ne "") {
 				$systemstring = "rm -rf $tmpdir";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				rmdir($tmpdir);
 			}
 			
@@ -435,23 +431,23 @@ sub ConvertToNifti() {
 		
 		if (($is_derived) || ($datatype ne 'dicom')) {
 			my $systemstring = "cp $indir/* $tmpdir";
-			print("$systemstring (" . `$systemstring` . ")");
+			print("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {
 			my $currentdir = getcwd;
 			chdir($indir);
 			# create a 4D file
 			my $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
-			print("$systemstring (" . `$systemstring` . ")");
+			print("$systemstring (" . `$systemstring 2>&1` . ")");
 			
 			chdir($currentdir);
 		}
 		
 		my $systemstring = "mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
-		print("$systemstring (" . `$systemstring` . ")");
+		print("$systemstring (" . `$systemstring 2>&1` . ")");
 	}
 	my $systemstring = "fslval $tmpdir/*.nii.gz dim4";
-	$nvols = trim(`$systemstring`);
+	$nvols = trim(`$systemstring 2>&1`);
 	print "Num Vols: $nvols\n";
 
 	if ($nvols > 1) {
@@ -462,26 +458,26 @@ sub ConvertToNifti() {
 		
 			if (($is_derived) || ($datatype ne 'dicom')) {
 				my $systemstring = "cp $indir/* $tmpdir";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 			else {
 				my $currentdir = getcwd;
 				chdir($tmpdir);
 				# realign the 4D file
 				my $systemstring = "mcflirt -in 4D -out mc4D -rmsrel -rmsabs -plots -stats";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 
 				# move and rename the mean,sigma,variance volumes to the archive directory
 				$systemstring = "mv *mc4D_meanvol.nii.gz Tmean.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				$systemstring = "mv *mc4D_sigma.nii.gz Tsigma.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				$systemstring = "mv *mc4D_variance.nii.gz Tvariance.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 
 				# rename the realignment file to something meaningful
 				$systemstring = "mv *.par MotionCorrection.txt";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				
 				chdir($currentdir);
 			}

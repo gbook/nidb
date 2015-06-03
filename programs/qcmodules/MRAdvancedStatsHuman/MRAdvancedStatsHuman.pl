@@ -105,36 +105,36 @@ sub QC() {
 			chdir($indir);
 			
 			my $tmpdir = "/tmp/" . GenerateRandomString(10);
-			mkpath($tmpdir);
-			mkpath($qadir);
+			mkpath($tmpdir, {error => \my $err} );
+			mkpath($qadir, {error => \my $err} );
 
 			if ($datatype eq "parrec") {
 				chdir($indir); print `pwd`;
 				
 				# convert the dicoms to analyze (which also copies the Niftis to the tmpdir)
 				$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				
 				# run analyze2bxh
 				$systemstring = "/opt/bxh_xcede_tools/bin/./analyze2bxh --xcede $tmpdir/*.nii.gz $tmpdir/WRAPPED.xml";
-				print("[$systemstring] (" . `$systemstring` . ")\n");
+				print("[$systemstring] (" . `$systemstring 2>&1` . ")\n");
 			}
 			else {
 				# copy all the DICOM data to the tmpdir
 				print "Copying DICOM files to [$tmpdir]\n";
-				$systemstring = "cp $indir/*.dcm $tmpdir/";
-				print("[$systemstring] (" . `$systemstring` . ")\n");
+				$systemstring = "cp -v $indir/*.dcm $tmpdir/";
+				print("[$systemstring] (" . `$systemstring 2>&1` . ")\n");
 				
 				chdir($tmpdir);
 				print `pwd`;
 				# run dicom2bxh
 				$systemstring = "/opt/bxh_xcede_tools/bin/./dicom2bxh --xcede $tmpdir/*.dcm $tmpdir/WRAPPED.xml";
-				print("[$systemstring] (" . `$systemstring` . ")\n");
+				print("[$systemstring] (" . `$systemstring 2>&1` . ")\n");
 			}
 			
 			# run the fmriqa_phantom.pl
 			$systemstring = "perl /opt/bxh_xcede_tools/bin/fmriqa_generate.pl --overwrite $tmpdir/WRAPPED.xml $qadir";
-			print("[$systemstring] (" . `$systemstring` . ")\n");
+			print("[$systemstring] (" . `$systemstring 2>&1` . ")\n");
 			
 			# ----- check if the thumbnails exist -----
 			chdir($qadir);
@@ -206,7 +206,7 @@ sub QC() {
 			# delete the 4D file and temp directory
 			if (trim($tmpdir) ne "") {
 				$systemstring = "rm -rf $tmpdir";
-				print("$systemstring (" . `$systemstring` . ")\n");
+				print("$systemstring (" . `$systemstring 2>&1` . ")\n");
 				rmdir($tmpdir);
 			}
 			
@@ -316,24 +316,24 @@ sub ConvertToNifti() {
 		print "[[[[$tmpdir/4D.nii.gz does not exist]]]]";
 		
 		if (($is_derived) || ($datatype ne 'dicom')) {
-			my $systemstring = "cp $indir/* $tmpdir";
-			print("$systemstring (" . `$systemstring` . ")");
+			my $systemstring = "cp -v $indir/* $tmpdir";
+			print("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {
 			my $currentdir = getcwd;
 			chdir($indir);
 			# create a 4D file
 			my $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
-			print("$systemstring (" . `$systemstring` . ")");
+			print("$systemstring (" . `$systemstring 2>&1` . ")");
 			
 			chdir($currentdir);
 		}
 		
 		my $systemstring = "mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
-		print("$systemstring (" . `$systemstring` . ")");
+		print("$systemstring (" . `$systemstring 2>&1` . ")");
 	}
 	my $systemstring = "fslval $tmpdir/*.nii.gz dim4";
-	$nvols = trim(`$systemstring`);
+	$nvols = trim(`$systemstring 2>&1`);
 	print "Num Vols: $nvols\n";
 
 	if ($nvols > 1) {
@@ -343,27 +343,27 @@ sub ConvertToNifti() {
 			print "[[[[ One of ($tmpdir/mc4D.nii.gz, $tmpdir/Tmean.nii.gz, $tmpdir/Tsigma.nii.gz, $tmpdir/Tvariance.nii.gz) does not exist]]]]\n";
 		
 			if (($is_derived) || ($datatype ne 'dicom')) {
-				my $systemstring = "cp $indir/* $tmpdir";
-				print("$systemstring (" . `$systemstring` . ")");
+				my $systemstring = "cp -v $indir/* $tmpdir";
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 			else {
 				my $currentdir = getcwd;
 				chdir($tmpdir);
 				# realign the 4D file
 				my $systemstring = "mcflirt -in 4D -out mc4D -rmsrel -rmsabs -plots -stats";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 
 				# move and rename the mean,sigma,variance volumes to the archive directory
 				$systemstring = "mv *mc4D_meanvol.nii.gz Tmean.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				$systemstring = "mv *mc4D_sigma.nii.gz Tsigma.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				$systemstring = "mv *mc4D_variance.nii.gz Tvariance.nii.gz";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 
 				# rename the realignment file to something meaningful
 				$systemstring = "mv *.par MotionCorrection.txt";
-				print("$systemstring (" . `$systemstring` . ")");
+				print("$systemstring (" . `$systemstring 2>&1` . ")");
 				
 				chdir($currentdir);
 			}
