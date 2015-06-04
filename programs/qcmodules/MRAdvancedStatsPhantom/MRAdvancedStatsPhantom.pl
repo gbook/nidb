@@ -85,7 +85,7 @@ sub QC() {
 	left join enrollment c on b.enrollment_id = c.enrollment_id
 	left join subjects d on c.subject_id = d.subject_id
 	left join projects e on c.project_id = e.project_id
-	where a.mrseries_id = $seriesid";
+	where a.mrseries_id = $seriesid and a.bold_reps > 1";
 	print "$sqlstring\n";
 	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
@@ -179,6 +179,9 @@ sub QC() {
 			#	last;
 			#}
 		}
+	}
+	else {
+		print "Nothing to do. No series matched the SQL statement\n";
 	}
 }
 

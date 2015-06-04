@@ -261,6 +261,7 @@ sub QC() {
 				WriteLog("Running the following file: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
 				my $systemstring = "$cfg{'qcmoduledir'}/$modulename/./$modulename.sh $qcmoduleseriesid";
 				print "About to run [$systemstring]\n";
+				WriteLog("About to run [$systemstring])");
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 				WriteLog("Should be done running: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
 			}

@@ -102,23 +102,24 @@ sub DoReport {
 	
 	# check if this module should be running now or not
 	my $sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-	my $result = $db->query($sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows < 1) {
 		return 0;
 	}
 	# update the start time
 	$sqlstring = "update modules set module_laststart = now(), module_status = 'running' where module_name = '$scriptname'";
-	$result = $db->query($sqlstring);
-	
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# get series updated in the last 24 hours
-	$sqlstring = "select * from `enrollment` join `projects` on `enrollment`.project_id = `projects`.project_id join `subjects` on `subjects`.subject_id = `enrollment`.subject_id join studies on studies.enrollment_id = enrollment.enrollment_id join `mr_series` on `mr_series`.study_id = `studies`.study_id left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id where `subjects`.isactive = 1 and `projects`.project_sharing in ('F','V') and `studies`.study_modality = 'mr' and `mr_series`.series_datetime > date_add( now( ) , interval -1 day )  and `mr_series`.series_datetime < now() order by `studies`.study_datetime, `mr_series`.series_num";	
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+	$sqlstring = "select * from `enrollment` join `projects` on `enrollment`.project_id = `projects`.project_id join `subjects` on `subjects`.subject_id = `enrollment`.subject_id join studies on studies.enrollment_id = enrollment.enrollment_id join `mr_series` on `mr_series`.study_id = `studies`.study_id left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id where `subjects`.isactive = 1 and `studies`.study_modality = 'mr' and `mr_series`.series_datetime > date_add( now( ) , interval -1 day )  and `mr_series`.series_datetime < now() order by `studies`.study_datetime, `mr_series`.series_num";	
+	WriteLog($sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my $numseries = $result->numrows;
 
 	# get the start/end time of the report from the database (which may have a different time than Perl)
 	my $sqlstringA = "SELECT now( ) 'endtime', date_add( now( ) , INTERVAL -1 DAY ) 'starttime'";
-	my $resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
+	WriteLog($sqlstringA);
+	my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 	my %rowA = $resultA->fetchhash;
 	my $starttime = $rowA{'starttime'};
 	my $endtime = $rowA{'endtime'};
@@ -204,14 +205,16 @@ sub DoReport {
 		my $study_operator = $row{'study_operator'};
 		my $study_performingphysician = $row{'study_performingphysician'};
 		my $study_site = $row{'study_site'};
+		my $study_ageatscan = $row{'study_ageatscan'};
 		
 		# calculate age at scan
-		my ($year, $month, $day) = split(/-/, $birthdate);
-		my $d1 = mktime(0,0,0,$month,$day,$year);
-		my ($year2, $month2, $day2, $extra2) = split(/-/, $study_datetime);
-		print "[$year2] [$month2] [$day2] [$extra2]\n";
-		my $d2 = mktime(0,0,0,$month2,$day2,$year2);
-		my $ageatscan = floor(($d2-$d1)/31536000);
+		#my ($year, $month, $day) = split(/-/, $birthdate);
+		#my $d1 = mktime(0,0,0,$month,$day,$year);
+		#my ($year2, $month2, $day2, $extra2) = split(/-/, $study_datetime);
+		#print "[$year2] [$month2] [$day2] [$extra2]\n";
+		#my $d2 = mktime(0,0,0,$month2,$day2,$year2);
+		#my $ageatscan = floor(($d2-$d1)/31536000);
+		my $ageatscan = $study_ageatscan;
 		
 		# series specific variables
 		my $series_datetime = $row{'series_datetime'};
@@ -259,7 +262,9 @@ sub DoReport {
 		my $rangey = abs($move_miny) + abs($move_maxy);
 		my $rangez = abs($move_minz) + abs($move_maxz);
 		
-		my ($xindex, $yindex, $zindex);
+		my $xindex = 0;
+		my $yindex = 0;
+		my $zindex = 0;
 		if ($pstats{$sequence}{'rangex'} > 0) {
 			$xindex = round(($rangex/$pstats{$sequence}{'rangex'})*100); if ($xindex > 100) { $xindex = 100; }
 		}
@@ -383,23 +388,25 @@ sub DoReport {
 	
 	$email .= "</table></body>";
 	
-	print $email;
-	#exit(0);
+	#print $email;
 	
 	$sqlstring = "SELECT user_email FROM `users` WHERE sendmail_dailysummary = 1";
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+	WriteLog($sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	while (my %row = $result->fetchhash) {
 		my $toemail = $row{'user_email'};
-		WriteLog("Calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
-		SendHTMLEmail($toemail, 'NiDB Server daily report', $email);
-		WriteLog("Done calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
+		if (trim($toemail) ne "") {
+			WriteLog("Calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
+			SendHTMLEmail($toemail, 'NiDB Server daily report', $email);
+			WriteLog("Done calling SendHTMLEmail($toemail, 'NiDB Server daily report', $email)");
+		}
 	}
 	
 	# update the stop time
 	$sqlstring = "update modules set module_laststop = now(), module_status = 'stopped' where module_name = '$scriptname'";
-	$result = $db->query($sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
-	return $ret;
+	return 1;
 }
 
 
@@ -474,11 +481,10 @@ sub GetGlobalQAStats {
 	
 	# get the movement & SNR stats by sequence name
 	my $sqlstring = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
-	
-	#echo "$sqlstring2<br>";
-	my $result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+	WriteLog($sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	while (my %row = $result->fetchhash) {
-		my $sequence = $row{'series_sequencename'};
+		my $sequence = "$row{'series_sequencename'}";
 		$pstats{$sequence}{'rangex'} = abs($row{'minx'}) + abs($row{'maxx'});
 		$pstats{$sequence}{'rangey'} = abs($row{'miny'}) + abs($row{'maxy'});
 		$pstats{$sequence}{'rangez'} = abs($row{'minz'}) + abs($row{'maxz'});
