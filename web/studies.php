@@ -135,6 +135,14 @@
 			AddRating($seriesid, $modality, $value, $username);
 			DisplayStudy($id, "", "", "", "", "", '','','','');
 			break;
+		case 'hidemrseries':
+			HideMRSeries($seriesid);
+			DisplayStudy($id, "", "", "", "", "", '','','','');
+			break;
+		case 'unhidemrseries':
+			UnhideMRSeries($seriesid);
+			DisplayStudy($id, "", "", "", "", "", '','','','');
+			break;
 		default:
 			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
 	}
@@ -202,6 +210,40 @@
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series Added</span></div><br><br><?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- HideMRSeries ----------------------- */
+	/* -------------------------------------------- */
+	function HideMRSeries($seriesid) {
+		$seriesid = mysql_real_escape_string($seriesid);
+		
+		if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			$sqlstring = "update mr_series set ishidden = 1 where mrseries_id = $seriesid";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			?><div align="center"><span class="message">Series hidden</span></div><br><br><?
+		}
+		else {
+			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UnhideMRSeries ----------------------- */
+	/* -------------------------------------------- */
+	function UnhideMRSeries($seriesid) {
+		$seriesid = mysql_real_escape_string($seriesid);
+		
+		if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			$sqlstring = "update mr_series set ishidden = 0 where mrseries_id = $seriesid";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			?><div align="center"><span class="message">Series unhidden</span></div><br><br><?
+		}
+		else {
+			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+		}
 	}
 
 
@@ -950,17 +992,9 @@
 			elseif ($study_modality == "CT") {
 				DisplayCTSeries($id, $study_num, $uid, $audit, $fix);
 			}
-			//elseif ($study_modality == "OT") {
-			//	DisplayOtherSeries($id);
-			//}
-			//elseif (in_array($study_modality, array('EEG','PPI','ET','VIDEO','AUDIO','CONSENT','SNP'))) {
 			else {
 				DisplayGenericSeries($id, $study_modality);
 			}
-			/*else {
-				$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
-				DisplayFileSeries($path);
-			}*/
 		?>
 		<br><br><br><br><br><br>
 		<?
@@ -1001,8 +1035,6 @@
 			$pstats[$sequence]['rangex'] = abs($row2['minx']) + abs($row2['maxx']);
 			$pstats[$sequence]['rangey'] = abs($row2['miny']) + abs($row2['maxy']);
 			$pstats[$sequence]['rangez'] = abs($row2['minz']) + abs($row2['maxz']);
-			//$pstats[$sequence]['maxpvsnr'] = $row2['pvsnr'];
-			//$pstats[$sequence]['maxiosnr'] = $row2['iosnr'];
 			$pstats[$sequence]['avgpvsnr'] = $row2['avgpvsnr'];
 			$pstats[$sequence]['stdpvsnr'] = $row2['stdpvsnr'];
 			$pstats[$sequence]['minpvsnr'] = $row2['minpvsnr'];
@@ -1051,7 +1083,6 @@
 			});
 		</script>
 		
-		<!--<a href="studies.php?id=<?$id?>&action=addseries&modality=MR">Add Series</a>-->
 		<style type="text/css">
             .edit_inline { background-color: lightyellow; padding-left: 2pt; padding-right: 2pt; }
             .edit_textarea { background-color: lightyellow; }
@@ -1059,23 +1090,12 @@
 			input.inplace_field { background-color: white; font-size: 8pt; border: 1pt solid gray; width: 200px;  }
 		</style>
 
-		<!--
-		<table width="100%">
-			<tr>
-				<td>
-					<div id="file-uploader-demo1">		
-					</div>
-				</td>
-				<td>
-					<span class="smallnote"><b>Upload file(s) by clicking the button or drag-and-drop (Firefox and Chrome only)</b><br>
-					DICOM files will only be associated with the study under which they were originally run... If you upload files from a different study, they won't show up here.</span>
-				</td>
-			</tr>
-		</table>
-		<br>-->
 		<table class="smallgraydisplaytable" width="100%">
 			<thead>
 				<tr>
+					<? if ($GLOBALS['issiteadmin']) { ?>
+					<th>Hide</th>
+					<? } ?>
 					<th>Series</th>
 					<th>Upload Beh</th>
 					<th>Protocol</th>
@@ -1089,15 +1109,11 @@
 					<th title="Per Voxel SNR (timeseries) - Calculated from the fslstats command">PV<br>SNR</th>
 					<th title="Inside-Outside SNR - This calculates the brain signal (center of brain-extracted volume) compared to the average of the volume corners">IO<br>SNR</th>
 					<th>Motion R<sup>2</sup></th>
-					<!--<th>Quality</th>-->
 					<th>Sequence</th>
 					<th>Length<br><span class="tiny">approx.</span></th>
 					<th>TR<br><span class="tiny">ms</span></th>
-					<!--<th>TE</th>-->
-					<!--<th>Flip</th>-->
 					<th>Spacing <br><span class="tiny">(x y z)</span></th>
 					<th>Image size <br><span class="tiny">(x y z)</span></th>
-					<!--<th>Magnet</th>-->
 					<th>BOLD reps</th>
 					<th># files</th>
 					<th>Size</th>
@@ -1165,6 +1181,7 @@
 							$lastupdate = $row['lastupdate'];
 							$image_type = $row['image_type'];
 							$image_comments = $row['image_comments'];
+							$ishidden = $row['ishidden'];
 							
 							if (($numfiles_beh == '') || ($numfiles_beh == 0)) {
 								/* get the number and size of the beh files */
@@ -1381,6 +1398,7 @@
 							}
 							if ($isbadseries) { $rowcolor = "red"; }
 							if ($istestseries) { $rowcolor = "#AAAAAA"; }
+							if ($ishidden) { $rowcolor = "AAA"; }
 							
 							/* --- audit the dicom files --- */
 							$dupes = null;
@@ -1474,7 +1492,6 @@
 											
 										}
 										$mergeddcms{$filesubjectname}{$filesubjectdob}{$filesubjectsex}{$filestudydate}{$filestudytime}{$fileseriesnum}{$fileslicenumber}{$fileinstancenumber}{$fileacquisitiontime}{$filecontenttime}[] = $dcmfile;
-										//$mergeddcms{$filesubjectname}{$filesubjectdob}{$filesubjectsex}{$filestudydate}{$filestudytime}{$fileseriesnum}{$fileslicenumber}{$fileinstancenumber}{$fileacquisitiontime}++;
 										
 										if (count($mergeddcms{$filesubjectname}{$filesubjectdob}{$filesubjectsex}{$filestudydate}{$filestudytime}{$fileseriesnum}{$fileslicenumber}{$fileinstancenumber}{$fileacquisitiontime}{$filecontenttime}) > 1) {
 											/* check the MD5 hash to see if the files really are the same */
@@ -1493,10 +1510,6 @@
 										}
 									}
 								}
-								//echo "<pre>";
-								//print_r($mergeddcms);
-								//print_r($errantdcms);
-								//echo "</pre>";
 								
 								/* move the errant files */
 								if ($fix) {
@@ -1548,23 +1561,6 @@
 										bg_over: "white",
 										bg_out: "lightyellow",
 									});
-									//$('#pop<? echo $mrseries_id; ?>').click(function(){
-									//	$('#popup').bPopup({loadUrl:'ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr'});
-									//});
-									//$(document).ready(function() {
-									//	$(".fancybox").fancybox();
-									//});
-									/*$(".various").fancybox({
-										maxWidth	: 800,
-										maxHeight	: 600,
-										fitToView	: false,
-										width		: '70%',
-										height		: '70%',
-										autoSize	: false,
-										closeClick	: false,
-										openEffect	: 'none',
-										closeEffect	: 'none'
-									});	*/
 								});
 							</script>
 							<script type="text/javascript">
@@ -1583,6 +1579,15 @@
 								}
 							</style>
 							<tr style="color: <?=$rowcolor?>">
+								<? if ($GLOBALS['issiteadmin']) {
+									if ($ishidden) { ?>
+									<td><a href="studies.php?action=unhidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Un-hide this series from search results.">Unhide</a></td>
+									<? } else { ?>
+									<td><a href="studies.php?action=hidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Hide this series from search results. It will be visible on this page, but nowhere else on NiDB">Hide</a></td>
+									<?
+									}
+								}
+								?>
 								<td><?=$series_num?>
 								<?
 									if ($dupes[$series_num] == 1) {
@@ -1593,9 +1598,7 @@
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
 								<? if ($data_type == "dicom") {
-									//echo $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm<br>";
 									$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
-									//print_r($dicoms);
 									$dcmfile = $dicoms[0];
 									?>
 									<a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a>
@@ -1618,7 +1621,6 @@
 								<td><span id="series_notes" class="edit_inline<? echo $mrseries_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_notes; ?></span></td>
 								<td class="seriesrow" style="padding: 0px 5px;">
 									<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$mrseries_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
-									<!--<span class="button small pop2" id="my-button" data-bpopup='{"content":"iframe","contentContainer":".content","loadUrl":"mrseriesqa.php?id=<?=$mrseries_id?>"}'>Pop it up</span>-->
 								</td>
 								<td class="seriesrow" style="padding: 0px 5px;">
 									<span style="font-size:7pt"><?=$ratingcount2;?></span>
@@ -1653,19 +1655,11 @@
 								<td class="seriesrow" align="right" style="background-color: <?=$maxmotioncolor?>; font-size:8pt">
 									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
 								</td>
-								<!--<td align="right"><?=$motion_rsq?></td>-->
-								<!--<td align="center" valign="top" class="ratingdiv" style="cursor:default; font-size:12pt">
-									<span style="color:<?=$manualqacolor?>; font-size:14pt">&#9679;</span><br>
-									<a class="highlightblack" href="studies.php?action=rateseries&modality=MR&seriesid=<?=$mrseries_id?>&value=0&id=<?=$id?>">&#9679;</a><a class="highlightred" href="studies.php?action=rateseries&modality=MR&seriesid=<?=$mrseries_id?>&value=1&id=<?=$id?>">&#9679;</a><a class="highlightgreen" href="studies.php?action=rateseries&modality=MR&seriesid=<?=$mrseries_id?>&value=2&id=<?=$id?>">&#9679;</a>
-								</td>-->
 								<td><?=$sequence?></td>
 								<td style="font-size:8pt"><?=$scanlength?></td>
 								<td align="right" style="font-size:8pt"><?=$series_tr?></td>
-								<!--<td align="right" style="font-size:8pt"><?=$series_te?></td>-->
-								<!--<td align="right" style="font-size:8pt"><?=$series_flip?>&deg;</td>-->
 								<td style="font-size:8pt"><?=number_format($series_spacingx,1)?> &times; <?=number_format($series_spacingy,1)?> &times; <?=number_format($series_spacingz,1)?></td>
 								<td style="font-size:8pt"><?=$img_cols?> &times; <?=$img_rows?> &times; <?=$img_slices?></td>
-								<!--<td style="font-size:8pt"><?=number_format($series_fieldstrength,1)?> T</td>-->
 								<td style="font-size:8pt"><?=$bold_reps?></td>
 								<td style="font-size:8pt">
 									<?=$numfiles?>
@@ -1700,24 +1694,18 @@
 					<script>
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
-							//var uploader = new qq.FileUploader({
-							//	element: document.getElementById('file-uploader-demo1'),
-							//	action: 'upload.php',
-							//	params: {modality: 'MR', studyid: '<?=$id?>'},
-							//	debug: true
-							//});
 							<?
 							mysql_data_seek($result,0); /* reset the sql result, so we can loop through it again */
 							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 								$mrseries_id = $row['mrseries_id'];
 								?>
-										var uploader<?=$mrseries_id?> = new qq.FileUploader({
-											element: document.getElementById('uploader<?=$mrseries_id?>'),
-											action: 'upload.php',
-											params: {modality: 'MRBEH', studyid: '<?=$id?>', seriesid: <?=$mrseries_id?>},
-											debug: true
-										});
-							<?
+								var uploader<?=$mrseries_id?> = new qq.FileUploader({
+									element: document.getElementById('uploader<?=$mrseries_id?>'),
+									action: 'upload.php',
+									params: {modality: 'MRBEH', studyid: '<?=$id?>', seriesid: <?=$mrseries_id?>},
+									debug: true
+								});
+								<?
 							}
 							?>
 						}

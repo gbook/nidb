@@ -397,6 +397,8 @@
 	/* -------------------------------------------- */
 	function MoveStudyToSubject($studyid, $newuid) {
 	
+		echo "<ol>";
+		
 		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
 		$sqlstring = "select a.uid, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -411,7 +413,7 @@
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$newsubjectid = $row['subject_id'];
-		echo "Got new subjectid: $newsubjectid<br>";
+		echo "<li>Got new subjectid: $newsubjectid<br>";
 		
 		/* check if the new subject is enrolled in the project, if not, enroll them */
 		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = $oldprojectid";
@@ -419,25 +421,24 @@
 		if (mysql_num_rows($result) > 0) {
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$newenrollmentid = $row['enrollment_id'];
-			echo "Selected existing row to get new enrollment id: $newenrollmentid<br>";
+			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid<br>";
 		}
 		else {
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$newenrollmentid = mysql_insert_id();
-			echo "$sqlstring<br>";
-			echo "Inserted row to get new enrollment id: $newenrollmentid<br>";
+			echo "<li>Inserted row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
 		}
 		
 		/* get the next study number for the new subject */
 		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$newstudynum = mysql_num_rows($result) + 1;
-		echo "Got new study number: $newstudynum<br>";
+		echo "<li>Got new study number: $newstudynum<br>";
 		
 		/* change the enrollment_id associated with the studyid */
 		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
-		echo "$sqlstring<br>";
+		echo "<li>$sqlstring<br>";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 
 		/* move the data */
@@ -446,9 +447,10 @@
 		
 		//mkdir($newpath);
 		$systemstring = "mv $oldpath $newpath";
-		echo "$systemstring<br>";
+		echo "<li><tt>$systemstring</tt>";
 		echo shell_exec($systemstring);
 		
+		echo "</ol>";
 		?><div align="center"><span class="message">Study moved to subject <?=$newuid?></span></div><br><br><?
 	}
 
@@ -457,6 +459,11 @@
 	/* ------- DoMergeSubjects -------------------- */
 	/* -------------------------------------------- */
 	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact) {
+
+		?>
+		<span class="tiny">
+		<ol>
+		<?
 		
 		/* get list of subjectids that were not selected and will therefor be deleted*/
 		foreach ($name as $key => $value) {
@@ -484,46 +491,70 @@
 		$guid = mysql_real_escape_string($guid[$selectedid]);
 		$altuids = explode(',',$altuid);
 
+		$sqlstring = "start transaction";
+		echo "<li><b>Starting transaction [$sqlstring]</b>";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
 		/* move all of the studies from the other subjects to the primary subject */
 		$sqlstring = "select uid from subjects where subject_id = $selectedid";
-		//PrintSQL($sqlstring);
+		echo "<li>Getting selected UID [$sqlstring]";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$newuid = $row['uid'];
 		
+		echo "<li>Getting study lists<ol>";
 		foreach ($extrasubjectids as $oldid) {
 			/* get list of studies associated with the oldsubjectid */
 			$sqlstring = "select b.study_id from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where a.subject_id = $oldid and b.study_id is not null";
-			//PrintSQL($sqlstring);
+			echo "<li>Get study list for [$oldid] [$sqlstring]";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			echo "<ol>";
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$studyid = $row['study_id'];
-				//echo "MoveStudyToSubject($studyid, $newuid)<br>";
+				echo "<li>Running MoveStudyToSubject($studyid, $newuid)<br>";
 				MoveStudyToSubject($studyid, $newuid);
 			}
+			echo "</ol>";
 			
 			/* delete the old subject after everything has been merged */
 			$sqlstring = "update subjects set isactive = 0 where subject_id = $oldid";
-			//PrintSQL($sqlstring);
+			echo "<li>Deleting old subject [$oldid] [$sqlstring]";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
+		echo "</ol>";
 		
 		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', weight = $weight, handedness = '$handedness', education = '$education', phone1 = '$phone1', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $selectedid";
-		//PrintSQL($sqlstring);
+		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', weight = '$weight', handedness = '$handedness', education = '$education', phone1 = '$phone1', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $selectedid";
+		echo "<li>Updating subject [$sqlstring]";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete entries for this subject from the altuid table ... */
 		$sqlstring = "delete from subject_altuid where subject_id = $selectedid";
+		echo "<li>Deleting alternate IDs [$sqlstring]";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		
+		echo "<ol>";
 		/* ... and insert the new rows into the altuids table */
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
-			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($selectedid, '$altuid')";
+			if (strpos($altuid, '*') !== FALSE) {
+				$altuid = str_replace('*','',$altuid);
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',1)";
+			}
+			else {
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',0)";
+			}
+			echo "<li>Inserting new alternate UIDs [$sqlstring]";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
-		?><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br><?
+		/* ------ all done ------ */
+		$sqlstring = "commit";
+		//PrintSQL("$sqlstring");
+		echo "<li><b>Commit the transaction</b>";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		?></ol></ol><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br><?
 	}
 	
 	
@@ -561,6 +592,8 @@
 			
 			$i++;
 		}
+		
+		PrintVariable($subjects);
 		
 		/* display one column for each subject with a radio button to "merge all studies into this subject" */
 		?>
@@ -2623,7 +2656,9 @@
 				?>
 				<tr>
 					<td colspan="8">
-						<input type="submit" name="merge" value="Merge selected subjects" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='merge'" disabled>
+						<? if ($GLOBALS['issiteadmin']) {?>
+						<input type="submit" name="merge" value="Merge selected subjects" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='merge'" title="Merges all studies from the selected subjects">
+						<? } ?>
 						<br><br>
 						<select name="subjectgroupid">
 							<?
@@ -2646,7 +2681,9 @@
 						<input type="submit" name="addtogroup" value="Add to group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
 					</td>
 					<td colspan="3" align="right">
+						<? if ($GLOBALS['issiteadmin']) {?>
 						<input type="submit" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" name="obliterate" value="Obliterate subjects" title="Remove all database entries for the subject and move their data to a /deleted directory" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='obliterate'"><br>
+						<? } ?>
 					</td>
 				</tr>
 				<?

@@ -28,55 +28,13 @@
 <script type="text/javascript" src="scripts/js/jquery-ui-1.10.3.custom.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
-<!--<script type="text/javascript" src="scripts/jquery.sparkline.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.validate.js"></script>
-<!--<script type="text/javascript" src="scripts/jquery.tablehover.pack.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
-<!--<script type="text/javascript" src="scripts/jquery.uitableedit.js"></script>-->
-<!--<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <script type="text/javascript" src="scripts/jquery.details.js"></script>
-<!--<script type="text/javascript" src="scripts/jquery-ui-timepicker-addon.js"></script>-->
-<!--<script type="text/javascript" src="scripts/jquery.bpopup.min.js"></script>-->
-
-<!--<link rel="stylesheet" type="text/css" href="scripts/style.min.css">-->
-
-<!--<script type="text/javascript" src="scripts/jquery.jListbox.js"></script>
-<link rel="stylesheet" type="text/css" href="scripts/jquery.jListbox.css">-->
 
 <link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">
-
-<!--
-<script type="text/javascript" src="scripts/fancybox/jquery.fancybox.pack.js"></script>
-<link rel="stylesheet" href="scripts/fancybox/jquery.fancybox.css" type="text/css" media="screen" />
--->
-
-<!-- Add mousewheel plugin (this is optional) -->
-<!--<script type="text/javascript" src="scripts/fancybox/jquery.mousewheel-3.0.6.pack.js"></script>-->
-
-<!-- Add fancyBox main JS and CSS files -->
-<!--<script type="text/javascript" src="scripts/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>
-<link rel="stylesheet" type="text/css" href="scripts/fancybox/jquery.fancybox.css?v=2.1.3" media="screen" />
-
-<!-- Add fancyBox - button helper (this is optional) -->
-<!--<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-buttons.css?v=2.1.3" />
-<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-buttons.js?v=2.1.3"></script>
-
-<!-- Add fancyBox - thumbnail helper (this is optional) -->
-<!--<link rel="stylesheet" type="text/css" href="scripts/fancybox/helpers/jquery.fancybox-thumbs.css?v=2.1.3" />
-<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-thumbs.js?v=2.1.3"></script> -->
-
-<!-- Add fancyBox - media helper (this is optional) -->
-<!--<script type="text/javascript" src="scripts/fancybox/helpers/jquery.fancybox-media.js?v=1.0.0"></script>
-	
-	
-	
-<!--<script type="text/javascript" src="scripts/cluetip/jquery.cluetip.js"></script>
-<link rel="stylesheet" type="text/css" href="scripts/cluetip/jquery.cluetip.css"></link>-->
-
-<!--<script type="text/javascript" src="scripts/wz_tooltip.js"></script>-->
-<!--<script type="text/javascript" src="scripts/editinplace.0.4.js"></script>-->
 
 <!-- menu drop box -->
 <script language="javascript" type="text/javascript" src="scripts/jquery.dropmenu.js"></script>

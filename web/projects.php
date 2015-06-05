@@ -356,8 +356,8 @@
 			</tr>
 			<tr>
 				<td align="right">
-					<input type="submit" value="Obliterate Subjects" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'" style="color: red; font-size:10pt"> &nbsp; &nbsp;
-					<input type="submit" value="Obliterate Studies" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'" style="color: red; font-size:10pt">
+					<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'" style="color: red; font-size:10pt"> &nbsp; &nbsp;
+					<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'" style="color: red; font-size:10pt">
 				</td>
 			</tr>
 		</table>
@@ -511,7 +511,7 @@
 			$modality = strtolower($row['study_modality']);
 			
 			if (($modality != "") && ($studyid != "")) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid'";
+				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
@@ -559,7 +559,7 @@
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
 						$localcount = $seriesdescs[$uid][$modality][$ser];
-						if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
+						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
 						?>
 							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
 						<?
@@ -584,7 +584,7 @@
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
 		/* get all studies associated with this project */
-		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid  FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id";
+		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid, a.project_name FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id and d.isactive = 1 order by a.project_name, e.altuid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
@@ -594,11 +594,11 @@
 			$subjectid = $row['subject_id'];
 			$age = $row['study_ageatscan'];
 			$dob = $row['birthdate'];
-			//$altuid = $row['altuid'];
+			$projectname = $row['project_name'];
 			$modality = strtolower($row['study_modality']);
 			$enrollmentid = $row['enrollment_id'];
 			
-			$sqlstringA = "select altuid from subject_altuid where subject_id = $subjectid order by isprimary desc";
+			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
 			$isprimary = $rowA['isprimary'];
@@ -606,7 +606,7 @@
 			
 			if (($modality != "") && ($studyid != "")) {
 				/* get the series */
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid'";
+				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
@@ -618,6 +618,7 @@
 						$seriesdescs[$uid]['dob'] = $dob;
 						$seriesdescs[$uid]['altuid'] = $altuid;
 						$seriesdescs[$uid]['subjectid'] = $subjectid;
+						$seriesdescs[$uid]['project'] = $projectname;
 					}
 				}
 				
@@ -640,9 +641,18 @@
 		//PrintVariable($uniqueseries, 'uniqueseries');
 		
 		?>
-		<table class="smallgraydisplaytable">
+		<script>
+			$(document).ready(function() 
+				{ 
+					$("#thetable").tablesorter(); 
+				} 
+			);		
+		</script>
+		<table id="thetable" class="tablesorter">
 			<thead>
 				<tr>
+					<th></th>
+					<th></th>
 					<th></th>
 					<th></th>
 					<th></th>
@@ -658,6 +668,7 @@
 					<th>Subject ID</th>
 					<th>Age</th>
 					<th>DOB</th>
+					<th>Project</th>
 					<?
 						foreach ($uniqueseries as $modality => $series) {
 							foreach ($series as $ser => $count) {
@@ -669,22 +680,31 @@
 			</thead>
 		<?
 
+		/* sort the list by altuid */
+		//function compareByName($a, $b) {
+		//	return strcmp($a["altuid"], $b["altuid"]);
+		//}
+		//usort($seriesdescs, 'compareByName');
+
 		foreach ($seriesdescs as $uid => $modalities) {
 			$age = $seriesdescs[$uid]['age'];
 			$dob = $seriesdescs[$uid]['dob'];
 			$altuid = $seriesdescs[$uid]['altuid'];
 			$subjectid = $seriesdescs[$uid]['subjectid'];
+			$project = $seriesdescs[$uid]['project'];
 			?>
 			<tr>
 				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 				<td><?=$altuid?></td>
 				<td><?=$age?></td>
 				<td><?=$dob?></td>
+				<td><?=$project?></td>
 				<?
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
 						$localcount = $seriesdescs[$uid][$modality][$ser];
-						if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
+						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
+						#if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
 						?>
 							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
 						<?
