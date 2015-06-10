@@ -924,22 +924,22 @@ sub Anonymize() {
 		if ($File::Find::name =~ /\.dcm/) {
 			my $systemstring;
 			if ($anon == 4) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='$randstr1' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='Anonymous^$randstr1' -o $File::Find::name";
 				#WriteLog("Anonymizing (level 4) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 1) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
 				#WriteLog("Anonymizing (level 1) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 2) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,20='19000101' --replace 8,21='19000101' --replace 8,22='19000101' --replace 8,23='19000101' --replace 8,30='000000.000000' --replace 8,31='000000.000000' --replace 8,32='000000.000000' --replace 8,33='000000.000000' --replace 8,80='Anonymous' --replace 8,81='Anonymous' --replace 8,90='Anonymous' --replace 8,1010='Anonymous' --replace 8,1030='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,20='$randstr1$randstr2' --replace 10,30='Anonymous-$randstr2' --replace 10,1030='Anonymous' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,20='19000101' --replace 8,21='19000101' --replace 8,22='19000101' --replace 8,23='19000101' --replace 8,30='000000.000000' --replace 8,31='000000.000000' --replace 8,32='000000.000000' --replace 8,33='000000.000000' --replace 8,80='Anonymous' --replace 8,81='Anonymous' --replace 8,90='Anonymous' --replace 8,1010='Anonymous' --replace 8,1030='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,20='$randstr1$randstr2' --replace 10,30='Anonymous-$randstr2' --replace 10,1030='Anonymous' -o $File::Find::name";
 				#WriteLog("Anonymizing (level 2) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 3) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
 				#WriteLog("Anonymizing (level 3) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}

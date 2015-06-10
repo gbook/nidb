@@ -387,6 +387,26 @@
 		$n = $row['instance_name'];
 		return $n;
 	}	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDataPathFromSeriesID ------------ */
+	/* -------------------------------------------- */
+	function GetDataPathFromSeriesID($id, $modality) {
+		$modality = strtolower($modality);
+		
+		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = $id";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		$seriesnum = $row['series_num'];
+		$subjectid = $row['subject_id'];
+		$studyid = $row['study_id'];
+		
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum";
+		return array($path, $uid, $studynum, $studyid, $subjectid);
+	}
 	
 	
 	/* -------------------------------------------- */

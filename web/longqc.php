@@ -154,7 +154,7 @@
 					$sequencename = $row['series_sequencename'];
 					?>
 					<tr>
-						<td><?=$desc?></td>
+						<td><a href="longqc.php?action=viewlongqc&groupid=<?=$groupid?>&protocol=<?=$desc?>"><?=$desc?></a></td>
 						<td><?=$altdesc?></td>
 						<td><?=$protocol?></td>
 						<td><?=$sequencename?></td>
@@ -168,6 +168,181 @@
 		<?
 	}
 
+	/* -------------------------------------------- */
+	/* ------- DisplayLonitudinalQC --------------- */
+	/* -------------------------------------------- */
+	function DisplayLonitudinalQC($groupid, $protocol) {
+	
+		$urllist['Groups'] = "longqc.php";
+		NavigationBar("Longitudinal QC", $urllist,0,'','','','');
+		
+		# this only works for study groups
+		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
+		//PrintSQL($sqlstring);
+		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$name = $row['group_name'];
+			$ownerusername = $row['ownerusername'];
+			$grouptype = $row['group_type'];
+			$studyid = $row['data_id'];
+			$modality = $row['modality'];
+			$seriesid = $row[$modality . "series_id"];
+			
+			$sqlstringA = "select *, unix_timestamp(DATE(series_datetime)) 'seriesdate' from $modality"."_series where study_id = $studyid and series_desc = '$protocol' order by seriesdate asc";
+			//PrintSQL($sqlstringA);
+			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringA</i><br>");
+			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+				$seriesid = $rowA[$modality."series_id"];
+				$seriesdate = $rowA['seriesdate'];
+				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+				
+				$qadir = "$path/qa";
+				//echo "$qadir: ";
+				
+				$sqlstringB = "select * from mr_qa where mrseries_id = $seriesid";
+				$resultB = mysql_query($sqlstringB) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringB</i><br>");
+				$rowB = mysql_fetch_array($resultB, MYSQL_ASSOC);
+				$iosnr = $rowB["io_snr"];
+				$pvsnr = $rowB["pv_snr"];
+				$motion_rsq = $rowB["motion_rsq"];
+				$moveminx = $rowB["move_minx"];
+				$moveminy = $rowB["move_miny"];
+				$moveminz = $rowB["move_minz"];
+				$movemaxx = $rowB["move_maxx"];
+				$movemaxy = $rowB["move_maxy"];
+				$movemaxz = $rowB["move_maxz"];
+
+				$iosnrs[$seriesdate]['studyid'] = $studyid;
+				$iosnrs[$seriesdate]['uid'] = $uid;
+				$iosnrs[$seriesdate]['studynum'] = $studynum;
+				$iosnrs[$seriesdate]['subjectid'] = $subjectid;
+				$iosnrs[$seriesdate]['value']= $iosnr;
+				
+				$pvsnrs[$seriesdate]['studyid'] = $studyid;
+				$pvsnrs[$seriesdate]['uid'] = $uid;
+				$pvsnrs[$seriesdate]['studynum'] = $studynum;
+				$pvsnrs[$seriesdate]['subjectid'] = $subjectid;
+				$pvsnrs[$seriesdate]['value'] = $pvsnr;
+				
+				$motionrsqs[$seriesdate] = $motion_rsq;
+				$moves[$seriesdate]['minx'] = $moveminx;
+				$moves[$seriesdate]['miny'] = $moveminy;
+				$moves[$seriesdate]['minz'] = $moveminz;
+				$moves[$seriesdate]['maxx'] = $movemaxx;
+				$moves[$seriesdate]['maxy'] = $movemaxy;
+				$moves[$seriesdate]['maxz'] = $movemaxz;
+			}
+		}
+		ksort($iosnrs);
+		ksort($pvsnrs);
+		ksort($motionrsqs);
+		ksort($moves);
+
+		DisplayChart($iosnrs, "IO SNR", 250, 1);
+		DisplayChart($pvsnrs, "PV SNR", 250, 2);
+		DisplayChart($motionrsqs, "Motion r^2", 250, 3);
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayChart ----------------------- */
+	/* -------------------------------------------- */
+	function DisplayChart($data, $label, $height, $id) {
+		$colors = GenerateColorGradient();
+		?>
+			<table class="grayrounded" width="100%">
+				<tr>
+					<td class="title"><?=$label?></td>
+				</tr>
+				<tr>
+					<td class="body">
+						<script>
+							$(function() {
+									var data = [
+										{
+										label: "<?=$label?>",
+										hoverable: true,
+										clickable: true,
+										data: [<?
+										foreach ($data as $date => $item) {
+											$value = $data[$date]['value'];
+											$date = $date*1000;
+											if (($date > 0) && ($value > 0)) {
+												$jsonstrings[] .= "['$date', $value]";
+												#$jsonstrings[] .= "['$date', " . number_format($value,1,'.','') . "]";
+											}
+										}
+									?><?=implode2(',',$jsonstrings)?>]
+										}
+								];
+							
+								var options = {
+									series: {
+										lines: { show: true, fill: false },
+										points: { show: true }
+									},
+									legend: { noColumns: 6 },
+									xaxis: { mode: "time", timeformat: "%Y-%m-%d" },
+									yaxis: { min: 0, tickDecimals: 1 },
+									selection: { mode: "x" },
+								};
+								var placeholder = $("#placeholder<?=$id?>");
+								var plot = $.plot(placeholder, data, options);									
+							});
+						</script>
+						<div id="placeholder<?=$id?>" style="height:<?=$height?>px;" align="center"></div>
+					</td>
+				</tr>
+				<tr>
+					<td class="body">
+						<table class="tinytable">
+							<thead>
+								<th>Date</th>
+								<th>Subject</th>
+								<th>Study</th>
+								<th>Value</th>
+							</thead>
+							<tbody>
+						<?
+							// get min, max
+							$min = $data[0];
+							$max = $data[0];
+							foreach ($data as $date => $value) {
+								$value = $data[$date]['value'];
+								if ($value > $max) { $max = $value; }
+								if ($value < $min) { $min = $value; }
+							}
+							$range = $max - $min;
+							
+							foreach ($data as $date => $value) {
+								$value = $data[$date]['value'];
+								$uid = $data[$date]['uid'];
+								$studynum = $data[$date]['studynum'];
+								$subjectid = $data[$date]['subjectid'];
+								$studyid = $data[$date]['studyid'];
+								if (($value > 0) && ($range > 0)) {
+									$cindex = round((($value - $min)/$range)*100);
+									if ($cindex > 100) { $cindex = 100; }
+								}
+								$date = $date;
+								$date = date("D, d M Y", $date);
+								?>
+								<tr>
+									<td><?=$date?></td>
+									<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+									<td><a href="subjects.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+									<td align="right" bgcolor="<?=$colors[$cindex];?>"><tt><?=$value?><tt></td>
+								</tr>
+								<?
+							}
+						?>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+			</table>
+		<?
+	}
 	
 ?>
 <? include("footer.php") ?>

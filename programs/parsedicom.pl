@@ -187,6 +187,7 @@ sub ParseDirectory {
 	my %dicomfiles;
 	my $ret = 0;
 	my $i = 0;
+	my $problem = 0;
 
 	# ----- parse all files in /incoming -----
 	opendir(DIR,$dir) || Error("Cannot open directory [$dir]!\n");
@@ -224,6 +225,9 @@ sub ParseDirectory {
 						my $ret = InsertParRec($file, $importRowID);
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
+							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'PARREC', '$importRowID', now(), '[$ret], moving to the problem directory')";
+							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+							move("$dir/$file","$cfg{'problemdir'}/$file");
 						}
 						$i++;
 					}
@@ -330,7 +334,7 @@ sub ParseDirectory {
 			WriteLog(sprintf "permissions are %04o\n", $mode &07777);
 			if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*') && ($importRowID ne '')) {
 				#my $systemstring = "rm -rf $uploaddir";
-				my $systemstring = "rmdir $uploaddir";
+				my $systemstring = "cd $uploaddir; find . -type d -empty -exec rmdir {} \;";
 				WriteLog("We'll attempt to run this [$systemstring]");
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
@@ -414,7 +418,7 @@ sub ParseDICOMFile {
 	
 	# check for other undefined or blank fields
 	if ((!defined($tags->{'PatientSex'})) || ($tags->{'PatientSex'} eq "")) { $tags->{'PatientSex'} = "U"; }
-	if ((!defined($tags->{'PatientBirthDate'})) || ($tags->{'PatientBirthDate'} eq "")) { $tags->{'PatientBirthDate'} = "0000-00-00"; }
+	if ((!defined($tags->{'PatientBirthDate'})) || ($tags->{'PatientBirthDate'} eq "")) { $tags->{'PatientBirthDate'} = "0001-01-01"; }
 	if ((!defined($tags->{'StationName'})) || ($tags->{'StationName'} eq "")) { $tags->{'StationName'} = "Unknown"; }
 	if ((!defined($tags->{'InstitutionName'})) || ($tags->{'InstitutionName'} eq "")) { $tags->{'InstitutionName'} = "Unknown"; }
 	if ((!defined($tags->{'SeriesNumber'})) || (trim($tags->{'SeriesNumber'}) eq "")) {
@@ -618,8 +622,8 @@ sub InsertSeries {
 	$PatientSex =~ s/[[:^print:]]+//g;
 	
 	if (($PatientBirthDate eq "") || ($PatientBirthDate eq "XXXXXXXX") || ($PatientBirthDate =~ /[a-z]/i) || ($PatientBirthDate =~ /anonymous/i)) {
-		WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0000-00-00]");
-		$PatientBirthDate = "0000-00-00";
+		WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0001-01-01]");
+		$PatientBirthDate = "0001-01-01";
 	}
 
 	WriteLog("Birthdate: [$PatientBirthDate]");
@@ -1212,7 +1216,7 @@ sub InsertParRec {
 	my %row;
 	
 	my $PatientName;
-	my $PatientBirthDate = "0000-00-00";
+	my $PatientBirthDate = "0001-01-01";
 	my $PatientID = "NotSpecified";
 	my $PatientSex = "U";
 	my $PatientWeight = "0";
@@ -1687,7 +1691,7 @@ sub InsertEEG {
 	my %row;
 	
 	my $PatientName = "NotSpecified";
-	my $PatientBirthDate = "0000-00-00";
+	my $PatientBirthDate = "0001-01-01";
 	my $PatientID = "NotSpecified";
 	my $PatientSex = "U";
 	my $PatientWeight = "0";
