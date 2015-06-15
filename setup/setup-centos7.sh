@@ -154,7 +154,7 @@ read -p "Press [enter] to continue"
 echo "------ Modifying httpd to run as nidb user ------"
 sed -i "s/User apache/User $NIDBUSER/" /etc/httpd/conf/httpd.conf
 sed -i "s/Group apache/Group $NIDBUSER/" /etc/httpd/conf/httpd.conf
-
+chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
 echo "------ Restarting httpd ------"
 systemctl restart httpd.service
 
@@ -279,5 +279,5 @@ echo "----------------- Remaining items to be done by you -----------------"
 echo "Install FSL to the default path [/usr/local/fsl]"
 echo "Edit /etc/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
-echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Save the file as nidb.cfg"
+echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
