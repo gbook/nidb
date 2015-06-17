@@ -36,7 +36,8 @@ use Image::ExifTool;
 use Data::Dumper;
 use File::Path;
 use File::Copy;
-use XML::Bare;
+use XML::Simple;
+#use XML::Bare;
 use Switch;
 use Sort::Naturally;
 use List::Util qw(first max maxstr min minstr reduce shuffle sum);
@@ -155,10 +156,81 @@ sub QC() {
 
 			if (-e "$qadir/summaryQA.xml") {
 				InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/summaryQA.xml", $moduleseriesid, 'fBIRN-QA-Summary','textfile','text','text');
-				my $xml = new XML::Bare( file => "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/summaryQA.xml" );
-				my $xmlroot = $xml->parse();
-				#print Dumper($xmlroot);
-				#my $subjectuid = EscapeMySQLString(trim($xmlroot->{XCEDE}->{analysis}->{measurementGroup}));
+				
+				my $xs = XML::Simple->new();
+				my $xml = $xs->XMLin("$qadir/summaryQA.xml");
+				
+				my $sliceorder = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{sliceorder}->{content}));
+				my $mean = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{mean}->{content}));
+				my $SNR = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{SNR}->{content}));
+				my $SFNR = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{SFNR}->{content}));
+				my $std = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{std}->{content}));
+				my $percentFluc = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{percentFluc}->{content}));
+				my $drift = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{drift}->{content}));
+				my $driftfit = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{driftfit}->{content}));
+				my $rdc = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{rdc}->{content}));
+				my $minCMassX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minCMassX}->{content}));
+				my $minCMassY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minCMassY}->{content}));
+				my $minCMassZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minCMassZ}->{content}));
+				my $maxCMassX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxCMassX}->{content}));
+				my $maxCMassY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxCMassY}->{content}));
+				my $maxCMassZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxCMassZ}->{content}));
+				my $meanCMassX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanCMassX}->{content}));
+				my $meanCMassY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanCMassY}->{content}));
+				my $meanCMassZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanCMassZ}->{content}));
+				my $dispCMassX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{dispCMassX}->{content}));
+				my $dispCMassY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{dispCMassY}->{content}));
+				my $dispCMassZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{dispCMassZ}->{content}));
+				my $driftCMassX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{driftCMassX}->{content}));
+				my $driftCMassY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{driftCMassY}->{content}));
+				my $driftCMassZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{driftCMassZ}->{content}));
+				my $minFWHMX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minFWHMX}->{content}));
+				my $minFWHMY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minFWHMY}->{content}));
+				my $minFWHMZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{minFWHMZ}->{content}));
+				my $maxFWHMX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxFWHMX}->{content}));
+				my $maxFWHMY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxFWHMY}->{content}));
+				my $maxFWHMZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{maxFWHMZ}->{content}));
+				my $meanFWHMX = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanFWHMX}->{content}));
+				my $meanFWHMY = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanFWHMY}->{content}));
+				my $meanFWHMZ = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanFWHMZ}->{content}));
+				my $meanGhost = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanGhost}->{content}));
+				my $meanBrightGhost = EscapeMySQLString(trim($xml->{analysis}->{measurementGroup}->{observation}->{meanBrightGhost}->{content}));
+				
+				InsertQCResult($sliceorder, $moduleseriesid, 'sliceorder','sliceorder','');
+				InsertQCResult($mean, $moduleseriesid, 'mean','intensity','');
+				InsertQCResult($SNR, $moduleseriesid, 'SNR','SNR','');
+				InsertQCResult($SFNR, $moduleseriesid, 'SFNR','SNR','');
+				InsertQCResult($std, $moduleseriesid, 'std','intensity','');
+				InsertQCResult($percentFluc, $moduleseriesid, 'percentFluc','intensity','');
+				InsertQCResult($drift, $moduleseriesid, 'drift','intensity','');
+				InsertQCResult($driftfit, $moduleseriesid, 'driftfit','intensity','');
+				InsertQCResult($rdc, $moduleseriesid, 'rdc','voxels','');
+				InsertQCResult($minCMassX, $moduleseriesid, 'minCMassX','voxels','');
+				InsertQCResult($minCMassY, $moduleseriesid, 'minCMassY','voxels','');
+				InsertQCResult($minCMassZ, $moduleseriesid, 'minCMassZ','voxels','');
+				InsertQCResult($maxCMassX, $moduleseriesid, 'maxCMassX','voxels','');
+				InsertQCResult($maxCMassY, $moduleseriesid, 'maxCMassY','voxels','');
+				InsertQCResult($maxCMassZ, $moduleseriesid, 'maxCMassZ','voxels','');
+				InsertQCResult($meanCMassX, $moduleseriesid, 'meanCMassX','voxels','');
+				InsertQCResult($meanCMassY, $moduleseriesid, 'meanCMassY','voxels','');
+				InsertQCResult($meanCMassZ, $moduleseriesid, 'meanCMassZ','voxels','');
+				InsertQCResult($dispCMassX, $moduleseriesid, 'dispCMassX','voxels','');
+				InsertQCResult($dispCMassY, $moduleseriesid, 'dispCMassY','voxels','');
+				InsertQCResult($dispCMassZ, $moduleseriesid, 'dispCMassZ','voxels','');
+				InsertQCResult($driftCMassX, $moduleseriesid, 'driftCMassX','voxels','');
+				InsertQCResult($driftCMassY, $moduleseriesid, 'driftCMassY','voxels','');
+				InsertQCResult($driftCMassZ, $moduleseriesid, 'driftCMassZ','voxels','');
+				InsertQCResult($minFWHMX, $moduleseriesid, 'minFWHMX','voxels','');
+				InsertQCResult($minFWHMY, $moduleseriesid, 'minFWHMY','voxels','');
+				InsertQCResult($minFWHMZ, $moduleseriesid, 'minFWHMZ','voxels','');
+				InsertQCResult($maxFWHMX, $moduleseriesid, 'maxFWHMX','voxels','');
+				InsertQCResult($maxFWHMY, $moduleseriesid, 'maxFWHMY','voxels','');
+				InsertQCResult($maxFWHMZ, $moduleseriesid, 'maxFWHMZ','voxels','');
+				InsertQCResult($meanFWHMX, $moduleseriesid, 'meanFWHMX','voxels','');
+				InsertQCResult($meanFWHMY, $moduleseriesid, 'meanFWHMY','voxels','');
+				InsertQCResult($meanFWHMZ, $moduleseriesid, 'meanFWHMZ','voxels','');
+				InsertQCResult($meanGhost, $moduleseriesid, 'meanGhost','voxels','');
+				InsertQCResult($meanBrightGhost, $moduleseriesid, 'meanBrightGhost','voxels','');
 			}
 
 			# delete the 4D file and temp directory

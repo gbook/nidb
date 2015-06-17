@@ -1519,7 +1519,7 @@ sub GetData() {
 							my $datatype = $rowC{'data_type'};
 							my $seriessize = $rowC{'series_size'};
 							my $numfiles = $rowC{'numfiles'};
-							if ($type eq 'primary') {
+							if ($level eq 'study') {
 								# studynum is not returned as part of this current result set, so reuse the studynum from outside this
 								# resultset loop
 								$localstudynum = $studynum;

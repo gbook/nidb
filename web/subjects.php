@@ -1866,6 +1866,7 @@
 														<th>Operator</th>
 														<th>Site</th>
 														<th>Study ID</th>
+														<th>Visit</th>
 														<th>Rad Read</th>
 													</thead>
 													<tbody>
@@ -1880,6 +1881,7 @@
 														$study_operator = $row2['study_operator'];
 														$study_performingphysician = $row2['study_performingphysician'];
 														$study_site = $row2['study_site'];
+														$study_type = $row2['study_type'];
 														$study_status = $row2['study_status'];
 														$study_doradread = $row2['study_doradread'];
 														
@@ -1899,6 +1901,7 @@
 															<td><?=$study_operator?></td>
 															<td><?=$study_site?></td>
 															<td><tt><?=$uid?><?=$study_num?></tt></td>
+															<td><?=$study_type?></td>
 															<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
 														</tr>
 														<?

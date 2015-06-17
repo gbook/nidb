@@ -83,8 +83,8 @@
 		
 		?>
 		View import <a href="importlog.php?action=viewtransactions">transactions</a><br>
-		<!--View <a href="importlog.php?action=viewreceived">received</a><br>
-		View <a href="importlog.php?action=viewimported">imported</a><br>-->
+		View <a href="importlog.php?action=viewreceived">received</a> (slow page load)<br>
+		View <a href="importlog.php?action=viewimported">imported</a> (slow page load)<br>
 		<br><br>
 		<?
 	}

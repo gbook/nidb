@@ -1552,8 +1552,8 @@
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
 					<select name="dd_studyassoc[<?=$neworder?>]">
-						<option value="">(select study link)
-						<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
+						<option value="" <? if ($dd_assoctype == "") { echo "selected"; } ?>>(select study link)
+						<option value="nearesttime" <? if ($dd_assoctype == "nearesttime") { echo "selected"; } ?>>Nearest in time
 						<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
 					</select>
 				</td>
