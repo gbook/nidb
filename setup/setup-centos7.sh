@@ -25,6 +25,14 @@ echo
 
 read -p "Press [enter] to continue"
 
+#---------------create an nidb account --------------
+echo "${redb}${whitef}${boldon}--------------- Creating nidb user account ----------------${reset}"
+echo "Please enter account-name for nidb"
+read NIDBUSER
+useradd -m -s /bin/bash $NIDBUSER
+echo "Enter the passowrd for the nidb account"
+passwd $NIDBUSER
+
 # ---------- yum based installs ----------
 echo "----------------- Installing YUM based packages -----------------"
 yum install -y -q vim
@@ -62,6 +70,9 @@ cpan Net::SMTP::TLS
 cpan List::Util
 cpan Date::Parse
 cpan Image::ExifTool
+cpan String::CRC32
+cpan Date::Manip
+
 
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
@@ -140,6 +151,10 @@ sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_S
 
 read -p "Press [enter] to continue"
 
+echo "------ Modifying httpd to run as nidb user ------"
+sed -i "s/User apache/User $NIDBUSER/" /etc/httpd/conf/httpd.conf
+sed -i "s/Group apache/Group $NIDBUSER/" /etc/httpd/conf/httpd.conf
+chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
 echo "------ Restarting httpd ------"
 systemctl restart httpd.service
 
@@ -155,7 +170,7 @@ wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyA
 unzip phpMyAdmin-4.4.7-english.zip
 mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
 chmod 777 /var/www/html
-chown -R nidb:nidb /var/www/html
+chown -R $NIDBUSER:$NIDBUSER /var/www/html
 #echo "Edit the /var/www/html/phpMyAdmin/config.sample.inc.php file and add:"
 #echo "      \$cfg['McryptDisableWarning'] = TRUE;"
 #echo "      \$cfg['LoginCookieValidity'] = 28800;"
@@ -196,8 +211,8 @@ svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
 cp -Rv programs/* ${NIDBROOT}/programs
 cp -Rv web/* /var/www/html/
-chown -Rv nidb:nidb ${NIDBROOT}
-chown -Rv nidb:nidb /var/www/html
+chown -R $NIDBUSER:$NIDBUSER ${NIDBROOT}
+chown -R $NIDBUSER:$NIDBUSER /var/www/html
 
 sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!g' /var/www/html/functions.php
 
@@ -222,6 +237,7 @@ echo "Installing dcm4che receiver to listen on port 8104"
 
 # add dcmrcv service at boot
 cp ${NIDBROOT}/install/programs/dcmrcv /etc/init.d
+sed -i "s/su nidb/su $NIDBUSER/" /etc/init.d/dcmrcv
 chmod 755 /etc/init.d/dcmrcv
 chkconfig --add dcmrcv
 
@@ -254,7 +270,7 @@ echo "* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" 
 echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
-crontab -u nidb tempcron.txt
+crontab -u $NIDBUSER tempcron.txt
 #rm ~/tempcron.txt
 
 
@@ -263,5 +279,5 @@ echo "----------------- Remaining items to be done by you -----------------"
 echo "Install FSL to the default path [/usr/local/fsl]"
 echo "Edit /etc/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
-echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Save the file as nidb.cfg"
+echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
