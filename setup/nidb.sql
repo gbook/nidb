@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: May 06, 2015 at 03:13 PM
+-- Generation Time: Jun 19, 2015 at 01:43 PM
 -- Server version: 5.1.61-log
 -- PHP Version: 5.3.3
 
@@ -17,16 +17,15 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- Database: `nidb`
+-- Database: `ado2`
 --
-CREATE DATABASE IF NOT EXISTS `nidb` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `nidb`;
+CREATE DATABASE IF NOT EXISTS `ado2` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `ado2`;
 
 DELIMITER $$
 --
 -- Functions
 --
-DROP FUNCTION IF EXISTS `RemoveNonAlphaNumericChars`$$
 CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars`(prm_strInput varchar(255)) RETURNS varchar(255) CHARSET utf8
     DETERMINISTIC
 BEGIN
@@ -55,7 +54,6 @@ DELIMITER ;
 -- Table structure for table `analysis`
 --
 
-DROP TABLE IF EXISTS `analysis`;
 CREATE TABLE IF NOT EXISTS `analysis` (
 `analysis_id` bigint(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
@@ -82,7 +80,7 @@ CREATE TABLE IF NOT EXISTS `analysis` (
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysis_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -90,13 +88,12 @@ CREATE TABLE IF NOT EXISTS `analysis` (
 -- Table structure for table `analysis_data`
 --
 
-DROP TABLE IF EXISTS `analysis_data`;
 CREATE TABLE IF NOT EXISTS `analysis_data` (
 `analysisdata_id` int(11) NOT NULL,
-  `analysis_id` int(11) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
   `data_id` int(11) NOT NULL,
   `modality` varchar(25) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -104,7 +101,6 @@ CREATE TABLE IF NOT EXISTS `analysis_data` (
 -- Table structure for table `analysis_group`
 --
 
-DROP TABLE IF EXISTS `analysis_group`;
 CREATE TABLE IF NOT EXISTS `analysis_group` (
 `analysisgroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
@@ -121,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `analysis_group` (
   `analysisgroup_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysisgroup_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysisgroup_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -129,11 +125,10 @@ CREATE TABLE IF NOT EXISTS `analysis_group` (
 -- Table structure for table `analysis_resultnames`
 --
 
-DROP TABLE IF EXISTS `analysis_resultnames`;
 CREATE TABLE IF NOT EXISTS `analysis_resultnames` (
 `resultname_id` int(11) NOT NULL,
   `result_name` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 PACK_KEYS=0 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 PACK_KEYS=0;
 
 -- --------------------------------------------------------
 
@@ -141,10 +136,9 @@ CREATE TABLE IF NOT EXISTS `analysis_resultnames` (
 -- Table structure for table `analysis_results`
 --
 
-DROP TABLE IF EXISTS `analysis_results`;
 CREATE TABLE IF NOT EXISTS `analysis_results` (
 `analysisresults_id` int(11) NOT NULL,
-  `analysis_id` int(11) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
   `result_type` char(1) NOT NULL COMMENT 'image, file, text, value',
   `result_nameid` int(11) NOT NULL,
   `result_text` text,
@@ -153,7 +147,7 @@ CREATE TABLE IF NOT EXISTS `analysis_results` (
   `result_filename` text,
   `result_isimportant` tinyint(1) DEFAULT NULL,
   `result_count` smallint(5) unsigned DEFAULT '0'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -161,11 +155,10 @@ CREATE TABLE IF NOT EXISTS `analysis_results` (
 -- Table structure for table `analysis_resultunit`
 --
 
-DROP TABLE IF EXISTS `analysis_resultunit`;
 CREATE TABLE IF NOT EXISTS `analysis_resultunit` (
 `resultunit_id` int(11) NOT NULL,
   `result_unit` varchar(25) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -173,7 +166,6 @@ CREATE TABLE IF NOT EXISTS `analysis_resultunit` (
 -- Table structure for table `assessments`
 --
 
-DROP TABLE IF EXISTS `assessments`;
 CREATE TABLE IF NOT EXISTS `assessments` (
 `experiment_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
@@ -186,7 +178,7 @@ CREATE TABLE IF NOT EXISTS `assessments` (
   `notes` text NOT NULL,
   `iscomplete` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -194,7 +186,6 @@ CREATE TABLE IF NOT EXISTS `assessments` (
 -- Table structure for table `assessment_data`
 --
 
-DROP TABLE IF EXISTS `assessment_data`;
 CREATE TABLE IF NOT EXISTS `assessment_data` (
 `formdata_id` int(11) NOT NULL,
   `formfield_id` int(11) NOT NULL,
@@ -206,7 +197,7 @@ CREATE TABLE IF NOT EXISTS `assessment_data` (
   `value_date` date NOT NULL,
   `update_username` varchar(50) NOT NULL COMMENT 'last username to change this value',
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -214,7 +205,6 @@ CREATE TABLE IF NOT EXISTS `assessment_data` (
 -- Table structure for table `assessment_formfields`
 --
 
-DROP TABLE IF EXISTS `assessment_formfields`;
 CREATE TABLE IF NOT EXISTS `assessment_formfields` (
 `formfield_id` int(11) NOT NULL,
   `form_id` int(11) DEFAULT NULL,
@@ -226,7 +216,7 @@ CREATE TABLE IF NOT EXISTS `assessment_formfields` (
   `formfield_haslinebreak` tinyint(1) NOT NULL,
   `formfield_scored` tinyint(1) NOT NULL,
   `formfield_order` varchar(45) DEFAULT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -234,7 +224,6 @@ CREATE TABLE IF NOT EXISTS `assessment_formfields` (
 -- Table structure for table `assessment_forms`
 --
 
-DROP TABLE IF EXISTS `assessment_forms`;
 CREATE TABLE IF NOT EXISTS `assessment_forms` (
 `form_id` int(11) NOT NULL,
   `form_title` varchar(100) DEFAULT NULL,
@@ -243,7 +232,7 @@ CREATE TABLE IF NOT EXISTS `assessment_forms` (
   `form_createdate` datetime NOT NULL,
   `form_ispublished` tinyint(1) NOT NULL DEFAULT '0',
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -251,7 +240,6 @@ CREATE TABLE IF NOT EXISTS `assessment_forms` (
 -- Table structure for table `audio_series`
 --
 
-DROP TABLE IF EXISTS `audio_series`;
 CREATE TABLE IF NOT EXISTS `audio_series` (
 `audioseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
@@ -266,7 +254,7 @@ CREATE TABLE IF NOT EXISTS `audio_series` (
   `audio_cputime` double NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -274,7 +262,6 @@ CREATE TABLE IF NOT EXISTS `audio_series` (
 -- Table structure for table `audit_results`
 --
 
-DROP TABLE IF EXISTS `audit_results`;
 CREATE TABLE IF NOT EXISTS `audit_results` (
 `auditresult_id` int(11) NOT NULL,
   `audit_num` int(11) NOT NULL,
@@ -297,7 +284,7 @@ CREATE TABLE IF NOT EXISTS `audit_results` (
   `file_string` varchar(255) NOT NULL,
   `db_string` varchar(255) NOT NULL,
   `audit_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -305,7 +292,6 @@ CREATE TABLE IF NOT EXISTS `audit_results` (
 -- Table structure for table `binary_series`
 --
 
-DROP TABLE IF EXISTS `binary_series`;
 CREATE TABLE IF NOT EXISTS `binary_series` (
 `binaryseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
@@ -317,7 +303,7 @@ CREATE TABLE IF NOT EXISTS `binary_series` (
   `series_description` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -325,7 +311,6 @@ CREATE TABLE IF NOT EXISTS `binary_series` (
 -- Table structure for table `changelog`
 --
 
-DROP TABLE IF EXISTS `changelog`;
 CREATE TABLE IF NOT EXISTS `changelog` (
 `changelog_id` int(11) NOT NULL,
   `performing_userid` int(11) NOT NULL,
@@ -340,7 +325,7 @@ CREATE TABLE IF NOT EXISTS `changelog` (
   `change_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `change_event` enum('changepassword','changeprojectpermissions','changeprojectname','changeuserinfo') NOT NULL,
   `change_desc` text NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -348,7 +333,6 @@ CREATE TABLE IF NOT EXISTS `changelog` (
 -- Table structure for table `common`
 --
 
-DROP TABLE IF EXISTS `common`;
 CREATE TABLE IF NOT EXISTS `common` (
 `common_id` int(11) NOT NULL,
   `common_type` enum('number','file','text') NOT NULL,
@@ -359,7 +343,7 @@ CREATE TABLE IF NOT EXISTS `common` (
   `common_text` text NOT NULL,
   `common_file` varchar(255) NOT NULL,
   `common_size` int(11) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -367,7 +351,6 @@ CREATE TABLE IF NOT EXISTS `common` (
 -- Table structure for table `consent_series`
 --
 
-DROP TABLE IF EXISTS `consent_series`;
 CREATE TABLE IF NOT EXISTS `consent_series` (
 `consentseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -380,7 +363,7 @@ CREATE TABLE IF NOT EXISTS `consent_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -388,7 +371,6 @@ CREATE TABLE IF NOT EXISTS `consent_series` (
 -- Table structure for table `contacts`
 --
 
-DROP TABLE IF EXISTS `contacts`;
 CREATE TABLE IF NOT EXISTS `contacts` (
 `contact_id` int(11) NOT NULL,
   `contact_fullname` varchar(255) NOT NULL,
@@ -409,7 +391,7 @@ CREATE TABLE IF NOT EXISTS `contacts` (
   `contact_website` varchar(255) NOT NULL,
   `contact_company` varchar(255) NOT NULL,
   `contact_department` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -417,7 +399,6 @@ CREATE TABLE IF NOT EXISTS `contacts` (
 -- Table structure for table `cr_series`
 --
 
-DROP TABLE IF EXISTS `cr_series`;
 CREATE TABLE IF NOT EXISTS `cr_series` (
 `crseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -430,7 +411,7 @@ CREATE TABLE IF NOT EXISTS `cr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -438,7 +419,6 @@ CREATE TABLE IF NOT EXISTS `cr_series` (
 -- Table structure for table `cs_prefs`
 --
 
-DROP TABLE IF EXISTS `cs_prefs`;
 CREATE TABLE IF NOT EXISTS `cs_prefs` (
 `csprefs_id` int(11) NOT NULL,
   `userid` int(11) NOT NULL,
@@ -555,7 +535,7 @@ CREATE TABLE IF NOT EXISTS `cs_prefs` (
   `db_smoothkernel` varchar(255) NOT NULL,
   `db_imcalcs` text NOT NULL,
   `db_imnames` text NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -563,7 +543,6 @@ CREATE TABLE IF NOT EXISTS `cs_prefs` (
 -- Table structure for table `ct_series`
 --
 
-DROP TABLE IF EXISTS `ct_series`;
 CREATE TABLE IF NOT EXISTS `ct_series` (
 `ctseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -597,7 +576,7 @@ CREATE TABLE IF NOT EXISTS `ct_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -605,7 +584,6 @@ CREATE TABLE IF NOT EXISTS `ct_series` (
 -- Table structure for table `data_requests`
 --
 
-DROP TABLE IF EXISTS `data_requests`;
 CREATE TABLE IF NOT EXISTS `data_requests` (
 `request_id` int(11) NOT NULL,
   `req_username` varchar(50) NOT NULL,
@@ -649,7 +627,7 @@ CREATE TABLE IF NOT EXISTS `data_requests` (
   `req_status` varchar(25) NOT NULL,
   `req_results` text NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -657,7 +635,6 @@ CREATE TABLE IF NOT EXISTS `data_requests` (
 -- Table structure for table `eeg_series`
 --
 
-DROP TABLE IF EXISTS `eeg_series`;
 CREATE TABLE IF NOT EXISTS `eeg_series` (
 `eegseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -670,8 +647,9 @@ CREATE TABLE IF NOT EXISTS `eeg_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `series_status` varchar(255) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -679,7 +657,6 @@ CREATE TABLE IF NOT EXISTS `eeg_series` (
 -- Table structure for table `enrollment`
 --
 
-DROP TABLE IF EXISTS `enrollment`;
 CREATE TABLE IF NOT EXISTS `enrollment` (
 `enrollment_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL,
@@ -689,7 +666,7 @@ CREATE TABLE IF NOT EXISTS `enrollment` (
   `enroll_enddate` datetime NOT NULL,
   `irb_consent` blob COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -697,7 +674,6 @@ CREATE TABLE IF NOT EXISTS `enrollment` (
 -- Table structure for table `et_series`
 --
 
-DROP TABLE IF EXISTS `et_series`;
 CREATE TABLE IF NOT EXISTS `et_series` (
 `etseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -709,8 +685,9 @@ CREATE TABLE IF NOT EXISTS `et_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -718,7 +695,6 @@ CREATE TABLE IF NOT EXISTS `et_series` (
 -- Table structure for table `families`
 --
 
-DROP TABLE IF EXISTS `families`;
 CREATE TABLE IF NOT EXISTS `families` (
 `family_id` int(11) NOT NULL,
   `family_uid` varchar(10) NOT NULL,
@@ -726,7 +702,7 @@ CREATE TABLE IF NOT EXISTS `families` (
   `family_name` varchar(255) NOT NULL,
   `family_isactive` tinyint(1) NOT NULL DEFAULT '1',
   `family_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -734,13 +710,12 @@ CREATE TABLE IF NOT EXISTS `families` (
 -- Table structure for table `family_members`
 --
 
-DROP TABLE IF EXISTS `family_members`;
 CREATE TABLE IF NOT EXISTS `family_members` (
 `familymember_id` int(11) NOT NULL,
   `family_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `fm_createdate` datetime NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -748,7 +723,6 @@ CREATE TABLE IF NOT EXISTS `family_members` (
 -- Table structure for table `fileio_requests`
 --
 
-DROP TABLE IF EXISTS `fileio_requests`;
 CREATE TABLE IF NOT EXISTS `fileio_requests` (
 `fileiorequest_id` int(11) NOT NULL,
   `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly') NOT NULL,
@@ -763,7 +737,7 @@ CREATE TABLE IF NOT EXISTS `fileio_requests` (
   `requestdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -771,14 +745,13 @@ CREATE TABLE IF NOT EXISTS `fileio_requests` (
 -- Table structure for table `groups`
 --
 
-DROP TABLE IF EXISTS `groups`;
 CREATE TABLE IF NOT EXISTS `groups` (
 `group_id` int(11) NOT NULL,
   `group_name` varchar(255) NOT NULL,
   `group_type` varchar(25) NOT NULL COMMENT 'subject, study, series',
   `group_owner` int(11) NOT NULL COMMENT 'user_id of the group owner',
   `instance_id` int(11) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -786,13 +759,12 @@ CREATE TABLE IF NOT EXISTS `groups` (
 -- Table structure for table `group_data`
 --
 
-DROP TABLE IF EXISTS `group_data`;
 CREATE TABLE IF NOT EXISTS `group_data` (
 `subjectgroup_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `data_id` int(11) NOT NULL,
   `modality` varchar(10) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -800,7 +772,6 @@ CREATE TABLE IF NOT EXISTS `group_data` (
 -- Table structure for table `importlogs`
 --
 
-DROP TABLE IF EXISTS `importlogs`;
 CREATE TABLE IF NOT EXISTS `importlogs` (
 `importlog_id` bigint(20) NOT NULL,
   `filename_orig` text NOT NULL,
@@ -860,7 +831,7 @@ CREATE TABLE IF NOT EXISTS `importlogs` (
   `family_created` tinyint(1) NOT NULL,
   `enrollment_created` tinyint(1) NOT NULL,
   `overwrote_existing` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -868,7 +839,6 @@ CREATE TABLE IF NOT EXISTS `importlogs` (
 -- Table structure for table `import_received`
 --
 
-DROP TABLE IF EXISTS `import_received`;
 CREATE TABLE IF NOT EXISTS `import_received` (
 `importreceived_id` bigint(20) NOT NULL,
   `import_transactionid` int(11) NOT NULL,
@@ -883,7 +853,7 @@ CREATE TABLE IF NOT EXISTS `import_received` (
   `import_projectid` int(11) NOT NULL,
   `import_siteid` int(11) NOT NULL,
   `import_route` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -891,7 +861,6 @@ CREATE TABLE IF NOT EXISTS `import_received` (
 -- Table structure for table `import_requestdirs`
 --
 
-DROP TABLE IF EXISTS `import_requestdirs`;
 CREATE TABLE IF NOT EXISTS `import_requestdirs` (
   `importrequestdir_id` int(11) NOT NULL,
   `importrequest_id` int(11) NOT NULL,
@@ -905,7 +874,6 @@ CREATE TABLE IF NOT EXISTS `import_requestdirs` (
 -- Table structure for table `import_requests`
 --
 
-DROP TABLE IF EXISTS `import_requests`;
 CREATE TABLE IF NOT EXISTS `import_requests` (
 `importrequest_id` int(11) NOT NULL,
   `import_transactionid` int(11) NOT NULL,
@@ -921,13 +889,14 @@ CREATE TABLE IF NOT EXISTS `import_requests` (
   `import_projectid` int(11) NOT NULL,
   `import_instanceid` int(11) NOT NULL,
   `import_uuid` varchar(255) NOT NULL,
+  `import_subjectid` varchar(255) NOT NULL,
   `import_anonymize` tinyint(1) NOT NULL,
   `import_permanent` tinyint(1) NOT NULL,
   `import_matchidonly` tinyint(1) NOT NULL,
   `import_filename` varchar(255) NOT NULL,
   `import_userid` int(11) NOT NULL,
   `import_fileisseries` tinyint(1) NOT NULL COMMENT 'if each file should be its own series'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -935,7 +904,6 @@ CREATE TABLE IF NOT EXISTS `import_requests` (
 -- Table structure for table `import_transactions`
 --
 
-DROP TABLE IF EXISTS `import_transactions`;
 CREATE TABLE IF NOT EXISTS `import_transactions` (
 `importtrans_id` int(11) NOT NULL,
   `transaction_startdate` datetime NOT NULL,
@@ -943,7 +911,7 @@ CREATE TABLE IF NOT EXISTS `import_transactions` (
   `transaction_status` varchar(20) NOT NULL,
   `transaction_source` varchar(255) NOT NULL,
   `transaction_username` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -951,14 +919,13 @@ CREATE TABLE IF NOT EXISTS `import_transactions` (
 -- Table structure for table `instance`
 --
 
-DROP TABLE IF EXISTS `instance`;
 CREATE TABLE IF NOT EXISTS `instance` (
 `instance_id` int(11) NOT NULL,
   `instance_uid` varchar(25) NOT NULL,
   `instance_name` varchar(255) NOT NULL,
   `instance_ownerid` int(11) NOT NULL,
   `instance_default` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -966,7 +933,6 @@ CREATE TABLE IF NOT EXISTS `instance` (
 -- Table structure for table `instance_billing`
 --
 
-DROP TABLE IF EXISTS `instance_billing`;
 CREATE TABLE IF NOT EXISTS `instance_billing` (
 `billingitem_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
@@ -976,7 +942,7 @@ CREATE TABLE IF NOT EXISTS `instance_billing` (
   `bill_datestart` datetime NOT NULL,
   `bill_dateend` datetime NOT NULL,
   `bill_notes` text NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -984,12 +950,11 @@ CREATE TABLE IF NOT EXISTS `instance_billing` (
 -- Table structure for table `instance_contact`
 --
 
-DROP TABLE IF EXISTS `instance_contact`;
 CREATE TABLE IF NOT EXISTS `instance_contact` (
 `instancecontact_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `contact_id` int(11) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -997,7 +962,6 @@ CREATE TABLE IF NOT EXISTS `instance_contact` (
 -- Table structure for table `instance_invoice`
 --
 
-DROP TABLE IF EXISTS `instance_invoice`;
 CREATE TABLE IF NOT EXISTS `instance_invoice` (
 `invoice_id` int(11) NOT NULL,
   `invoice_number` int(11) NOT NULL,
@@ -1006,7 +970,7 @@ CREATE TABLE IF NOT EXISTS `instance_invoice` (
   `invoice_paid` tinyint(1) NOT NULL,
   `invoice_paiddate` datetime NOT NULL,
   `invoice_paymethod` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1014,7 +978,6 @@ CREATE TABLE IF NOT EXISTS `instance_invoice` (
 -- Table structure for table `instance_pricing`
 --
 
-DROP TABLE IF EXISTS `instance_pricing`;
 CREATE TABLE IF NOT EXISTS `instance_pricing` (
 `pricing_id` int(11) NOT NULL,
   `pricing_startdate` datetime NOT NULL,
@@ -1024,7 +987,7 @@ CREATE TABLE IF NOT EXISTS `instance_pricing` (
   `pricing_price` double NOT NULL,
   `pricing_comments` text NOT NULL,
   `pricing_internal` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1032,14 +995,13 @@ CREATE TABLE IF NOT EXISTS `instance_pricing` (
 -- Table structure for table `instance_usage`
 --
 
-DROP TABLE IF EXISTS `instance_usage`;
 CREATE TABLE IF NOT EXISTS `instance_usage` (
 `instanceusage_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `usage_date` date NOT NULL,
   `pricing_id` int(11) NOT NULL,
   `usage_amount` double NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1047,14 +1009,13 @@ CREATE TABLE IF NOT EXISTS `instance_usage` (
 -- Table structure for table `manual_qa`
 --
 
-DROP TABLE IF EXISTS `manual_qa`;
 CREATE TABLE IF NOT EXISTS `manual_qa` (
 `manualqa_id` int(11) NOT NULL,
   `series_id` int(11) NOT NULL,
   `modality` varchar(10) NOT NULL,
   `rater_id` int(11) NOT NULL,
   `value` int(11) NOT NULL COMMENT '0,1, or 2'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1062,13 +1023,12 @@ CREATE TABLE IF NOT EXISTS `manual_qa` (
 -- Table structure for table `measureinstruments`
 --
 
-DROP TABLE IF EXISTS `measureinstruments`;
 CREATE TABLE IF NOT EXISTS `measureinstruments` (
 `measureinstrument_id` int(11) NOT NULL,
   `instrument_name` varchar(255) NOT NULL,
   `instrument_group` varchar(255) NOT NULL,
   `instrument_notes` text NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1076,14 +1036,13 @@ CREATE TABLE IF NOT EXISTS `measureinstruments` (
 -- Table structure for table `measurenames`
 --
 
-DROP TABLE IF EXISTS `measurenames`;
 CREATE TABLE IF NOT EXISTS `measurenames` (
 `measurename_id` int(11) NOT NULL,
   `measure_name` varchar(255) NOT NULL,
   `measure_group` varchar(255) NOT NULL,
   `measure_multiple` tinyint(1) NOT NULL COMMENT 'Indicates if a measure can have more than one entry',
   `measure_notes` text NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1091,7 +1050,6 @@ CREATE TABLE IF NOT EXISTS `measurenames` (
 -- Table structure for table `measures`
 --
 
-DROP TABLE IF EXISTS `measures`;
 CREATE TABLE IF NOT EXISTS `measures` (
 `measure_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
@@ -1109,7 +1067,7 @@ CREATE TABLE IF NOT EXISTS `measures` (
   `measure_isdoubleentered` tinyint(1) NOT NULL,
   `measure_datecomplete` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `measure_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1117,13 +1075,12 @@ CREATE TABLE IF NOT EXISTS `measures` (
 -- Table structure for table `modalities`
 --
 
-DROP TABLE IF EXISTS `modalities`;
 CREATE TABLE IF NOT EXISTS `modalities` (
 `mod_id` int(11) NOT NULL,
   `mod_code` varchar(15) NOT NULL,
   `mod_desc` varchar(255) NOT NULL,
   `mod_enabled` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1131,7 +1088,6 @@ CREATE TABLE IF NOT EXISTS `modalities` (
 -- Table structure for table `modality_protocol`
 --
 
-DROP TABLE IF EXISTS `modality_protocol`;
 CREATE TABLE IF NOT EXISTS `modality_protocol` (
   `modality` varchar(10) NOT NULL,
   `protocol` varchar(255) NOT NULL
@@ -1143,7 +1099,6 @@ CREATE TABLE IF NOT EXISTS `modality_protocol` (
 -- Table structure for table `modules`
 --
 
-DROP TABLE IF EXISTS `modules`;
 CREATE TABLE IF NOT EXISTS `modules` (
 `module_id` int(11) NOT NULL,
   `module_name` varchar(200) NOT NULL,
@@ -1152,7 +1107,7 @@ CREATE TABLE IF NOT EXISTS `modules` (
   `module_laststart` datetime NOT NULL,
   `module_laststop` datetime NOT NULL,
   `module_isactive` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1160,13 +1115,12 @@ CREATE TABLE IF NOT EXISTS `modules` (
 -- Table structure for table `module_prefs`
 --
 
-DROP TABLE IF EXISTS `module_prefs`;
 CREATE TABLE IF NOT EXISTS `module_prefs` (
 `mp_id` int(11) NOT NULL,
   `mp_module` varchar(50) NOT NULL,
   `mp_pref` varchar(255) NOT NULL,
   `mp_value` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1174,14 +1128,13 @@ CREATE TABLE IF NOT EXISTS `module_prefs` (
 -- Table structure for table `mostrecent`
 --
 
-DROP TABLE IF EXISTS `mostrecent`;
 CREATE TABLE IF NOT EXISTS `mostrecent` (
 `mostrecent_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `mostrecent_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1189,7 +1142,6 @@ CREATE TABLE IF NOT EXISTS `mostrecent` (
 -- Table structure for table `mr_qa`
 --
 
-DROP TABLE IF EXISTS `mr_qa`;
 CREATE TABLE IF NOT EXISTS `mr_qa` (
 `mrqa_id` int(11) NOT NULL,
   `mrseries_id` int(11) DEFAULT NULL,
@@ -1217,7 +1169,7 @@ CREATE TABLE IF NOT EXISTS `mr_qa` (
   `cputime` double DEFAULT NULL,
   `status` varchar(25) NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1225,7 +1177,6 @@ CREATE TABLE IF NOT EXISTS `mr_qa` (
 -- Table structure for table `mr_series`
 --
 
-DROP TABLE IF EXISTS `mr_series`;
 CREATE TABLE IF NOT EXISTS `mr_series` (
 `mrseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1260,8 +1211,9 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
   `series_notes` text NOT NULL,
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 PACK_KEYS=0 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 PACK_KEYS=0;
 
 -- --------------------------------------------------------
 
@@ -1269,7 +1221,6 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
 -- Table structure for table `mr_studyqa`
 --
 
-DROP TABLE IF EXISTS `mr_studyqa`;
 CREATE TABLE IF NOT EXISTS `mr_studyqa` (
 `mrstudyqa_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1281,7 +1232,7 @@ CREATE TABLE IF NOT EXISTS `mr_studyqa` (
   `t1_snrremovethreshold` double NOT NULL,
   `cputime` double DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1289,7 +1240,6 @@ CREATE TABLE IF NOT EXISTS `mr_studyqa` (
 -- Table structure for table `nidb_sites`
 --
 
-DROP TABLE IF EXISTS `nidb_sites`;
 CREATE TABLE IF NOT EXISTS `nidb_sites` (
 `site_id` int(11) NOT NULL,
   `site_uid` varchar(20) NOT NULL,
@@ -1297,7 +1247,7 @@ CREATE TABLE IF NOT EXISTS `nidb_sites` (
   `site_name` varchar(255) NOT NULL,
   `site_address` varchar(255) NOT NULL,
   `site_contact` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1305,7 +1255,6 @@ CREATE TABLE IF NOT EXISTS `nidb_sites` (
 -- Table structure for table `nm_series`
 --
 
-DROP TABLE IF EXISTS `nm_series`;
 CREATE TABLE IF NOT EXISTS `nm_series` (
 `nmseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1318,7 +1267,7 @@ CREATE TABLE IF NOT EXISTS `nm_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1326,7 +1275,6 @@ CREATE TABLE IF NOT EXISTS `nm_series` (
 -- Table structure for table `notifications`
 --
 
-DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE IF NOT EXISTS `notifications` (
 `notif_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -1335,7 +1283,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   `notif_snrvalue` double NOT NULL,
   `notif_snrcriteria` varchar(5) NOT NULL,
   `notif_snrvariable` double NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1343,7 +1291,6 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 -- Table structure for table `ot_series`
 --
 
-DROP TABLE IF EXISTS `ot_series`;
 CREATE TABLE IF NOT EXISTS `ot_series` (
 `otseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1366,7 +1313,7 @@ CREATE TABLE IF NOT EXISTS `ot_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1374,7 +1321,6 @@ CREATE TABLE IF NOT EXISTS `ot_series` (
 -- Table structure for table `pipelines`
 --
 
-DROP TABLE IF EXISTS `pipelines`;
 CREATE TABLE IF NOT EXISTS `pipelines` (
 `pipeline_id` int(11) NOT NULL,
   `pipeline_name` varchar(50) NOT NULL,
@@ -1412,7 +1358,7 @@ CREATE TABLE IF NOT EXISTS `pipelines` (
   `pipeline_ishidden` tinyint(1) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '1',
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1420,7 +1366,6 @@ CREATE TABLE IF NOT EXISTS `pipelines` (
 -- Table structure for table `pipeline_data_def`
 --
 
-DROP TABLE IF EXISTS `pipeline_data_def`;
 CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
 `pipelinedatadef_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
@@ -1428,6 +1373,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
   `pdd_order` int(11) NOT NULL,
   `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
+  `pdd_level` enum('study','subject') NOT NULL,
   `pdd_assoctype` enum('nearesttime','samestudytype') NOT NULL,
   `pdd_protocol` text NOT NULL,
   `pdd_imagetype` varchar(255) NOT NULL,
@@ -1439,8 +1385,10 @@ CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
   `pdd_preserveseries` tinyint(1) NOT NULL,
   `pdd_behformat` varchar(50) NOT NULL,
   `pdd_behdir` varchar(255) NOT NULL,
-  `pdd_enabled` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+  `pdd_enabled` tinyint(1) NOT NULL,
+  `pdd_optional` tinyint(1) NOT NULL,
+  `pdd_numboldreps` varchar(255) NOT NULL
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1448,12 +1396,11 @@ CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
 -- Table structure for table `pipeline_dependencies`
 --
 
-DROP TABLE IF EXISTS `pipeline_dependencies`;
 CREATE TABLE IF NOT EXISTS `pipeline_dependencies` (
 `pipelinedep_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `parent_id` int(11) DEFAULT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1461,7 +1408,6 @@ CREATE TABLE IF NOT EXISTS `pipeline_dependencies` (
 -- Table structure for table `pipeline_download`
 --
 
-DROP TABLE IF EXISTS `pipeline_download`;
 CREATE TABLE IF NOT EXISTS `pipeline_download` (
 `pipelinedownload_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
@@ -1481,7 +1427,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_download` (
   `pd_createdate` datetime NOT NULL,
   `pd_status` varchar(25) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1489,12 +1435,11 @@ CREATE TABLE IF NOT EXISTS `pipeline_download` (
 -- Table structure for table `pipeline_groups`
 --
 
-DROP TABLE IF EXISTS `pipeline_groups`;
 CREATE TABLE IF NOT EXISTS `pipeline_groups` (
 `pipelinegroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `group_id` int(11) DEFAULT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1502,7 +1447,6 @@ CREATE TABLE IF NOT EXISTS `pipeline_groups` (
 -- Table structure for table `pipeline_procs`
 --
 
-DROP TABLE IF EXISTS `pipeline_procs`;
 CREATE TABLE IF NOT EXISTS `pipeline_procs` (
   `pp_processid` int(11) NOT NULL,
   `pp_status` varchar(50) NOT NULL,
@@ -1519,7 +1463,6 @@ CREATE TABLE IF NOT EXISTS `pipeline_procs` (
 -- Table structure for table `pipeline_status`
 --
 
-DROP TABLE IF EXISTS `pipeline_status`;
 CREATE TABLE IF NOT EXISTS `pipeline_status` (
 `pipelinestatus_id` int(11) NOT NULL,
   `pipeline_modulerunnum` bigint(20) NOT NULL,
@@ -1531,7 +1474,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_status` (
   `pipelinestatus_status` enum('pending','complete','running') NOT NULL,
   `pipelinestatus_result` text NOT NULL,
   `pipelinestatus_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1539,7 +1482,6 @@ CREATE TABLE IF NOT EXISTS `pipeline_status` (
 -- Table structure for table `pipeline_steps`
 --
 
-DROP TABLE IF EXISTS `pipeline_steps`;
 CREATE TABLE IF NOT EXISTS `pipeline_steps` (
 `pipelinestep_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
@@ -1550,7 +1492,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_steps` (
   `ps_description` varchar(255) DEFAULT NULL,
   `ps_enabled` tinyint(1) NOT NULL,
   `ps_logged` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1558,7 +1500,6 @@ CREATE TABLE IF NOT EXISTS `pipeline_steps` (
 -- Table structure for table `ppi_series`
 --
 
-DROP TABLE IF EXISTS `ppi_series`;
 CREATE TABLE IF NOT EXISTS `ppi_series` (
 `ppiseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1571,7 +1512,7 @@ CREATE TABLE IF NOT EXISTS `ppi_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1579,12 +1520,11 @@ CREATE TABLE IF NOT EXISTS `ppi_series` (
 -- Table structure for table `prescriptionnames`
 --
 
-DROP TABLE IF EXISTS `prescriptionnames`;
 CREATE TABLE IF NOT EXISTS `prescriptionnames` (
 `rxname_id` int(11) NOT NULL,
   `rx_name` varchar(255) NOT NULL,
   `rx_group` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1592,7 +1532,6 @@ CREATE TABLE IF NOT EXISTS `prescriptionnames` (
 -- Table structure for table `prescriptions`
 --
 
-DROP TABLE IF EXISTS `prescriptions`;
 CREATE TABLE IF NOT EXISTS `prescriptions` (
   `rx_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
@@ -1612,7 +1551,6 @@ CREATE TABLE IF NOT EXISTS `prescriptions` (
 -- Table structure for table `projects`
 --
 
-DROP TABLE IF EXISTS `projects`;
 CREATE TABLE IF NOT EXISTS `projects` (
 `project_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL DEFAULT '0',
@@ -1627,7 +1565,7 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `project_irbapprovaldate` date DEFAULT NULL,
   `project_status` varchar(15) DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a' AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a';
 
 -- --------------------------------------------------------
 
@@ -1635,7 +1573,6 @@ CREATE TABLE IF NOT EXISTS `projects` (
 -- Table structure for table `project_protocol`
 --
 
-DROP TABLE IF EXISTS `project_protocol`;
 CREATE TABLE IF NOT EXISTS `project_protocol` (
 `projectprotocol_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
@@ -1643,7 +1580,7 @@ CREATE TABLE IF NOT EXISTS `project_protocol` (
   `pp_criteria` enum('required','recommended','conditional','') NOT NULL,
   `pp_perstudyquantity` int(11) NOT NULL,
   `pp_perprojectquantity` int(11) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1651,12 +1588,11 @@ CREATE TABLE IF NOT EXISTS `project_protocol` (
 -- Table structure for table `protocolgroup_items`
 --
 
-DROP TABLE IF EXISTS `protocolgroup_items`;
 CREATE TABLE IF NOT EXISTS `protocolgroup_items` (
 `pgitem_id` int(11) NOT NULL,
   `protocolgroup_id` int(11) NOT NULL,
   `pgitem_protocol` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1664,12 +1600,11 @@ CREATE TABLE IF NOT EXISTS `protocolgroup_items` (
 -- Table structure for table `protocol_group`
 --
 
-DROP TABLE IF EXISTS `protocol_group`;
 CREATE TABLE IF NOT EXISTS `protocol_group` (
 `protocolgroup_id` int(11) NOT NULL,
   `protocolgroup_name` varchar(50) NOT NULL,
   `protocolgroup_modality` varchar(40) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='specifies the protocol group name and modality' AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='specifies the protocol group name and modality';
 
 -- --------------------------------------------------------
 
@@ -1677,7 +1612,6 @@ CREATE TABLE IF NOT EXISTS `protocol_group` (
 -- Table structure for table `public_downloads`
 --
 
-DROP TABLE IF EXISTS `public_downloads`;
 CREATE TABLE IF NOT EXISTS `public_downloads` (
 `pd_id` int(11) NOT NULL,
   `pd_createdate` datetime NOT NULL,
@@ -1697,7 +1631,7 @@ CREATE TABLE IF NOT EXISTS `public_downloads` (
   `pd_status` varchar(50) NOT NULL,
   `pd_key` varchar(255) NOT NULL,
   `pd_numdownloads` bigint(20) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1705,13 +1639,12 @@ CREATE TABLE IF NOT EXISTS `public_downloads` (
 -- Table structure for table `qc_modules`
 --
 
-DROP TABLE IF EXISTS `qc_modules`;
 CREATE TABLE IF NOT EXISTS `qc_modules` (
 `qcmodule_id` int(11) NOT NULL,
   `qcm_modality` varchar(20) NOT NULL,
   `qcm_name` varchar(255) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
   `qcm_isenabled` tinyint(1) NOT NULL DEFAULT '1'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1719,14 +1652,13 @@ CREATE TABLE IF NOT EXISTS `qc_modules` (
 -- Table structure for table `qc_moduleseries`
 --
 
-DROP TABLE IF EXISTS `qc_moduleseries`;
 CREATE TABLE IF NOT EXISTS `qc_moduleseries` (
 `qcmoduleseries_id` int(11) NOT NULL,
   `qcmodule_id` int(11) NOT NULL,
   `series_id` int(11) NOT NULL,
   `modality` varchar(25) NOT NULL,
   `cpu_time` double NOT NULL
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1734,14 +1666,13 @@ CREATE TABLE IF NOT EXISTS `qc_moduleseries` (
 -- Table structure for table `qc_resultnames`
 --
 
-DROP TABLE IF EXISTS `qc_resultnames`;
 CREATE TABLE IF NOT EXISTS `qc_resultnames` (
 `qcresultname_id` int(11) NOT NULL,
   `qcresult_name` varchar(255) NOT NULL DEFAULT '',
   `qcresult_type` enum('graph','image','histogram','minmax','number','textfile') NOT NULL DEFAULT 'number',
   `qcresult_units` varchar(255) NOT NULL DEFAULT 'unitless',
   `qcresult_labels` varchar(255) NOT NULL DEFAULT ''
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1749,7 +1680,6 @@ CREATE TABLE IF NOT EXISTS `qc_resultnames` (
 -- Table structure for table `qc_results`
 --
 
-DROP TABLE IF EXISTS `qc_results`;
 CREATE TABLE IF NOT EXISTS `qc_results` (
 `qcresults_id` int(11) NOT NULL,
   `qcmoduleseries_id` int(11) NOT NULL,
@@ -1759,7 +1689,7 @@ CREATE TABLE IF NOT EXISTS `qc_results` (
   `qcresults_valuefile` varchar(255) DEFAULT NULL,
   `qcresults_datetime` datetime DEFAULT NULL,
   `qcresults_cputime` double NOT NULL DEFAULT '0'
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1767,7 +1697,6 @@ CREATE TABLE IF NOT EXISTS `qc_results` (
 -- Table structure for table `ratings`
 --
 
-DROP TABLE IF EXISTS `ratings`;
 CREATE TABLE IF NOT EXISTS `ratings` (
 `rating_id` int(11) NOT NULL,
   `rater_id` int(11) NOT NULL,
@@ -1777,7 +1706,7 @@ CREATE TABLE IF NOT EXISTS `ratings` (
   `rating_value` int(11) NOT NULL,
   `rating_notes` text NOT NULL,
   `rating_date` datetime NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1785,14 +1714,13 @@ CREATE TABLE IF NOT EXISTS `ratings` (
 -- Table structure for table `remote_logins`
 --
 
-DROP TABLE IF EXISTS `remote_logins`;
 CREATE TABLE IF NOT EXISTS `remote_logins` (
 `remotelogin_id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `ip` varchar(100) NOT NULL,
   `login_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `login_result` enum('success','failure') NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1800,7 +1728,6 @@ CREATE TABLE IF NOT EXISTS `remote_logins` (
 -- Table structure for table `snps`
 --
 
-DROP TABLE IF EXISTS `snps`;
 CREATE TABLE IF NOT EXISTS `snps` (
 `snp_id` int(11) NOT NULL,
   `snp` varchar(255) NOT NULL,
@@ -1808,7 +1735,7 @@ CREATE TABLE IF NOT EXISTS `snps` (
   `chromosome` tinyint(3) unsigned NOT NULL,
   `reference_allele` char(2) NOT NULL,
   `genetic_distance` int(11) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1816,13 +1743,12 @@ CREATE TABLE IF NOT EXISTS `snps` (
 -- Table structure for table `snp_alleles`
 --
 
-DROP TABLE IF EXISTS `snp_alleles`;
 CREATE TABLE IF NOT EXISTS `snp_alleles` (
 `snpallele_id` int(11) NOT NULL,
   `snp_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `allele` char(2) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1830,7 +1756,6 @@ CREATE TABLE IF NOT EXISTS `snp_alleles` (
 -- Table structure for table `snp_series`
 --
 
-DROP TABLE IF EXISTS `snp_series`;
 CREATE TABLE IF NOT EXISTS `snp_series` (
 `snpseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1843,7 +1768,7 @@ CREATE TABLE IF NOT EXISTS `snp_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1851,7 +1776,6 @@ CREATE TABLE IF NOT EXISTS `snp_series` (
 -- Table structure for table `sr_series`
 --
 
-DROP TABLE IF EXISTS `sr_series`;
 CREATE TABLE IF NOT EXISTS `sr_series` (
 `srseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1864,7 +1788,7 @@ CREATE TABLE IF NOT EXISTS `sr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1872,7 +1796,6 @@ CREATE TABLE IF NOT EXISTS `sr_series` (
 -- Table structure for table `studies`
 --
 
-DROP TABLE IF EXISTS `studies`;
 CREATE TABLE IF NOT EXISTS `studies` (
 `study_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
@@ -1905,7 +1828,7 @@ CREATE TABLE IF NOT EXISTS `studies` (
   `study_isactive` tinyint(1) NOT NULL DEFAULT '1',
   `study_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1913,7 +1836,6 @@ CREATE TABLE IF NOT EXISTS `studies` (
 -- Table structure for table `subjects`
 --
 
-DROP TABLE IF EXISTS `subjects`;
 CREATE TABLE IF NOT EXISTS `subjects` (
 `subject_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -1938,7 +1860,7 @@ CREATE TABLE IF NOT EXISTS `subjects` (
   `isimported` tinyint(1) NOT NULL,
   `importeduuid` varchar(255) NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1946,13 +1868,12 @@ CREATE TABLE IF NOT EXISTS `subjects` (
 -- Table structure for table `subject_altuid`
 --
 
-DROP TABLE IF EXISTS `subject_altuid`;
 CREATE TABLE IF NOT EXISTS `subject_altuid` (
 `subjectaltuid_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `altuid` varchar(50) NOT NULL,
   `isprimary` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1960,13 +1881,12 @@ CREATE TABLE IF NOT EXISTS `subject_altuid` (
 -- Table structure for table `subject_relation`
 --
 
-DROP TABLE IF EXISTS `subject_relation`;
 CREATE TABLE IF NOT EXISTS `subject_relation` (
 `subjectrelation_id` int(11) NOT NULL,
   `subjectid1` int(11) NOT NULL,
   `subjectid2` int(11) NOT NULL,
   `relation` varchar(10) NOT NULL COMMENT 'siblingm, siblingf, sibling, child, parent [subject1 is the ''relation'' of subject2]'
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1974,7 +1894,6 @@ CREATE TABLE IF NOT EXISTS `subject_relation` (
 -- Table structure for table `surgery_series`
 --
 
-DROP TABLE IF EXISTS `surgery_series`;
 CREATE TABLE IF NOT EXISTS `surgery_series` (
 `surgeryseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1987,7 +1906,7 @@ CREATE TABLE IF NOT EXISTS `surgery_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -1995,7 +1914,6 @@ CREATE TABLE IF NOT EXISTS `surgery_series` (
 -- Table structure for table `task_series`
 --
 
-DROP TABLE IF EXISTS `task_series`;
 CREATE TABLE IF NOT EXISTS `task_series` (
 `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -2008,7 +1926,7 @@ CREATE TABLE IF NOT EXISTS `task_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2016,7 +1934,6 @@ CREATE TABLE IF NOT EXISTS `task_series` (
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
 `user_id` int(11) NOT NULL,
   `username` varchar(45) DEFAULT NULL,
@@ -2049,7 +1966,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `sendmail_dailysummary` tinyint(1) NOT NULL,
   `user_enablebeta` tinyint(1) NOT NULL DEFAULT '0',
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2057,7 +1974,6 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Table structure for table `users_pending`
 --
 
-DROP TABLE IF EXISTS `users_pending`;
 CREATE TABLE IF NOT EXISTS `users_pending` (
 `user_id` int(11) NOT NULL,
   `username` varchar(45) DEFAULT NULL,
@@ -2072,7 +1988,7 @@ CREATE TABLE IF NOT EXISTS `users_pending` (
   `user_firstname` varchar(255) NOT NULL,
   `user_midname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2080,7 +1996,6 @@ CREATE TABLE IF NOT EXISTS `users_pending` (
 -- Table structure for table `user_favorites`
 --
 
-DROP TABLE IF EXISTS `user_favorites`;
 CREATE TABLE IF NOT EXISTS `user_favorites` (
   `favorite_id` int(11) NOT NULL,
   `favorite_type` set('project','subject') NOT NULL,
@@ -2094,14 +2009,13 @@ CREATE TABLE IF NOT EXISTS `user_favorites` (
 -- Table structure for table `user_instance`
 --
 
-DROP TABLE IF EXISTS `user_instance`;
 CREATE TABLE IF NOT EXISTS `user_instance` (
 `userinstance_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `isdefaultinstance` tinyint(1) NOT NULL,
   `instance_joinrequest` tinyint(1) NOT NULL
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2109,7 +2023,6 @@ CREATE TABLE IF NOT EXISTS `user_instance` (
 -- Table structure for table `user_project`
 --
 
-DROP TABLE IF EXISTS `user_project`;
 CREATE TABLE IF NOT EXISTS `user_project` (
 `userproject_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -2119,7 +2032,7 @@ CREATE TABLE IF NOT EXISTS `user_project` (
   `write_data` tinyint(1) NOT NULL,
   `write_phi` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2127,7 +2040,6 @@ CREATE TABLE IF NOT EXISTS `user_project` (
 -- Table structure for table `us_series`
 --
 
-DROP TABLE IF EXISTS `us_series`;
 CREATE TABLE IF NOT EXISTS `us_series` (
 `usseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -2140,7 +2052,7 @@ CREATE TABLE IF NOT EXISTS `us_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2148,7 +2060,6 @@ CREATE TABLE IF NOT EXISTS `us_series` (
 -- Table structure for table `video_series`
 --
 
-DROP TABLE IF EXISTS `video_series`;
 CREATE TABLE IF NOT EXISTS `video_series` (
 `videoseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
@@ -2163,7 +2074,7 @@ CREATE TABLE IF NOT EXISTS `video_series` (
   `video_cputime` double NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2171,7 +2082,6 @@ CREATE TABLE IF NOT EXISTS `video_series` (
 -- Table structure for table `xa_series`
 --
 
-DROP TABLE IF EXISTS `xa_series`;
 CREATE TABLE IF NOT EXISTS `xa_series` (
 `xaseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -2184,7 +2094,7 @@ CREATE TABLE IF NOT EXISTS `xa_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
 -- Indexes for dumped tables
@@ -2200,7 +2110,7 @@ ALTER TABLE `analysis`
 -- Indexes for table `analysis_data`
 --
 ALTER TABLE `analysis_data`
- ADD PRIMARY KEY (`analysisdata_id`), ADD UNIQUE KEY `analysis_id` (`analysis_id`,`data_id`,`modality`);
+ ADD PRIMARY KEY (`analysisdata_id`), ADD UNIQUE KEY `analysis_id` (`analysis_id`,`data_id`,`modality`), ADD KEY `idx_analysis_data` (`analysis_id`);
 
 --
 -- Indexes for table `analysis_group`
@@ -2218,7 +2128,7 @@ ALTER TABLE `analysis_resultnames`
 -- Indexes for table `analysis_results`
 --
 ALTER TABLE `analysis_results`
- ADD PRIMARY KEY (`analysisresults_id`), ADD UNIQUE KEY `analysis_id` (`analysis_id`,`result_type`,`result_nameid`), ADD KEY `result_value` (`result_value`), ADD KEY `result_type` (`result_type`), ADD KEY `result_nameid` (`result_nameid`), ADD KEY `result_unitid` (`result_unitid`);
+ ADD PRIMARY KEY (`analysisresults_id`), ADD UNIQUE KEY `analysis_id` (`analysis_id`,`result_type`,`result_nameid`), ADD KEY `result_value` (`result_value`), ADD KEY `result_type` (`result_type`), ADD KEY `idx_analysis_results` (`analysis_id`);
 
 --
 -- Indexes for table `analysis_resultunit`
@@ -2302,7 +2212,7 @@ ALTER TABLE `cr_series`
 -- Indexes for table `cs_prefs`
 --
 ALTER TABLE `cs_prefs`
- ADD PRIMARY KEY (`csprefs_id`), ADD UNIQUE KEY `shortname` (`shortname`);
+ ADD PRIMARY KEY (`csprefs_id`), ADD UNIQUE KEY `shortname` (`shortname`), ADD KEY `idx_cs_prefs` (`userid`);
 
 --
 -- Indexes for table `ct_series`
@@ -2314,13 +2224,13 @@ ALTER TABLE `ct_series`
 -- Indexes for table `data_requests`
 --
 ALTER TABLE `data_requests`
- ADD PRIMARY KEY (`request_id`), ADD KEY `req_groupid` (`req_groupid`), ADD KEY `req_date` (`req_date`), ADD KEY `req_status` (`req_status`);
+ ADD PRIMARY KEY (`request_id`), ADD KEY `req_groupid` (`req_groupid`), ADD KEY `req_date` (`req_date`), ADD KEY `req_status` (`req_status`), ADD KEY `idx_data_requests` (`req_username`);
 
 --
 -- Indexes for table `eeg_series`
 --
 ALTER TABLE `eeg_series`
- ADD PRIMARY KEY (`eegseries_id`), ADD KEY `fk_eeg_series_studies1` (`study_id`), ADD KEY `series_desc` (`series_desc`), ADD KEY `series_protocol` (`series_protocol`);
+ ADD PRIMARY KEY (`eegseries_id`), ADD KEY `fk_eeg_series_studies1` (`study_id`), ADD KEY `series_desc` (`series_desc`), ADD KEY `series_protocol` (`series_protocol`), ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `enrollment`
@@ -2332,7 +2242,7 @@ ALTER TABLE `enrollment`
 -- Indexes for table `et_series`
 --
 ALTER TABLE `et_series`
- ADD PRIMARY KEY (`etseries_id`), ADD KEY `fk_eeg_series_studies1` (`study_id`);
+ ADD PRIMARY KEY (`etseries_id`), ADD KEY `fk_eeg_series_studies1` (`study_id`), ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `families`
@@ -2374,13 +2284,13 @@ ALTER TABLE `importlogs`
 -- Indexes for table `import_received`
 --
 ALTER TABLE `import_received`
- ADD PRIMARY KEY (`importreceived_id`);
+ ADD PRIMARY KEY (`importreceived_id`), ADD KEY `idx_import_received` (`import_transactionid`);
 
 --
 -- Indexes for table `import_requests`
 --
 ALTER TABLE `import_requests`
- ADD PRIMARY KEY (`importrequest_id`);
+ ADD PRIMARY KEY (`importrequest_id`), ADD KEY `import_subjectid` (`import_subjectid`), ADD KEY `idx_import_requests` (`import_transactionid`), ADD KEY `idx_import_requests_0` (`import_modality`);
 
 --
 -- Indexes for table `import_transactions`
@@ -2455,6 +2365,12 @@ ALTER TABLE `modalities`
  ADD PRIMARY KEY (`mod_id`), ADD UNIQUE KEY `pk_modalities_0` (`mod_code`);
 
 --
+-- Indexes for table `modality_protocol`
+--
+ALTER TABLE `modality_protocol`
+ ADD KEY `idx_modality_protocol` (`modality`);
+
+--
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
@@ -2482,7 +2398,7 @@ ALTER TABLE `mr_qa`
 -- Indexes for table `mr_series`
 --
 ALTER TABLE `mr_series`
- ADD PRIMARY KEY (`mrseries_id`), ADD UNIQUE KEY `study_id_2` (`study_id`,`series_num`), ADD KEY `series_desc` (`series_desc`), ADD KEY `study_id` (`study_id`), ADD KEY `series_protocol` (`series_protocol`), ADD KEY `series_tr` (`series_tr`), ADD KEY `series_altdesc` (`series_altdesc`);
+ ADD PRIMARY KEY (`mrseries_id`), ADD UNIQUE KEY `study_id_2` (`study_id`,`series_num`), ADD KEY `series_desc` (`series_desc`), ADD KEY `study_id` (`study_id`), ADD KEY `series_protocol` (`series_protocol`), ADD KEY `series_tr` (`series_tr`), ADD KEY `series_altdesc` (`series_altdesc`), ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `mr_studyqa`
@@ -2638,7 +2554,7 @@ ALTER TABLE `ratings`
 -- Indexes for table `remote_logins`
 --
 ALTER TABLE `remote_logins`
- ADD PRIMARY KEY (`remotelogin_id`);
+ ADD PRIMARY KEY (`remotelogin_id`), ADD KEY `idx_remote_logins` (`username`);
 
 --
 -- Indexes for table `snps`
@@ -2686,7 +2602,7 @@ ALTER TABLE `subject_altuid`
 -- Indexes for table `subject_relation`
 --
 ALTER TABLE `subject_relation`
- ADD PRIMARY KEY (`subjectrelation_id`);
+ ADD PRIMARY KEY (`subjectrelation_id`), ADD KEY `idx_subject_relation` (`subjectid1`), ADD KEY `idx_subject_relation_0` (`subjectid2`);
 
 --
 -- Indexes for table `surgery_series`
@@ -2750,62 +2666,62 @@ ALTER TABLE `xa_series`
 -- AUTO_INCREMENT for table `analysis`
 --
 ALTER TABLE `analysis`
-MODIFY `analysis_id` bigint(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `analysis_id` bigint(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_data`
 --
 ALTER TABLE `analysis_data`
-MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_group`
 --
 ALTER TABLE `analysis_group`
-MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_resultnames`
 --
 ALTER TABLE `analysis_resultnames`
-MODIFY `resultname_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `resultname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_results`
 --
 ALTER TABLE `analysis_results`
-MODIFY `analysisresults_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `analysisresults_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_resultunit`
 --
 ALTER TABLE `analysis_resultunit`
-MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessments`
 --
 ALTER TABLE `assessments`
-MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_data`
 --
 ALTER TABLE `assessment_data`
-MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_formfields`
 --
 ALTER TABLE `assessment_formfields`
-MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_forms`
 --
 ALTER TABLE `assessment_forms`
-MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audio_series`
 --
 ALTER TABLE `audio_series`
-MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audit_results`
 --
 ALTER TABLE `audit_results`
-MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `binary_series`
 --
@@ -2820,17 +2736,17 @@ MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `common`
 --
 ALTER TABLE `common`
-MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `consent_series`
 --
 ALTER TABLE `consent_series`
-MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `contacts`
 --
 ALTER TABLE `contacts`
-MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `cr_series`
 --
@@ -2845,57 +2761,57 @@ MODIFY `csprefs_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `ct_series`
 --
 ALTER TABLE `ct_series`
-MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `data_requests`
 --
 ALTER TABLE `data_requests`
-MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `eeg_series`
 --
 ALTER TABLE `eeg_series`
-MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `enrollment`
 --
 ALTER TABLE `enrollment`
-MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `et_series`
 --
 ALTER TABLE `et_series`
-MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `families`
 --
 ALTER TABLE `families`
-MODIFY `family_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `family_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `family_members`
 --
 ALTER TABLE `family_members`
-MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `fileio_requests`
 --
 ALTER TABLE `fileio_requests`
-MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `groups`
 --
 ALTER TABLE `groups`
-MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `group_data`
 --
 ALTER TABLE `group_data`
-MODIFY `subjectgroup_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `subjectgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `importlogs`
 --
 ALTER TABLE `importlogs`
-MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `import_received`
 --
@@ -2905,7 +2821,7 @@ MODIFY `importreceived_id` bigint(20) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `import_requests`
 --
 ALTER TABLE `import_requests`
-MODIFY `importrequest_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `importrequest_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `import_transactions`
 --
@@ -2915,7 +2831,7 @@ MODIFY `importtrans_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `instance`
 --
 ALTER TABLE `instance`
-MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_billing`
 --
@@ -2925,7 +2841,7 @@ MODIFY `billingitem_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `instance_contact`
 --
 ALTER TABLE `instance_contact`
-MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_invoice`
 --
@@ -2935,42 +2851,42 @@ MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `instance_pricing`
 --
 ALTER TABLE `instance_pricing`
-MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_usage`
 --
 ALTER TABLE `instance_usage`
-MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `manual_qa`
 --
 ALTER TABLE `manual_qa`
-MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measureinstruments`
 --
 ALTER TABLE `measureinstruments`
-MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measurenames`
 --
 ALTER TABLE `measurenames`
-MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measures`
 --
 ALTER TABLE `measures`
-MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `modalities`
 --
 ALTER TABLE `modalities`
-MODIFY `mod_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `mod_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `module_prefs`
 --
@@ -2980,27 +2896,27 @@ MODIFY `mp_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `mostrecent`
 --
 ALTER TABLE `mostrecent`
-MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_qa`
 --
 ALTER TABLE `mr_qa`
-MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_series`
 --
 ALTER TABLE `mr_series`
-MODIFY `mrseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `mrseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_studyqa`
 --
 ALTER TABLE `mr_studyqa`
-MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
-MODIFY `site_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `site_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `nm_series`
 --
@@ -3010,37 +2926,37 @@ MODIFY `nmseries_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ot_series`
 --
 ALTER TABLE `ot_series`
-MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipelines`
 --
 ALTER TABLE `pipelines`
-MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_data_def`
 --
 ALTER TABLE `pipeline_data_def`
-MODIFY `pipelinedatadef_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipelinedatadef_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_dependencies`
 --
 ALTER TABLE `pipeline_dependencies`
-MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_download`
 --
 ALTER TABLE `pipeline_download`
-MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_groups`
 --
 ALTER TABLE `pipeline_groups`
-MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_status`
 --
@@ -3050,87 +2966,87 @@ MODIFY `pipelinestatus_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `pipeline_steps`
 --
 ALTER TABLE `pipeline_steps`
-MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ppi_series`
 --
 ALTER TABLE `ppi_series`
-MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `prescriptionnames`
 --
 ALTER TABLE `prescriptionnames`
-MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `project_protocol`
 --
 ALTER TABLE `project_protocol`
-MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `protocolgroup_items`
 --
 ALTER TABLE `protocolgroup_items`
-MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `protocol_group`
 --
 ALTER TABLE `protocol_group`
-MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_modules`
 --
 ALTER TABLE `qc_modules`
-MODIFY `qcmodule_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `qcmodule_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_moduleseries`
 --
 ALTER TABLE `qc_moduleseries`
-MODIFY `qcmoduleseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `qcmoduleseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_resultnames`
 --
 ALTER TABLE `qc_resultnames`
-MODIFY `qcresultname_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `qcresultname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_results`
 --
 ALTER TABLE `qc_results`
-MODIFY `qcresults_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `qcresults_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ratings`
 --
 ALTER TABLE `ratings`
-MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `remote_logins`
 --
 ALTER TABLE `remote_logins`
-MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snps`
 --
 ALTER TABLE `snps`
-MODIFY `snp_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `snp_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snp_alleles`
 --
 ALTER TABLE `snp_alleles`
-MODIFY `snpallele_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `snpallele_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snp_series`
 --
 ALTER TABLE `snp_series`
-MODIFY `snpseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `snpseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `sr_series`
 --
@@ -3140,22 +3056,22 @@ MODIFY `srseries_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `studies`
 --
 ALTER TABLE `studies`
-MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subjects`
 --
 ALTER TABLE `subjects`
-MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subject_altuid`
 --
 ALTER TABLE `subject_altuid`
-MODIFY `subjectaltuid_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `subjectaltuid_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subject_relation`
 --
 ALTER TABLE `subject_relation`
-MODIFY `subjectrelation_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `subjectrelation_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `surgery_series`
 --
@@ -3165,27 +3081,27 @@ MODIFY `surgeryseries_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `task_series`
 --
 ALTER TABLE `task_series`
-MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users_pending`
 --
 ALTER TABLE `users_pending`
-MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `user_instance`
 --
 ALTER TABLE `user_instance`
-MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `user_project`
 --
 ALTER TABLE `user_project`
-MODIFY `userproject_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `userproject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `us_series`
 --
@@ -3195,66 +3111,12 @@ MODIFY `usseries_id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `video_series`
 --
 ALTER TABLE `video_series`
-MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `xa_series`
 --
 ALTER TABLE `xa_series`
 MODIFY `xaseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
-
-INSERT INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `instance_ownerid`, `instance_default`) VALUES
-(1, 'I1234ABC', 'NiDB Main Instance', 1, 1);
-
-INSERT INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`) VALUES
-(1, 'MR', 'MRI - Magnetic Resonance Imaging', 1),
-(2, 'CT', 'CT - Computed Tomography', 1),
-(3, 'EEG', 'EEG - Electroencephalography', 1),
-(4, 'VIDEO', 'Video', 1),
-(5, 'ECG', 'ECG - Electrocardiogram', 1),
-(6, 'US', 'Ultrasound', 1),
-(7, 'MEG', 'MEG - Magnetoencephalography', 1),
-(8, 'XRAY', 'X-ray', 1),
-(9, 'PT', 'PET - Positron Emission Tomography', 1),
-(10, 'OT', 'Other DICOM', 1),
-(11, 'PPI', 'Pre-pulse inhibition', 1),
-(12, 'ET', 'Eye-tracking', 1),
-(13, 'XA', 'XA - X-ray angiography', 1),
-(14, 'CR', 'CR - Computed radiography (digital x-ray)', 1),
-(15, 'SURGERY', 'Pre-surgical Mapping', 1),
-(16, 'AUDIO', 'Audio', 1),
-(17, 'SNP', 'SNP genetic information', 1),
-(18, 'CONSENT', 'Consent form', 1),
-(19, 'TASK', 'Task', 1);
-
-INSERT INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numrunning`, `module_laststart`, `module_laststop`, `module_isactive`) VALUES
-(1, 'parsedicom', 'stopped', 0, now(), now(), 1),
-(2, 'datarequests', 'stopped', 0, now(), now(), 1),
-(3, 'mriqa', 'stopped', 0, now(), now(), 1),
-(4, 'pipeline', 'stopped', 0, now(), now(), 0),
-(5, 'dailyreport', 'stopped', 0, now(), now(), 0),
-(6, 'dailybackup', 'stopped', 0, now(), now(), 0),
-(7, 'import', 'stopped', 0, now(), now(), 0),
-(8, 'qc', 'stopped', 0, now(), now(), 0),
-(9, 'fileio', 'stopped', 0, now(), now(), 1),
-(10, 'importuploaded', 'stopped', 0, now(), now(), 1),
-(11, 'usage', 'stopped', 0, now(), now(), 0),
-(12, 'audit', 'stopped', 0, now(), now(), 0),
-(13, 'notifications', 'stopped', 0, now(), now(), 0);
-
-INSERT INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
-(1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
-
-INSERT INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
-(1, 1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
-(2, 1, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
-
-INSERT INTO `user_instance` (`userinstance_id`, `user_id`, `instance_id`, `isdefaultinstance`, `instance_joinrequest`) VALUES
-(1, 1, 1, 1, 0);
-
-INSERT INTO `users` (`user_id`, `username`, `password`, `login_type`, `user_instanceid`, `user_fullname`, `user_firstname`, `user_midname`, `user_lastname`, `user_institution`, `user_country`, `user_email`, `user_email2`, `user_address1`, `user_address2`, `user_city`, `user_state`, `user_zip`, `user_phone1`, `user_phone2`, `user_website`, `user_dept`, `user_lastlogin`, `user_logincount`, `user_enabled`, `user_isadmin`, `user_issiteadmin`, `user_canimport`, `sendmail_dailysummary`, `user_enablebeta`, `lastupdate`) VALUES
-(1, 'admin', sha1('password'), 'Standard', 1, 'Administrator', '', '', '', '', '', 'email@email.com', '', '', '', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, 1, 1, 1, 0, 0, 0, '0000-00-00 00:00:00');
-
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
