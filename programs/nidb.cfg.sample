@@ -25,12 +25,12 @@
 # database variables
 [mysqlhost] = localhost
 [mysqldatabase] = nidb
-[mysqluser] = username
+[mysqluser] = root
 [mysqlpassword] = password
 
 [mysqldevhost] = localhost
 [mysqldevdatabase] = nidb
-[mysqldevuser] = username
+[mysqldevuser] = root
 [mysqldevpassword] = password
 
 # email parameters (SMTP through TLS)
@@ -66,9 +66,9 @@
 # setup the directories to be used (alphabetical list)
 
 # analysis root location
-[analysisdir] = /home/pipeline/pipeline
+[analysisdir] = /nidb/pipeline
 # group analysis root location
-[groupanalysisdir] = /home/pipeline/pipelinegroup
+[groupanalysisdir] = /nidb/pipelinegroup
 # this is the final place for zipped/recon/formatted subject directories
 [archivedir] = /nidb/archive
 # backup directory. all handled data is copied here, usually mounted to another server
