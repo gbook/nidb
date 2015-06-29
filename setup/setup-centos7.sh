@@ -68,13 +68,17 @@ cpan Date::Parse
 cpan Image::ExifTool
 cpan String::CRC32
 cpan Date::Manip
+cpan Sort::Naturally
 
+# copy recently installed Perl modules to a directory accessible by the
+# nidb account
+cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/
 
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
 
-cp -r Mysql* /usr/lib64/perl5/
+cp -rv Mysql* /usr/local/lib64/perl5/
 
 # compile ImageMagick with fft support
 #wget http://www.fftw.org/fftw-3.3.2.tar.gz
@@ -243,8 +247,9 @@ rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
-echo "Install FSL to the default path [/usr/local/fsl]"
+echo " *** Install FSL to the default path [/usr/local/fsl] ***"
 echo "Edit /etc/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
 echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
+echo "TIP: A reboot can be useful to make sure everything works"
