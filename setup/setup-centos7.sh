@@ -35,13 +35,10 @@ passwd $NIDBUSER
 
 # ---------- yum based installs ----------
 echo "----------------- Installing YUM based packages -----------------"
+echo "Because of Perl dependency issues, all perl packages will be installed"
 yum install -y -q vim
-yum install -y -q perl
-yum install -y -q perl-File-Copy-Recursive
-yum install -y -q perl-Net-SMTP*
-yum install -y -q perl-Data-Dumper
+yum install -y -q perl*
 yum install -y -q cpan
-yum install -y -q perl-YAML
 yum install -y -q php
 yum install -y -q php-mysql
 yum install -y -q php-gd
@@ -62,7 +59,7 @@ yum install -y -q iptraf*
 yum install -y -q java
 yum install -y -q ImageMagick
 
-# --------- Perl/CPAN based installs ----------
+# --------- extra Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
 cpan File::Path
 cpan Net::SMTP::TLS
