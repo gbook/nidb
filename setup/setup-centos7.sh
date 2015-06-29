@@ -54,7 +54,6 @@ yum install -y -q mysql
 yum install -y -q mysql-server
 yum install -y -q mariadb
 yum install -y -q mariadb-server
-yum install -y -q subversion*
 yum install -y -q git
 yum install -y -q gcc
 yum install -y -q gcc-c++
