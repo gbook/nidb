@@ -146,9 +146,7 @@ sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php.ini
 sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php.ini
 sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
-sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/g' /etc/php.ini
-
-read -p "Press [enter] to continue"
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
 sed -i "s/User apache/User $NIDBUSER/" /etc/httpd/conf/httpd.conf
@@ -170,9 +168,6 @@ unzip phpMyAdmin-4.4.7-english.zip
 mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
 chmod 777 /var/www/html
 chown -R $NIDBUSER:$NIDBUSER /var/www/html
-#echo "Edit the /var/www/html/phpMyAdmin/config.sample.inc.php file and add:"
-#echo "      \$cfg['McryptDisableWarning'] = TRUE;"
-#echo "      \$cfg['LoginCookieValidity'] = 28800;"
 sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
 sed '$ i $cfg[''LoginCookieValidity''] = 28800;' /var/www/html/phpMyAdmin/config.sample.inc.php;
 #echo "Rename config.sample.inc.php to config.inc.php"
@@ -181,10 +176,6 @@ chmod 755 /var/www/html/phpMyAdmin/config.inc.php
 echo "You should be able to see this" >> /var/www/html/index.php
 echo "Check to make sure you can see http://$HOSTNAME/index.php"
 read -p "Press [enter] to continue"
-#echo "phpMyAdmin installed, but must be configured"
-#echo "Go to http://$HOSTNAME/phpMyAdmin/setup to add the local DB server"
-#read -p "Press [enter] to continue"
-
 
 # --------- install all nidb files and db ----------
 echo "----------------- Copying nidb program/html files -----------------"
@@ -240,25 +231,6 @@ sed -i "s/su nidb/su $NIDBUSER/" /etc/init.d/dcmrcv
 chmod 755 /etc/init.d/dcmrcv
 chkconfig --add dcmrcv
 
-# echo "#!/bin/sh" >> /etc/init.d/dcmrcv
-# echo "# description: DICOM receiver" >> /etc/init.d/dcmrcv
-# echo "# chkconfig: 2345 99 00" >> /etc/init.d/dcmrcv
-# echo "case \"$1\" in" >> /etc/init.d/dcmrcv
-# echo "'start')" >> /etc/init.d/dcmrcv
-# echo "        su onrc -c '${NIDBROOT}/programs/dcm4che/bin/./dcmrcv NIDB:8104 -dest ${NIDBROOT}/dicomincoming > /dev/null 2>&1 &'" >> /etc/init.d/dcmrcv
-# echo "        touch /var/lock/subsys/dcmrcv" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "'stop')" >> /etc/init.d/dcmrcv
-# echo "        rm -f /var/lock/subsys/dcmrcv" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "*)" >> /etc/init.d/dcmrcv
-# echo "        echo \"Usage: $0 { start | stop }\"" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "esac" >> /etc/init.d/dcmrcv
-# echo "exit 0" >> /etc/init.d/dcmrcv
-# chkconfig --add dcmrcv
-
-
 # ---------- setup cron jobs ----------
 echo "----------------- Setup scheduled cron jobs -----------------"
 echo "Setting up cron jobs for nidb"
@@ -270,8 +242,7 @@ echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> 
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
-#rm ~/tempcron.txt
-
+rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
