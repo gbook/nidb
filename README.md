@@ -14,3 +14,5 @@ To install on CentOS 7, type the following on the command line as root, and foll
 `> ./setup-centos7.sh`
 
 After setup, go to http://localhost/ and login with admin/password. Change the default password immediately after logging in!
+
+Visit <a href="http://neuroinfodb.com">neuroinfodb.com</a> for more support and cloud hosting
