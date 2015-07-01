@@ -35,13 +35,10 @@ passwd $NIDBUSER
 
 # ---------- yum based installs ----------
 echo "----------------- Installing YUM based packages -----------------"
+echo "Because of Perl dependency issues, all perl packages will be installed"
 yum install -y -q vim
-yum install -y -q perl
-yum install -y -q perl-File-Copy-Recursive
-yum install -y -q perl-Net-SMTP*
-yum install -y -q perl-Data-Dumper
+yum install -y -q perl*
 yum install -y -q cpan
-yum install -y -q perl-YAML
 yum install -y -q php
 yum install -y -q php-mysql
 yum install -y -q php-gd
@@ -54,7 +51,6 @@ yum install -y -q mysql
 yum install -y -q mysql-server
 yum install -y -q mariadb
 yum install -y -q mariadb-server
-yum install -y -q subversion*
 yum install -y -q git
 yum install -y -q gcc
 yum install -y -q gcc-c++
@@ -63,7 +59,7 @@ yum install -y -q iptraf*
 yum install -y -q java
 yum install -y -q ImageMagick
 
-# --------- Perl/CPAN based installs ----------
+# --------- extra Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
 cpan File::Path
 cpan Net::SMTP::TLS
@@ -72,13 +68,17 @@ cpan Date::Parse
 cpan Image::ExifTool
 cpan String::CRC32
 cpan Date::Manip
+cpan Sort::Naturally
 
+# copy recently installed Perl modules to a directory accessible by the
+# nidb account
+cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/
 
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
 
-cp -r Mysql* /usr/lib64/perl5/
+cp -rv Mysql* /usr/local/lib64/perl5/
 
 # compile ImageMagick with fft support
 #wget http://www.fftw.org/fftw-3.3.2.tar.gz
@@ -147,9 +147,7 @@ sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php.ini
 sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php.ini
 sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
-sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/g' /etc/php.ini
-
-read -p "Press [enter] to continue"
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
 sed -i "s/User apache/User $NIDBUSER/" /etc/httpd/conf/httpd.conf
@@ -171,9 +169,6 @@ unzip phpMyAdmin-4.4.7-english.zip
 mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
 chmod 777 /var/www/html
 chown -R $NIDBUSER:$NIDBUSER /var/www/html
-#echo "Edit the /var/www/html/phpMyAdmin/config.sample.inc.php file and add:"
-#echo "      \$cfg['McryptDisableWarning'] = TRUE;"
-#echo "      \$cfg['LoginCookieValidity'] = 28800;"
 sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
 sed '$ i $cfg[''LoginCookieValidity''] = 28800;' /var/www/html/phpMyAdmin/config.sample.inc.php;
 #echo "Rename config.sample.inc.php to config.inc.php"
@@ -182,10 +177,6 @@ chmod 755 /var/www/html/phpMyAdmin/config.inc.php
 echo "You should be able to see this" >> /var/www/html/index.php
 echo "Check to make sure you can see http://$HOSTNAME/index.php"
 read -p "Press [enter] to continue"
-#echo "phpMyAdmin installed, but must be configured"
-#echo "Go to http://$HOSTNAME/phpMyAdmin/setup to add the local DB server"
-#read -p "Press [enter] to continue"
-
 
 # --------- install all nidb files and db ----------
 echo "----------------- Copying nidb program/html files -----------------"
@@ -241,25 +232,6 @@ sed -i "s/su nidb/su $NIDBUSER/" /etc/init.d/dcmrcv
 chmod 755 /etc/init.d/dcmrcv
 chkconfig --add dcmrcv
 
-# echo "#!/bin/sh" >> /etc/init.d/dcmrcv
-# echo "# description: DICOM receiver" >> /etc/init.d/dcmrcv
-# echo "# chkconfig: 2345 99 00" >> /etc/init.d/dcmrcv
-# echo "case \"$1\" in" >> /etc/init.d/dcmrcv
-# echo "'start')" >> /etc/init.d/dcmrcv
-# echo "        su onrc -c '${NIDBROOT}/programs/dcm4che/bin/./dcmrcv NIDB:8104 -dest ${NIDBROOT}/dicomincoming > /dev/null 2>&1 &'" >> /etc/init.d/dcmrcv
-# echo "        touch /var/lock/subsys/dcmrcv" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "'stop')" >> /etc/init.d/dcmrcv
-# echo "        rm -f /var/lock/subsys/dcmrcv" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "*)" >> /etc/init.d/dcmrcv
-# echo "        echo \"Usage: $0 { start | stop }\"" >> /etc/init.d/dcmrcv
-# echo "        ;;" >> /etc/init.d/dcmrcv
-# echo "esac" >> /etc/init.d/dcmrcv
-# echo "exit 0" >> /etc/init.d/dcmrcv
-# chkconfig --add dcmrcv
-
-
 # ---------- setup cron jobs ----------
 echo "----------------- Setup scheduled cron jobs -----------------"
 echo "Setting up cron jobs for nidb"
@@ -271,13 +243,13 @@ echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> 
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
-#rm ~/tempcron.txt
-
+rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
-echo "Install FSL to the default path [/usr/local/fsl]"
+echo " *** Install FSL to the default path [/usr/local/fsl] ***"
 echo "Edit /etc/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
 echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
+echo "TIP: A reboot can be useful to make sure everything works"
