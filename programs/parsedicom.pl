@@ -1955,7 +1955,7 @@ sub CreateThumbnail {
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 
 	if ($type eq "epi") {
-		if ($numdcmfiles < 256) {
+		if ($numdcmfiles < 50) {
 			my $systemstring;
 			if ($xdim == 384) {
 				$systemstring = "/usr/local/bin/./convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";

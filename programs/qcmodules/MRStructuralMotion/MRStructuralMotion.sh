@@ -1,2 +1,2 @@
 python -V
-python MRStructuralMotion.py $1
+timeout 1h python MRStructuralMotion.py $1
