@@ -27,10 +27,10 @@ read -p "Press [enter] to continue"
 
 #---------------create an nidb account --------------
 echo "${redb}${whitef}${boldon}--------------- Creating nidb user account ----------------${reset}"
-echo "Please enter account-name for nidb"
+echo "Please enter the Linux account under which NiDB will run (it will be created if it does not exist)"
 read NIDBUSER
 useradd -m -s /bin/bash $NIDBUSER
-echo "Enter the passowrd for the nidb account"
+echo "Enter the password for the NiDB account"
 passwd $NIDBUSER
 
 # ---------- yum based installs ----------
