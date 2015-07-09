@@ -1382,18 +1382,18 @@
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
-				SearchStudy($result);
+				SearchStudy(&$result);
 			}
 			elseif ($s_resultorder == 'uniquesubject') {
 				/* display only unique subject data */
-				SearchSubject($result);
+				SearchSubject(&$result);
 			}
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
-				SearchLongitudinal($result);
+				SearchLongitudinal(&$result);
 			}
 			else {
-				SearchDefault($result, $s, $colors, $colors2);
+				SearchDefault(&$result, $s, $colors, $colors2);
 			}
 		}
 		else {
@@ -1412,7 +1412,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchDefault ---------------------- */
 	/* -------------------------------------------- */
-	function SearchDefault(&$result, $s, $colors, $colors2) {
+	function SearchDefault($result, $s, $colors, $colors2) {
 		error_reporting(-1);
 		ini_set('display_errors', '1');
 	
@@ -2162,7 +2162,8 @@
 	/* -------------------------------------------- */
 	/* ------- SearchSubject ---------------------- */
 	/* -------------------------------------------- */
-	function SearchSubject(&$result) {
+	function SearchSubject($result) {
+		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
@@ -2204,7 +2205,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchStudy ------------------------ */
 	/* -------------------------------------------- */
-	function SearchStudy(&$result) {
+	function SearchStudy($result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2284,7 +2285,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchLongitudinal ----------------- */
 	/* -------------------------------------------- */
-	function SearchLongitudinal(&$result) {
+	function SearchLongitudinal($result) {
 		//PrintSQLTable(&$result);
 		
 		$modality = '';
@@ -2338,6 +2339,9 @@
 		<br>
 		Of <span class="darkblue"><?=count($subjects)?> subjects</span>, <span class="darkblue"><?=count($studies)?> studies</span>, <span class="darkblue"><?=count($series)?> series</span>, longitudinal series were found in <span class="darkblue"><?=count($subjects2)?> subjects</span>, <span class="darkblue"><?=count($studies2)?> studies</span>, <span class="darkblue"><?=count($series2)?> series</span><br><br>
 		<?
+
+		$csv1 = "uid, protocol";
+		$csv2 = "uid, protocol";
 		
 		?><table cellspacing="0" style="border-collapse:collapse;">
 			<tr>
@@ -2345,6 +2349,8 @@
 				<td style="padding: 1px 5px; border-right: 2px solid #aaa"><b>Protocol</b></td>
 				<?
 					for ($col=1;$col<$maxcol;$col++) {
+						$csv1 .= ", Time$col";
+						$csv2 .= ", Time$col";
 						?>
 						<script type="text/javascript">
 						$(document).ready(function() {
@@ -2364,6 +2370,9 @@
 				<td align="right" style="color:darkblue"><b>Time <?=$maxcol?> <input type="checkbox" name="" onclick=""> </b></td>
 			</tr>
 		<?
+		$csv1 .= "\n";
+		$csv2 .= "\n";
+		
 		/* loop through the UIDs */
 		foreach ($longs as $uid => $value) {
 			$printeduid = false;
@@ -2395,6 +2404,8 @@
 					?><td valign="top" style="border-left: 1px solid #DDDDDD; border-right: 2px solid #aaa; white-space: nowrap; font-size:11pt; padding: 1px 5px"><?=$seriesdesc?></td><?
 					$lastdate = "";
 					$tspan = "";
+					$csv1 .= "$uid,$seriesdesc";
+					$csv2 .= "$uid,$seriesdesc";
 					
 					$numcolsdisplayed = 0;
 					/* loop through the studies */
@@ -2411,9 +2422,9 @@
 								$tspan = number_format($tspan,1) . " y";
 							}
 						}
+						$csv1 .= ",$studydate";
+						$csv2 .= ",$uid$studynum";
 						$studydate = date("M j, Y", strtotime($studydate));
-						?>
-						<?
 							if ($tspan != "") {
 								$numcolsdisplayed++;
 						?>
@@ -2461,12 +2472,22 @@
 					}
 					for ($i=0;$i<(($maxcol*2)-$numcolsdisplayed-1);$i++) {
 						?><td style="font-size:8pt; white-space: nowrap; border-left: 1px solid #DDDDDD; border-right: 1px solid #DDDDDD; padding: 1px 5px;"></td><?
+						$csv1 .= ",";
+						$csv2 .= ",";
 					}
 					?></tr><?
+					$csv1 .= "\n";
+					$csv2 .= "\n";
 				}
 			}
 		}
-		?></table><?
+		?></table>
+		.csv file with scan dates<br>
+		<textarea rows="8" cols="150"><?=$csv1?></textarea>
+		<br><br>
+		.csv file with study numbers<br>
+		<textarea rows="8" cols="150"><?=$csv2?></textarea>
+		<?
 		DisplayDownloadBox(strtolower($modality), 'long');
 	}
 

@@ -39,11 +39,11 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	if ($debug) {
+	//if ($debug) {
 		echo "<pre>";
 		print_r($_POST);
 		echo "</pre>";
-	}
+	//}
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -61,7 +61,6 @@
 	$gender = GetVariable("gender");
 	$ethnicity1 = GetVariable("ethnicity1");
 	$ethnicity2 = GetVariable("ethnicity2");
-	$weight = GetVariable("weight");
 	$handedness = GetVariable("handedness");
 	$education = GetVariable("education");
 	$phone = GetVariable("phone");
@@ -70,7 +69,8 @@
 	$smokingstatus = GetVariable("smokingstatus");
 	$cancontact = GetVariable("cancontact");
 	$uid = GetVariable("uid");
-	$altuid = GetVariable("altuid");
+	$altuids = GetVariable("altuids");
+	$enrollmentids = GetVariable("enrollmentids");
 	$guid = GetVariable("guid");
 	$searchuid = trim(GetVariable("searchuid"));
 	$searchaltuid = trim(GetVariable("searchaltuid"));
@@ -130,24 +130,24 @@
 			DisplayMergeSubjects($mergeuids);
 			break;
 		case 'mergesubjects':
-			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone1, $email,$maritalstatus,$smokingstatus, $altuid, $guid, $cancontact);
+			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email,$maritalstatus,$smokingstatus, $altuid, $guid, $cancontact);
 			break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
 			DisplaySubject($id);
 			break;
 		case 'confirmupdate':
-			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuid, $guid);
+			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid);
 			break;
 		case 'confirmadd':
-			Confirm("add", "", $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, "", $altuid, $guid);
+			Confirm("add", "", $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, "", $altuids, $enrollmentids, $guid);
 			break;
 		case 'update':
-			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuid, $guid);
+			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid);
 			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			break;
 		case 'add':
-			AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $altuid, $guid);
+			AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $altuid, $guid);
 			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			break;
 		default:
@@ -167,14 +167,13 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateSubject ---------------------- */
 	/* -------------------------------------------- */
-	function UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuid, $guid) {
+	function UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid) {
 		/* perform data checks */
 		$name = mysql_real_escape_string("$lastname^$firstname");
 		$dob = mysql_real_escape_string($dob);
 		$gender = mysql_real_escape_string($gender);
 		$ethnicity1 = mysql_real_escape_string($ethnicity1);
 		$ethnicity2 = mysql_real_escape_string($ethnicity2);
-		$weight = mysql_real_escape_string($weight);
 		$handedness = mysql_real_escape_string($handedness);
 		$education = mysql_real_escape_string($education);
 		$phone = mysql_real_escape_string($phone);
@@ -182,29 +181,41 @@
 		$maritalstatus = mysql_real_escape_string($maritalstatus);
 		$smokingstatus = mysql_real_escape_string($smokingstatus);
 		$cancontact = mysql_real_escape_string($cancontact);
-		$altuid = mysql_real_escape_string($altuid);
+		$altuidlist = $altuids;
 		$guid = mysql_real_escape_string($guid);
-		$altuids = explode(',',$altuid);
+		
+		print_r($altuids);
+		print_r($enrollmentids);
 		
 		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', weight = '$weight', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $id";
-		//echo $sqlstring;
+		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $id";
+		PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete entries for this subject from the altuid table ... */
 		$sqlstring = "delete from subject_altuid where subject_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		/* ... and insert the new rows into the altuids table */
-		foreach ($altuids as $altuid) {
-			$altuid = trim($altuid);
-			if (strpos($altuid, '*') !== FALSE) {
-				$altuid = str_replace('*','',$altuid);
-				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($id, '$altuid',1)";
+		$i=0;
+		foreach ($altuidlist as $altuidsublist) {
+			$altuidsublist = mysql_real_escape_string($altuidsublist);
+			echo($altuidsublist);
+			$altuids = explode(',',$altuidsublist);
+			foreach ($altuids as $altuid) {
+				echo($altuid);
+				$altuid = trim($altuid);
+				$enrollmentid = $enrollmentids[$i];
+				if (strpos($altuid, '*') !== FALSE) {
+					$altuid = str_replace('*','',$altuid);
+					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',1, '$enrollmentid')";
+				}
+				else {
+					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',0, '$enrollmentid')";
+				}
+				PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			}
-			else {
-				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($id, '$altuid',0)";
-			}
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$i++;
 		}
 		
 		?><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br><?
@@ -214,10 +225,10 @@
 	/* -------------------------------------------- */
 	/* ------- AddSubject ------------------------- */
 	/* -------------------------------------------- */
-	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid) {
+	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid) {
 	
 		if ($GLOBALS['debug']) {
-			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
+			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
 		}
 		/* perform data checks */
 		$name = mysql_real_escape_string("$lastname^$firstname");
@@ -225,7 +236,6 @@
 		$gender = mysql_real_escape_string($gender);
 		$ethnicity1 = mysql_real_escape_string($ethnicity1);
 		$ethnicity2 = mysql_real_escape_string($ethnicity2);
-		$weight = mysql_real_escape_string($weight);
 		$handedness = mysql_real_escape_string($handedness);
 		$education = mysql_real_escape_string($education);
 		$phone = mysql_real_escape_string($phone);
@@ -254,7 +264,7 @@
 		} while ($count > 0);
 		
 		/* insert the new subject */
-		$sqlstring = "insert into subjects (name, birthdate, gender, ethnicity1, ethnicity2, weight, handedness, education, phone1, email, marital_status, smoking_status, uid, uuid, guid, cancontact) values ('$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$weight', '$handedness', '$education', '$phone', '$email', '$maritalstatus', '$smokingstatus', '$uid', ucase(md5(concat(RemoveNonAlphaNumericChars('$name'), RemoveNonAlphaNumericChars('$dob'),RemoveNonAlphaNumericChars('$gender')))), '$guid', '$cancontact')";
+		$sqlstring = "insert into subjects (name, birthdate, gender, ethnicity1, ethnicity2, handedness, education, phone1, email, marital_status, smoking_status, uid, uuid, guid, cancontact) values ('$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$phone', '$email', '$maritalstatus', '$smokingstatus', '$uid', ucase(md5(concat(RemoveNonAlphaNumericChars('$name'), RemoveNonAlphaNumericChars('$dob'),RemoveNonAlphaNumericChars('$gender')))), '$guid', '$cancontact')";
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring); }
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$dbid = mysql_insert_id();
@@ -458,7 +468,7 @@
 	/* -------------------------------------------- */
 	/* ------- DoMergeSubjects -------------------- */
 	/* -------------------------------------------- */
-	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact) {
+	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact) {
 
 		?>
 		<span class="tiny">
@@ -479,7 +489,6 @@
 		$gender = mysql_real_escape_string($gender[$selectedid]);
 		$ethnicity1 = mysql_real_escape_string($ethnicity1[$selectedid]);
 		$ethnicity2 = mysql_real_escape_string($ethnicity2[$selectedid]);
-		$weight = mysql_real_escape_string($weight[$selectedid]);
 		$handedness = mysql_real_escape_string($handedness[$selectedid]);
 		$education = mysql_real_escape_string($education[$selectedid]);
 		$phone1 = mysql_real_escape_string($phone1[$selectedid]);
@@ -524,7 +533,7 @@
 		echo "</ol>";
 		
 		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', weight = '$weight', handedness = '$handedness', education = '$education', phone1 = '$phone1', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $selectedid";
+		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone1', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $selectedid";
 		echo "<li>Updating subject [$sqlstring]";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
@@ -575,7 +584,6 @@
 			$subjects[$i]['gender'] = $row['gender'];
 			$subjects[$i]['ethnicity1'] = $row['ethnicity1'];
 			$subjects[$i]['ethnicity2'] = $row['ethnicity2'];
-			$subjects[$i]['weight'] = $row['weight'];
 			$subjects[$i]['handedness'] = $row['handedness'];
 			$subjects[$i]['education'] = $row['education'];
 			$subjects[$i]['phone1'] = $row['phone1'];
@@ -669,19 +677,6 @@
 					}
 				?>
 			</tr>
-			<!--
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Weight</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['weight'] != $subjects[0]['weight']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="weight[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['weight'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			-->
 			<tr>
 				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Handedness</td>
 				<?
@@ -961,7 +956,6 @@
 		$gender = $row['gender'];
 		$ethnicity1 = $row['ethnicity1'];
 		$ethnicity2 = $row['ethnicity2'];
-		$weight = $row['weight'];
 		$handedness = $row['handedness'];
 		$education = $row['education'];
 		$phone1 = $row['phone1'];
@@ -1010,10 +1004,6 @@
 							<td class="label">Ethnicity1&2</td>
 							<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
 						</tr>
-						<!--<tr>
-							<td class="label">Weight</td>
-							<td class="value"><?=$weight?> kg</td>
-						</tr>-->
 						<tr>
 							<td class="label">Handedness</td>
 							<td class="value"><?=$handedness?></td>
@@ -1171,9 +1161,9 @@
 	/* -------------------------------------------- */
 	/* ------- Confirm ---------------------------- */
 	/* -------------------------------------------- */
-	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuid, $guid) {
+	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid) {
 
-		echo "Calling Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $weight, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuid, $guid)";
+		echo "Calling Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid)";
 		
 		$encdob = $dob;
 		if (($encrypt) && ($type != 'update')) {
@@ -1234,19 +1224,17 @@
 				<td class="value"><?=$gender?></td>
 			</tr>
 			<tr>
-				<td class="label">Alternate UIDs</td>
-				<td class="value"><?=$altuid?></td>
+				<td class="label">IDs</td>
+				<td class="value"><?print_r($altuids)?></td>
+			</tr>
+			<tr>
+				<td class="label">Enrollment IDs</td>
+				<td class="value"><?print_r($enrollmentids)?></td>
 			</tr>
 			<tr>
 				<td class="label">Ethnicity1&2</td>
 				<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
 			</tr>
-			<!--
-			<tr>
-				<td class="label">Weight</td>
-				<td class="value"><?=$weight?></td>
-			</tr>
-			-->
 			<tr>
 				<td class="label">Handedness</td>
 				<td class="value"><?=$handedness?></td>
@@ -1299,7 +1287,6 @@
 				<input type="hidden" name="gender" value="<?=$gender?>">
 				<input type="hidden" name="ethnicity1" value="<?=$ethnicity1?>">
 				<input type="hidden" name="ethnicity2" value="<?=$ethnicity2?>">
-				<!--<input type="hidden" name="weight" value="<?=$weight?>">-->
 				<input type="hidden" name="handedness" value="<?=$handedness?>">
 				<input type="hidden" name="education" value="<?=$education?>">
 				<input type="hidden" name="phone" value="<?=$phone?>">
@@ -1308,9 +1295,13 @@
 				<input type="hidden" name="smokingstatus" value="<?=$smokingstatus?>">
 				<input type="hidden" name="cancontact" value="<?=$cancontact?>">
 				<input type="hidden" name="uid" value="<?=$uid?>">
-				<input type="hidden" name="altuid" value="<?=implode(',',$encids)?>">
+				<? foreach ($altuids as $altuid) { ?>
+				<input type="hidden" name="altuids[]" value="<?=$altuid?>">
+				<? } ?>
+				<? foreach ($enrollmentids as $enrollmentid) { ?>
+				<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
+				<? } ?>
 				<input type="hidden" name="guid" value="<?=$guid?>">
-				
 				<td align="center" valign="middle"><input type="submit" value="Yes, <?=$type?> it"</td>
 				</form>
 			</tr>
@@ -1324,7 +1315,6 @@
 	/* -------------------------------------------- */
 	function DisplaySubject($id) {
 
-		//PrintVariable($_SESSION,'SESSION');
 		/* get privacy information */
 		$username = $_SESSION['username'];
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -1394,7 +1384,6 @@
 		$gender = $row['gender'];
 		$ethnicity1 = $row['ethnicity1'];
 		$ethnicity2 = $row['ethnicity2'];
-		//$weight = $row['weight'];
 		$handedness = $row['handedness'];
 		$education = $row['education'];
 		$phone1 = $row['phone1'];
@@ -1530,10 +1519,6 @@
 										<td class="label">Ethnicity1&2</td>
 										<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
 									</tr>
-									<!--<tr>
-										<td class="label">Weight</td>
-										<td class="value"><?=$weight?> kg</td>
-									</tr>-->
 									<tr>
 										<td class="label">Handedness</td>
 										<td class="value"><?=$handedness?></td>
@@ -1715,7 +1700,6 @@
 								$costcenter = $rowA['project_costcenter'];
 								$project_enddate = $rowA['project_enddate'];
 								
-								//echo "PROJECT ID 1 [$projectid]<br>";
 								$enrolldate = date('M j, Y g:ia',strtotime($enroll_startdate));
 								
 								if ($row['irb_consent'] != "") { $irb = "Y"; }
@@ -1732,13 +1716,12 @@
 								/* check if this user has data access to this project */
 								$projectaccess = 1;
 								$sqlstring2 = "select view_data from user_project where project_id = $projectid and view_data = 1 and user_id = $userid";
-								//echo "PROJECT ID 2 [$projectid]<br>";
-								//PrintSQL($sqlstring2);
-								//$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
 								$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
 								if (mysql_num_rows($result2) < 1) {
 									$projectaccess = 0;
 								}
+								
+								$subjectaltids = implode2(',',GetAlternateUIDs($id, $enrollmentid));
 						?>
 						<script type="text/javascript">
 							$(document).ready(function(){
@@ -1761,8 +1744,9 @@
 											<div style="font-size:10pt; font-weight: normal;">
 											Enrolled: <span style="color: darkblue"><?=$enrolldate?></span><br>
 											<? if ($phiaccess) { ?>
-											Group: <span id="enroll_subgroup" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span>
+											Group: <span id="enroll_subgroup" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
 											<? } ?>
+											<b>ID:</b> <?=$subjectaltids;?>
 											<br>
 											<? if ($enroll_enddate != "0000-00-00 00:00:00") { ?>
 											<span style="color: darkred">Un-enroll date: <?=$enroll_enddate?></span><br>
@@ -2136,7 +2120,6 @@
 			$gender = $row['gender'];
 			$ethnicity1 = $row['ethnicity1'];
 			$ethnicity2 = $row['ethnicity2'];
-			//$weight = $row['weight'];
 			$handedness = $row['handedness'];
 			$education = $row['education'];
 			$phone1 = $row['phone1'];
@@ -2148,9 +2131,6 @@
 			$cancontact = $row['cancontact'];
 			
 			list($lastname, $firstname) = explode("^",$name);
-		
-			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($id);
 		
 			/* get privacy information */
 			$username = $_SESSION['username'];
@@ -2262,10 +2242,36 @@
 				</td>
 			</tr>
 			<tr>
-				<td class="requiredlabel">Alternate UIDs<br><span class="tiny">comma separated list</span></td>
+				<td class="requiredlabel">IDs<br><span class="tiny">comma separated list</span></td>
 				<td>
-					<input type="text" size="50" name="altuid" value="<?=implode2(',',$altuids)?>" required style="background-color: lightyellow; border: 1px solid gray"><br><span class="tiny">
-					Use asterisk next to primary alternate ID. Example: [*PrimaryID1, otherID1, otherID23]</span>
+					<table style="border: 1px solid #ddd; border-radius:3px; color: #555; font-size: 11pt">
+						<thead>
+							<tr>
+								<th align="right" style="padding-right: 8px"><b>Project</b></th>
+								<th><b>IDs</b> <span class="tiny">Use asterisk next to primary ID (Example "*PrimaryID1, otherID1, otherID23")</span></th>
+							</tr>
+						</thead>
+						<tr>
+							<td align="right" style="padding-right: 8px">Global</td>
+							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,''))?>" required style="background-color: lightyellow; border: 1px solid gray"></td>
+							<input type="hidden" name="enrollmentids[]" value="">
+						</tr>
+						<?
+						$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$enrollmentid = $row['enrollment_id'];
+							$projectname = $row['project_name'];
+							?>
+							<tr>
+								<td align="right" style="padding-right: 8px"><?=$projectname?></td>
+								<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,$enrollmentid))?>" required style="background-color: lightyellow; border: 1px solid gray"></td>
+								<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
+							</tr>
+							<?
+						}
+						?>
+					</table>
 				</td>
 			</tr>
 			<tr>
@@ -2542,7 +2548,6 @@
 				$subjectsfound = 0;
 				/* if all the fields are blank, only display the most recent subjects */
 				if ( ($searchuid == "") && ($searchaltuid == "") && ($searchname == "") && ($searchgender == "") && ($searchdob == "") ) {
-					//$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on c.project_id = d.project_id where a.isactive = 1 and c.view_data = 1 and c.view_phi = 1 and c.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and d.instance_id = '" . $_SESSION['instanceid'] . "' group by a.uid order by a.lastupdate desc limit 0,25";
 					$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on c.project_id = d.project_id where a.isactive = 1 group by a.uid order by a.lastupdate desc limit 0,25";
 					//PrintSQL($sqlstring);
 					?>
@@ -2554,9 +2559,8 @@
 					<?
 				}
 				else {
-					//$sqlstring = "select a.*, b.altuid from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id left join user_project d on c.project_id = d.project_id left join projects e on c.project_id = e.project_id where d.view_data = 1 and d.view_phi = 1 and d.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and e.instance_id = '" . $_SESSION['instanceid'] . "' and a.uid like '%$searchuid%'";
-					$sqlstring = "select a.*, b.altuid, d.view_phi from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id left join user_project d on c.project_id = d.project_id left join projects e on c.project_id = e.project_id where a.uid like '%$searchuid%'";
-					if ($searchaltuid != "") { $sqlstring .= " and (b.altuid like '%$searchaltuid%' or b.altuid = sha1('$searchaltuid') or b.altuid = sha1(upper('$searchaltuid')) or b.altuid = sha1(lower('$searchaltuid')))"; }
+					$sqlstring = "select a.*, b.altuid, d.view_phi from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id left join user_project d on c.project_id = d.project_id left join projects e on c.project_id = e.project_id left join studies f on c.enrollment_id = f.enrollment_id where a.uid like '%$searchuid%'";
+					if ($searchaltuid != "") { $sqlstring .= " and (b.altuid like '%$searchaltuid%' or b.altuid = sha1('$searchaltuid') or b.altuid = sha1(upper('$searchaltuid')) or b.altuid = sha1(lower('$searchaltuid')) or f.study_alternateid = '$searchaltuid' or f.study_alternateid like '%$searchaltuid%' or f.study_alternateid = sha1('$searchaltuid') or f.study_alternateid = sha1(upper('$searchaltuid')) or f.study_alternateid = sha1(lower('$searchaltuid')) )"; }
 					if ($searchname != "") { $sqlstring .= " and (a." . MakeSQLorList($searchname,'name') . ")"; }
 					if ($searchgender != "") { $sqlstring .= " and a.`gender` like '%$searchgender%'"; }
 					if ($searchdob != "") { $sqlstring .= " and a.`birthdate` like '%$searchdob%'"; }
@@ -2693,112 +2697,6 @@
 				}
 				?>
 			</table>
-			
-			<!--
-			<br><br><br>
-			<div style="text-align: center">
-			<b style="color:darkred">The following subjects are not enrolled in a project</b><br><span class="tiny">But they really should be enrolled... because the enrollment determines who can see their PHI. So enroll them ASAP!</span>
-			</div>
-			<br>
-			<table class="graydisplaytable" width="100%">
-				<thead>
-					<tr>
-						<th align="left">&nbsp;</th>
-						<th>UID<br><span class="tiny">S1234ABC</span></th>
-						<th>Alternate UID</th>
-						<th>Name</th>
-						<th>Sex<br><span class="tiny">M,F,O,U</span></th>
-						<th>DOB<br><span class="tiny">YYYY-MM-DD</span></th>
-						<th>Projects</th>
-						<th>Active?</th>
-						<th>Activity date</th>
-						<? if ($GLOBALS['isadmin']) { ?>
-						<th>Delete</td>
-						<? } ?>
-					</tr>
-				</thead>
-				<script type="text/javascript">
-				$(document).ready(function() {
-					$("#rightcheckall").click(function() {
-						var checked_status = this.checked;
-						$(".rightcheck").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
-					});
-				});
-				</script>
-				<tbody>
-				<?
-				/* if all the fields are blank, only display the most recent subjects */
-				if ( ($searchuid == "") && ($searchaltuid == "") && ($searchname == "") && ($searchgender == "") && ($searchdob == "") ) {
-					$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id is null group by a.uid order by a.lastupdate desc limit 0,25";
-					//PrintSQL($sqlstring);
-				}
-				else {
-					$sqlstring = "select a.*, b.altuid from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id where c.enrollment_id is null and a.uid like '%$searchuid%'";
-					if ($searchaltuid != "") { $sqlstring .= " and (b.altuid like '%$searchaltuid%')"; }
-					if ($searchname != "") { $sqlstring .= " and (a." . MakeSQLorList($searchname,'name') . ")"; }
-					if ($searchgender != "") { $sqlstring .= " and a.`gender` like '%$searchgender%'"; }
-					if ($searchdob != "") { $sqlstring .= " and a.`birthdate` like '%$searchdob%'"; }
-					$sqlstring .= "and a.isactive = '$searchactive' group by a.uid order by a.name asc";
-					//PrintSQL($sqlstring);
-				}
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-						$id = $row['subject_id'];
-						$name = $row['name'];
-						$dob = $row['birthdate'];
-						$gender = $row['gender'];
-						$uid = $row['uid'];
-						$isactive = $row['isactive'];
-						$lastupdate = date('M j, Y g:ia',strtotime($row['lastupdate']));
-
-						$altuids = GetAlternateUIDs($id);
-						
-						list($lname, $fname) = explode("^",$name);
-						$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
-						
-						if ($isactive == 0) {
-						?>
-						<tr style="background-image:url('images/deleted.png')">
-						<?
-						} else {
-						?>
-						<tr>
-						<? } ?>
-							<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
-							<!--<input type="hidden" name="uidids[]" value="<?=$id?>">
-							<td><a href="subjects.php?action=display&id=<?=$id?>"><?=FormatUID($uid)?></a></td>
-							<td><?=implode2(', ',$altuids)?></td>
-							<td><?=$name?></td>
-							<td><?=$gender?></td>
-							<td><?=$dob?></td>
-							<td><?=$isactive?></td>
-							<td><?=$lastupdate?></td>
-							<? if ($GLOBALS['isadmin']) { ?>
-							<!--<td><a href="subjects.php?action=deleteconfirm&id=<?=$id?>"><div class="adminbutton" style="padding: 0px; margin; 0px;">X</div></a></td>
-							<? } ?>
-							<? if ($GLOBALS['issiteadmin']) { ?>
-							<td class="rightcheck"><input type="checkbox" name="ids[]" value="<?=$id?>"></td>
-							<? } ?>
-						</tr>
-						<? 
-					}
-					$subjectsfound = 1;
-				}
-				
-				if (!$subjectsfound) {
-				?>
-				<tr>
-					<td colspan="7" align="center" style="color: #555555; padding:8px; font-size:10pt">
-						No subjects found which match the search criteria
-					</td>
-				</tr>
-				<?
-				}
-			?>
-			-->
 			</form>
 		</tbody>
 	</table>

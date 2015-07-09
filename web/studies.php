@@ -143,6 +143,10 @@
 			UnhideMRSeries($seriesid);
 			DisplayStudy($id, "", "", "", "", "", '','','','');
 			break;
+		case 'resetqa':
+			ResetQA($seriesid);
+			DisplayStudy($id, "", "", "", "", "", '','','','');
+			break;
 		default:
 			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
 	}
@@ -246,6 +250,43 @@
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- ResetQA ---------------------------- */
+	/* -------------------------------------------- */
+	function ResetQA($seriesid) {
+		$seriesid = mysql_real_escape_string($seriesid);
+		
+		if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			/* delete from the mr_qa table */
+			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
+			PrintSQL($sqlstring);
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete from the qc* tables */
+			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+			PrintSQL($sqlstring);
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$qcmoduleseriesid = $row['qcmoduleseries_id'];
+
+			if ($qcmoduleseriesid != "") {
+				$sqlstring = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
+				PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				$sqlstring = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
+				PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				?><div align="center"><span class="message">QC deleted</span></div><br><br><?
+			}
+		}
+		else {
+			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+		}
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- UpdateGenericSeries ---------------- */
@@ -1093,9 +1134,6 @@
 		<table class="smallgraydisplaytable" width="100%">
 			<thead>
 				<tr>
-					<? if ($GLOBALS['issiteadmin']) { ?>
-					<th>Hide</th>
-					<? } ?>
 					<th>Series</th>
 					<th>Upload Beh</th>
 					<th>Protocol</th>
@@ -1118,6 +1156,10 @@
 					<th># files</th>
 					<th>Size</th>
 					<th>Beh</th>
+					<? if ($GLOBALS['issiteadmin']) { ?>
+					<th>Hide</th>
+					<th>Reset QA</th>
+					<? } ?>
 				</tr>
 			</thead>
 			<tbody>
@@ -1579,15 +1621,6 @@
 								}
 							</style>
 							<tr style="color: <?=$rowcolor?>">
-								<? if ($GLOBALS['issiteadmin']) {
-									if ($ishidden) { ?>
-									<td><a href="studies.php?action=unhidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Un-hide this series from search results.">Unhide</a></td>
-									<? } else { ?>
-									<td><a href="studies.php?action=hidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Hide this series from search results. It will be visible on this page, but nowhere else on NiDB">Hide</a></td>
-									<?
-									}
-								}
-								?>
 								<td><?=$series_num?>
 								<?
 									if ($dupes[$series_num] == 1) {
@@ -1686,6 +1719,18 @@
 									?>
 									</span>
 								</td>
+								<? if ($GLOBALS['issiteadmin']) {
+									if ($ishidden) { ?>
+									<td><a href="studies.php?action=unhidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Un-hide this series from search results.">Unhide</a></td>
+									<? } else { ?>
+									<td><a href="studies.php?action=hidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Hide this series from search results. It will be visible on this page, but nowhere else on NiDB">Hide</a></td>
+									<?
+									}
+									?>
+									<td><a href="studies.php?action=resetqa&seriesid=<?=$mrseries_id?>&id=<?=$id?>" color="red">X</a></td>
+									<?
+								}
+								?>
 							</tr>
 							<?
 						}

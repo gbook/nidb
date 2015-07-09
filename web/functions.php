@@ -412,9 +412,9 @@
 	/* -------------------------------------------- */
 	/* ------- GetAlternateUIDs ------------------- */
 	/* -------------------------------------------- */
-	function GetAlternateUIDs($subjectid) {
+	function GetAlternateUIDs($subjectid, $enrollmentid) {
 	
-		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
+		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
 		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
