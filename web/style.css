@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  ------------------------------------------------------------------------------
  NIDB style.css
@@ -529,4 +530,537 @@ input.required { border: 1px solid #888; background-color: #FBFFC4}
 .table-header-rotated th.row-header {
   padding: 0 10px;
   border-bottom: 1px solid #ccc;
+=======
+/*
+ ------------------------------------------------------------------------------
+ NIDB style.css
+ Copyright (C) 2004 - 2013
+ Gregory A Book <gbook@harthosp.org> <gbook@gbook.org>
+ Olin Neuropsychiatry Research Center, Hartford Hospital
+ ------------------------------------------------------------------------------
+ GPLv3 License:
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ------------------------------------------------------------------------------
+*/
+
+/* body related styles */
+body {
+	font-family: arial,helvetica, sans-serif;
+	margin:0px;
+	padding:0;
+	height:100%;
+}
+#wrapper {
+	min-height:100%;
+	position:relative;
+}
+#header {
+	padding:10px;
+	background:#5ee;
+}
+#content {
+	padding:10px;
+	padding-bottom:40px;   /* Height of the footer element */
+}
+#footer {
+	width:100%;
+	height:42px;
+	position:absolute;
+	bottom:0;
+	left:0;
+	/*background:#ee5;*/
+}
+
+/* all form elements */
+input { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+input:focus { border: 1px solid #777; background-color: #ffffe0; }
+input:hover { border: 1px solid #777; }
+textarea { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+textarea:focus { border: 1px solid #777; background-color: #ffffe0; }
+textarea:hover { border: 1px solid #777; }
+select { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+select:focus { border: 1px solid #777; background-color: #ffffe0; }
+select:hover { border: 1px solid #777; }
+
+input[type=submit] {
+	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	cursor:pointer;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+input[type=submit]:hover { border: 1px solid #666; }
+
+input[type=button] {
+	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	cursor:pointer;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+input[type=button]:hover { border: 1px solid #666; }
+
+input[type=reset] {
+	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	cursor:pointer;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+input[type=reset]:hover { border: 1px solid #666; }
+
+/* for the fixed menu at the top of each page */
+div.menu {
+	margin-left: -8px;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	}
+
+a { text-decoration: none; color: #224ea5; }
+a:hover { text-decoration: underline; color: #224ea5; }
+
+td.data { text-align: center; vertical-align: middle; border-bottom: solid 1pt #BBBBBB; border-top: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; }
+
+td.free { border-bottom: solid 1pt #BBBBBB; border-right: solid 1pt #BBBBBB; border-top: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; text-align: center; vertical-align: middle; background-color: #DDDDDD; }
+
+td.bottom { border-bottom: solid 1pt #BBBBBB; border-right: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; }
+
+div.title { font-weight: bold; color: white; background-color: darkblue; }
+
+span.label { font-size: 8pt; font-weight: bold }
+
+span.value { font-size: 8pt }
+
+.sublabel { font-size: 8pt; color: #666666; font-weight:normal; }
+
+td.columnheader { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; }
+td.columnheaderleft { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; }
+td.columnheaderright { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; background-color: #EEEEEE; }
+
+.editor td.label { font-weight: bold; text-align: right; padding-right: 10px; vertical-align: top; color: #666666; font-size:11pt; white-space:nowrap; }
+.editor td.value { text-align: left; vertical-align: top; color: darkblue; font-size:11pt; }
+.editor .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+
+.blockdisplay td.label { font-weight: bold; text-align: right; padding-right: 10px; vertical-align: top; color: #666666; font-size:12pt; white-space:nowrap; }
+.blockdisplay .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.blockdisplay .rightvalue { font-weight: normal; font-size:11pt; }
+
+/* search results */
+.patient { margin-top: 20px; }
+.patient td.titlename { width: 80%; padding: 4px; font-weight: bold; background-color: DBF7DD; font-size: 14pt; border-top: solid 2px gray; border-bottom: solid 1px gray; }
+.patient td.titlefield { background-color: DBF7DD; border-top: solid 2px gray; border-bottom: solid 1px gray; font-size: 10pt; }
+.patient td.titlefieldsmall { padding-right: 4px; font-size: 8pt; background-color: DBF7DD; border-top: solid 2px gray; border-bottom: solid 1px gray; }
+.patient .graylabel { font-size: 10pt; color: gray; }
+
+.study { margin-top: 2px; }
+.study td.scannerid { padding: 2px; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
+.study td.scanid { padding-left: 5px; font-weight: bold; color: darkblue; width: 10%; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
+.study td.study { border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
+.study td.detail { font-size: 9pt; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
+.study .detaillabel { color: gray; font-size: 8pt; }
+
+table.series td.seriescell { padding-top: 2px; padding-bottom: 2px; padding-left: 5px; padding-right: 5px; border-top: 1px dashed #DDDDDD; font-size: 10pt; }
+table.series td.seriescellnew { padding-top: 2px; padding-bottom: 2px; padding-left: 5px; padding-right: 5px; border-top: 1px solid darkgray; font-size: 10pt; }
+
+
+td.rightvalue { text-align: left; vertical-align: top; }
+span.example { font-weight: normal; font-family: courier; color: darkred; font-size: 8pt; }
+
+input.textbox { background-color: lightyellow; border:1pt solid gray; margin-right: 6px; }
+
+span.button { background-color: #DDDDDD; border-bottom: 1pt solid #555555; border-right: 1pt solid #555555; border-left: 1pt solid #AAAAAA; border-top: 1pt solid #AAAAAA; }
+
+a.button { color:darkblue; text-decoration: none; }
+a.link { color: blue; text-decoration: underline; font-size: 11pt; }
+
+td.tableheader { border-top: 2pt solid darkblue; font-weight: bold; text-align: center; }
+td.colheadsmall { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; font-size: 10pt;}
+td.colheadsmallleft { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; font-size: 10pt;}
+td.colheadsmallright { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; background-color: #EEEEEE; font-size: 10pt;}
+
+td.tdsmall { vertical-align: top; font-size: 10pt; border-bottom: 1pt solid #BBBBBB; }
+td.tdtiny { vertical-align: top; font-size: 8pt; border-bottom: 1pt solid #BBBBBB; }
+
+span.description { color: darkblue; font-size: 10pt }
+
+.sampletext{color:#666;}
+
+td.mainmenu { color: black; background-color: lightsteelblue; border-top: solid 2pt #000000; border-bottom: solid 1pt #000000; font-size: 10pt; }
+td.mainmenucurrent { color: black; background-color: aliceblue; border-top: solid 2pt #000000; font-size: 10pt; }
+td.submenu { color: black; background-color: aliceblue; border-top: solid 2pt #000000; border-bottom: solid 1pt #000000; font-size: 10pt; }
+
+td.hover, tr.hover { background-color: aliceblue; }
+
+.calendar { border: 1pt gray; }
+.calendar td.heading { font-size: 12pt; color: darkblue; font-weight: bold; text-align: center; }
+.calendar td.days { font-size: 11pt; color: darkblue; text-align: center; border-top: 1pt solid gray; border-bottom: 1pt solid gray; }
+.calendar td.day { font-size: 7pt; color: black; text-align: left; vertical-align: top; border-right: 1pt solid #DDDDDD; border-bottom: 1pt solid #DDDDDD; }
+
+/* entry table */
+/*.entrytable {border-top: 2px solid darkblue; border-bottom: 2px solid darkblue;}*/
+.entrytable  { font-size: 11pt; color: #003366; }
+.entrytable td.label { font-weight: bold; color: #555555; font-size: 11pt; padding: 5px; vertical-align:top; }
+.entrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 11pt; padding: 5px; vertical-align: top;}
+.entrytable td.heading { font-weight: bold; color: #333; padding: 5px; vertical-align: top; }
+.entrytable td.variable { font-weight: normal; color: #333; padding: 5px; vertical-align: top; }
+.entrytable td { vertical-align: top; }
+.entrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.entrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }
+
+/* entry table */
+.smallentrytable {border-top: 1px solid gray; border-bottom: 1px solid gray; font-size: 10pt; }
+.smallentrytable th { padding: 4px 0px; border-spacing: 0px; }
+.smallentrytable td { padding: 4px 0px; border-spacing: 0px; vertical-align: top; text-align: center; }
+.smallentrytable td.label { font-weight: bold; color: #555555; font-size: 10pt; padding: 2px; }
+.smallentrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 10pt; padding: 2px;}
+.smallentrytable td.heading { font-weight: bold; color: darkblue; padding: 2px; }
+.smallentrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.smallentrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }
+.smallentrytable input.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
+.smallentrytable select.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
+.smallentrytable textarea.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
+.smallentrytable tbody tr:hover { background-color: lightyellow; }
+
+/* display table (multiple rows) */
+.displaytable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; border-radius: 5px }
+.displaytable th { font-weight: bold; border-bottom: 1px solid gray; padding: 3px 8px; background-color: #EEE; }
+.displaytable tbody tr:hover { background-color: #BBC8E6; }
+.displaytable td { border-bottom: 1px solid #DDD; font-size: 11pt; padding: 2px 8px; }
+.displaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.displaytable tr:last-child td:first-child { border-bottom-left-radius:5px; } /* kludge to make the border radius appear correct */
+.displaytable tr:last-child td:last-child { border-bottom-right-radius:5px; }
+.displaytable tr:first-child th:first-child { border-top-left-radius: 5px; }
+.displaytable tr:first-child th:last-child { border-top-right-radius: 5px; }
+
+/* small display table (multiple rows) */
+table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-radius:5px; border-spacing: 0px; }
+.smalldisplaytable th { font-weight: bold; font-size: 9pt; border-bottom: 1px solid #777; padding: 2px 6px; background-color: #EEE; }
+.smalldisplaytable td { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 1px 6px; }
+.smalldisplaytable tbody tr:hover { background-color: #BBC8E6; }
+.smalldisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.smalldisplaytable tr:last-child > td:first-child { border-bottom-left-radius:5px; } /* kludge to make the border radius appear correct */
+.smalldisplaytable tr:last-child > td:last-child { border-bottom-right-radius:5px; }
+.smalldisplaytable tr:first-child > th:first-child { border-top-left-radius: 5px; }
+.smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; }
+
+/* gray display table (multiple rows) */
+table.graydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px; border-radius:4px;}
+.graydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px; border-radius: 4px;}
+.graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; }
+.graydisplaytable td { border-top: 1px solid #DDD; font-size: 11pt; padding: 2px 4px; vertical-align: top }
+.graydisplaytable td.child { font-size: 11pt; padding: 2px 4px; }
+.graydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 11pt; padding: 3px 6px; background-color: #EFEFEF; }
+.graydisplaytable tbody tr:hover { background-color: #eee; }
+/*.graydisplaytable tbody td:hover { border: solid 1px #666; border-collapse: collapse; }*/
+.graydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.graydisplaytable a { text-decoration: none; color: #224ea5; }
+.graydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
+
+/* small gray display table (multiple rows) */
+table.smallgraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
+.smallgraydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
+.smallgraydisplaytable th { font-weight: bold; color: #333; font-size: 11pt; padding: 5px; background-color: #ddd; vertical-align: bottom; }
+.smallgraydisplaytable td { border-top: 1px solid #DDD; font-size: 10pt; padding: 2px 4px; }
+.smallgraydisplaytable td.child { border-top: none; font-size: 10pt; padding: 2px 4px; }
+.smallgraydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 10pt; padding: 3px 6px; background-color: #EFEFEF; }
+.smallgraydisplaytable tbody tr:hover { background-color: #eee; }
+.smallgraydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.smallgraydisplaytable a { text-decoration: none; color: #224ea5; }
+.smallgraydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
+
+/* tiny gray display table (multiple rows) */
+table.tinygraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
+.tinygraydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
+.tinygraydisplaytable th { font-weight: bold; color: #333; font-size: 10pt; padding: 5px; background-color: #ddd; }
+.tinygraydisplaytable td { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 2px 4px; }
+.tinygraydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 3px 6px; background-color: #EFEFEF; }
+.tinygraydisplaytable tbody tr:hover { background-color: #eee; }
+.tinygraydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+.tinygraydisplaytable a { text-decoration: none; color: #224ea5; }
+.tinygraydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
+
+/* tiny gray display table (multiple rows) */
+table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
+.tinytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
+.tinytable th { font-weight: bold; color: #333; font-size: 8pt; padding: 1px; background-color: #ddd; }
+.tinytable td { border-bottom: 1px solid #DDD; font-size: 8pt; padding: 1px 2px; }
+.tinytable tbody tr:hover { background-color: #eee; }
+.tinytable tbody td:hover { background-color: #eee; border: 1px solid black; border-collapse: collapse; }
+.tinytable a { text-decoration: none; color: #224ea5; }
+.tinytable a:hover { text-decoration: underline; color: #224ea5; }
+
+/* gray display table (multiple rows) */
+table.bluedisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
+table.bluedisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
+table.bluedisplaytable th { font-weight: bold; color: #222; font-size: 12pt; padding: 5px; background-color: #abbbdb; }
+table.bluedisplaytable td.main { padding:10px }
+table.bluedisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+table.bluedisplaytable a { text-decoration: none; color: #224ea5; }
+table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
+
+.movementsubtable { border-spacing: 0px; padding: 0px; margin: 0px; border: none; width: 100%; height: 100%; border-radius:0px; }
+.movementsubtable td.mainval { border: none; text-align: right; padding:8px; border-radius:0px; }
+.movementsubtable td.subval { border: none; font-size:8pt; color: #555555;text-align: right; border-radius:0px; }
+
+/* review table (single entity such as a subject or project)*/
+.reviewtable { border-spacing: 0px; padding: 0px; }
+.reviewtable th { font-weight: bold; border-bottom: 2px solid gray; padding: 3px 8px; }
+.reviewtable td.label { text-align: right; font-weight: bold; color: #555555; font-size: 11pt; padding: 2px; }
+.reviewtable td.value { text-align: left; font-weight: normal; color: darkblue; font-size: 11pt; padding: 2px; }
+.reviewtable td.missing { text-align: left; font-weight: bold; color: darkred; background-color: #FFD4D4; font-size: 11pt; padding: 2px; }
+
+/* demographics table (small table with 2 columns: variable, value)*/
+.demographicstable { border-spacing: 0px; padding: 0px; border-top: 2px solid #666666; border-bottom: 2px solid #666666; }
+.demographicstable th { text-align: left; font-weight: bold; color: black; font-size: 12pt; padding: 2px; }
+.demographicstable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.demographicstable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
+.demographicstable .small { font-size:9pt; color: darkblue}
+.demographicstable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+
+/* 2 column table (small table with 2 columns: variable, value)*/
+.twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; }
+.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
+.twocoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.twocoltable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
+.twocoltable .small { font-size:9pt; color: darkblue}
+.twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+
+/* 2 column table (small table with 2 columns: variable, value)*/
+.multicoltable { border-spacing: 0px; padding: 0px; border: 1px solid #AAA; border-collapse:collapse; }
+.multicoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; border-right: 1px solid #AAA }
+.multicoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.multicoltable td { text-align: center; vertical-align: top; font-weight: normal; padding: 4px; border: 1px solid #BBBBBB; }
+.multicoltable 
+.multicoltable .small { font-size:9pt; color: darkblue}
+.multicoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+
+/* page header */
+.headertable { border-spacing: 0px; padding: 3px; }
+.headertable td.header1 { font-weight: bold; font-size: 16pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top;}
+.headertable td.header2 { font-size: 10pt; padding: 5px; white-space: nowrap; vertical-align: top; }
+
+.headertable1 { font-weight: bold; font-size: 16pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top; }
+.headertable2 { font-size: 10pt; padding: 5px; white-space: nowrap; vertical-align: top; padding-left: 25px; }
+
+/* all links */
+/*a { color: blue; } */
+
+/* update/delete/added messages */
+.message { text-align: center; color: white; background-color: darkred; border-radius: 5px; padding: 4px 15px; margin: 10px; }
+.subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
+
+/* any time the UID is shown */
+.uid { border: 1px black solid; text-align: center; font-weight: bold; letter-spacing: 0.5pt; color: white; background-color: darkblue; border-radius: 5px; padding: 2px 10px 2px 10px; }
+
+/* small text */
+.smallnote { font-weight: normal; font-size:9pt; color:#666666; }
+
+/* search result tables */
+.searchresultstudy { border-spacing: 0px; padding: 2px; border-top: solid 2px gray; background-color: beige; }
+.searchresultstudy td.header1 { width: 15%; font-weight: bold; font-size: 12pt; color: darkblue; white-space: nowrap; } /* important information (subject UID, name) */
+.searchresultstudy td.header2 { width: 15%; font-weight: bold; font-size: 10pt; white-space: nowrap; color: #555555 } /* semi-important information (date, project) */
+.searchresultstudy td.header3 { font-weight: normal; font-size:8pt; color: darkblue; padding:1px 3px; } /* not so important fields */
+
+.searchresults { border-spacing: 0px; padding: 0px; }
+.searchresults td.seriesrow { font-weight: normal; font-size: 10pt; border-bottom: 1px solid #AAAAAA; padding: 0px 5px; }
+.searchresults td.seriesrowsmall { font-weight: normal; font-size: 8pt; border-bottom: 1px solid #AAAAAA; padding: 0px 5px; }
+.searchresults td.seriesheader { font-weight: bold; font-size: 10pt; border-bottom: 1px solid #AAAAAA; background-color: beige; border-top: dashed 1px gray; padding: 0px 5px; }
+
+.searchresultssheet { border-spacing: 0px; padding: 0px; border-collapse:collapse; border: 2px solid black; white-space:nowrap; }
+.searchresultssheet td.seriesrow { font-weight: normal; font-size: 10pt; border: 1px dotted #AAAAAA; padding: 0px 5px; }
+.searchresultssheet td.seriesheader { font-weight: bold; background-color: #EEEEEE; font-size: 10pt; border: 1px dotted #AAAAAA; padding: 0px 5px; }
+
+table.download { background-color: #093892; width: 100%; padding: 3px; border-spacing: 5px 1px; border-radius: 5px; }
+table.download td.title { font-weight: bold; font-size: 14pt; color: white; }
+table.download td.section { background-color: #EEEEEE; border-radius: 5px; }
+
+table.subdownload { border-spacing: 0px; margin: 0px; }
+table.subdownload td.label { font-weight: bold; background-color: white; padding:8px 16px 8px 8px; width: 120px; text-align: right; }
+table.subdownload td.main { padding: 8px; vertical-align: top; }
+table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; }
+
+.verytiny { font-size: 7pt; font-weight:normal; color: #333333; }
+.tiny { font-size: 8pt; color: #666666; }
+.staticmessage { font-size: 9pt; color: darkred; }
+.smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
+
+.adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; }
+.adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
+
+/* form entry table */
+table.formentrytable { width: 100%; border: 2px solid #666; padding: 8px; }
+table.formentrytable td.title { font-size: 15pt; font-weight: bold; text-align: center; }
+table.formentrytable td.desc { font-size: 12pt; color: #666666; text-align: center; vertical-align: top; }
+table.formentrytable td.order { font-size: 8pt; color: #555555; padding-right: 10px; padding-left: 10px; vertical-align: top; }
+table.formentrytable td.rater { font-size: 8pt; color: darkred; padding-right: 10px; padding-left: 10px; vertical-align: top; }
+table.formentrytable td.field { font-size: 10pt; vertical-align: top; padding: 5px }
+table.formentrytable td.value { vertical-align: top; font-size: 10pt; }
+table.formentrytable td.sectionheader { font-size: 12pt; color: darkblue; background-color: #DDDDDD; text-align: left; padding: 3px; }
+table.formentrytable tr { background-color: #fff; border: 1px solid #fff }
+table.formentrytable tr:hover { background-color: #eee; border: 1px solid #666 }
+table.formentrytable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
+
+/* pipeline listing table */
+table.codelisting { background-color: #EFEFEF; border: 1px solid #BBBBBB; padding: 8px; border-spacing: 0px; }
+table.codelisting td.title { font-size: 15pt; font-weight: bold; text-align: left; }
+table.codelisting td.desc { font-size: 12pt; color: #666666; text-align: left; vertical-align: top; }
+table.codelisting td.order { font-size: 8pt; color: #555555; padding-right: 10px; padding-left: 10px; vertical-align: top; }
+table.codelisting td.code { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; }
+table.codelisting td.comment { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; color: green }
+table.codelisting td.colhead { font-size: 12pt; text-align: left; vertical-align: top; font-weight:bold; }
+table.codelisting td.sectionhead { font-size: 14pt; text-align: left; vertical-align: top; font-weight:bold; color:darkblue; }
+table.codelisting td.datadef { font-size: 10pt; text-align: left; vertical-align: top; }
+table.codelisting tbody tr:hover { background-color: lightyellow; }
+table.codelisting .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
+
+.completeform {text-align: center; font-size: 14pt; background-color: #CCFF99; border: 1px solid darkolivegreen; border-radius: 4px; color: darkolivegreen; font-weight: bold; padding: 5px;}
+.incompleteform {text-align: center; font-size: 14pt; background-color: #F5E6E6; border: 1px solid darkred; border-radius: 4px; color: darkred; font-weight: bold; padding: 5px;}
+
+/* generic rounded display box (blue) */
+table.bluerounded { background-color: #093892; border-spacing: 6px; border-radius: 5px; }
+table.bluerounded td.title { color: white; font-weight: bold; font-size: 14pt; }
+table.bluerounded td.body { background-color: white; padding: 8px; border-radius: 5px; font-size: 10pt; }
+table.bluerounded span.header { color: darkblue; font-weight: bold; }
+table.bluerounded span.tiny { color: #555555; font-size: 8pt; }
+
+/* generic rounded display box (blue) */
+table.grayrounded { background-color: #DDD; border-spacing: 3px; border-radius: 3px; }
+table.grayrounded td.title { color: black; font-weight: bold; font-size: 14pt; padding-left:10px; }
+table.grayrounded td.body { background-color: white; padding: 8px; border-radius: 3px; font-size: 10pt; }
+table.grayrounded span.header { color: #DDD; font-weight: bold; }
+table.grayrounded span.tiny { color: #555555; font-size: 8pt; }
+
+table.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+caption.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+tbody.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+tfoot.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+thead.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+tr.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+tbody.nostyle tr:hover { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+th.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+td.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
+
+/* ratings (highlighted) */
+a.highlightblack { color:rgba(0,0,0,0.4); font-size:12pt; text-decoration: none; }
+a.highlightblack:hover { color:rgba(0,0,0,1.0); font-size:12pt; text-decoration: none; }
+
+a.highlightred { color:rgba(255,0,0,0.4); font-size:12pt; text-decoration: none; }
+a.highlightred:hover { color:rgba(255,0,0,1.0); font-size:12pt; text-decoration: none; }
+
+a.highlightgreen { color:rgba(0,255,0,0.4); font-size:12pt; text-decoration: none; }
+a.highlightgreen:hover { color:rgba(0,255,0,1.0); font-size:12pt; text-decoration: none; }
+
+.codelisting { background-color: #DDDDDD; font-family: courier new; padding-left: 4px; padding-right: 4px; font-size:85%}
+
+td.delete { background-color: transparent; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: #942617; text-decoration: none; }
+td.delete:hover { background-color: #942617; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: white; text-decoration: underline; }
+a.delete { color: #601207; text-decoration: none; }
+a.delete:hover { color: #FFF; text-decoration: underline; }
+
+/* ------- the following are for emulating the <details> and <summary> tags ------- */
+details, summary { display: block; border: 0; padding: 2px; }
+/* Apply a pointer cursor and style the background upon hover to indicate <summary> is a clickable element. */
+/* These styles can be applied regardless of whether the fallback is needed */
+summary { cursor: pointer; border: 1px solid transparent; }
+summary:hover, summary:focus { border: 1px solid #EEE; }
+
+/* The following styles are not really needed, since the jQuery script takes care of hiding/displaying the elements. */
+/* However, we’re still gonna use CSS as well to prevent FOUC in browsers that understand these selectors. */
+/* Remember: by default (and probably most of the time), the contents of the <details> element are hidden. */
+.no-details details > * { display: none; }
+/* This doesn’t work very well in Firefox 3.6.x */
+/* .no-details details[open] > * { display: block; } */
+/* The following doesn’t toggle correctly in WebKit:
+.no-details details > summary:before { content: '\25BA '; }
+.no-details details[open] > summary:before { content: '\25BC '; }
+*/
+/* And yes, it should really be ::before, but that doesn’t work in IE8 */
+.no-details details > summary:before { float: left; width: 20px; content: "\25BA "; }
+.no-details details.open > summary:before { content: "\25BC "; }
+/* For IE6 and IE7, who don’t support generated content, you could use padding-left + a background image instead */
+/* I really couldn’t be bothered though. */
+/*
+.no-details details > summary { padding-left: 20px; background: url(img/arrow-sprite.png) no-repeat 0 0; }
+.no-details details.open > summary { background-position: 0 -20px; }
+*/
+/* Make sure summary remains visible */
+.no-details details summary { display: block; }
+
+.pipelinevariable { font-family: courier new; color: 333333; font-size:10pt; vertical-align: top; text-align: left; }
+.pipelinevariable:hover { background-color: #EEEEEE; text-decoration: underline; cursor:pointer; }
+.editoroptions { font-size:10pt; padding:5px; }
+.editoroptions:hover { background-color: #DDDDDD; text-decoration: underline; cursor:pointer; }
+.smalldesc { font-size: 9pt; vertical-align: top; }
+
+.linkhighlight { text-decoration: none; padding:0px 10px; }
+.linkhighlight:hover { background-color: #FFF82B; text-decoration: underline; }
+
+/* report menu table */
+.reporttable { border-spacing: 0px; padding: 0px; border-top: 1px solid #666666; border-bottom: 1px solid #666666; }
+.reporttable td.left { border-bottom: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; font-size: 10pt; padding: 2px 8px; }
+.reporttable td.right { font-size: 9pt; padding: 2px 8px; }
+.reporttable td:hover { background-color: yellow;}
+.reporttable a { text-decoration: none;}
+.reporttable a:hover { text-decoration: underline;}
+.reporttable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
+
+/* table pagination table */
+.tablepage { border-spacing: 0px; padding: 4px; }
+.tablepage td.label { font-size:10pt; font-weight:bold; white-space:nowrap; padding:5px }
+.tablepage td.pagenum { font-size:10pt; color: darkblue; white-space:nowrap; padding:5px }
+.tablepage td.middle { width:95%; }
+.tablepage td.firstpage { font-size:14pt; padding:5px }
+.tablepage td.previouspage { font-size:18pt; padding:5px }
+.tablepage td.nextpage { font-size:18pt; padding:5px }
+.tablepage td.lastpage { font-size:14pt; padding:5px }
+.tablepage a { text-decoration: none;}
+.tablepage a:hover { text-decoration: underline;}
+
+.question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }
+
+input.required { border: 1px solid #888; background-color: #FBFFC4}
+
+.table-header-rotated {
+  border-collapse: collapse;
+}
+.csstransforms .table-header-rotated td {
+  width: 30px;
+}
+.no-csstransforms .table-header-rotated th {
+  padding: 5px 10px;
+}
+.table-header-rotated td {
+  text-align: center;
+  padding: 10px 5px;
+  border: 1px solid #ccc;
+}
+.csstransforms .table-header-rotated th.rotate {
+  height: 140px;
+  white-space: nowrap;
+}
+.csstransforms .table-header-rotated th.rotate > div {
+  -webkit-transform: translate(25px, 51px) rotate(315deg);
+  -ms-transform: translate(25px, 51px) rotate(315deg);
+  transform: translate(25px, 51px) rotate(315deg);
+  width: 30px;
+}
+.csstransforms .table-header-rotated th.rotate > div > span {
+  border-bottom: 1px solid #ccc;
+  padding: 5px 10px;
+}
+.table-header-rotated th.row-header {
+  padding: 0 10px;
+  border-bottom: 1px solid #ccc;
+>>>>>>> 7cc912bd4d9ca991eaf09b17355c0bf507a73aa9
 }
