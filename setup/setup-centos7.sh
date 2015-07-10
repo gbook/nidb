@@ -58,6 +58,7 @@ yum install -y -q gedit*
 yum install -y -q iptraf*
 yum install -y -q java
 yum install -y -q ImageMagick
+yum install -y -q iptables-services
 
 # --------- extra Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
@@ -77,23 +78,9 @@ cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
+pear install Net_SMTP
 
 cp -rv Mysql* /usr/local/lib64/perl5/
-
-# compile ImageMagick with fft support
-#wget http://www.fftw.org/fftw-3.3.2.tar.gz
-#tar -xvzf fftw-3.3.2.tar.gz
-#cd fftw3
-#./configure CXXFLAGS=-fPIC CFLAGS=-fPIC
-#make
-#make install
-#cd ..
-#wget http://www.imagemagick.org/download/ImageMagick.tar.gz
-#tar -xvzf ImageMagick.tar.gz
-#cd ImageMagick
-#./configure --enable-hdri -with-fftw
-#make
-#make install
 
 # ---------- configure system based services ----------
 echo "----------------- Configuring system services -----------------"
@@ -105,7 +92,12 @@ sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
 #read -p "Press [enter] to continue"
 
 echo "Setting up port forwarding to forward 8104 to 104"
-# configure the firewall to accept everything, and still forward port 104 to 8104
+# configure the firewall to accept everything, and still forward port 104 to 8104 (using iptables)
+# stop the existing firewalld service and mask it
+systemctl stop firewalld
+systemctl mask firewalld
+systemctl enable iptables
+# setup the port forwarding in iptables
 iptables -F
 iptables -X
 iptables -t nat -F
@@ -118,6 +110,7 @@ iptables -P OUTPUT ACCEPT
 iptables -A FORWARD -p tcp --destination-port 104 -j ACCEPT
 iptables -t nat -A PREROUTING -j REDIRECT -p tcp --destination-port 104 --to-port 8104
 iptables-save > /etc/sysconfig/iptables
+systemctl start iptables
 echo "Done setting up port forwarding and disabling the firewall"
 
 # ---------- Web based installs ----------
