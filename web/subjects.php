@@ -39,11 +39,11 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//if ($debug) {
+	if ($debug) {
 		echo "<pre>";
 		print_r($_POST);
 		echo "</pre>";
-	//}
+	}
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -2248,27 +2248,29 @@
 						<thead>
 							<tr>
 								<th align="right" style="padding-right: 8px"><b>Project</b></th>
-								<th><b>IDs</b> <span class="tiny">Use asterisk next to primary ID (Example "*PrimaryID1, otherID1, otherID23")</span></th>
+								<th align="left" title="Use asterisk next to primary ID (Example *PrimaryID1, otherID1, otherID23)"><b>IDs</b></th>
 							</tr>
 						</thead>
 						<tr>
-							<td align="right" style="padding-right: 8px">Global</td>
-							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,''))?>" required style="background-color: lightyellow; border: 1px solid gray"></td>
+							<td align="right" style="padding-right: 8px">All projects</td>
+							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,''))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
-						$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-							$enrollmentid = $row['enrollment_id'];
-							$projectname = $row['project_name'];
-							?>
-							<tr>
-								<td align="right" style="padding-right: 8px"><?=$projectname?></td>
-								<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,$enrollmentid))?>" required style="background-color: lightyellow; border: 1px solid gray"></td>
-								<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
-							</tr>
-							<?
+						if ($id != "") {
+							$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = '$id'";
+							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$enrollmentid = $row['enrollment_id'];
+								$projectname = $row['project_name'];
+								?>
+								<tr>
+									<td align="right" style="padding-right: 8px"><?=$projectname?></td>
+									<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,$enrollmentid))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
+									<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
+								</tr>
+								<?
+							}
 						}
 						?>
 					</table>

@@ -1938,7 +1938,7 @@ sub CreateThumbnail {
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	#$systemstring = "convert --version";
 	#WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-	$systemstring = "/usr/local/bin/./convert --version";
+	$systemstring = "convert --version";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	
 	my $origDir = getcwd;
@@ -1951,23 +1951,23 @@ sub CreateThumbnail {
 	my $numdcmfiles = @dcmfiles;
 	my $dcmfile = $dcmfiles[int($numdcmfiles/2)];
 	my $outfile = "$dir/thumb.png";
-	$systemstring = "/usr/local/bin/./convert -normalize $dir/dicom/$dcmfile $outfile";
+	$systemstring = "convert -normalize $dir/dicom/$dcmfile $outfile";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 
 	if ($type eq "epi") {
-		if ($numdcmfiles < 50) {
+		if ($numdcmfiles < 256) {
 			my $systemstring;
 			if ($xdim == 384) {
-				$systemstring = "/usr/local/bin/./convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+				$systemstring = "convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
 			if ($xdim == 518) {
-				$systemstring = "/usr/local/bin/./convert -crop 74x74+296+74\\! -fill white -pointsize 10 -annotate +55+72 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+				$systemstring = "convert -crop 74x74+296+74\\! -fill white -pointsize 10 -annotate +55+72 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
 			if ($xdim == 672) {
-				$systemstring = "/usr/local/bin/./convert -crop 84x84+336+84\\! -fill white -pointsize 10 -annotate +65+82 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+				$systemstring = "convert -crop 84x84+336+84\\! -fill white -pointsize 10 -annotate +65+82 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
 			if ($xdim == 658) {
-				$systemstring = "/usr/local/bin/./convert -crop 94x94+376+94\\! -fill white -pointsize 10 -annotate +75+92 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+				$systemstring = "convert -crop 94x94+376+94\\! -fill white -pointsize 10 -annotate +75+92 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
 			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
@@ -1977,7 +1977,7 @@ sub CreateThumbnail {
 	}
 	if ($type eq "structural") {
 		if ($numdcmfiles < 256) {
-			my $systemstring = "/usr/local/bin/./convert -resize 50% -fill white -pointsize 10 -annotate +2+12 '%p' +map -delay 20 -loop 0 *.dcm $dir/thumb.gif";
+			my $systemstring = "convert -resize 50% -fill white -pointsize 10 -annotate +2+12 '%p' +map -delay 20 -loop 0 *.dcm $dir/thumb.gif";
 			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {

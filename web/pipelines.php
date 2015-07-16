@@ -107,6 +107,8 @@
 	$analysisnotes = GetVariable("analysisnotes");
 	$fileviewtype = GetVariable("fileviewtype");
 	
+	$returnpage = GetVariable("returnpage");
+	
 	/* determine action */
 	switch ($action) {
 		case 'viewjob': DisplayJob($id); break;
@@ -177,11 +179,21 @@
 			break;
 		case 'disable':
 			DisablePipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			if ($returnpage == "home") {
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			}
+			else {
+				DisplayPipelineForm("edit", $id);
+			}
 			break;
 		case 'enable':
 			EnablePipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			if ($returnpage == "home") {
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			}
+			else {
+				DisplayPipelineForm("edit", $id);
+			}
 			break;
 		case 'testingoff':
 			DisablePipelineTesting($id);
@@ -1058,10 +1070,10 @@
 					<td valign="middle">
 						<?
 							if ($isenabled) {
-								?><a href="pipelines.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a><?
+								?><a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a><?
 							}
 							else {
-								?><a href="pipelines.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a><?
+								?><a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a><?
 							}
 						?>
 					</td>
@@ -1459,8 +1471,8 @@
 				<td class="dataheader"><b>Order</b></td>
 				<td class="dataheader"><b>Protocol</b></td>
 				<td class="dataheader"><b>Modality</b></td>
-				<td class="dataheader"><b>Data level</b> <img src="images/help.gif" title="<b>Data Level</b><br>All analyses are based at the study level. If you want to pull data from the same subject, but the data was collected in a different study, select the Subject data level."></td>
-				<td class="dataheader"><b>Study link</b> <img src="images/help.gif" title="<b>Data Level</b><br>If you are looking for data in other studies (within the same subject) you can choose either the nearest in time, or the same study type."></td>
+				<td class="dataheader"><b>Where's the data coming from?</b> <img src="images/help.gif" title="<b>Data Source</b><br>All analyses are run off of the study level. If you want data from this subject, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates, but only one of them has"></td>
+				<td class="dataheader"><b>Subject linkage</b> <img src="images/help.gif" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></td>
 			</tr>
 		<?
 		$neworder = 1;
@@ -1552,8 +1564,8 @@
 				</td>
 				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
 					<select name="dd_studyassoc[<?=$neworder?>]">
-						<option value="" <? if ($dd_assoctype == "") { echo "selected"; } ?>>(select study link)
-						<option value="nearesttime" <? if ($dd_assoctype == "nearesttime") { echo "selected"; } ?>>Nearest in time
+						<option value="">(select study link)
+						<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
 						<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
 					</select>
 				</td>
@@ -3350,10 +3362,10 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>">
 				<?
 					if ($info['isenabled']) {
-						?><a href="pipelines.php?action=disable&id=<?=$info['id']?>"><img src="images/checkedbox16.png" title="Enabled. Click to disable"></a><?
+						?><a href="pipelines.php?action=disable&returnpage=home&id=<?=$info['id']?>"><img src="images/checkedbox16.png" title="Enabled. Click to disable"></a><?
 					}
 					else {
-						?><a href="pipelines.php?action=enable&id=<?=$info['id']?>"><img src="images/uncheckedbox16.png" title="Disabled. Click to enable"></a><?
+						?><a href="pipelines.php?action=enable&returnpage=home&id=<?=$info['id']?>"><img src="images/uncheckedbox16.png" title="Disabled. Click to enable"></a><?
 					}
 				?>
 				<span title="<b>Last message:</b> <?=$info['message']?><br><b>Last check:</b> <?=$info['lastcheck']?>">

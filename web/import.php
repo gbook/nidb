@@ -274,7 +274,7 @@
 						$uid = $row['uid'];
 						$altuid = $row['altuid'];
 						$isactive = $row['isactive'];
-						if ($isactive) {
+						if (!$isactive) {
 							$deleted = " (deleted)";
 						}
 						else {
@@ -299,7 +299,7 @@
 							$uid = $row['uid'];
 							$altuid = $row['study_alternateid'];
 							$isactive = $row['isactive'];
-							if ($isactive) {
+							if (!$isactive) {
 								$deleted = " (deleted)";
 							}
 							else {

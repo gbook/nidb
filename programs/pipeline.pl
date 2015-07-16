@@ -1338,7 +1338,7 @@ sub GetData() {
 					my $studytype = $rowA{'study_type'};
 					my $studydate = $rowA{'study_datetime'};
 					
-					if ($assoctype eq 'nearesttime') {
+					if (($assoctype eq 'nearesttime') || ($assoctype eq 'nearestintime')) {
 						# find the data from the same subject and modality that has the nearest (in time) matching scan
 						#WriteLog("Searching for subject-level data nearest in time...");
 						$datalog .= "    Searching for subject-level data nearest in time\n";
@@ -1479,7 +1479,7 @@ sub GetData() {
 							my $studytype = $rowA{'study_type'};
 							my $studydate = $rowA{'study_datetime'};
 							
-							if ($assoctype eq 'nearesttime') {
+							if (($assoctype eq 'nearesttime') || ($assoctype eq 'nearestintime')) {
 								# find the data from the same subject and modality that has the nearest (in time) matching scan
 								WriteLog("Searching for subject-level data nearest in time...");
 								$datalog .= "    Searching for subject-level data nearest in time\n";

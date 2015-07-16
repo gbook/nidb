@@ -81,15 +81,15 @@
 		/* build the correct path */
 		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 			$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
-			#echo "(1) Path is [$path]<br>";
+			//echo "(1) Path is [$path]<br>";
 		}
 		elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 			$path = $GLOBALS['cfg']['mountdir'] . "$pipelinedirectory/$uid/$studynum/$pipelinename/pipeline";
-			#echo "(2) Path is [$path]<br>";
+			//echo "(2) Path is [$path]<br>";
 		}
 		else {
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename/pipeline";
-			#echo "(3) Path is [$path]<br>";
+			//echo "(3) Path is [$path]<br>";
 		}
 		
 		/* check if the path exists */
@@ -151,16 +151,16 @@
 		//if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 		if ($pipeline_level == 1) {
 			$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			//echo "(1) Path is [$path]<br>";
+			echo "(1) Path is [$path]<br>";
 		}
 		//elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 		elseif ($pipeline_level == 0) {
 			$path = $GLOBALS['cfg']['mountdir'] . "$pipelinedirectory/$uid/$studynum/$pipelinename/pipeline";
-			//echo "(2) Path is [$path]<br>";
+			echo "(2) Path is [$path]<br>";
 		}
 		else {
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
-			//echo "(3) Path is [$path]<br>";
+			echo "(3) Path is [$path]<br>";
 		}
 		
 		$origfileslog = $path . "origfiles.log";
@@ -189,12 +189,12 @@
 				$size2 = 0;
 				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = explode("\t",$line);
 				
-				if (is_link('/mount' . $file)) { $islink2 = 1; }
-				if (is_dir('/mount' . $file)) { $isdir2 = 1; }
-				if (file_exists('/mount' . $file)) {
-					$timestamp2 = filemtime('/mount' . $file);
-					$perm2 = substr(sprintf('%o', fileperms('/mount' . $file)), -4);
-					$size2 = filesize('/mount' . $file);
+				if (is_link($file)) { $islink2 = 1; }
+				if (is_dir($file)) { $isdir2 = 1; }
+				if (file_exists($file)) {
+					$timestamp2 = filemtime($file);
+					$perm2 = substr(sprintf('%o', fileperms($file)), -4);
+					$size2 = filesize($file);
 					//if (substr(finfo_file($finfo, "/mount$file"), 0, 4) == 'text') {
 					//	$istext = true;
 					//}
@@ -255,18 +255,18 @@
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<?=$filetype?>&filename=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:

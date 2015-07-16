@@ -26,7 +26,7 @@
 <?
 	//require "config.php";
 	require "functions.php";
-	//require "includes.php";
+	require "includes.php";
 
 	$id = GetVariable("id");
 

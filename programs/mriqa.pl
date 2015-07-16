@@ -266,50 +266,51 @@ sub QA() {
 			rmdir($tmpdir);
 			
 			# make a color mapped version of the thumbnail
-			$systemstring = "/usr/local/bin/convert -version";
+			$systemstring = "convert -version";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 			my $thumbpath = "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 			my $gradientfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/gradient.png";
 			my $thumblut = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_lut.png";
 			chdir("$cfg{'archivedir'}/$uid/$study_num/$series_num");
-			$systemstring = "/usr/local/bin/convert -size 1x30 gradient:black-red gradient:red-yellow gradient:yellow-white -append $gradientfile";
+			$systemstring = "convert -size 1x30 gradient:black-red gradient:red-yellow gradient:yellow-white -append $gradientfile";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "/usr/local/bin/convert $thumbpath $gradientfile -clut $thumblut";
+			$systemstring = "convert $thumbpath $gradientfile -clut $thumblut";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 			# make an fft of the thumbnail
 			my $fftthumb = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft.png";
 			my $fftthumb0 = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft-0.png";
-			$systemstring = "/usr/local/bin/convert $thumbpath -fft -delete 1 -auto-level -evaluate log 10000 $fftthumb";
+			$systemstring = "convert $thumbpath -fft -delete 1 -auto-level -evaluate log 10000 $fftthumb";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
-			# get a 1D plot from the 2D FFT
-			my $macrofile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/macro.ijm";
-			my $plotfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft_1d.png";
-			my $plotfiletxt = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft_1d.txt";
-			# get original fft_thumb size
-			$systemstring = "identify $fftthumb";
-			my $output = `$systemstring`;
-			my @parts = split(" ", $output);
-			my ($width, $height) = split("x", $parts[2]);
 			
-			open(FILE,"> $macrofile") or die ("Could not open $macrofile!");
-			print FILE "open(\"$fftthumb\");\n";
-			print FILE "run(\"Select All\");\n";
-			print FILE "run(\"Radial Profile\", \"x=" . $width/2 . " y=" . $height/2 . " radius=" . $width/2 . "\");\n";
-			print FILE "selectWindow(\"Radial Profile Plot\");\n";
-			print FILE "saveAs(\"PNG\",\"$plotfile\");\n";
-			print FILE "Plot.getValues(x,y);\n";
-			print FILE "for (i=0;i<x.length;i++)\n";
-			print FILE "     print(x[i],y[i]);\n";
-			print FILE "saveAs(\"Text\",\"$plotfiletxt\");\n";
-			print FILE "run(\"Text...\",\"save=$plotfiletxt\");\n";
-			print FILE "run(\"Quit\");\n";
-			close(FILE);
-			$systemstring = "java -jar $cfg{'scriptdir'}/ImageJ/ij.jar ij.ImageJ -ijpath $cfg{'scriptdir'}/ImageJ/plugins -batch $macrofile";
-			my $plotnumbers = `$systemstring`;
-			open PLOTFILE, ("> $plotfiletxt");
-			print PLOTFILE $plotnumbers;
-			close PLOTFILE;
-			unlink($macrofile);
+			# get a 1D plot from the 2D FFT
+			#my $macrofile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/macro.ijm";
+			#my $plotfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft_1d.png";
+			#my $plotfiletxt = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft_1d.txt";
+			# get original fft_thumb size
+			#$systemstring = "identify $fftthumb";
+			#my $output = `$systemstring`;
+			#my @parts = split(" ", $output);
+			#my ($width, $height) = split("x", $parts[2]);
+			
+			#open(FILE,"> $macrofile") or die ("Could not open $macrofile!");
+			#print FILE "open(\"$fftthumb\");\n";
+			#print FILE "run(\"Select All\");\n";
+			#print FILE "run(\"Radial Profile\", \"x=" . $width/2 . " y=" . $height/2 . " radius=" . $width/2 . "\");\n";
+			#print FILE "selectWindow(\"Radial Profile Plot\");\n";
+			#print FILE "saveAs(\"PNG\",\"$plotfile\");\n";
+			#print FILE "Plot.getValues(x,y);\n";
+			#print FILE "for (i=0;i<x.length;i++)\n";
+			#print FILE "     print(x[i],y[i]);\n";
+			#print FILE "saveAs(\"Text\",\"$plotfiletxt\");\n";
+			#print FILE "run(\"Text...\",\"save=$plotfiletxt\");\n";
+			#print FILE "run(\"Quit\");\n";
+			#close(FILE);
+			#$systemstring = "java -jar $cfg{'scriptdir'}/ImageJ/ij.jar ij.ImageJ -ijpath $cfg{'scriptdir'}/ImageJ/plugins -batch $macrofile";
+			#my $plotnumbers = `$systemstring`;
+			#open PLOTFILE, ("> $plotfiletxt");
+			#print PLOTFILE $plotnumbers;
+			#close PLOTFILE;
+			#unlink($macrofile);
 			
 			# run the motion detection program (for 3D volumes only)
 			my $motion_rsq;
@@ -333,7 +334,7 @@ sub QA() {
 			WriteLog("[$sqlstringC]");
 			my $resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
 			
-			# only process 10 before exiting the script. Since the script always starts with the newest when it first runs,
+			# only process 5 before exiting the script. Since the script always starts with the newest when it first runs,
 			# this will allow newly collect studies a chance to be QC'd if there is a backlog of old studies
 			$numProcessed = $numProcessed + 1;
 			if ($numProcessed > 5) {
