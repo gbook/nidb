@@ -56,7 +56,7 @@ our $scriptname = "pipeline";
 our $lockfileprefix = "pipeline";	# lock files will be numbered lock.1, lock.2 ...
 our $lockfile = "";					# lockfile name created for this instance of the program
 our $log;							# logfile handle created for this instance of the program
-our $numinstances = 7;				# number of times this program can be run concurrently
+our $numinstances = 10;				# number of times this program can be run concurrently
 # debugging
 our $debug = 0;
 
@@ -368,10 +368,10 @@ sub ProcessPipelines() {
 						if ($filled == 0) { last; }
 						if ($filled == 1) {
 							# update the pipeline status message
-							SetPipelineStatusMessage($pid, 'Process quota reached. Waiting 5 minutes to resubmit');
-							WriteLog("Concurrent analysis quota reached, waiting 5 minutes");
-							print "Queue full, waiting 5 minutes...";
-							sleep(300); # sleep for 5 minutes
+							SetPipelineStatusMessage($pid, 'Process quota reached. Waiting 1 minute to resubmit');
+							WriteLog("Concurrent analysis quota reached, waiting 1 minute");
+							print "Queue full, waiting 1 minute...";
+							sleep(60); # sleep for 1 minute
 						}
 						if ($filled == 2) { return 1; }
 					}
@@ -1340,18 +1340,18 @@ sub GetData() {
 					
 					if (($assoctype eq 'nearesttime') || ($assoctype eq 'nearestintime')) {
 						# find the data from the same subject and modality that has the nearest (in time) matching scan
-						#WriteLog("Searching for subject-level data nearest in time...");
+						WriteLog("Searching for subject-level data nearest in time...");
 						$datalog .= "    Searching for subject-level data nearest in time\n";
 						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
 					}
 					elsif ($assoctype eq 'all') {
-						#WriteLog("Searching for all subject-level data...");
+						WriteLog("Searching for all subject-level data...");
 						$datalog .= "    Searching for all subject-level data\n";
 						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%'";
 					}
 					else {
 						# find the data from the same subject and modality that has the same study_type
-						#WriteLog("Searching for subject-level data with same study type...");
+						WriteLog("Searching for subject-level data with same study type...");
 						$datalog .= "    Searching for subject-level data with same study type\n";
 						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%' and `studies`.study_type = '$studytype'";
 					}
@@ -1442,6 +1442,7 @@ sub GetData() {
 			if ($enabled) {
 				#WriteLog("---------- Checking for $protocol for $modality ----------");
 				#$datalog .= "---------- Checking for protocol [$protocol] modality [$modality] imagetype [$imagetype] ----------\n";
+				my $neareststudynum = "";
 				$modality = lc($modality);
 				# make sure the requested modality table exists
 				$sqlstring = "show tables like '$modality"."_series'";
@@ -1482,8 +1483,42 @@ sub GetData() {
 							if (($assoctype eq 'nearesttime') || ($assoctype eq 'nearestintime')) {
 								# find the data from the same subject and modality that has the nearest (in time) matching scan
 								WriteLog("Searching for subject-level data nearest in time...");
-								$datalog .= "    Searching for subject-level data nearest in time\n";
-								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
+								$datalog .= "    Searching for subject-level data nearest in time\nSearching for nearest study first...";
+								# get the studyid
+								$sqlstringA = "SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
+								my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+								WriteLog($sqlstringA);
+								my $studyid;
+								if ($resultA->numrows > 0) {
+									my %rowA = $resultA->fetchhash;
+									$studyid = $rowA{'study_id'};
+									$neareststudynum = $rowA{'study_num'};
+								}
+								else {
+									WriteLog("Could not find a matching row: [$sqlstring]");
+									# this data item is probably optional, so go to the next item
+									next;
+								}
+								
+								$datalog .= "Still within the subject-level data search [$protocols] criteria: [$criteria]\n";
+								if ($criteria eq 'first') {
+									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
+								}
+								elsif ($criteria eq 'last') {
+									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num desc limit 1";
+								}
+								elsif ($criteria eq 'largestsize') {
+									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
+								}
+								elsif ($criteria eq 'smallestsize') {
+									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
+								}
+								else {
+									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc";
+								}
+								
+								$datalog .= "... now searching for the data IN the nearest study\n";
+								
 							}
 							elsif ($assoctype eq 'all') {
 								WriteLog("Searching for all subject-level data...");
@@ -1499,6 +1534,7 @@ sub GetData() {
 						}
 					}
 					WriteLog($sqlstring);
+					$datalog .= "SQL [$sqlstring]";
 					my $newseriesnum = 1;
 					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {
@@ -1521,10 +1557,20 @@ sub GetData() {
 							if ($level eq 'study') {
 								# studynum is not returned as part of this current result set, so reuse the studynum from outside this
 								# resultset loop
-								$localstudynum = $studynum;
+								if ($neareststudynum eq '') {
+									$localstudynum = $studynum;
+								}
+								else {
+									$localstudynum = $neareststudynum;
+								}
 							}
 							else {
-								$localstudynum = $rowC{'study_num'};
+								if ($neareststudynum eq '') {
+									$localstudynum = $rowC{'study_num'};
+								}
+								else {
+									$localstudynum = $neareststudynum;
+								}
 							}
 							WriteLog("Processing $seriesdesc [$seriessize bytes] [$numfiles files]");
 							$datalog .= "Processing [$seriesdesc] series [$seriesnum] datetime [$seriesdatetime]...\n";

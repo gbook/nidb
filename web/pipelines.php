@@ -456,13 +456,24 @@
 	/* -------------------------------------------- */
 	function UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries) {
 		
+		?>
+		<span class="tiny">
+		<ol>
+		<?
+		$sqlstring = "start transaction";
+		//PrintSQL("$sqlstring");
+		echo "<li><b>Starting transaction</b>";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
 		/* determine the current and next pipeline version # */
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$oldversion = $row['pipeline_version'];
 		$newversion = $oldversion + 1;
-
+		echo "<li>Got new version number [$newversion]";
+		
 		//echo "<pre>";
 		/* split up the commandlist into commands, then split them into enabled, command, description, logged, etc */
 		$commands = explode("\n",$commandlist);
@@ -519,6 +530,7 @@
 				$logged[$i] = trim(mysql_real_escape_string($logged[$i]));
 				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, '$command[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
 				//printSQL($sqlstring);
+				echo "<li>Inserted step $i: [$command[$i]]\n";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
 		}
@@ -529,20 +541,6 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				//$primarydataorder[$i] = mysql_real_escape_string($primarydataorder[$i]);
-				//$primaryprotocol[$i] = mysql_real_escape_string($primaryprotocol[$i]);
-				//$primarymodality[$i] = mysql_real_escape_string($primarymodality[$i]);
-				//$primarydataformat[$i] = mysql_real_escape_string($primarydataformat[$i]);
-				//$primaryimagetype[$i] = mysql_real_escape_string($primaryimagetype[$i]);
-				//$primarygzip[$i] = mysql_real_escape_string($primarygzip[$i]);
-				//$primarylocation[$i] = mysql_real_escape_string($primarylocation[$i]);
-				//$primaryseriescriteria[$i] = mysql_real_escape_string($primaryseriescriteria[$i]);
-				//$primaryuseseriesdirs[$i] = mysql_real_escape_string($primaryuseseriesdirs[$i]);
-				//$primarypreserveseries[$i] = mysql_real_escape_string($primarypreserveseries[$i]);
-				//$primarybehformat[$i] = mysql_real_escape_string($primarybehformat[$i]);
-				//$primarybehdir[$i] = mysql_real_escape_string($primarybehdir[$i]);
-				//$primarydataenabled[$i] = mysql_real_escape_string($primarydataenabled[$i]);
-
 				$dd_enabled[$i] = mysql_real_escape_string($dd_enabled[$i]);
 				$dd_order[$i] = mysql_real_escape_string($dd_order[$i]);
 				$dd_protocol[$i] = mysql_real_escape_string($dd_protocol[$i]);
@@ -563,40 +561,22 @@
 				
 				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
+				echo "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
 		}
-
-		// /* insert all the new ASSOC data fields with NEW version # */
-		// for($i=0; $i<=count($assocprotocol); $i++) {
-			// if (trim($assocprotocol[$i]) != "") {
-				// /* perform data checks */
-				// $assocdataorder[$i] = mysql_real_escape_string($assocdataorder[$i]);
-				// $assocprotocol[$i] = mysql_real_escape_string($assocprotocol[$i]);
-				// $assocmodality[$i] = mysql_real_escape_string($assocmodality[$i]);
-				// $assoctype[$i] = mysql_real_escape_string($assoctype[$i]);
-				// $assocdataformat[$i] = mysql_real_escape_string($assocdataformat[$i]);
-				// $associmagetype[$i] = mysql_real_escape_string($associmagetype[$i]);
-				// $assocgzip[$i] = mysql_real_escape_string($assocgzip[$i]);
-				// $assoclocation[$i] = mysql_real_escape_string($assoclocation[$i]);
-				// $assocseriescriteria[$i] = mysql_real_escape_string($assocseriescriteria[$i]);
-				// $assocuseseriesdirs[$i] = mysql_real_escape_string($assocuseseriesdirs[$i]);
-				// $assocpreserveseries[$i] = mysql_real_escape_string($assocpreserveseries[$i]);
-				// $assocbehformat[$i] = mysql_real_escape_string($assocbehformat[$i]);
-				// $assocbehdir[$i] = mysql_real_escape_string($assocbehdir[$i]);
-				// $assocdataenabled[$i] = mysql_real_escape_string($assocdataenabled[$i]);
-
-				// $sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_type, pdd_assoctype, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled) values ($id, $newversion, '$assocdataorder[$i]', '$assocseriescriteria[$i]', 'associated', '$assoctype[$i]', '$assocprotocol[$i]', '$assocmodality[$i]', '$assocdataformat[$i]', '$associmagetype[$i]', '$assocgzip[$i]', '$assoclocation[$i]', '$assocuseseriesdirs[$i]', '$assocpreserveseries[$i]', '$assocbehformat[$i]', '$assocbehdir[$i]', '$assocdataenabled[$i]')";
-				// //printSQL($sqlstring);
-				// $result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			// }
-		// }
 		
 		/* update pipeline with new version */
 		$sqlstring = "update pipelines set pipeline_version = $newversion where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message">Data specification [<?=$id?>] updated</span></div><?
+		/* ------ all done ------ */
+		$sqlstring = "commit";
+		//PrintSQL("$sqlstring");
+		echo "<li><b>Commit the transaction</b>";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		?></ol></span><div align="center"><span class="message">Data specification [<?=$id?>] updated</span></div><?
 	}
 	
 	
@@ -2232,6 +2212,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			<thead>
 				<tr>
 					<th><input type="checkbox" id="studiesall"> Study</th>
+					<th>Visit</th>
 					<th>Pipeline<br>version</th>
 					<? if ($pipeline_level == 1) { ?>
 					<th>Study date</th>
@@ -2248,7 +2229,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<th>Hostname</th>
 					<th>Setup time<br><span class="tiny">completed date</span></th>
 					<th>Cluster time<br><span class="tiny">completed date</span></th>
-					<th style="color:darkred">Delete <input type="checkbox" id="analysesall"></th>
+					<th>Operations<br><input type="checkbox" id="analysesall"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -2286,11 +2267,17 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 						$analysis_hostname = $row['analysis_hostname'];
 						$cluster_time = $row['cluster_time'];
 						$analysis_enddate = date('Y-m-d H:i',strtotime($row['analysis_enddate']));
-						$analysis_clusterenddate = date('Y-m-d H:i',strtotime($row['analysis_clusterenddate']));
+						if ($row['analysis_clusterenddate'] == "") {
+							$analysis_clusterenddate = "-";
+						}
+						else {
+							$analysis_clusterenddate = date('Y-m-d H:i',strtotime($row['analysis_clusterenddate']));
+						}
 						$study_id = $row['study_id'];
 						$study_num = $row['study_num'];
 						$study_datetime = date('M j, Y H:i',strtotime($row['study_datetime']));
 						$uid = $row['uid'];
+						$visittype = $row['study_type'];
 						$pipeline_version = $row['pipeline_version'];
 						$pipeline_dependency = $row['pipeline_dependency'];
 						
@@ -2348,6 +2335,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				<tr bgcolor="<?=$rowcolor?>">
 					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
 						<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
+					<td><?=$visittype?></td>
 					<td><?=$pipeline_version?></td>
 					<? if ($pipeline_level == 1) { ?>
 					<td class="tiny"><?=$study_datetime?></td>
@@ -2471,7 +2459,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 						</tr>
 						</table>
 					</td>
-					<td colspan="7" align="right" style="background-color: #fff; font-size: 12pt">
+					<td colspan="8" align="right" style="background-color: #fff; font-size: 12pt">
 					With selected:&nbsp;<br><br>
 					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled until the deletion is finished</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
 					<br><br><br>

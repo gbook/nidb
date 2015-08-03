@@ -652,7 +652,6 @@
 							<option value="">Select a group</option>
 						<?
 							$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-							//$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 								$groupid = $row['group_id'];
@@ -719,7 +718,6 @@
 							<option value="">Select a group</option>
 						<?
 							$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-							//$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 								$groupid = $row['group_id'];
@@ -754,7 +752,6 @@
 							<option value="">Select pipeline</option>
 						<?
 							$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
-							//$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring2</b><br>");
 							$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
 							while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
 								$pipelineid = $row2['pipeline_id'];
@@ -1382,18 +1379,18 @@
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
-				SearchStudy(&$result);
+				SearchStudy($result);
 			}
 			elseif ($s_resultorder == 'uniquesubject') {
 				/* display only unique subject data */
-				SearchSubject(&$result);
+				SearchSubject($result);
 			}
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
-				SearchLongitudinal(&$result);
+				SearchLongitudinal($result);
 			}
 			else {
-				SearchDefault(&$result, $s, $colors, $colors2);
+				SearchDefault($result, $s, $colors, $colors2);
 			}
 		}
 		else {
@@ -1412,7 +1409,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchDefault ---------------------- */
 	/* -------------------------------------------- */
-	function SearchDefault($result, $s, $colors, $colors2) {
+	function SearchDefault(&$result, $s, $colors, $colors2) {
 		error_reporting(-1);
 		ini_set('display_errors', '1');
 	
@@ -2162,7 +2159,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchSubject ---------------------- */
 	/* -------------------------------------------- */
-	function SearchSubject($result) {
+	function SearchSubject(&$result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2205,7 +2202,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchStudy ------------------------ */
 	/* -------------------------------------------- */
-	function SearchStudy($result) {
+	function SearchStudy(&$result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2285,7 +2282,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchLongitudinal ----------------- */
 	/* -------------------------------------------- */
-	function SearchLongitudinal($result) {
+	function SearchLongitudinal(&$result) {
 		//PrintSQLTable(&$result);
 		
 		$modality = '';
@@ -3280,7 +3277,6 @@
 		if ($s_formvalue[0] != "") {
 			/* get the formfield datatype to make sure we compare against the correct assessment_data value */
 			$tmpsqlstring = "select * from assessment_formfields where formfield_id = $s_formfieldid[0]";
-			//$tmpresult = mysql_query($tmpsqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$tmpsqlstring</i><br>");
 			$tmpresult = MySQLQuery($tmpsqlstring,__FILE__,__LINE__);
 			$tmprow = mysql_fetch_array($tmpresult, MYSQL_ASSOC);
 			$datatype = $tmprow['formfield_datatype'];
@@ -3312,7 +3308,7 @@
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultname_id from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__, mysql_error());
+				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__);
 				if (mysql_num_rows($resultX) > 0) {
 					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
 						$resultnames[] = $rowX['resultname_id'];
@@ -3330,7 +3326,7 @@
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__, mysql_error());
+				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__);
 				if (mysql_num_rows($resultX) > 0) {
 					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
 						$resultunit[] = $rowX['resultunit_id'];
@@ -3443,7 +3439,6 @@
 	/* -------------------------------------------- */
 	function GetIDListFromGroup($groupid) {
 		$sqlstring = "select data_id from group_data where group_id = $groupid";
-		//$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$groupids[] = $row['data_id'];
@@ -3664,9 +3659,9 @@
 		$downloadbeh = $r['downloadbeh'];
 		$downloadqc = $r['downloadqc'];
 
-		//echo "<pre>";
-		//print_r($r);
-		//echo "</pre>";
+		echo "<pre>";
+		print_r($r);
+		echo "</pre>";
 		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
@@ -3750,7 +3745,6 @@
 		
 		/* get the next group ID */
 		$sqlstring  = "select max(req_groupid) 'max' from data_requests";
-		//$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$groupid = $row['max'] + 1;
@@ -3784,12 +3778,12 @@
 				/* get enrollment IDs from the series IDs */
 				$seriesidlist = implode2(",", $seriesids);
 				$sqlstring = "select distinct(b.enrollment_id) from " . $modality . "_series a left join studies b on a.study_id = b.study_id where a.series_id in ($seriesidlist)";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				
 				$enrollmentidlist = implode2(",", $enrollmentids);
 				/* get modality list from studies table */
 				$sqlstring = "select distinct(study_modality) 'study_modality' from studies where enrollment_id in ($enrollmentidlist)";
-				$result = MySQLQuery($sqlstring, __FILE__ , __LINE__, mysql_error);
+				$result = MySQLQuery($sqlstring, __FILE__ , __LINE__);
 				$numseries = mysql_num_rows($result);
 				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 					$modalities[] = strtolower($row['study_modality']);
@@ -3809,14 +3803,17 @@
 		
 		$numseries = 0;
 		foreach ($sqlstrings as $modality => $sqlstring) {
-			//PrintSQL($sqlstring);
+			PrintSQL($sqlstring);
 			
-			$result = MySQLQuery($sqlstring, __FILE__ , __LINE__, mysql_error);
+			echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
+			
+			$result = MySQLQuery($sqlstring, __FILE__ , __LINE__);
 			//PrintSQLTable($result);
 			
 			$numseries += mysql_num_rows($result);
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 
+				echo "(B) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 				$safe = true;
 				
 				/* go through the list and populate the request table */
@@ -3867,8 +3864,8 @@
 					$totalseriessize += $series_size;
 					
 					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', sha1('$remotenidbpassword'), '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
-					//PrintSQL($sqlstringA);
-					$resultA = MySQLQuery($sqlstringA, __FILE__ , __LINE__, mysql_error);
+					PrintSQL($sqlstringA);
+					$resultA = MySQLQuery($sqlstringA, __FILE__ , __LINE__);
 					
 					?>
 						<tr>
@@ -3894,6 +3891,9 @@
 					<?
 				}
 				$laststudyid = $currentstudyid;
+
+				echo "(C) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
+				
 			}
 		}
 		?>
@@ -4004,52 +4004,20 @@
 		return implode2(" or ", $newparts);
 	}
 	
-// Function to calculate square of value - mean
-function sd_square($x, $mean) { return pow($x - $mean,2); }
+	/* -------------------------------------------- */
+	/* ------- sd_square -------------------------- */
+	/* -------------------------------------------- */
+	// Function to calculate square of value - mean
+	function sd_square($x, $mean) { return pow($x - $mean,2); }
 
-// Function to calculate standard deviation (uses sd_square)    
-function sd($array) {
-    // square root of sum of squares devided by N-1
-    return sqrt(array_sum(array_map("sd_square", $array, array_fill(0,count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
-}
-
-/* function median()
-{
-    $args = func_get_args();
-
-    switch(func_num_args())
-    {
-        case 0:
-            //trigger_error('median() requires at least one parameter',E_USER_WARNING);
-            return false;
-            break;
-
-        case 1:
-            $args = array_pop($args);
-            // fallthrough
-
-        default:
-            if(!is_array($args)) {
-                //trigger_error('median() requires a list of numbers to operate on or an array of numbers',E_USER_NOTICE);
-                return false;
-            }
-
-            sort($args);
-            
-            $n = count($args);
-            $h = intval($n / 2);
-
-            if($n % 2 == 0) { 
-                $median = ($args[$h] + $args[$h-1]) / 2; 
-            } else { 
-                $median = $args[$h]; 
-            }
-
-            break;
-    }
-    
-    return $median;
-} */
+	/* -------------------------------------------- */
+	/* ------- sd --------------------------------- */
+	/* -------------------------------------------- */
+	// Function to calculate standard deviation (uses sd_square)    
+	function sd($array) {
+		// square root of sum of squares devided by N-1
+		return sqrt(array_sum(array_map("sd_square", $array, array_fill(0,count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
+	}
 
 ?>
 

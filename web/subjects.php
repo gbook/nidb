@@ -2420,7 +2420,7 @@
 	/* ------- MakeSQLorList ---------------------- */
 	/* -------------------------------------------- */
 	function MakeSQLorList($str, $field) {
-		$str = str_ireplace(array('^',',','-',"'"), " ", $str);
+		$str = str_ireplace(array('^',',','-'), " ", $str);
 		$parts = explode(" ", $str);
 		foreach ($parts as $part) {
 			$newparts[] = "`$field` like '%" . trim($part) . "%'";

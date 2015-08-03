@@ -117,14 +117,14 @@ echo $value . "\n";
 				?></pre></td>
 			</tr>
 			<tr>
-				<td class="label">Parse DICOM module</td>
+				<td class="label">Parse DICOM module<br><span class="tiny"><?=$GLOBALS['cfg']['incomingdir']?></span></td>
 				<td>
 					<?=$numdicomfiles?> queued files<br>
 					<?=$numdicomdirs?> queued directories<br>
 				</td>
 			</tr>
 			<tr>
-				<td class="label">Import module</td>
+				<td class="label">Import module<br><span class="tiny"><?=$GLOBALS['cfg']['uploadedpath']?></span></td>
 				<td>
 					<?=$numimportpending?> requests pending<br>
 					<?=$numimportdirs?> queued directories<br>
