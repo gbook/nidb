@@ -364,6 +364,7 @@
 		</form>
 		<? } ?>
 		</div>
+		<br><br><br><br><br>
 		<?
 	}
 	
@@ -917,5 +918,5 @@
 	}
 ?>
 
-<br><br>
+
 <? include("footer.php") ?>
