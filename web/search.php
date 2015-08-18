@@ -1134,13 +1134,13 @@
 						$name .= " <b>$unit</b>";
 						$name2 .= " " . $row['result_unit'];
 					}
-					$tables[$uid][$name] = $thevalue;
-					$tables[$uid][$name2] = $thevalue;
-					$tables[$uid]['age'] = $ageatscan;
-					$tables[$uid]['gender'] = $gender;
-					$tables[$uid]['subjectid'] = $subject_id;
-					$tables[$uid]['studyid'] = $study_id;
-					$tables[$uid]['studynum'] = $study_num;
+					$tables["$uid$study_num"][$name] = $thevalue;
+					$tables["$uid$study_num"][$name2] = $thevalue;
+					$tables["$uid$study_num"]['age'] = $ageatscan;
+					$tables["$uid$study_num"]['gender'] = $gender;
+					$tables["$uid$study_num"]['subjectid'] = $subject_id;
+					$tables["$uid$study_num"]['studyid'] = $study_id;
+					$tables["$uid$study_num"]['studynum'] = $study_num;
 					//$names[$name] = "blah";
 					if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
 					if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
@@ -1201,7 +1201,7 @@
 								?>
 								<tr style="font-weight: <?=$bold?>" class="rowhover">
 									<td>
-									<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a>
+									<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
 									</td>
 									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
 									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
