@@ -285,6 +285,7 @@ sub ParseDirectory {
 	$Data::Dumper::Sortkeys = 1;
 	#WriteLog("dicomfiles: " . Dumper(\%dicomfiles) );
 	
+	my $iscomplete = 0;
 	# go through the %dicomfiles hash by SERIES. ignore any series that are unfinished
 	foreach my $institute (keys %dicomfiles) {
 		foreach my $equip (keys %{$dicomfiles{$institute}}) {
@@ -307,6 +308,9 @@ sub ParseDirectory {
 										if ($ret ne "") {
 											WriteLog("InsertSeries($importRowID, ...) failed: [$ret]");
 										}
+										else {
+											$iscomplete = 1;
+										}
 									}
 									else {
 										WriteLog("$institute->$patient->$dob->$sex->$date->$series: incomplete");
@@ -325,7 +329,7 @@ sub ParseDirectory {
 		}
 	}
 	
-	if ($importRowID ne "") {
+	if (($importRowID ne "") && ($iscomplete)) {
 		my $uploaddir = "$cfg{'incomingdir'}/$importRowID";
 		if (-d $uploaddir) {
 			# delete the uploaded directory
@@ -548,7 +552,7 @@ sub InsertSeries {
 	foreach my $line(@dcmlines) {	
 		if ($line =~ /\.dInPlaneRot/i) {
 			my ($key, $value) = split /\s*=\s*/, $line;
-			$PhaseEncodeAngle = $value;
+			$PhaseEncodeAngle = substr($value,0,8);
 			last;
 		}
 	}

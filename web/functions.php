@@ -26,7 +26,7 @@
 	require_once "Mail/mime.php";
 
 	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
- 	$cfg = LoadConfig('/home/nidb/programs/nidb.cfg');
+ 	$cfg = LoadConfig('/nidb/programs/nidb.cfg');
 	date_default_timezone_set("America/New_York");
 
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
