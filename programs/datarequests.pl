@@ -141,14 +141,14 @@ sub ProcessDataRequests {
 			my $transactionid;
 
 			# check to see if ANY of the series in this group have already started processing, if so, skip it
-			my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending')";
+			my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending' and req_status <> 'cancelled')";
 			WriteLog("$sqlstringA");
 			my $resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
 			if ($resultA->numrows > 0) {
 				my %rowA = $resultA->fetchhash;
 				my $reqdate = $rowA{'req_date'};
 				
-				WriteLog("This group [$groupid] already has " . $resultA->numrows . " series which do not have a pending or blank status. That means at least one of the series is probably already processing (as of $reqdate)");
+				WriteLog("This group [$groupid] already has " . $resultA->numrows . " series which do not have a pending or blank status. That means at least one of the series is probably already processing (as of $reqdate) or is cancelled");
 				next;
 			}
 			
@@ -316,7 +316,41 @@ sub ProcessDataRequests {
 				my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 				my $qcindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa";
-				#WriteLog('G');
+
+				# check if the indir directory exists or is empty
+				if (-e $indir) {
+					WriteLog("indir [$indir] exists");
+					if (IsDirEmpty($indir)) {
+						WriteLog("indir [$indir] exists but is empty");
+					}
+				}
+				else {
+					WriteLog("indir [$indir] does not exist");
+					$newstatus = 'problem';
+					$results .= "[$indir] does not exist";
+				}
+				
+				# check if the behindir directory exists or is empty
+				if (-e $behindir) {
+					WriteLog("behindir [$behindir] exists");
+					if (IsDirEmpty($behindir)) {
+						WriteLog("behindir [$behindir] exists but is empty");
+					}
+				}
+				else {
+					WriteLog("behindir [$behindir] does not exist");
+				}
+				
+				# check if the qcindir directory exists or is empty
+				if (-e $qcindir) {
+					WriteLog("qcindir [$qcindir] exists");
+					if (IsDirEmpty($qcindir)) {
+						WriteLog("qcindir [$qcindir] exists but is empty");
+					}
+				}
+				else {
+					WriteLog("qcindir [$qcindir] does not exist");
+				}
 				
 				# ----- copy locally (NFS, local FTP, Web, or Public download) -----
 				if (($req_destinationtype eq "nfs") || ($req_destinationtype eq "localftp") || ($req_destinationtype eq "web") || ($req_destinationtype eq "publicdownload")) {
@@ -718,25 +752,36 @@ sub ProcessDataRequests {
 		if ($req_destinationtype eq "web") {
 			my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
 			my $outdir;
+			WriteLog("Final zip file will be [$zipfile]");
+			
+			WriteLog("tmpwebdir: [$tmpwebdir]");
 			#if (!defined($tmpdir)) { $tmpdir = ''; }
 			#if ($tmpdir eq "") { $outdir = $tmpwebdir; }
 			#else { $outdir = $tmpdir; }
 			$outdir = $tmpwebdir;
 			
 			my $pwd = getcwd;
-			WriteLog("Changing directory to [$outdir]");
-			chdir($outdir);
-			if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
-			else { $systemstring = "zip -1rq $zipfile ."; }
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-			WriteLog("Changing directory to [$pwd]");
-			chdir($pwd);
+			WriteLog("Current directory is [$pwd], changing directory to [$outdir]");
+			if (-e $outdir) {
+				chdir($outdir);
+				if (-e $zipfile) { $systemstring = "zip -1grv $zipfile ."; }
+				else { $systemstring = "zip -1rv $zipfile ."; }
+				WriteLog("Beginning zipping...");
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				WriteLog("Finished zipping...");
+				WriteLog("Changing directory to [$pwd]");
+				chdir($pwd);
+			}
+			else {
+				WriteLog("temp dir [$outdir] does not exist");
+			}
 		}
 		
 		# if the tmpwebdir was created, delete it
 		if (-e $tmpwebdir) {
 			if (trim($tmpwebdir) ne "") {
-				#rmtree($tmpwebdir);
+				WriteLog("Temporary web dir [$tmpwebdir] exists and will be deleted");
+				rmtree($tmpwebdir);
 			}
 		}
 		
@@ -785,6 +830,7 @@ sub GetOutputDirectories() {
 				case "behseriesdir" { $behoutdir = "$cfg{'ftpdir'}/$newdir/$newseriesnum/$req_behdirseriesname"; }
 				else { $behoutdir = "$cfg{'ftpdir'}/$newdir"; }
 			}
+			WriteLog("Destination is 'localftp'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 		case "web" {
 			$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
@@ -796,6 +842,7 @@ sub GetOutputDirectories() {
 				case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
 				else { $behoutdir = "$tmpwebdir/$newdir"; }
 			}
+			WriteLog("Destination is 'web'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 		case "publicdownload" {
 			$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
@@ -807,6 +854,7 @@ sub GetOutputDirectories() {
 				case "behseriesdir" { $behoutdir = "$tmpwebdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
 				else { $behoutdir = "$tmpwebdir/$newdir"; }
 			}
+			WriteLog("Destination is 'publicdownload'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 		case "nfs" {
 			$fullexportdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum";
@@ -818,6 +866,7 @@ sub GetOutputDirectories() {
 				case "behseriesdir" { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
 				else { $behoutdir = "$cfg{'mountdir'}$req_nfsdir/$newdir"; }
 			}
+			WriteLog("Destination is 'nfs'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 		case "remoteftp" {
 			$fullexportdir = "$req_nfsdir/$newdir/$newseriesnum";
@@ -829,6 +878,7 @@ sub GetOutputDirectories() {
 				case "behseriesdir" { $behoutdir = "$req_nfsdir/$newdir/$newseriesnum/$req_behdirseriesname"; }
 				else { $behoutdir = "$req_nfsdir/$newdir"; }
 			}
+			WriteLog("Destination is 'remoteftp'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 	}
 	
@@ -923,28 +973,28 @@ sub Anonymize() {
 	find sub {
 		if ($File::Find::name =~ /\.dcm/) {
 			my $systemstring;
-			if (($anon == 4) || ($anon eq "") || ($anon == 0)) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='Anonymous^$randstr1' -o $File::Find::name";
+			if ($anon == 4) {
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='$randstr1' -o $File::Find::name";
 				WriteLog("Anonymizing (level 4) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 1) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
 				WriteLog("Anonymizing (level 1) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 2) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,20='19000101' --replace 8,21='19000101' --replace 8,22='19000101' --replace 8,23='19000101' --replace 8,30='000000.000000' --replace 8,31='000000.000000' --replace 8,32='000000.000000' --replace 8,33='000000.000000' --replace 8,80='Anonymous' --replace 8,81='Anonymous' --replace 8,90='Anonymous' --replace 8,1010='Anonymous' --replace 8,1030='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,20='$randstr1$randstr2' --replace 10,30='Anonymous-$randstr2' --replace 10,1030='Anonymous' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,20='19000101' --replace 8,21='19000101' --replace 8,22='19000101' --replace 8,23='19000101' --replace 8,30='000000.000000' --replace 8,31='000000.000000' --replace 8,32='000000.000000' --replace 8,33='000000.000000' --replace 8,80='Anonymous' --replace 8,81='Anonymous' --replace 8,90='Anonymous' --replace 8,1010='Anonymous' --replace 8,1030='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,20='$randstr1$randstr2' --replace 10,30='Anonymous-$randstr2' --replace 10,1030='Anonymous' -o $File::Find::name";
 				WriteLog("Anonymizing (level 2) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 3) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous^$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
+				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
 				WriteLog("Anonymizing (level 3) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 		}
-		# remove any txt files, which may contain PHI
+		# remove an txt files, which may contain PHI
 		if ($File::Find::name =~ /\.gif/) { unlink($File::Find::name); }
 		if ($File::Find::name =~ /\.txt/) { unlink($File::Find::name); }
 	}, "$dir";
@@ -969,6 +1019,7 @@ sub Anonymize() {
 			my $cpu = $t->join;
 			$totalcpu += $cpu;
 		}
+		WriteLog("Anonymize threads finished");
 	}
 	
 	return $totalcpu;

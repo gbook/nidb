@@ -517,8 +517,8 @@ sub Error {
 	
 	WriteLog("FATAL ERROR: $error");
 
-	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal Error: $error", "The following error occurred: $error");
-	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	SendHTMLEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
 	
 	exit(0);
 }
@@ -531,10 +531,8 @@ sub SQLError {
 	my ($sql, $error) = @_;
 	
 	WriteLog("SQL Error: '$error' in statement [$sql]");
-	
-	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error] in statement [$sql]");
-	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error] in statement [$sql]");
-	
+	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
+	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
 	exit(0);
 }
 
@@ -722,6 +720,17 @@ sub MakePath {
 		return 1;
 	}
 }
+
+
+# ----------------------------------------------------------
+# --------- IsDirEmpty -------------------------------------
+# ----------------------------------------------------------
+sub IsDirEmpty {
+    my $dirname = shift;
+    opendir(my $dh, $dirname) or return 0;
+    return scalar(grep { $_ ne "." && $_ ne ".." } readdir($dh)) == 0;
+}
+
 
 # must return 1 for this file to be included correctly
 1;
