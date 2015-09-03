@@ -236,7 +236,8 @@
 <?		
 		
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.uid, d.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id and d.isactive = 1 order by a.study_site, a.study_desc";
+		//$sqlstring = "select a.*, c.*, d.uid, d.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id and d.isactive = 1 order by a.study_site, a.study_desc";
+		$sqlstring = "select a.*, c.*, d.uid, d.subject_id, d.isactive from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by a.study_datetime";
 		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$numstudies = mysql_num_rows($result);
 		?>
@@ -252,6 +253,7 @@
 		<table class="smallgraydisplaytable" id='table1'>
 			<tr>
 				<th>Study ID</th>
+				<th>Deleted?</th>
 				<th>Subject ID</th>
 				<th>Study Date</th>
 				<th>Modality</th>
@@ -287,6 +289,7 @@
 				$subjectid = $row['subject_id'];
 				$project_name = $row['project_name'];
 				$project_costcenter = $row['project_costcenter'];
+				$isactive = $row['isactive'];
 				
 				$sqlstringA = "select altuid from subject_altuid where subject_id = $subjectid order by isprimary desc";
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -302,6 +305,7 @@
 					<td>
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
+					<td><? if (!$isactive) { echo "Deleted"; } ?></td>
 					<td><?=$altuid?></td>
 					<td><?=$study_datetime?></td>
 					<td><?=$modality?></td>
@@ -364,7 +368,6 @@
 		</form>
 		<? } ?>
 		</div>
-		<br><br><br><br><br>
 		<?
 	}
 	
@@ -918,5 +921,6 @@
 	}
 ?>
 
+<br><br><br><br>
 
 <? include("footer.php") ?>

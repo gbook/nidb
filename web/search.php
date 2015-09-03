@@ -138,10 +138,21 @@
     $requestvars['allsubject'] = GetVariable("allsubject");
 	
 	
+	$numpostvars = count($_POST);
+	$maxnumvars = ini_get('max_input_vars');
+	
 	//echo "<pre>";
 	//print_r($_POST);
+	//echo "Received " . count($_POST) . " variables<br>";
+	//echo "Limit is " . ini_get('max_input_vars') . " variables<br>";
 	//echo "</pre>";
-	//exit(0);
+	
+	if ($numpostvars >= $maxnumvars) {
+		?>
+		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] in the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your download request. Please go back to the search page and download less than [<?=$maxnumvars?>] data items.</div>
+		<?
+		exit(0);
+	}
 	
 	/* ----- determine which action to take ----- */
 	switch ($action) {
@@ -1134,13 +1145,13 @@
 						$name .= " <b>$unit</b>";
 						$name2 .= " " . $row['result_unit'];
 					}
-					$tables["$uid$study_num"][$name] = $thevalue;
-					$tables["$uid$study_num"][$name2] = $thevalue;
-					$tables["$uid$study_num"]['age'] = $ageatscan;
-					$tables["$uid$study_num"]['gender'] = $gender;
-					$tables["$uid$study_num"]['subjectid'] = $subject_id;
-					$tables["$uid$study_num"]['studyid'] = $study_id;
-					$tables["$uid$study_num"]['studynum'] = $study_num;
+					$tables[$uid][$name] = $thevalue;
+					$tables[$uid][$name2] = $thevalue;
+					$tables[$uid]['age'] = $ageatscan;
+					$tables[$uid]['gender'] = $gender;
+					$tables[$uid]['subjectid'] = $subject_id;
+					$tables[$uid]['studyid'] = $study_id;
+					$tables[$uid]['studynum'] = $study_num;
 					//$names[$name] = "blah";
 					if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
 					if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
@@ -1201,7 +1212,7 @@
 								?>
 								<tr style="font-weight: <?=$bold?>" class="rowhover">
 									<td>
-									<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
+									<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a>
 									</td>
 									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
 									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
@@ -3659,9 +3670,9 @@
 		$downloadbeh = $r['downloadbeh'];
 		$downloadqc = $r['downloadqc'];
 
-		echo "<pre>";
-		print_r($r);
-		echo "</pre>";
+		//echo "<pre>";
+		//print_r($r);
+		//echo "</pre>";
 		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
@@ -3803,7 +3814,7 @@
 		
 		$numseries = 0;
 		foreach ($sqlstrings as $modality => $sqlstring) {
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			
 			echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 			
@@ -3864,7 +3875,7 @@
 					$totalseriessize += $series_size;
 					
 					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', sha1('$remotenidbpassword'), '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
-					PrintSQL($sqlstringA);
+					//PrintSQL($sqlstringA);
 					$resultA = MySQLQuery($sqlstringA, __FILE__ , __LINE__);
 					
 					?>
