@@ -1633,11 +1633,16 @@
 								<? if ($data_type == "dicom") {
 									$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
 									$dcmfile = $dicoms[0];
-									?>
-									<a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a>
-								<? } else { ?>
-								<?=$series_desc?>
-								<? } ?>
+									if (file_exists($dcmfile)) {
+										?><a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a><?
+									}
+									else {
+										?><span style="color: red" title="Files missing from disk"><?=$series_desc?></span><?
+									}
+								} else {
+									echo $series_desc;
+								}
+								?>
 								<br>
 								<? if (file_exists($thumbpath)) { ?>
 								<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>

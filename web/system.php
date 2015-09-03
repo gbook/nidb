@@ -74,6 +74,9 @@
 		//echo "</pre>";
 		
 		?>
+		
+		<center>Reading from config file <code style="background-color: #ddd;">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></center>
+		<br><br>
 		<form name="configform" method="post" action="system.php">
 		<input type="hidden" name="action" value="updateconfig">
 		<table class="entrytable">

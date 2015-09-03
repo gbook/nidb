@@ -194,10 +194,10 @@
 			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 				$seriesid = $rowA[$modality."series_id"];
 				$seriesdate = $rowA['seriesdate'];
-				list($path, $uid, $studynum, $junkid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 				
 				$qadir = "$path/qa";
-				//echo "[$qadir]<br>";
+				//echo "$qadir: ";
 				
 				$sqlstringB = "select * from mr_qa where mrseries_id = $seriesid";
 				$resultB = mysql_query($sqlstringB) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringB</i><br>");
@@ -330,7 +330,7 @@
 								<tr>
 									<td><?=$date?></td>
 									<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-									<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+									<td><a href="subjects.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 									<td align="right" bgcolor="<?=$colors[$cindex];?>"><tt><?=$value?><tt></td>
 								</tr>
 								<?

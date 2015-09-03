@@ -156,6 +156,10 @@
 				<a href="admininstances.php">Instances</a>
 				<? } ?>
 				<a href="adminaudits.php">Audits</a>
+				<a href="cleanup.php">Clean-up</a>
+				<a href="system.php">System info</a>
+				<a href="stats.php">Usage stats</a>
+				<a href="longqc.php">Longitudinal QC</a>
 			</div>
 			<? } ?>
 			

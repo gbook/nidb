@@ -26,7 +26,7 @@
 	require_once "Mail/mime.php";
 
 	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
- 	$cfg = LoadConfig('/ado2/prod/programs/nidb.cfg');
+ 	$cfg = LoadConfig('/home/nidb/programs/nidb.cfg');
 	date_default_timezone_set("America/New_York");
 
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
@@ -100,9 +100,8 @@
 	// this function loads the config file into a hash called $cfg
 	// ----------------------------------------------------------
 	function LoadConfig($file) {
-		//if (file_exists('/nidb.cfg')) {
-		//	$file = 'nidb.cfg';
-		//}
+		$cfg['cfgpath'] = $file;
+		
 		$lines = file($file);
 		foreach ($lines as $line) {
 			if ((substr($line,0,1) != '#') && (trim($line) != "")) {

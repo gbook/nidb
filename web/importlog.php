@@ -83,8 +83,8 @@
 		
 		?>
 		View import <a href="importlog.php?action=viewtransactions">transactions</a><br>
-		View <a href="importlog.php?action=viewreceived">received</a> (slow page load)<br>
-		View <a href="importlog.php?action=viewimported">imported</a> (slow page load)<br>
+		<!--View <a href="importlog.php?action=viewreceived">received</a><br>
+		View <a href="importlog.php?action=viewimported">imported</a><br>-->
 		<br><br>
 		<?
 	}
@@ -424,21 +424,19 @@
 					<th>ID</th>
 					<th>Data type</th>
 					<th>Modality</th>
-					<th>Date</th>
+					<th>Start Date</th>
 					<th>Status</th>
-					<th>Message</th>
-					<th>Startdate</th>
-					<th>Enddate</th>
+					<th>End Date</th>
 					<th>Equipment</th>
 					<th>Site</th>
 					<th>Project</th>
 					<th>Instance</th>
-					<th>UUID</th>
-					<th>Anonymize</th>
+					<!--<th>UUID</th>-->
+					<!--<th>Anonymize</th>
 					<th>Permanent</th>
 					<th>Match by ID only</th>
 					<th>filename</th>
-					<th>File-is-series</th>
+					<th>File-is-series</th>-->
 				</tr>
 			</thead>
 		<?
@@ -457,7 +455,7 @@
 			$import_siteid = $row['import_siteid'];
 			$import_projectid = $row['import_projectid'];
 			$import_instanceid = $row['import_instanceid'];
-			$import_uuid = $row['import_uuid'];
+			//$import_uuid = $row['import_uuid'];
 			$import_anonymize = $row['import_anonymize'];
 			$import_permanent = $row['import_permanent'];
 			$import_matchidonly = $row['import_matchidonly'];
@@ -466,6 +464,10 @@
 			$projectname = $row['project_name'];
 			$sitename = $row['site_name'];
 			$instancename = $row['instance_name'];
+			
+			if (strlen($sitename) > 30) {
+				$sitename = "<span title='$sitename'>" . substr($sitename,0,30) . "...</span>";
+			}
 			
 			switch ($import_status) {
 				case 'uploading':
@@ -549,13 +551,13 @@
 				<td style="font-size:8pt"><?=$sitename?></td>
 				<td style="font-size:8pt"><?=$projectname?></td>
 				<td style="font-size:8pt"><?=$instancename?></td>
-				<td><?=$import_uuid?></td>
-				<td><?=$import_anonymize?></td>
-				<td><?=$import_permanent?></td>
-				<td><?=$import_matchidonly?></td>
+				<!--<td><?=$import_uuid?></td>-->
+				<!--<td><?=$import_anonymize?></td>-->
+				<!--<td><?=$import_permanent?></td>-->
+				<!--<td><?=$import_matchidonly?></td>
 				<td><?=$import_message?></td>
 				<td><?=$import_filename?></td>
-				<td><?=$import_fileisseries?></td>
+				<td><?=$import_fileisseries?></td>-->
 			</tr>
 			<?
 		}
