@@ -119,9 +119,10 @@ sub ProcessDataRequests {
 	my $req_destinationtype;
 	my $publicdownloadid = 0;
 	my $groupid = 0;
+	my $lastgroupid = 0;
 	
 	# loop through all groups of data requests. each request in a group should have the same the modality
-	$sqlstring = "select distinct(req_groupid) 'req_groupid', req_modality, req_username, req_destinationtype, req_nidbserver, req_nidbusername, req_nidbpassword from data_requests where req_status = 'pending' or req_status = '' order by req_date";
+	$sqlstring = "select distinct(req_groupid) 'req_groupid', req_modality, req_username, req_destinationtype, req_nidbserver, req_nidbusername, req_nidbpassword from data_requests where req_status = 'pending' or req_status = '' order by req_groupid, req_date";
 	WriteLog($sqlstring);
 	#WriteLog('A');
 	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
@@ -282,7 +283,6 @@ sub ProcessDataRequests {
 						$newdir = $altuid;
 					}
 				}
-				#WriteLog('E');
 
 				# create the new series number
 				if ($req_preserveseries == 1) {
@@ -308,7 +308,6 @@ sub ProcessDataRequests {
 					}
 				}
 				WriteLog("Preserve [$req_preserveseries] Old [$series_num] New [$newseriesnum]");
-				#WriteLog('F');
 			
 				# determine what the actual export directory should be
 				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir);
@@ -443,23 +442,6 @@ sub ProcessDataRequests {
 							Anonymize($fullexportdir,$req_anonymize,uc($sha1name),uc($sha1dob));
 						}
 						
-						# if its to be downloaded via the web, zip it
-						# if ($req_destinationtype eq "web") {
-							# my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
-							# my $outdir;
-							# if (!defined($tmpdir)) { $tmpdir = ''; }
-							# if ($tmpdir eq "") { $outdir = $tmpwebdir; }
-							# else { $outdir = $tmpdir; }
-							
-							# my $pwd = getcwd;
-							# WriteLog("Changing directory to [$outdir]");
-							# chdir($outdir);
-							# if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
-							# else { $systemstring = "zip -1rq $zipfile ."; }
-							# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							# WriteLog("Changing directory to [$pwd]");
-							# chdir($pwd);
-						# }
 						# if its a public download, zip it and update the entry in the public downloads table
 						if (($req_destinationtype eq "publicdownload") || ($req_destinationtype eq "web")) {
 							$systemstring = "cp $tmpdir/* $tmpwebdir";
@@ -472,7 +454,6 @@ sub ProcessDataRequests {
 						}
 					}
 				}
-				#WriteLog('I');
 				
 				# ----- send to remote NiDB site -----
 				# for now, only DICOM data and beh can be sent to remote sites
@@ -551,7 +532,6 @@ sub ProcessDataRequests {
 							$results = "$fullexportdir not created. Check permissions on destination directory.";
 						}
 					}
-					#WriteLog('H');
 					# see if the directory has been created
 					if (-d $fullexportdir) {
 						$systemstring = "chmod -Rf 777 $fullexportdir";
@@ -594,7 +574,6 @@ sub ProcessDataRequests {
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
 					$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir";
 					my $headerfile = "$fullexportdir/ndar.csv";
-					#$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir/$uid/$study_num/$series_num";
 
 					# try to create the path
 					if (!-d $fullexportdir) {
@@ -604,7 +583,6 @@ sub ProcessDataRequests {
 							$results = "$fullexportdir not created. Check permissions on destination directory.";
 						}
 					}
-					#WriteLog('H');
 					# see if the directory has been created
 					if (-d $fullexportdir) {
 						$systemstring = "chmod -Rf 777 $fullexportdir";
@@ -691,106 +669,101 @@ sub ProcessDataRequests {
 			my $email = $rowC{'user_email'};
 			my $sendmail_singlerequest = $rowC{'sendmail_singlerequest'};
 			if ($sendmail_singlerequest) {
-				# get email for $req_username
-				
 				# send an email
 				SendTextEmail($email, "ADO server data request: $newstatus", $results);
 			}
 			
-		}
-		
-		# should be doing the zip creation here:
-		# get the information about the download from the public_download table
-		if ($req_destinationtype eq "publicdownload") {
-			my $sqlstringC = "select * from public_downloads where pd_id = $publicdownloadid";
-			WriteLog("SQL: $sqlstringC");
-			my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
-			my %rowC = $resultC->fetchhash;
-			my $createdate = $rowC{'pd_createdate'};
-			my $expiredate = $rowC{'pd_expiredate'};
-			my $expiredays = $rowC{'pd_expiredays'};
-			my $createdby = $rowC{'pd_createdby'};
-			my $zippedsize = $rowC{'pd_zippedsize'};
-			my $unzippedsize = $rowC{'pd_unzippedsize'};
-			my $desc = $rowC{'pd_desc'};
-			my $notes = $rowC{'pd_notes'};
-			my $shareinternal = $rowC{'pd_shareinternal'};
-			my $password = $rowC{'pd_password'};
-			my $status = $rowC{'pd_status'};
-			
-			my $filename = "NiDB-$groupid.zip";
-			my $zipfile = "$cfg{'webdir'}/$filename";
-			my $outdir = $tmpwebdir;
-			#if (!defined($tmpdir)) { $tmpdir = ''; }
-			#if ($tmpdir eq "") { $outdir = $tmpwebdir; }
-			#else { $outdir = $tmpdir; }
-			
-			my $pwd = getcwd;
-			WriteLog("Changing directory to [$outdir]");
-			chdir($outdir);
-			if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
-			else { $systemstring = "zip -1rq $zipfile ."; }
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-			WriteLog("Changing directory to [$pwd]");
-			chdir($pwd);
-			$systemstring = "unzip -vl $zipfile";
-			WriteLog("Running [$systemstring]");
-			my $filecontents = `$systemstring`;
-			my @lines = split(/\n/, $filecontents);
-			my $lastline = $lines[-1];
-			my @parts = split(/\s+/,trim($lastline));
-			$unzippedsize = $parts[0];
-			$zippedsize = $parts[1];
-			$filecontents = EscapeMySQLString($filecontents);
-			
-			# update status, size, expire date, etc in the public download table
-			$sqlstringC = "update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval $expiredays day), pd_zippedsize = '$zippedsize', pd_unzippedsize = '$unzippedsize', pd_filename = '$filename', pd_filecontents = '$filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = $publicdownloadid";
-			#WriteLog("SQL: $sqlstringC");
-			$resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
-		}
-		# if its a web download, do the zipping at the end
-		if ($req_destinationtype eq "web") {
-			my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
-			my $outdir;
-			WriteLog("Final zip file will be [$zipfile]");
-			
-			WriteLog("tmpwebdir: [$tmpwebdir]");
-			#if (!defined($tmpdir)) { $tmpdir = ''; }
-			#if ($tmpdir eq "") { $outdir = $tmpwebdir; }
-			#else { $outdir = $tmpdir; }
-			$outdir = $tmpwebdir;
-			
-			my $pwd = getcwd;
-			WriteLog("Current directory is [$pwd], changing directory to [$outdir]");
-			if (-e $outdir) {
-				chdir($outdir);
-				if (-e $zipfile) { $systemstring = "zip -1grv $zipfile ."; }
-				else { $systemstring = "zip -1rv $zipfile ."; }
-				WriteLog("Beginning zipping...");
-				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				WriteLog("Finished zipping...");
-				WriteLog("Changing directory to [$pwd]");
-				chdir($pwd);
+			# check if we're switching groups, then attempt to do a zip
+			if ($groupid != $lastgroupid) {
+				# should be doing the zip creation here (for each group!):
+				# get the information about the download from the public_download table
+				if ($req_destinationtype eq "publicdownload") {
+					my $sqlstringC = "select * from public_downloads where pd_id = $publicdownloadid";
+					WriteLog("SQL: $sqlstringC");
+					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+					my %rowC = $resultC->fetchhash;
+					my $createdate = $rowC{'pd_createdate'};
+					my $expiredate = $rowC{'pd_expiredate'};
+					my $expiredays = $rowC{'pd_expiredays'};
+					my $createdby = $rowC{'pd_createdby'};
+					my $zippedsize = $rowC{'pd_zippedsize'};
+					my $unzippedsize = $rowC{'pd_unzippedsize'};
+					my $desc = $rowC{'pd_desc'};
+					my $notes = $rowC{'pd_notes'};
+					my $shareinternal = $rowC{'pd_shareinternal'};
+					my $password = $rowC{'pd_password'};
+					my $status = $rowC{'pd_status'};
+					
+					my $filename = "NiDB-$groupid.zip";
+					my $zipfile = "$cfg{'webdir'}/$filename";
+					my $outdir = $tmpwebdir;
+					
+					my $pwd = getcwd;
+					WriteLog("Changing directory to [$outdir]");
+					chdir($outdir);
+					if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
+					else { $systemstring = "zip -1rq $zipfile ."; }
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					WriteLog("Changing directory to [$pwd]");
+					chdir($pwd);
+					$systemstring = "unzip -vl $zipfile";
+					WriteLog("Running [$systemstring]");
+					my $filecontents = `$systemstring`;
+					my @lines = split(/\n/, $filecontents);
+					my $lastline = $lines[-1];
+					my @parts = split(/\s+/,trim($lastline));
+					$unzippedsize = $parts[0];
+					$zippedsize = $parts[1];
+					$filecontents = EscapeMySQLString($filecontents);
+					
+					# update status, size, expire date, etc in the public download table
+					$sqlstringC = "update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval $expiredays day), pd_zippedsize = '$zippedsize', pd_unzippedsize = '$unzippedsize', pd_filename = '$filename', pd_filecontents = '$filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = $publicdownloadid";
+					#WriteLog("SQL: $sqlstringC");
+					$resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+				}
+				# if its a web download, do the zipping at the end
+				if ($req_destinationtype eq "web") {
+					my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
+					my $outdir;
+					WriteLog("Final zip file will be [$zipfile]");
+					WriteLog("tmpwebdir: [$tmpwebdir]");
+					$outdir = $tmpwebdir;
+					
+					my $pwd = getcwd;
+					WriteLog("Current directory is [$pwd], changing directory to [$outdir]");
+					if (-e $outdir) {
+						chdir($outdir);
+						if (-e $zipfile) { $systemstring = "zip -1grv $zipfile ."; }
+						else { $systemstring = "zip -1rv $zipfile ."; }
+						WriteLog("Beginning zipping...");
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						WriteLog("Finished zipping...");
+						WriteLog("Changing directory to [$pwd]");
+						chdir($pwd);
+					}
+					else {
+						WriteLog("temp dir [$outdir] does not exist");
+					}
+				}
+				
+				# if the tmpwebdir was created, delete it
+				if (-e $tmpwebdir) {
+					if (trim($tmpwebdir) ne "") {
+						WriteLog("Temporary web dir [$tmpwebdir] exists and will be deleted");
+						rmtree($tmpwebdir);
+					}
+				}
+				
+				if ($publicdownloadid != 0) {
+					my $sqlstringC = "update public_downloads set pd_status = 'complete' where pd_id = '$publicdownloadid'";
+					WriteLog("SQL: $sqlstringC");
+					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+				}
+				
 			}
-			else {
-				WriteLog("temp dir [$outdir] does not exist");
-			}
+			
+			$lastgroupid = $groupid;
 		}
-		
-		# if the tmpwebdir was created, delete it
-		if (-e $tmpwebdir) {
-			if (trim($tmpwebdir) ne "") {
-				WriteLog("Temporary web dir [$tmpwebdir] exists and will be deleted");
-				rmtree($tmpwebdir);
-			}
-		}
-		
-		if ($publicdownloadid != 0) {
-			my $sqlstringC = "update public_downloads set pd_status = 'complete' where pd_id = '$publicdownloadid'";
-			WriteLog("SQL: $sqlstringC");
-			my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
-		}
-		#WriteLog('L');
 		
 		$time = CreateCurrentDate();
 		WriteLog("$scriptname Done... Current Time is $time");
