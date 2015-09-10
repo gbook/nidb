@@ -86,6 +86,12 @@
 		case 'importmeasures':
 			ImportMeasures($siteid,$projectid,$fileformat);
 			break;
+		case 'updatedemographics':
+			UpdateDemographics();
+			break;
+		case 'updateageatscan':
+			UpdateAgeAtScan();
+			break;
 		case 'uploaddicom':
 			UploadDICOM($siteid,$projectid,$anonymize,$permanent);
 			break;
@@ -385,62 +391,67 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', end
 			}
 		</script>
 		
-		<div style="font-weight:bold; color: darkblue; font-size:14pt">Upload data to NiDB</div>
-		<br>
-		<span style="color:#444">Instance <b><?=$GLOBALS['instancename']?></b></span>
+		<span style="color:#444">Uploading data to the <b><?=$GLOBALS['instancename']?></b> instance</span>
 		<br>
 		<br>
-		<div style="padding:8px; border: 1px solid #ccc; border-radius:5px">
-		<b>Web upload ( < 1GB file size )</b>
-		<table width="100%">
-			<tr>
-				<td>
-					<table class="entrytable">
-						<form action="import.php" method="post" enctype="multipart/form-data">
-						<input type="hidden" name="action" value="uploaddicom">
-						<tr>
-							<td class="label">Site</td>
-							<td>
-								<select name="siteid" required>
-									<option value="">Select site...</option>
-									<?
-										$s = GetSiteList();
-										foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
-									?>
-								</select>
-							</td>
-						</tr>
-						<tr>
-							<td class="label">Project</td>
-							<td>
-								<select name="projectid" required>
-									<option value="">Select project...</option>
-									<?
-										$projects = GetProjectList();
-										foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
-									?>
-								</select>
-							</td>
-						</tr>
-						<? if (!$GLOBALS['cfg']['ispublic']) { ?>
-						<tr>
-							<td class="label">Anonymize?</td>
-							<td><input type="checkbox" name="anonymize" value="1" checked></td>
-						</tr>
-						<? } ?>
-						<tr>
-							<td class="label">Select files<br><span class="tiny">DICOM files only. Or any zip<br>file containing DICOM files</span></td>
-							<td><input type="file" name="files[]" multiple style="border:none"></td>
-						</tr>
-						<tr>
-							<td colspan="2"><input type="submit" value="Import DICOM"></td>
-						</tr>
-						</form>
-					</table>
-				</td>
-			</tr>
-		</table>
-		</div>
+		<br>
+		<details>
+			<summary>Upload DICOM Image Data</summary>
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
+			<table width="100%">
+				<tr>
+					<td>
+						<span style="color: darkred">
+						<b>Upload limits:</b> Max 1000 files per upload (unzipped). Max 1GB per file.
+						</span>
+						<br><br>
+						<table class="entrytable">
+							<form action="import.php" method="post" enctype="multipart/form-data">
+							<input type="hidden" name="action" value="uploaddicom">
+							<tr>
+								<td class="label">Site</td>
+								<td>
+									<select name="siteid" required>
+										<option value="">Select site...</option>
+										<?
+											$s = GetSiteList();
+											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
+										?>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">Project</td>
+								<td>
+									<select name="projectid" required>
+										<option value="">Select project...</option>
+										<?
+											$projects = GetProjectList();
+											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
+										?>
+									</select>
+								</td>
+							</tr>
+							<? if (!$GLOBALS['cfg']['ispublic']) { ?>
+							<tr>
+								<td class="label">Anonymize?</td>
+								<td><input type="checkbox" name="anonymize" value="1" checked></td>
+							</tr>
+							<? } ?>
+							<tr>
+								<td class="label">Select files<br><span class="tiny">DICOM files only or a .zip<br>file containing DICOM files</span></td>
+								<td><input type="file" name="files[]" multiple style="border:none"></td>
+							</tr>
+							<tr>
+								<td colspan="2"><input type="submit" value="Import DICOM"></td>
+							</tr>
+							</form>
+						</table>
+					</td>
+				</tr>
+			</table>
+			</div>
+		</details>
 		<br>
 		<script>
 			$(document).ready(function() {
@@ -490,11 +501,12 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', end
 			.freelabel {font-weight: bold; text-align: right; padding-right: 10px; vertical-align: top; color: #666666; font-size:12pt; white-space:nowrap; }
 		</style>
 		
+		<? if ($_SESSION['enablebeta']) { ?>
 		<details>
-			<summary>Import non-DICOM Image Data</summary>
+			<summary>Import non-DICOM Image Data <?=PrintBeta();?></summary>
 			<form action="import.php" id="nondicomform" method="post">
 			<input type="hidden" name="apiaction" value="uploadnondicom">
-			<div style="margin-left: 20px; padding:8px;">
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td>
@@ -568,60 +580,61 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', end
 			</div>
 			</form>
 		</details>
-		
+		<? } ?>
 		<br>
 		
-		<? if ($_SESSION['enablebeta']) { ?>
 		<details>
-			<summary>Import Subject Demographics <?=PrintBeta();?></summary>
-			<div style="margin-left: 40px; padding:8px; background-color: #e5eeff">
+			<summary>Update Subject Demographics</summary>
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td valign="top">
 						<table class="entrytable" style="border:1px solid #ccc">
 							<form action="import.php" method="post" enctype="multipart/form-data">
-							<input type="hidden" name="action" value="importdemographics">
-							<tr>
-								<td class="label">Site</td>
-								<td>
-									<select name="siteid" required>
-										<option value="">Select site...</option>
-										<?
-											$s = GetSiteList();
-											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
-										?>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Project</td>
-								<td>
-									<select name="projectid" required>
-										<option value="">Select project...</option>
-										<?
-											$projects = GetProjectList();
-											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
-										?>
-									</select>
-								</td>
-							</tr>
+							<input type="hidden" name="action" value="updatedemographics">
 							<tr>
 								<td class="label">Select files<br><span class="tiny">.csv file in<br>NiDB demographics format</span></td>
 								<td><input type="file" name="files[]" multiple style="border:none"></td>
 							</tr>
 							<tr>
-								<td colspan="2"><input type="submit" value="Import Demographics"></td>
+								<td colspan="2"><input type="submit" value="Update Demographics"></td>
+							</tr>
+							</form>
+						</table>
+						<br><br>
+						<b>Update age-at-scan</b><br>
+						<table class="entrytable" style="border:1px solid #ccc">
+							<form action="import.php" method="post" enctype="multipart/form-data">
+							<input type="hidden" name="action" value="updateageatscan">
+							<tr>
+								<td class="label">Select files</td>
+								<td><input type="file" name="files[]" multiple style="border:none"></td>
+							</tr>
+							<tr>
+								<td colspan="2">
+								.csv format (age in years: integer or decimal)
+								<div style="border: 1px dashed #ccc;font-family: monospace; white-space: pre; font-size:8pt; padding: 8px">UID1,scandate,age-at-scan
+UID2,scandate,age-at-scan
+UID3,scandate,age-at-scan
+...</div>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2"><input type="submit" value="Update age-at-scan"></td>
 							</tr>
 							</form>
 						</table>
 					</td>
 					<td valign="top">
+						<details>
+							<summary>Demographics .csv file format</summary>
 						.csv format
-						<div style="border: 1px dashed #ccc;font-family: monospace; white-space: pre; font-size:8pt">
-UID, sex, ethnicity, race, weight, height, handedness, education, maritalstatus, smokingstatus
-						</div>
+						<div style="border: 1px dashed #ccc;font-family: monospace; white-space: pre; font-size:8pt; padding: 8px">UID1, DOB, sex, ethnicity, race, handedness, education, maritalstatus, smokingstatus
+UID2, DOB, sex, ethnicity, race, handedness, education, maritalstatus, smokingstatus
+UID3, DOB, sex, ethnicity, race, handedness, education, maritalstatus, smokingstatus
+...</div>
 						<br>
-						<b>Column values</b>
+						<b>Column values</b> <span class="tiny">(leave value blank to not update)</span>
 						<ul style="font-size:10pt">
 							<li>Sex
 								<ul>
@@ -632,8 +645,6 @@ UID, sex, ethnicity, race, weight, height, handedness, education, maritalstatus,
 								</ul>
 							<li><b>Ethnicity:</b> hispanic, nothispanic
 							<li><b>Race:</b> unknown, asian, black, indian, islander, mixed, white, other
-							<li><b>Weight</b> (in kg)
-							<li><b>Height</b> (in meters)
 							<li>Handedness
 								<ul>
 									<li>L - Left
@@ -656,17 +667,17 @@ UID, sex, ethnicity, race, weight, height, handedness, education, maritalstatus,
 							<li><b>Marital status:</b> unknown, married, single, divorced, separated, civilunion, cohabitating, widowed
 							<li><b>Smoking status:</b> unknown, never, current, past
 						</ul>
+						</details>
 					</td>
 				</tr>
 			</table>
 			</div>
 		</details>
 		<br>
-		<? } ?>
 
 		<details>
 			<summary>Import Assessment Forms</summary>
-			<div style="margin-left: 20px; padding:8px;">
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td valign="top">
@@ -714,7 +725,7 @@ question_num, question_text, datatype, values, comment</div>
 		<? if ($_SESSION['enablebeta']) { ?>
 		<details>
 			<summary>Import Assessment Data <?=PrintBeta();?></summary>
-			<div style="margin-left: 20px; padding:8px;">
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td>
@@ -765,10 +776,9 @@ question_num, question_text, datatype, values, comment</div>
 		<br>
 		<? } ?>
 		
-		<? if ($_SESSION['enablebeta']) { ?>
 		<details>
 			<summary>Import Measures (name/value pairs only) <?=PrintBeta();?></summary>
-			<div style="margin-left: 20px; padding:8px;">
+			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td>
@@ -836,7 +846,6 @@ question_num, question_text, datatype, values, comment</div>
 			</table>
 			</div>
 		</details>
-		<? } ?>
 		
 		<?
 	}
@@ -1155,6 +1164,351 @@ question_num, question_text, datatype, values, comment</div>
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateDemographics ----------------- */
+	/* -------------------------------------------- */
+	function UpdateDemographics() {
+	
+		$instanceid = $_SESSION['instanceid'];
+	
+		$savepath = $GLOBALS['cfg']['tmpdir'] . '/' . GenerateRandomString(20);
+		
+		/* create the directory in which the files are stored until the import module takes them */
+		mkdir($savepath, 0, true);
+		chmod($savepath, 0777);
+		
+		echo "<ul>";
+		
+		/* go through all the files and save them */
+		foreach ($_FILES['files']['name'] as $i => $name) {
+			if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
+				echo "<li>Received [$name] - " . number_format($_FILES['files']['size'][$i]) . " bytes<br>";
+				chmod("$savepath/$name", 0777);
+				if (ValidateDemographics("$savepath/$name")) {
+					echo "<li>Measures file [$name] is valid, inserting into database...";
+					InsertDemographics("$savepath/$name");
+				}
+				else {
+					echo "<li>Measures file [$name] is not valid. See errors above.";
+				}
+			}
+			else {
+				echo "<li>An error occured moving " . $_FILES['files']['tmp_name'][$i] . " to [" . $_FILES['files']['error'][$i] . "]<br>";
+			}
+		}
+		
+		echo "</ul>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidateDemographics --------------- */
+	/* -------------------------------------------- */
+	function ValidateDemographics($f) {
+	
+		/* open the file and check some fields */
+		$lines = file($f);
+
+		echo "<pre style='border: solid 1px #ccc; padding:5px'>";
+
+		$numErrors = 0;
+		$numWarnings = 0;
+		$L = 1;
+		/* check if its the short format */
+		for ($i=0;$i<count($lines);$i++) {
+			$line = $lines[$i];
+			$parts = str_getcsv($line);
+			$validid = false;
+			
+			/* check for the correct number of columns */
+			$c = count($parts);
+			if ($c != 9) {
+				echo "Incorrect number of columns. Should be 9, but is actually [$c]. Line $L<br>";
+				$numErrors++;
+				continue;
+			}
+			
+			/* separate out the columns */
+			$uid = mysql_real_escape_string(trim($parts[0]));
+			$dob = mysql_real_escape_string(trim($parts[1]));
+			$sex = mysql_real_escape_string(trim($parts[2]));
+			$ethnicity = mysql_real_escape_string(trim($parts[3]));
+			$race = mysql_real_escape_string(trim($parts[4]));
+			$handedness = mysql_real_escape_string(trim($parts[5]));
+			$education = mysql_real_escape_string(trim($parts[6]));
+			$marital = mysql_real_escape_string(trim($parts[7]));
+			$smoking = mysql_real_escape_string(trim($parts[8]));
+			
+			/* ----- check each column ----- */
+			/* check if the UID exists in any format anywhere */
+			$uid = mysql_real_escape_string(trim($uid));
+			$sqlstring = "select subject_id from subjects where uid = '$uid'";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			if (mysql_num_rows($result) > 0) {
+				$validid = true;
+			}
+			else {
+				$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid') or altuid = sha1(upper('$uid')) or altuid = sha1(lower('$uid'))";
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				if (mysql_num_rows($result) > 0) {
+					$validid = true;
+				}
+			}
+			
+			if (!$validid) {
+				echo "Column 1 (UID) does not contain a valid  subject ID [$uid]. Line $L<br>";
+				$numErrors++;
+			}
+			
+			/* check for blank entries in other columns */
+			if ($uid == "") {
+				echo "Column 1 (UID) is blank. Line $L<br>";
+				$numErrors++;
+			}
+			
+			$L++;
+		}
+		
+		echo "Checked $L lines";
+		echo "</pre>";
+		
+		if ($numErrors == 0) {
+			return 1;
+		}
+		else {
+			return 0;
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- InsertDemographics ----------------- */
+	/* -------------------------------------------- */
+	function InsertDemographics($f) {
+	
+		/* open the file and check some fields */
+		$lines = file($f);
+
+		$c=0;
+		/* check if its the short format */
+		for ($i=0;$i<count($lines);$i++) {
+			$line = $lines[$i];
+			$parts = str_getcsv($line);
+			
+			/* separate out the columns */
+			$uid = mysql_real_escape_string(trim($parts[0]));
+			$dob = mysql_real_escape_string(trim($parts[1]));
+			$sex = mysql_real_escape_string(trim($parts[2]));
+			$ethnicity = mysql_real_escape_string(trim($parts[3]));
+			$race = mysql_real_escape_string(trim($parts[4]));
+			$handedness = mysql_real_escape_string(trim($parts[5]));
+			$education = mysql_real_escape_string(trim($parts[6]));
+			$marital = mysql_real_escape_string(trim($parts[7]));
+			$smoking = mysql_real_escape_string(trim($parts[8]));
+			
+			/* ----- check each column ----- */
+			/* get subjectID */
+			$subjectRowID = GetSubjectRowID($uid);
+			
+			if ($subjectRowID != "") {
+				$sqlstring = "update subjects set";
+				if ($dob != "") {
+					$thedate = date_parse($dob);
+					$dob = $thedate['year'] . "-" . $thedate['month'] . "-" . $thedate['day'];
+					$sqlstring .= " birthdate = '$dob'";
+				}
+				if ($sex != "") { $sqlstring .= " gender = '$gender'"; }
+				if ($ethnicity != "") { $sqlstring .= " ethnicity1 = '$ethnicity'"; }
+				if ($race != "") { $sqlstring .= " ethnicity2 = '$ethnicity2'"; }
+				if ($handedness != "") { $sqlstring .= " handedness = '$handedness'"; }
+				if ($education != "") { $sqlstring .= " education = '$education'"; }
+				if ($marital != "") { $sqlstring .= " marital_status = '$marital'"; }
+				if ($smoking != "") { $sqlstring .= " smoking_status = '$smoking'"; }
+				$sqlstring .= " where subject_id = $subjectRowID";
+			
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+				//echo "[" . mysql_affected_rows() . "]<br>";
+				$numupdated += mysql_affected_rows();
+			}
+			
+			$c++;
+		}
+		?>
+		<li><span style="color: darkblue">Updated <?=$numupdated?> of <?=$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateAgeAtScan -------------------- */
+	/* -------------------------------------------- */
+	function UpdateAgeAtScan() {
+	
+		$instanceid = $_SESSION['instanceid'];
+	
+		$savepath = $GLOBALS['cfg']['tmpdir'] . '/' . GenerateRandomString(20);
+		
+		/* create the directory in which the files are stored until the import module takes them */
+		mkdir($savepath, 0, true);
+		chmod($savepath, 0777);
+		
+		echo "<ul>";
+		
+		/* go through all the files and save them */
+		foreach ($_FILES['files']['name'] as $i => $name) {
+			if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
+				echo "<li>Received [$name] - " . number_format($_FILES['files']['size'][$i]) . " bytes<br>";
+				chmod("$savepath/$name", 0777);
+				if (ValidateAgeAtScan("$savepath/$name")) {
+					echo "<li>age-at-scan file [$name] is valid, inserting into database...";
+					InsertAgeAtScan("$savepath/$name");
+				}
+				else {
+					echo "<li>age-at-scan file [$name] is not valid. See errors above.";
+				}
+			}
+			else {
+				echo "<li>An error occured moving " . $_FILES['files']['tmp_name'][$i] . " to [" . $_FILES['files']['error'][$i] . "]<br>";
+			}
+		}
+		
+		echo "</ul>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidateAgeAtScan ------------------ */
+	/* -------------------------------------------- */
+	function ValidateAgeAtScan($f) {
+	
+		/* open the file and check some fields */
+		$lines = file($f);
+
+		echo "<pre style='border: solid 1px #ccc; padding:5px'>";
+
+		$numErrors = 0;
+		$numWarnings = 0;
+		$L = 1;
+		/* check if its the short format */
+		for ($i=0;$i<count($lines);$i++) {
+			$line = $lines[$i];
+			$parts = str_getcsv($line);
+			$validid = false;
+			
+			/* check for the correct number of columns */
+			$c = count($parts);
+			if ($c != 3) {
+				echo "Incorrect number of columns. Should be 3, but is actually [$c]. Line $L<br>";
+				$numErrors++;
+				continue;
+			}
+			
+			/* separate out the columns */
+			$uid = mysql_real_escape_string(trim($parts[0]));
+			$scandate = mysql_real_escape_string(trim($parts[1]));
+			$age = mysql_real_escape_string(trim($parts[2]));
+			
+			/* ----- check each column ----- */
+			/* check if the UID exists in any format anywhere */
+			$uid = mysql_real_escape_string(trim($uid));
+			$sqlstring = "select subject_id from subjects where uid = '$uid'";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			if (mysql_num_rows($result) > 0) {
+				$validid = true;
+			}
+			else {
+				$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid') or altuid = sha1(upper('$uid')) or altuid = sha1(lower('$uid'))";
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				if (mysql_num_rows($result) > 0) {
+					$validid = true;
+				}
+			}
+			
+			if (!$validid) {
+				echo "Column 1 (UID) does not contain a valid  subject ID [$uid]. Line $L<br>";
+				$numErrors++;
+			}
+			
+			/* check for blank entries in other columns */
+			if ($uid == "") {
+				echo "Column 1 (UID) is blank. Line $L<br>";
+				$numErrors++;
+			}
+			if ($scandate == "") {
+				echo "Column 2 (scan date) is blank. Line $L<br>";
+				$numErrors++;
+			}
+			if ($age == "") {
+				echo "Column 3 (age-at-scan) is blank. Line $L<br>";
+				$numErrors++;
+			}
+			
+			$parseddate = date_parse($scandate);
+			if ($parseddate['error_count'] > 0) {
+				echo "Column 2 (scan date) is not valid [$scandate]. Line $L<br>";
+				$numErrors++;
+			}
+			
+			$L++;
+		}
+		
+		echo "Checked $L lines";
+		echo "</pre>";
+		
+		if ($numErrors == 0) {
+			return 1;
+		}
+		else {
+			return 0;
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- InsertAgeAtScan -------------------- */
+	/* -------------------------------------------- */
+	function InsertAgeAtScan($f) {
+	
+		/* open the file and check some fields */
+		$lines = file($f);
+
+		$c=0;
+		/* check if its the short format */
+		for ($i=0;$i<count($lines);$i++) {
+			$line = $lines[$i];
+			$parts = str_getcsv($line);
+			
+			/* separate out the columns */
+			$uid = mysql_real_escape_string(trim($parts[0]));
+			$scandate = mysql_real_escape_string(trim($parts[1]));
+			$age = mysql_real_escape_string(trim($parts[2]));
+			
+			/* ----- check each column ----- */
+			/* get subjectID */
+			$subjectRowID = GetSubjectRowID($uid);
+			
+			if ($subjectRowID != "") {
+				$thedate = date_parse($scandate);
+				$scandate = $thedate['year'] . "-" . $thedate['month'] . "-" . $thedate['day'];
+				$sqlstring = "update studies set study_ageatscan = '$age' where date(study_datetime) = '$scandate' and enrollment_id in (select enrollment_id from enrollment where subject_id = $subjectRowID)";
+			
+				PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+				echo "[" . mysql_affected_rows() . "]<br>";
+				$numupdated += mysql_affected_rows();
+			}
+			
+			$c++;
+		}
+		?>
+		<li><span style="color: darkblue">Updated <?=$numupdated?> of <?=$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
+		<?
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- GetSubjectRowID -------------------- */

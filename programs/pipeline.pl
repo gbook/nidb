@@ -1370,6 +1370,7 @@ sub GetData() {
 			}
 			# otherwise, check the study for the protocol(s)
 			else {
+				$datalog .= "Checking the study [$studyid] for the protocol ($protocols)\n";
 				# get a list of series satisfying the search criteria, if it exists
 				if (($comparison == 0) && ($num == 0)) {
 					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
@@ -1377,8 +1378,8 @@ sub GetData() {
 				else {
 					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%' and numfiles $comparison $num)";
 				}
-				#WriteLog($sqlstring);
-				#$datalog .= "[$sqlstring]\n";
+				WriteLog($sqlstring);
+				$datalog .= "Checking if study contains data [$sqlstring]\n";
 				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 					$datalog .= "    This study contained step [$i]\n";
@@ -1453,19 +1454,21 @@ sub GetData() {
 					if ($level eq 'study') {
 						$datalog .= "This data step is study-level [$protocols] criteria: [$criteria]\n";
 						if ($criteria eq 'first') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
+							$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%') order by series_num asc limit 1";
+							#$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%')";
+							
 						}
 						elsif ($criteria eq 'last') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num desc limit 1";
+							$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%') order by series_num desc limit 1";
 						}
 						elsif ($criteria eq 'largestsize') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
+							$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%') order by series_size desc, numfiles desc, img_slices desc limit 1";
 						}
 						elsif ($criteria eq 'smallestsize') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
+							$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%') order by series_size asc, numfiles asc, img_slices asc limit 1";
 						}
 						else {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc";
+							$sqlstring = "select * from $modality"."_series where study_id = $studyid and (series_desc in ($protocols) or series_protocol in ($protocols) and image_type like '%$imagetype%') order by series_num asc";
 						}
 					}
 					else {
@@ -1484,14 +1487,14 @@ sub GetData() {
 								# find the data from the same subject and modality that has the nearest (in time) matching scan
 								WriteLog("Searching for subject-level data nearest in time...");
 								$datalog .= "    Searching for subject-level data nearest in time\nSearching for nearest study first...";
-								# get the studyid
+								# get the otherstudyid
 								$sqlstringA = "SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.series_desc in ($protocols) and `$modality" . "_series`.image_type like '%$imagetype%' ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
 								my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 								WriteLog($sqlstringA);
-								my $studyid;
+								my $otherstudyid;
 								if ($resultA->numrows > 0) {
 									my %rowA = $resultA->fetchhash;
-									$studyid = $rowA{'study_id'};
+									$otherstudyid = $rowA{'study_id'};
 									$neareststudynum = $rowA{'study_num'};
 								}
 								else {
@@ -1502,19 +1505,19 @@ sub GetData() {
 								
 								$datalog .= "Still within the subject-level data search [$protocols] criteria: [$criteria]\n";
 								if ($criteria eq 'first') {
-									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
+									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc limit 1";
 								}
 								elsif ($criteria eq 'last') {
-									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num desc limit 1";
+									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num desc limit 1";
 								}
 								elsif ($criteria eq 'largestsize') {
-									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
+									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size desc, numfiles desc, img_slices desc limit 1";
 								}
 								elsif ($criteria eq 'smallestsize') {
-									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
+									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_size asc, numfiles asc, img_slices asc limit 1";
 								}
 								else {
-									$sqlstring = "select * from $modality"."_series where study_id = $studyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc";
+									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and series_desc in ($protocols) and image_type like '%$imagetype%' order by series_num asc";
 								}
 								
 								$datalog .= "... now searching for the data IN the nearest study\n";
@@ -1534,7 +1537,7 @@ sub GetData() {
 						}
 					}
 					WriteLog($sqlstring);
-					$datalog .= "SQL [$sqlstring]";
+					$datalog .= "SQL [$sqlstring]\n";
 					my $newseriesnum = 1;
 					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {

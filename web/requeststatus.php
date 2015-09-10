@@ -96,8 +96,16 @@
 	/* --------------------------------------------------- */
 	function ShowList() {
 		?>
+		
+		<div style="border: 1px solid #aaa; border-radius:4px; font-size:10pt; padding: 5px">
+			<b>Notes</b>
+			<ul>
+				<li>Some older version of Linux cannot unzip files > 4GB. Upgrade unzip to v6.0 or try <code>jar xf thefile.zip</code>
+			</ul>
+		</div>
 		<table width="100%" cellspacing="0" cellpadding="2">
 			<tr>
+				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Group</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Request Date</td>
 				<? if (!$GLOBALS['ispublic']) { ?>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Username</td>
@@ -136,7 +144,12 @@
 		$completedate = $row['waittime'];
 		
 		/* get the groups that occur in the last 7 days */
-		$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
+		if ($GLOBALS['issiteadmin']) {
+			$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
+		}
+		else {
+			$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
+		}
 		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$groupid = $row['groupid'];
@@ -169,6 +182,7 @@
 			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['problem'];
 			?>
 			<tr style="font-size:9pt">
+				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$groupid?>&nbsp;</td>
 				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="requeststatus.php?action=showgroup&groupid=<?=$groupid?>"><?=$requestdate?></a>&nbsp;
 				<?
 					if (($GLOBALS['username'] == $username) || ($GLOBALS['issiteadmin'])) {
@@ -214,8 +228,11 @@
 				if ($destinationtype == "web") {
 					if (round($totals['complete']/$total)*100 == 100) {
 						$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$groupid.zip";
+						//echo "$zipfile<br>";
 						if (file_exists($zipfile)) {
-							$filesize = filesize($zipfile);
+							$output = shell_exec("du -sb $zipfile");
+							//echo "[$output]<br>";
+							list($filesize, $fname) = preg_split('/\s+/', $output);
 						}
 						else {
 							$filesize = 0;
