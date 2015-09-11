@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB groups.php
- // Copyright (C) 2004 - 2015
+ // Copyright (C) 2004 - 2014
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -353,7 +353,7 @@
 				<tr>
 					<td valign="top" style="padding-right:20px">
 						<?
-						DisplayDemographicsTable($n,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
 						?>
 					</td>
 				</tr>
@@ -442,7 +442,7 @@
 			$csv = "";
 			
 			/* get the demographics (study level) */
-			$sqlstring = "select c.enroll_subgroup,d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
+			$sqlstring = "select c.enroll_subgroup, b.study_ageatscan,d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
 			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$studyid = $row['study_id'];
@@ -450,6 +450,7 @@
 				$studydesc = $row['study_desc'];
 				$studyalternateid = $row['study_alternateid'];
 				$studymodality = $row['study_modality'];
+				$studyageatscan = $row['study_ageatscan'];
 				$studydatetime = $row['study_datetime'];
 				$studyoperator = $row['study_operator'];
 				$studyperformingphysician = $row['study_performingphysician'];
@@ -458,6 +459,8 @@
 				$studynotes = $row['study_notes'];
 				$subgroup = $row['enroll_subgroup'];
 
+				//PrintVariable($row);
+				
 				$subjectid = $row['subject_id'];
 				$name = $row['name'];
 				$birthdate = $row['birthdate'];
@@ -473,6 +476,11 @@
 				$subjectids[] = $subjectid;
 				/* do some demographics calculations */
 				$n++;
+				
+				if ($studyageatscan > 0) {
+					$age = $studyageatscan;
+				}
+				
 				if ($age > 0) {
 					$totalage += $age;
 					$numage++;
@@ -575,7 +583,7 @@
 				<tr>
 					<td valign="top" style="padding-right:20px">
 						<?
-						DisplayDemographicsTable($n,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
 						?>
 					</td>
 				</tr>
@@ -648,6 +656,7 @@
 							$studydesc = $row['study_desc'];
 							$studyalternateid = $row['study_alternateid'];
 							$studymodality = $row['study_modality'];
+							$studyageatscan = $row['study_ageatscan'];
 							$studydatetime = $row['study_datetime'];
 							$studyoperator = $row['study_operator'];
 							$studyperformingphysician = $row['study_performingphysician'];
@@ -668,6 +677,10 @@
 							$handedness = $row['handedness'];
 							$education = $row['education'];
 							$uid = $row['uid'];
+
+							if ($age <= 0) {
+								$age = $studyageatscan;
+							}
 
 							/* get list of alternate subject UIDs */
 							$altuids = GetAlternateUIDs($subjectid);
@@ -842,7 +855,7 @@
 				<tr>
 					<td valign="top" style="padding-right:20px">
 						<?
-						DisplayDemographicsTable($n,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
 						?>
 					</td>
 					<td valign="top" style="padding-right:20px">
@@ -943,7 +956,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDemographicsTable ----------- */
 	/* -------------------------------------------- */
-	function DisplayDemographicsTable($n,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight) {
+	function DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight) {
 		?>
 		<details>
 		<summary>Demographics</summary>
@@ -956,7 +969,7 @@
 				<td class="value"><?=$n?></td>
 			</tr>
 			<tr>
-				<td class="label">Age<br><span class="tiny">computed from<br>non-zero ages</span></td>
+				<td class="label">Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
 				<td class="value"><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
 			</tr>
 			<tr>

@@ -110,6 +110,7 @@
 	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
 	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
 	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
+	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
 	$requestvars['remotenidbserver'] = GetVariable("remotenidbserver");
 	$requestvars['remotenidbusername'] = GetVariable("remotenidbusername");
 	$requestvars['remotenidbpassword'] = GetVariable("remotenidbpassword");
@@ -2793,14 +2794,33 @@
 														</table>
 														<br>
 														<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
-														<table class="remotenidb" style="margin-left:40px; border:1px solid gray; border-radius: 4px">
+														<select name="remoteconnid" class="remotenidb">
+															<?
+																$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
+																$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+																while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+																	$connid = $row['remoteconn_id'];
+																	$connname = $row['conn_name'];
+																	$remoteserver = $row['remote_server'];
+																	$remoteusername = $row['remote_username'];
+																	$remotepassword = $row['remote_password'];
+																	$remoteinstanceid = $row['remote_instanceid'];
+																	$remoteprojectid = $row['remote_projectid'];
+																	$remotesiteid = $row['remote_siteid'];
+																	?>
+																	<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
+																	<?
+																}
+															?>
+														</select>
+														<!--<table class="remotenidb" style="margin-left:40px; border:1px solid gray; border-radius: 4px">
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>server</b></td><td><input type="url" name="remotenidbserver" title="Full server name or IP such as http://nidb.org" value="http://12.200.43.25/"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>username</b></td><td><input type="text" name="remotenidbusername" title="username for the <b>remote</b> NiDB site"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>password</b></td><td><input type="password" name="remotenidbpassword"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Instance&nbsp;ID</b></td><td><input type="text" name="remoteinstanceid" value="0"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Site&nbsp;ID</b></td><td><input type="text" name="remotesiteid" value="0"></td></tr>
 															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Project&nbsp;ID</b></td><td><input type="text" name="remoteprojectid" value="0"></td></tr>
-														</table>
+														</table>-->
 														<?
 													}
 												}
@@ -3636,6 +3656,7 @@
 		$remoteftpserver = $r['remoteftpserver'];
 		$remoteftpport = $r['remoteftpport'];
 		$remoteftppath = $r['remoteftppath'];
+		$remoteconnid = $r['remoteconnid'];
 		$remotenidbserver = $r['remotenidbserver'];
 		$remotenidbusername = $r['remotenidbusername'];
 		$remotenidbpassword = $r['remotenidbpassword'];
@@ -3816,7 +3837,7 @@
 		foreach ($sqlstrings as $modality => $sqlstring) {
 			//PrintSQL($sqlstring);
 			
-			echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
+			//echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 			
 			$result = MySQLQuery($sqlstring, __FILE__ , __LINE__);
 			//PrintSQLTable($result);
@@ -3824,7 +3845,7 @@
 			$numseries += mysql_num_rows($result);
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 
-				echo "(B) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
+				//echo "(B) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 				$safe = true;
 				
 				/* go through the list and populate the request table */
@@ -3874,7 +3895,17 @@
 				if ($safe) {
 					$totalseriessize += $series_size;
 					
-					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', sha1('$remotenidbpassword'), '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
+					$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
+					$resultC = mysql_query($sqlstringC) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringC</i><br>");
+					$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
+					$remotenidbserver = $rowC['remote_server'];
+					$remotenidbusername = $rowC['remote_username'];
+					$remotenidbpassword = $rowC['remote_password'];
+					$remoteinstanceid = $rowC['remote_instanceid'];
+					$remoteprojectid = $rowC['remote_projectid'];
+					$remotesiteid = $rowC['remote_siteid'];
+					
+					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
 					//PrintSQL($sqlstringA);
 					$resultA = MySQLQuery($sqlstringA, __FILE__ , __LINE__);
 					

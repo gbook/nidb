@@ -165,6 +165,7 @@
 			
 			<div id="user_menu" class="dropmenudiv_b">
 				<a href="users.php">My Account</a>
+				<a href="remoteconnections.php">Remote Connections</a>
 				<a href="login.php?action=logout">Logout</a>
 			</div>
 		</td>
