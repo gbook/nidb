@@ -91,7 +91,6 @@
 		}
 
 		$emailto = implode(",",$emails);
-		$emailto = "gregory.book@hhchealth.org,gregory.a.book@gmail.com";
 		/* send the email */
 		if (!SendGmail($emailto,$emailsubject,$emailbody, 1, 1)) {
 			return "System error. Unable to send email!";
