@@ -3453,7 +3453,7 @@
 				$sqlstring .= " group by `" . $s_studymodality . "_series`.$s_studymodality" . "series_id ";
 			}
 			if (($s_resultorder != "pipeline") && ($s_resultorder != "pipelinecsv")) {
-				$sqlstring .= " order by `studies`.study_datetime, `studies`.study_id";
+				$sqlstring .= " group by `$s_studymodality" . "_series`.$s_studymodality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
 				if ($s_pipelineid == ""){
 					$sqlstring .= ", `" . $s_studymodality . "_series`.series_num";
 				}
@@ -3895,15 +3895,17 @@
 				if ($safe) {
 					$totalseriessize += $series_size;
 					
-					$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
-					$resultC = mysql_query($sqlstringC) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringC</i><br>");
-					$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
-					$remotenidbserver = $rowC['remote_server'];
-					$remotenidbusername = $rowC['remote_username'];
-					$remotenidbpassword = $rowC['remote_password'];
-					$remoteinstanceid = $rowC['remote_instanceid'];
-					$remoteprojectid = $rowC['remote_projectid'];
-					$remotesiteid = $rowC['remote_siteid'];
+					if (trim($remoteconnid) != "") {
+						$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
+						$resultC = MySQLQuery($sqlstringC, __FILE__ , __LINE__);
+						$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
+						$remotenidbserver = $rowC['remote_server'];
+						$remotenidbusername = $rowC['remote_username'];
+						$remotenidbpassword = $rowC['remote_password'];
+						$remoteinstanceid = $rowC['remote_instanceid'];
+						$remoteprojectid = $rowC['remote_projectid'];
+						$remotesiteid = $rowC['remote_siteid'];
+					}
 					
 					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
 					//PrintSQL($sqlstringA);
