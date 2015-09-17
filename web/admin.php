@@ -77,6 +77,7 @@
 		<li><a href="system.php">System info</a>
 		<li><a href="stats.php">Usage stats</a>
 		<li><a href="longqc.php">Longitudinal QC</a>
+		<li><a href="adminemail.php">Mass email</a>
 		</ul>
 		<?
 	}
