@@ -87,18 +87,15 @@
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysql_num_rows($result);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$emails[] = $row['user_email'];
+			$emailto = $row['user_email'];
+			/* send the email */
+			if (!SendGmail($emailto,$emailsubject,$emailbody, 1, 0)) {
+				return "System error. Unable to send email!";
+			}
+			else {
+				return "Message send successfully to $numrows recipients";
+			}
 		}
-
-		$emailto = implode(",",$emails);
-		/* send the email */
-		if (!SendGmail($emailto,$emailsubject,$emailbody, 1, 1)) {
-			return "System error. Unable to send email!";
-		}
-		else {
-			return "Message send successfully to $numrows recipients";
-		}
-		
 	}
 	
 ?>
