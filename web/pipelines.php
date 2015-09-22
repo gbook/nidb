@@ -103,6 +103,7 @@
 	$dd_useseriesdirs = GetVariable("dd_useseriesdirs");
 	$dd_optional = GetVariable("dd_optional");
 	$dd_preserveseries = GetVariable("dd_preserveseries");
+	$dd_usephasedir = GetVariable("dd_usephasedir");
 	
 	$analysisnotes = GetVariable("analysisnotes");
 	$fileviewtype = GetVariable("fileviewtype");
@@ -116,7 +117,7 @@
 		case 'viewpipeline': DisplayPipeline($id, $version); break;
 		case 'addform': DisplayPipelineForm("add", ""); break;
 		case 'updatepipelinedef':
-			UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries);
+			UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
@@ -454,8 +455,11 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipelineDef ------------------ */
 	/* -------------------------------------------- */
-	function UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries) {
+	function UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
 		
+		if ($id == "") {
+			?>Error: pipeline ID blank<br><br><?
+		}
 		?>
 		<span class="tiny">
 		<ol>
@@ -558,8 +562,9 @@
 				$dd_useseriesdirs[$i] = mysql_real_escape_string($dd_useseriesdirs[$i]);
 				$dd_optional[$i] = mysql_real_escape_string($dd_optional[$i]);
 				$dd_preserveseries[$i] = mysql_real_escape_string($dd_preserveseries[$i]);
+				$dd_usephasedir[$i] = mysql_real_escape_string($dd_usephasedir[$i]);
 				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
 				echo "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -584,6 +589,11 @@
 	/* ------- ChangeOwner ------------------------ */
 	/* -------------------------------------------- */
 	function ChangeOwner($id, $newuserid) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
 		/* update owner id */
 		$sqlstring = "update pipelines set pipeline_admin = $newuserid where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -596,6 +606,11 @@
 	/* ------- SetAnalysisNotes ------------------- */
 	/* -------------------------------------------- */
 	function SetAnalysisNotes($id, $notes) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
+		
 		$notes = mysql_real_escape_string($notes);
 		$sqlstring = "update analysis set analysis_notes = '$notes' where analysis_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -609,6 +624,11 @@
 	/* ------- DeletePipeline --------------------- */
 	/* -------------------------------------------- */
 	function DeletePipeline($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
 		/* disable this pipeline */
 		DisablePipeline($id);
 		
@@ -629,6 +649,10 @@
 	/* ------- DeleteAnalyses --------------------- */
 	/* -------------------------------------------- */
 	function DeleteAnalyses($id, $analysisids) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
 	
 		/* disable this pipeline */
 		DisablePipeline($id);
@@ -673,6 +697,10 @@
 	/* ------- CopyAnalyses ----------------------- */
 	/* -------------------------------------------- */
 	function CopyAnalyses($id, $analysisids, $destination) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
 	
 		$destination = mysql_real_escape_string($destination);
 		
@@ -700,6 +728,10 @@
 	/* ------- CreateLinks ------------------------ */
 	/* -------------------------------------------- */
 	function CreateLinks($id, $analysisids, $destination) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
 	
 		$destination = mysql_real_escape_string($destination);
 		
@@ -728,8 +760,10 @@
 	/* -------------------------------------------- */
 	function RerunResults($id, $analysisids) {
 	
-		/* disable this pipeline */
-		//DisablePipeline($id);
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -760,6 +794,11 @@
 	/* ------- MarkAnalysis ----------------------- */
 	/* -------------------------------------------- */
 	function MarkAnalysis($id, $analysisids, $status) {
+		
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -840,6 +879,11 @@
 	/* ------- ResetAnalyses ---------------------- */
 	/* -------------------------------------------- */
 	function ResetAnalyses($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
+		
 		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_startdate is null)";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		?><div align="center"><span class="message">Reset analyses: <?echo mysql_affected_rows(); ?> analysis <b>data</b> rows deleted</span></div><?
@@ -854,6 +898,11 @@
 	/* ------- ResetPipeline ---------------------- */
 	/* -------------------------------------------- */
 	function ResetPipeline($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
 		$sqlstring = "update pipelines set pipeline_status = 'stopped' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}	
@@ -863,6 +912,11 @@
 	/* ------- EnablePipeline --------------------- */
 	/* -------------------------------------------- */
 	function EnablePipeline($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
 		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
@@ -872,6 +926,11 @@
 	/* ------- DisablePipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisablePipeline($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
 		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
@@ -899,6 +958,10 @@
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id) {
+		if (($id == "") && ($type == "edit")) {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
 	
 		$level = 0;
 		/* populate the fields if this is an edit */
@@ -1471,6 +1534,7 @@
 			$dd_location = $row['pdd_location'];
 			$dd_useseries = $row['pdd_useseries'];
 			$dd_preserveseries = $row['pdd_preserveseries'];
+			$dd_usephasedir = $row['pdd_usephasedir'];
 			$dd_behformat = $row['pdd_behformat'];
 			$dd_behdir = $row['pdd_behdir'];
 			$dd_enabled = $row['pdd_enabled'];
@@ -1554,7 +1618,7 @@
 				<td valign="top" colspan="7" style="padding-left:25px">
 					<details class="level1" style="padding:0px;margin:0px">
 						<summary style="padding:0px; font-size:9pt">Options</summary>
-						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">
+						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
 							<tr>
 								<td class="label">Data format</td>
 								<td>
@@ -1577,8 +1641,8 @@
 								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
 							</tr>
 							<tr>
-								<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
-								<td title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
+								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
 							</tr>
 							<tr>
 								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
@@ -1598,12 +1662,16 @@
 								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
 							</tr>
 							<tr>
-								<td class="label">Use series directories</td>
-								<td title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>></td>
+								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></td>
+								<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>></td>
 							</tr>
 							<tr>
 								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
 								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>></td>
+							</tr>
+							<tr>
+								<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></td>
+								<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>></td>
 							</tr>
 							<tr>
 								<td class="label">Behavioral data directory format</td>
@@ -1696,7 +1764,7 @@
 				<td valign="top" colspan="7" style="padding-left:25px">
 					<details class="level1" style="padding:0px;margin:0px">
 						<summary style="padding:0px; font-size:9pt">Options</summary>
-						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999" width="100%">
+						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
 							<tr>
 								<td class="label">Data format</td>
 								<td>
@@ -1719,8 +1787,8 @@
 								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
-								<td class="label">Directory<br><span class="tiny">Relative to analysis root</span></td>
-								<td title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
+								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
 							</tr>
 							<tr>
 								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
@@ -1740,12 +1808,16 @@
 								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]"></td>
 							</tr>
 							<tr>
-								<td class="label">Use series directories</td>
-								<td title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1"></td>
+								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"</td>
+								<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
 								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
 								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1"></td>
+							</tr>
+							<tr>
+								<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, noPE"></td>
+								<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
 								<td class="label">Behavioral data directory format</td>
@@ -1909,6 +1981,10 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	/* ------- DisplayPipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisplayPipeline($id, $version) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1990,6 +2066,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 								$pdd_location = $row['pdd_location'];
 								$pdd_useseries = $row['pdd_useseries'];
 								$pdd_preserveseries = $row['pdd_preserveseries'];
+								$pdd_usephasedir = $row['pdd_usephasedir'];
 								$pdd_behformat = $row['pdd_behformat'];
 								$pdd_behdir = $row['pdd_behdir'];
 								$pdd_enabled = $row['pdd_enabled'];
@@ -2004,6 +2081,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 									<td class="datadef"><?=$pdd_location?></td>
 									<td class="datadef"><?=$pdd_useseries?></td>
 									<td class="datadef"><?=$pdd_preserveseries?></td>
+									<td class="datadef"><?=$pdd_usephasedir?></td>
 									<td class="datadef"><?=$pdd_behformat?></td>
 									<td class="datadef"><?=$pdd_behdir?></td>
 								</tr>

@@ -1421,6 +1421,7 @@ sub GetData() {
 			my $location = $datadef[$i]{'location'};
 			my $useseries = $datadef[$i]{'useseries'};
 			my $preserveseries = $datadef[$i]{'preserveseries'};
+			my $usephasedir = $datadef[$i]{'usephasedir'};
 			my $behformat = $datadef[$i]{'behformat'};
 			my $behdir = $datadef[$i]{'behdir'};
 			my $enabled = $datadef[$i]{'enabled'};
@@ -1557,6 +1558,10 @@ sub GetData() {
 							my $datatype = $rowC{'data_type'};
 							my $seriessize = $rowC{'series_size'};
 							my $numfiles = $rowC{'numfiles'};
+							my $phaseplane = $rowC{'phaseencodedir'};
+							my $phaseangle = $rowC{'phaseencodeangle'};
+							my $phasepositive = $rowC{'PhaseEncodingDirectionPositive'};
+							
 							if ($level eq 'study') {
 								# studynum is not returned as part of this current result set, so reuse the studynum from outside this
 								# resultset loop
@@ -1604,6 +1609,20 @@ sub GetData() {
 									if ($behformat eq "behseries") { $behoutdir = "$analysispath/$location/$seriesnum"; }
 									if ($behformat eq "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
 								}
+							}
+							
+							if ($usephasedir) {
+								my $phasedir = "unknownPE";
+								
+								$datalog .= "PhasePlane [$phaseplane] PhasePositive [$phasepositive]\n";
+								if (($phaseplane eq "COL") && ($phasepositive eq "1")) { $phasedir = "AP"; }
+								if (($phaseplane eq "COL") && ($phasepositive eq "0")) { $phasedir = "PA"; }
+								if (($phaseplane eq "COL") && ($phasepositive eq "")) { $phasedir = "COL"; }
+								if (($phaseplane eq "ROW") && ($phasepositive eq "1")) { $phasedir = "RL"; }
+								if (($phaseplane eq "ROW") && ($phasepositive eq "0")) { $phasedir = "LR"; }
+								if (($phaseplane eq "ROW") && ($phasepositive eq "")) { $phasedir = "ROW"; }
+								
+								$newanalysispath = $newanalysispath . "/$phasedir";
 							}
 							
 							$datalog .= "    Creating directory [$newanalysispath]\n";
@@ -1861,6 +1880,7 @@ sub GetPipelineDataDef() {
 			$rec->{'location'} = $row{'pdd_location'};
 			$rec->{'useseries'} = $row{'pdd_useseries'};
 			$rec->{'preserveseries'} = $row{'pdd_preserveseries'};
+			$rec->{'usephasedir'} = $row{'pdd_usephasedir'};
 			$rec->{'behformat'} = $row{'pdd_behformat'};
 			$rec->{'behdir'} = $row{'pdd_behdir'};
 			$rec->{'enabled'} = $row{'pdd_enabled'};
