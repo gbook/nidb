@@ -544,18 +544,44 @@ sub InsertSeries {
 	my $InPlanePhaseEncodingDirection = EscapeMySQLString(trim($info->{'InPlanePhaseEncodingDirection'}));
 	
 	# attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header
-	my $PhaseEncodeAngle = 0;
-	my $PhaseEncodingDirectionPositive = 0;
-	open(F, $files[0]); # open the dicom file as a text file, since the CSA header is stored as text, not binary
+	my $PhaseEncodeAngle = "";
+	my $PhaseEncodingDirectionPositive = "";
+	my $dicomfile = $files[0];
+	open(F, $dicomfile); # open the dicom file as a text file, since part of the CSA header is stored as text, not binary
 	my @dcmlines=<F>;
 	close(F);
 	foreach my $line(@dcmlines) {	
-		if ($line =~ /\.dInPlaneRot/i) {
-			my ($key, $value) = split /\s*=\s*/, $line;
+		if ($line =~ /\]\.dInPlaneRot/i) {
+			if (length($line) > 150) {
+				my $idx = index($line, '.dInPlaneRot');
+				#print "[$line]\n";
+				$line = substr($line,$idx,23);
+			}
+			my @values = split /\s*=\s*/, $line;
+			my $value = trim($values[-1]);
+			if ($value > 3.5) { $value = ""; }
+			if ($value < -3.5) { $value = ""; }
+			#print "[$line]: [$value]\n";
 			$PhaseEncodeAngle = substr($value,0,8);
 			last;
 		}
 	}
+	#print "PhaseEncodeAngle = [$PhaseEncodeAngle]\n";
+	
+	# get the other part of the CSA header, the PhaseEncodingDirectionPositive value
+	chdir($cfg{'scriptdir'});
+	my $systemstring = "./gdcmdump -C $dicomfile | grep PhaseEncodingDirectionPositive";
+	#print "Running [$systemstring]\n";
+	my $header = trim(`$systemstring`);
+	#print "$header\n";
+	my @parts = split(',', $header);
+	my $val = $parts[4];
+	$val =~ s/Data '//g;
+	$val =~ s/'//g;
+	$val = trim($val);
+	#print "PhaseEncodingDirectionPositive = [$val]\n";
+	$PhaseEncodingDirectionPositive = EscapeMySQLString(trim($val));
+	$PhaseEncodeAngle = EscapeMySQLString(trim($PhaseEncodeAngle));
 	
 	# CT specific tags
 	my $ContrastBolusAgent = trim($info->{'ContrastBolusAgent'});
@@ -1160,7 +1186,7 @@ sub InsertSeries {
 	}
 	
 	# change the permissions to 777 so the webpage can read/write the directories
-	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
+	$systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	# change back to original directory before leaving
 	WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID");
