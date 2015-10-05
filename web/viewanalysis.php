@@ -410,7 +410,7 @@
 	/* -------------------------------------------- */
 	function DisplayResults($analysisid, $studyid) {
 		?>
-		Analyses for this study<br><br>
+		Results for this analysis<br><br>
 		<table class="smalldisplaytable">
 		<?
 			if ($studyid == "") {
@@ -459,7 +459,7 @@
 									break;
 								case "i":
 									?>
-									<img src="preview.php?image=/mount<?=$filename?>">
+									<img src="preview.php?image=/mount<?=$filename?>" style="max-width:800px">
 									<?
 									break;
 							}
