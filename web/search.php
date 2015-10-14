@@ -417,95 +417,6 @@
 				</table>
 			</td>
 		</tr>
-		<? if ($_SESSION['enablebeta']) { ?>
-		<tr class="advanced">
-			<td class="sidelabel">Phenotype <?=PrintBeta();?></td>
-			<td style="border-bottom: 1pt solid #CCC">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Measure Search<br><span class="tiny">Search based on these critera</span></td>
-						<td>
-							<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
-								<tr>
-									<td>
-									<?
-										$sqlstring = "select measure_name from measurenames order by measure_name";
-										$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-											$tags[] = '"' . $row['measure_name'] . '"';
-										}
-									?>
-									<script>
-										$(function() {
-											var availableTags = [<?=implode2(',',$tags);?>];
-											function split( val ) {
-												return val.split( /,\s*/ );
-											}
-											function extractLast( term ) {
-												return split( term ).pop();
-											}
-
-											$( "#s_measure1" )
-												// don't navigate away from the field on tab when selecting an item
-												.bind( "keydown", function( event ) {
-													if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
-														event.preventDefault();
-													}
-											})
-											$( "#s_measure2" )
-												// don't navigate away from the field on tab when selecting an item
-												.bind( "keydown", function( event ) {
-													if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
-														event.preventDefault();
-													}
-											})											.autocomplete({
-												minLength: 0,
-												source: function( request, response ) {
-													// delegate back to autocomplete, but extract the last term
-													response( $.ui.autocomplete.filter(
-													availableTags, extractLast( request.term ) ) );
-												},
-												focus: function() {
-													// prevent value inserted on focus
-													return false;
-												},
-												select: function( event, ui ) {
-													var terms = split( this.value );
-													// remove the current input
-													terms.pop();
-													// add the selected item
-													terms.push( ui.item.value );
-													// add placeholder to get the comma-and-space at the end
-													terms.push( "" );
-													this.value = terms.join( ", " );
-													return false;
-												}
-											});
-										});
-									</script>
-										<input type="text" id="s_measure1" name="s_measuresearch" value="<?=$searchvars['s_measuresearch'];?>" size="50" maxlength="255"><br><span class="tiny">Example: meas1=4;meas*&lt;50;meas3~value</span>
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Measure Columns<br><span class="tiny">Show these columns in results</span></td>
-						<td>
-							<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
-								<tr>
-									<td>
-										<input type="text" id="s_measure2" name="s_measurelist" value="<?=$searchvars['s_measurelist'];?>" size="50" maxlength="255">
-										<br><span class="tiny">Example: meas1,meas2,meas3<br>Or * for all measures</span>
-									</td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-		<? } ?>
 		<tr>
 			<td class="sidelabel">Study</td>
 			<td style="border-bottom: 1pt solid #CCC">
@@ -753,120 +664,231 @@
 				</table>
 			</td>
 		</tr>
-		<tr class="advanced">
-			<td class="sidelabel">Analysis</td>
-			<td style="border-bottom: 1pt solid #CCC">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr>
-						<td class="fieldlabel" width="150px">Pipeline</td>
-						<td>
-						<select name="s_pipelineid" onClick="SwitchOption('viewpipeline')">
-							<option value="">Select pipeline</option>
-						<?
-							$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
-							$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
-							while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
-								$pipelineid = $row2['pipeline_id'];
-								$pipelinename = $row2['pipeline_name'];
-								?>
-								<option value="<?=$pipelineid?>" <? if ($searchvars['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
-								<?
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Result name</td>
-						<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultname']?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Result unit</td>
-						<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
-					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Result type</td>
-						<td>
-							<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
-							<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
-							<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
-							<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
-							<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
-						</td>
-					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Result value</td>
-						<td valign="top">
-							<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
-								<option value="=" <? if ($searchvars['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
-								<option value=">" <? if ($searchvars['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
-								<option value=">=" <? if ($searchvars['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
-								<option value="<" <? if ($searchvars['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
-								<option value="<=" <? if ($searchvars['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
-							</select>
-							<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
-							<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
-							<br>
-							<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
-							<br>
-							<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
 		<tr>
 			<td class="sidelabel" style="color: gray">Results</td>
 			<td style="border-bottom: 1pt solid #CCC">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr>
-						<td class="fieldlabel" width="150px"><!--Results format--></td>
 						<td>
-							<span style="font-size:10pt; color: darkblue">Download/Export</span><br>
-							
-							<? if (($searchvars['s_resultorder'] == "subject") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
-							
-							<? if (($searchvars['s_resultorder'] == "uniquesubject") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
-							
-							<? if (($searchvars['s_resultorder'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
-							
-							<? if ($searchvars['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Series List
-							
-							<br><br>
+							<script>
+								$(function() {
+									$( "#tabs-min" ).tabs();
+								});
+							</script>
+							<div id="tabs-min" class="tabs-min">
+								<div style="overflow:auto; width: 650px">
+									<ul>
+										<li><a href="#tabs-1">Download Data</a></li>
+										<li><a href="#tabs-2">Assessments</a></li>
+										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
+										<li><a href="#tabs-4">Analysis</a></li>
+										<li><a href="#tabs-5">QC</a></li>
+										<li><a href="#tabs-6">Admin</a></li>
+									</ul>
+									<div id="tabs-1">
+										<? if (($searchvars['s_resultorder'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
+										
+										<? if ($searchvars['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Series List<br>
 
-							<span style="font-size:10pt; color: darkblue">View</span><br>
-							<? if ($searchvars['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewtable" value="table" <?=$checked?>> Table<br>
-							
-							<? if ($searchvars['s_resultorder'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
-							
-							<? if ($searchvars['s_resultorder'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
-							
-							<? if ($searchvars['s_resultorder'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
-							
-							<? if ($searchvars['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
+										<? if ($searchvars['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
+									</div>
+									<div id="tabs-2">
+										<table width="100%" cellspacing="0" cellpadding="3">
+											<tr>
+												<td class="fieldlabel" width="150px">Measure Search<br><span class="tiny">Search based on these critera</span></td>
+												<td>
+													<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
+														<tr>
+															<td>
+															<?
+																$sqlstring = "select measure_name from measurenames order by measure_name";
+																$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+																while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+																	$tags[] = '"' . $row['measure_name'] . '"';
+																}
+															?>
+															<script>
+																$(function() {
+																	var availableTags = [<?=implode2(',',$tags);?>];
+																	function split( val ) {
+																		return val.split( /,\s*/ );
+																	}
+																	function extractLast( term ) {
+																		return split( term ).pop();
+																	}
 
-							<? if ($searchvars['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
-							
-							<? if ($GLOBALS['isadmin']) { ?>
-							<? if ($searchvars['s_resultorder'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultorder" id="viewoperations" value="operations" <?=$checked?>> File operations
-							<? } ?>
-							
-							<br>
-							<br>
-							
-							<? if ($searchvars['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
+																	$( "#s_measure1" )
+																		// don't navigate away from the field on tab when selecting an item
+																		.bind( "keydown", function( event ) {
+																			if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
+																				event.preventDefault();
+																			}
+																	})
+																	$( "#s_measure2" )
+																		// don't navigate away from the field on tab when selecting an item
+																		.bind( "keydown", function( event ) {
+																			if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
+																				event.preventDefault();
+																			}
+																	})											.autocomplete({
+																		minLength: 0,
+																		source: function( request, response ) {
+																			// delegate back to autocomplete, but extract the last term
+																			response( $.ui.autocomplete.filter(
+																			availableTags, extractLast( request.term ) ) );
+																		},
+																		focus: function() {
+																			// prevent value inserted on focus
+																			return false;
+																		},
+																		select: function( event, ui ) {
+																			var terms = split( this.value );
+																			// remove the current input
+																			terms.pop();
+																			// add the selected item
+																			terms.push( ui.item.value );
+																			// add placeholder to get the comma-and-space at the end
+																			terms.push( "" );
+																			this.value = terms.join( ", " );
+																			return false;
+																		}
+																	});
+																});
+															</script>
+																<input type="text" id="s_measure1" name="s_measuresearch" value="<?=$searchvars['s_measuresearch'];?>" size="50" maxlength="255"><br><span class="tiny">Example: meas1=4;meas*&lt;50;meas3~value</span>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+											<tr>
+												<td class="fieldlabel" width="150px">Measure Columns<br><span class="tiny">Show these columns in results</span></td>
+												<td>
+													<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
+														<tr>
+															<td>
+																<input type="text" id="s_measure2" name="s_measurelist" value="<?=$searchvars['s_measurelist'];?>" size="50" maxlength="255">
+																<br><span class="tiny">Example: meas1,meas2,meas3<br>Or * for all measures</span>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</table>
+										<br>
+										<? if ($searchvars['s_resultorder'] == "assessment") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="assessment" value="study" <?=$checked?>> Phenotypic measures<br>
+									</div>
+									<div id="tabs-3">
+										<? if ($searchvars['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewtable" value="table" <?=$checked?>> Table<br>
+										
+										<? if ($searchvars['s_resultorder'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
+										
+										<? if ($searchvars['s_resultorder'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
+										
+										<? if ($searchvars['s_resultorder'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
+									</div>
+									<div id="tabs-4">
+										<table width="100%" cellspacing="0" cellpadding="3" style="font-size:11pt">
+											<tr>
+												<td class="fieldlabel" width="150px">Pipeline</td>
+												<td>
+												<select name="s_pipelineid" onClick="SwitchOption('viewpipeline')">
+													<option value="">Select pipeline</option>
+												<?
+													$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
+													$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
+													while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+														$pipelineid = $row2['pipeline_id'];
+														$pipelinename = $row2['pipeline_name'];
+														?>
+														<option value="<?=$pipelineid?>" <? if ($searchvars['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
+														<?
+													}
+												?>
+												</select>
+												</td>
+											</tr>
+											<tr>
+												<td class="fieldlabel" width="150px">Result name</td>
+												<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultname']?>" size="50" class="importantfield"></td>
+											</tr>
+											<tr>
+												<td class="fieldlabel" width="150px">Result unit</td>
+												<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
+											</tr>
+											<tr>
+												<td class="fieldlabel" width="150px">Result type</td>
+												<td>
+													<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
+													<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
+													<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
+													<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
+													<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
+												</td>
+											</tr>
+											<tr>
+												<td class="fieldlabel" width="150px">Result value</td>
+												<td valign="top">
+													<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
+														<option value="=" <? if ($searchvars['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
+														<option value=">" <? if ($searchvars['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
+														<option value=">=" <? if ($searchvars['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
+														<option value="<" <? if ($searchvars['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
+														<option value="<=" <? if ($searchvars['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
+													</select>
+													<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
+													<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
+													<br>
+													<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
+													<br>
+													<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
+												</td>
+											</tr>
+										</table>
+										<br><br>
+									
+										<? if ($searchvars['s_resultorder'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
+										
+										<? if ($searchvars['s_resultorder'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
+										
+										<? if ($searchvars['s_resultorder'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
+										
+										<? if ($searchvars['s_resultorder'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
+									</div>
+									<div id="tabs-5">
+										<? if ($searchvars['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="qcchart" value="pipeline" <?=$checked?>> Chart<br>
+										
+										<? if ($searchvars['s_resultorder'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="qctable" value="pipeline" <?=$checked?>> Table<br>
+									</div>
+									<div id="tabs-6">
+										<? if ($searchvars['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
+										
+										<? if ($GLOBALS['isadmin']) { ?>
+										<? if ($searchvars['s_resultorder'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewoperations" value="operations" <?=$checked?>> File operations
+										<? } ?>
+										<br>
+										
+										<? if ($searchvars['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
+									</div>
+								</div>
+							</div>
 						</td>
 					</tr>
 				</table>
@@ -879,21 +901,12 @@
 		</tr>
 	</table>
 			</td>
-			<td rowspan="5" width="300px" valign="top" style="padding-left: 150px; color: darkblue; font-size:10pt">
-				<details>
-				<summary><b>Search Tips:</b></summary>
-				<ul>
-					<li>Enter as much or as little information as you want
-					<li>Put commas between items to search for lists of names, scanids, study descriptions, physicians, operators or protocols
-					<li>Use the <a href="http://www.google.com/chrome" class="link">Google Chrome</a> browser if possible
-				</ul>
-				</details>
-			</td>
 		</tr>
 	</table>
 	
 	</form>
 	</div>
+	<br><br><br><br><br><br><br><br>
 	<?
 	}
 
@@ -1400,6 +1413,10 @@
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
 				SearchLongitudinal($result);
+			}
+			elseif (($s_resultorder == 'pipelinelong') || ($s_resultorder == 'pipelinelongyear')) {
+				/* display longitudinal pipeline data */
+				SearchLongitudinalPipeline($result, $s_resultorder);
 			}
 			else {
 				SearchDefault($result, $s, $colors, $colors2);
@@ -2502,6 +2519,157 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- SearchLongitudinalPipeline --------- */
+	/* -------------------------------------------- */
+	function SearchLongitudinalPipeline(&$result, $s_resultorder) {
+		//PrintSQLTable($result);
+		
+		if ($s_resultorder == 'pipelinelong') {
+			$agebin = 'M';
+		}
+		else {
+			$agebin = 'Y';
+		}
+		
+		$modality = '';
+		/* gather scans into longitudinal format */
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$uid = strtoupper(trim($row['uid']));
+			$studyid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$age = $row['ageinmonths'];
+			$age = $row['ageinmonths'];
+			$seriesdesc = $row['series_desc'];
+			$resultname = $row['result_nameid'];
+			$resultvalue = $row['result_value'];
+			
+			if ($age > 0) {
+				$longs[$uid][$age][$resultname] = $resultvalue;
+			}
+		}
+		
+		echo "<pre>";
+		//print_r($longs);
+		echo "</pre>";
+		
+		/* get the month ranges */
+		$maxage = 0;
+		$minage = INF;
+		foreach ($longs as $uid => $value) {
+			foreach ($longs[$uid] as $age => $value2) {
+				if (($age > 0) && ($age < 1200)) {
+					if ($age > $maxage) { $maxage = $age; }
+					if ($age < $minage) { $minage = $age; }
+				}
+			}
+		}
+
+		echo "Age range in months [$minage] to [$maxage]<br>";
+		
+		$csv1 = "uid";
+		$csv2 = "uid";
+		
+		/* loop through the UIDs */
+		foreach ($longs as $uid => $val) {
+			/* loop through the SeriesDescriptions */
+			for ($age=$minage;$age<=$maxage;$age++) {
+				if (isset($longs[$uid][$age][1])) {
+					$value = $longs[$uid][$age][1];
+					//echo "[$uid][$age][1] = $value<br>";
+					$ages[$age][] = $value;
+				}
+			}
+		}
+		
+		?>
+		<table cellspacing="0" style="font-size: 8pt" border="1">
+			<tr>
+				<td><b>UID</b></td>
+				<?
+					for ($col=$minage;$col<=$maxage;$col++) {
+						$values = $ages[$col];
+						if (count($values) > 0) {
+							$csv1 .= ", $col";
+							$csv2 .= ", $col";
+							?>
+							<td align="right" style="color:darkblue"><?=$col?></td>
+							<?
+						}
+					}
+				?>
+			</tr>
+		<?
+		$csv1 .= "\n";
+		$csv2 .= "\n";
+		
+		//ksort($ages, SORT_NATURAL);
+		//echo "<pre>";
+		//print_r($ages);
+		//echo "</pre>";
+		
+		?><tr><td style="padding-right: 4px">Count</td><?
+		$csv2 .= "n";
+		for ($col=$minage;$col<=$maxage;$col++) {
+			$values = $ages[$col];
+			if (count($values) > 0) {
+				$n = count($values);
+				$csv2 .= ", $n";
+				?><td style="padding-right: 4px; text-align: right"><?=$n?></td><?
+			}
+		}
+		$csv2 .= "\n";
+		?></tr>
+		
+		<tr><td>Min</td><?
+		$csv2 .= "min";
+		for ($col=$minage;$col<=$maxage;$col++) {
+			$values = $ages[$col];
+			if (count($values) > 0) {
+				$min = min($values);
+				$csv2 .= ", $min";
+				?><td style="padding-right: 4px; text-align: right"><?=number_format($min,0)?></td><?
+			}
+		}
+		$csv2 .= "\n";
+		?></tr>
+		
+		<tr><td>Max</td><?
+		$csv2 .= "max";
+		for ($col=$minage;$col<=$maxage;$col++) {
+			$values = $ages[$col];
+			if (count($values) > 0) {
+				$max = max($values);
+				$csv2 .= ", $max";
+				?><td style="padding-right: 4px; text-align: right"><?=number_format($max,0)?></td><?
+			}
+		}
+		$csv2 .= "\n";
+		?></tr>
+		
+		<tr><td>Mean</td><?
+		$csv2 .= "mean";
+		for ($col=$minage;$col<=$maxage;$col++) {
+			$values = $ages[$col];
+			if (count($values) > 0) {
+				$mean = array_sum($values) / count($values);
+				$csv2 .= ", $mean";
+				?><td style="padding-right: 4px; text-align: right"><?=number_format($mean,0)?></td><?
+			}
+		}
+		$csv2 .= "\n";
+		?></tr>
+		
+		</table>
+		Full table .csv<br>
+		<textarea rows="8" cols="150"><?=$csv1?></textarea>
+		<br><br>
+		Summary .csv<br>
+		<textarea rows="8" cols="150"><?=$csv2?></textarea>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
 	/* ------- DisplayFileIOBox ------------------- */
 	/* -------------------------------------------- */
 	function DisplayFileIOBox() {
@@ -3381,8 +3549,13 @@
 	
 		/* ----- build SQL query ----- */
 		if ($s_resultorder == "pipeline") {
-			//$sqlstring = "select analysis_resultnames.result_name, subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, analysis_results.*";
-			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, analysis_results.*";
+			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+		}
+		elseif ($s_resultorder == "pipelinelong") {
+			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+		}
+		elseif ($s_resultorder == "pipelinelongyear") {
+			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "long") {
 			if ($s_usealtseriesdesc) {
@@ -3406,7 +3579,7 @@
 			$sqlstring .= ", measures.*, measurenames.measure_name";
 		}
 		
-		if ($s_pipelineid == ""){
+		if ($s_pipelineid == "") {
 			$sqlstring .= ", `$s_studymodality" . "_series`.$s_studymodality" . "series_id";
 		}
 		$sqlstring .= " from `enrollment`
@@ -3452,7 +3625,7 @@
 			if ($s_formvalue[0] != ""){
 				$sqlstring .= " group by `" . $s_studymodality . "_series`.$s_studymodality" . "series_id ";
 			}
-			if (($s_resultorder != "pipeline") && ($s_resultorder != "pipelinecsv")) {
+			if (($s_resultorder != "pipeline") && ($s_resultorder != "pipelinecsv") && ($s_resultorder != "pipelinelong") && ($s_resultorder != "pipelinelongyear")) {
 				$sqlstring .= " group by `$s_studymodality" . "_series`.$s_studymodality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
 				if ($s_pipelineid == ""){
 					$sqlstring .= ", `" . $s_studymodality . "_series`.series_num";

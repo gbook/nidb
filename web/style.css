@@ -531,3 +531,34 @@ input.required { border: 1px solid #888; background-color: #FBFFC4}
   padding: 0 10px;
   border-bottom: 1px solid #ccc;
 }
+#tabs-min { 
+	background: transparent; 
+	border: none;
+	font-size:11pt;
+} 
+#tabs-min .ui-widget-header { 
+	background: transparent; 
+	border: none; 
+	border-bottom: 1px solid #c0c0c0; 
+	-moz-border-radius: 0px; 
+	-webkit-border-radius: 0px; 
+	border-radius: 0px; 
+} 
+#tabs-min .ui-tabs-nav .ui-state-default { 
+	background: transparent; 
+	border: none; 
+} 
+#tabs-min .ui-tabs-nav .ui-state-active { 
+	background: transparent url(images/uiTabsArrow.png) no-repeat bottom center; 
+	border: none; 
+} 
+#tabs-min .ui-tabs-nav .ui-state-default a { 
+	color: #3B5998;
+} 
+#tabs-min .ui-tabs-nav .ui-state-default a:hover { 
+	background-color: #EEE;
+} 
+#tabs-min .ui-tabs-nav .ui-state-active a { 
+	color: #000;
+	font-weight: bold;
+}
