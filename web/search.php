@@ -868,6 +868,41 @@
 										<input type="radio" name="s_resultorder" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
 									</div>
 									<div id="tabs-5">
+										QC variable <span class="tiny">built-in</span>&nbsp;
+										<select name="s_qcbuiltinvariable">
+											<option value="">(Select built-in QC variable)
+											<option value="all">ALL available variables
+											<option value="iosnr">IO SNR
+											<option value="pvsnr">PV SNR
+											<option value="totaldisp">Total displacement [mm]
+											<option value="totalvel">Total velocity [mm]
+											<option value="totalrot">Total rotation [rad]
+											<option value="mindisp">Min negative displacement [mm]
+											<option value="minvel">Min negative velocity [mm]
+											<option value="minrot">Min negative rotation [rad]
+											<option value="maxdisp">Max positive displacement [mm]
+											<option value="maxvel">Max postive velocity [mm]
+											<option value="maxrot">Max positive rotation [rad]
+										</select>
+										<br>
+										QC variable <span class="tiny">modular</span>&nbsp;
+										<select name="s_qcvariableid">
+											<option value="">(Select modular QC variable)
+											<?
+												$sqlstring2 = "select * from qc_resultnames where qcresult_type = 'number' order by qcresult_name";
+												$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
+												while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+													$qcresultnameid = $row2['qcresultname_id'];
+													$qcresultname = $row2['qcresult_name'];
+													$qcresultunits = $row2['qcresult_units'];
+													?>
+													<option value="<?=$qcresultnameid?>" <? if ($searchvars['s_qvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
+													<?
+												}
+												
+											?>
+										</select>
+										<br><br>
 										<? if ($searchvars['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="qcchart" value="pipeline" <?=$checked?>> Chart<br>
 										
@@ -3321,7 +3356,20 @@
 		if ($s_subjectdobstart != "") { $sqlwhere .= " and `subjects`.birthdate >= '$s_subjectdobstart'"; }
 		if ($s_subjectdobend != "") { $sqlwhere .= " and `subjects`.birthdate <= '$s_subjectdobend'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
-		if ($s_projectid != "all") { $sqlwhere .= " and `projects`.project_id = $s_projectid"; }
+		if ($s_projectid != "all") {
+			$sqlwhere .= " and `projects`.project_id = $s_projectid";
+		}
+		else {
+			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		
+			$tmpresult = MySQLQuery($tmpsqlstring,__FILE__,__LINE__);
+			while ($tmprow = mysql_fetch_array($tmpresult, MYSQL_ASSOC)) {
+				if ($tmprow['project_id'] != "") {
+					$projectids[] = $tmprow['project_id'];
+				}
+			}
+			$projectidlist = implode(",",$projectids);
+			$sqlwhere .= " and `projects`.project_id in ($projectidlist)";
+		}
 		if ($s_enrollsubgroup != "") { $sqlwhere .= " and `enrollment`.enroll_subgroup = '$s_enrollsubgroup'"; }
 		if ($s_studygroupid != "") {
 			$studyids = GetIDListFromGroup($s_studygroupid);
