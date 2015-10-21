@@ -1559,7 +1559,7 @@
 		$userid = $rowC['user_id'];
 				
 		/* check to see which projects this user has access to view */
-		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = $userid and (a.view_data = 1 or a.view_phi = 1)";
+		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
 		//print "$sqlstringC<br>";
 		$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
 		while ($rowC = mysql_fetch_array($resultC, MYSQL_ASSOC)) {
@@ -2004,7 +2004,15 @@
 								<tr>
 									<td class="header1"><?=$name?></td>
 									<td class="header1"><a href="subjects.php?id=<?=$subject_id?>" class="header1"><?=$uid?></a></td>
-									<td class="header3"><?=$altuidlist?></td>
+									<td class="header3">
+										<?
+										if (mb_strlen($altuidlist) > 60) {
+											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,60)?>...</span><?
+										}
+										else {
+											echo "$altuidlist";
+										}
+									?></td>
 									<td class="header2"><a href="studies.php?id=<?=$study_id?>">Study <?=$study_num?></a> <?=$study_type?></td>
 									<td class="header2"><?=$project_name?> (<?=$project_costcenter?>)</td>
 									<td class="header2"><?=$study_datetime?></td>
@@ -2499,7 +2507,7 @@
 						<?
 						foreach ($seriesids as $ser) {
 							list($seriesid,$studyid,$studynum) = explode(',',$ser);
-							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $seriesid";
+							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = '$seriesid'";
 							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 							$row = mysql_fetch_array($result, MYSQL_ASSOC);
 							$seriesnum = $row['series_num'];
@@ -3016,14 +3024,6 @@
 																}
 															?>
 														</select>
-														<!--<table class="remotenidb" style="margin-left:40px; border:1px solid gray; border-radius: 4px">
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>server</b></td><td><input type="url" name="remotenidbserver" title="Full server name or IP such as http://nidb.org" value="http://12.200.43.25/"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>username</b></td><td><input type="text" name="remotenidbusername" title="username for the <b>remote</b> NiDB site"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;NiDB&nbsp;<b>password</b></td><td><input type="password" name="remotenidbpassword"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Instance&nbsp;ID</b></td><td><input type="text" name="remoteinstanceid" value="0"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Site&nbsp;ID</b></td><td><input type="text" name="remotesiteid" value="0"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote&nbsp;<b>Project&nbsp;ID</b></td><td><input type="text" name="remoteprojectid" value="0"></td></tr>
-														</table>-->
 														<?
 													}
 												}
@@ -3080,7 +3080,7 @@
 						<table class="subdownload" width="100%">
 							<tr>
 								<td class="label">
-									Data<!--<br><span class="tiny" style="font-weight:normal">Types of data to download</span>-->
+									Data
 								</td>
 								<td class="main">
 									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>Imaging<br>
