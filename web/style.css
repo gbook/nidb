@@ -402,12 +402,19 @@ table.bluerounded td.body { background-color: white; padding: 8px; border-radius
 table.bluerounded span.header { color: darkblue; font-weight: bold; }
 table.bluerounded span.tiny { color: #555555; font-size: 8pt; }
 
-/* generic rounded display box (blue) */
+/* generic rounded display box (gray) */
 table.grayrounded { background-color: #DDD; border-spacing: 3px; border-radius: 3px; }
 table.grayrounded td.title { color: black; font-weight: bold; font-size: 14pt; padding-left:10px; }
 table.grayrounded td.body { background-color: white; padding: 8px; border-radius: 3px; font-size: 10pt; }
 table.grayrounded span.header { color: #DDD; font-weight: bold; }
 table.grayrounded span.tiny { color: #555555; font-size: 8pt; }
+
+/* generic rounded display box (small gray) */
+table.smallgrayrounded { background-color: #CCC; border-spacing: 1px; border-radius: 3px; margin: 2px }
+table.smallgrayrounded td.title { color: black; font-weight: bold; font-size: 11pt; padding-left:10px; }
+table.smallgrayrounded td.body { background-color: white; padding: 4px; border-radius: 3px; font-size: 10pt; }
+table.smallgrayrounded span.header { color: #CCC; font-weight: bold; }
+table.smallgrayrounded span.tiny { color: #555555; font-size: 8pt; }
 
 table.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
 caption.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}

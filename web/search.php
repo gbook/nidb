@@ -89,6 +89,8 @@
     $searchvars['s_formcriteria'] = GetVariable("s_formcriteria");
     $searchvars['s_formvalue'] = GetVariable("s_formvalue");
     $searchvars['s_audit'] = GetVariable("s_audit");
+    $searchvars['s_qcbuiltinvariable'] = GetVariable("s_qcbuiltinvariable");
+    $searchvars['s_qcvariableid'] = GetVariable("s_qcvariableid");
 	
 	/* data request variables */
 	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
@@ -150,7 +152,7 @@
 	
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] in the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your download request. Please go back to the search page and download less than [<?=$maxnumvars?>] data items.</div>
+		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your download request. Please go back to the search page and download less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -871,23 +873,16 @@
 										QC variable <span class="tiny">built-in</span>&nbsp;
 										<select name="s_qcbuiltinvariable">
 											<option value="">(Select built-in QC variable)
-											<option value="all">ALL available variables
+											<option value="all" selected>ALL available variables
 											<option value="iosnr">IO SNR
 											<option value="pvsnr">PV SNR
 											<option value="totaldisp">Total displacement [mm]
-											<option value="totalvel">Total velocity [mm]
-											<option value="totalrot">Total rotation [rad]
-											<option value="mindisp">Min negative displacement [mm]
-											<option value="minvel">Min negative velocity [mm]
-											<option value="minrot">Min negative rotation [rad]
-											<option value="maxdisp">Max positive displacement [mm]
-											<option value="maxvel">Max postive velocity [mm]
-											<option value="maxrot">Max positive rotation [rad]
 										</select>
 										<br>
 										QC variable <span class="tiny">modular</span>&nbsp;
 										<select name="s_qcvariableid">
 											<option value="">(Select modular QC variable)
+											<option value="all">ALL available variables
 											<?
 												$sqlstring2 = "select * from qc_resultnames where qcresult_type = 'number' order by qcresult_name";
 												$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
@@ -904,10 +899,10 @@
 										</select>
 										<br><br>
 										<? if ($searchvars['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="qcchart" value="pipeline" <?=$checked?>> Chart<br>
+										<input type="radio" name="s_resultorder" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
 										
 										<? if ($searchvars['s_resultorder'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="qctable" value="pipeline" <?=$checked?>> Table<br>
+										<input type="radio" name="s_resultorder" id="qctable" value="qctable" <?=$checked?>> Table<br>
 									</div>
 									<div id="tabs-6">
 										<? if ($searchvars['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
@@ -1452,6 +1447,10 @@
 			elseif (($s_resultorder == 'pipelinelong') || ($s_resultorder == 'pipelinelongyear')) {
 				/* display longitudinal pipeline data */
 				SearchLongitudinalPipeline($result, $s_resultorder);
+			}
+			elseif (($s_resultorder == 'qcchart') || ($s_resultorder == 'qctable')) {
+				/* display longitudinal pipeline data */
+				SearchQC($result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid);
 			}
 			else {
 				SearchDefault($result, $s, $colors, $colors2);
@@ -2710,7 +2709,207 @@
 		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchQC --------------------------- */
+	/* -------------------------------------------- */
+	function SearchQC(&$result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid) {
+		//PrintSQLTable($result);
+		
+		/* gather scans into longitudinal format */
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$uid = strtoupper(trim($row['uid']));
+			$studydate = trim($row['studydate']);
+			$seriesdesc = trim($row['series_desc']);
+			$qc[$seriesdesc][$studydate]['io_snr'] = trim($row['io_snr']);
+			$qc[$seriesdesc][$studydate]['pv_snr'] = trim($row['pv_snr']);
+			$qc[$seriesdesc][$studydate]['move_minx'] = trim($row['move_minx']);
+			$qc[$seriesdesc][$studydate]['move_miny'] = trim($row['move_miny']);
+			$qc[$seriesdesc][$studydate]['move_minz'] = trim($row['move_minz']);
+			$qc[$seriesdesc][$studydate]['move_maxx'] = trim($row['move_maxx']);
+			$qc[$seriesdesc][$studydate]['move_maxy'] = trim($row['move_maxy']);
+			$qc[$seriesdesc][$studydate]['move_maxz'] = trim($row['move_maxz']);
+
+			$qc[$seriesdesc][$studydate]['totaldispx'] = $row['move_maxx'] - $row['move_minx'];
+			$qc[$seriesdesc][$studydate]['totaldispy'] = $row['move_maxy'] - $row['move_miny'];
+			$qc[$seriesdesc][$studydate]['totaldispz'] = $row['move_maxz'] - $row['move_minz'];
+			
+			$qc[$seriesdesc][$studydate]['motion_rsq'] = trim($row['motion_rsq']);
+		}
+		
+		ksort($qc);
+		
+		//echo "<pre>";
+		//print_r($qc);
+		//echo "</pre>";
+		
+		$i=0;
+		foreach ($qc as $series => $value) {
+			ksort($value);
+			foreach ($value as $date => $vals) {
+				if ($vals['io_snr'] > 0) { $iosnrs[$date]['value'] = $vals['io_snr']; }
+				if ($vals['pv_snr'] > 0) { $pvsnrs[$date]['value'] = $vals['pv_snr']; }
+				if ($vals['totaldispx'] != 0) { $dispx[$date]['value'] = $vals['totaldispx']; }
+				if ($vals['totaldispy'] != 0) { $dispy[$date]['value'] = $vals['totaldispy']; }
+				if ($vals['totaldispz'] != 0) { $dispz[$date]['value'] = $vals['totaldispz']; }
+			}
+			if ((count($dispx) > 2) || (count($iosnrs) > 2) || (count($pvsnrs) > 2)) {
+				?>
+				<table width="100%" style="border: 1px solid #888">
+					<tr>
+						<td colspan="2"><b>Charts for <?=$series?></b></td>
+					</tr>
+					<tr>
+						<td width="50%" valign="top">
+						<?
+						if (count($dispx) > 2) {
+							DisplayChart($dispx, $dispy, $dispz,"Total displacement","X","Y","Z",200,"totaldisp$i",0);
+						}
+						?>
+						</td>
+						<td width="50%" valign="top">
+						<?
+						if (count($iosnrs) > 2) {
+							DisplayChart($iosnrs,"","","IO SNR","SNR","","",200,"iosnr$i",0);
+						}
+						if (count($pvsnrs) > 2) {
+							DisplayChart($pvsnrs,"","","PV SNR","SNR","","",200,"pvsnr$i",0);
+						}
+						?>
+						</td>
+					</tr>
+				</table>
+				<br>
+				<?
+			}
+			$dispx = $dispy = $dispz = $iosnr = $pvsnr = "";
+			$i++;
+		}
+	}
+
 	
+	/* -------------------------------------------- */
+	/* ------- DisplayChart ----------------------- */
+	/* -------------------------------------------- */
+	function DisplayChart($data1, $data2, $data3, $title, $label1, $label2, $label3, $height, $id, $disptable) {
+		$colors = GenerateColorGradient();
+		ksort($data1);
+		ksort($data2);
+		ksort($data3);
+		?>
+			<table class="smallgrayrounded" width="100%">
+				<tr>
+					<td class="title"><?=$title?></td>
+				</tr>
+				<tr>
+					<td class="body">
+						<script>
+							$(function() {
+									var data1 = [<?
+											foreach ($data1 as $date => $item) {
+												$value = $data1[$date]['value'];
+												$date = $date*1000;
+												if (($date > 0) && ($value > 0)) {
+													$jsonstrings[] .= "['$date', $value]";
+												}
+											}?><?=implode2(',',$jsonstrings)?>];
+									<? if ($label2 != "") { ?>var data2 = [<?
+											$jsonstrings = "";
+											foreach ($data2 as $date => $item) {
+												$value = $data2[$date]['value'];
+												$date = $date*1000;
+												if (($date > 0) && ($value > 0)) {
+													$jsonstrings[] .= "['$date', $value]";
+												}
+											}?><?=implode2(',',$jsonstrings)?>];
+									<? } ?>
+									<? if ($label3 != "") { ?>var data3 = [<?
+											$jsonstrings = "";
+											foreach ($data3 as $date => $item) {
+												$value = $data3[$date]['value'];
+												$date = $date*1000;
+												if (($date > 0) && ($value > 0)) {
+													$jsonstrings[] .= "['$date', $value]";
+												}
+											}?><?=implode2(',',$jsonstrings)?>];
+									<? } ?>
+							
+								var options = {
+									series: {
+										lines: { show: true, fill: false },
+										points: { show: true }
+									},
+									grid: {
+										hoverable: true,
+										clickable: true
+									},
+									legend: { noColumns: 6 },
+									xaxis: { mode: "time", timeformat: "%Y-%m-%d" },
+									yaxis: { min: 0, tickDecimals: 1 },
+									selection: { mode: "x" },
+								};
+								var placeholder = $("#placeholder<?=$id?>");
+								var plot = $.plot(placeholder, [
+								{ label: "<?=$label1?>", color: '#F00', data: data1}<? if ($label2 != "") { ?>, { label: "<?=$label2?>", color: '#4B4', data: data2} <? } ?><? if ($label3 != "") { ?>, { label: "<?=$label3?>", color: '#00F', data: data3} <? } ?> ],options);
+							});
+						</script>
+						<div id="placeholder<?=$id?>" style="height:<?=$height?>px;" align="center"></div>
+					</td>
+				</tr>
+				<? if ($disptable) { ?>
+				<tr>
+					<td class="body">
+						<table class="tinytable">
+							<thead>
+								<th>Date</th>
+								<th>Subject</th>
+								<th>Study</th>
+								<th>Value</th>
+							</thead>
+							<tbody>
+						<?
+							// get min, max
+							$min = $data[0];
+							$max = $data[0];
+							foreach ($data as $date => $value) {
+								$value = $data[$date]['value'];
+								if ($value > $max) { $max = $value; }
+								if ($value < $min) { $min = $value; }
+							}
+							$range = $max - $min;
+							
+							foreach ($data as $date => $value) {
+								$value = $data[$date]['value'];
+								$uid = $data[$date]['uid'];
+								$studynum = $data[$date]['studynum'];
+								$subjectid = $data[$date]['subjectid'];
+								$studyid = $data[$date]['studyid'];
+								if (($value > 0) && ($range > 0)) {
+									$cindex = round((($value - $min)/$range)*100);
+									if ($cindex > 100) { $cindex = 100; }
+								}
+								$date = $date;
+								$date = date("D, d M Y", $date);
+								?>
+								<tr>
+									<td><?=$date?></td>
+									<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+									<td><a href="subjects.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+									<td align="right" bgcolor="<?=$colors[$cindex];?>"><tt><?=$value?><tt></td>
+								</tr>
+								<?
+							}
+						?>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+				<? } ?>
+			</table>
+		<?
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayFileIOBox ------------------- */
@@ -3318,13 +3517,16 @@
 
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
+		$modality = $s_studymodality;
+		/* also make a variable for the series table */
+		$modalitytable = $s_studymodality . "_series";
 		
 		/* check if modality_series table actually exists */
-		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '$s_studymodality" . "_series'";
+		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '$modalitytable'";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		if (mysql_num_rows($result) < 1) {
 			?>
-			<?=$s_studymodality?>_series table does not exist. Unable to query information about <?=$s_studymodality?> type series
+			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> type series
 			<?
 			return "";
 		}
@@ -3393,7 +3595,7 @@
 		if ($s_studytype != "") { $sqlwhere .= " and `studies`.study_type like '%$s_studytype%'"; }
 		if ($s_seriesgroupid != "") {
 			$seriesids = GetIDListFromGroup($s_seriesgroupid);
-			$sqlwhere .= " and `$s_studymodality" . "_series`.$s_studymodality" . "series_id in (" . $seriesids . ")";
+			$sqlwhere .= " and `$modalitytable`.$modality" . "series_id in (" . $seriesids . ")";
 		}
 		if ($s_seriesdesc != "") {
 			$sqlwhere .= " and (";
@@ -3403,10 +3605,10 @@
 				$wheres = array();
 				foreach ($seriesdescs as $seriesdesc) {
 					if ($s_usealtseriesdesc) {
-						$wheres[] = "(`$s_studymodality" . "_series`.series_altdesc like '%" . trim($seriesdesc) . "%')";
+						$wheres[] = "(`$modalitytable`.series_altdesc like '%" . trim($seriesdesc) . "%')";
 					}
 					else {
-						$wheres[] = "(`$s_studymodality" . "_series`.series_desc like '%" . trim($seriesdesc) . "%')";
+						$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
 					}
 				}
 				$sqlwhere .= implode(" or ", $wheres);
@@ -3416,14 +3618,14 @@
 				//$seriesdescs = explode(';',$s_seriesdesc);
 				//$wheres = array();
 				//foreach ($seriesdescs as $seriesdesc) {
-				//	$wheres[] = "(`$s_studymodality" . "_series`.series_desc like '%" . trim($seriesdesc) . "%')";
+				//	$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
 				//}
 				//$sqlwhere .= implode(" and ", $wheres);
 			//}
 			
 			$sqlwhere .= ")";
 		}
-		if ($s_seriessequence != "") { $sqlwhere .= " and `$s_studymodality" . "_series`.series_sequencename like '%$s_seriessequence%'"; }
+		if ($s_seriessequence != "") { $sqlwhere .= " and `$modalitytable`.series_sequencename like '%$s_seriessequence%'"; }
 		if ($s_seriesimagetype != "") {
 		
 			$sqlwhere .= " and (";
@@ -3432,68 +3634,67 @@
 			foreach ($seriesimagetypes as $seriesimagetype) {
 				if (strpos($seriesimagetype,'*') !== false) {
 					$seriesimagetype = str_replace('*','%',$seriesimagetype);
-					$wheres[] = "(`$s_studymodality" . "_series`.image_type like '" . trim($seriesimagetype) . "')";
+					$wheres[] = "(`$modalitytable`.image_type like '" . trim($seriesimagetype) . "')";
 				}
 				else {
-					$wheres[] = "(`$s_studymodality" . "_series`.image_type = '" . trim($seriesimagetype) . "')";
+					$wheres[] = "(`$modalitytable`.image_type = '" . trim($seriesimagetype) . "')";
 				}
 			}
 			$sqlwhere .= implode(" or ", $wheres);
 			$sqlwhere .= ")";
 		
-			//$sqlwhere .= " and `$s_studymodality" . "_series`.image_type like '%$s_seriesimagetype%'";
+			//$sqlwhere .= " and `$modalitytable`.image_type like '%$s_seriesimagetype%'";
 		}
-		if ($s_seriesimagecomments != "") { $sqlwhere .= " and `$s_studymodality" . "_series`.image_comments like '%$s_seriesimagecomments%'"; }
-		if ($s_seriestr != "") { $sqlwhere .= " and `$s_studymodality" . "_series`.series_tr = '$s_seriestr'"; }
+		if ($s_seriesimagecomments != "") { $sqlwhere .= " and `$modalitytable`.image_comments like '%$s_seriesimagecomments%'"; }
+		if ($s_seriestr != "") { $sqlwhere .= " and `$modalitytable`.series_tr = '$s_seriestr'"; }
 		if ($s_seriesnum != "") {
 			if (substr($s_seriesnum,0,2) == '>=') {
 				$val = substr($s_seriesnum,2);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num >= '$val'";
+				$sqlwhere .= " and `$modalitytable`.series_num >= '$val'";
 			}
 			elseif (substr($s_seriesnum,0,2) == '<=') {
 				$val = substr($s_seriesnum,2);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num <= '$val'";
+				$sqlwhere .= " and `$modalitytable`.series_num <= '$val'";
 			}
 			elseif (substr($s_seriesnum,0,1) == '>') {
 				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num > '$val'";
+				$sqlwhere .= " and `$modalitytable`.series_num > '$val'";
 			}
 			elseif (substr($s_seriesnum,0,1) == '<') {
 				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num < '$val'";
+				$sqlwhere .= " and `$modalitytable`.series_num < '$val'";
 			}
 			elseif (substr($s_seriesnum,0,1) == '~') {
 				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num <> '$val'";
+				$sqlwhere .= " and `$modalitytable`.series_num <> '$val'";
 			}
 			else {
-				$sqlwhere .= " and `$s_studymodality" . "_series`.series_num = '$s_seriesnum'";
+				$sqlwhere .= " and `$modalitytable`.series_num = '$s_seriesnum'";
 			}
-			//$sqlwhere .= " and `$s_studymodality" . "_series`.series_num = '$s_seriesnum'";
 		}
 		if ($s_seriesnumfiles != "") {
 			if (substr($s_seriesnumfiles,0,2) == '>=') {
 				$val = substr($s_seriesnumfiles,2);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles >= '$val'";
+				$sqlwhere .= " and `$modalitytable`.numfiles >= '$val'";
 			}
 			elseif (substr($s_seriesnumfiles,0,2) == '<=') {
 				$val = substr($s_seriesnumfiles,2);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles <= '$val'";
+				$sqlwhere .= " and `$modalitytable`.numfiles <= '$val'";
 			}
 			elseif (substr($s_seriesnumfiles,0,1) == '>') {
 				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles > '$val'";
+				$sqlwhere .= " and `$modalitytable`.numfiles > '$val'";
 			}
 			elseif (substr($s_seriesnumfiles,0,1) == '<') {
 				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles < '$val'";
+				$sqlwhere .= " and `$modalitytable`.numfiles < '$val'";
 			}
 			elseif (substr($s_seriesnumfiles,0,1) == '~') {
 				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles <> '$val'";
+				$sqlwhere .= " and `$modalitytable`.numfiles <> '$val'";
 			}
 			else {
-				$sqlwhere .= " and `$s_studymodality" . "_series`.numfiles = '$s_seriesnumfiles'";
+				$sqlwhere .= " and `$modalitytable`.numfiles = '$s_seriesnumfiles'";
 			}
 		}
 		if ($s_measuresearch != "") {
@@ -3547,7 +3748,9 @@
 			
 			$sqlwhere .= " and `assessment_formfields`.formfield_id = $s_formfieldid[0] and `assessment_data`.$valtype $val";
 		}
+		//echo "Checkpoint A<br>";
 		if ($s_pipelineid != ""){
+			//echo "Checkpoint B<br>";
 			//echo "s_pipelineid is not blank";
 			$sqlwhere .= " and `analysis`.pipeline_id = $s_pipelineid";
 			if ($s_pipelineresultname != "") {
@@ -3566,10 +3769,10 @@
 				else {
 					$sqlwhere .= " and `analysis_results`.`result_nameid` = '' ";
 				}
-				//$sqlwhere .= " and `analysis`.pipeline_id = $s_pipelineid and `analysis_resultnames`.`result_name` like '%$s_pipelineresultname%' ";
 			}
+			//echo "Checkpoint C<br>";
 			if ($s_pipelineresultunit != "") {
-				//echo "s_pipelineresultunit is not blank";
+				//echo "Checkpoint D<br>";
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
@@ -3586,32 +3789,41 @@
 				}
 			}
 			if ($s_pipelineresultvalue != "") {
+				//echo "Checkpoint E<br>";
 				//echo "s_pipelineresultvalue is not blank";
 				$sqlwhere .= " and `analysis_results`.`result_value` $s_pipelineresultcompare '$s_pipelineresultvalue' ";
 			}
 			if ($s_pipelineresulttype != "") {
+				//echo "Checkpoint F<br>";
 				//echo "s_pipelineresulttype is not blank";
 				$sqlwhere .= " and `analysis_results`.`result_type` = '$s_pipelineresulttype' ";
 			}
 		}
 	
-		/* ----- build SQL query ----- */
+		/* ----- put the whole SQL query together ----- */
+		/* first setup the SELECT, depending on the type of query ... */
 		if ($s_resultorder == "pipeline") {
+			//echo "Checkpoint G<br>";
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "pipelinelong") {
+			//echo "Checkpoint H<br>";
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "pipelinelongyear") {
+			//echo "Checkpoint I<br>";
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "long") {
 			if ($s_usealtseriesdesc) {
-				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `" . $s_studymodality . "_series`.series_altdesc";
+				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_altdesc";
 			}
 			else {
-				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `" . $s_studymodality . "_series`.series_desc";
+				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `modalitytable`.series_desc";
 			}
+		}
+		elseif (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
+			$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_num, unix_timestamp(DATE(series_datetime)) 'studydate', $modalitytable.series_desc, $modality" . "_qa.*";
 		}
 		elseif ($s_resultorder == 'subject') {
 			$sqlstring = "select subjects.*, projects.*, enrollment.*";
@@ -3628,8 +3840,10 @@
 		}
 		
 		if ($s_pipelineid == "") {
-			$sqlstring .= ", `$s_studymodality" . "_series`.$s_studymodality" . "series_id";
+			$sqlstring .= ", `$modalitytable`.$modality" . "series_id";
 		}
+		
+		/* ... then add the table JOINs ... */
 		$sqlstring .= " from `enrollment`
 		join `projects` on `enrollment`.project_id = `projects`.project_id
 		join `subjects` on `subjects`.subject_id = `enrollment`.subject_id
@@ -3639,7 +3853,7 @@
 			$sqlstring .= " join `subject_altuid` on `subjects`.subject_id = `subject_altuid`.subject_id";
 		}
 		if ($s_pipelineid == ""){
-			$sqlstring .= " join `" . $s_studymodality . "_series` on `" . $s_studymodality . "_series`.study_id = `studies`.study_id";
+			$sqlstring .= " join `$modalitytable` on `$modalitytable`.study_id = `studies`.study_id";
 		}
 		if ($s_measuresearch != ""){
 			/* join in the measure table if there is a measure to search for */
@@ -3655,14 +3869,13 @@
 			/* join in the pipeline tables if there is formfield criteria to search for */
 			$sqlstring .= " join `analysis` on `analysis`.study_id = `studies`.study_id
 			join `analysis_results` on `analysis_results`.analysis_id = `analysis`.analysis_id";
-			//join `analysis_resultnames` on `analysis_results`.result_nameid = `analysis_resultnames`.resultname_id";
 		}
-		if (($s_studymodality == "mr") && ($s_pipelineid == "")) {
-			$sqlstring .= " left join `" . $s_studymodality . "_qa` on `" . $s_studymodality . "_qa`.$s_studymodality" . "series_id = `" . $s_studymodality . "_series`.$s_studymodality" . "series_id";
+		if (($modality == "mr") && ($s_pipelineid == "")) {
+			$sqlstring .= " left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id";
 		}
 		
-		/* merge the joins and where clauses */
-		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = '$s_studymodality' $sqlwhere ";
+		/* ... then add the WHERE clause (created earlier) and the ORDER BY and GROUP BY clauses if necessary */
+		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = '$modality' $sqlwhere ";
 		if ($s_resultorder == 'subject') {
 			$sqlstring .= " group by enrollment.enrollment_id order by subjects.uid, projects.project_name";
 		}
@@ -3671,18 +3884,15 @@
 		}
 		else {
 			if ($s_formvalue[0] != ""){
-				$sqlstring .= " group by `" . $s_studymodality . "_series`.$s_studymodality" . "series_id ";
+				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id ";
 			}
 			if (($s_resultorder != "pipeline") && ($s_resultorder != "pipelinecsv") && ($s_resultorder != "pipelinelong") && ($s_resultorder != "pipelinelongyear")) {
-				$sqlstring .= " group by `$s_studymodality" . "_series`.$s_studymodality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
+				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
 				if ($s_pipelineid == ""){
-					$sqlstring .= ", `" . $s_studymodality . "_series`.series_num";
+					$sqlstring .= ", `$modalitytable`.series_num";
 				}
 			}
 		}
-		
-		//echo "[$sqlstring] [$sqlwhere]";
-		//exit(0);
 		return $sqlstring;
 	}	
 
