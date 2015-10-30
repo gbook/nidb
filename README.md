@@ -17,4 +17,5 @@ To install on CentOS 7, type the following on the command line as root, and foll
 After setup, go to http://localhost/ and login with admin/password. Change the default password immediately after logging in!
 
 View a 3 part overview of the main features of NiDB: <a href="https://youtu.be/tOX7VamHGvM">Part 1</a> | <a href="https://youtu.be/dX11HRj_kEs">Part 2</a> | <a href="https://youtu.be/aovrq-oKO-M">Part 3</a>
+
 Visit the NiDB <a href="http://neuroinfodb.com/forums/">forums</a> for more support.
