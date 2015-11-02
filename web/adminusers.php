@@ -29,7 +29,7 @@
 		<title>NiDB - Manage Users</title>
 	</head>
 
-<body>
+<body onload="onload()">
 	<div id="wrapper">
 <?
 	require "functions.php";
@@ -358,6 +358,14 @@
 		NavigationBar("Admin", $urllist);
 		
 	?>
+		<style type="text/css">
+			td label { 
+			   display: block;
+			}
+			.checkcell {
+				border-left: 1px solid #999;
+			}
+		</style>
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="adminusers.php">
@@ -378,7 +386,7 @@
 			<? } ?>
 			<tr>
 				<td class="label">Full name</td>
-				<td><input type="text" name="fullname" value="<?=$fullname?>"></td>
+				<td><input type="text" name="fullname" value="<?=$fullname?>" required></td>
 			</tr>
 			<? if (($login_type == "Guest") || ($login_type == "Standard") || ($type == "add")) { ?>
 			<tr>
@@ -498,17 +506,17 @@
 						<tr>
 							<th></th>
 							<th align="center">View &nbsp;</th>
-							<th align="center">Change/upload &nbsp;</th>
+							<th align="center">Change &nbsp;</th>
 							<th align="center">View &nbsp;</th>
 							<th align="center">Change &nbsp;</th>
 						</tr>
 						</thead>
 						<tr style="color: darkblue; font-size:11pt; font-weight: bold">
 							<td>Select/unselect all<br><br></td>
-							<td valign="top" align="center"><input type="checkbox" id="alldataprojects"></td>
-							<td valign="top" align="center"><input type="checkbox" id="writealldataprojects"></td>
-							<td valign="top" align="center"><input type="checkbox" id="allphiprojects"></td>
-							<td valign="top" align="center"><input type="checkbox" id="writeallphiprojects"></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="alldataprojects"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="writealldataprojects"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allphiprojects"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="writeallphiprojects"></label></td>
 						</tr>
 				<?
 					$sqlstring = "select * from user_instance where user_id = '$id'";
@@ -538,7 +546,7 @@
 						}
 						?>
 						<tr>
-							<td colspan="5"><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>><b><?=$instance_name?></b></td>
+							<td colspan="5"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>><b><?=$instance_name?></b></label></td>
 						</tr>
 						<?
 							$bgcolor = "#EEFFEE";
@@ -570,10 +578,10 @@
 								?>
 								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
 									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
-									<td align="center" class="dataprojects"><input type="checkbox" class="chkInstance<?=$instance_id?>" name="dataprojects[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View data for<br><b><?=$project_name?></b>">
-									<td align="center" class="writedataprojects"><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writedataprojects[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change/upload data for<br><b><?=$project_name?></b>">
-									<td align="center" class="phiprojects"><input type="checkbox" class="chkInstance<?=$instance_id?>" name="phiprojects[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View PHI for<br><b><?=$project_name?></b>">
-									<td align="center" class="writephiprojects"><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writephiprojects[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change PHI for<br><b><?=$project_name?></b>">
+									<td align="center" class="dataprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="dataprojects[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View data for<br><b><?=$project_name?></b>"></label></td>
+									<td align="center" class="writedataprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writedataprojects[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change/upload data for<br><b><?=$project_name?></b>"></label></td>
+									<td align="center" class="phiprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="phiprojects[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View PHI for<br><b><?=$project_name?></b>"></label></td>
+									<td align="center" class="writephiprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writephiprojects[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change PHI for<br><b><?=$project_name?></b>"></label></td>
 								</tr>
 								<?
 								if ($bgcolor == "#EEFFEE") { $bgcolor = "#FFFFFF"; }

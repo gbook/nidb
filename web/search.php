@@ -38,6 +38,9 @@
 	require "includes.php";
 	require "menu.php";
 	require 'kashi.php';
+
+	/* set debugging on/off only for this page */
+	$GLOBALS['cfg']['debug'] = 0;
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -3500,10 +3503,7 @@
 	/* -------------------------------------------- */
 	function BuildSQLString($s) {
 		
-		//echo "<pre>";
-		//print_r($s);
-		//print_r($resultorder);
-		//echo "</pre>";
+		Debug(__FILE__, __LINE__, "<pre>" . print_r($s,true) . "</pre>");
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
@@ -3748,10 +3748,9 @@
 			
 			$sqlwhere .= " and `assessment_formfields`.formfield_id = $s_formfieldid[0] and `assessment_data`.$valtype $val";
 		}
-		//echo "Checkpoint A<br>";
+		Debug(__FILE__, __LINE__, "Checkpoint A");
 		if ($s_pipelineid != ""){
-			//echo "Checkpoint B<br>";
-			//echo "s_pipelineid is not blank";
+			Debug(__FILE__, __LINE__, "Checkpoint B");
 			$sqlwhere .= " and `analysis`.pipeline_id = $s_pipelineid";
 			if ($s_pipelineresultname != "") {
 				//echo "s_pipelineresultname is not blank";
@@ -3770,9 +3769,9 @@
 					$sqlwhere .= " and `analysis_results`.`result_nameid` = '' ";
 				}
 			}
-			//echo "Checkpoint C<br>";
+			Debug(__FILE__, __LINE__, "Checkpoint C");
 			if ($s_pipelineresultunit != "") {
-				//echo "Checkpoint D<br>";
+				Debug(__FILE__, __LINE__, "Checkpoint D");
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
@@ -3789,12 +3788,12 @@
 				}
 			}
 			if ($s_pipelineresultvalue != "") {
-				//echo "Checkpoint E<br>";
+				Debug(__FILE__, __LINE__, "Checkpoint E");
 				//echo "s_pipelineresultvalue is not blank";
 				$sqlwhere .= " and `analysis_results`.`result_value` $s_pipelineresultcompare '$s_pipelineresultvalue' ";
 			}
 			if ($s_pipelineresulttype != "") {
-				//echo "Checkpoint F<br>";
+				Debug(__FILE__, __LINE__, "Checkpoint F");
 				//echo "s_pipelineresulttype is not blank";
 				$sqlwhere .= " and `analysis_results`.`result_type` = '$s_pipelineresulttype' ";
 			}
@@ -3803,15 +3802,15 @@
 		/* ----- put the whole SQL query together ----- */
 		/* first setup the SELECT, depending on the type of query ... */
 		if ($s_resultorder == "pipeline") {
-			//echo "Checkpoint G<br>";
+			Debug(__FILE__, __LINE__, "Checkpoint G");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "pipelinelong") {
-			//echo "Checkpoint H<br>";
+			Debug(__FILE__, __LINE__, "Checkpoint H");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "pipelinelongyear") {
-			//echo "Checkpoint I<br>";
+			Debug(__FILE__, __LINE__, "Checkpoint I");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "long") {
@@ -4493,7 +4492,6 @@
 		// square root of sum of squares devided by N-1
 		return sqrt(array_sum(array_map("sd_square", $array, array_fill(0,count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
 	}
-
 ?>
 
 <? include("footer.php") ?>

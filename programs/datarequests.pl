@@ -209,6 +209,7 @@ sub ProcessDataRequests {
 				my $study_num = $rowA{'study_num'};
 				my $study_id = $rowA{'study_id'};
 				my $series_num = $rowA{'series_num'};
+				my $seriesnotes = $rowA{'series_notes'};
 				my $data_type = $rowA{'data_type'};
 				my $uid = $rowA{'uid'};
 				my $subjectid = $rowA{'subject_id'};
@@ -221,6 +222,15 @@ sub ProcessDataRequests {
 				# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
 				if ($data_type eq '') {
 					$data_type = $modality;
+				}
+				
+				# get the list of all IDs to send along with the series
+				my $sqlstringX = "select altuid from subject_altuid where subject_id = '$subjectid'";
+				WriteLog("SQL: $sqlstringX");
+				my $resultX = $db->query($sqlstringX) || SQLError($sqlstringX, $db->errmsg());
+				my $altuids = $uid;
+				while (my %rowX = $resultX->fetchhash) {
+					$altuids .= "," . $rowX{'altuid'};
 				}
 				
 				# first check if this status of this row has changed... it may been changed since the list was first gathered
@@ -497,7 +507,7 @@ sub ProcessDataRequests {
 					}
 					
 					# build the cURL string to send the actual data
-					$systemstring = "curl -g -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'uuid=$uuid' -F 'anonymize=0' -F 'seriesnum=$series_num' ";
+					$systemstring = "curl -g -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'uuid=$uuid' -F 'anonymize=0' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
 					my $c = 0;
 					foreach my $f (@dcmfiles) {
 						$c++;
