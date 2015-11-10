@@ -182,7 +182,7 @@
 	function Debug($F, $L, $msg) {
 		if ($GLOBALS['cfg']['debug'] == 1) {
 		?>
-		<tt style="color:#444; font-size:8pt">[<?=$F?> @ line <?=$L?>] <?=$msg?></tt><br>
+		<tt style="color:#444; font-size:8pt"><b>[<?=$F?> @ line <?=$L?>]</b> <?=$msg?></tt><br>
 		<?
 		}
 	}

@@ -54,10 +54,12 @@
 	$instance = GetVariable("instance");
 	$dataformat = GetVariable("dataformat");
 	$matchidonly = GetVariable("matchidonly");
+	$altuids = GetVariable("altuids");
+	$seriesnotes = GetVariable("seriesnotes");
 	
 	switch($action) {
-		case 'UploadNonDICOM': UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
-		case 'UploadDICOM': UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
+		case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
+		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
 		case 'getProjectList': GetProjectList($u, $instance); break;
@@ -269,7 +271,7 @@
 	/* -------------------------------------------- */
 	/* ------- UploadDICOM ------------------------ */
 	/* -------------------------------------------- */
-	function UploadDICOM($uuid, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
+	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
 		//print_r($_POST);
 		
@@ -282,6 +284,8 @@
 		$instanceid = mysql_real_escape_string($instanceid);
 		$matchidonly = mysql_real_escape_string($matchidonly);
 		$transactionid = mysql_real_escape_string($transactionid);
+		$seriesnotes = mysql_real_escape_string($seriesnotes);
+		$altuids = mysql_real_escape_string($altuids);
 		
 		/* clear out the older stuff */
 		$sqlstring = "DELETE FROM import_received WHERE import_datetime < DATE_SUB(NOW(), INTERVAL 30 DAY)";
@@ -311,7 +315,7 @@
 				$siteRowID = $row['site_id'];
 				
 				/* get next import ID */
-				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$anonymize','$permanent','$matchidonly')";
+				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
 				//echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysql_insert_id();

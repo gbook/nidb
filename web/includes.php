@@ -76,7 +76,7 @@
 
 <script>
 	$(function() {
-		$( document ).tooltip({show:{effect:'appear'}, hide:{duration:0}});
+		$( document ).tooltip({show:{effect:'appear', delay: 500}, hide:{duration:0}});
 	});
 </script>
 

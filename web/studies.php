@@ -260,23 +260,23 @@
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			/* delete from the mr_qa table */
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			/* delete from the qc* tables */
 			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$qcmoduleseriesid = $row['qcmoduleseries_id'];
 
 			if ($qcmoduleseriesid != "") {
 				$sqlstring = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				
 				$sqlstring = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				
 				?><div align="center"><span class="message">QC deleted</span></div><br><br><?

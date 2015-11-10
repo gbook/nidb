@@ -880,7 +880,7 @@
 	/* -------------------------------------------- */
 	function ResetAnalyses($id) {
 		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			?><div class="error"><b>Error</b> - pipeline ID is blank</div><?
 			return;
 		}
 		
