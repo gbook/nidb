@@ -269,8 +269,7 @@
 		$numNotFound = 0;
 		foreach ($ids as $altid) {
 			if ($altid != "") {
-				//$sqlstring = "select * from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid like '%$altid%' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid'))";
-				$sqlstring = "select * from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid = '$altid' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid'))";
+				$sqlstring = "select * from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid = '$altid' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid')) group by a.altuid, b.isactive";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -296,7 +295,7 @@
 					}
 				}
 				else {
-					$sqlstring = "select c.subject_id, c.isactive, c.uid, a.study_alternateid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_alternateid = '$altid' or a.study_alternateid = sha1('$altid') or a.study_alternateid = sha1('$altid ') or a.study_alternateid = sha1(' $altid') or a.study_alternateid = sha1(' $altid ') or a.study_alternateid = sha1(upper('$altid')) or a.study_alternateid = sha1(lower('$altid'))";
+					$sqlstring = "select c.subject_id, c.isactive, c.uid, a.study_alternateid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_alternateid = '$altid' or a.study_alternateid = sha1('$altid') or a.study_alternateid = sha1('$altid ') or a.study_alternateid = sha1(' $altid') or a.study_alternateid = sha1(' $altid ') or a.study_alternateid = sha1(upper('$altid')) or a.study_alternateid = sha1(lower('$altid')) group by a.study_alternateid, c.isactive";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					if (mysqli_num_rows($result) > 0) {
 						$numFound++;

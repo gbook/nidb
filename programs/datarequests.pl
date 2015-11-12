@@ -710,12 +710,12 @@ sub ProcessDataRequests {
 					
 					my $pwd = getcwd;
 					WriteLog("Changing directory to [$outdir]");
-					chdir($outdir);
+					if (chdir($outdir)) { WriteLog("Successfully changed directory to [$outdir]"); }
 					if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
 					else { $systemstring = "zip -1rq $zipfile ."; }
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 					WriteLog("Changing directory to [$pwd]");
-					chdir($pwd);
+					if (chdir($pwd)) { WriteLog("Successfully changed directory to [$pwd]"); }
 					$systemstring = "unzip -vl $zipfile";
 					WriteLog("Running [$systemstring]");
 					my $filecontents = `$systemstring`;

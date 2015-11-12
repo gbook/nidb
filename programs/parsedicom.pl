@@ -469,6 +469,8 @@ sub InsertSeries {
 	my $importAnonymize = '';
 	my $importMatchIDOnly = '';
 	my $importUUID = '';
+	my $importSeriesNotes = '';
+	my $importAltUIDs = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -483,6 +485,8 @@ sub InsertSeries {
 		$importAnonymize = $row{'import_anonymize'};
 		$importMatchIDOnly = $row{'import_matchidonly'};
 		$importUUID = $row{'import_uuid'};
+		$importSeriesNotes = $row{'import_seriesnotes'};
+		$importAltUIDs = $row{'import_altuids'};
 	}
 	
 	WriteLog("Parsing $files[0]");
@@ -927,7 +931,7 @@ sub InsertSeries {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'mrseries_id'};
 			
-			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_status = 'complete' where mrseries_id = $seriesRowID";
+			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete' where mrseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			WriteLog("This MR series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
@@ -957,7 +961,7 @@ sub InsertSeries {
 		else {
 			
 			# create seriesRowID if it doesn't exist
-			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, image_type, image_comments, bold_reps, numfiles, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', 'dicom', 'complete', '$scriptname')";
+			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname')";
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
@@ -1283,6 +1287,8 @@ sub InsertParRec {
 	my $importPermanent = '';
 	my $importAnonymize = '';
 	my $importUUID = '';
+	my $importSeriesNotes = '';
+	my $importAltUIDs = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1296,6 +1302,8 @@ sub InsertParRec {
 		$importPermanent = $row{'import_permanent'};
 		$importAnonymize = $row{'import_anonymize'};
 		$importUUID = $row{'import_uuid'};
+		$importSeriesNotes = $row{'import_seriesnotes'};
+		$importAltUIDs = $row{'import_altuids'};
 	}
 	
 	# read the .par file into an array, get all the useful info out of it

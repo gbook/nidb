@@ -688,6 +688,32 @@ sub GetSQLComparison {
 
 
 # ----------------------------------------------------------
+# ------- GetDataPathFromSeriesID --------------------------
+# ----------------------------------------------------------
+sub GetDataPathFromSeriesID {
+	my ($id, $modality) = @_;
+	$modality = lc($modality);
+	
+	$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = $id";
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows > 0) {
+		my %row = $result->fetchhash;
+		$uid = $row{'uid'};
+		$studynum = $row{'study_num'};
+		$seriesnum = $row{'series_num'};
+		$subjectid = $row{'subject_id'};
+		$studyid = $row{'study_id'};
+		
+		$path = $cfg{'archivedir'} . "/$uid/$studynum/$seriesnum";
+		return ($path, $uid, $studynum, $studyid, $subjectid);
+	}
+	else {
+		return ("","","",0,0);
+	}
+}
+
+
+# ----------------------------------------------------------
 # --------- MakePath ---------------------------------------
 # ----------------------------------------------------------
 sub MakePath {
