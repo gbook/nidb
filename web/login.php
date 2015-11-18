@@ -25,6 +25,7 @@
 	
 	$nologin = true;
  	require "functions.php";
+	require_once("phpCAS/CAS.php");
 ?>
 
 <html>
@@ -51,140 +52,154 @@
 	$link = mysql_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
 	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
+	/* connect to CAS if enabled */
+	if ($GLOBALS['cfg']['enablecas']){
+		phpCAS::client(CAS_VERSION_2_0, $GLOBALS['cfg']['casserver'], intval($GLOBALS['cfg']['casport']), $GLOBALS['cfg']['cascontext']);
+	}
 	
 	/* ----- determine which action to take ----- */
 	if ($action == "login") {
-		if (!DoLogin($username, $password))
+		if (!CheckLogin($username, $password)) {
 			DisplayLogin("Incorrect login. Make sure Caps Lock is not on");
+		}
 		else {
 			header("Location: index.php");
 		}
 	}
 	elseif ($action =="logout") {
 		DoLogout();
-		DisplayLogin("You have been logged out");
 	}
 	else {
-		DisplayLogin("");
+		if ($GLOBALS['cfg']['enablecas']){
+			$username = AuthenticateCASUser();
+			if ($username == "") {
+				DisplayLogin("Invalid CAS login");
+			}
+			else {
+				echo "Created the client (session already exists)...<br>";
+				phpCAS::setNoCasServerValidation();
+				if (phpCAS::checkAuthentication()) {
+					$username = phpCAS::getUser();
+					echo "Username [$username]";
+				}
+				else {
+					phpCAS::forceAuthentication();
+				}
+				DoLogin($username);
+				header("Location: index.php");
+			}
+		}
+		else {
+			DisplayLogin("");
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- CheckLogin ------------------------- */
+	/* -------------------------------------------- */
+	function CheckLogin($username, $password) {
+		$validlogin = false;
+		//if ($GLOBALS['cfg']['enablecas']){
+		//	Debug(__FILE__, __LINE__,"Checking against CAS server");
+		//	echo "Using CAS authentication<br>";
+		//	$username = AuthenticateCASUser();
+		//	exit(0);
+		//	if ($username != "") {
+		//		$validlogin = true;
+		//	}
+		//}
+		//else {
+			if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
+				Debug(__FILE__, __LINE__,"This is a Unix user account");
+				$validlogin = true;
+			}
+			else {
+				Debug(__FILE__, __LINE__,"Not a unix user account");
+				if (AuthenticateStandardUser($username, $password)) {
+					$validlogin = true;
+				}
+				else {
+					return false;
+				}
+			}
+		//}
+		
+		if ($validlogin) {
+			DoLogin($username);
+			return true;
+		}
 	}
 
 	
 	/* -------------------------------------------- */
 	/* ------- DoLogin ---------------------------- */
 	/* -------------------------------------------- */
-	function DoLogin($username, $password) {
+	function DoLogin() {
+		/* check if they are an admin */
+		$sqlstring = "select user_isadmin from users where username = '$username'";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		if ($row['user_isadmin'] == '1')
+			$isadmin = true;
+		else
+			$isadmin = false;
+
+		/* check if they are an admin */
+		$sqlstring = "select user_isadmin from users where username = '$username'";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		if ($row['user_isadmin'] == '1')
+			$isadmin = true;
+		else
+			$isadmin = false;
 		
-		if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
-		
-			Debug(__FILE__, __LINE__,"This is a Unix user account");
-			/* check if they are an admin */
-			$sqlstring = "select user_isadmin from users where username = '$username'";
+		if (mysql_num_rows($result) > 0) {
+			$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
-			if ($row['user_isadmin'] == '1')
-				$isadmin = true;
-			else
-				$isadmin = false;
-			
-			if (mysql_num_rows($result) > 0) {
-				$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 
-				$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-			else {
-				$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values ('$username', 'NIS', now(), 1, 1)";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-
-			$_SESSION['username'] = $username;
-			$_SESSION['validlogin'] = "true";
-			if ($isadmin) $_SESSION['isadmin'] = "true";
-			else $_SESSION['isadmin'] = "false";
+			$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		else {
+			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values ('$username', 'NIS', now(), 1, 1)";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
 			
-			$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
+		//$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
+		//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		//$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
+		//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+
+		$_SESSION['username'] = $username;
+		$_SESSION['validlogin'] = "true";
+		if ($isadmin) $_SESSION['isadmin'] = "true";
+		else $_SESSION['isadmin'] = "false";
+		
+		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$instanceid = $row['instance_id'];
+		//echo "[$sqlstring] - [$instanceid]<br>";
+		if ($instanceid == '') {
+			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			
+			$sqlstring = "select instance_id from instance where instance_default = 1";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$instanceid = $row['instance_id'];
-			//echo "[$sqlstring] - [$instanceid]<br>";
-			if ($instanceid == '') {
-				$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				
-				$sqlstring = "select instance_id from instance where instance_default = 1";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$instanceid = $row['instance_id'];
-			}
-			
-			$sqlstring = "select instance_name from instance where instance_id = $instanceid";
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
-			$instancename = $row['instance_name'];
-			Debug(__FILE__, __LINE__,"[$sqlstring] - [$instancename]");
-			
-			$_SESSION['instanceid'] = $instanceid;
-			$_SESSION['instancename'] = $instancename;
-			
-			//exit(0);
-			return true;
 		}
-		else {
-			Debug(__FILE__, __LINE__,"Not a unix user account");
-			if (AuthenticateStandardUser($username, $password)) {
-			
-				/* check if they are an admin */
-				$sqlstring = "select user_isadmin from users where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				if ($row['user_isadmin'] == '1')
-					$isadmin = true;
-				else
-					$isadmin = false;
-
-				$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-
-				$_SESSION['username'] = $username;
-				$_SESSION['validlogin'] = "true";
-				if ($isadmin) $_SESSION['isadmin'] = "true";
-				else $_SESSION['isadmin'] = "false";
-				
-				$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$instanceid = $row['instance_id'];
-				//echo "[$sqlstring] - [$instanceid]<br>";
-				if ($instanceid == '') {
-					$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					
-					$sqlstring = "select instance_id from instance where instance_default = 1";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					$row = mysql_fetch_array($result, MYSQL_ASSOC);
-					$instanceid = $row['instance_id'];
-				}
-				
-				$sqlstring = "select instance_name from instance where instance_id = $instanceid";
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$instancename = $row['instance_name'];
-				//echo "[$sqlstring] - [$instancename]<br>";
-				
-				$_SESSION['instanceid'] = $instanceid;
-				$_SESSION['instancename'] = $instancename;
-				
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
+		
+		$sqlstring = "select instance_name from instance where instance_id = $instanceid";
+		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$instancename = $row['instance_name'];
+		//echo "[$sqlstring] - [$instancename]<br>";
+		
+		$_SESSION['instanceid'] = $instanceid;
+		$_SESSION['instancename'] = $instancename;
 	}
-
 
 	/* -------------------------------------------- */
 	/* ------- DoLogout --------------------------- */
@@ -193,6 +208,16 @@
 		//setcookie("username", "");
 		//setcookie("validlogin", "false");
 		session_destroy();
+		setcookie('MOD_AUTH_CAS', '', time()-1000, '/');
+		
+		if ($GLOBALS['cfg']['enablecas']) {
+			//phpCAS::client(CAS_VERSION_2_0, $GLOBALS['cfg']['casserver'], intval($GLOBALS['cfg']['casport']), $GLOBALS['cfg']['cascontext']);
+			phpCAS::logoutWithRedirectService($GLOBALS['cfg']['siteurl']);
+			echo "You have been logged out of NiDB through CAS. <a href='login.php'>Login</a> again.";
+		}
+		else {
+			DisplayLogin("You have been logged out");
+		}
 	}
 
 
@@ -244,6 +269,42 @@
 			return true;
 		return false;
 	}
+	
+	/* -------------------------------------------- */
+	/* ------- AuthenticateCASUser ---------------- */
+	/* -------------------------------------------- */
+	function AuthenticateCASUser() {
+		//phpCAS::setDebug("/tmp/phpCAS.log");
+		// Enable verbose error messages. Disable in production!
+		//phpCAS::setVerbose(true);		
+		//echo "I'm in the AuthenticateCASUser function<br>";
+		if(isset($_SESSION)) {
+			//phpCAS::client(CAS_VERSION_2_0, $GLOBALS['cfg']['casserver'], intval($GLOBALS['cfg']['casport']), $GLOBALS['cfg']['cascontext'], false);
+			echo "Created the client (session already exists)...<br>";
+			phpCAS::setNoCasServerValidation();
+			if (phpCAS::checkAuthentication()) {
+				$username = phpCAS::getUser();
+				//echo "Username [$username]";
+				return $username;
+			}
+			else {
+				phpCAS::forceAuthentication();
+			}
+		}
+		phpCAS::setNoCasServerValidation();
+		//echo "Set the no server validation...<br>";
+		//actually authenticate
+		if (phpCAS::checkAuthentication()) {
+			//echo "Already authenticated...<br>";
+		}
+		else {
+			//echo "NOT already authenticated...<br>";
+			phpCAS::forceAuthentication();
+			# We'll never get back to this point! because CAS will redirect back to login.php with no POST variables passed in...
+			echo "Did the authentication...<br>";
+		}
+		return '';
+	}
 
 	
 	/* -------------------------------------------- */
@@ -270,6 +331,13 @@
 								&nbsp;<small><?=$message?></small>
 								</td>
 							</tr>
+							<? if ($GLOBALS['cfg']['enablecas']) { ?>
+							<tr>
+								<td align="center" colspan="2">
+									<input type="submit" value="Login with CAS">
+								</td>
+							</tr>
+							<? } else { ?>
 							<tr title="Username is your email address if you self-registered">
 								<td class="label">Username<br><span class="tiny">or email address</span></td>
 								<td>
@@ -293,6 +361,7 @@
 									<input type="submit" value="Login">
 								</td>
 							</tr>
+							<? } ?>
 						</table>
 					</td>
 				</tr>

@@ -3249,7 +3249,7 @@
 												if ($s_resultorder != 'subject') {
 													?>
 												<input type="radio" name="destination" id="destination" value="export">Export package<br>
-												<input type="radio" name="destination" id="destination" value="ndar">NDAR submission</span><br>
+												<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission</span><br>
 												<?
 												}
 											}
@@ -3451,6 +3451,10 @@
 													<tr>
 														<td><input type="radio" name="preserveseries" value="2">Use alternate protocol name</td>
 														<td style="color:#333"><tt>1 2 3 &rarr; Localizer Resting TaskA</tt></td>
+													</tr>
+													<tr>
+														<td><input type="radio" name="preserveseries" value="3">ABIDE format</td>
+														<td style="color:#333"><tt>1 2 3 &rarr; anat_1 anat_2 anat_3</tt></td>
 													</tr>
 												</table>
 												
@@ -4366,7 +4370,7 @@
 				}
 				$laststudyid = $currentstudyid;
 
-				echo "(C) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
+				//echo "(C) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 				
 			}
 		}

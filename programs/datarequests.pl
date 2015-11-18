@@ -294,9 +294,11 @@ sub ProcessDataRequests {
 					}
 				}
 
+				my $finalseriesnum;
 				# create the new series number
 				if ($req_preserveseries == 1) {
 					$newseriesnum = $series_num;
+					$finalseriesnum = $newseriesnum;
 				}
 				if ($req_preserveseries == 2) {
 					# get the protocol name to be used in place of the series number
@@ -307,6 +309,27 @@ sub ProcessDataRequests {
 					$newseriesnum = trim($rowC{'series_desc'});
 					WriteLog("NewSeriesNum: [$newseriesnum]");
 					$newseriesnum =~ s/ /\_/gi;
+					$finalseriesnum = $newseriesnum;
+				}
+				# ABIDE format
+				if ($req_preserveseries == 3) {
+					# get the protocol name to be used in place of the series number
+					my $sqlstringC = "select series_altdesc from $modality" . "_series where $modality" . "series_id = $series_id";
+					WriteLog($sqlstringC);
+					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringB, $db->errmsg());
+					my %rowC = $resultC->fetchhash;
+					my $seriesdesc = trim($rowC{'series_altdesc'});
+					$seriesdesc =~ s/ /\_/gi;
+					
+					if ($laststudyid ne $currentstudyid) {
+						$newseriesnum = 1;
+					}
+					else {
+						$newseriesnum++;
+					}
+					WriteLog("NewSeriesNum: [$newseriesnum]");
+					$finalseriesnum = $seriesdesc . '_' . $newseriesnum;
+					$newdir .= "/session_" . $study_num;
 				}
 				if ($req_preserveseries == 0) {
 					WriteLog("current: $currentstudyid... last: $laststudyid");
@@ -316,11 +339,12 @@ sub ProcessDataRequests {
 					else {
 						$newseriesnum++;
 					}
+					$finalseriesnum = $newseriesnum
 				}
-				WriteLog("Preserve [$req_preserveseries] Old [$series_num] New [$newseriesnum]");
+				WriteLog("Preserve [$req_preserveseries] Old [$series_num] New [$finalseriesnum]");
 			
 				# determine what the actual export directory should be
-				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir);
+				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $finalseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir);
 
 				my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
