@@ -135,7 +135,7 @@
 	/* -------------------------------------------- */
 	/* ------- DoLogin ---------------------------- */
 	/* -------------------------------------------- */
-	function DoLogin() {
+	function DoLogin($username) {
 		/* check if they are an admin */
 		$sqlstring = "select user_isadmin from users where username = '$username'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
