@@ -58,6 +58,12 @@
 # possible site types: local, public, commercial
 [sitetype] = local
 
+# CAS authentication
+[enablecas] = 0
+[casserver] = sample.server.com
+[casport] = 443
+[cascontext] = cas
+
 # local FTP info
 [localftphostname] = ftphostname
 [localftpusername] = ftpusername
