@@ -1696,7 +1696,14 @@ sub GetData() {
 									if ($behformat eq "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
 								}
 							}
+							else {
+								if ($behformat eq "behroot") { $behoutdir = "$analysispath/$location"; }
+								if ($behformat eq "behrootdir") { $behoutdir = "$analysispath/$location/$behdir"; }
+								if ($behformat eq "behseries") { $behoutdir = "$analysispath/$location/$seriesnum"; }
+								if ($behformat eq "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
+							}
 							
+							$datalog .= "behformat [$behformat] behoutdir [$behoutdir]\n";
 							if ($usephasedir) {
 								my $phasedir = "unknownPE";
 								

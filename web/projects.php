@@ -291,7 +291,7 @@
 				$project_costcenter = $row['project_costcenter'];
 				$isactive = $row['isactive'];
 				
-				$sqlstringA = "select altuid from subject_altuid where subject_id = $subjectid order by isprimary desc";
+				$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 				$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
 				$isprimary = $rowA['isprimary'];
