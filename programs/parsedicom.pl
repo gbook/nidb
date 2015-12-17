@@ -218,7 +218,7 @@ sub ParseDirectory {
 
 				if (-d "$dir/$file") { WriteLog("[$dir/$file] is a directory"); }
 				else {
-					WriteLog("Working on [$dir/$file]");
+					#WriteLog("Working on [$dir/$file]");
 					chdir($dir);
 					if (lc($file) =~ /\.par$/) {
 						WriteLog("Filetype is .par");
@@ -244,7 +244,7 @@ sub ParseDirectory {
 						$i++;
 					}
 					else {
-						WriteLog("Filetype is not specified, so maybe DICOM");
+						#WriteLog("Filetype is not specified, so maybe DICOM");
 						my ($tags,$newfilename,$filetype) = ParseDICOMFile("$dir/$file");
 						if ($tags != 0) {
 							if (trim($tags->{'Warning'}) eq "Error reading DICOM file (corrupted? still being copied?)") {
@@ -1972,10 +1972,8 @@ sub CreateThumbnail {
 	my ($dir, $type, $xdim, $ydim) = @_;
 
 	# print the ImageMagick version
-	my $systemstring = "which convert; convert --version";
+	my $systemstring = "which convert";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-	#$systemstring = "convert --version";
-	#WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	$systemstring = "convert --version";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	

@@ -627,7 +627,7 @@ sub ProcessDataRequests {
 						if ($modality eq "mr") {
 							$systemstring = "find $indir -iname '*.dcm' -exec cp -v {} $tmpdir \\;";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							Anonymize($tmpdir,3,'','');
+							Anonymize($tmpdir,2,'','');
 						}
 						else {
 							$systemstring = "cp -r $indir/* $tmpdir";
@@ -981,19 +981,67 @@ sub Anonymize() {
 		if ($File::Find::name =~ /\.dcm/) {
 			my $systemstring;
 			if ($anon == 4) {
+				# encrypt patient name, leave everything else
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='$randstr1' -o $File::Find::name";
 				WriteLog("Anonymizing (level 4) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 1) {
+				# remove ReferringPhysicianName
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
 				WriteLog("Anonymizing (level 1) $File::Find::name");
 				push(@systemstrings,$systemstring);
 			}
 			if ($anon == 2) {
-				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,20='19000101' --replace 8,21='19000101' --replace 8,22='19000101' --replace 8,23='19000101' --replace 8,30='000000.000000' --replace 8,31='000000.000000' --replace 8,32='000000.000000' --replace 8,33='000000.000000' --replace 8,80='Anonymous' --replace 8,81='Anonymous' --replace 8,90='Anonymous' --replace 8,1010='Anonymous' --replace 8,1030='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,20='$randstr1$randstr2' --replace 10,30='Anonymous-$randstr2' --replace 10,1030='Anonymous' -o $File::Find::name";
-				WriteLog("Anonymizing (level 2) $File::Find::name");
-				push(@systemstrings,$systemstring);
+				# Full anonymization. remove all names, dates, locations. ANYTHING identifiable
+				my $s = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name";
+				$s .= " --replace 8,20='19000101'"; # StudyDate
+				$s .= " --replace 8,21='19000101'"; # SeriesDate
+				$s .= " --replace 8,22='19000101'"; # AcquisitionDate
+				$s .= " --replace 8,23='19000101'"; # ContentDate
+				$s .= " --replace 8,30='000000.000000'"; #StudyTime
+				$s .= " --replace 8,31='000000.000000'"; #SeriesTime
+				$s .= " --replace 8,32='000000.000000'"; #AcquisitionTime
+				$s .= " --replace 8,33='000000.000000'"; #ContentTime
+				$s .= " --replace 8,80='Anonymous'"; # InstitutionName
+				$s .= " --replace 8,81='Anonymous'"; # InstitutionAddress
+				$s .= " --replace 8,90='Anonymous'"; # ReferringPhysicianName
+				$s .= " --replace 8,92='Anonymous'"; # ReferringPhysicianAddress
+				$s .= " --replace 8,94='Anonymous'"; # ReferringPhysicianTelephoneNumber
+				$s .= " --replace 8,96='Anonymous'"; # ReferringPhysicianIDSequence
+				$s .= " --replace 8,1010='Anonymous'"; # StationName
+				$s .= " --replace 8,1030='Anonymous'"; # StudyDescription
+				$s .= " --replace 8,103E='Anonymous'"; # SeriesDescription
+				$s .= " --replace 8,1050='Anonymous'"; # PerformingPhysicianName
+				$s .= " --replace 8,1060='Anonymous'"; # NameOfPhysicianReadingStudy
+				$s .= " --replace 8,1070='Anonymous'"; # OperatorsName
+				$s .= " --replace 10,10='Anonymous'"; # PatientName
+				$s .= " --replace 10,20='Anonymous'"; # PatientID
+				$s .= " --replace 10,21='Anonymous'"; # IssuerOfPatientID
+				$s .= " --replace 10,30='19000101'"; # PatientBirthDate
+				$s .= " --replace 10,32='000000.000000'"; # PatientBirthTime
+				$s .= " --replace 10,50='Anonymous'"; # PatientInsurancePlanCodeSequence
+				$s .= " --replace 10,1000='Anonymous'"; # OtherPatientIDs
+				$s .= " --replace 10,1001='Anonymous'"; # OtherPatientNames
+				$s .= " --replace 10,1005='Anonymous'"; # PatientBirthName
+				$s .= " --replace 10,1010='Anonymous'"; # PatientAge
+				$s .= " --replace 10,1020='Anonymous'"; # PatientSize
+				$s .= " --replace 10,1030='Anonymous'"; # PatientWeight
+				$s .= " --replace 10,1040='Anonymous'"; # PatientAddress
+				$s .= " --replace 10,1060='Anonymous'"; # PatientMotherBirthName
+				$s .= " --replace 10,2154='Anonymous'"; # PatientTelephoneNumbers
+				$s .= " --replace 10,21b0='Anonymous'"; # AdditionalPatientHistory
+				$s .= " --replace 10,21f0='Anonymous'"; # PatientReligiousPreference
+				$s .= " --replace 10,4000='Anonymous'"; # PatientComments
+				$s .= " --replace 18,1030='Anonymous'"; # ProtocolName
+				$s .= " --replace 32,1032='Anonymous'"; # RequestingPhysician
+				$s .= " --replace 40,6='Anonymous'"; # ScheduledPerformingPhysiciansName
+				$s .= " --replace 40,4036='Anonymous'"; # HumanPerformerOrganization
+				$s .= " --replace 40,4037='Anonymous'"; # HumanPerformerName
+				$s .= " --replace 40,a123='Anonymous'"; # PersonName
+				$s .= " -o $File::Find::name";
+				WriteLog("Anonymizing (level 2 - FULL) $File::Find::name");
+				push(@systemstrings,$s);
 			}
 			if ($anon == 3) {
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
