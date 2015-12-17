@@ -1963,6 +1963,7 @@
 								$istestseries = true;
 							}
 							$ratingcount2 = count($ratingarray);
+							$ratingavg = array_sum($ratingarray) / count($ratingarray);
 							break;
 						}
 					}
@@ -2119,7 +2120,7 @@
 							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
 						</td>
 						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
-							<span style="font-size:7pt"><?=$ratingcount2;?></span>
+							<span style="font-size:7pt"><?=$ratingavg;?></span>
 							<a href="JavaScript:newPopup('ratings.php?id=<?=$series_id?>&type=series&modality=mr');">
 							<? if ($hasratings) { $image = "rating2.png"; } else { $image = "rating.png"; } ?>
 							<img src="images/<?=$image?>" border="0" title="View ratings">
@@ -2577,139 +2578,118 @@
 		}
 		
 		$modality = '';
+		$i = 0;
 		/* gather scans into longitudinal format */
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$uid = strtoupper(trim($row['uid']));
+			$encuid = crc32(strtoupper(trim($row['uid'])));
 			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
+			#$studynum = $row['study_num'];
+			$sex = $row['gender'];
 			$age = $row['ageinmonths'];
-			$age = $row['ageinmonths'];
-			$seriesdesc = $row['series_desc'];
+			#$seriesdesc = $row['series_desc'];
 			$resultname = $row['result_nameid'];
 			$resultvalue = $row['result_value'];
 			
-			if ($age > 0) {
-				$longs[$uid][$age][$resultname] = $resultvalue;
+			$series[] = $resultname;
+			# exclude anyone under 0yr or over 100yrs
+			if (($age > 0) && ($age < 1200)) {
+				$longs[$age][$resultname][] = $resultvalue;
 			}
+			
+			$exportdata[$resultname][$studyid]['age'] = $age;
+			$exportdata[$resultname][$studyid]['value'] = $resultvalue;
+			$exportdata[$resultname][$studyid]['sex'] = $sex;
+			$i++;
 		}
+		$series = array_unique($series);
+		sort($series);
 		
-		echo "<pre>";
-		//print_r($longs);
-		echo "</pre>";
+		ksort($longs);
+		
+		//echo "<pre>";
+		//print_r($exportdata);
+		//echo "</pre>";
+		//exit(0);
 		
 		/* get the month ranges */
-		$maxage = 0;
-		$minage = INF;
-		foreach ($longs as $uid => $value) {
-			foreach ($longs[$uid] as $age => $value2) {
-				if (($age > 0) && ($age < 1200)) {
-					if ($age > $maxage) { $maxage = $age; }
-					if ($age < $minage) { $minage = $age; }
-				}
-			}
-		}
-
+		$thekeys = array_keys($longs);
+		$minage = $thekeys[0];
+		$maxage = end($thekeys);
 		echo "Age range in months [$minage] to [$maxage]<br>";
 		
 		$csv1 = "uid";
 		$csv2 = "uid";
 		
-		/* loop through the UIDs */
-		foreach ($longs as $uid => $val) {
+		/* loop through the age bins and calculate stats on each bin */
+		foreach ($longs as $bin => $val) {
 			/* loop through the SeriesDescriptions */
-			for ($age=$minage;$age<=$maxage;$age++) {
-				if (isset($longs[$uid][$age][1])) {
-					$value = $longs[$uid][$age][1];
-					//echo "[$uid][$age][1] = $value<br>";
-					$ages[$age][] = $value;
-				}
+			foreach ($val as $resultid => $values) {
+				$mean = array_sum($values) / count($values);
+				$count = count($values);
+				$min = min($values);
+				$max = max($values);
+				$stdev = sd($values);
+				
+				$summary[$bin][$resultid]['mean'] = $mean;
+				$summary[$bin][$resultid]['count'] = $count;
+				$summary[$bin][$resultid]['min'] = $min;
+				$summary[$bin][$resultid]['max'] = $max;
+				$summary[$bin][$resultid]['stdev'] = $stdev;
 			}
 		}
-		
-		?>
-		<table cellspacing="0" style="font-size: 8pt" border="1">
-			<tr>
-				<td><b>UID</b></td>
-				<?
-					for ($col=$minage;$col<=$maxage;$col++) {
-						$values = $ages[$col];
-						if (count($values) > 0) {
-							$csv1 .= ", $col";
-							$csv2 .= ", $col";
-							?>
-							<td align="right" style="color:darkblue"><?=$col?></td>
-							<?
-						}
-					}
-				?>
-			</tr>
-		<?
-		$csv1 .= "\n";
-		$csv2 .= "\n";
-		
-		//ksort($ages, SORT_NATURAL);
 		//echo "<pre>";
-		//print_r($ages);
+		//print_r($summary);
 		//echo "</pre>";
 		
-		?><tr><td style="padding-right: 4px">Count</td><?
-		$csv2 .= "n";
-		for ($col=$minage;$col<=$maxage;$col++) {
-			$values = $ages[$col];
-			if (count($values) > 0) {
-				$n = count($values);
-				$csv2 .= ", $n";
-				?><td style="padding-right: 4px; text-align: right"><?=$n?></td><?
+		foreach ($series as $resultid) {
+			?>
+			result ID [<?=$resultid?>]<br>
+			<table cellspacing="0" style="font-size: 8pt" border="1">
+				<tr>
+					<td>Bin (months)</td>
+					<td>Count</td>
+					<td>min</td>
+					<td>max</td>
+					<td>stdev</td>
+					<td>Mean</td>
+				</tr>
+				<?
+					foreach ($summary as $bin => $values) {
+						$mean = $values[$resultid]['mean'];
+						$count = $values[$resultid]['count'];
+						$min = $values[$resultid]['min'];
+						$max = $values[$resultid]['max'];
+						$stdev = $values[$resultid]['stdev'];
+						?>
+						<tr>
+							<td align="right" style="color:darkblue"><?=$bin?></td>
+							<td align="right" style="color:darkblue"><?=$count?></td>
+							<td align="right" style="color:darkblue"><?=$min?></td>
+							<td align="right" style="color:darkblue"><?=$max?></td>
+							<td align="right" style="color:darkblue"><?=$stdev?></td>
+							<td align="right" style="color:darkblue"><?=$mean?></td>
+						</tr>
+						<?
+						}
+					?>
+			</table>
+			<?
+		}
+		$csv = "ID, age, sex, ROI, value\n";
+		
+		foreach ($exportdata as $resultid => $subject) {
+			foreach ($subject as $uid => $values) {
+				$age = $values['age'];
+				$sex = $values['sex'];
+				$value = $values['value'];
+				$csv .= "$uid, $age, $sex, $resultid, $value\n";
 			}
 		}
-		$csv2 .= "\n";
-		?></tr>
-		
-		<tr><td>Min</td><?
-		$csv2 .= "min";
-		for ($col=$minage;$col<=$maxage;$col++) {
-			$values = $ages[$col];
-			if (count($values) > 0) {
-				$min = min($values);
-				$csv2 .= ", $min";
-				?><td style="padding-right: 4px; text-align: right"><?=number_format($min,0)?></td><?
-			}
-		}
-		$csv2 .= "\n";
-		?></tr>
-		
-		<tr><td>Max</td><?
-		$csv2 .= "max";
-		for ($col=$minage;$col<=$maxage;$col++) {
-			$values = $ages[$col];
-			if (count($values) > 0) {
-				$max = max($values);
-				$csv2 .= ", $max";
-				?><td style="padding-right: 4px; text-align: right"><?=number_format($max,0)?></td><?
-			}
-		}
-		$csv2 .= "\n";
-		?></tr>
-		
-		<tr><td>Mean</td><?
-		$csv2 .= "mean";
-		for ($col=$minage;$col<=$maxage;$col++) {
-			$values = $ages[$col];
-			if (count($values) > 0) {
-				$mean = array_sum($values) / count($values);
-				$csv2 .= ", $mean";
-				?><td style="padding-right: 4px; text-align: right"><?=number_format($mean,0)?></td><?
-			}
-		}
-		$csv2 .= "\n";
-		?></tr>
-		
+		?>
 		</table>
 		Full table .csv<br>
-		<textarea rows="8" cols="150"><?=$csv1?></textarea>
-		<br><br>
-		Summary .csv<br>
-		<textarea rows="8" cols="150"><?=$csv2?></textarea>
+		<textarea rows="8" cols="150"><?=$csv?></textarea>
 		<?
 	}
 

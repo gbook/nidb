@@ -41,6 +41,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$ratingid = GetVariable("ratingid");
 	$type = GetVariable("type");
 	$modality = GetVariable("modality");
 	$value = GetVariable("rating_value");
@@ -50,6 +51,9 @@
 		//echo "Username: [$username]";
 		AddRating($username, $modality, $type, $id, $value, $notes);
 		DisplayRatings($id, $type, $modality, $username);
+	}
+	elseif ($action == "deleterating") {
+		DeleteRating($ratingid);
 	}
 	else {
 		DisplayRatings($id, $type, $modality, $username);
@@ -62,7 +66,7 @@
 	function AddRating($username, $modality, $type, $id, $value, $notes) {
 		/* get user_id */
 		$sqlstring = "select user_id from users where username = '$username'";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$userid = $row['user_id'];
 
@@ -70,7 +74,16 @@
 		
 		$sqlstring = "insert into ratings (rater_id, data_id, data_modality, rating_type, rating_value, rating_notes, rating_date) values ($userid, $id, '$modality', '$type', $value, '$notes', now())";
 		//echo "$sqlstring<br>";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+	/* -------------------------------------------- */
+	/* ------- DeleteRating ----------------------- */
+	/* -------------------------------------------- */
+	function DeleteRating($ratingid) {
+		$sqlstring = "delete from ratings where rating_id = '$ratingid'";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		?><span class="message">Rating deleted</span><?
 	}
 
 	
@@ -84,7 +97,7 @@
 			<thead>
 				<th>Rater</th>
 				<th>Date</th>
-				<th>Avoidance level</th>
+				<th>Rating</th>
 				<th>Notes</th>
 				<th></th>
 			</thead>
@@ -98,14 +111,14 @@
 				<td><?=$username?></td>
 				<td></td>
 				<td>
-					<select name="rating_value">
-						<option value=""></option>
-						<option value="0">None</option>
-						<option value="1" style="background-color: palegreen">No worries, its good</option>
-						<option value="2" style="background-color: skyblue">Guarded (cautious pessimism)</option>
-						<option value="3" style="background-color: #FFFF44">Elevated (hide your wife)</option>
-						<option value="4" style="background-color: #FFC533">High (hide your kids)</option>
-						<option value="5" style="background-color: red; color:white; font-weight:bold">Severe (no hope)</option>
+					<select name="rating_value" required>
+						<option value="">(Select a rating)</option>
+						<option value="0">No rating</option>
+						<option value="1" style="background-color: palegreen">Good data</option>
+						<option value="2" style="background-color: skyblue">Minor problems</option>
+						<option value="3" style="background-color: #FFFF44">Moderate problems</option>
+						<option value="4" style="background-color: #FFC533">Major problems</option>
+						<option value="5" style="background-color: red; color:white; font-weight:bold">Severe problems, unusble</option>
 						<option value="6" style="background-color: #CCCCCC;">Test scan (not real data)</option>
 					</select>
 				</td>
@@ -113,7 +126,7 @@
 					<textarea name="rating_notes"></textarea>
 				</td>
 				<td>
-					<input type="submit" value="Add" onClick="alert('Hi')">
+					<input type="submit" value="Add">
 				</td>
 				</tr>
 				</form>
@@ -123,6 +136,7 @@
 				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 					$username = $row['username'];
+					$rating_id = $row['rating_id'];
 					$rating_value = $row['rating_value'];
 					$rating_notes = $row['rating_notes'];
 					$rating_date = $row['rating_date'];
@@ -141,6 +155,7 @@
 						<td><?=$rating_date?></td>
 						<td style="color: <?=$rating_fcolor;?>; background-color: <?=$rating_bcolor;?>"><?=$rating_value?></td>
 						<td><?=$rating_notes?></td>
+						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>" style="color: red">X</a></td>
 					</tr>
 					<?
 				}

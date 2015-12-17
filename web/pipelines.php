@@ -1341,13 +1341,22 @@
 						$row = mysql_fetch_array($result, MYSQL_ASSOC);
 						$totaltime = $row['cluster_time'];
 						$totaltime = number_format(($totaltime/60/60),2);
-						//$parts = explode(':', $totaltime);
-						//$totaltime = $parts[0]. "h " . $parts[1] . "m " . $parts[2] . "s";
+						
+						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$totaltimesuccess = $row['cluster_timesuccess'];
+						$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
 						
 						$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
 						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 						$row = mysql_fetch_array($result, MYSQL_ASSOC);
 						$numcomplete = $row['numcomplete'];
+
+						$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$numcompletesuccess = $row['numcompletesuccess'];
 						
 						$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
 						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
@@ -1385,12 +1394,16 @@
 								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hr</td>
 							</tr>
 							<tr>
+								<td>Successfuly completed<br>Total analysis time</td>
+								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hr</td>
+							</tr>
+							<tr>
 								<td>Processing</td>
-								<td><?=$numprocessing?></td>
+								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
 							</tr>
 							<tr>
 								<td>Pending</td>
-								<td><?=$numpending?></td>
+								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
 							</tr>
 							<tr>
 								<td>Mean Cluster time</td>
@@ -1417,6 +1430,37 @@
 								<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> sec</td>
 							</tr>
 						</table>
+						<br><br>
+						<!-- display performance by hostname -->
+						<details>
+							<summary style="color: #3B5998"> Computing Performance </summary>
+							<table class="smallgraydisplaytable">
+								<tr>
+									<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+								</tr>
+								<tr>
+									<td><b>Hostname</b></td>
+									<td><b>Avg CPU</b></td>
+									<td><b>Count</b></td>
+								</tr>
+							<?
+								$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+									$count = $row['count'];
+									$hostname = $row['analysis_hostname'];
+									?>
+									<tr>
+										<td><?=$hostname?></td>
+										<td><?=$cpuhrs?> hrs</td>
+										<td><?=$count?></td>
+									</tr>
+									<?
+								}
+							?>
+							</table>
+						</details>
 					<br>
 					<script>
 						function GetNewPipelineName(){

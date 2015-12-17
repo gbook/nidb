@@ -1434,6 +1434,7 @@
 											$istestseries = true;
 										}
 										$ratingcount2 = count($ratingarray);
+										$ratingavg = array_sum($ratingarray) / count($ratingarray);
 										break;
 									}
 								}
@@ -1661,7 +1662,7 @@
 									<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$mrseries_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
 								</td>
 								<td class="seriesrow" style="padding: 0px 5px;">
-									<span style="font-size:7pt"><?=$ratingcount2;?></span>
+									<span style="font-size:7pt"><?=$ratingavg;?></span>
 									<div id="popup" style="display:none; min-width:800px; min-height:400px"></div>
 									<? if ($hasratings) { $image = "rating2.png"; } else { $image = "rating.png"; } ?>
 									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><img src="images/<?=$image?>" border="0" title="View ratings"></a>
