@@ -1951,6 +1951,7 @@
 				$ratingcount2 = '';
 				$hasratings = false;
 				$rowcolor = '';
+				$ratingavg = '';
 				if (isset($ratings)) {
 					foreach ($ratings as $key => $ratingarray) {
 						if ($key == $series_id) {
@@ -2120,11 +2121,11 @@
 							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
 						</td>
 						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
-							<span style="font-size:7pt"><?=$ratingavg;?></span>
 							<a href="JavaScript:newPopup('ratings.php?id=<?=$series_id?>&type=series&modality=mr');">
 							<? if ($hasratings) { $image = "rating2.png"; } else { $image = "rating.png"; } ?>
-							<img src="images/<?=$image?>" border="0" title="View ratings">
+							<img src="images/<?=$image?>" border="0" title="View/edit ratings">
 							</a>
+							<span style="font-size:7pt" title="Scale of 1 to 5, where<br>1 = good<br>5 = bad"><?=$ratingavg;?></span>
 						</td>
 						<td class="<?=$rowstyle?>">
 							<? if (trim($series_notes) != "") { ?>
@@ -3960,7 +3961,7 @@
 			<td class="seriesheader">Z</td>
 			<? if (($s_resultorder == "series") || ($s_resultorder == "operations")) { ?>
 				<td class="seriesheader">QA</td>
-				<td class="seriesheader">Rating</td>
+				<td class="seriesheader" title="Scale 1-5<br>1 = good<br>5 = bad">Rating</td>
 			<? } ?>
 			<td class="seriesheader" title="Per Voxel SNR (timeseries) - Calculated from the fslstats command">PV SNR</td>
 			<td class="seriesheader" title="Inside-Outside SNR - This calculates the brain signal (center of brain-extracted volume) compared to the average of the volume corners">IO SNR</td>

@@ -238,7 +238,7 @@
 					$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
 			?>
 			<tr>
-				<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>"><?=$module_name?></a></td>
+				<td><?=$module_name?> (<a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a>)</td>
 				<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>
 				<td><?=$module_numrunning?></td>
 				<td><?=$module_laststop?></td>
