@@ -117,7 +117,7 @@ sub DoQA {
 			my $mrseries_id = $row{'mrseries_id'};
 			QA($mrseries_id);
 		}
-		WriteLog("Finished reconstructing data");
+		WriteLog("Finished quality control");
 		$ret = 1;
 	}
 	else {
@@ -189,13 +189,18 @@ sub QA() {
 			mkpath($tmpdir, {mode => 0777});
 			mkpath("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa", {mode => 0777});
 
-			if (($is_derived) || ($datatype ne 'dicom')) {
+			if ($is_derived) {
 				$systemstring = "cp $cfg{'archivedir'}/$uid/$study_num/$series_num/nifti/* $tmpdir";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			else {
 				# create a 4D file to pass to the SNR program and run the SNR program on it
-				$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+				if ($datatype eq 'dicom') {
+					$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+				}
+				else {
+					$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
+				}
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				
 				$systemstring = "mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
@@ -267,7 +272,8 @@ sub QA() {
 			
 			# if there is no thumbnail, create one, or replace the original
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
-				$systemstring = "cp -uv $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			
 			# make a color mapped version of the thumbnail

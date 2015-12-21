@@ -2188,6 +2188,10 @@
 	/* ------- DisplayGenericSeries --------------- */
 	/* -------------------------------------------- */
 	function DisplayGenericSeries($id, $modality) {
+		if (($modality == "") || ($modality == "missing modality") {
+			?><div align="center" color="red">Modality was blank, unable to display data</div><?
+			return;
+		}
 		?>
 		<SCRIPT LANGUAGE="Javascript">
 		<!---

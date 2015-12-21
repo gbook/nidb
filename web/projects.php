@@ -609,6 +609,13 @@
 			$altuid = $rowA['altuid'];
 			
 			if (($modality != "") && ($studyid != "")) {
+				/* check for valid modality */
+				$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "_series'";
+				$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+				if (mysqli_num_rows($result2) < 1) {
+					continue;
+				}
+
 				/* get the series */
 				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
 				//PrintSQL($sqlstringA);
