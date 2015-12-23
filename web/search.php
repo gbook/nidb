@@ -2598,9 +2598,9 @@
 				$longs[$age][$resultname][] = $resultvalue;
 			}
 			
-			$exportdata[$resultname][$encuid]['age'] = $age;
-			$exportdata[$resultname][$encuid]['value'] = $resultvalue;
-			$exportdata[$resultname][$encuid]['sex'] = $sex;
+			$exportdata[$resultname][$studyid]['age'] = $age;
+			$exportdata[$resultname][$studyid]['value'] = $resultvalue;
+			$exportdata[$resultname][$studyid]['sex'] = $sex;
 			$i++;
 		}
 		$series = array_unique($series);

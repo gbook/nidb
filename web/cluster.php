@@ -63,9 +63,13 @@
 	/* -------------------------------------------- */
 	function GetClusterStats() {
 		//$statsoutput = explode("\n",shell_exec("SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; /sge/sge-root/bin/lx24-amd64/./qstat -f -u '*'"));
-		$statsoutput = explode("\n",shell_exec("ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'"));
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'";
+		$statsoutput = explode("\n",shell_exec($command));
 		
-		//print_r($statsoutput);
+		echo "<pre>";
+		echo "Running: [$command]<br>";
+		print_r($statsoutput);
+		echo "</pre>";
 
 		$hostname = $queue = "";
 		$hostnames = $queues = null;
