@@ -1312,7 +1312,7 @@ sub WriteNDARHeader() {
 	
 	if (lc($modality) eq 'mr') {
 		print F "image,3\n";
-		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type\n";
+		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,pulse_seq,slice_acquisition,software_preproc,study,week\n";
 	}
 	if (lc($modality) eq 'eeg') {
 	
@@ -1332,7 +1332,8 @@ sub WriteNDARSeries() {
 
 	# get the information on the subject and series
 
-	my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', round(datediff(study_datetime, birthdate)/12) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
+	#my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', round(datediff(study_datetime, birthdate)/12) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
+	my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
 	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
@@ -1342,6 +1343,7 @@ sub WriteNDARSeries() {
 		my $serieste = $row{'series_te'};
 		my $seriesflip = $row{'series_flip'};
 		my $seriesprotocol = $row{'series_protocol'};
+		my $seriessequence = $row{'series_sequencename'};
 		my $seriesnotes = $row{'series_notes'};
 		my $imagetype = $row{'image_type'};
 		my $imagecomments = $row{'image_comments'};
@@ -1398,6 +1400,10 @@ sub WriteNDARSeries() {
 			$scantype = "MR structural (T2)";
 		}
 		
+		if (trim($AcquisitionMatrix) eq "") {
+			$AcquisitionMatrix = "0 0 0 0";
+		}
+		
 		my @AcqParts = split(' ', $AcquisitionMatrix);
 		my $FOV = "0x0";
 		$FOV = $AcqParts[0]*$seriesspacingx*$PercentPhaseFieldOfView . "x" . $AcqParts[3]*$seriesspacingy*$PercentPhaseFieldOfView;
@@ -1405,7 +1411,7 @@ sub WriteNDARSeries() {
 		open(F,">> $file");
 		
 		if ($modality eq "MRI") {
-			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype\n";
+			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,,,$ProtocolName,$seriessequence,1,,,0\n";
 		}
 		if ($modality eq "EEG") {
 			#print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,\"$seriesnotes\",,,,,,,,,,,,$imagefile,,,\n";

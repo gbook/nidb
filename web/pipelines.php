@@ -156,6 +156,10 @@
 			MarkAnalysis($id, $analysisids, 'good');
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
+		case 'rechecksuccess':
+			RecheckSuccess($id, $analysisids);
+			DisplayAnalysisList($id, $numperpage, $pagenum);
+			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
 		case 'changeowner':
@@ -826,6 +830,35 @@
 				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
 			}
 			?><span class="codelisting"><?=$datapath?> marked as bad</span><br><?
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- RecheckSuccess --------------------- */
+	/* -------------------------------------------- */
+	function RecheckSuccess($id, $analysisids) {
+		
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID blank</div><?
+			return;
+		}
+		
+		foreach ($analysisids as $analysisid) {
+		
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rechecksuccess', 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			$sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+			//echo "[$sqlstring]";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$uid = $row['uid'];
+			$studynum = $row['study_num'];
+			$pipelinename = $row['pipeline_name'];
+			
+			$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+			?><span class="codelisting"><?=$datapath?> to be rechecked for successful file(s)</span><br><?
 		}
 	}
 	
@@ -2587,13 +2620,15 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<br><br><br>
 					<input type="button" name="copyanalyses" value="Copy analyses to..." style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='copyanalyses';GetDestination()">
 					<br>
-					<input type="button" name="createlinks" value="Create Links..." style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies">
+					<input type="button" name="createlinks" value="Create links..." style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies">
 					<br>
-					<input type="button" name="rerunresults" value="Re-run Results Script" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">
+					<input type="button" name="rerunresults" value="Re-run results script" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">
 					<br>
-					<input type="button" name="copyanalyses" value="Mark as bad" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
+					<input type="button" name="rechecksuccess" value="Re-check if successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist">
 					<br>
-					<input type="button" name="copyanalyses" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">&nbsp;
+					<input type="button" name="markasbad" value="Mark as bad" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
+					<br>
+					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">&nbsp;
 					</td>
 				</tr>
 			</tbody>

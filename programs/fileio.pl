@@ -131,6 +131,11 @@ sub DoIO {
 			WriteLog("Performing the following fileio operation [$fileio_operation] on the datatype [$data_type]");
 			my $found = 0;
 			switch ($fileio_operation) {
+				case 'rechecksuccess' {
+					switch ($data_type) {
+						case 'analysis' { $found = RecheckSuccess($data_id); $found = 1; }
+					}
+				}
 				case 'createlinks' {
 					switch ($data_type) {
 						case 'analysis' { $found = CreateLinks($data_id, $cfg{'mountdir'}.$data_destination); $found = 1; }
@@ -210,6 +215,60 @@ sub DoIO {
 	ModuleDBCheckOut($scriptname, $db);
 
 	return $ret;
+}
+
+
+# ----------------------------------------------------------
+# --------- RecheckSuccess ---------------------------------
+# ----------------------------------------------------------
+sub RecheckSuccess() {
+	my ($analysisid) = @_;
+	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
+	WriteLog("In RecheckSuccess($analysisid)");
+
+	# get the path to the analysisroot
+	my $sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+	WriteLog($sqlstring);
+	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	my %row = $result->fetchhash;
+	my $uid = $row{'uid'};
+	my $studynum = $row{'study_num'};
+	my $pipelinename = $row{'pipeline_name'};
+
+	# check to see if anything isn't valid or is blank
+	if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); return "cfg->analysisdir was not initialized"; }
+	if (!defined($uid)) { WriteLog("Something was wrong, uid was not initialized"); return "uid was not initialized"; }
+	if (!defined($studynum)) { WriteLog("Something was wrong, studynum was not initialized"); return "studynum was not initialized"; }
+	if (!defined($pipelinename)) { WriteLog("Something was wrong, pipelinename was not initialized"); return "pipelinename was not initialized"; }
+	if (trim($cfg{'analysisdir'}) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); return "analysisdir"; }
+	if (trim($uid) eq '') { WriteLog("Something was wrong, uid was blank"); return "UID was blank"; }
+	if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); return "studynum was blank"; }
+	if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); return "Pipelinename was blank"; }
+
+	my $analysispath = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
+
+	# if we've gotten this far, now we can check the analysispath to see if the required file(s) exist
+	# get a list of expected files from the database
+	$sqlstring = "select pipeline_completefiles from pipelines a left join analysis b on a.pipeline_id = b.pipeline_id where b.analysis_id = $analysisid";
+	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	%row = $result->fetchhash;
+	my $completefiles = $row{'pipeline_completefiles'};
+	my @filelist = split(/,/,$completefiles);
+
+	my $iscomplete = 1;
+	foreach my $file(@filelist) {
+		WriteLog("Checking for [$analysispath/$file]");
+		unless (-e "$analysispath/$file") {
+			WriteLog("File [$analysispath/$file] does not exist");
+			$iscomplete = 0;
+			last;
+		}
+	}
+
+	$sqlstring = "update analysis set analysis_iscomplete = $iscomplete where analysis_id = $analysisid";
+	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	
+	return 1;
 }
 
 

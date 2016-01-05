@@ -2964,6 +2964,7 @@
 							$('.export').slideUp();
 							$('.format').slideUp();
 							$('.dirstructure').slideUp();
+							//$('.datatoexport').slideUp();
 						}
 						else {
 							$('.export').slideUp();
@@ -3258,7 +3259,7 @@
 						</table>
 					</td>
 				</tr>
-				<tr id="sectiondatatype">
+				<tr class="datatoexport" id="sectiondatatype">
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
