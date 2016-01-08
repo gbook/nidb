@@ -85,6 +85,7 @@
 	$newuserid = GetVariable("newuserid");
 	
 	$commandlist = GetVariable("commandlist");
+	$supplementcommandlist = GetVariable("supplementcommandlist");
 
 	$dd_enabled = GetVariable("dd_enabled");
 	$dd_order = GetVariable("dd_order");
@@ -117,7 +118,7 @@
 		case 'viewpipeline': DisplayPipeline($id, $version); break;
 		case 'addform': DisplayPipelineForm("add", ""); break;
 		case 'updatepipelinedef':
-			UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir);
+			UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
@@ -146,6 +147,10 @@
 			break;
 		case 'rerunresults':
 			RerunResults($id, $analysisids);
+			DisplayAnalysisList($id, $numperpage, $pagenum);
+			break;
+		case 'runsupplement':
+			RunSupplement($id, $analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'markbad':
@@ -459,7 +464,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipelineDef ------------------ */
 	/* -------------------------------------------- */
-	function UpdatePipelineDef($id, $commandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
+	function UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
 		
 		if ($id == "") {
 			?>Error: pipeline ID blank<br><br><?
@@ -536,12 +541,73 @@
 				$description[$i] = trim(mysql_real_escape_string($description[$i]));
 				$stepenabled[$i] = trim(mysql_real_escape_string($stepenabled[$i]));
 				$logged[$i] = trim(mysql_real_escape_string($logged[$i]));
-				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, '$command[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
+				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 0, '$command[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
 				//printSQL($sqlstring);
 				echo "<li>Inserted step $i: [$command[$i]]\n";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
 		}
+
+		/* split up the SUPPLEMENT commandlist into commands, then split them into enabled, command, description, logged, etc */
+		$supplementcommands = explode("\n",$supplementcommandlist);
+		$step = 1;
+		foreach ($supplementcommands as $line) {
+			//echo "[$step] $line ";
+			//$line = trim($line);
+			if ($line == "") {
+				continue;
+			}
+			
+			/* check if the command should be logged */
+			if (stristr($line, '{NOLOG}') === false) {
+				$logged[$step] = 1;
+			}
+			else {
+				$logged[$step] = 0;
+				$line = str_replace('{NOLOG}','',$line);
+			}
+			
+			/* check if the command should be enabled */
+			if (substr($line,0,1) == '#') {
+				$stepenabled[$step] = 0;
+				$subline = ltrim($line, '#');
+				$description[$step] = substr(stristr($subline, '#'),1);
+				$supplementcommand[$step] = stristr($subline, '#', true);
+				if ($supplementcommand[$step] == "") {
+					$supplementcommand[$step] = $subline;
+				}
+			}
+			else {
+				$stepenabled[$step] = 1;
+				$description[$step] = substr(stristr($line, '#'),1);
+				$supplementcommand[$step] = stristr($line, '#', true);
+				if ($supplementcommand[$step] == "") {
+					$supplementcommand[$step] = $line;
+				}
+			}
+
+			$workingdir[$step] = "";
+			$steporder[$step] = $step;
+			$step++;
+		}
+		
+		/* insert all the new fields with NEW version # */
+		for($i=1; $i<=count($steporder); $i++) {
+			if (trim($supplementcommand[$i]) != "") {
+				/* perform data checks */
+				$steporder[$i] = trim(mysql_real_escape_string($steporder[$i]));
+				$supplementcommand[$i] = rtrim(mysql_real_escape_string($supplementcommand[$i]));
+				$workingdir[$i] = trim(mysql_real_escape_string($workingdir[$i]));
+				$description[$i] = trim(mysql_real_escape_string($description[$i]));
+				$stepenabled[$i] = trim(mysql_real_escape_string($stepenabled[$i]));
+				$logged[$i] = trim(mysql_real_escape_string($logged[$i]));
+				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 1, '$supplementcommand[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
+				//printSQL($sqlstring);
+				echo "<li>Inserted step $i: [$supplementcommand[$i]]\n";
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			}
+		}
+		
 		
 		?><div align="center"><span class="message">Pipeline steps [<?=$id?>] updated</span></div><?
 		
@@ -793,6 +859,41 @@
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- RunSupplement ---------------------- */
+	/* -------------------------------------------- */
+	function RunSupplement($id, $analysisids) {
+	
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - analysis ID(s) blank</div><?
+			return;
+		}
+		
+		foreach ($analysisids as $analysisid) {
+			
+			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for supplement run', analysis_runsupplement = 1 where analysis_id = $analysisid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+			//echo "[$sqlstring]";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$uid = $row['uid'];
+			$studynum = $row['study_num'];
+			$pipelinename = $row['pipeline_name'];
+			$pipelinelevel = $row['pipeline_level'];
+
+			if ($pipelinelevel == 1) {
+				$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+			}
+			elseif ($pipelinelevel == 2) {
+				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
+			}
+			?><span class="codelisting"><?=$datapath?> analysis queued for supplement run</span><br><?
+		}
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- MarkAnalysis ----------------------- */
@@ -1157,7 +1258,7 @@
 				<tr>
 					<td class="label" valign="top">Status<br><br></td>
 					<td valign="top" style="font-size: 10pt">
-						<b>Status</b> <?=$pipeline_status ?><br>
+						<b>Status</b> <?=$pipeline_status ?> <? if ($pipeline_status == "running") { ?>(<a href="pipelines.php?action=reset&id=<?=$info['id']?>" style="color: darkred" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)<? } ?><br>
 						<b>Status message</b> <?=$pipeline_statusmessage ?><br>
 						<b>Last start</b> <?=$pipeline_laststart ?><br>
 						<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
@@ -1423,12 +1524,12 @@
 								<th colspan="2">Analysis Statistics</th>
 							</tr>
 							<tr>
-								<td>Complete<br>Total analysis time</td>
-								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hr</td>
+								<td>Processing Complete<br><span style="font-weight: normal">Total CPU time</span></td>
+								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
 							</tr>
 							<tr>
-								<td>Successfuly completed<br>Total analysis time</td>
-								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hr</td>
+								<td>Successfuly Completed<br><span style="font-weight: normal">Total CPU time</span></td>
+								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
 							</tr>
 							<tr>
 								<td>Processing</td>
@@ -1438,62 +1539,52 @@
 								<td>Pending</td>
 								<td><a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
 							</tr>
-							<tr>
-								<td>Mean Cluster time</td>
-								<td><?=number_format(mean($clustertimes)/60/60,2)?> hr</td>
+							</tr>
+								<td>Setup Time</td>
+								<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
+								<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
 							</tr>
 							<tr>
-								<td>Median Cluster time</td>
-								<td><?=number_format(median($clustertimes)/60/60,2)?> hr</td>
+								<td>Cluster Time</td>
+								<td><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
+								<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
 							</tr>
 							<tr>
-								<td>Min/Max Cluster time</td>
-								<td><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hr</td>
-							</tr>
-							<tr>
-								<td>Mean Setup time</td>
-								<td><?=number_format(mean($analysistimes),1)?> sec</td>
-							</tr>
-							<tr>
-								<td>Median Setup time</td>
-								<td><?=number_format(median($analysistimes),1)?> sec</td>
-							<tr>
-							</tr>
-								<td>Min/Max Setup time</td>
-								<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> sec</td>
+								<td colspan="2">
+									<!-- display performance by hostname -->
+									<details>
+										<summary style="color: #3B5998"> Computing Performance </summary>
+										<table class="smallgraydisplaytable">
+											<tr>
+												<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+											</tr>
+											<tr>
+												<td><b>Hostname</b></td>
+												<td><b>Avg CPU</b></td>
+												<td><b>Count</b></td>
+											</tr>
+										<?
+											$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+												$count = $row['count'];
+												$hostname = $row['analysis_hostname'];
+												?>
+												<tr>
+													<td><?=$hostname?></td>
+													<td><?=$cpuhrs?> hrs</td>
+													<td><?=$count?></td>
+												</tr>
+												<?
+											}
+										?>
+										</table>
+									</details>
+								</td>
 							</tr>
 						</table>
-						<br><br>
-						<!-- display performance by hostname -->
-						<details>
-							<summary style="color: #3B5998"> Computing Performance </summary>
-							<table class="smallgraydisplaytable">
-								<tr>
-									<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
-								</tr>
-								<tr>
-									<td><b>Hostname</b></td>
-									<td><b>Avg CPU</b></td>
-									<td><b>Count</b></td>
-								</tr>
-							<?
-								$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-									$count = $row['count'];
-									$hostname = $row['analysis_hostname'];
-									?>
-									<tr>
-										<td><?=$hostname?></td>
-										<td><?=$cpuhrs?> hrs</td>
-										<td><?=$count?></td>
-									</tr>
-									<?
-								}
-							?>
-							</table>
-						</details>
+						<br>
 					<br>
 					<script>
 						function GetNewPipelineName(){
@@ -1504,12 +1595,6 @@
 						   }
 						}
 					</script>
-
-					<span style="color:#555; font-size:11pt; font-weight: bold">Where is my data?</span><br><br>
-					<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
-					<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
-					</span>
-					<br><br>
 					<details>
 						<summary style="color: #3B5998"> Pipeline Operations </summary>
 						<br>
@@ -1524,7 +1609,7 @@
 						<img src="images/copy16.gif"> <input type="button" value="Copy to new pipeline..." onClick="GetNewPipelineName();"><br><br>
 						</form>
 						<? if (!$readonly) { ?>
-						Change pipeline owner:
+						Change pipeline owner to:
 						<form>
 						<input type="hidden" name="action" value="changeowner">
 						<input type="hidden" name="id" value="<?=$id?>">
@@ -1550,6 +1635,11 @@
 						<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
 						<? } ?>
 					</details>
+					<br>
+					<span style="color:#555; font-size:11pt; font-weight: bold">Where is my data?</span><br><br>
+					<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
+					<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
+					</span>
 				</td>
 					<?
 				}
@@ -1614,6 +1704,7 @@
 			$dd_usephasedir = $row['pdd_usephasedir'];
 			$dd_behformat = $row['pdd_behformat'];
 			$dd_behdir = $row['pdd_behdir'];
+			$dd_numboldreps = $row['pdd_numboldreps'];
 			$dd_enabled = $row['pdd_enabled'];
 			$dd_assoctype = $row['pdd_assoctype'];
 			$dd_optional = $row['pdd_optional'];
@@ -1924,7 +2015,7 @@
 		} /* end of the check to display the data specs */ ?>
 		
 		<br><br>
-		<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;">Script commands<br><span class="tiny" style="font-weight:normal">Ctrl+S to save</span></span>
+		<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;">Main Script Commands<br><span class="tiny" style="font-weight:normal">Ctrl+S to save</span></div>
 		<br><br>
 		
 		<style type="text/css" media="screen">
@@ -1937,13 +2028,22 @@
 				bottom: 0;
 				left: 0;
 			}
+			#supplementcommandlist { 
+				position: relative;
+				width: 1000px;
+				height: 300px;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				left: 0;
+			}
 		</style>
 		</b>
 		<table>
 			<tr>
 				<td valign="top">
 		<textarea name="commandlist" style="font-weight:normal"><?
-			$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version order by ps_order + 0";
+			$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$pipelinestep_id = $row['pipelinestep_id'];
@@ -1959,8 +2059,85 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			}
 		?></textarea>
 		<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
+				</td>
+				<td valign="top" align="center">
+				<b>Available pipeline variables</b><br>
+				<span class="tiny">Click variable to insert at current editor location</span>
+				<br><br>
+				<table>
+					<tr><td class="pipelinevariable" onclick="insertText('{analysisrootdir}');" title="Full path to the root directory of the analysis">{analysisrootdir}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{last_ext_file}');" title="Finds last file (alphabetically) with extension">{last_ext_file}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{all_ext_files}');" title="Finds all files matching the extension">{all_ext_files}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{subjectuids}');" title="Space separated list of UIDs. For group analyses">{subjectuids}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{studydatetimes}');" title="Space separated list of datetimes, ordered by datetime. For group analyses">{studydatetimes}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{analysisgroupid}');" title="Group analysis ID">{analysisgroupid}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums}');" title="Space separated list of uidstudynums for all groups">{uidstudynums}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects}');" title="Number of subjects from all groups">{numsubjects}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{groups}');" title="Space separated list of groups">{groups}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects_groupname}');" title="Number of subjects (sessions) in the group specified">{numsubjects_groupname}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums_groupname}');" title="Space separated list of uidstudynums for the group specified">{uidstudynums_groupname}</td></tr>
+				</table>
+				<br><br>
+				<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="6" align="left">
+					<?
+						$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement = 1 order by ps_order + 0";
+						$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+						if (mysqli_num_rows($result2) > 0) {
+							$open = "open";
+						}
+						else {
+							$open = "";
+						}
+					?>
+					<details <?=$open?>>
+					<summary style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;">Supplementary script commands</summary>
+					<br>
+					<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
+					<textarea name="supplementcommandlist"><?
+						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+							$pipelinestep_id = $row2['pipelinestep_id'];
+							$ps_desc = $row2['ps_description'];
+							$ps_order = $row2['ps_order'];
+							$ps_command = $row2['ps_command'];
+							$ps_workingdir = $row2['ps_workingdir'];
+							$ps_enabled = $row2['ps_enabled'];
+							$ps_logged = $row2['ps_logged'];
+							if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
+							if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
+echo "$enabled$ps_command     # $logged $ps_desc\n";
+						}
+					?></textarea>
+					<span class="editoroptions" onClick="toggleWrap2()">Toggle text wrap</span>
+					</details>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="6" align="center">
+					<br><br>
+					<input type="submit" <?=$disabled?> value="Update Pipeline Definition Only">
+				</td>
+			</tr>
+			</form>
+		</table>
+		</fieldset>
 		<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>
-		<!--<script src="http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>-->
 		<script>
 			var editor = ace.edit("commandlist");
 			var textarea = $('textarea[name="commandlist"]').hide();
@@ -1997,54 +2174,34 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 							break;
 					}
 				}
-			});		
+			});
+			
+			var editor2 = ace.edit("supplementcommandlist");
+			var textarea2 = $('textarea[name="supplementcommandlist"]').hide();
+			editor2.setFontSize(12);
+			editor2.getSession().setMode("ace/mode/sh");
+			editor2.getSession().setUseWrapMode(false);
+			editor2.getSession().setValue(textarea2.val());
+			<?if ($readonly) { ?>
+			editor2.setReadOnly();
+			<? } ?>
+			editor2.getSession().on('change', function(){
+			  textarea2.val(editor2.getSession().getValue());
+			});
+			editor2.setTheme("ace/theme/xcode");
+			
+			function insertText2(text) {
+				editor2.insert(text);
+			}
+			function toggleWrap2() {
+				if (editor2.getSession().getUseWrapMode()) {
+					editor2.getSession().setUseWrapMode(false);
+				}
+				else {
+					editor2.getSession().setUseWrapMode(true);
+				}
+			};
 		</script>
-				</td>
-				<td valign="top" align="center">
-				<b>Available pipeline variables</b><br>
-				<span class="tiny">Click variable to insert at current editor location</span>
-				<br><br>
-				<table>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisrootdir}');" title="Full path to the root directory of the analysis">{analysisrootdir}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{last_ext_file}');" title="Finds last file (alphabetically) with extension">{last_ext_file}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{all_ext_files}');" title="Finds all files matching the extension">{all_ext_files}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{subjectuids}');" title="Space separated list of UIDs. For group analyses">{subjectuids}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studydatetimes}');" title="Space separated list of datetimes, ordered by datetime. For group analyses">{studydatetimes}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisgroupid}');" title="Group analysis ID">{analysisgroupid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums}');" title="Space separated list of uidstudynums for all groups">{uidstudynums}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects}');" title="Number of subjects from all groups">{numsubjects}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{groups}');" title="Space separated list of groups">{groups}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects_groupname}');" title="Number of subjects (sessions) in the group specified">{numsubjects_groupname}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums_groupname}');" title="Space separated list of uidstudynums for the group specified">{uidstudynums_groupname}</td></tr>
-				</table>
-				<br><br>
-				<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>
-				</td>
-			</tr>
-		</table>
-				<tr>
-					<td colspan="6" align="center">
-						<br><br>
-						<input type="submit" <?=$disabled?> value="Update Pipeline Definition Only">
-					</td>
-				</tr>
-				</form>
-			</tbody>
-		</table>
-		</fieldset>
 		
 		<br><br>
 		<br><br>
@@ -2374,7 +2531,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<th># series</th>
 					<? } ?>
 					<th>Status</th>
-					<th>Complete</th>
+					<th>Successful</th>
 					<th>Logs</th>
 					<th>Files</th>
 					<th>Results</th>
@@ -2616,7 +2773,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					</td>
 					<td colspan="8" align="right" style="background-color: #fff; font-size: 12pt">
 					With selected:&nbsp;<br><br>
-					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled until the deletion is finished</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
+					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
 					<br><br><br>
 					<input type="button" name="copyanalyses" value="Copy analyses to..." style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='copyanalyses';GetDestination()">
 					<br>
@@ -2624,8 +2781,10 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<br>
 					<input type="button" name="rerunresults" value="Re-run results script" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">
 					<br>
-					<input type="button" name="rechecksuccess" value="Re-check if successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist">
+					<input type="button" name="runsupplement" value="Run supplement script" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">
 					<br>
+					<input type="button" name="rechecksuccess" value="Re-check if successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist">
+					<br><br>
 					<input type="button" name="markasbad" value="Mark as bad" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
 					<br>
 					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">&nbsp;

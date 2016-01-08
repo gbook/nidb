@@ -190,22 +190,6 @@ sub SetModuleStopped() {
 }
 
 
-# ----------------------------------------------------------
-# --------- WriteLog ---------------------------------------
-# ----------------------------------------------------------
-#sub WriteLog {
-#	my ($msg) = @_;
-
-#	if ($debug) {
-#		print "[" . CreateCurrentDate() . "][pid $$] $msg\n";
-#		print $log "[" . CreateCurrentDate() . "][pid $$] $msg\n";
-#	}
-#	else {
-#		print $log "[" . CreateCurrentDate() . "][pid $$] $msg\n";
-#	}
-#}
-
-
 # -------------------------------------------------------------------
 # ----------- CreateCurrentDate -------------------------------------
 # -------------------------------------------------------------------
@@ -498,12 +482,7 @@ sub AppendLog {
 sub SQLQuery {
 	my ($sql,$F,$L) = @_;
 	
-	#if ($dirOnError) {
-		my $result = $db->query($sql) || SQLError("[File: $F Line: $L]" . $db->errmsg(),$sql);
-	#}
-	#else {
-	#	my $result = $db->query($sql) || WriteLog("[File: $F Line: $L]" . $db->errmsg(),$sql);
-	#}
+	my $result = $db->query($sql) || SQLError("[File: $F Line: $L]" . $db->errmsg(),$sql);
 
 	return $result;
 }
@@ -547,11 +526,8 @@ sub GetDirectorySize {
 	
 	# get the size of the unzipped data
 	my $systemstring = "du -sb $dir";
-	#WriteLog($systemstring);
 	my $output = `$systemstring`;
-	#WriteLog("Output: $output");
 	my @parts = split(/\s/,$output);
-	#WriteLog(join ":", @parts);
 	$size = $parts[0];
 
 	my @files = <$dir/*.*>;
@@ -656,8 +632,8 @@ sub GetSQLComparison {
 	# check if there is anything to format
 	if ($c eq "") { return (0,0); }
 	
-	my $comp;
-	my $num;
+	my $comp = 0;
+	my $num = 0;
 	if (substr($c,0,2) eq "<=") {
 		$comp = "<=";
 		$num = substr($c,2);
