@@ -85,6 +85,7 @@
 					<li><a href="pipelines.php" rel="analysis_menu">Analysis</a></li>
 					<li><a href="import.php">Import</a></li>
 					<li><a href="downloads.php">Downloads</a></li>
+					<li><a href="calendar.php" rel="calendar_menu">Calendar</a></li>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<li><a href="admin.php" rel="admin_menu">Admin</a></li>
 					<? } ?>
@@ -94,9 +95,15 @@
 
 			<div id="analysis_menu" class="dropmenudiv_b">
 				<a href="pipelines.php">Pipelines</a>
-				<a href="csprefs.php">CenterScripts</a>
+				<!--<a href="csprefs.php">CenterScripts</a>-->
 				<a href="common.php">Common objects</a>
 				<a href="cluster.php">Cluster Stats</a>
+			</div>
+			
+			<div id="calendar_menu" class="dropmenudiv_b">
+				<? if ($GLOBALS['isadmin']) { ?>
+				<a href="calendar_projects.php">Manage</a>
+				<? } ?>
 			</div>
 			
 			<div id="subjects_menu" class="dropmenudiv_b">
