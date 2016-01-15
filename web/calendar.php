@@ -26,7 +26,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Administration</title>
+		<title>NiDB - Calendar</title>
 	</head>
 
 <body>
@@ -102,11 +102,11 @@
 		?>
 		<style>
 			.menuitem { color: blue; text-align: center; padding-left: 5px; padding-right: 5px }
-			.menuitemhighlight { color: blue; text-align: center; padding: 5px; background-color: yellow; border: 1pt solid orange; border-radius: 3px }
+			.menuitemhighlight { text-align: center; padding: 5px; background-color: lightyellow; border: 1pt solid orange; border-radius: 3px }
 			.title { color: darkblue; font-size: 16pt; font-weight: bold }
 
-			.week_heading { font-size: 12pt; color: darkblue; font-weight:bold; text-align: center; border-top: 2px solid gray; border-bottom: 1px solid gray }
-			.week_heading_date { font-size: 9pt; color: #555555; font-weight: normal; }
+			.week_heading { font-size: 12pt; color: white; font-weight:bold; text-align: center; background-color: #555; padding: 5px }
+			.week_heading_date { font-size: 10pt; color: white; font-weight: normal; }
 			.week_heading_holiday { font-size: 8pt; background-color: darkred; color: white; font-weight: bold; padding: 1px 4px; }
 			.time { font-size: 10pt; color: darkred; background-color: lightyellow; }
 			.timeallday { font-size: 10pt; color: darkred; background-color: #DFDFDF; }
@@ -149,17 +149,14 @@
 				</td>
 				<? if ($menuitem == "day") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
 				<td class="<?=$class?>">
-				<img src="images/day.png">
-				<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>" style="color: blue; text-decoration: underline">Day</a>
+				<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/day.png"><br>Day</a>
 				</td>
 				<? if ($menuitem == "week") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
 				<td class="<?=$class?>">
-				<img src="images/week.png"><br>
-				<a href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>" style="color: blue; text-decoration: underline">Week</a></td>
+				<a href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/week.png"><br>Week</a></td>
 				<? if ($menuitem == "month") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
 				<td class="<?=$class?>">
-				<img src="images/month.png">
-				<a href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>" style="color: blue; text-decoration: underline">Month</a></td>
+				<a href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/month.png"><br>Month</a></td>
 				<!--<? if ($menuitem == "year") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
 				<td class="<?=$class?>"><a href="calendar.php?action=year&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>" style="color: blue; text-decoration: underline">Year</a></td>-->
 			</tr>
@@ -229,15 +226,15 @@
 		$today = date('D M j, Y',mktime(0,0,0,$month, $day, $year));
 		?>
 		<div align="center">
-		<table class="calendar" cellpadding="0" cellspacing="0" width="50%" style="border: 2px solid gray; background-color: snow">
+		<table class="calendar" cellpadding="0" cellspacing="0" width="50%" style="border: 1px solid #555; background-color: snow">
 			<tr>
-				<td colspan=7 class="heading" style="padding: 8px">
+				<td colspan=7 class="heading" style="padding: 8px; background-color: #555;">
 					<br>
-					<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: darkblue">&#9664;</a>
+					<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size:16pt">&#9664;</a>
 					&nbsp;
-					<span style="color: darkblue; font-size:16pt"><?=$today?></span>
+					<span style="color: white; font-size:16pt"><?=$today?></span>
 					&nbsp;
-					<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: darkblue">&#9654;</a>
+					<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: white; font-size:16pt">&#9654;</a>
 					<br>
 					<br>
 				</td>
@@ -248,7 +245,7 @@
 					$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
 					$enddatetime = date('Y-m-d 23:59:59', mktime(0,0,0,$month, $day, $year));
 					?>
-					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><img src="images/add12.png" border="0"></a><br><br>
+					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><img src="images/add12.png" border="0" title="Add appointment"></a><br><br>
 					<?
 					if ($currentcal == 0) {
 						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
@@ -370,9 +367,9 @@
 		if (array_key_exists($sat_hol_date, $holidays)) { $sat_holidays = implode("<br>", $holidays[$sat_hol_date]); }
 	
 		?>
-		<table class="calendar" cellpadding="3" cellspacing="0" width="100%" style=" background-color: snow">
+		<table class="calendar" cellpadding="3" cellspacing="0" width="100%" style="background-color: snow;">
 			<tr>
-				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: darkblue">&#9664;</a></td>
+				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size: 18pt">&#9664;</a></td>
 				<td width="14%" class="week_heading" valign="top">Sunday<br><a href="calendar.php?action=day&year=<?=$sun{'y'}?>&month=<?=$sun{'m'}?>&day=<?=$sun{'d'}?>"><span class="week_heading_date"><u><?=$sun_date?></u></span></a></td>
 				<td width="14%" class="week_heading" valign="top">Monday<br><a href="calendar.php?action=day&year=<?=$mon{'y'}?>&month=<?=$mon{'m'}?>&day=<?=$mon{'d'}?>"><span class="week_heading_date"><u><?=$mon_date?></u></span></a></td>
 				<td width="14%" class="week_heading" valign="top">Tuesday<br><a href="calendar.php?action=day&year=<?=$tue{'y'}?>&month=<?=$tue{'m'}?>&day=<?=$tue{'d'}?>"><span class="week_heading_date"><u><?=$tue_date?></u></span></a></td>
@@ -380,7 +377,7 @@
 				<td width="14%" class="week_heading" valign="top">Thursday<br><a href="calendar.php?action=day&year=<?=$thu{'y'}?>&month=<?=$thu{'m'}?>&day=<?=$thu{'d'}?>"><span class="week_heading_date"><u><?=$thu_date?></u></span></a></td>
 				<td width="14%" class="week_heading" valign="top">Friday<br><a href="calendar.php?action=day&year=<?=$fri{'y'}?>&month=<?=$fri{'m'}?>&day=<?=$fri{'d'}?>"><span class="week_heading_date"><u><?=$fri_date?></u></span></a></td>
 				<td width="14%" class="week_heading" valign="top">Saturday<br><a href="calendar.php?action=day&year=<?=$sat{'y'}?>&month=<?=$sat{'m'}?>&day=<?=$sat{'d'}?>"><span class="week_heading_date"><u><?=$sat_date?></u></span></a></td>
-				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: darkblue">&#9654;</a></td>
+				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: white; font-size: 18pt">&#9654;</a></td>
 			</tr>
 			<tr>
 				<td></td>
@@ -388,43 +385,43 @@
 					<? if ($sun_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$sun_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($mon_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$mon_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($tue_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$tue_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($wed_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$wed_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($thu_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$thu_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($fri_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$fri_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($sat_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$sat_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><img src="images/add12.png" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 				</td>
 				<td></td>
 			</tr>
@@ -560,16 +557,16 @@
 		$datestart = "$year-$month-1 00:00:00";
 		$dateend = "$year-$month-$days_in_month 23:59:59";
 		?>
-		<table class="calendar" cellpadding="0" cellspacing="0" width="100%" style=" background-color: snow; border-top: 2px solid gray">
-			<tr><td colspan=7 class="heading">
-				<br>
-				<a href="calendar.php?action=month&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: darkblue">&#9664;</a>
-				&nbsp;
-				<span style="color: darkblue; font-size:16pt"><?=$title?> <?=$year?></span>
-				&nbsp;
-				<a href="calendar.php?action=month&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: darkblue">&#9654;</a>
-				<br><br>
-			</td></tr>
+		<table class="calendar" cellpadding="0" cellspacing="0" width="100%" style=" background-color: snow; border: 1px solid #555">
+			<tr>
+				<td colspan=7 class="heading" style="background-color: #555; padding-top: 10px; padding-bottom: 10px">
+					<a href="calendar.php?action=month&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size:16pt">&#9664;</a>
+					&nbsp;
+					<span style="color: white; font-size:16pt"><?=$title?> <?=$year?></span>
+					&nbsp;
+					<a href="calendar.php?action=month&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: white; font-size:16pt">&#9654;</a>
+				</td>
+			</tr>
 			<tr>
 				<td width="14.28%" class="days">Sun</td>
 				<td width="14.28%" class="days">Mon</td>
@@ -627,7 +624,7 @@
 				</table>
 				<table width="100%" height="100%">
 					<tr>
-						<td align="left" height="100%">&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><img src="images/add12.png" border="0"></a>
+						<td align="left" height="100%">&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
 							<br>
 							<?
 							if ($currentcal == 0) {

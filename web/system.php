@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB system.php
- // Copyright (C) 2004 - 2015
+ // Copyright (C) 2004 - 2016
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -29,7 +29,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - System</title>
+		<title>NiDB - Configuration</title>
 	</head>
 
 <body>

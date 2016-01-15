@@ -27,7 +27,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Administration</title>
+		<title>NiDB - Calendar</title>
 	</head>
 
 <body>

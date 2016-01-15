@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB menu.php
- // Copyright (C) 2004 - 2015
+ // Copyright (C) 2004 - 2016
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -102,7 +102,7 @@
 			
 			<div id="calendar_menu" class="dropmenudiv_b">
 				<? if ($GLOBALS['isadmin']) { ?>
-				<a href="calendar_projects.php">Manage</a>
+				<a href="calendar_calendars.php">Manage</a>
 				<? } ?>
 			</div>
 			
@@ -164,7 +164,7 @@
 				<? } ?>
 				<a href="adminaudits.php">Audits</a>
 				<a href="cleanup.php">Clean-up</a>
-				<a href="system.php">System info</a>
+				<a href="system.php">Configuration</a>
 				<a href="stats.php">Usage stats</a>
 				<a href="longqc.php">Longitudinal QC</a>
 			</div>
