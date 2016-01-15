@@ -162,11 +162,15 @@ sub QA() {
 			my $datatype = $row{'data_type'};
 			my $mrqaid;
 			
+			my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$datatype";
+			WriteLog("Starting to work on [$indir]");
+			
 			# check if this mr_qa row exists
 			my $sqlstringA = "select * from mr_qa where mrseries_id = $seriesid";
 			my $resultA = $db->query($sqlstringA) || SQLError($db->errmsg(),$sqlstringA);
 			if ($resultA->numrows > 0) {
 				# if a row does exist, go onto the next row
+				WriteLog("Someone else is working on [$indir]");
 				next;
 			}
 			else {
@@ -179,8 +183,6 @@ sub QA() {
 			
 			my $starttime = GetTotalCPUTime();
 			
-			my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$datatype";
-			WriteLog("Working on [$indir]");
 			my $systemstring;
 			chdir($indir);
 
@@ -190,7 +192,7 @@ sub QA() {
 			mkpath("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa", {mode => 0777});
 
 			if ($is_derived) {
-				$systemstring = "cp $cfg{'archivedir'}/$uid/$study_num/$series_num/nifti/* $tmpdir";
+				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/nifti/* $tmpdir";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			else {
@@ -203,7 +205,9 @@ sub QA() {
 				}
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				
-				$systemstring = "mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
+				$systemstring = "cp -v $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+				$systemstring = "cp -v $tmpdir/*.nii $tmpdir/4D.nii";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			
@@ -212,21 +216,21 @@ sub QA() {
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 			
 			# move the realignment file(s) to the archive directory
-			$systemstring = "mv $tmpdir/*.par $cfg{'archivedir'}/$uid/$study_num/$series_num/qa";
+			$systemstring = "mv -v $tmpdir/*.par $cfg{'archivedir'}/$uid/$study_num/$series_num/qa";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 
 			# rename the realignment file to something meaningful
-			$systemstring = "mv $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/*.par $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
+			$systemstring = "mv -v $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/*.par $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 			
 			# move and rename the mean,sigma,variance volumes to the archive directory
-			$systemstring = "mv $tmpdir/*mcvol_meanvol.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz";
+			$systemstring = "mv -v $tmpdir/*mcvol_meanvol.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "mv $tmpdir/*mcvol_sigma.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz";
+			$systemstring = "mv -v $tmpdir/*mcvol_sigma.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "mv $tmpdir/*mcvol_variance.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz";
+			$systemstring = "mv -v $tmpdir/*mcvol_variance.nii.gz $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "mv $tmpdir/*mcvol.nii.gz $tmpdir/mc4D.nii.gz";
+			$systemstring = "mv -v $tmpdir/*mcvol.nii.gz $tmpdir/mc4D.nii.gz";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 
 			# get min/max intensity in the mean/variance/stdev volumes
@@ -238,6 +242,14 @@ sub QA() {
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 
 			# create thumbnails
+			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				$systemstring = "slicer $tmpdir/4D.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				$systemstring = "slicer $tmpdir/4D.nii -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}			
 			$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 			$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.png";
@@ -275,23 +287,42 @@ sub QA() {
 				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
+			# if there is still no thumbnail, generate one the old fashioned way, with convert
+			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				# print the ImageMagick version
+				my $systemstring = "which convert";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				$systemstring = "convert --version";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				
+				# get list of dicom files
+				chdir("$cfg{'archivedir'}/$uid/$study_num/$series_num/dicom");
+				my @dcmfiles = <*.dcm>;
+				
+				@dcmfiles = sort @dcmfiles;
+				my $numdcmfiles = @dcmfiles;
+				my $dcmfile = $dcmfiles[int($numdcmfiles/2)];
+				my $outfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+				$systemstring = "convert -normalize $cfg{'archivedir'}/$uid/$study_num/$series_num/dicom/$dcmfile $outfile";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			}
 			
 			# make a color mapped version of the thumbnail
-			$systemstring = "convert -version";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			my $thumbpath = "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
-			my $gradientfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/gradient.png";
-			my $thumblut = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_lut.png";
-			chdir("$cfg{'archivedir'}/$uid/$study_num/$series_num");
-			$systemstring = "convert -size 1x30 gradient:black-red gradient:red-yellow gradient:yellow-white -append $gradientfile";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "convert $thumbpath $gradientfile -clut $thumblut";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
+			#$systemstring = "convert -version";
+			#WriteLog("$systemstring (" . `$systemstring` . ")");
+			#my $thumbpath = "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+			#my $gradientfile = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/gradient.png";
+			#my $thumblut = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_lut.png";
+			#chdir("$cfg{'archivedir'}/$uid/$study_num/$series_num");
+			#$systemstring = "convert -size 1x30 gradient:black-red gradient:red-yellow gradient:yellow-white -append $gradientfile";
+			#WriteLog("$systemstring (" . `$systemstring` . ")");
+			#$systemstring = "convert $thumbpath $gradientfile -clut $thumblut";
+			#WriteLog("$systemstring (" . `$systemstring` . ")");
 			# make an fft of the thumbnail
-			my $fftthumb = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft.png";
-			my $fftthumb0 = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft-0.png";
-			$systemstring = "convert $thumbpath -fft -delete 1 -auto-level -evaluate log 10000 $fftthumb";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
+			#my $fftthumb = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft.png";
+			#my $fftthumb0 = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb_fft-0.png";
+			#$systemstring = "convert $thumbpath -fft -delete 1 -auto-level -evaluate log 10000 $fftthumb";
+			#WriteLog("$systemstring (" . `$systemstring` . ")");
 			
 			# run the motion detection program (for 3D volumes only)
 			my $motion_rsq;
