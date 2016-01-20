@@ -2598,9 +2598,9 @@
 				$longs[$age][$resultname][] = $resultvalue;
 			}
 			
-			$exportdata[$resultname][$studyid]['age'] = $age;
-			$exportdata[$resultname][$studyid]['value'] = $resultvalue;
-			$exportdata[$resultname][$studyid]['sex'] = $sex;
+			$exportdata[$resultname][$encuid]['age'] = $age;
+			$exportdata[$resultname][$encuid]['value'] = $resultvalue;
+			$exportdata[$resultname][$encuid]['sex'] = $sex;
 			$i++;
 		}
 		$series = array_unique($series);
@@ -2682,15 +2682,39 @@
 		foreach ($exportdata as $resultid => $subject) {
 			foreach ($subject as $uid => $values) {
 				$age = $values['age'];
-				$sex = $values['sex'];
+				$sex = strtoupper($values['sex']);
 				$value = $values['value'];
-				$csv .= "$uid, $age, $sex, $resultid, $value\n";
+				// weed out non male/female sexes, and people with odd ages
+				if ( (($age > 0) && ($age < 100)) && (($sex == "M") || ($sex == "F")) ) {
+					$csv .= "$uid, $age, $sex, $resultid, $value\n";
+				}
+				$exportdatacombined[$uid]['age'] = $age;
+				$exportdatacombined[$uid]['value'] += $value;
+				$exportdatacombined[$uid]['sex'] = $sex;
 			}
 		}
 		?>
 		</table>
-		Full table .csv<br>
+		<br>
+		Full table .csv (collapsed by UID)<br>
 		<textarea rows="8" cols="150"><?=$csv?></textarea>
+		<?
+		$csv2 = "ID, age, sex, ROI, value\n";
+		
+		foreach ($exportdatacombined as $uid => $values) {
+			$age = $values['age'];
+			$sex = strtoupper($values['sex']);
+			$value = $values['value'];
+			// weed out non male/female sexes, and people with odd ages
+			if ( (($age > 0) && ($age < 100)) && (($sex == "M") || ($sex == "F")) ) {
+				$csv2 .= "$uid, $age, $sex, $resultid, $value\n";
+			}
+		}
+		?>
+		</table>
+		<br>
+		Full table .csv (collapsed by UID, and combined regions: eg. right + left = total volume)<br>
+		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
 	}
 

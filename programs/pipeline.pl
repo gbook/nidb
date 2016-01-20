@@ -403,6 +403,8 @@ sub ProcessPipelines() {
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							$analysisRowID = $result->insertid;
+
+							InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysiscreated', 'Analysis created');
 						}
 						
 						# get information about the study
@@ -588,6 +590,8 @@ sub ProcessPipelines() {
 								$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
 								AppendLog($setuplogF, WriteLog($sqlstring));
 								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysissubmitted', $sgeresult);
 								
 								$numsubmitted = $numsubmitted + 1;
 								$jobsWereSubmitted = 1;
@@ -608,6 +612,7 @@ sub ProcessPipelines() {
 								my $datalog2 = EscapeMySQLString($datalog);
 								my $sqlstringC = "update analysis set analysis_datalog = '$datalog2' where analysis_id = $analysisRowID";
 								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysissetuperror', "No data found, 0 series returned from search. Setup log:\n\n [$datalog]");
 							}
 							AppendLog($setuplogF, WriteLog("Submitted $numsubmitted jobs so far"));
 							print "Submitted $numsubmitted jobs so far\n";
@@ -623,6 +628,7 @@ sub ProcessPipelines() {
 								$sqlstring = "update analysis set analysis_status = 'pending', analysis_numseries = $numseries, analysis_enddate = now() where analysis_id = $analysisRowID";
 							}
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+							InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysispending', 'Analysis has been submitted to the cluster [$pipelinequeue] and is waiting to run');
 						}
 						else {
 							# save some database space, since most entries will be blank
@@ -2285,23 +2291,23 @@ sub CheckDependency {
 	my ($sid,$pipelinedep) = @_;
 
 	# check if the dependency exists
-	my $sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep'";
-	my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
-	if ($resultB->numrows < 1) {
+	my $sqlstring = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep'";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows < 1) {
 		return "NoMatchingStudyDependency";
 	}
 	
 	# check if the dependency is complete
-	my $sqlstring = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_status = 'complete'";
-	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	$sqlstring = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_status = 'complete'";
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows < 1) {
 		return "IncompleteDependency";
 	}
 
 	# check if the dependency is marked as bad
-	$sqlstringB = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_isbad <> 1";
-	$resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
-	if ($resultB->numrows < 1) {
+	$sqlstring = "select * from analysis where study_id = '$sid' and pipeline_id = '$pipelinedep' and analysis_isbad <> 1";
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows < 1) {
 		return "BadDependency";
 	}
 	

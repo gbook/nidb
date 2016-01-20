@@ -1327,7 +1327,7 @@
 						</tr>
 						<tr>
 							<td class="label" valign="top">Queue name <img src="images/help.gif" title="<b>Queue name</b><br><br>The sun grid (SGE) queue to submit to"></td>
-							<td valign="top"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required></td>
+							<td valign="top"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required><br><span class="tiny">Comma separated list</span></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Use temporary directory <img src="images/help.gif" title="<b>Use tmp directory</b><br><br>This option will copy all data into the temporary directory first, process it there, and copy it back to its final location"></td>
@@ -2681,9 +2681,9 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					</td>
 					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
 					<? if ($analysis_status != "") { ?>
-					<td><a href="#" class="viewlog" id="<?=$analysis_id?>"><img src="images/preview.gif"></a></td>
-					<td><a href="#" class="viewfiles" id="<?=$analysis_id?>"><img src="images/folder.gif"></a></td>
-					<td><a href="#" class="viewresults" id="<?=$analysis_id?>"><img src="images/chart-vertical.png"></a></td>
+					<td><a href="#" class="viewlog" id="<?=$analysis_id?>" title="View log files"><img src="images/log16.png"></a></td>
+					<td><a href="#" class="viewfiles" id="<?=$analysis_id?>" title="View file listing"><img src="images/folder16.png"></a></td>
+					<td><a href="#" class="viewresults" id="<?=$analysis_id?>" title="View analysis results"><img src="images/chart16.png"></a></td>
 					<? } else { ?>
 					<td></td>
 					<td></td>

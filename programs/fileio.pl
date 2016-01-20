@@ -227,13 +227,16 @@ sub RecheckSuccess() {
 	WriteLog("In RecheckSuccess($analysisid)");
 
 	# get the path to the analysisroot
-	my $sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+	my $sqlstring = "select d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 	WriteLog($sqlstring);
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	my %row = $result->fetchhash;
 	my $uid = $row{'uid'};
 	my $studynum = $row{'study_num'};
+	my $studyid = $row{'study_id'};
 	my $pipelinename = $row{'pipeline_name'};
+	my $pipelineid = $row{'pipeline_id'};
+	my $pipelineversion = $row{'pipeline_version'};
 
 	# check to see if anything isn't valid or is blank
 	if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); return "cfg->analysisdir was not initialized"; }
@@ -267,6 +270,8 @@ sub RecheckSuccess() {
 
 	$sqlstring = "update analysis set analysis_iscomplete = $iscomplete where analysis_id = $analysisid";
 	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+
+	InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisrecheck', 'Analysis success recheck finished');
 	
 	return 1;
 }
@@ -283,13 +288,16 @@ sub CopyAnalysis() {
 	# check if destination is somewhat valid, if so create it
 	if (($destination ne "") && ($destination ne ".") && ($destination ne "..") && ($destination ne "/")) {
 	
-		my $sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+		my $sqlstring = "select d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 		WriteLog($sqlstring);
 		my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-		my %rowA = $result->fetchhash;
-		my $uid = $rowA{'uid'};
-		my $studynum = $rowA{'study_num'};
-		my $pipelinename = $rowA{'pipeline_name'};
+		my %row = $result->fetchhash;
+		my $uid = $row{'uid'};
+		my $studynum = $row{'study_num'};
+		my $pipelinename = $row{'pipeline_name'};
+		my $studyid = $row{'study_id'};
+		my $pipelineid = $row{'pipeline_id'};
+		my $pipelineversion = $row{'pipeline_version'};
 
 		# check to see if anything isn't valid or is blank
 		if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); return "cfg->analysisdir was not initialized"; }
@@ -325,7 +333,9 @@ sub CopyAnalysis() {
 		}		
 		if (($datapath ne "") && ($datapath ne ".") && ($datapath ne "..") && ($datapath ne "/")) {
 			my $systemstring = "cp -ruv $datapath $destination";
-			WriteLog("[$systemstring] :" . `$systemstring 2>&1`);
+			my $output = `$systemstring 2>&1`;
+			WriteLog("[$systemstring] : $output");
+			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysiscopy', "Analysis copied\n [$output]");
 		}
 		return 1;
 	}
@@ -346,13 +356,16 @@ sub CreateLinks() {
 	# check if destination is somewhat valid, if so create it
 	if (($destination ne "") && ($destination ne ".") && ($destination ne "..") && ($destination ne "/")) {
 	
-		my $sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+		my $sqlstring = "select d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 		WriteLog($sqlstring);
 		my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-		my %rowA = $result->fetchhash;
-		my $uid = $rowA{'uid'};
-		my $studynum = $rowA{'study_num'};
-		my $pipelinename = $rowA{'pipeline_name'};
+		my %row = $result->fetchhash;
+		my $uid = $row{'uid'};
+		my $studynum = $row{'study_num'};
+		my $pipelinename = $row{'pipeline_name'};
+		my $studyid = $row{'study_id'};
+		my $pipelineid = $row{'pipeline_id'};
+		my $pipelineversion = $row{'pipeline_version'};
 
 		# check to see if anything isn't valid or is blank
 		if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); return "cfg->analysisdir was not initialized"; }
@@ -392,7 +405,9 @@ sub CreateLinks() {
 		}
 		if (($datapath ne "") && ($datapath ne ".") && ($datapath ne "..") && ($datapath ne "/")) {
 			my $systemstring = "cd $destination; ln -s $datapath $uid$studynum; chmod 777 $uid$studynum";
-			WriteLog("[$systemstring] :" . `$systemstring 2>&1`);
+			my $output = `$systemstring 2>&1`;
+			WriteLog("[$systemstring] : $output");
+			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysiscreatelink', "Analysis link created \n [$output]");
 		}
 		return 1;
 	}
@@ -444,16 +459,19 @@ sub DeleteAnalysis() {
 	
 	#my $analysisid = $id;
 	
-	my $sqlstring = "select a.analysis_qsubid, d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_directory from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+	my $sqlstring = "select a.analysis_qsubid, d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version, e.pipeline_level, e.pipeline_directory from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 	WriteLog($sqlstring);
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
-	my %rowA = $result->fetchhash;
-	my $uid = $rowA{'uid'};
-	my $studynum = $rowA{'study_num'};
-	my $pipelinename = $rowA{'pipeline_name'};
-	my $pipelinelevel = $rowA{'pipeline_level'};
-	my $pipelinedirectory = $rowA{'pipeline_directory'};
-	my $sgeid = $rowA{'analysis_qsubid'};
+	my %row = $result->fetchhash;
+	my $uid = $row{'uid'};
+	my $studynum = $row{'study_num'};
+	my $pipelinename = $row{'pipeline_name'};
+	my $pipelinelevel = $row{'pipeline_level'};
+	my $pipelinedirectory = $row{'pipeline_directory'};
+	my $sgeid = $row{'analysis_qsubid'};
+	my $studyid = $row{'study_id'};
+	my $pipelineid = $row{'pipeline_id'};
+	my $pipelineversion = $row{'pipeline_version'};
 
 	if ($pipelinelevel == 0) {
 		my $d = $pipelinedirectory;
@@ -465,15 +483,15 @@ sub DeleteAnalysis() {
 			# clear the entry from the database
 			my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
 			WriteLog($sqlstringA);
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 					
 			my $sqlstringB = "delete from analysis_results where analysis_id = $analysisid";
 			WriteLog($sqlstringB);
-			my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+			my $resultB = SQLQuery($sqlstringA, __FILE__, __LINE__);
 
 			my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
 			WriteLog($sqlstringC);
-			my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+			my $resultC = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			
 			return 1;
 		}
@@ -506,26 +524,29 @@ sub DeleteAnalysis() {
 			if (-e $datapath) {
 				my $sqlstringA = "update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = $analysisid";
 				WriteLog($sqlstringA);
-				my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+				InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Analysis directory not deleted. Probably because permissions have changed and I dont have permission to delete the directory [$datapath]");
 			}
 			else {
 				# clear the entry from the database
 				my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
 				WriteLog($sqlstringA);
-				my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						
 				my $sqlstringB = "delete from analysis_results where analysis_id = $analysisid";
 				WriteLog($sqlstringB);
-				my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+				my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 
 				my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
 				WriteLog($sqlstringC);
-				my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+				my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+				InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 			}			
 			return 1;
 		}
 		else {
 			WriteLog("Something was wrong, datapath was [$datapath]");
+			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Something was wrong, datapath was [$datapath]");
 			return "Something was wrong, datapath was [$datapath]";
 		}
 	}
@@ -543,7 +564,7 @@ sub DeleteGroupAnalysis() {
 	
 	#my $analysisid = $id;
 	
-	my $sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+	my $sqlstring = "select d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 	WriteLog($sqlstring);
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	my %rowA = $result->fetchhash;
