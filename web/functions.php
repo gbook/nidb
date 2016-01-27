@@ -26,7 +26,7 @@
 	require_once "Mail/mime.php";
 
 	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
- 	$cfg = LoadConfig('/nidb/programs/nidb.cfg');
+ 	$cfg = LoadConfig();
 	date_default_timezone_set("America/New_York");
 
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
@@ -99,7 +99,45 @@
 	/* -------------------------------------------- */
 	// this function loads the config file into a hash called $cfg
 	// ----------------------------------------------------------
-	function LoadConfig($file) {
+	function LoadConfig() {
+		$file = "";
+		/* check some possible config file locations */
+		if (file_exists('nidb.cfg')) {
+			$file = 'nidb.cfg';
+		}
+		elseif (file_exists('../nidb.cfg')) {
+			$file = '../nidb.cfg';
+		}
+		elseif (file_exists('../../prod/programs/nidb.cfg')) {
+			$file = '../../prod/programs/nidb.cfg';
+		}
+		elseif (file_exists('../../../../prod/programs/nidb.cfg')) {
+			$file = '../../../../prod/programs/nidb.cfg';
+		}
+		elseif (file_exists('../programs/nidb.cfg')) {
+			$file = '../programs/nidb.cfg';
+		}
+		elseif (file_exists('/home/nidb/programs/nidb.cfg')) {
+			$file = '/home/nidb/programs/nidb.cfg';
+		}
+		elseif (file_exists('/nidb/programs/nidb.cfg')) {
+			$file = '/nidb/programs/nidb.cfg';
+		}
+		else {
+			?><tt>nidb.cfg</tt> not found in the usual places.<br>
+			Perhaps you need to edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>? Make sure <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
+			<ul>
+				<li><?=getcwd()?>/nidb.cfg
+				<li><?=getcwd()?>/../nidb.cfg
+				<li><?=getcwd()?>/../../prod/programs/nidb.cfg
+				<li><?=getcwd()?>/../../../../prod/programs/nidb.cfg
+				<li><?=getcwd()?>/../programs/nidb.cfg
+				<li>/home/nidb/programs/nidb.cfg
+				<li>/nidb/programs/nidb.cfg
+			</ul>
+			<?
+			exit(0);
+		}
 		$cfg['cfgpath'] = $file;
 		
 		$lines = file($file);
@@ -112,7 +150,7 @@
 		}
 		return $cfg;
 	}
-
+	
 	
 	/* -------------------------------------------- */
 	/* ------- GetVariable ------------------------ */
