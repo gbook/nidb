@@ -468,7 +468,7 @@ sub ProcessPipelines() {
 							}
 							else {
 								if (!$runsupplement) {
-									($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelinedataand, @datadef);
+									($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelinedataand, $pipelineversion, $pid, @datadef);
 								}
 							}
 
@@ -628,7 +628,7 @@ sub ProcessPipelines() {
 								$sqlstring = "update analysis set analysis_status = 'pending', analysis_numseries = $numseries, analysis_enddate = now() where analysis_id = $analysisRowID";
 							}
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-							InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysispending', 'Analysis has been submitted to the cluster [$pipelinequeue] and is waiting to run');
+							InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysispending', "Analysis has been submitted to the cluster [$pipelinequeue] and is waiting to run");
 						}
 						else {
 							# save some database space, since most entries will be blank
@@ -1042,7 +1042,12 @@ sub CreateSGEJobFile() {
 			}
 			
 			if ($checkedin) {
-				$jobfile .= "\nperl /opt/pipeline/$checkinscript $analysisid processing 'processing $supplement"."step " . ($i + 1) . " of " . ($#pipelinesteps + 1) . "'\n# $description\necho Running $command\n";
+				my $cleandesc = $description;
+				$cleandesc =~ s/'//g;
+				$cleandesc =~ s/"//g;
+				$jobfile .= "\nperl /opt/pipeline/$checkinscript $analysisid processing 'processing $supplement"."step " . ($i + 1) . " of " . ($#pipelinesteps + 1) . "' '$cleandesc'";
+				
+				$jobfile .= "\n# $description\necho Running $command\n";
 			}
 			
 			# write to a log file if logging is requested
@@ -1261,7 +1266,7 @@ sub GetUIDStudyNumListByGroup() {
 # --------- GetData ----------------------------------------
 # ----------------------------------------------------------
 sub GetData() {
-	my ($studyid, $analysispath, $uid, $analysisid, $pipelinedataand, @datadef) = @_;
+	my ($studyid, $analysispath, $uid, $analysisid, $pipelinedataand, $pipelineversion, $pid, @datadef) = @_;
 	
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1270,6 +1275,8 @@ sub GetData() {
 	my $datalog = "";
 	my $datareport = "";
 	WriteLog("Inside GetData($analysispath)");
+
+	InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', 'Checking for data');
 	
 	# get list of series for this study
 	my $sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
@@ -1437,6 +1444,8 @@ sub GetData() {
 		# -------------------------------------------------------------------------
 		
 		WriteLog("Modality: $modality");
+
+		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Started copying data to [$analysispath]");
 		
 		$datalog .= "----- Required data for this study exists, beginning data copy -----\n";
 		# go through list of data search criteria
@@ -1795,6 +1804,7 @@ sub GetData() {
 			}
 		}
 		WriteLog("Leaving GetData() successfully => ret($numdownloaded, $datalog)");
+		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Finished copying data [$numdownloaded] series downloaded");
 		return ($numdownloaded, $datalog, $datareport);
 	}
 	else {

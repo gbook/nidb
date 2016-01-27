@@ -627,6 +627,8 @@ sub IsDICOMFile {
 sub GetSQLComparison {
 	my ($c) = @_;
 
+	WriteLog("Inside GetSQLComparison($c)");
+	
 	$c =~ s/\s*//g; # remove all whitespace
 	
 	# check if there is anything to format
@@ -655,7 +657,7 @@ sub GetSQLComparison {
 		$num = substr($c,1);
 	}
 	else {
-		$num = "=";
+		$comp = "=";
 		$num = $c;
 	}
 	

@@ -27,7 +27,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$pipelineid = GetVariable("pipelineid");
+	$pipelineversion = GetVariable("pipelineversion");
 	$analysisid = GetVariable("analysisid");
 	$studyid = GetVariable("studyid");
 	$fileviewtype = GetVariable("fileviewtype");
@@ -38,9 +39,10 @@
 <?	
 	/* determine action */
 	switch ($action) {
-		case 'viewlogs': DisplayLogs($id, $analysisid); break;
-		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
+		case 'viewlogs': DisplayLogs($pipelineid, $analysisid); break;
+		case 'viewfiles': DisplayFiles($pipelineid, $analysisid, $fileviewtype); break;
 		case 'viewresults': DisplayResults($analysisid, $studyid); break;
+		case 'viewhistory': DisplayHistory($analysisid, $studyid, $pipelineid, $pipelineversion); break;
 		default:
 	}
 ?></div><?
@@ -476,6 +478,70 @@
 		</table>
 		<?
 	}	
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayHistory --------------------- */
+	/* -------------------------------------------- */
+	function DisplayHistory($analysisid, $studyid, $pipelineid, $pipelineversion) {
+		
+		?>
+		<table class="smalldisplaytable">
+			<thead>
+				<tr>
+					<th>Cumulative time</th>
+					<th>Date/time</th>
+					<th>Pipeline version</th>
+					<th>Hostname</th>
+					<th>Event</th>
+					<th>Message</th>
+				</tr>
+			</thead>
+		<?
+		$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		/* get the first event to get the starting time */
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$pipeline_version = $row['pipeline_version'];
+		$analysis_event = $row['analysis_event'];
+		$analysis_hostname = $row['analysis_hostname'];
+		$event_message = $row['event_message'];
+		$startdatetime = $row['event_datetime'];
+		$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
+		?>
+		<tr>
+			<td>0</td>
+			<td nowrap><?=$event_datetime?></td>
+			<td><?=$pipeline_version?></td>
+			<td><?=$analysis_hostname?></td>
+			<td><?=$analysis_event?></td>
+			<td><?=$event_message?></td>
+		</tr>
+		<?
+		/* continue on with the rest of the events */
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$pipeline_version = $row['pipeline_version'];
+			$analysis_event = $row['analysis_event'];
+			$analysis_hostname = $row['analysis_hostname'];
+			$event_message = $row['event_message'];
+			$event_datetime = $row['event_datetime'];
+			$cumtime = FormatCountdown($event_datetime - $startdatetime);
+			?>
+			<tr>
+				<td><?=$cumtime?></td>
+				<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+				<td><?=$pipeline_version?></td>
+				<td><?=$analysis_hostname?></td>
+				<td><?=$analysis_event?></td>
+				<td><?=$event_message?></td>
+			</tr>
+			<?
+		}
+		?>
+		</table>
+		<?
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- find_all_files --------------------- */

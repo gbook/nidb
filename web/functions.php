@@ -26,7 +26,7 @@
 	require_once "Mail/mime.php";
 
 	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
- 	$cfg = LoadConfig();
+ 	$cfg = LoadConfig('/nidb/programs/nidb.cfg');
 	date_default_timezone_set("America/New_York");
 
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
@@ -99,48 +99,7 @@
 	/* -------------------------------------------- */
 	// this function loads the config file into a hash called $cfg
 	// ----------------------------------------------------------
-	function LoadConfig() {
-
-		$file = "";
-
-		/* check some possible config file locations */
-		if (file_exists('nidb.cfg')) {
-			$file = 'nidb.cfg';
-		}
-		elseif (file_exists('../nidb.cfg')) {
-			$file = '../nidb.cfg';
-		}
-		elseif (file_exists('../../prod/programs/nidb.cfg')) {
-			$file = '../../prod/programs/nidb.cfg';
-		}
-		elseif (file_exists('../../../../prod/programs/nidb.cfg')) {
-			$file = '../../../../prod/programs/nidb.cfg';
-		}
-		elseif (file_exists('../programs/nidb.cfg')) {
-			$file = '../programs/nidb.cfg';
-		}
-		elseif (file_exists('/home/nidb/programs/nidb.cfg')) {
-			$file = '/home/nidb/programs/nidb.cfg';
-		}
-		elseif (file_exists('/nidb/programs/nidb.cfg')) {
-			$file = '/nidb/programs/nidb.cfg';
-		}
-		else {
-			?><tt>nidb.cfg</tt> not found in the usual places.<br>
-			Perhaps you need to edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>? Make sure <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
-			<ul>
-				<li><?=getcwd()?>/nidb.cfg
-				<li><?=getcwd()?>/../nidb.cfg
-				<li><?=getcwd()?>/../../prod/programs/nidb.cfg
-				<li><?=getcwd()?>/../../../../prod/programs/nidb.cfg
-				<li><?=getcwd()?>/../programs/nidb.cfg
-				<li>/home/nidb/programs/nidb.cfg
-				<li>/nidb/programs/nidb.cfg
-			</ul>
-			<?
-			exit(0);
-		}
-
+	function LoadConfig($file) {
 		$cfg['cfgpath'] = $file;
 		
 		$lines = file($file);
@@ -318,12 +277,19 @@
 		$diff = $diff - ($hours*3600);
 		$minutes = floor($diff/60);
 		$diff = $diff - ($minutes*60);
-		$seconds = number_format($diff,1);
+		$seconds = number_format($diff,0);
 		$time = "";
-		if ($days > 0) $time .= $days . "d ";
-		if ($hours > 0) $time .= $hours . "h ";
-		if ($minutes > 0) $time .= $minutes . "m ";
-		if ($seconds > 0) $time .= $seconds . "s";
+		if ($days > 0) { $time = $days . "d $hours" . "h $minutes" . "m $seconds" . "s"; }
+		else {
+			if ($hours > 0) { $time = $hours . "h $minutes" . "m $seconds" . "s"; }
+			else {
+				if ($minutes > 0) { $time = $minutes . "m $seconds" . "s"; }
+				else {
+					if ($seconds > 0) { $time = $seconds . "s"; }
+					else { $time = "0"; }
+				}
+			}
+		}
 
 		return $time;
 	}
@@ -385,7 +351,8 @@
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
 			<b>Error:</b> " . mysql_error() . "<br>
 			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
-			<b>Server info</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
+			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
+			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
 			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);

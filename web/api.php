@@ -24,17 +24,20 @@
  /* This page is the public API for interaction with NiDB
 	A valid username and sha1(password) hash is required for every transaction */
 
+	$nologin = true;
+	
 	require "functions.php";
 	require "nidbapi.php";
 	
 	//print_r($_POST);
+	//exit(0);
 	//print_r($_FILES);
 	
 	/* ----- setup variables ----- */
 	$u = GetVariable("u");
 	$p = GetVariable("p");
 	
-	/* before even accepting any more variables... (I know, they're already accepted by PHP)
+	/* before even checking any more variables... (I know, they're already accepted by PHP)
 	... into variables inside the program, authenticate */
 	if (!Authenticate($u,$p)) {
 		echo "Incorrect username or password ($u,$p)";
@@ -53,13 +56,14 @@
 	$altuid = GetVariable("altuid");
 	$instance = GetVariable("instance");
 	$dataformat = GetVariable("dataformat");
+	$numfiles = GetVariable("numfiles");
 	$matchidonly = GetVariable("matchidonly");
 	$altuids = GetVariable("altuids");
 	$seriesnotes = GetVariable("seriesnotes");
 	
 	switch($action) {
-		case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
-		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly,$transactionid); break;
+		case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
+		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
 		case 'getProjectList': GetProjectList($u, $instance); break;
@@ -77,12 +81,12 @@
 		$username = mysql_real_escape_string($username);
 		$password = mysql_real_escape_string($password);
 		
-		if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
-			$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			return true;
-		}
-		else {
+		//if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
+		//	$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
+		//	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		//	return true;
+		//}
+		//else {
 			//echo "Not a UNIX account, trying standard account";
 			if (AuthenticateStandardUser($username, $password)) {
 				$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
@@ -94,7 +98,7 @@
 				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 				return false;
 			}
-		}
+		//}
 	}
 
 
@@ -271,9 +275,9 @@
 	/* -------------------------------------------- */
 	/* ------- UploadDICOM ------------------------ */
 	/* -------------------------------------------- */
-	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
+	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
-		//print_r($_POST);
+		print_r($_POST);
 		
 		$uuid = mysql_real_escape_string($uuid);
 		$anonymize = mysql_real_escape_string($anonymize);
@@ -286,37 +290,40 @@
 		$transactionid = mysql_real_escape_string($transactionid);
 		$seriesnotes = mysql_real_escape_string($seriesnotes);
 		$altuids = mysql_real_escape_string($altuids);
+		$numfiles = mysql_real_escape_string($numfiles);
 		
 		/* clear out the older stuff */
 		$sqlstring = "DELETE FROM import_received WHERE import_datetime < DATE_SUB(NOW(), INTERVAL 30 DAY)";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
+		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
-			if (count($_FILES['files'] > 0)) {
+			/* and check if we received the expected number of files */
+			if (count($_FILES['files']) == $numfiles) {
 				/* get the instanceRowID */
 				$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
-				//echo "[[$sqlstring]]";
+				echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$instanceRowID = $row['instance_id'];
 				
 				/* get the projectRowID */
 				$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-				//echo "[[$sqlstring]]";
+				echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$projectRowID = $row['project_id'];
 				
 				/* get the siteRowID */
 				$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
-				//echo "[[$sqlstring]]";
+				echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$siteRowID = $row['site_id'];
 				
 				/* get next import ID */
 				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
-				//echo "[[$sqlstring]]";
+				echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysql_insert_id();
 				
@@ -324,7 +331,7 @@
 				$numfilestotal = 0;
 				$numbehsuccess = 0;
 				$numbehtotal = 0;
-				//echo "I'm still here\n";
+				echo "I'm still here\n";
 				$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
 				$behsavepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID/beh";
 		
@@ -337,7 +344,7 @@
 					$filesize = 0;
 					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-						//echo "RECEIVED $savepath/$name\n";
+						echo "RECEIVED $savepath/$name\n";
 						$numfilessuccess++;
 						chmod("$savepath/$name", 0777);
 						//echo date('c') . "\n";
@@ -353,7 +360,7 @@
 					
 					/* record this received file in the import_received table */
 					$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-					//echo "$sqlstring\n";
+					echo "$sqlstring\n";
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
@@ -385,7 +392,7 @@
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			else {
-				echo "No files sent";
+				echo "Incorrect number of files received. Expecting [$numfiles], got [" . count($_FILES['files']) . "]";
 			}
 		}
 		

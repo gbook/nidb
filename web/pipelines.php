@@ -2417,11 +2417,12 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function DisplayAnalysisList($id, $numperpage, $pagenum) {
 	
-		$sqlstring = "select pipeline_name, pipeline_level from pipelines where pipeline_id = $id";
+		$sqlstring = "select pipeline_name, pipeline_level, pipeline_version from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
 		$pipeline_level = $row['pipeline_level'];
+		$pipeline_version = $row['pipeline_version'];
 	
 		//$urllist['Analysis'] = "analysis.php";
 		$urllist['Pipelines'] = "pipelines.php";
@@ -2484,6 +2485,11 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				e.preventDefault();
 				$("#dialogbox").load("viewanalysis.php?action=viewresults&analysisid=" + id + "&studyid=<?=$study_id?>").dialog({height:800, width:1200});
 			});
+			$("a.viewhistory").click(function(e) {
+				var id = jQuery(this).attr("id");
+				e.preventDefault();
+				$("#dialogbox").load("viewanalysis.php?action=viewhistory&analysisid=" + id + "&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>").dialog({height:800, width:1200});
+			});
 		});
 		</script>
 		<table width="100%" class="tablepage">
@@ -2533,6 +2539,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<th>Status</th>
 					<th>Successful</th>
 					<th>Logs</th>
+					<th>History</th>
 					<th>Files</th>
 					<th>Results</th>
 					<th>Notes</th>
@@ -2592,6 +2599,8 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 						$visittype = $row['study_type'];
 						$pipeline_version = $row['pipeline_version'];
 						$pipeline_dependency = $row['pipeline_dependency'];
+						
+						if ($analysis_status == "") { $analysis_status = "unknown"; }
 						
 						$sqlstringA = "select pipeline_submithost from pipelines where pipeline_id = $id";
 						//PrintSQL($sqlstringA);
@@ -2682,9 +2691,12 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
 					<? if ($analysis_status != "") { ?>
 					<td><a href="#" class="viewlog" id="<?=$analysis_id?>" title="View log files"><img src="images/log16.png"></a></td>
+					<td><a href="#" class="viewhistory" id="<?=$analysis_id?>" title="View analysis history"><img src="images/history16.png"></a></td>
 					<td><a href="#" class="viewfiles" id="<?=$analysis_id?>" title="View file listing"><img src="images/folder16.png"></a></td>
 					<td><a href="#" class="viewresults" id="<?=$analysis_id?>" title="View analysis results"><img src="images/chart16.png"></a></td>
 					<? } else { ?>
+					<td></td>
+					<td></td>
 					<td></td>
 					<td></td>
 					<? } ?>
@@ -3842,7 +3854,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			echo "Invalid cluster job ID";
 		}
 		else {
-			$systemstring = "SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; cd /sge/sge-root/bin/lx24-amd64; ./qstat -j $id";
+			$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $id";
 			$out = shell_exec($systemstring);
 			PrintVariable($out,'output');
 		}
