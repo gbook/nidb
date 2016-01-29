@@ -169,8 +169,8 @@ td.submenu { color: black; background-color: aliceblue; border-top: solid 2pt #0
 
 td.hover, tr.hover { background-color: aliceblue; }
 
-.calendar { border: 1pt gray; }
-.calendar td.heading { font-size: 12pt; color: darkblue; font-weight: bold; text-align: center; }
+.calendar { border: 1pt gray; border-radius: 5px }
+.calendar td.heading { font-size: 12pt; color: white; font-weight: bold; text-align: center; }
 .calendar td.days { font-size: 11pt; color: darkblue; text-align: center; border-top: 1pt solid gray; border-bottom: 1pt solid gray; }
 .calendar td.day { font-size: 7pt; color: black; text-align: left; vertical-align: top; border-right: 1pt solid #DDDDDD; border-bottom: 1pt solid #DDDDDD; }
 
@@ -184,6 +184,7 @@ td.hover, tr.hover { background-color: aliceblue; }
 .entrytable td { vertical-align: top; }
 .entrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 .entrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }
+/*.entrytable tbody tr:hover { background-color: #FFFFD4; }*/
 
 /* entry table */
 .smallentrytable {border-top: 1px solid gray; border-bottom: 1px solid gray; font-size: 10pt; }

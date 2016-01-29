@@ -299,7 +299,7 @@
 		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
 			/* and check if we received the expected number of files */
-			if (count($_FILES['files']) == $numfiles) {
+			if ((count($_FILES['files']) == $numfiles) || ($numfiles == "")) {
 				/* get the instanceRowID */
 				$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
 				echo "[[$sqlstring]]";

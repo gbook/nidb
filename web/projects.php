@@ -833,17 +833,18 @@
 		?>
 		View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>
-		<table class="graydisplaytable" width="100%">
+		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>		
+		<table class="sortable graydisplaytable" width="100%">
 			<thead>
 				<tr>
-					<th>Name</th>
-					<th>UID</th>
-					<th>Cost Center</th>
-					<th>Admin</th>
-					<th>PI</th>
+					<th data-sort="string-ins">Name</th>
+					<th data-sort="string-ins">UID</th>
+					<th data-sort="string-ins">Cost Center</th>
+					<th data-sort="string-ins">Admin</th>
+					<th data-sort="string-ins">PI</th>
 					<th>View report</th>
 					<th>Group Protocols</th>
-					<th>Studies</th>
+					<th data-sort="int">Studies</th>
 				</tr>
 			</thead>
 			<tbody>

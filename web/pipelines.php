@@ -2525,27 +2525,27 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		<input type="hidden" name="analysisnotes" value="">
 		<input type="hidden" name="analysisid" value="">
 		<input type="hidden" name="id" value="<?=$id?>">
-		<table id="analysistable" class="smallgraydisplaytable" width="100%">
-		<!--<table id="analysistable" class="tablesorter" width="100%">-->
+		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>		
+		<table id="analysistable" class="sortable smallgraydisplaytable" width="100%">
 			<thead>
 				<tr>
-					<th><input type="checkbox" id="studiesall"> Study</th>
-					<th>Visit</th>
-					<th>Pipeline<br>version</th>
+					<th data-sort="string-ins"><input type="checkbox" id="studiesall">Study</th>
+					<th data-sort="string-ins">Visit</th>
+					<th data-sort="int">Pipeline<br>version</th>
 					<? if ($pipeline_level == 1) { ?>
 					<th>Study date</th>
-					<th># series</th>
+					<th data-sort="int"># series</th>
 					<? } ?>
-					<th>Status</th>
-					<th>Successful</th>
+					<th data-sort="string-ins">Status</th>
+					<th data-sort="string-ins">Successful</th>
 					<th>Logs</th>
 					<th>History</th>
 					<th>Files</th>
 					<th>Results</th>
 					<th>Notes</th>
-					<th>Message</th>
-					<th>Size<br><span class="tiny">bytes</span></th>
-					<th>Hostname</th>
+					<th data-sort="string-ins">Message</th>
+					<th data-sort="string-ins">Size<br><span class="tiny">bytes</span></th>
+					<th data-sort="string-ins">Hostname</th>
 					<th>Setup time<br><span class="tiny">completed date</span></th>
 					<th>Cluster time<br><span class="tiny">completed date</span></th>
 					<th>Operations<br><input type="checkbox" id="analysesall"></th>
@@ -2757,6 +2757,8 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					document.studieslist.submit();
 				}
 				</script>
+				
+				<tfoot>
 				<tr style="color: #444; font-size:12pt; font-weight:bold">
 					<td colspan="8" valign="top" style="background-color: #fff">
 						<table>
@@ -2802,6 +2804,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='pipelines.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">&nbsp;
 					</td>
 				</tr>
+				</tfoot>
 			</tbody>
 		</table>
 		</form>
