@@ -40,7 +40,7 @@
 	/* before even checking any more variables... (I know, they're already accepted by PHP)
 	... into variables inside the program, authenticate */
 	if (!Authenticate($u,$p)) {
-		echo "Incorrect username or password ($u,$p)";
+		echo "LOGINERROR";
 		exit(0);
 	}
 	
@@ -135,7 +135,7 @@
 		$pwent = posix_getpwnam($username);
 		$password_hash = $pwent["passwd"];
 		//echo "User info for $username: {{$password_hash}}";
-		print_r($pwent);
+		//print_r($pwent);
 		//if($pwent == false)
 		//	return false;
 			
@@ -277,7 +277,7 @@
 	/* -------------------------------------------- */
 	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
-		print_r($_POST);
+		//print_r($_POST);
 		
 		$uuid = mysql_real_escape_string($uuid);
 		$anonymize = mysql_real_escape_string($anonymize);
@@ -298,32 +298,32 @@
 		
 		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
-			/* and check if we received the expected number of files */
-			if ((count($_FILES['files']) == $numfiles) || ($numfiles == "")) {
+			/* and check if we received at least 1 file */
+			if (count($_FILES['files']) > 0) {
 				/* get the instanceRowID */
 				$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
-				echo "[[$sqlstring]]";
+				//echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$instanceRowID = $row['instance_id'];
 				
 				/* get the projectRowID */
 				$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-				echo "[[$sqlstring]]";
+				//echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$projectRowID = $row['project_id'];
 				
 				/* get the siteRowID */
 				$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
-				echo "[[$sqlstring]]";
+				//echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysql_fetch_array($result, MYSQL_ASSOC);
 				$siteRowID = $row['site_id'];
 				
 				/* get next import ID */
 				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
-				echo "[[$sqlstring]]";
+				//echo "[[$sqlstring]]";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysql_insert_id();
 				
@@ -331,7 +331,7 @@
 				$numfilestotal = 0;
 				$numbehsuccess = 0;
 				$numbehtotal = 0;
-				echo "I'm still here\n";
+				//echo "I'm still here\n";
 				$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
 				$behsavepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID/beh";
 		
@@ -344,23 +344,24 @@
 					$filesize = 0;
 					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-						echo "RECEIVED $savepath/$name\n";
+						//echo "RECEIVED $savepath/$name\n";
 						$numfilessuccess++;
 						chmod("$savepath/$name", 0777);
 						//echo date('c') . "\n";
-						//$filemd5 = strtoupper(md5_file("$savepath/$name"));
+						$filemd5 = strtoupper(md5_file("$savepath/$name"));
+						$md5list[] = $filemd5;
 						$filesize = filesize("$savepath/$name");
 						//echo date('c') . " [MD5: $filemd5]\n";
 						$success = 1;
 					}
 					else {
-						echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
+						//echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 						$success = 0;
 					}
 					
 					/* record this received file in the import_received table */
 					$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-					echo "$sqlstring\n";
+					//echo "$sqlstring\n";
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
@@ -374,12 +375,13 @@
 							//echo "RECEIVED $name\n";
 							$numbehsuccess++;
 							chmod("$behsavepath/$name", 0777);
-							//$filemd5 = strtoupper(md5_file("$savepath/$name"));
+							$filemd5 = strtoupper(md5_file("$savepath/$name"));
+							$md5list[] = $filemd5;
 							$filesize = filesize("$savepath/$name");
 							$success = 1;
 						}
 						else {
-							echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
+							//echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 							$success = 0;
 						}
 						/* record this received file in the import_received table */
@@ -392,11 +394,11 @@
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			else {
-				echo "Incorrect number of files received. Expecting [$numfiles], got [" . count($_FILES['files']) . "]";
+				echo "UPLOADERROR";
 			}
 		}
-		
-		echo "NiDB: Successfully received $numfilessuccess of $numfilestotal files and $numbehsuccess of $numbehtotal beh files";
+		echo "SUCCESS," . implode(",",$md5list);
+		//echo "NiDB: Successfully received $numfilessuccess of $numfilestotal files and $numbehsuccess of $numbehtotal beh files";
 	}
 
 
