@@ -62,7 +62,7 @@
 	$seriesnotes = GetVariable("seriesnotes");
 	
 	switch($action) {
-		case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
+		//case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
@@ -278,6 +278,7 @@
 	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
 		//print_r($_POST);
+		//echo "\n";
 		
 		$uuid = mysql_real_escape_string($uuid);
 		$anonymize = mysql_real_escape_string($anonymize);
@@ -292,6 +293,39 @@
 		$altuids = mysql_real_escape_string($altuids);
 		$numfiles = mysql_real_escape_string($numfiles);
 		
+		/* get the instanceRowID */
+		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
+		//echo "[[$sqlstring]]\n";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$instanceRowID = $row['instance_id'];
+		if ($instanceRowID == "") {
+			echo "ERROR_EMPTY_INSTANCEID";
+			return;
+		}
+		
+		/* get the projectRowID */
+		$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
+		//echo "[[$sqlstring]]\n";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$projectRowID = $row['project_id'];
+		if ($projectRowID == "") {
+			echo "ERROR_EMPTY_PROJECTID";
+			return;
+		}
+		
+		/* get the siteRowID */
+		$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
+		//echo "[[$sqlstring]]\n";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$siteRowID = $row['site_id'];
+		if ($siteRowID == "") {
+			echo "ERROR_EMPTY_SITEID";
+			return;
+		}
+		
 		/* clear out the older stuff */
 		$sqlstring = "DELETE FROM import_received WHERE import_datetime < DATE_SUB(NOW(), INTERVAL 30 DAY)";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -300,30 +334,9 @@
 		if (isset($_FILES['files'])){
 			/* and check if we received at least 1 file */
 			if (count($_FILES['files']) > 0) {
-				/* get the instanceRowID */
-				$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
-				//echo "[[$sqlstring]]";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$instanceRowID = $row['instance_id'];
-				
-				/* get the projectRowID */
-				$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-				//echo "[[$sqlstring]]";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$projectRowID = $row['project_id'];
-				
-				/* get the siteRowID */
-				$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
-				//echo "[[$sqlstring]]";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				$siteRowID = $row['site_id'];
-				
 				/* get next import ID */
 				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
-				//echo "[[$sqlstring]]";
+				//echo "[[$sqlstring]]\n";
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysql_insert_id();
 				
@@ -372,7 +385,6 @@
 					foreach ($_FILES['behs']['name'] as $i => $name) {
 						$numbehtotal++;
 						if (move_uploaded_file($_FILES['behs']['tmp_name'][$i], "$behsavepath/$name")) {
-							//echo "RECEIVED $name\n";
 							$numbehsuccess++;
 							chmod("$behsavepath/$name", 0777);
 							$filemd5 = strtoupper(md5_file("$savepath/$name"));
@@ -381,7 +393,6 @@
 							$success = 1;
 						}
 						else {
-							//echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 							$success = 0;
 						}
 						/* record this received file in the import_received table */
@@ -398,104 +409,5 @@
 			}
 		}
 		echo "SUCCESS," . implode(",",$md5list);
-		//echo "NiDB: Successfully received $numfilessuccess of $numfilestotal files and $numbehsuccess of $numbehtotal beh files";
 	}
-
-
-	/* -------------------------------------------- */
-	/* ------- UploadNonDICOM --------------------- */
-	/* -------------------------------------------- */
-	function UploadNonDICOM($equipmentid, $siteid, $projectid, $instanceid, $dataformat, $matchidonly, $transactionid) {
-		$equipmentid = mysql_real_escape_string($equipmentid);
-		$siteid = mysql_real_escape_string($siteid);
-		$projectid = mysql_real_escape_string($projectid);
-		$instanceid = mysql_real_escape_string($instanceid);
-		$dataformat = mysql_real_escape_string($dataformat);
-		$matchidonly = mysql_real_escape_string($matchidonly);
-		$transactionid = mysql_real_escape_string($transactionid);
-		
-		/* get the instanceRowID */
-		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
-		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		$instanceRowID = $row['instance_id'];
-		
-		/* get the projectRowID */
-		$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		$projectRowID = $row['project_id'];
-		
-		/* get the siteRowID */
-		$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
-		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		$siteRowID = $row['site_id'];
-		
-		/* get next import ID */
-		$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading','$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$anonymize','$permanent','$matchidonly')";
-		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$uploadID = mysql_insert_id();
-		
-		$numfiles = 0;
-		//echo "I'm still here\n";
-		$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
-		$behsavepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID/beh";
-		
-		/* go through all the files and save them */
-		if (isset($_FILES['files'])){ 
-			mkdir($savepath, 0777, true);
-			chmod($savepath, 0777);
-			foreach ($_FILES['files']['name'] as $i => $name) {
-				if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-					//echo "RECEIVED $name\n";
-					$numfiles++;
-					chmod("$savepath/$name", 0777);
-					$success = 1;
-				}
-				else {
-					echo "ERROR $name\n";
-					$success = 0;
-				}
-				/* record this received file in the import_received table */
-				//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_destination, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$savepath/$name', '$success', '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploadnondicom')";
-				$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$success', '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploadnondicom')";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-		
-		/* go through all the beh files and save them */
-		if (isset($_FILES['behs'])){ 
-			mkdir($behsavepath, 0777, true);
-			chmod($behsavepath, 0777);
-			foreach ($_FILES['behs']['name'] as $i => $name) {
-				if (move_uploaded_file($_FILES['behs']['tmp_name'][$i], "$behsavepath/$name")) {
-					//echo "RECEIVED $name\n";
-					$numfiles++;
-					chmod("$behsavepath/$name", 0777);
-					$success = 1;
-				}
-				else {
-					echo "ERROR $name\n";
-					$success = 0;
-				}
-				/* record this received file in the import_received table */
-				//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_destination, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$savepath/$name', '$success', '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploadnondicom')";
-				$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$success', '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploadnondicom')";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-		
-		$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		
-		
-
-		echo "NiDB: Successfully received $numfilessuccess of $numfilestotal files and $numbehsuccess of $numbehtotal beh files";
-	}
-	
 ?>
