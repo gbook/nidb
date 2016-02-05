@@ -1,6 +1,6 @@
 <?
  // ------------------------------------------------------------------------------
- // NiDB index.php
+ // NiDB studies.php
  // Copyright (C) 2004 - 2016
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -32,7 +32,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes.php";
 	require "menu.php";
@@ -386,6 +385,14 @@
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$newsubjectid = $row['subject_id'];
+		
+		if ($newsubjectid == "") {
+			?>
+			<div style="background-color: red"><?$newuid?> not found. Unable to move study.</div>
+			<?
+			return;
+		}
+		
 		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]";
 		
 		/* check if the new subject is enrolled in the project, if not, enroll them */

@@ -576,8 +576,10 @@
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$groupids[] = $row['importrequest_id'];
 		}
-
 		$grouplist = implode2(',',$groupids);
+		if ($grouplist == "") {
+			$grouplist = 'null';
+		}
 		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in ($grouplist) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
 		//$sqlstring = "select * from importlogs where importgroupid in ($grouplist)";
 		?>
