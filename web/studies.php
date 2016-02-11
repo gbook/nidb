@@ -81,6 +81,8 @@
 	$search_swversion = GetVariable("search_swversion");
 	$imgperline = GetVariable("imgperline");
 
+	$starttime = microtime(true);
+	usleep(1);
 	/* determine action */
 	switch($action) {
 		case 'editform':
@@ -705,6 +707,8 @@
 	
 		$id = mysql_real_escape_string($id);
 		
+		echo "<p>Time: " . microtime(true) - $GLOBALS['starttime'] . "</p>";
+		
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
@@ -767,7 +771,6 @@
 		$study_datetime = date("F j, Y g:ia",strtotime($study_datetime));
 		$study_radreaddate = date("F j, Y g:ia",strtotime($study_radreaddate));
 
-		
 		/* get privacy information */
 		$username = $_SESSION['username'];
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -819,13 +822,6 @@
 			color:#fff;
 			}
 		</style>
-		<script type="text/javascript">
-			$(document).ready(function() {
-				//$('a.basic').cluetip({width: 275});
-				//$('a.wide').cluetip({width: 800, clickThrough:true});
-				//$('a.iframe').fancybox({width:1100, height: 1000, transitionIn: 'none', transitionOut: 'none', speedIn: 0, speedOut: 0, type: 'iframe'});
-			});
-		</script>
 
 		<table class="bluerounded">
 			<tr>
@@ -1073,7 +1069,7 @@
 		else {
 			echo "$sqlstring<br>";
 		}
-	
+
 		/* get the movement & SNR stats by sequence name */
 		$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
 		//echo "$sqlstring2<br>";

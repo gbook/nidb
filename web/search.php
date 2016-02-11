@@ -2573,9 +2573,13 @@
 		
 		if ($s_resultorder == 'pipelinelong') {
 			$agebin = 'M';
+			$agecutoffmin = 10*12;
+			$agecutoffmax = 95*12;
 		}
 		else {
 			$agebin = 'Y';
+			$agecutoffmin = 10;
+			$agecutoffmax = 95;
 		}
 		
 		$modality = '';
@@ -2594,7 +2598,7 @@
 			
 			$series[] = $resultname;
 			# exclude anyone under 0yr or over 100yrs
-			if (($age > 0) && ($age < 1200)) {
+			if (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) {
 				$longs[$age][$resultname][] = $resultvalue;
 			}
 			
@@ -2644,8 +2648,12 @@
 		//echo "</pre>";
 		
 		foreach ($series as $resultid) {
+			$sqlstring = "select result_name from analysis_resultnames where resultname_id = '$resultid'";
+			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$resultname = $row['result_name'];
 			?>
-			result ID [<?=$resultid?>]<br>
+			<?=$resultname?> [<?=$resultid?>]<br>
 			<table cellspacing="0" style="font-size: 8pt" border="1">
 				<tr>
 					<td>Bin (months)</td>
@@ -2677,6 +2685,7 @@
 			</table>
 			<?
 		}
+		
 		$csv = "ID, age, sex, ROI, value\n";
 		
 		foreach ($exportdata as $resultid => $subject) {
@@ -2685,7 +2694,7 @@
 				$sex = strtoupper($values['sex']);
 				$value = $values['value'];
 				// weed out non male/female sexes, and people with odd ages
-				if ( (($age > 0) && ($age < 100)) && (($sex == "M") || ($sex == "F")) ) {
+				if ( (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) && (($sex == "M") || ($sex == "F")) ) {
 					$csv .= "$uid, $age, $sex, $resultid, $value\n";
 				}
 				$exportdatacombined[$uid]['age'] = $age;
@@ -2699,15 +2708,15 @@
 		Full table .csv (collapsed by UID)<br>
 		<textarea rows="8" cols="150"><?=$csv?></textarea>
 		<?
-		$csv2 = "ID, age, sex, ROI, value\n";
+		$csv2 = "ID, age, sex, value\n";
 		
 		foreach ($exportdatacombined as $uid => $values) {
 			$age = $values['age'];
 			$sex = strtoupper($values['sex']);
 			$value = $values['value'];
 			// weed out non male/female sexes, and people with odd ages
-			if ( (($age > 0) && ($age < 100)) && (($sex == "M") || ($sex == "F")) ) {
-				$csv2 .= "$uid, $age, $sex, $resultid, $value\n";
+			if ( (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) && (($sex == "M") || ($sex == "F")) ) {
+				$csv2 .= "$uid, $age, $sex, $value\n";
 			}
 		}
 		?>

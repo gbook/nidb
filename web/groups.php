@@ -442,7 +442,7 @@
 			$csv = "";
 			
 			/* get the demographics (study level) */
-			$sqlstring = "select c.enroll_subgroup, b.study_ageatscan,d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
+			$sqlstring = "select c.enroll_subgroup, b.study_id, b.study_ageatscan,d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
 			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$studyid = $row['study_id'];
@@ -459,7 +459,7 @@
 				$studynotes = $row['study_notes'];
 				$subgroup = $row['enroll_subgroup'];
 
-				//PrintVariable($row);
+				$studylist[] = $studyid;
 				
 				$subjectid = $row['subject_id'];
 				$name = $row['name'];
@@ -501,6 +501,8 @@
 			if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
 			if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 			if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
+
+			//PrintVariable($studylist);
 			
 			if ($measures == "all") {
 				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
@@ -584,6 +586,13 @@
 					<td valign="top" style="padding-right:20px">
 						<?
 						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+						?>
+					</td>
+				</tr>
+				<tr>
+					<td valign="top" style="padding-right:20px">
+						<?
+						DisplayMRProtocolSummary($studylist);
 						?>
 					</td>
 				</tr>
@@ -891,7 +900,7 @@
 							/* get the demographics (series level) */
 							$sqlstring = "select b.*, c.study_num, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
 							//print "[$sqlstring]<br>";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 							mysql_data_seek($result,0);
 							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 								$seriesdesc = $row['series_desc'];
@@ -952,6 +961,77 @@
 			<?
 		}
 	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayMRProtocolSummary ----------- */
+	/* -------------------------------------------- */
+	function DisplayMRProtocolSummary($studylist) {
+		$studylist = array_filter($studylist);
+		$studies = implode(",",$studylist);
+		
+		$sqlstring = "SELECT series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols, count(*) 'count' FROM `mr_series` where study_id in ($studies) and is_derived <> 1 group by series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols";
+		//PrintSQL($sqlstring);
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		?>
+		<details>
+		<summary>MR protocol summary</summary>
+		<table class="smallgraydisplaytable sortable">
+			<thead>
+				<th>Desc</th>
+				<th>TR</th>
+				<th>TE</th>
+				<th>Flip</th>
+				<th>Phase dir</th>
+				<th>Phase dir pos.</th>
+				<th>Spacing X</th>
+				<th>Spacing Y</th>
+				<th>Spacing Z (center of slices)</th>
+				<th>Rows</th>
+				<th>Cols</th>
+				<th>Slices</th>
+				<th>Count</th>
+			</thead>
+			<tbody>
+			<?
+			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$seriesdesc = $row['series_altdesc'];
+				$series_tr = $row['series_tr'];
+				$series_te = $row['series_te'];
+				$series_flip = $row['series_flip'];
+				$phaseencodedir = $row['phaseencodedir'];
+				$PhaseEncodingDirectionPositive = $row['PhaseEncodingDirectionPositive'];
+				$series_spacingx = $row['series_spacingx'];
+				$series_spacingy = $row['series_spacingy'];
+				$series_spacingz = $row['series_spacingz'];
+				$img_rows = $row['img_rows'];
+				$img_cols = $row['img_cols'];
+				$img_slices = $row['img_slices'];
+				$count = $row['count'];
+				?>
+				<tr>
+					<td><?=$seriesdesc?></td>
+					<td><?=$series_tr?></td>
+					<td><?=$series_te?></td>
+					<td><?=$series_flip?></td>
+					<td><?=$phaseencodedir?></td>
+					<td><?=$PhaseEncodingDirectionPositive?></td>
+					<td><?=$series_spacingx?></td>
+					<td><?=$series_spacingy?></td>
+					<td><?=$series_spacingz?></td>
+					<td><?=$img_rows?></td>
+					<td><?=$img_cols?></td>
+					<td><?=$img_slices?></td>
+					<td><?=$count?></td>
+				</tr>
+				<?
+			}
+			?>
+			</tbody>
+		</table>
+		<?
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayDemographicsTable ----------- */
