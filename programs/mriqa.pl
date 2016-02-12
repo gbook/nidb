@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB mriqa.pl
-# Copyright (C) 2004 - 2015
+# Copyright (C) 2004 - 2016
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -44,7 +44,6 @@ use Math::Derivative qw(Derivative1 Derivative2);
 use List::Util qw(first max maxstr min minstr reduce shuffle sum);
 require 'nidbroutines.pl';
 
-#my %config = do 'config.pl';
 our %cfg;
 LoadConfig();
 
@@ -73,7 +72,6 @@ if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {
 else {
 	my $logfilename;
 	($lockfile, $logfilename) = CreateLockFile($lockfileprefix, $cfg{'lockdir'}, $numinstances);
-	#my $logfilename = "$lockfile";
 	$logfilename = "$cfg{'logdir'}/$scriptname" . CreateLogDate() . ".log";
 	open $log, '> ', $logfilename;
 	my $x = DoQA();
@@ -205,6 +203,7 @@ sub QA() {
 				}
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				
+				WriteLog("Done attempting to convert files... now trying to copy out a valid Nifti file");
 				$systemstring = "cp -v $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				$systemstring = "cp -v $tmpdir/*.nii $tmpdir/4D.nii";
@@ -214,6 +213,16 @@ sub QA() {
 			# create a 4D file to pass to the SNR program and run the SNR program on it
 			$systemstring = "$cfg{'scriptdir'}/./nii_qa.sh -i $tmpdir/*.nii* -o $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa.txt -v 2 -t $tmpdir";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
+			
+			# the nii_qa script may have generated a valid nii.gz file, so use that if the 4D.nii.gz doesn't exist
+			if (! -e "$tmpdir/4D.nii.gz") {
+				$systemstring = "cp -v $tmpdir/s*.nii.gz $tmpdir/4D.nii.gz";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			if (! -e "$tmpdir/4D.nii") {
+				$systemstring = "cp -v $tmpdir/s*.nii $tmpdir/4D.nii";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
 			
 			# move the realignment file(s) to the archive directory
 			$systemstring = "mv -v $tmpdir/*.par $cfg{'archivedir'}/$uid/$study_num/$series_num/qa";
@@ -243,19 +252,36 @@ sub QA() {
 
 			# create thumbnails
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
-				$systemstring = "slicer $tmpdir/4D.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb.png";
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it");
+				$systemstring = "slicer $tmpdir/4D.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
-				$systemstring = "slicer $tmpdir/4D.nii -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/thumb.png";
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it");
+				$systemstring = "slicer $tmpdir/4D.nii -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
-			}			
-			$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.png";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.png";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			
+			if (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png does not exist, attempting to create it");
+				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			else { WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz does not exist"); }
+			
+			if (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.png does not exist, attempting to create it");
+				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			else { WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tsigma.nii.gz does not exist"); }
+			
+			if (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.png does not exist, attempting to create it");
+				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			else { WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz does not exist"); }
 
 			# get mean/stdev in intensity over time
 			$systemstring = "fslstats -t $tmpdir/mc4D -m > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/meanIntensityOverTime.txt";
@@ -277,18 +303,15 @@ sub QA() {
 			# parse the movement correction file
 			my ($maxrx,$maxry,$maxrz,$maxtx,$maxty,$maxtz,$maxax,$maxay,$maxaz,$minrx,$minry,$minrz,$mintx,$minty,$mintz,$minax,$minay,$minaz) = GetMovementStats("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/MotionCorrection.txt");
 
-			# delete the 4D file and temp directory
-			$systemstring = "rm $tmpdir/*";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			rmdir($tmpdir);
-			
 			# if there is no thumbnail, create one, or replace the original
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png still does not exist, attempting to create it from Tmean.png");
 				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			# if there is still no thumbnail, generate one the old fashioned way, with convert
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png still does not exist, attempting to create it using ImageMagick");
 				# print the ImageMagick version
 				my $systemstring = "which convert";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -336,6 +359,11 @@ sub QA() {
 			else {
 				$motion_rsq = 0;
 			}
+			
+			# delete the 4D file and temp directory
+			$systemstring = "rm $tmpdir/*";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			rmdir($tmpdir);
 
 			# calculate the total time running
 			my $endtime = GetTotalCPUTime();
@@ -372,12 +400,7 @@ sub GetQAStats() {
 	my @filecontents = <FILE>;
 	close(FILE);
 
-	#WriteLog(@filecontents);
-	
-	#my ($pvsnr,$iosnr);
-	
 	my $line = $filecontents[1];
-	#WriteLog($line);
 	$line =~ s/\n//g;
 	my ($fname, $pvsnr, $iosnr) = split(/\t/, trim($line));
 	

@@ -81,8 +81,6 @@
 	$search_swversion = GetVariable("search_swversion");
 	$imgperline = GetVariable("imgperline");
 
-	$starttime = microtime(true);
-	usleep(1);
 	/* determine action */
 	switch($action) {
 		case 'editform':
@@ -707,8 +705,6 @@
 	
 		$id = mysql_real_escape_string($id);
 		
-		echo "<p>Time: " . microtime(true) - $GLOBALS['starttime'] . "</p>";
-		
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
@@ -1104,24 +1100,9 @@
 				$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
 			} else { $pstats[$sequence]['maxstdmotion'] = 0; }
 		}
-		//print_r($pstats);
-	
 		?>
 		
 		<script>
-			$(document).ready(function() {
-				$(".highlightblack").hide();
-				$(".highlightred").hide();
-				$(".highlightorange").hide();
-				$(".highlightyellow").hide();
-				$(".highlightgreen").hide();
-				
-				$(".ratingdiv").hover( function() { $(this).children(".highlightblack").show(); }, function() { $(this).children(".highlightblack").hide(); } );
-				$(".ratingdiv").hover( function() { $(this).children(".highlightred").show(); }, function() { $(this).children(".highlightred").hide(); } );
-				$(".ratingdiv").hover( function() { $(this).children(".highlightorange").show(); }, function() { $(this).children(".highlightorange").hide(); } );
-				$(".ratingdiv").hover( function() { $(this).children(".highlightyellow").show(); }, function() { $(this).children(".highlightyellow").hide(); } );
-				$(".ratingdiv").hover( function() { $(this).children(".highlightgreen").show(); }, function() { $(this).children(".highlightgreen").hide(); } );
-			});		
 			$(function() {
 				$( document ).tooltip({show:{effect:'appear'}, hide:{duration:0}});
 			});
@@ -1227,6 +1208,22 @@
 							$image_type = $row['image_type'];
 							$image_comments = $row['image_comments'];
 							$ishidden = $row['ishidden'];
+							
+							if ($series_num - $lastseriesnum > 1) {
+								$firstmissing = $lastseriesnum+1;
+								$lastmissing = $series_num-1;
+								if ($firstmissing == $lastmissing) {
+									$missingmsg = $firstmissing;
+								}
+								else {
+									$missingmsg = "$firstmissing - $lastmissing";
+								}
+								?>
+								<tr>
+									<td colspan="24" align="center" style="border-top: double 3px #FF7F7F; border-bottom: double 3px #FF7F7F; padding:5px">Non-consecutive series numbers. Missing series <?=$missingmsg?></td>
+								</tr>
+								<?
+							}
 							
 							if (($numfiles_beh == '') || ($numfiles_beh == 0)) {
 								/* get the number and size of the beh files */
@@ -1446,7 +1443,7 @@
 							if ($istestseries) { $rowcolor = "#AAAAAA"; }
 							if ($ishidden) { $rowcolor = "AAA"; }
 							
-							/* --- audit the dicom files --- */
+							/* -------- audit the dicom files -------- */
 							$dupes = null;
 							$dcmcount = 0;
 							if ($audit) {
@@ -1634,16 +1631,17 @@
 								</td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
-								<? if ($data_type == "dicom") {
-									$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
-									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
-									$dcmfile = $dicoms[0];
-									if (file_exists($dcmfile)) {
+								<?
+								if ($data_type == "dicom") {
+									//$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
+									//$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
+									//$dcmfile = $dicoms[0];
+									//if (file_exists($dcmfile)) {
 										?><a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a><?
-									}
-									else {
-										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?
-									}
+									//}
+									//else {
+									//	?><!--<span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span>--><?
+									//}
 								} else {
 									echo $series_desc;
 								}
@@ -1743,6 +1741,7 @@
 								?>
 							</tr>
 							<?
+							$lastseriesnum = $series_num;
 						}
 					?>
 					<!-- uploader script for this series -->
