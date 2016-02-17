@@ -70,6 +70,8 @@ cpan Image::ExifTool
 cpan String::CRC32
 cpan Date::Manip
 cpan Sort::Naturally
+cpan Digest::MD5
+cpan Digest::MD5::File
 
 # copy recently installed Perl modules to a directory accessible by the
 # nidb account
