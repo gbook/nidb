@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Nov 12, 2015 at 07:59 PM
+-- Generation Time: Feb 17, 2016 at 02:46 PM
 -- Server version: 10.0.20-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS `analysis` (
   `analysis_isbad` tinyint(1) NOT NULL DEFAULT '0',
   `analysis_datalog` mediumtext NOT NULL,
   `analysis_rerunresults` tinyint(1) NOT NULL,
+  `analysis_runsupplement` tinyint(1) NOT NULL,
   `analysis_result` varchar(50) DEFAULT NULL,
   `analysis_resultmessage` text,
   `analysis_numseries` int(11) DEFAULT NULL,
@@ -117,6 +118,24 @@ CREATE TABLE IF NOT EXISTS `analysis_group` (
   `analysisgroup_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysisgroup_enddate` timestamp NULL DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `analysis_history`
+--
+
+CREATE TABLE IF NOT EXISTS `analysis_history` (
+  `analysishistory_id` bigint(20) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
+  `pipeline_id` int(11) NOT NULL,
+  `pipeline_version` int(11) NOT NULL,
+  `study_id` int(11) NOT NULL,
+  `analysis_event` varchar(255) NOT NULL,
+  `analysis_hostname` varchar(255) NOT NULL,
+  `event_message` text NOT NULL,
+  `event_datetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -323,6 +342,97 @@ CREATE TABLE IF NOT EXISTS `binary_series` (
   `series_description` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendars`
+--
+
+CREATE TABLE IF NOT EXISTS `calendars` (
+  `calendar_id` int(11) NOT NULL,
+  `calendar_name` varchar(50) NOT NULL,
+  `calendar_description` varchar(255) NOT NULL,
+  `calendar_location` varchar(255) NOT NULL COMMENT 'room #, etc',
+  `calendar_createdate` datetime NOT NULL,
+  `calendar_deletedate` datetime NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendar_allocations`
+--
+
+CREATE TABLE IF NOT EXISTS `calendar_allocations` (
+  `alloc_id` int(11) NOT NULL,
+  `alloc_timeperiod` int(50) NOT NULL COMMENT 'yearly, monthly, weekly, daily',
+  `alloc_calendarid` int(11) NOT NULL,
+  `alloc_projectid` int(11) NOT NULL,
+  `alloc_amount` int(11) NOT NULL COMMENT 'number of allocations per time period'
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendar_appointments`
+--
+
+CREATE TABLE IF NOT EXISTS `calendar_appointments` (
+  `appt_id` int(11) NOT NULL,
+  `appt_groupid` int(11) NOT NULL,
+  `appt_username` varchar(50) NOT NULL,
+  `appt_calendarid` int(11) NOT NULL,
+  `appt_projectid` int(11) NOT NULL,
+  `appt_title` varchar(250) NOT NULL,
+  `appt_details` text NOT NULL,
+  `appt_startdate` datetime NOT NULL,
+  `appt_enddate` datetime NOT NULL,
+  `appt_isalldayevent` tinyint(1) NOT NULL,
+  `appt_istimerequest` tinyint(1) NOT NULL COMMENT 'true if the user is requesting a time slot that day',
+  `appt_repeats` tinyint(1) NOT NULL,
+  `appt_deletedate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00',
+  `appt_canceldate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00'
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendar_notifications`
+--
+
+CREATE TABLE IF NOT EXISTS `calendar_notifications` (
+  `not_id` int(11) NOT NULL,
+  `not_userid` int(11) NOT NULL,
+  `not_calendarid` int(11) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendar_projectnotifications`
+--
+
+CREATE TABLE IF NOT EXISTS `calendar_projectnotifications` (
+  `not_id` int(11) NOT NULL,
+  `not_userid` int(11) NOT NULL,
+  `not_projectid` int(11) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `calendar_projects`
+--
+
+CREATE TABLE IF NOT EXISTS `calendar_projects` (
+  `project_id` int(11) NOT NULL,
+  `project_name` varchar(50) NOT NULL,
+  `project_admin` varchar(50) NOT NULL,
+  `project_description` varchar(255) NOT NULL,
+  `project_startdate` datetime NOT NULL,
+  `project_enddate` datetime NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -750,7 +860,7 @@ CREATE TABLE IF NOT EXISTS `family_members` (
 
 CREATE TABLE IF NOT EXISTS `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) NOT NULL,
   `data_destination` varchar(255) NOT NULL,
@@ -1536,6 +1646,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_steps` (
   `pipelinestep_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '1',
+  `ps_supplement` tinyint(1) NOT NULL,
   `ps_command` text,
   `ps_workingdir` text,
   `ps_order` int(11) DEFAULT NULL,
@@ -2003,6 +2114,19 @@ CREATE TABLE IF NOT EXISTS `surgery_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `system_messages`
+--
+
+CREATE TABLE IF NOT EXISTS `system_messages` (
+  `message_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `message_date` datetime NOT NULL,
+  `message_status` enum('active','deleted','pending') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `task_series`
 --
 
@@ -2206,7 +2330,8 @@ ALTER TABLE `analysis`
   ADD KEY `analysis_status` (`analysis_status`),
   ADD KEY `analysis_disksize` (`analysis_disksize`),
   ADD KEY `pipeline_dependency` (`pipeline_dependency`),
-  ADD KEY `analysis_isbad` (`analysis_isbad`);
+  ADD KEY `analysis_isbad` (`analysis_isbad`),
+  ADD KEY `analysis_runsupplement` (`analysis_runsupplement`);
 
 --
 -- Indexes for table `analysis_data`
@@ -2223,6 +2348,14 @@ ALTER TABLE `analysis_group`
   ADD PRIMARY KEY (`analysisgroup_id`),
   ADD UNIQUE KEY `pipeline_id_2` (`pipeline_id`,`pipeline_version`),
   ADD KEY `pipeline_id` (`pipeline_id`);
+
+--
+-- Indexes for table `analysis_history`
+--
+ALTER TABLE `analysis_history`
+  ADD PRIMARY KEY (`analysishistory_id`),
+  ADD KEY `analysis_id` (`analysis_id`,`pipeline_id`,`pipeline_version`,`study_id`),
+  ADD KEY `analysis_event` (`analysis_event`);
 
 --
 -- Indexes for table `analysis_resultnames`
@@ -2299,6 +2432,43 @@ ALTER TABLE `audit_results`
 --
 ALTER TABLE `binary_series`
   ADD PRIMARY KEY (`binaryseries_id`);
+
+--
+-- Indexes for table `calendars`
+--
+ALTER TABLE `calendars`
+  ADD PRIMARY KEY (`calendar_id`);
+
+--
+-- Indexes for table `calendar_allocations`
+--
+ALTER TABLE `calendar_allocations`
+  ADD PRIMARY KEY (`alloc_id`);
+
+--
+-- Indexes for table `calendar_appointments`
+--
+ALTER TABLE `calendar_appointments`
+  ADD PRIMARY KEY (`appt_id`),
+  ADD KEY `appt_startdate` (`appt_startdate`,`appt_enddate`);
+
+--
+-- Indexes for table `calendar_notifications`
+--
+ALTER TABLE `calendar_notifications`
+  ADD PRIMARY KEY (`not_id`);
+
+--
+-- Indexes for table `calendar_projectnotifications`
+--
+ALTER TABLE `calendar_projectnotifications`
+  ADD PRIMARY KEY (`not_id`);
+
+--
+-- Indexes for table `calendar_projects`
+--
+ALTER TABLE `calendar_projects`
+  ADD PRIMARY KEY (`project_id`);
 
 --
 -- Indexes for table `changelog`
@@ -2845,6 +3015,12 @@ ALTER TABLE `surgery_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
+-- Indexes for table `system_messages`
+--
+ALTER TABLE `system_messages`
+  ADD PRIMARY KEY (`message_id`);
+
+--
 -- Indexes for table `task_series`
 --
 ALTER TABLE `task_series`
@@ -2922,6 +3098,11 @@ ALTER TABLE `analysis_data`
 ALTER TABLE `analysis_group`
   MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `analysis_history`
+--
+ALTER TABLE `analysis_history`
+  MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `analysis_resultnames`
 --
 ALTER TABLE `analysis_resultnames`
@@ -2976,6 +3157,36 @@ ALTER TABLE `audit_results`
 --
 ALTER TABLE `binary_series`
   MODIFY `binaryseries_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendars`
+--
+ALTER TABLE `calendars`
+  MODIFY `calendar_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendar_allocations`
+--
+ALTER TABLE `calendar_allocations`
+  MODIFY `alloc_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendar_appointments`
+--
+ALTER TABLE `calendar_appointments`
+  MODIFY `appt_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendar_notifications`
+--
+ALTER TABLE `calendar_notifications`
+  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendar_projectnotifications`
+--
+ALTER TABLE `calendar_projectnotifications`
+  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `calendar_projects`
+--
+ALTER TABLE `calendar_projects`
+  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `changelog`
 --
@@ -3342,6 +3553,11 @@ ALTER TABLE `subject_relation`
 ALTER TABLE `surgery_series`
   MODIFY `surgeryseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `system_messages`
+--
+ALTER TABLE `system_messages`
+  MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `task_series`
 --
 ALTER TABLE `task_series`
@@ -3384,55 +3600,3 @@ ALTER TABLE `xa_series`
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-INSERT INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `instance_ownerid`, `instance_default`) VALUES
-(1, 'I1234ABC', 'NiDB Main Instance', 1, 1);
-
-INSERT INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`) VALUES
-(1, 'MR', 'MRI - Magnetic Resonance Imaging', 1),
-(2, 'CT', 'CT - Computed Tomography', 1),
-(3, 'EEG', 'EEG - Electroencephalography', 1),
-(4, 'VIDEO', 'Video', 1),
-(5, 'ECG', 'ECG - Electrocardiogram', 1),
-(6, 'US', 'Ultrasound', 1),
-(7, 'MEG', 'MEG - Magnetoencephalography', 1),
-(8, 'XRAY', 'X-ray', 1),
-(9, 'PT', 'PET - Positron Emission Tomography', 1),
-(10, 'OT', 'Other DICOM', 1),
-(11, 'PPI', 'Pre-pulse inhibition', 1),
-(12, 'ET', 'Eye-tracking', 1),
-(13, 'XA', 'XA - X-ray angiography', 1),
-(14, 'CR', 'CR - Computed radiography (digital x-ray)', 1),
-(15, 'SURGERY', 'Pre-surgical Mapping', 1),
-(16, 'AUDIO', 'Audio', 1),
-(17, 'SNP', 'SNP genetic information', 1),
-(18, 'CONSENT', 'Consent form', 1),
-(19, 'TASK', 'Task', 1);
-
-INSERT INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numrunning`, `module_laststart`, `module_laststop`, `module_isactive`) VALUES
-(1, 'parsedicom', 'stopped', 0, now(), now(), 1),
-(2, 'datarequests', 'stopped', 0, now(), now(), 1),
-(3, 'mriqa', 'stopped', 0, now(), now(), 1),
-(4, 'pipeline', 'stopped', 0, now(), now(), 0),
-(5, 'dailyreport', 'stopped', 0, now(), now(), 0),
-(6, 'dailybackup', 'stopped', 0, now(), now(), 0),
-(7, 'import', 'stopped', 0, now(), now(), 0),
-(8, 'qc', 'stopped', 0, now(), now(), 0),
-(9, 'fileio', 'stopped', 0, now(), now(), 1),
-(10, 'importuploaded', 'stopped', 0, now(), now(), 1),
-(11, 'usage', 'stopped', 0, now(), now(), 0),
-(12, 'audit', 'stopped', 0, now(), now(), 0),
-(13, 'notifications', 'stopped', 0, now(), now(), 0);
-
-INSERT INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
-(1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
-
-INSERT INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
-(1, 1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
-(2, 1, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
-
-INSERT INTO `user_instance` (`userinstance_id`, `user_id`, `instance_id`, `isdefaultinstance`, `instance_joinrequest`) VALUES
-(1, 1, 1, 1, 0);
-
-INSERT INTO `users` (`user_id`, `username`, `password`, `login_type`, `user_instanceid`, `user_fullname`, `user_firstname`, `user_midname`, `user_lastname`, `user_institution`, `user_country`, `user_email`, `user_email2`, `user_address1`, `user_address2`, `user_city`, `user_state`, `user_zip`, `user_phone1`, `user_phone2`, `user_website`, `user_dept`, `user_lastlogin`, `user_logincount`, `user_enabled`, `user_isadmin`, `user_issiteadmin`, `user_canimport`, `sendmail_dailysummary`, `user_enablebeta`, `lastupdate`) VALUES
-(1, 'admin', sha1('password'), 'Standard', 1, 'Administrator', '', '', '', '', '', 'email@email.com', '', '', '', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, 1, 1, 1, 0, 0, 0, '0000-00-00 00:00:00');
