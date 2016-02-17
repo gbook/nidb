@@ -62,7 +62,6 @@
 	$seriesnotes = GetVariable("seriesnotes");
 	
 	switch($action) {
-		//case 'UploadNonDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
@@ -300,8 +299,8 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$instanceRowID = $row['instance_id'];
 		if ($instanceRowID == "") {
-			echo "ERROR_EMPTY_INSTANCEID";
-			return;
+			echo "ERROR_INVALID_INSTANCEID";
+			exit(0);
 		}
 		
 		/* get the projectRowID */
@@ -311,8 +310,8 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$projectRowID = $row['project_id'];
 		if ($projectRowID == "") {
-			echo "ERROR_EMPTY_PROJECTID";
-			return;
+			echo "ERROR_INVALID_PROJECTID";
+			exit(0);
 		}
 		
 		/* get the siteRowID */
@@ -322,8 +321,8 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$siteRowID = $row['site_id'];
 		if ($siteRowID == "") {
-			echo "ERROR_EMPTY_SITEID";
-			return;
+			echo "ERROR_INVALID_SITEID";
+			exit(0);
 		}
 		
 		/* clear out the older stuff */

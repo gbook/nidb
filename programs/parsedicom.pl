@@ -177,6 +177,9 @@ sub ParseDirectory {
 		if (($importStatus eq 'complete') || ($importStatus eq "") || ($importStatus eq "received")) { }
 		else {
 			WriteLog("This import is not complete. Status is [$importStatus]. Skipping");
+			# cleanup so this import can continue another time
+			$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			return 0;
 		}
 	}
@@ -315,11 +318,17 @@ sub ParseDirectory {
 									}
 									else {
 										WriteLog("$institute->$patient->$dob->$sex->$date->$series: incomplete");
+										# cleanup so this import can continue another time
+										$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+										$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									}
 								}
 								# check if this module should be running now or not
 								if (!ModuleCheckIfActive($scriptname, $db)) {
 									WriteLog("Not supposed to be running right now");
+									# cleanup so this import can continue another time
+									$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+									$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									return 0;
 								}
 							}
@@ -344,11 +353,10 @@ sub ParseDirectory {
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 		}
+		$sqlstring = "update import_requests set import_status = 'archived', import_enddate = now() where importrequest_id = '$importRowID'";
+		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
-	
-	$sqlstring = "update import_requests set import_status = 'archived', import_enddate = now() where importrequest_id = '$importRowID'";
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	
+
 	if ($i > 0) {
 		WriteLog("Finished extracting data for [$dir]");
 		$ret = 1;
@@ -1211,21 +1219,6 @@ sub InsertSeries {
 	$systemstring = "cp -R $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	WriteLog("Finished copying to the backup directory");
-
-	#$sqlstring = "update import_requests set import_status = 'archiving', import_enddate = now() where importrequest_id = '$importRowID'";
-	#$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
-	
-#	my $uploaddir = "$cfg{'incomingdir'}/$importID";
-#	if (-d $uploaddir) {
-#		# delete the uploaded directory
-#		WriteLog("Attempting to remove $uploaddir...");
-#		my $mode = (stat($uploaddir))[2];
-#		WriteLog(sprintf "permissions are %04o\n", $mode &07777);
-#		if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*') && ($importID ne '')) {
-#			my $systemstring = "rm -rf $uploaddir";
-#			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-#		}
-#	}
 }
 
 

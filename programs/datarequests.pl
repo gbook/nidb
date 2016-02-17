@@ -166,7 +166,7 @@ sub ProcessDataRequests {
 				# if this is sent remotely to an NiDB server, get a transaction ID
 				if ($req_destinationtype eq "remotenidb") {
 					# build a cURL string to start the transaction
-					my $systemstring = "curl -g -F 'action=startTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' $remotenidbserver/api.php";
+					my $systemstring = "curl -gs -F 'action=startTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' $remotenidbserver/api.php";
 					WriteLog("[$systemstring] --> " . `$systemstring 2>&1`);
 					$transactionid = trim(`$systemstring`);
 					WriteLog("TransactionID: [$transactionid]");
@@ -496,7 +496,11 @@ sub ProcessDataRequests {
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/dicom";
 					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 					my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+					my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
+					my $tmpzipdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(12);
 					MakePath($tmpdir);
+					MakePath($tmpzipdir);
+					MakePath("$tmpzipdir/beh");
 					$systemstring = "cp $indir/* $tmpdir/";
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 					Anonymize($tmpdir,4,uc($sha1name),uc($sha1dob));
@@ -532,25 +536,52 @@ sub ProcessDataRequests {
 					}
 					
 					# build the cURL string to send the actual data
-					$systemstring = "curl -g -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'uuid=$uuid' -F 'anonymize=0' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
+					$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
 					my $c = 0;
 					foreach my $f (@dcmfiles) {
 						$c++;
 						#WriteLog("Appending file [$c] -> $f");
-						$systemstring .= "-F 'files[]=\@$tmpdir/$f' ";
+						#$systemstring .= "-F 'files[]=\@$tmpdir/$f' ";
+						my $systemstring2 = "cp $tmpdir/$f $tmpzipdir/";
+						WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
 					}
 					
 					$c = 0;
 					foreach my $f (@behfiles) {
 						$c++;
 						#WriteLog("Appending file [$c] -> $f");
-						$systemstring .= "-F 'behs[]=\@$behindir/$f' ";
+						#$systemstring .= "-F 'behs[]=\@$behindir/$f' ";
+						my $systemstring2 = "cp $behindir/$f $tmpzipdir/beh/";
+						WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
 					}
+					
+					# send the zip and send file
+					my $systemstring2 = "cd $tmpzipdir; tar -czvf $tmpzip .";
+					WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
+					# get MD5 before sending
+					my $zipmd5 = file_md5_hex($tmpzip);
+					$systemstring .= "-F 'files[]=\@$tmpzip' ";
 					$systemstring .= "$remotenidbserver/api.php";
 					$results = `$systemstring 2>&1`;
 					WriteLog("$systemstring ($results)");
 					
-					$newstatus = 'complete';
+					my @parts = split(',',$results);
+					if (trim($parts[0]) eq 'SUCCESS') {
+						# a file was successfully received by api.php, now check the return md5
+						if (trim(uc($parts[1])) eq uc($zipmd5)) {
+							$newstatus = 'complete';
+							WriteLog("Upload success: MD5 match");
+						}
+						else {
+							$newstatus = 'problem';
+							WriteLog("Upload fail: MD5 non-match");
+						}
+					}
+					else {
+						$newstatus = 'problem';
+						WriteLog("Upload fail: got message [" . $parts[0] . "]");
+					}
+					
 				}
 				
 				# ----- export data -----
@@ -693,7 +724,7 @@ sub ProcessDataRequests {
 			# if this is sent remotely to an NiDB server, end the transaction
 			if ($req_destinationtype eq "remotenidb") {
 				# build a cURL string to end the transaction
-				$systemstring = "curl -g -F 'action=endTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' $remotenidbserver/api.php";
+				$systemstring = "curl -gs -F 'action=endTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' $remotenidbserver/api.php";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 
@@ -1114,7 +1145,7 @@ sub Anonymize() {
 		WriteLog("Anonymize threads finished");
 	}
 	
-	return $totalcpu;
+	return @md5s;
 }
 
 

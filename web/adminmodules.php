@@ -118,7 +118,7 @@
 			<details>
 			<summary><?=$filename?> <span class="tiny"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</span></summary>
 			<? if ($filesize < 50000000) {?>
-			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px"><?=file_get_contents($filename)?></pre>
+			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px"><?=htmlspecialchars(file_get_contents($filename))?></pre>
 			<? } else { ?>
 			File too large to display
 			<? } ?>

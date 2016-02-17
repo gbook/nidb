@@ -203,11 +203,13 @@ sub QA() {
 				}
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				
-				WriteLog("Done attempting to convert files... now trying to copy out a valid Nifti file");
-				$systemstring = "cp -v $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
+				chdir($tmpdir);
+				WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
+				$systemstring = "find . -name '*.nii.gz' | head -1 | xargs -i cp -v {} 4D.nii.gz";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
-				$systemstring = "cp -v $tmpdir/*.nii $tmpdir/4D.nii";
+				$systemstring = "find . -name '*.nii' | head -1 | xargs -i cp -v {} 4D.nii";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
+				chdir($indir);
 			}
 			
 			# create a 4D file to pass to the SNR program and run the SNR program on it

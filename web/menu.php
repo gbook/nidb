@@ -190,6 +190,29 @@
 		</form>
 	</tr>
 </table>
+<?
+/* check for system status messages */
+	$sqlstring = "select * from system_messages where message_status = 'active' order by message_date desc";
+	$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+	if (mysql_num_rows($result) > 0) {
+?>
+<table width="100%" cellspacing="0" cellpadding="0">
+	<tr>
+		<td width="100%" style="border: 3px solid #FF5500;">
+			<div style="color: white; background-color: #FF5500; padding: 5px">System messages</div>
+			<ul>
+			<?
+			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$message = $row['message'];
+				$message_date = $row['message_date'];
+			?>
+			<li><?=$message_date?> - <?=$message?>
+			<? } ?>
+			</ul>
+		</td>
+	</tr>
+</table>
+<? } ?>
 <br>
 <table width="100%" cellpadding="5">
 	<tr>

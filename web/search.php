@@ -2087,6 +2087,22 @@
 					$csv .= "\n";
 				}
 				else {
+					if ($series_num - $lastseriesnum > 1) {
+						$firstmissing = $lastseriesnum+1;
+						$lastmissing = $series_num-1;
+						if ($firstmissing == $lastmissing) {
+							$missingmsg = $firstmissing;
+						}
+						else {
+							$missingmsg = "$firstmissing - $lastmissing";
+						}
+						?>
+						<tr>
+							<td colspan="24" align="center" style="border-top: solid 1px #FF7F7F; border-bottom: solid 1px #FF7F7F; padding:3px; font-size:8pt">Non-consecutive series numbers in search results. Probably normal. Missing series <?=$missingmsg?></td>
+						</tr>
+						<?
+					}
+					
 				?>
 					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
 						<? if ($s_resultorder != "table") { ?>
@@ -2196,6 +2212,7 @@
 			}
 
 			$laststudy_id = $study_id;
+			$lastseriesnum = $series_num;
 		}
 
 		/* ---------- generate csv file ---------- */
@@ -3837,7 +3854,7 @@
 				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_altdesc";
 			}
 			else {
-				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `modalitytable`.series_desc";
+				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_desc";
 			}
 		}
 		elseif (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
