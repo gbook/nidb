@@ -43,8 +43,7 @@
 	$modality = GetVariable("modality");
 	$datatype = GetVariable("datatype");
 	$filename = GetVariable("filename");
-	
-	//$datadir = GetDataDir($seriesid, $modality, $datatype);
+	$newfilename = GetVariable("newfilename");
 	
 	/* determine action */
 	if ($action == "delete") {
@@ -55,9 +54,6 @@
 		RenameFile($seriesid, $modality, $datatype, $filename, $newfilename);
 		DisplayFileList($seriesid, $modality, $datatype);
 	}
-//	elseif ($action == "download") {
-//		Download($seriesid, $modality, $datatype, $filename);
-//	}
 	else {
 		DisplayFileList($seriesid, $modality, $datatype);
 	}
@@ -103,37 +99,23 @@
 		}
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- Download --------------------------- */
-	/* -------------------------------------------- */
-	//function Download($seriesid, $modality, $datatype, $filename) {
-		
-	//	$filepath = GetDataDir($seriesid, $modality, $datatype) . "/$filename";
-		
-	//	?>
-		<pre>
-		<?
-	//	if (!file_exists($filepath)) {
-	//		echo "Could not find $filepath!!";
-	//	}
-	//	else {
-	//		$file = file($filepath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-	//		readfile($filepath);
-	//	}
-	//	?>
-		</pre>
-		<?
-	//}
-
 
 	/* -------------------------------------------- */
 	/* ------- RenameFile ------------------------- */
 	/* -------------------------------------------- */
 	function RenameFile($seriesid, $modality, $datatype, $filename, $newfilename) {
-		$oldfilepath = GetDataDir($seriesid, $modality, $datatype) . "/$filename";
-		$newfilepath = GetDataDir($seriesid, $modality, $datatype) . "/$newfilename";
+		$newfilename = preg_replace('/[^A-Za-z0-9_\-]/', '_', $newfilename);
+		
+		$datadir = GetDataDir($seriesid, $modality, $datatype);
+		$oldfilepath = "$datadir/$filename";
+		$newfilepath = "$datadir/$newfilename";
 
+		if (rename($oldfilepath, $newfilepath)) {
+			?><div align="center"><span class="staticmessage">Successfully renamed [<?=$oldfilepath?>] to [<?=$newfilepath?>]</span></div><br><br><?
+		}
+		else {
+			?><div align="center"><span class="staticmessage">Problem renaming [<?=$oldfilepath?>] to [<?=$newfilepath?>]</span></div><br><br><?
+		}
 	}
 
 	
@@ -199,10 +181,11 @@
 		<b>Protocol:</b> <?=$protocol?>
 		</div>
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="graydisplaytable" width="100%">
 			<thead>
 				<tr>
 					<th>Filename</th>
+					<th>Rename <span class="tiny">press Enter to rename</span></th>
 					<th>Type</th>
 					<th>Size <span class="tiny">(bytes)</span></th>
 					<th>Date created</th>
@@ -247,11 +230,6 @@
 									if ($datatype == "VIDEO") {
 										if ($filetype == "Flash Video") {
 										?>
-										<!--<object>
-											<param name="movie" value="getfile.php?file=<? echo "$datadir/$file"; ?>"></param>
-											<embed src="getfile.php?file=<? echo "$datadir/$file"; ?>" type="application/x-shockwave-flash" >
-											</embed>
-										</object>-->
 										<object type="application/x-shockwave-flash" width="320" height="260" wmode="transparent" data="flvplayer.swf?file=getfile.php%3Ffile%3D<? echo "$datadir/$file"; ?>&autoStart=false">
 											<param name="movie" value="flvplayer.swf?file=getfile.php%3Ffile%3D<? echo "$datadir/$file"; ?>&autoStart=false" />
 											<param name="wmode" value="transparent" />
@@ -269,6 +247,15 @@
 									}
 								?>
 								</td>
+								<form action="managefiles.php">
+									<input type="hidden" name="action" value="rename">
+									<input type="hidden" name="seriesid" value="<?=$seriesid?>">
+									<input type="hidden" name="modality" value="<?=$modality?>">
+									<input type="hidden" name="datatype" value="<?=$datatype?>">
+									<input type="hidden" name="filename" value="<?=$file?>">
+									<td><input type="text" size="50" maxlength="255" name="newfilename" value="<?=$file?>"></td>
+									<input type="submit" style="display:none">
+								</form>
 								<td><?=$filetype?></td>
 								<td><?=$size?></td>
 								<td><?=$ctime?></td>

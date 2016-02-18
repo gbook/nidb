@@ -326,6 +326,7 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 /* update/delete/added messages */
 .message { text-align: center; color: white; background-color: darkred; border-radius: 5px; padding: 4px 15px; margin: 10px; }
+.staticmessage { text-align: center; color: white; background-color: darkred; border-radius: 5px; padding: 4px 15px; margin: 10px; }
 .subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
 .error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
 
@@ -361,7 +362,7 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 
 .verytiny { font-size: 7pt; font-weight:normal; color: #333333; }
 .tiny { font-size: 8pt; color: #666666; }
-.staticmessage { font-size: 9pt; color: darkred; }
+/*.staticmessage { font-size: 9pt; color: darkred; }*/
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
 
 .adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; }
