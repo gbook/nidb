@@ -213,6 +213,17 @@ sub DoImportUploaded {
 				# ----- get list of files in directory -----
 				$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
 				
+				WriteLog("Should see me...");
+				# unzip anything in the directory before parsing it
+				my $systemstring = "cd $uploaddir; unzip *.zip;";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				$systemstring = "cd $uploaddir; tar -xzvf *.tar.gz;";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				$systemstring = "cd $uploaddir; gunzip *.gz;";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				$systemstring = "cd $uploaddir; bunzip2 *.bz2;";
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				
 				my @files;
 				if (!opendir (DIR, $uploaddir)) {
 					WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");

@@ -176,7 +176,7 @@ sub ParseDirectory {
 		#if (($importStatus ne 'complete') && ($importStatus ne "")) {
 		if (($importStatus eq 'complete') || ($importStatus eq "") || ($importStatus eq "received")) { }
 		else {
-			WriteLog("This import is not complete. Status is [$importStatus]. Skipping");
+			WriteLog("This import is not complete. Status is [$importStatus]. Skipping.");
 			# cleanup so this import can continue another time
 			$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -185,6 +185,7 @@ sub ParseDirectory {
 	}
 	
 	$sqlstring = "update import_requests set import_status = 'archiving' where importrequest_id = '$importRowID'";
+	WriteLog($sqlstring);
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	my %dicomfiles;
@@ -232,6 +233,13 @@ sub ParseDirectory {
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
+							# change the import status to reflect the error
+							$sqlstring = "update import_requests set import_status = 'error', import_enddate = now() where importrequest_id = '$importRowID'";
+							WriteLog($sqlstring);
+							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+						}
+						else {
+							$iscomplete = 1;
 						}
 						$i++;
 					}
@@ -244,6 +252,13 @@ sub ParseDirectory {
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'EEG', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
+							# change the import status to reflect the error
+							$sqlstring = "update import_requests set import_status = 'error', import_enddate = now() where importrequest_id = '$importRowID'";
+							WriteLog($sqlstring);
+							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+						}
+						else {
+							$iscomplete = 1;
 						}
 						$i++;
 					}
@@ -320,6 +335,7 @@ sub ParseDirectory {
 										WriteLog("$institute->$patient->$dob->$sex->$date->$series: incomplete");
 										# cleanup so this import can continue another time
 										$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+										WriteLog($sqlstring);
 										$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									}
 								}
@@ -328,6 +344,7 @@ sub ParseDirectory {
 									WriteLog("Not supposed to be running right now");
 									# cleanup so this import can continue another time
 									$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+									WriteLog($sqlstring);
 									$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									return 0;
 								}
@@ -354,6 +371,7 @@ sub ParseDirectory {
 			}
 		}
 		$sqlstring = "update import_requests set import_status = 'archived', import_enddate = now() where importrequest_id = '$importRowID'";
+		WriteLog($sqlstring);
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
 
@@ -1219,6 +1237,8 @@ sub InsertSeries {
 	$systemstring = "cp -R $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	WriteLog("Finished copying to the backup directory");
+	
+	return "";
 }
 
 
@@ -1426,10 +1446,6 @@ sub InsertParRec {
 	my $projectRowID;
 	my $subjectRealUID = $PatientName;
 	my $subjectRowID;
-	#my $sqlstring;
-	#my $subjectRowID;
-	#my $subjectRealUID;
-	#my $projectRowID;
 	my $enrollmentRowID;
 	my $studyRowID;
 	my $seriesRowID;
@@ -1701,7 +1717,6 @@ sub InsertEEG {
 	my ($file, $importRowID) = @_;
 	
 	WriteLog("In InsertEEG($file, $importRowID)...");
-	#exit(0);
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
 	
@@ -1717,9 +1732,6 @@ sub InsertEEG {
 	my $costcenter;
 	my $study_num;
 	
-	#my $parfile = $file;
-	#my $recfile = $file;
-	#$recfile =~ s/\.par/\.rec/;
 	my $sqlstring;
 	my $result;
 	my %row;

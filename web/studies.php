@@ -88,7 +88,7 @@
 			break;
 		case 'update':
 			UpdateStudy($id, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
-			DisplayStudy($id, 0, 0, '', '', '', '','','','');
+			DisplayStudy($id, 0, 0, '', '', '', '','','','', false);
 			break;
 		case 'movestudytosubject':
 			MoveStudyToSubject($studyid, $enrollmentid, $newuid);
@@ -98,7 +98,7 @@
 			break;
 		case 'upload':
 			Upload($modality, $studyid, $seriesid);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','');
+			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($id);
@@ -128,26 +128,29 @@
 			elseif ($modality == "MR") {
 				AddMRSeries($id);
 			}
-			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
+			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
 		case 'rateseries':
 			AddRating($seriesid, $modality, $value, $username);
-			DisplayStudy($id, "", "", "", "", "", '','','','');
+			DisplayStudy($id, "", "", "", "", "", '','','','', false);
 			break;
 		case 'hidemrseries':
 			HideMRSeries($seriesid);
-			DisplayStudy($id, "", "", "", "", "", '','','','');
+			DisplayStudy($id, "", "", "", "", "", '','','','', false);
 			break;
 		case 'unhidemrseries':
 			UnhideMRSeries($seriesid);
-			DisplayStudy($id, "", "", "", "", "", '','','','');
+			DisplayStudy($id, "", "", "", "", "", '','','','', false);
 			break;
 		case 'resetqa':
 			ResetQA($seriesid);
-			DisplayStudy($id, "", "", "", "", "", '','','','');
+			DisplayStudy($id, "", "", "", "", "", '','','','', false);
+			break;
+		case 'displayfiles':
+			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, true);
 			break;
 		default:
-			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
+			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 	}
 	
 	
@@ -208,7 +211,7 @@
 		$protocol = mysql_real_escape_string($protocol);
 		$notes = mysql_real_escape_string($notes);
 		$series_datetime = mysql_real_escape_string($series_datetime);
-		//echo "hello!";
+
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($id, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
@@ -408,8 +411,6 @@
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$newenrollmentid = mysql_insert_id();
-			//echo "$sqlstring<br>";
-			//echo "Inserted row to get new enrollment id: $newenrollmentid<br>";
 			echo "<li>Not already enrolled. Creating enrollment: $newenrollmentid [$sqlstring]";
 		}
 		
@@ -428,7 +429,6 @@
 		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
 		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
 		
-		//mkdir($newpath);
 		$systemstring = "mv $oldpath $newpath";
 		echo "Moving the data [$systemstring]";
 		echo shell_exec($systemstring);
@@ -458,8 +458,6 @@
 	/* ------- Upload ----------------------------- */
 	/* -------------------------------------------- */
 	function Upload($modality, $studyid, $seriesid) {
-	
-		//echo "I'm in the Upload function\n";
 		$modality = strtolower($modality);
 		
 		$sqlstring = "select a.uid, c.study_num, d.series_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on c.enrollment_id = b.enrollment_id left join $modality" . "_series d on d.study_id = c.study_id where d.$modality" . "series_id = $seriesid";
@@ -470,10 +468,8 @@
 		$studynum = $row['study_num'];
 		$seriesnum = $row['series_num'];
 		
-		//echo "I'm still here\n";
 		$savepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$modality";
 		
-		//echo "[$savepath]";
 		if (!file_exists($savepath)) {
 			mkdir($savepath,0777,true);
 			$systemstring = "chmod -R 777 " . $GLOBALS['cfg']['archivedir'] . "/$uid";
@@ -506,37 +502,29 @@
 	/* -------------------------------------------- */
 	/* functions must be at the end of the script, classes at the beginning, eh? */
 	function GetDirectorySize($dirname) {
+		// open the directory, if the script cannot open the directory then return folderSize = 0
+		$dir_handle = opendir($dirname);
+		if (!$dir_handle)
+			return 0;
 
-			//echo "Checking $dirname<br>";
-			// open the directory, if the script cannot open the directory then return folderSize = 0
-			$dir_handle = opendir($dirname);
-			if (!$dir_handle) return 0;
-
-			$folderSize = 0;
-			
-			// traversal for every entry in the directory
-			while ($file = readdir($dir_handle)){
-			
-				//echo "$dirname/$file<br>";
-
-				// ignore '.' and '..' directory
-				if  ($file  !=  "."  &&  $file  !=  "..")  {
-
-					// if entry is directory then go recursive !
-					if  (is_dir($dirname."/".$file)){
-							  $folderSize += GetDirectorySize($dirname.'/'.$file);
-
-					// if file then accumulate the size
-					} else {
-						  $folderSize += filesize($dirname."/".$file);
-					}
+		$folderSize = 0;
+		
+		// traversal for every entry in the directory
+		while ($file = readdir($dir_handle)){
+			// ignore '.' and '..' directory
+			if  ($file  !=  "."  &&  $file  !=  "..")  {
+				/* if this is a directory then go recursive! */
+				if (is_dir($dirname."/".$file)) {
+					$folderSize += GetDirectorySize($dirname.'/'.$file);
+				} else {
+					$folderSize += filesize($dirname."/".$file);
 				}
 			}
-			// chose the directory
-			closedir($dir_handle);
-
-			// return $dirname folder size
-			return $folderSize ;
+		}
+		// close the directory
+		closedir($dir_handle);
+		// return $dirname folder size
+		return $folderSize ;
 	}
 
 	
@@ -701,7 +689,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStudy ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline) {
+	function DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, $displayfiles) {
 	
 		$id = mysql_real_escape_string($id);
 		
@@ -1011,7 +999,7 @@
 							<br>
 							
 							<? if (!$audit) { ?>
-							<a href="studies.php?id=<?=$id?>&audit=1">Perform file audit</a> - compares all dicom files to the nidb database entries. Can be very slow<br><br>
+							<a href="studies.php?id=<?=$id?>&audit=1">Perform file audit</a> - Compares all dicom files to the nidb database entries. Can be very slow<br><br>
 							<? } else { ?>
 							<a href="studies.php?id=<?=$id?>&audit=1&fix=1">Fix file errors</a> - Removes duplicates and errant files, resets file count in nidb database. Can be very slow<br><br>
 						</details>
@@ -1022,10 +1010,15 @@
 			</tr>
 		</table>
 
-
-		<br><br>
-
+		<br>
 		<?
+		if ($displayfiles == true) {
+			?><a href="studies.php?id=<?=$id?>">Normal View</a><br><br><?
+			$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
+			DisplayFileSeries($studypath);
+		}
+		else {
+			?><a href="studies.php?id=<?=$id?>&action=displayfiles" style="font-size:8pt">View files</a><?
 			if ($study_modality == "MR") {
 				DisplayMRSeries($id, $study_num, $uid, $audit, $fix);
 			}
@@ -1035,13 +1028,14 @@
 			else {
 				DisplayGenericSeries($id, $study_modality);
 			}
-		?>
-		<br><br><br><br><br><br>
-		<?
-			DisplayAnalyses($id, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
-		?>
-		<br><br><br><br><br><br>
-		<?
+			?>
+			<br><br><br><br><br><br>
+			<?
+				DisplayAnalyses($id, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
+			?>
+			<br><br><br><br><br><br>
+			<?
+		}
 	}
 
 
@@ -2190,7 +2184,7 @@
 	/* ------- DisplayGenericSeries --------------- */
 	/* -------------------------------------------- */
 	function DisplayGenericSeries($id, $modality) {
-		if (($modality == "") || ($modality == "missing modality")) {
+		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
 			return;
 		}
@@ -2336,28 +2330,114 @@
 	
 		if (file_exists($path)) {
 			$dir = scandir($path);
-			
+			$files = find_all_files($path);
+
 			?>
-			<table class="smalldisplaytable">
-				<thead>
-					<tr>
-						<th>Series #</th>
-						<th># files</th>
-						<th>Size <span class="tiny">(bytes)</span></th>
-						<th>Upload file(s)<br><span class="tiny">Click button or drag & drop (Firefox and Chrome only)</span></th>
-					</tr>
-				</thead>
-				<tbody>
-			
+			Showing files from <b><?=$path?></b> (<?=count($files)?> files)
+			<br><br>
+			<table cellspacing="0" cellpadding="2" width="100%">
+				<tr>
+					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
+					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
+					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
+					<td style="font-weight: bold; border-bottom:2px solid #999999">Size <span class="tiny">bytes</span></td>
+				</tr>
 			<?
-			foreach ($dir as $series) {
-			?>
-			<pre><?=print_r($series)?></pre>
-			<?
+			foreach ($files as $line) {
+				
+				$timestamp2 = "N/A";
+				$perm2 = 'N/A';
+				$islink2 = '';
+				$isdir2 = '';
+				$size2 = 0;
+				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = explode("\t",$line);
+				
+				if (is_link($file)) { $islink2 = 1; }
+				if (is_dir($file)) { $isdir2 = 1; }
+				if (file_exists($file)) {
+					$timestamp2 = filemtime($file);
+					$perm2 = substr(sprintf('%o', fileperms($file)), -4);
+					$size2 = filesize($file);
+
+					$filetype = "";
+					if (stristr(strtolower($file),'.nii') !== FALSE) { $filetype = 'nifti'; }
+					if (stristr(strtolower($file),'.nii.gz') !== FALSE) { $filetype = 'nifti'; }
+					if (stristr(strtolower($file),'.inflated') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.smoothwm') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.sphere') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.pial') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.fsm') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.orig') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.png') !== FALSE) { $filetype = 'image'; }
+					if (stristr(strtolower($file),'.ppm') !== FALSE) { $filetype = 'image'; }
+					if (stristr(strtolower($file),'.jpg') !== FALSE) { $filetype = 'image'; }
+					if (stristr(strtolower($file),'.jpeg') !== FALSE) { $filetype = 'image'; }
+					if (stristr(strtolower($file),'.gif') !== FALSE) { $filetype = 'image'; }
+					if (stristr(strtolower($file),'.txt') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.log') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.sh') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.job') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".o") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".e") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".par") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".mat") !== FALSE) { $filetype = 'text'; }
+					if ($istext) { $filetype = "text"; }
+					//echo "[$file $filetype]";
+				}
+				$filecolor = "black";
+				if ($islink2) { $filecolor = "red"; } else { $filecolor = ''; }
+				if ($isdir1) { $filecolor = "darkblue"; $fileweight = ''; } else { $filecolor = ''; $fileweight = ''; }
+				
+				$clusterpath = str_replace('/mount','',$path);
+				$displayfile = str_replace($clusterpath,'',$file);
+				$lastslash = strrpos($displayfile,'/');
+				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
+				
+				$displayperms = '';
+				for ($i=1;$i<=3;$i++) {
+					switch (substr($perm2,$i,1)) {
+						case 0: $displayperms .= '---'; break;
+						case 1: $displayperms .= '--x'; break;
+						case 2: $displayperms .= '-w-'; break;
+						case 3: $displayperms .= '-wx'; break;
+						case 4: $displayperms .= 'r--'; break;
+						case 5: $displayperms .= 'r-x'; break;
+						case 6: $displayperms .= 'rw-'; break;
+						case 7: $displayperms .= 'rwx'; break;
+					}
+				}
+				?>
+				<tr>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<?
+						switch ($filetype) {
+							case 'text':
+					?>
+					<a href="viewfile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<?
+								break;
+							case 'image':
+					?>
+					<a href="viewimagefile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<?
+								break;
+							case 'nifti':
+							case 'mesh':
+					?>
+					<a href="viewimage.php?type=<?=$filetype?>&filename=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<?
+								break;
+							default:
+					?>
+					<?=$displayfile?>
+					<? } ?>
+					</td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+				</tr>
+				<?
 			}
-			?>
-			</table>
-			<?
 		}
 		else {
 			?>

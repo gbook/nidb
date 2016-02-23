@@ -493,7 +493,7 @@ sub ProcessDataRequests {
 				# ----- send to remote NiDB site -----
 				# for now, only DICOM data and beh can be sent to remote sites
 				if ($req_destinationtype eq "remotenidb") {
-					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/dicom";
+					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$modality";
 					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 					my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
 					my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
@@ -536,7 +536,7 @@ sub ProcessDataRequests {
 					}
 					
 					# build the cURL string to send the actual data
-					$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
+					$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$modality' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
 					my $c = 0;
 					foreach my $f (@dcmfiles) {
 						$c++;

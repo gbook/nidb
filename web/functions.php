@@ -998,6 +998,27 @@
 	}
 
 	
+	/* -------------------------------------------- */
+	/* ------- find_all_files --------------------- */
+	/* -------------------------------------------- */
+	function find_all_files($dir) 
+	{ 
+		$root = scandir($dir);
+		foreach($root as $value) 
+		{ 
+			if($value === '.' || $value === '..') {continue;} 
+			if(is_file("$dir/$value")) {$result[]="$dir/$value";continue;}
+			if (is_array(find_all_files("$dir/$value"))) {
+				foreach(find_all_files("$dir/$value") as $value)
+				{
+					$result[]=$value; 
+				}
+			}
+		} 
+		return $result; 
+	}
+
+	
 	function natksort($array) {
 		// Like ksort but uses natural sort instead
 		$keys = array_keys($array);
