@@ -103,13 +103,13 @@ sub ProcessDataRequests {
 	
 	# check if this module should be running now or not
 	my $sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows < 1) {
 		return 0;
 	}
 	# update the start time
 	$sqlstring = "update modules set module_laststart = now(), module_status = 'running' where module_name = '$scriptname'";
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	my $systemstring;
 	my $exportdir = CreateLogDate();
@@ -126,7 +126,7 @@ sub ProcessDataRequests {
 	$sqlstring = "select distinct(req_groupid) 'req_groupid', req_modality, req_username, req_destinationtype, req_nidbserver, req_nidbusername, req_nidbpassword from data_requests where req_status = 'pending' or req_status = '' order by req_groupid, req_date";
 	WriteLog($sqlstring);
 	#WriteLog('A');
-	$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my $tmpwebdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
 		while (my %row = $result->fetchhash) {
@@ -145,7 +145,7 @@ sub ProcessDataRequests {
 			# check to see if ANY of the series in this group have already started processing, if so, skip it
 			my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending' and req_status <> 'cancelled')";
 			WriteLog("$sqlstringA");
-			my $resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			if ($resultA->numrows > 0) {
 				my %rowA = $resultA->fetchhash;
 				my $reqdate = $rowA{'req_date'};
@@ -157,7 +157,7 @@ sub ProcessDataRequests {
 			# needed to know the modality before we can get the actual series information
 			$sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.subject_id, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
 			WriteLog("$sqlstringA");
-			$resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
+			$resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			my $currentstudyid;
 			my $laststudyid = 0;
 			my $newseriesnum = 0;
@@ -218,6 +218,7 @@ sub ProcessDataRequests {
 				my $sha1name = $rowA{'sha1name'};
 				my $sha1dob = $rowA{'sha1dob'};
 				my $project_costcenter = $rowA{'project_costcenter'};
+				my $numfilesbeh = $rowA{'numfiles_beh'};
 				$currentstudyid = $study_id;
 
 				# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
@@ -228,7 +229,7 @@ sub ProcessDataRequests {
 				# get the list of all IDs to send along with the series
 				my $sqlstringX = "select altuid from subject_altuid where subject_id = '$subjectid'";
 				WriteLog("SQL: $sqlstringX");
-				my $resultX = $db->query($sqlstringX) || SQLError($sqlstringX, $db->errmsg());
+				my $resultX = SQLQuery($sqlstringX, __FILE__, __LINE__);
 				my $altuids = $uid;
 				while (my %rowX = $resultX->fetchhash) {
 					$altuids .= "," . $rowX{'altuid'};
@@ -248,7 +249,7 @@ sub ProcessDataRequests {
 					# indicate that the row is now being processing
 					my $sqlstring2  = "update data_requests set req_status = 'processing' where request_id = $request_id";
 					WriteLog("SQL: $sqlstring2");
-					my $result2 = $db->query($sqlstring2) || SQLError($sqlstring2, $db->errmsg());
+					my $result2 = SQLQuery($sqlstring2, __FILE__, __LINE__);
 					WriteLog("Updated " . $result2->affectedrows . " rows");
 				}
 				my $starttime = time;
@@ -286,7 +287,7 @@ sub ProcessDataRequests {
 					case "altuid" {
 						# get the primary (or first) alternate UID
 						$sqlstringB = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc limit 1";
-						my $resultB = $db->query($sqlstringB) || SQLError($sqlstringB, $db->errmsg());
+						my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 						my %rowB = $resultB->fetchhash;
 						my $altuid = trim($rowB{'altuid'});
 						if ($altuid eq "") { $altuid = $uid; }
@@ -305,7 +306,7 @@ sub ProcessDataRequests {
 					# get the protocol name to be used in place of the series number
 					my $sqlstringC = "select series_desc from $modality" . "_series where $modality" . "series_id = $series_id";
 					WriteLog($sqlstringC);
-					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringB, $db->errmsg());
+					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					my %rowC = $resultC->fetchhash;
 					$newseriesnum = trim($rowC{'series_desc'});
 					WriteLog("NewSeriesNum: [$newseriesnum]");
@@ -317,7 +318,7 @@ sub ProcessDataRequests {
 					# get the protocol name to be used in place of the series number
 					my $sqlstringC = "select series_altdesc from $modality" . "_series where $modality" . "series_id = $series_id";
 					WriteLog($sqlstringC);
-					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringB, $db->errmsg());
+					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					my %rowC = $resultC->fetchhash;
 					my $seriesdesc = trim($rowC{'series_altdesc'});
 					$seriesdesc =~ s/ /\_/gi;
@@ -420,7 +421,7 @@ sub ProcessDataRequests {
 								# write the series info to a text file
 								open (MRFILE,"> $fullexportdir/seriesInfo.txt");
 								my $sqlstringC = "select * from mr_series where mrseries_id = $series_id";
-								my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 								my %rowC = $resultC->fetchhash;
 								foreach my $key ( keys %rowC ) {
 									print MRFILE "$key: $rowC{$key}\n";
@@ -493,7 +494,7 @@ sub ProcessDataRequests {
 				# ----- send to remote NiDB site -----
 				# for now, only DICOM data and beh can be sent to remote sites
 				if ($req_destinationtype eq "remotenidb") {
-					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$modality";
+					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 					my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
 					my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
@@ -638,6 +639,7 @@ sub ProcessDataRequests {
 				if ($req_destinationtype eq "ndar") {
 					# build destination path
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
+					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 					$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir";
 					my $headerfile = "$fullexportdir/ndar.csv";
 
@@ -671,14 +673,27 @@ sub ProcessDataRequests {
 							my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
 							$systemstring = "zip -jrq $zipfile $tmpdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							WriteLog("Done zipping files...");
+							WriteLog("Done zipping image files...");
 							
-							#my $headerfile = "$fullexportdir/ndar.csv";
+							my $behzipfile;
+							my $behdesc;
+							if ($numfilesbeh > 0) {
+								$behzipfile = "$uid-$study_num-$series_num-beh.zip";
+								$systemstring = "zip -jrq $fullexportdir/$behzipfile $behindir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								WriteLog("Done zipping beh files...");
+								$behdesc = "Behavioral/design data file";
+							}
+							else {
+								$behzipfile = "";
+								$behdesc = "";
+							}
+
 							if (!$headerwritten) {
 								WriteNDARHeader($headerfile, $modality);
 								$headerwritten = 1;
 							}
-							WriteNDARSeries($headerfile, "$uid-$study_num-$series_num.zip", $series_id, $modality, "$indir/$data_type");
+							WriteNDARSeries($headerfile, "$uid-$study_num-$series_num.zip", $behzipfile, $behdesc, $series_id, $modality, "$indir/$data_type");
 						}
 						else {
 							$results .= "Unable to export $indir. Directory does not exist";
@@ -702,12 +717,12 @@ sub ProcessDataRequests {
 				$results = EscapeMySQLString($results);
 				$sqlstring = "update data_requests set req_cputime = $totaltime, req_completedate = now(), req_status = '$newstatus', req_results = '$results' where request_id = $request_id";
 				WriteLog("SQL: $sqlstring");
-				$db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				
 				# if this was a pipeline download, insert it into the pipeline_data table
 				if ($req_pipelinedownloadid > 0) {
 					$sqlstring = "insert into pipeline_data (pipelinedownload_id, pdata_groupnum, pdata_seriesid, pdata_modality, pdata_downloaddate, pdata_datadir) values ($req_pipelinedownloadid, $groupid, $req_seriesid, '$modality', now(), '$req_nfsdir/$newdir/$newseriesnum')";
-					$db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+					$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				}
 				#WriteLog('K');
 				
@@ -730,7 +745,7 @@ sub ProcessDataRequests {
 
 			$sqlstring = "select * from users where username = '$req_username'";
 			WriteLog("SQL: $sqlstring");
-			my $resultC = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
+			my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 			my %rowC = $resultC->fetchhash;
 			my $email = $rowC{'user_email'};
 			my $sendmail_singlerequest = $rowC{'sendmail_singlerequest'};
@@ -746,7 +761,7 @@ sub ProcessDataRequests {
 				if ($req_destinationtype eq "publicdownload") {
 					my $sqlstringC = "select * from public_downloads where pd_id = $publicdownloadid";
 					WriteLog("SQL: $sqlstringC");
-					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					my %rowC = $resultC->fetchhash;
 					my $createdate = $rowC{'pd_createdate'};
 					my $expiredate = $rowC{'pd_expiredate'};
@@ -785,7 +800,7 @@ sub ProcessDataRequests {
 					# update status, size, expire date, etc in the public download table
 					$sqlstringC = "update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval $expiredays day), pd_zippedsize = '$zippedsize', pd_unzippedsize = '$unzippedsize', pd_filename = '$filename', pd_filecontents = '$filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = $publicdownloadid";
 					#WriteLog("SQL: $sqlstringC");
-					$resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+					$resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 				}
 				# if its a web download, do the zipping at the end
 				if ($req_destinationtype eq "web") {
@@ -823,7 +838,7 @@ sub ProcessDataRequests {
 				if ($publicdownloadid != 0) {
 					my $sqlstringC = "update public_downloads set pd_status = 'complete' where pd_id = '$publicdownloadid'";
 					WriteLog("SQL: $sqlstringC");
-					my $resultC = $db->query($sqlstringC) || SQLError($sqlstringC, $db->errmsg());
+					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 				}
 				
 			}
@@ -841,7 +856,7 @@ sub ProcessDataRequests {
 	
 	# update the stop time
 	$sqlstring = "update modules set module_laststop = now(), module_status = 'stopped' where module_name = '$scriptname'";
-	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	WriteLog('M');
 	
 	return $ret;
@@ -1156,8 +1171,8 @@ sub ThreadedSystemCall {
 	my $systemstring = shift;
 	
 	my $starttime = time;
-	#`$systemstring 2>&1`;
-	WriteLog("ThreadedSystemCall output: " . `$systemstring 2>&1`);
+	`$systemstring 2>&1`;
+	#WriteLog("ThreadedSystemCall output: " . `$systemstring 2>&1`);
 	my $endtime = time;
 	
 	return $endtime - $starttime;
@@ -1355,7 +1370,7 @@ sub WriteXMLFromSQL() {
 	
 	WriteLog("Running [$sql]");
 	my $str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-	my $result = $db->query($sql) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sql);
+	my $result = SQLQuery($sql, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			foreach my $column (keys %row) {
@@ -1380,7 +1395,7 @@ sub WriteNDARHeader() {
 	
 	if (lc($modality) eq 'mr') {
 		print F "image,3\n";
-		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,pulse_seq,slice_acquisition,software_preproc,study,week\n";
+		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description, experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week\n";
 	}
 	if (lc($modality) eq 'eeg') {
 	
@@ -1396,13 +1411,11 @@ sub WriteNDARHeader() {
 # -------------- WriteNDARSeries ------------------------------------------
 # -------------------------------------------------------------------------
 sub WriteNDARSeries() {
-	my ($file, $imagefile, $seriesid, $modality, $indir) = @_;
+	my ($file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir) = @_;
 
 	# get the information on the subject and series
-
-	#my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', round(datediff(study_datetime, birthdate)/12) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
 	my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		my $guid = $row{'guid'};
@@ -1429,7 +1442,7 @@ sub WriteNDARSeries() {
 		my $uid = $row{'uid'};
 		my $ageatscan = $row{'ageatscan'};
 		my $seriesdesc = $row{'series_desc'};
-		my $boldreps = $row{'boldreps'};
+		my $boldreps = $row{'bold_reps'};
 	
 		my $numdim;
 		if ($boldreps > 1) {
@@ -1455,13 +1468,14 @@ sub WriteNDARSeries() {
 		my $ManufacturersModelName = $tags->{'ManufacturersModelName'};
 		my $TransmitCoilName = $tags->{'TransmitCoilName'};
 		my $ProtocolName = $tags->{'ProtocolName'};
+		my $SequenceName = $tags->{'SequenceName'};
 
 		# figure out the scan type (T1,T2,DTI,fMRI)
 		my $scantype = "MR structural (T1)";
-		if ($boldreps > 1) {
-			$scantype = "MR time-series";
+		if (($boldreps > 1) || ($seriessequence =~ /epfid2d1/)) {
+			$scantype = "fMRI";
 		}
-		if (($ProtocolName =~ /perfusion/i) && ($ProtocolName =~ /ep2d_perf_tra/i)) {
+		if (($seriesdesc =~ /perfusion/i) && ($seriessequence =~ /ep2d_perf_tra/i)) {
 			$scantype = "MR diffusion";
 		}
 		if ($seriesdesc =~ /T2/i) {
@@ -1474,12 +1488,12 @@ sub WriteNDARSeries() {
 		
 		my @AcqParts = split(' ', $AcquisitionMatrix);
 		my $FOV = "0x0";
-		$FOV = $AcqParts[0]*$seriesspacingx*$PercentPhaseFieldOfView . "x" . $AcqParts[3]*$seriesspacingy*$PercentPhaseFieldOfView;
+		$FOV = ($AcqParts[0]*$seriesspacingx*$PercentPhaseFieldOfView)/100.0 . "mm x " . ($AcqParts[3]*$seriesspacingy*$PercentPhaseFieldOfView)/100.0 . "mm";
 		
 		open(F,">> $file");
 		
 		if ($modality eq "MRI") {
-			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,,,$ProtocolName,$seriessequence,1,,,0\n";
+			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0\n";
 		}
 		if ($modality eq "EEG") {
 			#print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,\"$seriesnotes\",,,,,,,,,,,,$imagefile,,,\n";

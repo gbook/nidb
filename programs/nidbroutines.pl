@@ -698,7 +698,7 @@ sub MakePath {
 	my ($p) = @_;
 	
 	WriteLog("Creating path [$p]");
-	print "Creating path [$p]\n";
+	#print "Creating path [$p]\n";
 	my $systemstring = "mkdir -pv $p";
 	WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
 	return 1;

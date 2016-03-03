@@ -262,7 +262,6 @@
 		}
 	</style>
 	<script type="text/javascript">
-	<!--
 		$(document).ready(function() {
 			/* default action */
 			$('tr.advanced').hide();
@@ -271,7 +270,6 @@
 				$('tr.advanced').toggle();
 			});
 		});
-	-->
 	</script>
 	<script>
 		$(function() {
@@ -1034,406 +1032,7 @@
 			
 			/* ---------- pipeline results ------------ */
 			if (($s_resultorder == "pipeline") || ($s_resultorder == "pipelinecsv")) {
-				if ($s_pipelineresulttype == "i") {
-					/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
-					$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-					$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-						$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
-					}
-					/* and get the result unit (due to the same MySQL bug) */
-					$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-					$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-						$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
-					}
-					
-					/* ---------------- pipeline results (images) --------------- */
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-						//PrintVariable($row,'row');
-					
-						$step = $row['analysis_step'];
-						$pipelinename = $row['pipeline_name'];
-						$uid = $row['uid'];
-						$subject_id = $row['subject_id'];
-						$gender = $row['gender'];
-						$study_id = $row['study_id'];
-						$study_num = $row['study_num'];
-						$type = $row['result_type'];
-						$size = $row['result_size'];
-						//$name = $row['result_name'];
-						$name = $resultnames[$row['result_nameid']];
-						$unit = $resultunit[$row['result_unitid']];
-						$filename = $row['result_filename'];
-						$swversion = $row['result_softwareversion'];
-						$important = $row['result_isimportant'];
-						$lastupdate = $row['result_lastupdate'];
-						
-						switch($type) {
-							case "v": $thevalue = $value; break;
-							case "f": $thevalue = $filename; break;
-							case "t": $thevalue = $text; break;
-							case "h": $thevalue = $filename; break;
-							case "i": $thevalue = $filename; break;
-						}
-						$tables["$uid$study_num"][$name] = $thevalue;
-						$tables["$uid$study_num"]['subjectid'] = $subject_id;
-						$tables["$uid$study_num"]['studyid'] = $study_id;
-						$tables["$uid$study_num"]['studynum'] = $study_num;
-						$names[$name] = "blah";
-					}
-					//PrintVariable($tables,'Tables');
-					?>
-					<table cellspacing="0" class="multicoltable">
-						<thead>
-						<tr>
-							<th>UID</th>
-							<?
-							foreach ($names as $name => $blah) {
-								?>
-								<th align="center" style="font-size:9pt"><?=$name?></th>
-								<?
-							}
-						?>
-						</tr>
-						</thead>
-						<?
-							$maximgwidth = 1200/count($names);
-							$maximgwidth -= ($maximgwidth*0.05); /* subtract 5% of image width to give a gap between them */
-							if ($maximgwidth < 100) { $maximgwidth = 100; }
-							foreach ($tables as $uid => $valuepair) {
-								?>
-								<tr style="font-weight: <?=$bold?>">
-									<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
-									<?
-									foreach ($names as $name => $blah) {
-										if ($tables[$uid][$name] == "") { $dispval = "-"; }
-										else { $dispval = $tables[$uid][$name]; }
-										list($width, $height, $type, $attr) = getimagesize("/mount$filename");
-										$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
-									?>
-										<td style="padding:2px"><a href="preview.php?image=/mount<?=$dispval?>" class="preview"><img src="preview.php?image=/mount<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
-										
-									<?
-									}
-									?>
-								</tr>
-								<?
-							}
-						?>
-					</table>
-					<br><br><br><br><br><br><br><br>
-					<?
-				}
-				else {
-				/* ---------------- pipeline results (values) --------------- */
-				/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
-				$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-				$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-				while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
-				}
-				/* and get the result unit (due to the same MySQL bug) */
-				$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-				$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-				while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-					$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
-				}
-
-				/* load the data into a useful table */
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-					
-					$step = $row['analysis_step'];
-					$pipelinename = $row['pipeline_name'];
-					$uid = $row['uid'];
-					$subject_id = $row['subject_id'];
-					$study_id = $row['study_id'];
-					$study_num = $row['study_num'];
-					$birthdate = $row['birthdate'];
-					$gender = $row['gender'];
-					$study_datetime = $row['study_datetime'];
-					$type = $row['result_type'];
-					$size = $row['result_size'];
-					$name = $resultnames[$row['result_nameid']];
-					$name2 = $resultnames[$row['result_nameid']];
-					$unit = $resultunit[$row['result_unitid']];
-					$unit2 = $resultunit[$row['result_unitid']];
-					$text = $row['result_text'];
-					$value = $row['result_value'];
-					$filename = $row['result_filename'];
-					$swversion = $row['result_softwareversion'];
-					$important = $row['result_isimportant'];
-					$lastupdate = $row['result_lastupdate'];
-					
-					/* calculate age at scan */
-					list($year, $month, $day) = explode("-", $birthdate);
-					$d1 = mktime(0,0,0,$month,$day,$year);
-					list($year, $month, $day, $extra) = explode("-", $study_datetime);
-					$d2 = mktime(0,0,0,$month,$day,$year);
-					$ageatscan = number_format((($d2-$d1)/31536000),1);					
-					
-					if (strpos($unit,'^') !== false) {
-						$unit = str_replace('^','<sup>',$unit);
-						$unit .= '</sup>';
-					}
-					
-					switch($type) {
-						case "v": $thevalue = $value; break;
-						case "f": $thevalue = $filename; break;
-						case "t": $thevalue = $text; break;
-						case "h": $thevalue = $filename; break;
-						case "i":
-							?>
-							<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
-							<?
-							break;
-					}
-					if (substr($name, -(strlen($unit))) != $unit) {
-						$name .= " <b>$unit</b>";
-						$name2 .= " " . $row['result_unit'];
-					}
-					$tables[$uid][$name] = $thevalue;
-					$tables[$uid][$name2] = $thevalue;
-					$tables[$uid]['age'] = $ageatscan;
-					$tables[$uid]['gender'] = $gender;
-					$tables[$uid]['subjectid'] = $subject_id;
-					$tables[$uid]['studyid'] = $study_id;
-					$tables[$uid]['studynum'] = $study_num;
-					//$names[$name] = "blah";
-					if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
-					if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
-					
-					if (($thevalue > $names2[$name2]['max']) || ($names2[$name2]['max'] == "")) { $names2[$name2]['max'] = $thevalue; }
-					if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
-				}
-
-				if ($s_resultorder == "pipelinecsv") {
-					$csv = "uid,studynum,sex,age";
-					foreach ($names2 as $name2 => $blah) {
-						$csv .= ",$name2";
-					}
-					$csv .= "\n";
-					foreach ($tables as $uid => $valuepair) {
-						$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
-						foreach ($names2 as $name2 => $blah) {
-							$csv .= ',' . $tables[$uid][$name2];
-						}
-						$csv .= "\n";
-					}
-					$filename = "query" . GenerateRandomString(10) . ".csv";
-					file_put_contents("/tmp/" . $filename, $csv);
-					?>
-					<br><br>
-					<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-					Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
-					</div>
-					<?
-				}
-				else {
-				?>
-					<br><br><br><br><br>
-					<br><br><br><br><br>
-					<br><br><br><br><br>
-					<style>
-						tr.rowhover:hover { background-color: ffff96; }
-						td.tdhover:hover { background-color: yellow; }
-					</style>
-					<table cellspacing="0">
-						<tr>
-							<td>UID</td>
-							<td>Sex</td>
-							<td>Age</td>
-							<?
-							$csv = "studyid,sex,age";
-							foreach ($names as $name => $blah) {
-								$csv .= ",$name";
-								?>
-								<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$name?></span></td>
-								<?
-							}
-							$csv .= "\n";
-						?>
-						</tr>
-						<?
-							foreach ($tables as $uid => $valuepair) {
-								?>
-								<tr style="font-weight: <?=$bold?>" class="rowhover">
-									<td>
-									<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a>
-									</td>
-									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
-									<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
-									<?
-									$stats[0][$tables[$uid]['gender']]++;
-									$stats[1][] = $tables[$uid]['age'];
-									$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
-									$i=2;
-									foreach ($names as $name => $blah) {
-										$val = $tables[$uid][$name];
-										$range = $names[$name]['max'] - $names[$name]['min'];
-										if (($val > 0) && ($range > 0)) {
-											$cindex = round((($val - $names[$name]['min'])/$range)*100);
-											//echo "[$val, $range, $cindex]<br>";
-											if ($cindex > 100) { $cindex = 100; }
-										}
-										
-										if ($tables[$uid][$name] == "") {
-											$dispval = "-";
-										}
-										else {
-											$dispval = $tables[$uid][$name];
-											$stats[$i][] = $val;
-											//$stats[$i]['numintotal'] ++;
-										}
-										$csv .= ',' . $tables[$uid][$name];
-										if ($dispval != '-') {
-											if (($dispval + 0) > 10000) { $dispval = number_format($dispval,0); }
-											elseif (($dispval + 0) > 1000) { $dispval = number_format($dispval,2); }
-											else { $dispval = number_format($dispval,4); }
-										}
-									?>
-										<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <? if ($s_pipelinecolorize) { if (trim($dispval) == '-') { echo "#EEE"; } else { echo $colors[$cindex]; } } ?>"><?=$dispval;?></td>
-									<?
-										$i++;
-									}
-									$csv .= "\n";
-									?>
-								</tr>
-								<?
-							}
-							if ($s_pipelineresultstats == 1) {
-								?>
-								<tr class="rowhover">
-									<td align="right"><b>N</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;">
-									<?
-										foreach ($stats[0] as $key => $value) { echo "$key -> $value<br>"; }
-									?>
-									</td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$count = count($stats[$i]);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$count?></td><?
-									}
-									?>
-								</tr>
-								<tr class="rowhover">
-									<td align="right"><b>Min</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$min = min($stats[$i]);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$min?></td><?
-									}
-									?>
-								</tr>
-								<tr class="rowhover">
-									<td align="right"><b>Max</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$max = max($stats[$i]);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$max?></td><?
-									}
-									?>
-								</tr>
-								<tr class="rowhover">
-									<td align="right"><b>Mean</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$avg = number_format(array_sum($stats[$i])/count($stats[$i]),2);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$avg?></td><?
-									}
-									?>
-								</tr>
-								<tr class="rowhover">
-									<td align="right"><b>Median</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$median = number_format(median($stats[$i]),2);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$median?></td><?
-									}
-									?>
-								</tr>
-								<tr class="rowhover">
-									<td align="right"><b>Std Dev</b></td>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
-									<?
-									for($i=1;$i<count($stats);$i++) {
-										$stdev = number_format(sd($stats[$i]),2);
-										?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$stdev?></td><?
-									}
-									?>
-								</tr>
-								<?
-							}
-						?>
-					</table>
-					<? if ($s_pipelinecormatrix == 1) { ?>
-					<br><br><br><br>
-					<br><br><br><br>
-					<b>Correlation Matrix (r)</b><br>
-					<?
-						foreach ($names as $name => $blah) {
-							foreach ($tables as $uid => $valuepair) {
-								$lists['age'][] = $tables[$uid]['age'];
-								
-								/* this loop gets the data into an array */
-								foreach ($names as $name => $blah) {
-									$lists[$name][] = $tables[$uid][$name];
-								}
-								
-							}
-						}
-					?>
-					<table cellspacing="0">
-						<tr>
-							<td>&nbsp;</td>
-							<? foreach ($lists as $label => $vals1) { ?>
-							<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$label?></span></td>
-							<? } ?>
-						</tr>
-						<?
-							$kashi = new Kashi();
-							foreach ($lists as $label => $vals1) {
-								for ($i=0;$i<count($vals1);$i++) {
-									if ($vals1[$i] == 0) { $vals1[$i] = 0.000001; }
-								}
-								?>
-								<tr class="rowhover">
-									<td align="right" style="font-size:10pt"><?=$label?></td>
-								<?
-								foreach ($lists as $label => $vals2) {
-									$starttime1 = microtime(true);
-									/* compare vals1 to vals2 */
-									//$coeff = Correlation($vals1,$vals2);
-									for ($i=0;$i<count($vals2);$i++) {
-										if ($vals2[$i] == 0) { $vals2[$i] = 0.000001; }
-									}
-									$coeff = $kashi->cor($vals1,$vals2);
-									$coefftime = microtime(true) - $starttime1;
-									
-									$cindex = round((($coeff - (-1))/2)*100);
-									//echo "[$val, $range, $cindex]<br>";
-									if ($cindex > 100) { $cindex = 100; }
-									/* display correlation coefficient */
-									?>
-									<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <?=$colors2[$cindex]?>"><?=number_format($coeff,3);?></td>
-									<?
-									flush();
-								}
-								?>
-								</tr>
-								<?
-							}
-						?>
-					</table>
-					<?
-						}
-					}
-				}
+				SearchPipeline($result, $s_resultorder);
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
@@ -1456,6 +1055,7 @@
 				SearchQC($result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid);
 			}
 			else {
+				/* regular old search */
 				SearchDefault($result, $s, $colors, $colors2);
 			}
 		}
@@ -1484,13 +1084,12 @@
 			if (is_scalar($value)) { $$key = mysql_real_escape_string($s[$key]); }
 			else { $$key = $s[$key]; }
 		}
-	
+
 		/* ---------------- regular search --------------- */
 		$s_studymodality = strtolower($s_studymodality);
 		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
 		$result3 = MySQLQuery($sqlstring3,__FILE__,__LINE__);
 		while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
-			//$ratingseriesids[] = $row3['data_id'];
 			$ratingseriesid = $row3['data_id'];
 			$ratings[$ratingseriesid][] = $row3['rating_value'];
 		}
@@ -1501,10 +1100,10 @@
 		<input type="hidden" name="action" value="submit">
 		<?
 		
+		/* if its MRI, get the basic QC data */
 		if (strtolower($s_studymodality) == "mr") {
 			/* get the movement & SNR stats by sequence name */
 			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
-			//echo "$sqlstring2<br>";
 			$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
 			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
 				$sequence = $row2['series_sequencename'];
@@ -1531,9 +1130,17 @@
 					$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
 				} else { $pstats[$sequence]['maxstdmotion'] = 0; }
 			}
-			
-			//print_r($pstats);
 		}
+		
+		/* get a list of previously downloaded series and their dates */
+		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = '" . $_SESSION['username'] ."' and req_modality = '$s_studymodality'";
+		$result3 = MySQLQuery($sqlstring3,__FILE__,__LINE__);
+		while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
+			$req_seriesid = $row3['req_seriesid'];
+			$downloadhistory[$req_seriesid]['date'] = $row3['req_completedate'];
+			$downloadhistory[$req_seriesid]['dest'] = $row3['req_destinationtype'];
+		}
+		
 		?>
 		<? if ($s_resultorder == "table") { ?>
 		<table width="100%" class="searchresultssheet">
@@ -1584,7 +1191,7 @@
 				}
 			}
 			
-			/* BUT: while we're in this loop, count the # of unique studies ... */
+			/* BUT! while we're in this loop, count the number of unique studies ... */
 			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
 				$studies[] = $studyid;
 			}
@@ -1592,11 +1199,23 @@
 			if ((!isset($subjects)) || (!in_array($subjectid, $subjects))) {
 				$subjects[] = $subjectid;
 			}
-			/* also a unique list of UIDs */
+			/* also a unique list of UIDs ... */
 			if ((!isset($uids)) || (!in_array($uid, $uids))) {
 				$uids[] = $uid;
 			}
+			/* ... and a unique list of SubjectIDs */
+			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
+				$subjectids[] = $subjectid;
+			}
 		}
+		
+		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
+		if (($s_projectid != "") && ($s_projectid != "all")) {
+			foreach ($subjectids as $subjid) {
+				$displayids[$subjid] = GetPrimaryProjectID($subjid, $s_projectid);
+			}
+		}
+		//PrintVariable($displayids);
 		
 		/* get the measures, if requested */
 		$measurenames = null;
@@ -1610,13 +1229,7 @@
 				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjects) . ") and d.measure_name in (" . MakeSQLList($s_measurelist) . ")";
 			}
 			
-			//PrintSQL($sqlstringD);
 			$resultD = MySQLQuery($sqlstringD,__FILE__,__LINE__);
-			//echo "<pre>";
-			//print_r($sqlstringD);
-			//echo "</pre>";
-			//PrintSQLTable($resultD);
-			//$i=0;
 			while ($rowD = mysql_fetch_array($resultD, MYSQL_ASSOC)) {
 				if ($rowD['measure_type'] == 's') {
 					$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'] = $rowD['measure_valuestring'];
@@ -1626,20 +1239,15 @@
 				}
 				$measuredata[$rowD['subject_id']][$rowD['measure_name']]['notes'] = $rowD['measure_notes'];
 				$measurenames[] = $rowD['measure_name'];
-				//$i++;
 			}
 			$measurenames = array_unique($measurenames);
 			natcasesort($measurenames);
-			//echo "<pre>";
-			//print_r($measurenames);
-			//print_r($measuredata);
-			//echo "</pre>";
 		}
 		
 		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
 		if ($s['s_subjectuid'] != "") {
 			$uidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectuid']);
-			$missinguids = array_diff($uidsearchlist,$uids);
+			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
 		}
 		if ($s['s_subjectaltuid'] != "") {
 			$altuidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
@@ -1650,11 +1258,11 @@
 			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
 				$altuids[] = $rowX['altuid'];
 			}
-			$missingaltuids = array_diff($altuidsearchlist,$altuids);
+			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
 		}
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
-			$missingsubjects = array_diff($subjectids,$subjects);
+			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
 			if (count($missingstudies) > 0) {
 				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
 				$resultY = MySQLQuery($sqlstringY,__FILE__,__LINE__);
@@ -1665,8 +1273,7 @@
 		}
 		if ($s['s_studygroupid'] != "") {
 			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
-			$missingstudies = array_diff($studyids,$studies);
-			//PrintVariable($studies,'studies');
+			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
 				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
 				$resultY = MySQLQuery($sqlstringY,__FILE__,__LINE__);
@@ -1676,7 +1283,7 @@
 			}
 		}
 		?>
-		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysql_num_rows($result)?> series</b> matching your query<!-- &nbsp; &nbsp; <span class="sublabel">Query took <?=number_format($querytime, 4)?> sec to execute</span>-->
+		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysql_num_rows($result)?> series</b> matching your query
 		<?
 			if (count($missinguids) > 0) {
 			?>
@@ -1714,11 +1321,6 @@
 				</details>
 			<?
 			}
-			elseif ($uidsearchlist != '') {
-			?>
-				<br><span style="font-size:8pt">All UIDs found</span>
-			<?
-			}
 		?>
 		<br><br>
 		<?
@@ -1744,10 +1346,7 @@
 		$laststudy_id = "";
 		$headeradded = 0;
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			//echo "<pre>";
-			//print_r($row);
-			//echo "</pre>";
-			
+
 			$project_id = $row['project_id'];
 			/* if the user doesn't have view access to this project, skip to the next record */
 			if (($projectids == null) || (!in_array($project_id, $projectids))) {
@@ -1779,6 +1378,19 @@
 			$study_institution = $row['study_institution'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 
+			/* determine the displayID - in case the user wants to see the project specific IDs instead */
+			$displayid = $uid;
+			$displayidcolor = "";
+			if (($s_projectid != "") && ($s_projectid != "all")) {
+				if ($displayids[$subject_id] != "") {
+					$displayid = $displayids[$subject_id];
+					$displayidcolor = "";
+				}
+				else {
+					$displayidcolor = "red";
+				}
+			}
+			
 			/* get list of alternate subject UIDs */
 			$altuids = GetAlternateUIDs($subject_id);
 			if (count($altuids) > 0) {
@@ -1986,6 +1598,14 @@
 				if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
 			
+			/* check if this has been downloaded before */
+			if (array_key_exists($series_id, $downloadhistory)) {
+				$downloadmsg = "Series downloaded on [" . $downloadhistory[$series_id]['date'] . "] to [" . $downloadhistory[$series_id]['dest'] . "]";
+			}
+			else {
+				$downloadmsg = "";
+			}
+			
 			/* display study header if study */
 			if ($study_id != $laststudy_id) {
 				if (($s_resultorder == "study") || ($s_resultorder == "export")) {
@@ -2007,7 +1627,7 @@
 							<table width="100%" class="searchresultstudy">
 								<tr>
 									<td class="header1"><?=$name?></td>
-									<td class="header1"><a href="subjects.php?id=<?=$subject_id?>" class="header1"><?=$uid?></a></td>
+									<td class="header1"><a href="subjects.php?id=<?=$subject_id?>" class="header1" style="color: <?=$displayidcolor?>;"><?=$displayid?></a></td>
 									<td class="header3">
 										<?
 										if (mb_strlen($altuidlist) > 60) {
@@ -2087,36 +1707,36 @@
 					$csv .= "\n";
 				}
 				else {
-					if ($series_num - $lastseriesnum > 1) {
-						$firstmissing = $lastseriesnum+1;
-						$lastmissing = $series_num-1;
-						if ($firstmissing == $lastmissing) {
-							$missingmsg = $firstmissing;
-						}
-						else {
-							$missingmsg = "$firstmissing - $lastmissing";
-						}
+					//if ($series_num - $lastseriesnum > 1) {
+					//	$firstmissing = $lastseriesnum+1;
+					//	$lastmissing = $series_num-1;
+					//	if ($firstmissing == $lastmissing) {
+					//		$missingmsg = $firstmissing;
+					//	}
+					//	else {
+					//		$missingmsg = "$firstmissing - $lastmissing";
+					//	}
 						?>
-						<tr>
+						<!--<tr>
 							<td colspan="24" align="center" style="border-top: solid 1px #FF7F7F; border-bottom: solid 1px #FF7F7F; padding:3px; font-size:8pt">Non-consecutive series numbers in search results. Probably normal. Missing series <?=$missingmsg?></td>
-						</tr>
+						</tr>-->
 						<?
-					}
+					//}
 					
 				?>
 					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
 						<? if ($s_resultorder != "table") { ?>
 							<td class="<?=$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<?=$series_id?>"></td>
 						<? } ?>
-						<td class="<?=$rowstyle?>"><b><?=$series_num?></b></td>
+						<td class="<?=$rowstyle?>"><b><?=$series_num?></b><? if ($downloadmsg != "") { ?>&nbsp;&nbsp;<img src="images/downloaded.png" title="<?=$downloadmsg?>"><?} ?>
+						</td>
 						<td class="<?=$rowstyle?>">
-							<!--<a href="protocols.php?action=viewprotocol&protocol=<?=$series_desc;?>" rel="protocols.php?action=viewprotocol&protocol=<?=$series_desc;?>" class="wide cluetip-default" title="Protocol Info">-->
 							<span><? if ($s_usealtseriesdesc) { echo $series_altdesc; } else { echo $series_desc; } ?></span></a>
 							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
 							&nbsp;<a href="preview.php?image=<?=$gifthumbpath?>" class="preview"><img src="images/movie.png" border="0"></a>
 						</td>
 						<? if (($s_resultorder == "series") || ($s_resultorder == "table") || ($s_resultorder == "operations")) { ?>
-							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><?=$uid?></tt></a></td>
+							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
 							<td class="<?=$rowstyle?>"><?=$gender?></td>
 							<td class="<?=$rowstyle?>"><?=number_format($ageatscan,1)?>Y</td>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
@@ -2245,7 +1865,407 @@
 	/* -------------------------------------------- */
 	/* ------- SearchPipeline --------------------- */
 	/* -------------------------------------------- */
-	function SearchPipeline($result) {
+	function SearchPipeline($result, $s_resultorder) {
+		if ($s_pipelineresulttype == "i") {
+			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
+			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
+			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+			}
+			/* and get the result unit (due to the same MySQL bug) */
+			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
+			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
+			}
+			
+			/* ---------------- pipeline results (images) --------------- */
+			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				//PrintVariable($row,'row');
+			
+				$step = $row['analysis_step'];
+				$pipelinename = $row['pipeline_name'];
+				$uid = $row['uid'];
+				$subject_id = $row['subject_id'];
+				$gender = $row['gender'];
+				$study_id = $row['study_id'];
+				$study_num = $row['study_num'];
+				$type = $row['result_type'];
+				$size = $row['result_size'];
+				//$name = $row['result_name'];
+				$name = $resultnames[$row['result_nameid']];
+				$unit = $resultunit[$row['result_unitid']];
+				$filename = $row['result_filename'];
+				$swversion = $row['result_softwareversion'];
+				$important = $row['result_isimportant'];
+				$lastupdate = $row['result_lastupdate'];
+				
+				switch($type) {
+					case "v": $thevalue = $value; break;
+					case "f": $thevalue = $filename; break;
+					case "t": $thevalue = $text; break;
+					case "h": $thevalue = $filename; break;
+					case "i": $thevalue = $filename; break;
+				}
+				$tables["$uid$study_num"][$name] = $thevalue;
+				$tables["$uid$study_num"]['subjectid'] = $subject_id;
+				$tables["$uid$study_num"]['studyid'] = $study_id;
+				$tables["$uid$study_num"]['studynum'] = $study_num;
+				$names[$name] = "blah";
+			}
+			//PrintVariable($tables,'Tables');
+			?>
+			<table cellspacing="0" class="multicoltable">
+				<thead>
+				<tr>
+					<th>UID</th>
+					<?
+					foreach ($names as $name => $blah) {
+						?>
+						<th align="center" style="font-size:9pt"><?=$name?></th>
+						<?
+					}
+				?>
+				</tr>
+				</thead>
+				<?
+					$maximgwidth = 1200/count($names);
+					$maximgwidth -= ($maximgwidth*0.05); /* subtract 5% of image width to give a gap between them */
+					if ($maximgwidth < 100) { $maximgwidth = 100; }
+					foreach ($tables as $uid => $valuepair) {
+						?>
+						<tr style="font-weight: <?=$bold?>">
+							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
+							<?
+							foreach ($names as $name => $blah) {
+								if ($tables[$uid][$name] == "") { $dispval = "-"; }
+								else { $dispval = $tables[$uid][$name]; }
+								list($width, $height, $type, $attr) = getimagesize("/mount$filename");
+								$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
+							?>
+								<td style="padding:2px"><a href="preview.php?image=/mount<?=$dispval?>" class="preview"><img src="preview.php?image=/mount<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
+								
+							<?
+							}
+							?>
+						</tr>
+						<?
+					}
+				?>
+			</table>
+			<br><br><br><br><br><br><br><br>
+			<?
+		}
+		else {
+		/* ---------------- pipeline results (values) --------------- */
+		/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
+		$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
+		$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+		while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+		}
+		/* and get the result unit (due to the same MySQL bug) */
+		$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
+		$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+		while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
+		}
+
+		/* load the data into a useful table */
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			
+			$step = $row['analysis_step'];
+			$pipelinename = $row['pipeline_name'];
+			$uid = $row['uid'];
+			$subject_id = $row['subject_id'];
+			$study_id = $row['study_id'];
+			$study_num = $row['study_num'];
+			$birthdate = $row['birthdate'];
+			$gender = $row['gender'];
+			$study_datetime = $row['study_datetime'];
+			$type = $row['result_type'];
+			$size = $row['result_size'];
+			$name = $resultnames[$row['result_nameid']];
+			$name2 = $resultnames[$row['result_nameid']];
+			$unit = $resultunit[$row['result_unitid']];
+			$unit2 = $resultunit[$row['result_unitid']];
+			$text = $row['result_text'];
+			$value = $row['result_value'];
+			$filename = $row['result_filename'];
+			$swversion = $row['result_softwareversion'];
+			$important = $row['result_isimportant'];
+			$lastupdate = $row['result_lastupdate'];
+			
+			/* calculate age at scan */
+			list($year, $month, $day) = explode("-", $birthdate);
+			$d1 = mktime(0,0,0,$month,$day,$year);
+			list($year, $month, $day, $extra) = explode("-", $study_datetime);
+			$d2 = mktime(0,0,0,$month,$day,$year);
+			$ageatscan = number_format((($d2-$d1)/31536000),1);					
+			
+			if (strpos($unit,'^') !== false) {
+				$unit = str_replace('^','<sup>',$unit);
+				$unit .= '</sup>';
+			}
+			
+			switch($type) {
+				case "v": $thevalue = $value; break;
+				case "f": $thevalue = $filename; break;
+				case "t": $thevalue = $text; break;
+				case "h": $thevalue = $filename; break;
+				case "i":
+					?>
+					<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+					<?
+					break;
+			}
+			if (substr($name, -(strlen($unit))) != $unit) {
+				$name .= " <b>$unit</b>";
+				$name2 .= " " . $row['result_unit'];
+			}
+			$tables[$uid][$name] = $thevalue;
+			$tables[$uid][$name2] = $thevalue;
+			$tables[$uid]['age'] = $ageatscan;
+			$tables[$uid]['gender'] = $gender;
+			$tables[$uid]['subjectid'] = $subject_id;
+			$tables[$uid]['studyid'] = $study_id;
+			$tables[$uid]['studynum'] = $study_num;
+			//$names[$name] = "blah";
+			if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
+			if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
+			
+			if (($thevalue > $names2[$name2]['max']) || ($names2[$name2]['max'] == "")) { $names2[$name2]['max'] = $thevalue; }
+			if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
+		}
+
+		if ($s_resultorder == "pipelinecsv") {
+			$csv = "uid,studynum,sex,age";
+			foreach ($names2 as $name2 => $blah) {
+				$csv .= ",$name2";
+			}
+			$csv .= "\n";
+			foreach ($tables as $uid => $valuepair) {
+				$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+				foreach ($names2 as $name2 => $blah) {
+					$csv .= ',' . $tables[$uid][$name2];
+				}
+				$csv .= "\n";
+			}
+			$filename = "query" . GenerateRandomString(10) . ".csv";
+			file_put_contents("/tmp/" . $filename, $csv);
+			?>
+			<br><br>
+			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
+			Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
+			</div>
+			<?
+		}
+		else {
+		?>
+			<br><br><br><br><br>
+			<br><br><br><br><br>
+			<br><br><br><br><br>
+			<style>
+				tr.rowhover:hover { background-color: ffff96; }
+				td.tdhover:hover { background-color: yellow; }
+			</style>
+			<table cellspacing="0">
+				<tr>
+					<td>UID</td>
+					<td>Sex</td>
+					<td>Age</td>
+					<?
+					$csv = "studyid,sex,age";
+					foreach ($names as $name => $blah) {
+						$csv .= ",$name";
+						?>
+						<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$name?></span></td>
+						<?
+					}
+					$csv .= "\n";
+				?>
+				</tr>
+				<?
+					foreach ($tables as $uid => $valuepair) {
+						?>
+						<tr style="font-weight: <?=$bold?>" class="rowhover">
+							<td>
+							<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a>
+							</td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
+							<?
+							$stats[0][$tables[$uid]['gender']]++;
+							$stats[1][] = $tables[$uid]['age'];
+							$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+							$i=2;
+							foreach ($names as $name => $blah) {
+								$val = $tables[$uid][$name];
+								$range = $names[$name]['max'] - $names[$name]['min'];
+								if (($val > 0) && ($range > 0)) {
+									$cindex = round((($val - $names[$name]['min'])/$range)*100);
+									//echo "[$val, $range, $cindex]<br>";
+									if ($cindex > 100) { $cindex = 100; }
+								}
+								
+								if ($tables[$uid][$name] == "") {
+									$dispval = "-";
+								}
+								else {
+									$dispval = $tables[$uid][$name];
+									$stats[$i][] = $val;
+									//$stats[$i]['numintotal'] ++;
+								}
+								$csv .= ',' . $tables[$uid][$name];
+								if ($dispval != '-') {
+									if (($dispval + 0) > 10000) { $dispval = number_format($dispval,0); }
+									elseif (($dispval + 0) > 1000) { $dispval = number_format($dispval,2); }
+									else { $dispval = number_format($dispval,4); }
+								}
+							?>
+								<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <? if ($s_pipelinecolorize) { if (trim($dispval) == '-') { echo "#EEE"; } else { echo $colors[$cindex]; } } ?>"><?=$dispval;?></td>
+							<?
+								$i++;
+							}
+							$csv .= "\n";
+							?>
+						</tr>
+						<?
+					}
+					if ($s_pipelineresultstats == 1) {
+						?>
+						<tr class="rowhover">
+							<td align="right"><b>N</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;">
+							<?
+								foreach ($stats[0] as $key => $value) { echo "$key -> $value<br>"; }
+							?>
+							</td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$count = count($stats[$i]);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$count?></td><?
+							}
+							?>
+						</tr>
+						<tr class="rowhover">
+							<td align="right"><b>Min</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$min = min($stats[$i]);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$min?></td><?
+							}
+							?>
+						</tr>
+						<tr class="rowhover">
+							<td align="right"><b>Max</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$max = max($stats[$i]);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$max?></td><?
+							}
+							?>
+						</tr>
+						<tr class="rowhover">
+							<td align="right"><b>Mean</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$avg = number_format(array_sum($stats[$i])/count($stats[$i]),2);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$avg?></td><?
+							}
+							?>
+						</tr>
+						<tr class="rowhover">
+							<td align="right"><b>Median</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$median = number_format(median($stats[$i]),2);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$median?></td><?
+							}
+							?>
+						</tr>
+						<tr class="rowhover">
+							<td align="right"><b>Std Dev</b></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"></td>
+							<?
+							for($i=1;$i<count($stats);$i++) {
+								$stdev = number_format(sd($stats[$i]),2);
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$stdev?></td><?
+							}
+							?>
+						</tr>
+						<?
+					}
+				?>
+			</table>
+			<? if ($s_pipelinecormatrix == 1) { ?>
+			<br><br><br><br>
+			<br><br><br><br>
+			<b>Correlation Matrix (r)</b><br>
+			<?
+				foreach ($names as $name => $blah) {
+					foreach ($tables as $uid => $valuepair) {
+						$lists['age'][] = $tables[$uid]['age'];
+						
+						/* this loop gets the data into an array */
+						foreach ($names as $name => $blah) {
+							$lists[$name][] = $tables[$uid][$name];
+						}
+						
+					}
+				}
+			?>
+			<table cellspacing="0">
+				<tr>
+					<td>&nbsp;</td>
+					<? foreach ($lists as $label => $vals1) { ?>
+					<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$label?></span></td>
+					<? } ?>
+				</tr>
+				<?
+					$kashi = new Kashi();
+					foreach ($lists as $label => $vals1) {
+						for ($i=0;$i<count($vals1);$i++) {
+							if ($vals1[$i] == 0) { $vals1[$i] = 0.000001; }
+						}
+						?>
+						<tr class="rowhover">
+							<td align="right" style="font-size:10pt"><?=$label?></td>
+						<?
+						foreach ($lists as $label => $vals2) {
+							$starttime1 = microtime(true);
+							/* compare vals1 to vals2 */
+							//$coeff = Correlation($vals1,$vals2);
+							for ($i=0;$i<count($vals2);$i++) {
+								if ($vals2[$i] == 0) { $vals2[$i] = 0.000001; }
+							}
+							$coeff = $kashi->cor($vals1,$vals2);
+							$coefftime = microtime(true) - $starttime1;
+							
+							$cindex = round((($coeff - (-1))/2)*100);
+							//echo "[$val, $range, $cindex]<br>";
+							if ($cindex > 100) { $cindex = 100; }
+							/* display correlation coefficient */
+							?>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <?=$colors2[$cindex]?>"><?=number_format($coeff,3);?></td>
+							<?
+							flush();
+						}
+						?>
+						</tr>
+						<?
+					}
+				?>
+			</table>
+			<?
+				}
+			}
+		}
 	}
 
 	
@@ -2614,15 +2634,20 @@
 			$resultvalue = $row['result_value'];
 			
 			$series[] = $resultname;
-			# exclude anyone under 0yr or over 100yrs
-			if (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) {
-				$longs[$age][$resultname][] = $resultvalue;
-			}
 			
-			$exportdata[$resultname][$encuid]['age'] = $age;
-			$exportdata[$resultname][$encuid]['value'] = $resultvalue;
-			$exportdata[$resultname][$encuid]['sex'] = $sex;
-			$i++;
+			# exclude anyone out of the age range and not M or F
+			if ( (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) && (($sex == "M") || ($sex == "F")) ) {
+				$longs[$age][$resultname][] = $resultvalue;
+		
+				$exportdata[$resultname][$encuid]['age'] = $age;
+				$exportdata[$resultname][$encuid]['value'] = $resultvalue;
+				$exportdata[$resultname][$encuid]['sex'] = $sex;
+				
+				$exportdata2[$encuid][$resultname]['age'] = $age;
+				$exportdata2[$encuid][$resultname]['value'] = $resultvalue;
+				$exportdata2[$encuid][$resultname]['sex'] = $sex;
+				$i++;
+			}
 		}
 		$series = array_unique($series);
 		sort($series);
@@ -2630,7 +2655,7 @@
 		ksort($longs);
 		
 		//echo "<pre>";
-		//print_r($exportdata);
+		//print_r($exportdata2);
 		//echo "</pre>";
 		//exit(0);
 		
@@ -2704,40 +2729,60 @@
 		}
 		
 		$csv = "ID, age, sex, ROI, value\n";
-		
 		foreach ($exportdata as $resultid => $subject) {
 			foreach ($subject as $uid => $values) {
 				$age = $values['age'];
 				$sex = strtoupper($values['sex']);
 				$value = $values['value'];
-				// weed out non male/female sexes, and people with odd ages
-				if ( (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) && (($sex == "M") || ($sex == "F")) ) {
-					$csv .= "$uid, $age, $sex, $resultid, $value\n";
-				}
+				$csv .= "$uid, $age, $sex, $resultid, $value\n";
 				$exportdatacombined[$uid]['age'] = $age;
 				$exportdatacombined[$uid]['value'] += $value;
 				$exportdatacombined[$uid]['sex'] = $sex;
 			}
 		}
 		?>
-		</table>
+		
 		<br>
 		Full table .csv (collapsed by UID)<br>
 		<textarea rows="8" cols="150"><?=$csv?></textarea>
+		
+		
+		<?
+		$csv3 = "ID, age, sex";
+		reset($exportdata2);
+		$key = key($exportdata2);
+		$rois = $exportdata2[$key];
+		foreach ($rois as $roi => $val) {
+			$csv3 .= ", $roi";
+		}
+		$csv3 .= "\n";
+		foreach ($exportdata2 as $uid => $values) {
+			$k = key($values);
+			$age = $values[$k]['age'];
+			$sex = strtoupper($values[$k]['sex']);
+			$csv3 .= "$uid, $age, $sex";
+			reset($values);
+			foreach ($values as $vals) {
+				$val = $vals['value'];
+				$csv3 .= ", $val";
+			}
+			$csv3 .= "\n";
+		}
+		?>
+		
+		<br>
+		Full table .csv (one UID per row, with ICV)<br>
+		<textarea rows="8" cols="150"><?=$csv3?></textarea>
+
 		<?
 		$csv2 = "ID, age, sex, value\n";
-		
 		foreach ($exportdatacombined as $uid => $values) {
 			$age = $values['age'];
 			$sex = strtoupper($values['sex']);
 			$value = $values['value'];
-			// weed out non male/female sexes, and people with odd ages
-			if ( (($age >= $agecutoffmin) && ($age <= $agecutoffmax)) && (($sex == "M") || ($sex == "F")) ) {
-				$csv2 .= "$uid, $age, $sex, $value\n";
-			}
+			$csv2 .= "$uid, $age, $sex, $value\n";
 		}
 		?>
-		</table>
 		<br>
 		Full table .csv (collapsed by UID, and combined regions: eg. right + left = total volume)<br>
 		<textarea rows="8" cols="150"><?=$csv2?></textarea>
@@ -3240,6 +3285,7 @@
 														<br>
 														<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
 														<select name="remoteconnid" class="remotenidb">
+															<option value="">(Select connection)</option>
 															<?
 																$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
 																$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
@@ -3798,6 +3844,7 @@
 					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
 						$resultnames[] = $rowX['resultname_id'];
 					}
+					$resultnames[] = 5429; /* hack... to always include ICV */
 					$resultnamelist = implode2(',',$resultnames);
 					$sqlwhere .= " and `analysis_results`.`result_nameid` in ($resultnamelist) ";
 				}
@@ -4512,6 +4559,20 @@
 			$newparts[] = $part;
 		}
 		return implode2(" or ", $newparts);
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- remove_outliers -------------------- */
+	/* -------------------------------------------- */
+	/* Function to remove outliers more than X stdev from the mean
+	   X default of 1 */
+	function remove_outliers($dataset, $magnitude = 1) {
+		$count = count($dataset);
+		$mean = array_sum($dataset) / $count; // Calculate the mean
+		$deviation = sqrt(array_sum(array_map("sd_square", $dataset, array_fill(0, $count, $mean))) / $count) * $magnitude; // Calculate standard deviation and times by magnitude
+
+		return array_filter($dataset, function($x) use ($mean, $deviation) { return ($x <= $mean + $deviation && $x >= $mean - $deviation); }); // Return filtered array of values that lie within $mean +- $deviation.
 	}
 	
 	/* -------------------------------------------- */

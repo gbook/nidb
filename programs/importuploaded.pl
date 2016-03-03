@@ -114,7 +114,7 @@ sub DoImportUploaded {
 	# get list of pending uploads
 	my $sqlstring = "select * from import_requests where import_status = 'pending'";
 	WriteLog("[$sqlstring]");
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			my $importrequest_id = $row{'importrequest_id'};
@@ -131,7 +131,7 @@ sub DoImportUploaded {
 			}
 	
 			my $sqlstringA = "update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = $importrequest_id";
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			
 			my $uploaddir;
 			
@@ -148,14 +148,19 @@ sub DoImportUploaded {
 				}
 				while (my $file = readdir(DIR)) {
 					#WriteLog($file);
-					if ((trim($file) ne '.') && (trim($file) ne '..')) {
+					if (-f "$uploaddir/$file") {
 						push(@files,$file);
 					}
 				}
 				closedir(DIR);
 				my $numfiles = $#files + 1;
 				WriteLog("Found $numfiles files in $uploaddir");
-					
+				if ($numfiles < 1) {
+					my $sqlstringB = "update import_requests set import_status = 'error', import_message = 'No files found' where importrequest_id = $importrequest_id";
+					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+					next;
+				}
+				
 				# go through the files
 				foreach my $file(@files) {
 					my $filepath = "$uploaddir/$file";
@@ -230,7 +235,7 @@ sub DoImportUploaded {
 					next;
 				}
 				while (my $file = readdir(DIR)) {
-					if ((trim($file) ne '.') && (trim($file) ne '..')) {
+					if (-f "$uploaddir/$file") {
 						WriteLog("Found [$file]");
 						push(@files,$file);
 					}
@@ -238,17 +243,19 @@ sub DoImportUploaded {
 				closedir(DIR);
 				my $numfiles = $#files + 1;
 				WriteLog("Found $numfiles files in $uploaddir");
+				if ($numfiles < 1) {
+					my $sqlstringB = "update import_requests set import_status = 'error', import_message = 'No files found' where importrequest_id = $importrequest_id";
+					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+					next;
+				}
 				
 				# go through the files
 				foreach my $file(@files) {
 					my $filepath = "$uploaddir/$file";
-					#PreparePARREC($importrequest_id,$filepath,$anonymize);
 					WriteLog("Attempting mkpath(". $cfg{'incomingdir'} . "/$importrequest_id)");
-					#WriteLog("[Long Listing 1] " . `ls -l $filepath`);
 					mkpath("$cfg{'incomingdir'}/$importrequest_id",0777);
 					my $systemstring = "touch $filepath; mv -v $filepath $cfg{'incomingdir'}/$importrequest_id/";
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-					#WriteLog("[Long Listing 2] " . `ls -l $cfg{'incomingdir'}/$importrequest_id/$file`);
 				}
 			}
 			else {
@@ -256,7 +263,7 @@ sub DoImportUploaded {
 			}
 			
 			my $sqlstringB = "update import_requests set import_status = 'received' where importrequest_id = $importrequest_id";
-			my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+			my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 			
 			# delete the uploaded directory
 			WriteLog("Attempting to remove [$uploaddir]...");
@@ -272,18 +279,7 @@ sub DoImportUploaded {
 	else {
 		WriteLog("No rows in import_requests found");
 	}
-	
-	#return 1;
 
-	#my $i;
-	#if ($i > 0) {
-	#	WriteLog("Finished extracting data");
-	#	$ret = 1;
-	#}
-	#else {
-	#	WriteLog("Nothing to do");
-	#}
-	
 	# update the stop time
 	SetModuleStopped();
 	

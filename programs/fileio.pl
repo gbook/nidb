@@ -309,7 +309,7 @@ sub CopyAnalysis() {
 		if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); return "studynum was blank"; }
 		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); return "Pipelinename was blank"; }
 
-		my $datapath = $cfg{'mountdir'} . $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
+		my $datapath = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
 
 		$destination = "$destination/$uid$studynum";
 		if (-e $destination) {

@@ -2424,7 +2424,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$pipeline_level = $row['pipeline_level'];
 		$pipeline_version = $row['pipeline_version'];
 	
-		//$urllist['Analysis'] = "analysis.php";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "pipelines.php?action=viewanalyses&id=$id";
@@ -2438,9 +2437,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
-		//echo "<pre>";
-		//print_r($colors);
-		//echo "</pre>";
 		
 		/* run the sql query here to get the row count */
 		$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
@@ -2451,12 +2447,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		?>
 		<div id="dialogbox" title="Dialog Box" style="display:none;">Loading...</div>
 		<script type="text/javascript">
-			//$(document).ready(function() {
-			//	$(".fancybox").fancybox();
-			//});
-		</script>
-		<script type="text/javascript">
-		//$(document).ready(function() {
 		$(function() {
 			$("#studiesall").click(function() {
 				var checked_status = this.checked;
@@ -3826,29 +3816,8 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		
 		//return $info;
 	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- find_all_files --------------------- */
-	/* -------------------------------------------- */
-	function find_all_files($dir) 
-	{ 
-		$root = scandir($dir); 
-		foreach($root as $value) 
-		{ 
-			if($value === '.' || $value === '..') {continue;} 
-			if(is_file("$dir/$value")) {$result[]="$dir/$value";continue;}
-			if (is_array(find_all_files("$dir/$value"))) {
-				foreach(find_all_files("$dir/$value") as $value)
-				{
-					$result[]=$value; 
-				}
-			}
-		} 
-		return $result; 
-	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplayJob ------------------------- */
 	/* -------------------------------------------- */

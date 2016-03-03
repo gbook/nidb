@@ -624,10 +624,12 @@
 									<? } ?>
 									<th>UID</th>
 									<? if ($columns != "min") { ?>
-									<th>Age<br><span class="tiny">at study</span></th>
+									<th>Age<br><span class="tiny">header</span></th>
+									<th>Age<br><span class="tiny">computed</span></th>
 									<th>Sex</th>
 									<th>Ethnicities</th>
 									<th>SubGroup</th>
+									<th>VisitType</th>
 									<th>Weight</th>
 									<th>Handedness</th>
 									<th>Education</th>
@@ -672,6 +674,8 @@
 							$studysite = $row['study_site'];
 							$studyinstitution = $row['study_institution'];
 							$studynotes = $row['study_notes'];
+							$studyvisittype = $row['study_type'];
+							$studyweight = $row['study_weight'];
 							$subgroup = $row['enroll_subgroup'];
 							
 							$itemid = $row['subjectgroup_id'];
@@ -711,13 +715,15 @@
 								<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 								<? if ($columns != "min") { ?>
 								<? if ($age <= 0) {$color = "red";} else {$color="black";} ?>
+								<td style="color:<?=$color?>"><?=number_format($studyageatscan,1)?>Y</td>
 								<td style="color:<?=$color?>"><?=number_format($age,1)?>Y</td>
 								<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
 								<td style="color:<?=$color?>"><?=$gender?></td>
 								<td style="font-size:8pt"><?=$ethnicity1?> <?=$ethnicity2?></td>
 								<td style="font-size:8pt"><?=$subgroup?></td>
-								<? if ($weight <= 0) {$color = "red";} else {$color="black";} ?>
-								<td style="color:<?=$color?>"><?=number_format($weight,1)?>kg</td>
+								<td style="font-size:8pt"><?=$studyvisittype?></td>
+								<? if ($studyweight <= 0) {$color = "red";} else {$color="black";} ?>
+								<td style="color:<?=$color?>"><?=number_format($studyweight,1)?>kg</td>
 								<td><?=$handedness?></td>
 								<td><?=$education?></td>
 								<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
@@ -970,6 +976,9 @@
 		$studylist = array_filter($studylist);
 		$studies = implode(",",$studylist);
 		
+		if (trim($studies) == "") {
+			return;
+		}
 		$sqlstring = "SELECT series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols, count(*) 'count' FROM `mr_series` where study_id in ($studies) and is_derived <> 1 group by series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols";
 		//PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);

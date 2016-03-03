@@ -426,6 +426,7 @@
 					<th>Modality</th>
 					<th>Start Date</th>
 					<th>Status</th>
+					<th>Message</th>
 					<th>End Date</th>
 					<th>Equipment</th>
 					<th>Site</th>
@@ -470,61 +471,77 @@
 			}
 			
 			switch ($import_status) {
-				case 'uploading':
+				case 'uploading': # Uploading
 					$step1color = "#000"; $step1weight = "bold";
-					$step2color = "#888"; $step2weight = "normal";
-					$step3color = "#888"; $step3weight = "normal";
-					$step4color = "#888"; $step4weight = "normal";
-					$step5color = "#888"; $step5weight = "normal";
-					$step6color = "#888"; $step6weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
-				case 'pending':
-					$step1color = "#888"; $step1weight = "normal";
+				case 'pending': # Uploaded
+					$step1color = "#999"; $step1weight = "normal";
 					$step2color = "#000"; $step2weight = "bold";
-					$step3color = "#888"; $step3weight = "normal";
-					$step4color = "#888"; $step4weight = "normal";
-					$step5color = "#888"; $step5weight = "normal";
-					$step6color = "#888"; $step6weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
-				case 'receiving':
-					$step1color = "#888"; $step1weight = "normal";
-					$step2color = "#888"; $step2weight = "normal";
+				case 'receiving': # Checking
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
 					$step3color = "#000"; $step3weight = "bold";
-					$step4color = "#888"; $step4weight = "normal";
-					$step5color = "#888"; $step5weight = "normal";
-					$step6color = "#888"; $step6weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
-				case 'received':
-					$step1color = "#888"; $step1weight = "normal";
-					$step2color = "#888"; $step2weight = "normal";
-					$step3color = "#888"; $step3weight = "normal";
+				case 'received': # Checked
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
 					$step4color = "#000"; $step4weight = "bold";
-					$step5color = "#888"; $step5weight = "normal";
-					$step6color = "#888"; $step6weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
-				case 'archiving':
-					$step1color = "#888"; $step1weight = "normal";
-					$step2color = "#888"; $step2weight = "normal";
-					$step3color = "#888"; $step3weight = "normal";
-					$step4color = "#888"; $step4weight = "normal";
+				case 'archiving': # Archiving
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
 					$step5color = "#000"; $step5weight = "bold";
-					$step6color = "#888"; $step6weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
-				case 'archived':
-					$step1color = "#888"; $step1weight = "normal";
-					$step2color = "#888"; $step2weight = "normal";
-					$step3color = "#888"; $step3weight = "normal";
-					$step4color = "#888"; $step4weight = "normal";
-					$step5color = "#888"; $step5weight = "normal";
+				case 'archived': # Archived
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
 					$step6color = "#000"; $step6weight = "bold";
+					$step7color = "#999"; $step7weight = "normal";
+					break;
+				case 'error': # Error
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#f22"; $step7weight = "bold";
 					break;
 				default:
-					$step1color = "#ccc"; $step1weight = "normal";
-					$step2color = "#ccc"; $step2weight = "normal";
-					$step3color = "#ccc"; $step3weight = "normal";
-					$step4color = "#ccc"; $step4weight = "normal";
-					$step5color = "#ccc"; $step5weight = "normal";
-					$step6color = "#ccc"; $step6weight = "normal";
+					$step1color = "#999"; $step1weight = "normal";
+					$step2color = "#999"; $step2weight = "normal";
+					$step3color = "#999"; $step3weight = "normal";
+					$step4color = "#999"; $step4weight = "normal";
+					$step5color = "#999"; $step5weight = "normal";
+					$step6color = "#999"; $step6weight = "normal";
+					$step7color = "#999"; $step7weight = "normal";
 					break;
 			}
 			
@@ -544,8 +561,9 @@
 				<td><?=$import_modality?></td>
 				<td style="font-size:8pt"><?=$import_startdate?></td>
 				<td style="font-size:8pt">
-					<span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span>
+					<span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span>&nbsp;&nbsp;&nbsp;<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
 				</td>
+				<td><?=$import_message?></td>
 				<td style="font-size:8pt"><?=$import_enddate?></td>
 				<td><?=$import_equipment?></td>
 				<td style="font-size:8pt"><?=$sitename?></td>

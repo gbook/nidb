@@ -467,10 +467,13 @@
 	/* -------------------------------------------- */
 	/* ------- GetAlternateUIDs ------------------- */
 	/* -------------------------------------------- */
-	function GetAlternateUIDs($subjectid, $enrollmentid) {
+	function GetAlternateUIDs($subjectid, $enrollmentid=0) {
+		
+		if ($subjectid == "") {
+			return "";
+		}
 	
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
-		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$isprimary = $row['isprimary'];
@@ -483,6 +486,23 @@
 		}
 		
 		return $altuids;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetPrimaryProjectID ---------------- */
+	/* -------------------------------------------- */
+	function GetPrimaryProjectID($subjectid, $projectid) {
+	
+		if (($subjectid == "") || ($projectid == "")) {
+			return "";
+		}
+		
+		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = (select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid) order by isprimary desc limit 1";
+		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		//PrintSQL($sqlstring);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		return $row['altuid'];
 	}
 
 	
@@ -548,18 +568,18 @@
 		if ($displayaccess) {
 			if ($phiaccess) {
 				if ($dataaccess) {
-					$accessmessage = "<b>Data</b> and <b>PHI</b> access";
+					$accessmessage = "<b>Data</b> and <b>PHI</b> permissions";
 				}
 				else {
-					$accessmessage = "<b>PHI</b> access";
+					$accessmessage = "<b>PHI</b> permissions";
 				}
 			}
 			else {
 				if ($dataaccess) {
-					$accessmessage = "<b>Data</b> access";
+					$accessmessage = "<b>Data</b> permissions";
 				}
 				else {
-					$accessmessage = "No <b>data</b> or <b>PHI</b> access";
+					$accessmessage = "No <b>data</b> or <b>PHI</b> permissions";
 				}
 			}
 			
@@ -582,7 +602,10 @@
 		?>
 		<details style="font-size:8pt; margin-left:15px; color: #666666">
 		<summary><?=$accessmessage?></summary>
+		<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
+		You have access permission to this subject through the following projects
 		<?=$projectlist?>
+		</div>
 		</details>
 		<?
 		}

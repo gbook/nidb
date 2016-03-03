@@ -174,7 +174,7 @@ sub ParseDirectory {
 		$importStatus = $row{'import_status'};
 		
 		#if (($importStatus ne 'complete') && ($importStatus ne "")) {
-		if (($importStatus eq 'complete') || ($importStatus eq "") || ($importStatus eq "received")) { }
+		if (($importStatus eq 'complete') || ($importStatus eq "") || ($importStatus eq "received") || ($importStatus eq "error")) { }
 		else {
 			WriteLog("This import is not complete. Status is [$importStatus]. Skipping.");
 			# cleanup so this import can continue another time
@@ -192,6 +192,7 @@ sub ParseDirectory {
 	my $ret = 0;
 	my $i = 0;
 	my $problem = 0;
+	my $iscomplete = 0;
 
 	# ----- parse all files in /incoming -----
 	opendir(DIR,$dir) || Error("Cannot open directory [$dir]!\n");
@@ -304,7 +305,6 @@ sub ParseDirectory {
 	$Data::Dumper::Sortkeys = 1;
 	#WriteLog("dicomfiles: " . Dumper(\%dicomfiles) );
 	
-	my $iscomplete = 0;
 	# go through the %dicomfiles hash by SERIES. ignore any series that are unfinished
 	foreach my $institute (keys %dicomfiles) {
 		foreach my $equip (keys %{$dicomfiles{$institute}}) {
@@ -944,8 +944,8 @@ sub InsertSeries {
 		my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
 	}
 	# if any of the DICOM fields were populated, use those instead
-	if ($ImagesInAcquisition > 0) { $zsize = $ImagesInAcquisition; }
-	if ($NumberOfTemporalPositions > 0) { $boldreps = $NumberOfTemporalPositions; }
+	if (($ImagesInAcquisition ne "") && ($ImagesInAcquisition > 0)) { $zsize = $ImagesInAcquisition; }
+	if (($NumberOfTemporalPositions ne "") && ($NumberOfTemporalPositions > 0)) { $boldreps = $NumberOfTemporalPositions; }
 	
 	# insert or update the series based on modality
 	my $dbModality;
@@ -1995,6 +1995,10 @@ sub CreateThumbnail {
 	my $numdcmfiles = @dcmfiles;
 	my $dcmfile = $dcmfiles[int($numdcmfiles/2)];
 	my $outfile = "$dir/thumb.png";
+
+	if ($numdcmfiles < 1) {
+		return;
+	}
 	$systemstring = "convert -normalize $dir/dicom/$dcmfile $outfile";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 
