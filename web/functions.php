@@ -522,6 +522,36 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- mysql_real_escape_array ------------ */
+	/* -------------------------------------------- */
+	function mysql_real_escape_array ($a) {
+		return array_map ("mysql_real_escape_string",$a); 
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- isInteger -------------------------- */
+	/* -------------------------------------------- */
+	function isInteger($input){
+		return(ctype_digit(strval($input)));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- arraystats ------------------------- */
+	/* -------------------------------------------- */
+	function arraystats ($a) {
+		$n = count($a);
+		$min = min($a);
+		$max = max($a);
+		$mean = array_sum($a)/$n;
+		$stdev = sd($a);
+		
+		return array($n, $min, $max, $mean, $stdev);
+	}
+	
+	
+	/* -------------------------------------------- */
 	/* ------- UpdateMostRecent ------------------- */
 	/* -------------------------------------------- */
 	function UpdateMostRecent($userid, $subjectid, $studyid) {
@@ -1041,6 +1071,17 @@
 		return $result; 
 	}
 
+	
+	// Function to calculate square of value - mean
+	function sd_square($x, $mean) { return pow($x - $mean,2); }
+
+	
+	// Function to calculate standard deviation (uses sd_square)    
+	function sd($array) {
+		// square root of sum of squares devided by N-1
+		return sqrt(array_sum(array_map("sd_square", $array, array_fill(0,count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
+	}
+	
 	
 	function natksort($array) {
 		// Like ksort but uses natural sort instead

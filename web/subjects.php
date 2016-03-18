@@ -1396,7 +1396,6 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 
-		//print_r($row);
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -2387,11 +2386,11 @@
 				<td>
 				<? if ($phiaccess) { ?>
 					<select name="smokingstatus">
-						<option value="" <? if ($maritalstatus == "") echo "selected"; ?>>(Select a status)</option>
-						<option value="unknown" <? if ($maritalstatus == "unknown") echo "selected"; ?>>Unknown</option>
-						<option value="never" <? if ($maritalstatus == "never") echo "selected"; ?>>Never</option>
-						<option value="past" <? if ($maritalstatus == "past") echo "selected"; ?>>Past</option>
-						<option value="current" <? if ($maritalstatus == "current") echo "selected"; ?>>Current</option>
+						<option value="" <? if ($smokingstatus == "") echo "selected"; ?>>(Select a status)</option>
+						<option value="unknown" <? if ($smokingstatus == "unknown") echo "selected"; ?>>Unknown</option>
+						<option value="never" <? if ($smokingstatus == "never") echo "selected"; ?>>Never</option>
+						<option value="past" <? if ($smokingstatus == "past") echo "selected"; ?>>Past</option>
+						<option value="current" <? if ($smokingstatus == "current") echo "selected"; ?>>Current</option>
 					</select>
 				<? } else { ?>
 				<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">

@@ -264,6 +264,13 @@ sub QA() {
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			
+			# get image dimensions
+			my $dimN = trim(`fslval $tmpdir/4D.nii dim0`);
+			my $dimX = trim(`fslval $tmpdir/4D.nii dim1`);
+			my $dimY = trim(`fslval $tmpdir/4D.nii dim2`);
+			my $dimZ = trim(`fslval $tmpdir/4D.nii dim3`);
+			my $dimT = trim(`fslval $tmpdir/4D.nii dim4`);
+			
 			if (-e "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz") {
 				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png does not exist, attempting to create it");
 				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tmean.png";
@@ -375,6 +382,11 @@ sub QA() {
 			my $sqlstringC = "update mr_qa set mrseries_id = $seriesid, io_snr = '$iosnr', pv_snr = '$pvsnr', move_minx = '$mintx', move_miny = '$minty', move_minz = '$mintz', move_maxx = '$maxtx', move_maxy = '$maxty', move_maxz = '$maxtz', acc_minx = '$minax', acc_miny = '$minay', acc_minz = '$minaz', acc_maxx = '$maxax', acc_maxy = '$maxay', acc_maxz = '$maxaz', rot_minp = '$minrx', rot_minr = '$minry', rot_miny = '$minrz', rot_maxp = '$maxrx', rot_maxr = '$maxry', rot_maxy = '$maxrz', motion_rsq = '$motion_rsq', cputime = $cputime where mrqa_id = $mrqaid";
 			WriteLog("[$sqlstringC]");
 			my $resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
+			
+			# also update the mr_series table with the image dimensions
+			$sqlstringC = "update mr_series set dimN = '$dimN', dimX = '$dimX', dimY = '$dimY', dimZ = '$dimZ', dimT = '$dimT' where mrseries_id = $seriesid";
+			WriteLog("[$sqlstringC]");
+			$resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
 			
 			# only process 5 before exiting the script. Since the script always starts with the newest when it first runs,
 			# this will allow newly collect studies a chance to be QC'd if there is a backlog of old studies

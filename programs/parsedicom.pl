@@ -323,9 +323,9 @@ sub ParseDirectory {
 										# we know these files are part of a complete series
 										# unique to the institution, equipment, modality, patient, DOB, sex, studydatetime, series...
 										# so send them forth
-										my $ret = InsertSeries($importRowID, @files);
+										my $ret = InsertDICOM($importRowID, @files);
 										if ($ret ne "") {
-											WriteLog("InsertSeries($importRowID, ...) failed: [$ret]");
+											WriteLog("InsertDICOM($importRowID, ...) failed: [$ret]");
 										}
 										else {
 											$iscomplete = 1;
@@ -466,12 +466,12 @@ sub ParseDICOMFile {
 
 
 # ----------------------------------------------------------
-# --------- InsertSeries -----------------------------------
+# --------- InsertDICOM -----------------------------------
 # ----------------------------------------------------------
-sub InsertSeries {
+sub InsertDICOM {
 	my ($importRowID, @files) = @_;
 
-	WriteLog("Inside InsertSeries() with [" . scalar @files . "] files");
+	WriteLog("Inside InsertDICOM() with [" . scalar @files . "] files");
 	
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
@@ -573,6 +573,12 @@ sub InsertSeries {
 	my $EchoTime = trim($info->{'EchoTime'});
 	my $AcquisitionMatrix = trim($info->{'AcquisitionMatrix'});
 	my $InPlanePhaseEncodingDirection = EscapeMySQLString(trim($info->{'InPlanePhaseEncodingDirection'}));
+	my $InversionTime = trim($info->{'InversionTime'});
+	my $PercentSampling = trim($info->{'PercentSampling'});
+	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'});
+	my $PixelBandwidth = trim($info->{'PixelBandwidth'});
+	my $SpacingBetweenSlices = trim($info->{'SpacingBetweenSlices'});
+	my $EchoTrainLength = trim($info->{'EchoTrainLength'});
 	
 	# attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header
 	my $PhaseEncodeAngle = "";
@@ -958,7 +964,7 @@ sub InsertSeries {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'mrseries_id'};
 			
-			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete' where mrseries_id = $seriesRowID";
+			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete' where mrseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			WriteLog("This MR series [$SeriesNumber] exists, updating");
 			$IL_seriescreated = 0;
@@ -988,7 +994,7 @@ sub InsertSeries {
 		else {
 			
 			# create seriesRowID if it doesn't exist
-			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname')";
+			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$InversionTime', '$PercentSampling', '$PercentPhaseFieldOfView', '$AcquisitionMatrix', '$SliceThickness', '$SpacingBetweenSlices', '$PixelBandwidth', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname', now())";
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
@@ -1638,7 +1644,7 @@ sub InsertParRec {
 	}
 	else {
 		# create seriesRowID if it doesn't exist
-		$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_sequencename, series_num, series_tr, series_te, series_flip, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, bold_reps, numfiles, data_type, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', $boldreps, '$numfiles', 'parrec', 'complete', 'parsedicom.pl')";
+		$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_sequencename, series_num, series_tr, series_te, series_flip, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, bold_reps, numfiles, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', $boldreps, '$numfiles', 'parrec', 'complete', 'parsedicom.pl', now())";
 		WriteLog("[$sqlstring]");
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;

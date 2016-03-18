@@ -1627,15 +1627,15 @@
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
 								<?
 								if ($data_type == "dicom") {
-									//$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
-									//$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
-									//$dcmfile = $dicoms[0];
-									//if (file_exists($dcmfile)) {
+									$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
+									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
+									$dcmfile = $dicoms[0];
+									if (file_exists($dcmfile)) {
 										?><a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a><?
-									//}
-									//else {
-									//	?><!--<span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span>--><?
-									//}
+									}
+									else {
+										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?
+									}
 								} else {
 									echo $series_desc;
 								}

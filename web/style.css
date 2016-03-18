@@ -298,9 +298,9 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 /* 2 column table (small table with 2 columns: variable, value)*/
 .twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; }
-.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
-.twocoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
-.twocoltable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
+.twocoltable>thead>tr>th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
+.twocoltable td.left { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.twocoltable td.right { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
@@ -367,6 +367,10 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 
 .adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; }
 .adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
+
+/* for links appearing as buttons */
+.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff; padding: 2px 8px; margin: 2px; }
+.linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff; text-decoration: none; }
 
 /* form entry table */
 table.formentrytable { width: 100%; border: 2px solid #666; padding: 8px; }
@@ -570,4 +574,15 @@ input.required { border: 1px solid #888; background-color: #FBFFC4}
 #tabs-min .ui-tabs-nav .ui-state-active a { 
 	color: #000;
 	font-weight: bold;
+}
+
+.nostyle * {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+	font-weight: normal;
 }

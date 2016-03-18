@@ -30,6 +30,7 @@
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.validate.js"></script>
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
+<script type="text/javascript" src="scripts/jquery.jeditable.js"></script>
 <script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <script type="text/javascript" src="scripts/jquery.details.js"></script>
