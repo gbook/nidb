@@ -3,8 +3,8 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Feb 17, 2016 at 02:46 PM
--- Server version: 10.0.20-MariaDB-log
+-- Generation Time: Mar 18, 2016 at 02:58 PM
+-- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -17,8 +17,10 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `ado2`
+-- Database: `nidb`
 --
+CREATE DATABASE IF NOT EXISTS `nidb` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `nidb`;
 
 DELIMITER $$
 --
@@ -541,6 +543,7 @@ CREATE TABLE IF NOT EXISTS `cr_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -748,9 +751,6 @@ CREATE TABLE IF NOT EXISTS `data_requests` (
   `req_nidbinstanceid` int(11) NOT NULL DEFAULT '0',
   `req_nidbsiteid` int(11) NOT NULL DEFAULT '0',
   `req_nidbprojectid` int(11) NOT NULL DEFAULT '0',
-  `req_remotearchivesuccess` tinyint(1) NOT NULL,
-  `req_remoteuid` varchar(25) NOT NULL,
-  `req_remotearchivesuccessdate` datetime NOT NULL,
   `req_downloadid` int(11) NOT NULL,
   `req_behonly` tinyint(1) NOT NULL,
   `req_behformat` varchar(35) NOT NULL,
@@ -860,7 +860,7 @@ CREATE TABLE IF NOT EXISTS `family_members` (
 
 CREATE TABLE IF NOT EXISTS `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) NOT NULL,
   `data_destination` varchar(255) NOT NULL,
@@ -1045,8 +1045,6 @@ CREATE TABLE IF NOT EXISTS `import_requests` (
   `import_projectid` int(11) NOT NULL,
   `import_instanceid` int(11) NOT NULL,
   `import_uuid` varchar(255) NOT NULL,
-  `import_seriesnotes` varchar(255) NOT NULL,
-  `import_altuids` varchar(255) NOT NULL,
   `import_subjectid` varchar(255) NOT NULL,
   `import_anonymize` tinyint(1) NOT NULL,
   `import_permanent` tinyint(1) NOT NULL,
@@ -1332,6 +1330,30 @@ CREATE TABLE IF NOT EXISTS `mr_qa` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `mr_scanparams`
+--
+
+CREATE TABLE IF NOT EXISTS `mr_scanparams` (
+  `mrscanparam_id` int(11) NOT NULL,
+  `protocol_name` varchar(255) NOT NULL,
+  `sequence_name` varchar(255) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `tr` int(11) NOT NULL,
+  `te` double NOT NULL,
+  `ti` double NOT NULL,
+  `flip` int(11) NOT NULL,
+  `xdim` int(11) NOT NULL COMMENT 'in voxels',
+  `ydim` int(11) NOT NULL COMMENT 'in voxels',
+  `zdim` int(11) NOT NULL COMMENT 'in voxels',
+  `tdim` int(11) NOT NULL,
+  `slicethickness` double NOT NULL,
+  `slicespacing` double NOT NULL,
+  `bandwidth` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mr_series`
 --
 
@@ -1342,11 +1364,14 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
   `series_desc` varchar(255) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
   `series_altdesc` varchar(255) NOT NULL,
   `series_protocol` varchar(255) NOT NULL,
-  `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc\n(0018,0024)',
+  `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
   `series_te` double DEFAULT NULL COMMENT '(0018,0081)',
+  `series_ti` double NOT NULL,
   `series_flip` double DEFAULT NULL COMMENT '(0018,1314)',
+  `percent_sampling` double NOT NULL,
+  `percent_phaseFOV` double NOT NULL,
   `phaseencodedir` varchar(20) NOT NULL COMMENT 'either ROW or COL. when combined with phaseencodeangle, it will give the A>P, R>L etc',
   `phaseencodeangle` double NOT NULL COMMENT 'in radians',
   `PhaseEncodingDirectionPositive` tinyint(1) NOT NULL,
@@ -1354,9 +1379,18 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
   `series_spacingy` double DEFAULT NULL COMMENT '(0028,0030) field 2',
   `series_spacingz` double DEFAULT NULL COMMENT '(0018,0050)',
   `series_fieldstrength` double DEFAULT NULL COMMENT '(0018,0087)',
+  `acq_matrix` varchar(20) NOT NULL COMMENT '(0018,1310)',
   `img_rows` int(11) DEFAULT NULL COMMENT '(0028,0010)',
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
+  `slicethickness` double NOT NULL,
+  `slicespacing` double NOT NULL,
+  `dimN` int(11) NOT NULL COMMENT 'from fslval dim0',
+  `dimX` int(11) NOT NULL COMMENT 'from fslval dim1',
+  `dimY` int(11) NOT NULL COMMENT 'from fslval dim2',
+  `dimZ` int(11) NOT NULL COMMENT 'from fslval dim3',
+  `dimT` int(11) NOT NULL COMMENT 'from fslval dim4',
+  `bandwidth` double NOT NULL,
   `image_type` varchar(255) NOT NULL,
   `image_comments` varchar(255) NOT NULL,
   `bold_reps` int(11) NOT NULL,
@@ -1370,6 +1404,7 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
+  `series_createdate` datetime NOT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 PACK_KEYS=0;
 
@@ -1600,6 +1635,23 @@ CREATE TABLE IF NOT EXISTS `pipeline_groups` (
   `pipeline_id` int(11) NOT NULL,
   `group_id` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pipeline_history`
+--
+
+CREATE TABLE IF NOT EXISTS `pipeline_history` (
+  `analysis_id` bigint(20) NOT NULL,
+  `pipeline_id` int(11) NOT NULL,
+  `pipeline_version` int(11) NOT NULL,
+  `study_id` int(11) NOT NULL,
+  `analysis_event` varchar(100) NOT NULL,
+  `analysis_datetime` timestamp NULL DEFAULT NULL,
+  `analysis_hostname` varchar(100) NOT NULL,
+  `event_message` text NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -1989,6 +2041,7 @@ CREATE TABLE IF NOT EXISTS `sr_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2735,6 +2788,13 @@ ALTER TABLE `mr_qa`
   ADD KEY `mriseries_id` (`mrseries_id`);
 
 --
+-- Indexes for table `mr_scanparams`
+--
+ALTER TABLE `mr_scanparams`
+  ADD PRIMARY KEY (`mrscanparam_id`),
+  ADD KEY `project_id` (`project_id`);
+
+--
 -- Indexes for table `mr_series`
 --
 ALTER TABLE `mr_series`
@@ -2816,6 +2876,12 @@ ALTER TABLE `pipeline_download`
 ALTER TABLE `pipeline_groups`
   ADD PRIMARY KEY (`pipelinegroup_id`),
   ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`group_id`);
+
+--
+-- Indexes for table `pipeline_history`
+--
+ALTER TABLE `pipeline_history`
+  ADD PRIMARY KEY (`analysis_id`);
 
 --
 -- Indexes for table `pipeline_procs`
@@ -3368,6 +3434,11 @@ ALTER TABLE `mostrecent`
 ALTER TABLE `mr_qa`
   MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `mr_scanparams`
+--
+ALTER TABLE `mr_scanparams`
+  MODIFY `mrscanparam_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `mr_series`
 --
 ALTER TABLE `mr_series`
@@ -3422,6 +3493,11 @@ ALTER TABLE `pipeline_download`
 --
 ALTER TABLE `pipeline_groups`
   MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `pipeline_history`
+--
+ALTER TABLE `pipeline_history`
+  MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_status`
 --
