@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 18, 2016 at 02:58 PM
+-- Generation Time: Mar 22, 2016 at 03:29 PM
 -- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -1338,17 +1338,17 @@ CREATE TABLE IF NOT EXISTS `mr_scanparams` (
   `protocol_name` varchar(255) NOT NULL,
   `sequence_name` varchar(255) NOT NULL,
   `project_id` int(11) NOT NULL,
-  `tr` int(11) NOT NULL,
+  `tr` double NOT NULL,
   `te` double NOT NULL,
   `ti` double NOT NULL,
-  `flip` int(11) NOT NULL,
-  `xdim` int(11) NOT NULL COMMENT 'in voxels',
-  `ydim` int(11) NOT NULL COMMENT 'in voxels',
-  `zdim` int(11) NOT NULL COMMENT 'in voxels',
-  `tdim` int(11) NOT NULL,
+  `flip` double NOT NULL,
+  `xdim` double NOT NULL COMMENT 'in voxels',
+  `ydim` double NOT NULL COMMENT 'in voxels',
+  `zdim` double NOT NULL COMMENT 'in voxels',
+  `tdim` double NOT NULL,
   `slicethickness` double NOT NULL,
   `slicespacing` double NOT NULL,
-  `bandwidth` int(11) NOT NULL
+  `bandwidth` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -2792,6 +2792,7 @@ ALTER TABLE `mr_qa`
 --
 ALTER TABLE `mr_scanparams`
   ADD PRIMARY KEY (`mrscanparam_id`),
+  ADD UNIQUE KEY `protocol_name` (`protocol_name`,`sequence_name`,`project_id`,`tr`,`te`,`ti`,`flip`,`xdim`,`ydim`,`zdim`,`tdim`,`slicethickness`,`slicespacing`,`bandwidth`),
   ADD KEY `project_id` (`project_id`);
 
 --
