@@ -365,5 +365,5 @@ $smode rm -rf ${tmpbase}*
 
 #Wrap up
 if [ ${vbse} -gt 0 ]; then
-	echo "**************** nii_qa COMPLETE ********************"
+	echo "******** nii_qa COMPLETE ********"
 fi

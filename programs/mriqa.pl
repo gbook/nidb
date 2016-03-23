@@ -161,7 +161,7 @@ sub QA() {
 			my $mrqaid;
 			
 			my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$datatype";
-			WriteLog("Starting to work on [$indir]");
+			WriteLog("======================== Working on [$indir] ========================");
 			
 			# check if this mr_qa row exists
 			my $sqlstringA = "select * from mr_qa where mrseries_id = $seriesid";
@@ -384,9 +384,10 @@ sub QA() {
 			my $resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
 			
 			# also update the mr_series table with the image dimensions
-			$sqlstringC = "update mr_series set dimN = '$dimN', dimX = '$dimX', dimY = '$dimY', dimZ = '$dimZ', dimT = '$dimT' where mrseries_id = $seriesid";
+			$sqlstringC = "update mr_series set dimN = '$dimN', dimX = '$dimX', dimY = '$dimY', dimZ = '$dimZ', dimT = '$dimT', bold_reps = '$dimT' where mrseries_id = $seriesid";
 			WriteLog("[$sqlstringC]");
 			$resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
+			WriteLog("======================== Finished [$indir] ========================");
 			
 			# only process 5 before exiting the script. Since the script always starts with the newest when it first runs,
 			# this will allow newly collect studies a chance to be QC'd if there is a backlog of old studies

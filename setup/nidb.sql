@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 22, 2016 at 03:29 PM
+-- Generation Time: Mar 23, 2016 at 07:53 PM
 -- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -1050,6 +1050,8 @@ CREATE TABLE IF NOT EXISTS `import_requests` (
   `import_permanent` tinyint(1) NOT NULL,
   `import_matchidonly` tinyint(1) NOT NULL,
   `import_filename` varchar(255) NOT NULL,
+  `import_seriesnotes` text NOT NULL,
+  `import_altuids` text NOT NULL,
   `import_userid` int(11) NOT NULL,
   `import_fileisseries` tinyint(1) NOT NULL COMMENT 'if each file should be its own series'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

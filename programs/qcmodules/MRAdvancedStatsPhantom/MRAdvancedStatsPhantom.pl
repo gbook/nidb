@@ -85,7 +85,7 @@ sub QC() {
 	left join enrollment c on b.enrollment_id = c.enrollment_id
 	left join subjects d on c.subject_id = d.subject_id
 	left join projects e on c.project_id = e.project_id
-	where a.mrseries_id = $seriesid and a.bold_reps > 1";
+	where a.mrseries_id = $seriesid and (a.bold_reps > 1 or a.dimT > 1)";
 	print "$sqlstring\n";
 	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
@@ -125,7 +125,7 @@ sub QC() {
 			else {
 				# copy all the DICOM data to the tmpdir
 				print "Copying DICOM files to [$tmpdir]\n";
-				$systemstring = "cp -v $indir/*.dcm $tmpdir/";
+				$systemstring = "cp $indir/*.dcm $tmpdir/";
 				print("[$systemstring] (" . `$systemstring 2>&1` . ")\n");
 				
 				chdir($tmpdir);
@@ -163,7 +163,7 @@ sub QC() {
 
 			# delete the 4D file and temp directory
 			if (trim($tmpdir) ne "") {
-				$systemstring = "rm -rfv $tmpdir";
+				$systemstring = "rm -rf $tmpdir";
 				print("$systemstring (" . `$systemstring 2>&1` . ")\n");
 				rmdir($tmpdir);
 			}
@@ -278,7 +278,7 @@ sub ConvertToNifti() {
 		print "[[[[$tmpdir/4D.nii.gz does not exist]]]]";
 		
 		if (($is_derived) || ($datatype ne 'dicom')) {
-			my $systemstring = "cp -v $indir/* $tmpdir";
+			my $systemstring = "cp $indir/* $tmpdir";
 			print("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {
@@ -305,7 +305,7 @@ sub ConvertToNifti() {
 			print "[[[[ One of ($tmpdir/mc4D.nii.gz, $tmpdir/Tmean.nii.gz, $tmpdir/Tsigma.nii.gz, $tmpdir/Tvariance.nii.gz) does not exist]]]]\n";
 		
 			if (($is_derived) || ($datatype ne 'dicom')) {
-				my $systemstring = "cp -v $indir/* $tmpdir";
+				my $systemstring = "cp $indir/* $tmpdir";
 				print("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 			else {

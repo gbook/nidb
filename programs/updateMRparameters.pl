@@ -209,7 +209,14 @@ sub UpdateMRScanParameters {
 	
 	$sqlstring = "update mr_series set phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive' where mrseries_id = $seriesid";
 	
-	$sqlstring = "update mr_series set series_tr = '$RepetitionTime', series_te = '$EchoTime', series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments' where mrseries_id = $seriesid";
+	$sqlstring = "update mr_series set series_tr = '$RepetitionTime', series_te = '$EchoTime', series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments'";
+	if (looks_like_number($NumberOfTemporalPositions) && ($NumberOfTemporalPositions > 0)) {
+		$sqlstring .= ", bold_reps = '$NumberOfTemporalPositions', dimT = '$NumberOfTemporalPositions', dimN = 4";
+	}
+	if (looks_like_number($ImagesInAcquisition) && ($ImagesInAcquisition > 0)) {
+		$sqlstring .= ", dimZ = '$ImagesInAcquisition'";
+	}
+	$sqlstring .= " where mrseries_id = $seriesid";
 	
 	#print "$sqlstring\n";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);

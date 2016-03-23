@@ -138,6 +138,10 @@
 		case 'viewmrparams':
 			ViewMRParams($id);
 			break;
+		case 'resetqa':
+			ResetQA($id);
+			DisplayProject($id);
+			break;
 		default:
 			DisplayProjectList();
 			break;
@@ -453,6 +457,11 @@
 						<a class="linkbutton" href="projects.php?action=viewuniqueseries&id=<?=$id?>">Edit Alt Series Names</a> &nbsp; <a class="linkbutton" href="projects.php?action=viewaltseriessummary&id=<?=$id?>">View Alt Series Names</a><br>
 						<a class="linkbutton" href="projects.php?action=editdemographics&id=<?=$id?>">Edit Demographics & IDs</a> &nbsp; <a class="linkbutton" href="projects.php?action=displaydemographics&id=<?=$id?>">View Demographics & IDs</a><br>
 						<a class="linkbutton" href="projects.php?action=editmrparams&id=<?=$id?>">Edit MR scan params</a> &nbsp; <a class="linkbutton" href="projects.php?action=viewmrparams&id=<?=$id?>">View MR scan QC</a>
+						<? if ($GLOBALS['isadmin']) { ?>
+						<br><br>
+						<b style="color:red">Danger area</b><br>
+						<a class="redlinkbutton" href="projects.php?action=resetqa&id=<?=$id?>">Reset MRI QA</a>
+						<? } ?>
 					</fieldset>
 				</td>
 			</tr>
@@ -509,7 +518,7 @@
 				$project_costcenter = $row['project_costcenter'];
 				$isactive = $row['isactive'];
 				
-				$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+				$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 					$isprimary = $rowA['isprimary'];
@@ -885,6 +894,46 @@
 		<?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- ResetQA ---------------------------- */
+	/* -------------------------------------------- */
+	function ResetQA($id) {
+		$id = mysql_real_escape_string($id);
+		
+		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = '$id'";
+		//PrintSQL($sqlstring);
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$seriesid = $row['mrseries_id'];
+		
+			/* delete from the mr_qa table */
+			$sqlstringA = "delete from mr_qa where mrseries_id = $seriesid";
+			//PrintSQL($sqlstringA);
+			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+			
+			/* delete from the qc* tables */
+			$sqlstringA = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+			//PrintSQL($sqlstringA);
+			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$qcmoduleseriesid = $rowA['qcmoduleseries_id'];
+
+			if ($qcmoduleseriesid != "") {
+				$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+				
+				$sqlstringA = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+				
+				echo "QC deleted<br>";
+			}
+		}
+	}
+
+	
 
 	/* -------------------------------------------- */
 	/* ------- ViewMRParams ----------------------- */

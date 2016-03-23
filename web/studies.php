@@ -1125,14 +1125,12 @@
 					<th title="Per Voxel SNR (timeseries) - Calculated from the fslstats command">PV<br>SNR</th>
 					<th title="Inside-Outside SNR - This calculates the brain signal (center of brain-extracted volume) compared to the average of the volume corners">IO<br>SNR</th>
 					<th>Motion R<sup>2</sup></th>
-					<th>Sequence</th>
+					<!--<th>Sequence</th>-->
 					<th>Length<br><span class="tiny">approx.</span></th>
 					<th>TR<br><span class="tiny">ms</span></th>
-					<th>Spacing <br><span class="tiny">(x y z)</span></th>
-					<th>Image size <br><span class="tiny">(x y z)</span></th>
-					<th>BOLD reps</th>
-					<th># files</th>
-					<th>Size</th>
+					<th>Voxel size <br><span class="tiny">(x y z)</span></th>
+					<th title="Image dimensions in voxels. If 4D image, <i>t</i> dimension will be the number of BOLD reps">Image dims <br><span class="tiny">(x y z t) in voxels</span></th>
+					<th>Files</th>
 					<th>Beh</th>
 					<? if ($GLOBALS['issiteadmin']) { ?>
 					<th>Hide</th>
@@ -1191,6 +1189,11 @@
 							$img_cols = $row['img_cols'];
 							$img_slices = $row['img_slices'];
 							$bold_reps = $row['bold_reps'];
+							$dimN = $row['dimN'];
+							$dimX = $row['dimX'];
+							$dimY = $row['dimY'];
+							$dimZ = $row['dimZ'];
+							$dimT = $row['dimT'];
 							$numfiles = $row['numfiles'];
 							$series_size = $row['series_size'];
 							$series_status = $row['series_status'];
@@ -1263,9 +1266,18 @@
 							if (trim($protocol) == "") {
 								$protocol = "(blank)";
 							}
-							$scanlengthsec = ($series_tr * $numfiles)/1000.0;
-							//echo "[Secs: $scanlengthsecs]";
-							$scanlength = floor($scanlengthsec/60.0) . ":" . sprintf("%02d",round(fmod($scanlengthsec,60.0)));
+							if (($bold_reps > 1) || ($dimT > 1)) {
+								$scanlengthsec = ($series_tr * max($bold_reps, $dimT))/1000.0;
+							}
+							else {
+								$scanlengthsec = ($series_tr * $numfiles)/1000.0;
+							}
+							if (floor($scanlengthsec/60.0) > 0) {
+								$scanlength = floor($scanlengthsec/60.0) . "m " . sprintf("%02d",round(fmod($scanlengthsec,60.0))) . "s";
+							}
+							else {
+								$scanlength = sprintf("%0.2f",fmod($scanlengthsec,60.0)) . "s";
+							}
 							
 							if ( (preg_match("/epfid2d1/i",$sequence)) && ($numfiles_beh < 1)) { $behcolor = "red"; } else { $behcolor = ""; }
 							if ($numfiles_beh < 1) { $numfiles_beh = "-"; }
@@ -1666,19 +1678,19 @@
 								<td class="seriesrow" align="right" style="padding:0px">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable" style="border-radius:0px">
 										<tr><td title="Total X displacement" class="mainval" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td></tr>
-										<tr><td title="Total X acceleration" class="subval" style="background-color: <?=$maxxcolor2?>;"><?=$rangex2;?></td></tr>
+										<tr><td title="Total X velocity" class="subval" style="background-color: <?=$maxxcolor2?>;"><?=$rangex2;?></td></tr>
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px;margin:0px;height:100%">
 									<table cellspacing="0" cellpadding="0" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;height:100%"><?=$rangey;?></td></tr>
-										<tr><td title="Total Y acceleration" class="subval" style="background-color: <?=$maxycolor2?>;height:100%"><?=$rangey2;?></td></tr>
+										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;height:100%"><?=$rangey2;?></td></tr>
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total Z displacement" class="mainval" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td></tr>
-										<tr><td title="Total Z acceleration" class="subval" style="background-color: <?=$maxzcolor2?>;"><?=$rangez2;?></td></tr>
+										<tr><td title="Total Z velocity" class="subval" style="background-color: <?=$maxzcolor2?>;"><?=$rangez2;?></td></tr>
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxpvsnrcolor?>; font-size:8pt">
@@ -1690,18 +1702,14 @@
 								<td class="seriesrow" align="right" style="background-color: <?=$maxmotioncolor?>; font-size:8pt">
 									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
 								</td>
-								<td><?=$sequence?></td>
+								<!--<td><?=$sequence?></td>-->
 								<td style="font-size:8pt"><?=$scanlength?></td>
 								<td align="right" style="font-size:8pt"><?=$series_tr?></td>
-								<td style="font-size:8pt"><?=number_format($series_spacingx,1)?> &times; <?=number_format($series_spacingy,1)?> &times; <?=number_format($series_spacingz,1)?></td>
-								<td style="font-size:8pt"><?=$img_cols?> &times; <?=$img_rows?> &times; <?=$img_slices?></td>
-								<td style="font-size:8pt"><?=$bold_reps?></td>
-								<td style="font-size:8pt">
-									<?=$numfiles?>
-									<? if (($dcmcount != $numfiles) && ($audit)) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><?=$dcmcount?></span> <? } ?>
-								</td>
+								<td style="font-size:8pt;white-space: nowrap;">(<?=number_format($series_spacingx,1)?>, <?=number_format($series_spacingy,1)?>, <?=number_format($series_spacingz,1)?>)</td>
+								<td style="font-size:8pt;white-space: nowrap;">(<?=$dimX?>, <?=$dimY?>, <?=$dimZ?><? if ($dimT > 1) { echo ", <big><b>$dimT</b></big>"; } ?>)</td>
 								<td nowrap style="font-size:8pt">
-									<?=HumanReadableFilesize($series_size)?> 
+									<?=$numfiles?>
+									<? if (($dcmcount != $numfiles) && ($audit)) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><?=$dcmcount?></span> <? } ?> (<?=HumanReadableFilesize($series_size)?>)
 									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
 								</td>
 								<td nowrap bgcolor="<?=$behcolor?>">

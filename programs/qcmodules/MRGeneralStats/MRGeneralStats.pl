@@ -442,9 +442,12 @@ sub ConvertToNifti() {
 			
 			chdir($currentdir);
 		}
-		
-		my $systemstring = "mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
+		my $currentdir = getcwd;
+		chdir($indir);
+		# go into the directory
+		my $systemstring = "cd $tmpdir; gzip *.nii; mv $tmpdir/*.nii.gz $tmpdir/4D.nii.gz";
 		print("$systemstring (" . `$systemstring 2>&1` . ")");
+		chdir($currentdir);
 	}
 	my $systemstring = "fslval $tmpdir/*.nii.gz dim4";
 	$nvols = trim(`$systemstring 2>&1`);

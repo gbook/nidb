@@ -126,7 +126,6 @@ sub DoQC {
 			my $modality = lc($row{'qcm_modality'});
 			
 			# look through DB for all series (of this modality) that don't have an associated QCdata row
-			#my $sqlstring = "SELECT a.$modality" . "series_id FROM $modality" . "_series a LEFT JOIN qc_moduleseries b ON a.$modality" . "series_id = b.series_id WHERE b.qcmoduleseries_id IS NULL and (b.qc_moduleid = $moduleid or b.qcmodule_id is NULL) order by a.series_datetime desc";
 			my $sqlstring = "SELECT $modality" . "series_id FROM $modality" . "_series where $modality" . "series_id not in (select series_id from qc_moduleseries where qcmodule_id = $moduleid) order by series_datetime desc";
 			WriteLog("$sqlstring");
 			my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
@@ -134,23 +133,32 @@ sub DoQC {
 				while (my %row = $result->fetchhash) {
 					$ret = 1;
 					my $series_id = $row{$modality . 'series_id'};
-					QC($moduleid, $series_id, $modality);
-					$numdone++;
 					
-					# check if this module should be running now or not
-					if (!ModuleCheckIfActive($scriptname, $db)) {
-						WriteLog("Not supposed to be running right now");
-						# update the stop time
-						ModuleDBCheckOut($scriptname, $db);
-						return 0;
+					# check if this series has an mr_qa row
+					my $sqlstringA = "select mrseries_id from mr_qa where mrseries_id = $series_id";
+					my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+					if ($resultA->numrows > 0) {
+						QC($moduleid, $series_id, $modality);
+						$numdone++;
+						
+						# check if this module should be running now or not
+						if (!ModuleCheckIfActive($scriptname, $db)) {
+							WriteLog("Not supposed to be running right now");
+							# update the stop time
+							ModuleDBCheckOut($scriptname, $db);
+							return 0;
+						}
+						
+						# give this thing a break every so often
+						if ($numdone >= 100) {
+							last;
+						}
+						
+						sleep(1);
 					}
-					
-					# give this thing a break every so often
-					if ($numdone >= 100) {
-						last;
+					else {
+						WriteLog("Skipping this QC because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first");
 					}
-					
-					sleep(1);
 				}
 				WriteLog("Finished checking data");
 			}
@@ -214,7 +222,7 @@ sub QC() {
 			my $datatype = $row{'data_type'};
 			my $mrqaid;
 			
-			#WriteLog("Checkpoint A");
+			WriteLog("============== Working on [$uid" . $study_num . "-" . $series_num . "] ==============");
 			# check if this qc_moduleseries row exists
 			my $sqlstringA = "select * from qc_moduleseries where series_id = $seriesid and modality = '$modality' and qcmodule_id = $moduleid";
 			my $resultA = $db->query($sqlstringA) || SQLError($db->errmsg(),$sqlstringA);
