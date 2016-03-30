@@ -1279,7 +1279,7 @@
 								$scanlength = sprintf("%0.2f",fmod($scanlengthsec,60.0)) . "s";
 							}
 							
-							if ( (preg_match("/epfid2d1/i",$sequence)) && ($numfiles_beh < 1)) { $behcolor = "red"; } else { $behcolor = ""; }
+							if ( (($dimT > 1) || ($bold_reps > 1)) && ($numfiles_beh < 1)) { $behcolor = "#FFAA7F"; } else { $behcolor = ""; }
 							if ($numfiles_beh < 1) { $numfiles_beh = "-"; }
 
 							$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
@@ -1712,7 +1712,7 @@
 									<? if (($dcmcount != $numfiles) && ($audit)) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><?=$dcmcount?></span> <? } ?> (<?=HumanReadableFilesize($series_size)?>)
 									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
 								</td>
-								<td nowrap bgcolor="<?=$behcolor?>">
+								<td nowrap bgcolor="<?=$behcolor?>" align="center">
 									<? if ($numfiles_beh != "-") { ?>
 									<a href="managefiles.php?seriesid=<?=$mrseries_id?>&modality=mr&datatype=beh"><?=$numfiles_beh?></a>
 									<? } else { ?>
@@ -1731,13 +1731,13 @@
 								</td>
 								<? if ($GLOBALS['issiteadmin']) {
 									if ($ishidden) { ?>
-									<td><a href="studies.php?action=unhidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Un-hide this series from search results.">Unhide</a></td>
+									<td><a class="linkbutton" href="studies.php?action=unhidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Un-hide this series from search results.">Unhide</a></td>
 									<? } else { ?>
-									<td><a href="studies.php?action=hidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Hide this series from search results. It will be visible on this page, but nowhere else on NiDB">Hide</a></td>
+									<td><a class="linkbutton" href="studies.php?action=hidemrseries&id=<?=$id?>&seriesid=<?=$mrseries_id?>" title="Hide this series from search results. It will be visible on this page, but nowhere else on NiDB">Hide</a></td>
 									<?
 									}
 									?>
-									<td><a href="studies.php?action=resetqa&seriesid=<?=$mrseries_id?>&id=<?=$id?>" color="red">X</a></td>
+									<td align="center"><a class="redlinkbutton" href="studies.php?action=resetqa&seriesid=<?=$mrseries_id?>&id=<?=$id?>" color="red">X</a></td>
 									<?
 								}
 								?>

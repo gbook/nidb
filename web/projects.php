@@ -411,7 +411,7 @@
 			<tr>
 				<td width="50%" valign="top">
 					<fieldset style="border-radius: 5px; border: 1px solid #999">
-						<legend>Project Info</legend>
+						<legend><b>Project Info</b></legend>
 						<table class="twocoltable">
 							<thead>
 								<tr>
@@ -452,7 +452,7 @@
 				</td>
 				<td width="50%" valign="top">
 					<fieldset style="border-radius: 5px; border: 1px solid #999">
-						<legend>Available actions</legend>
+						<legend><b>Available actions for project</b></legend>
 						<a class="linkbutton" href="projectreport.php?action=viewprojectreport&id=<?=$id?>">View Project Report</a><br>
 						<a class="linkbutton" href="projects.php?action=viewuniqueseries&id=<?=$id?>">Edit Alt Series Names</a> &nbsp; <a class="linkbutton" href="projects.php?action=viewaltseriessummary&id=<?=$id?>">View Alt Series Names</a><br>
 						<a class="linkbutton" href="projects.php?action=editdemographics&id=<?=$id?>">Edit Demographics & IDs</a> &nbsp; <a class="linkbutton" href="projects.php?action=displaydemographics&id=<?=$id?>">View Demographics & IDs</a><br>
@@ -570,6 +570,8 @@
 			}
 			?>
 		</table>
+		
+		<br><br>
 
 		<? if ($GLOBALS['issiteadmin']) { ?>
 		<div style="position: fixed; bottom:0px; background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:100%; padding:8px; margin-left: -7px; font-size: 10pt">

@@ -37,6 +37,8 @@ use Switch;
 use Sort::Naturally;
 #use Math::Derivative qw(Derivative1 Derivative2);
 use List::Util qw(first max maxstr min minstr reduce shuffle sum);
+use Statistics::Basic qw(:all);
+use Scalar::Util qw(looks_like_number);
 use Cwd;
 require '../../nidbroutines.pl';
 
@@ -49,6 +51,11 @@ our $moduleseriesid = $ARGV[0];
 
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------
+
+# turn off output buffering
+my $old_fh = select(STDOUT);
+$| = 1;
+select($old_fh);
 
 
 # ----------------------------------------------------------
@@ -148,22 +155,22 @@ sub QC() {
 			if (-e "$qadir/qa_cmassz_all.png") { InsertQCImageFile("qa_cmassz_all.png",$moduleseriesid, 'qa_cmassz_all','image'); }
 			if (-e "$qadir/qa_cmassz_all_histo.png") { InsertQCImageFile("qa_cmassz_all_histo.png",$moduleseriesid, 'qa_cmassz_all_histo','image'); }
 			if (-e "$qadir/qa_cmassz_allnorm.png") { InsertQCImageFile("qa_cmassz_allnorm.png",$moduleseriesid, 'qa_cmassz_all_norm','image'); }
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassx.txt", $moduleseriesid, 'qa_data_cmassx','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassy.txt", $moduleseriesid, 'qa_data_cmassy','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassz.txt", $moduleseriesid, 'qa_data_cmassz','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-X.txt", $moduleseriesid, 'qa_data_FWHMx-X','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-Y.txt", $moduleseriesid, 'qa_data_FWHMx-Y','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-Z.txt", $moduleseriesid, 'qa_data_FWHMx-Z','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassx.txt", $moduleseriesid, 'qa_data_maskedcmassx','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassy.txt", $moduleseriesid, 'qa_data_maskedcmassy','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassz.txt", $moduleseriesid, 'qa_data_maskedcmassz','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedtdiffvolmeans.txt", $moduleseriesid, 'qa_data_maskedtdiffvolmeans','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedvolmeans.txt", $moduleseriesid, 'qa_data_maskedvolmeans','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_mdiffvolmeans.txt", $moduleseriesid, 'qa_data_mdiffvolmeans','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_outliercount.txt", $moduleseriesid, 'qa_data_outliercount','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_spectrummax.txt", $moduleseriesid, 'qa_data_spectrummax','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_spectrummean.txt", $moduleseriesid, 'qa_data_spectrummean','textfile','text','text');
-			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_volmeans.txt", $moduleseriesid, 'qa_data_volmeans','textfile','text','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassx.txt", $moduleseriesid, 'qa_data_cmassx','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassy.txt", $moduleseriesid, 'qa_data_cmassy','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_cmassz.txt", $moduleseriesid, 'qa_data_cmassz','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-X.txt", $moduleseriesid, 'qa_data_FWHMx-X','textfile','','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-Y.txt", $moduleseriesid, 'qa_data_FWHMx-Y','textfile','','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_FWHMx-Z.txt", $moduleseriesid, 'qa_data_FWHMx-Z','textfile','','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassx.txt", $moduleseriesid, 'qa_data_maskedcmassx','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassy.txt", $moduleseriesid, 'qa_data_maskedcmassy','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedcmassz.txt", $moduleseriesid, 'qa_data_maskedcmassz','textfile','mm','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedtdiffvolmeans.txt", $moduleseriesid, 'qa_data_maskedtdiffvolmeans','textfile','percent','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_maskedvolmeans.txt", $moduleseriesid, 'qa_data_maskedvolmeans','textfile','percent','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_mdiffvolmeans.txt", $moduleseriesid, 'qa_data_mdiffvolmeans','textfile','percent','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_outliercount.txt", $moduleseriesid, 'qa_data_outliercount','textfile','percent','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_spectrummax.txt", $moduleseriesid, 'qa_data_spectrummax','textfile','magnitude','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_spectrummean.txt", $moduleseriesid, 'qa_data_spectrummean','textfile','magnitude','text');
+			InsertQCResultFile("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa_data_volmeans.txt", $moduleseriesid, 'qa_data_volmeans','textfile','percent','text');
 			if (-e "$qadir/qa_FWHMx-X_all.png") { InsertQCImageFile("qa_FWHMx-X_all.png",$moduleseriesid, 'qa_FWHMx-X_all','image'); }
 			if (-e "$qadir/qa_FWHMx-X_all_histo.png") { InsertQCImageFile("qa_FWHMx-X_all_histo.png",$moduleseriesid, 'qa_FWHMx-X_all_histo','image'); }
 			if (-e "$qadir/qa_FWHMx-Y_all.png") { InsertQCImageFile("qa_FWHMx-Y_all.png",$moduleseriesid, 'qa_FWHMx-Y_all','image'); }
@@ -233,18 +240,43 @@ sub QC() {
 sub InsertQCResultFile() {
 	my ($filename, $moduleseriesid, $resultname, $resulttype, $units, $labels) = @_;
 	
+	print "Working on [$filename]\n";
 	if (-e $filename) {
 		my $text;
+		my @col2;
 		open(F,$filename);
 		while(<F>) {
 			$text .= $_;
+			my $line = $_;
+			
+			# check if it is a valid row
+			if ((trim($line) ne "") && (substr(trim($line),0,1) ne "#")) {
+				# get the second column
+				my @parts = split /\s+/, trim($line);
+				#print "[$line] => [" . $parts[0] . "] [" . $parts[1] . "]\n";
+				if (looks_like_number($parts[1])) {
+					push(@col2,$parts[1]);
+					#print "Pushed [" . $parts[1] . "] onto col2\n";
+				}
+			}
 		}
 		close(F);
+		
+		# compute stats on the 2nd column
+		my $mean = mean(@col2);
+		my $min = min(@col2);
+		my $max = max(@col2);
+		InsertQCResult($mean, $moduleseriesid, "mean-$resultname",$units,$labels);
+		InsertQCResult($min, $moduleseriesid, "min-$resultname",$units,$labels);
+		InsertQCResult($max, $moduleseriesid, "max-$resultname",$units,$labels);
 		
 		#print "Reading file [$filename]: $text\n";
 		$text = EscapeMySQLString($text);
 		my $resultnameid = InsertQCResultName($resultname, $resulttype, $units, $labels);
+		
 		my $sqlstringA = "insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext, qcresults_datetime) values ($moduleseriesid, $resultnameid, compress('$text'), now())";
+		#my $sqlstringA = "insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_value, qcresults_datetime) values ($moduleseriesid, $resultnameid, compress('$text'), now())";
+		
 		#print("[$sqlstringA]\n");
 		my $resultA = $db->query($sqlstringA) || SQLError($db->errmsg(),$sqlstringA);
 	}
@@ -271,7 +303,7 @@ sub InsertQCResult() {
 	my ($value, $moduleseriesid, $resultname, $units, $labels) = @_;
 	
 	my $resultnameid = InsertQCResultName($resultname, 'number', $units, $labels);
-	my $sqlstringA = "insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber, qcresults_datetime) values ($moduleseriesid, $resultnameid, '$value', now())";
+	my $sqlstringA = "insert into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber, qcresults_datetime) values ($moduleseriesid, $resultnameid, '$value', now()) on duplicate key update qcresults_valuenumber = '$value'";
 	print("[$sqlstringA]\n");
 	my $resultA = $db->query($sqlstringA) || SQLError($db->errmsg(),$sqlstringA);
 }

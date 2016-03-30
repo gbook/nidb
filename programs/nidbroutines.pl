@@ -315,6 +315,7 @@ sub trim($)
 	}
 	$string =~ s/^\s+//;
 	$string =~ s/\s+$//;
+	chomp($string);
 	return $string;
 }
 

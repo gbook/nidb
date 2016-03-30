@@ -243,9 +243,22 @@ table.smallgraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spaci
 .smallgraydisplaytable td.child { border-top: none; font-size: 10pt; padding: 2px 4px; }
 .smallgraydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 10pt; padding: 3px 6px; background-color: #EFEFEF; }
 .smallgraydisplaytable tbody tr:hover { background-color: #eee; }
+.smallgraydisplaytable tbody td:hover { background-color: #ccc; }
 .smallgraydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 .smallgraydisplaytable a { text-decoration: none; color: #224ea5; }
 .smallgraydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
+
+/* small gray display table (multiple rows) */
+table.smallsimpledisplaytable { padding: 0px; border: 1px solid #eee; border-spacing: 0px;}
+.smallsimpledisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
+.smallsimpledisplaytable th { font-weight: bold; color: #333; font-size: 9pt; padding: 5px; background-color: #eee; vertical-align: bottom; }
+.smallsimpledisplaytable td { border-top: 1px solid #eee; font-size: 9pt; padding: 2px 4px; }
+.smallsimpledisplaytable td.child { border-top: none; font-size: 9pt; padding: 2px 4px; }
+.smallsimpledisplaytable td.subheader { border-bottom: 1px solid #eee; font-size: 9pt; padding: 3px 6px; background-color: #EFEFEF; }
+.smallsimpledisplaytable tbody tr:hover { background-color: #eee; }
+.smallsimpledisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888; }
+.smallsimpledisplaytable a { text-decoration: none; color: #224ea5; }
+.smallsimpledisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 /* tiny gray display table (multiple rows) */
 table.tinygraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
@@ -369,8 +382,10 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 .adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
 
 /* for links appearing as buttons */
-.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff; padding: 2px 8px; margin: 2px; }
-.linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff; text-decoration: none; }
+.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
+.linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; }
+.redlinkbutton { display: inline-block; background-color: #FF552A; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
+.redlinkbutton:hover { display: inline-block; background-color: #FF7F55; border: 1px solid #FF552A; color: #fff !important; text-decoration: none; }
 
 /* form entry table */
 table.formentrytable { width: 100%; border: 2px solid #666; padding: 8px; }
@@ -577,12 +592,12 @@ input.required { border: 1px solid #888; background-color: #FBFFC4}
 }
 
 .nostyle * {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    font-size: 100%;
-    vertical-align: baseline;
-    background: transparent;
-	font-weight: normal;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    font-size: 100% !important;
+    vertical-align: baseline !important;
+    background: transparent !important;
+	font-weight: normal !important;
 }

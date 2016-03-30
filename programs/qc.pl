@@ -157,7 +157,7 @@ sub DoQC {
 						sleep(1);
 					}
 					else {
-						WriteLog("Skipping this QC because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first");
+						WriteLog("Skipping this MR series [$series_id] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first");
 					}
 				}
 				WriteLog("Finished checking data");
