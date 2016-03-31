@@ -724,6 +724,7 @@
 			$study_experimenter = $row['study_experimenter'];
 			$study_desc = $row['study_desc'];
 			$study_createdby = $row['study_createdby'];
+			$study_createdate = $row['study_createdate'];
 			$uid = $row['uid'];
 			$subjectid = $row['subject_id'];
 			$costcenter = $row['project_costcenter'];
@@ -918,6 +919,10 @@
 						<tr>
 							<td class="label">Created by</td>
 							<td class="value"><?=$study_createdby?></td>
+						</tr>
+						<tr>
+							<td class="label">Import/upload date</td>
+							<td class="value"><?=$study_createdate?></td>
 						</tr>
 						<tr>
 							<td class="label">Experimenter</td>

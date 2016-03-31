@@ -51,7 +51,7 @@
 # full path to the qsub executable
 [qsubpath] = /sge/sge-root/bin/lx24-amd64/./qsub
 # NiDB version
-[version] = 5.0.1
+[version] = 5.5.0
 [sitename] = NiDB
 [sitenamedev] = NiDB&nbsp;(DEV)
 [ispublic] = 0

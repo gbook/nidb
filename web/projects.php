@@ -966,17 +966,17 @@
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$parms['protocol'][$i] = $row['protocol_name'];
 				$parms['sequence'][$i] = $row['sequence_name'];
-				$parms['tr'][$i] = (double)$row['tr'];
-				$parms['te'][$i] = (double)$row['te'];
-				$parms['ti'][$i] = (double)$row['ti'];
-				$parms['flip'][$i] = (double)$row['flip'];
-				$parms['xdim'][$i] = (double)$row['xdim'];
-				$parms['ydim'][$i] = (double)$row['ydim'];
-				$parms['zdim'][$i] = (double)$row['zdim'];
-				$parms['tdim'][$i] = (double)$row['tdim'];
-				$parms['slicethickness'][$i] = (double)$row['slicethickness'];
-				$parms['slicespacing'][$i] = (double)$row['slicespacing'];
-				$parms['bandwidth'][$i] = (double)$row['bandwidth'];
+				$parms['tr'][$i] = number_format($row['tr'],3,'.','');
+				$parms['te'][$i] = number_format($row['te'],3,'.','');
+				$parms['ti'][$i] = number_format($row['ti'],3,'.','');
+				$parms['flip'][$i] = number_format($row['flip'],3,'.','');
+				$parms['xdim'][$i] = number_format($row['xdim'],3,'.','');
+				$parms['ydim'][$i] = number_format($row['ydim'],3,'.','');
+				$parms['zdim'][$i] = number_format($row['zdim'],3,'.','');
+				$parms['tdim'][$i] = number_format($row['tdim'],3,'.','');
+				$parms['slicethickness'][$i] = number_format($row['slicethickness'],3,'.','');
+				$parms['slicespacing'][$i] = number_format($row['slicespacing'],3,'.','');
+				$parms['bandwidth'][$i] = number_format($row['bandwidth'],3,'.','');
 				$i++;
 			}
 			$numparms = $i;
@@ -992,7 +992,7 @@
 				$studynum = $row['study_num'];
 				if ($studyid > 0) {
 					/* get the mr_series rows */
-					$sqlstringA = "select * from mr_series where study_id = $studyid";
+					$sqlstringA = "select * from mr_series where study_id = $studyid order by series_num";
 					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 					if (mysql_num_rows($resultA) > 0){
 						?>
@@ -1006,17 +1006,17 @@
 							$series_desc = $rowA['series_desc'];
 							$series_protocol = $rowA['series_protocol'];
 							$sequence = $rowA['series_sequencename'];
-							$tr = (double)$rowA['series_tr'];
-							$te = (double)$rowA['series_te'];
-							$ti = (double)$rowA['series_ti'];
-							$flip = (double)$rowA['series_flip'];
-							$slicethickness = (double)$rowA['slicethickness'];
-							$slicespacing = (double)$rowA['slicespacing'];
-							$dimx = (double)$rowA['dimX'];
-							$dimy = (double)$rowA['dimY'];
-							$dimz = (double)$rowA['dimZ'];
-							$dimt = (double)$rowA['dimT'];
-							$bandwidth = (double)$rowA['bandwidth'];
+							$tr = number_format($rowA['series_tr'],3,'.','');
+							$te = number_format($rowA['series_te'],3,'.','');
+							$ti = number_format($rowA['series_ti'],3,'.','');
+							$flip = number_format($rowA['series_flip'],3,'.','');
+							$slicethickness = number_format($rowA['slicethickness'],3,'.','');
+							$slicespacing = number_format($rowA['slicespacing'],3,'.','');
+							$dimx = number_format($rowA['dimX'],3,'.','');
+							$dimy = number_format($rowA['dimY'],3,'.','');
+							$dimz = number_format($rowA['dimZ'],3,'.','');
+							$dimt = number_format($rowA['dimT'],3,'.','');
+							$bandwidth = number_format($rowA['bandwidth'],3,'.','');
 							
 							$protocol1 = $series_desc;
 							$protocol2 = $series_protocol;
@@ -1033,10 +1033,10 @@
 								if ($te != $parms['te'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($ti != $parms['ti'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($flip != $parms['flip'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								//if ($dimx != $parms['dimx']) { $rowmatch = false; $nummismatch[$i]++; }
-								//if ($dimy != $parms['dimy']) { $rowmatch = false; $nummismatch[$i]++; }
-								//if ($dimz != $parms['dimz']) { $rowmatch = false; $nummismatch[$i]++; }
-								//if ($dimt != $parms['dimt']) { $rowmatch = false; $nummismatch[$i]++; }
+								if ($dimx != $parms['xdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								if ($dimy != $parms['ydim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								if ($dimz != $parms['zdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								if ($dimt != $parms['tdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($slicethickness != $parms['slicethickness'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($slicespacing != $parms['slicespacing'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($bandwidth != $parms['bandwidth'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
@@ -1097,6 +1097,7 @@
 									</tr>
 								<?
 								/* loop through the possible matches */
+								$limit = 0;
 								foreach ($idx as $i) {
 									$parm_protocol = $parms['protocol'][$i];
 									$parm_sequence = $parms['sequence'][$i];
@@ -1119,16 +1120,19 @@
 										<td style="color: <?=($parm_te == $te)?"green":"red";?>"><?=$parm_te?></td>
 										<td style="color: <?=($parm_ti == $ti)?"green":"red";?>"><?=$parm_ti?></td>
 										<td style="color: <?=($parm_flip == $flip)?"green":"red";?>"><?=$parm_flip?></td>
-										<td style="color: <?=($parm_xdim == $xdim)?"green":"red";?>"><?=$parm_xdim?></td>
-										<td style="color: <?=($parm_ydim == $ydim)?"green":"red";?>"><?=$parm_ydim?></td>
-										<td style="color: <?=($parm_zdim == $zdim)?"green":"red";?>"><?=$parm_zdim?></td>
-										<td style="color: <?=($parm_tdim == $tdim)?"green":"red";?>"><?=$parm_tdim?></td>
+										<td style="color: <?=($parm_xdim == $dimx)?"green":"red";?>"><?=$parm_xdim?></td>
+										<td style="color: <?=($parm_ydim == $dimy)?"green":"red";?>"><?=$parm_ydim?></td>
+										<td style="color: <?=($parm_zdim == $dimz)?"green":"red";?>"><?=$parm_zdim?></td>
+										<td style="color: <?=($parm_tdim == $dimt)?"green":"red";?>"><?=$parm_tdim?></td>
 										<td style="color: <?=($parm_slicethickness == $slicethickness)?"green":"red";?>"><?=$parm_slicethickness?></td>
 										<td style="color: <?=($parm_slicespacing == $slicespacing)?"green":"red";?>"><?=$parm_slicespacing?></td>
 										<td style="color: <?=($parm_bandwidth == $bandwidth)?"green":"red";?>"><?=$parm_bandwidth?></td>
 										<td></td>
 									</tr>
 									<?
+									if (++$limit >= 2) {
+										break;
+									}
 								}
 								?></table>
 								</td>
@@ -1218,7 +1222,7 @@
 						$param_slicethickness[] = (double)$slicethickness;
 						$param_slicespacing[] = (double)$slicespacing;
 						$param_bandwidth[] = (double)$bandwidth;
-						echo "Found row [$protocol]<br>";
+						echo "Adding row [$protocol]<br>";
 					}
 					
 					/* we have all the params, now do the inserts into the scan params table */
@@ -1246,17 +1250,17 @@
 			
 			$protocol = mysql_real_escape_string(trim($param_protocol[$i]));
 			$sequence = mysql_real_escape_string(trim($param_sequence[$i]));
-			$tr = mysql_real_escape_string(trim($param_tr[$i]));
-			$te = mysql_real_escape_string(trim($param_te[$i]));
-			$ti = mysql_real_escape_string(trim($param_ti[$i]));
-			$flip = mysql_real_escape_string(trim($param_flip[$i]));
-			$xdim = mysql_real_escape_string(trim($param_xdim[$i]));
-			$ydim = mysql_real_escape_string(trim($param_ydim[$i]));
-			$zdim = mysql_real_escape_string(trim($param_zdim[$i]));
-			$tdim = mysql_real_escape_string(trim($param_tdim[$i]));
-			$slicethickness = mysql_real_escape_string(trim($param_slicethickness[$i]));
-			$slicespacing = mysql_real_escape_string(trim($param_slicespacing[$i]));
-			$bandwidth = mysql_real_escape_string(trim($param_bandwidth[$i]));
+			$tr = number_format(mysql_real_escape_string(trim($param_tr[$i])),3,'.','');
+			$te = number_format(mysql_real_escape_string(trim($param_te[$i])),3,'.','');
+			$ti = number_format(mysql_real_escape_string(trim($param_ti[$i])),3,'.','');
+			$flip = number_format(mysql_real_escape_string(trim($param_flip[$i])),3,'.','');
+			$xdim = number_format(mysql_real_escape_string(trim($param_xdim[$i])),3,'.','');
+			$ydim = number_format(mysql_real_escape_string(trim($param_ydim[$i])),3,'.','');
+			$zdim = number_format(mysql_real_escape_string(trim($param_zdim[$i])),3,'.','');
+			$tdim = number_format(mysql_real_escape_string(trim($param_tdim[$i])),3,'.','');
+			$slicethickness = number_format(mysql_real_escape_string(trim($param_slicethickness[$i])),3,'.','');
+			$slicespacing = number_format(mysql_real_escape_string(trim($param_slicespacing[$i])),3,'.','');
+			$bandwidth = number_format(mysql_real_escape_string(trim($param_bandwidth[$i])),3,'.','');
 			
 			if ($protocol != "") {
 				if ($paramid == "") {
@@ -1270,6 +1274,7 @@
 			}
 			if (($protocol == "") && ($paramid != "")) {
 				$sqlstring = "delete from mr_scanparams where mrscanparam_id = $paramid";
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$i++;
