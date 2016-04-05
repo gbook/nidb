@@ -359,9 +359,28 @@ sub ConvertToNifti() {
 		else {
 			my $currentdir = getcwd;
 			chdir($indir);
+			my $systemstring;
 			# create a 4D file
-			my $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
-			print("$systemstring (" . `$systemstring 2>&1` . ")");
+			#my $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+			#print("$systemstring (" . `$systemstring 2>&1` . ")");
+			
+			
+			if ($datatype eq 'dicom') {
+				$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+			}
+			else {
+				$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
+			}
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			
+			chdir($tmpdir);
+			WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
+			$systemstring = "find . -name '*.nii.gz' | head -1 | xargs -i cp -v {} 4D.nii.gz";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			$systemstring = "find . -name '*.nii' | head -1 | xargs -i cp -v {} 4D.nii";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			chdir($indir);
+			
 			
 			chdir($currentdir);
 		}

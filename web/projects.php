@@ -139,7 +139,7 @@
 			ViewMRParams($id);
 			break;
 		case 'resetqa':
-			ResetQA($id);
+			ResetProjectQA($id);
 			DisplayProject($id);
 			break;
 		default:
@@ -898,44 +898,24 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- ResetQA ---------------------------- */
+	/* ------- ResetProjectQA --------------------- */
 	/* -------------------------------------------- */
-	function ResetQA($id) {
+	function ResetProjectQA($id) {
 		$id = mysql_real_escape_string($id);
+		if ($id == "") {
+			?><div class="staticmessage">Invalid project ID</div><?
+		}
 		
-		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = '$id'";
-		//PrintSQL($sqlstring);
+		/* get list of series associated with this project */
+		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$seriesid = $row['mrseries_id'];
-		
-			/* delete from the mr_qa table */
-			$sqlstringA = "delete from mr_qa where mrseries_id = $seriesid";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-			
-			/* delete from the qc* tables */
-			$sqlstringA = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
-			$qcmoduleseriesid = $rowA['qcmoduleseries_id'];
-
-			if ($qcmoduleseriesid != "") {
-				$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-				
-				$sqlstringA = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-				
-				echo "QC deleted<br>";
-			}
+			echo "$seriesid<br>";
+			ResetQA($seriesid);
 		}
 	}
 
-	
 
 	/* -------------------------------------------- */
 	/* ------- ViewMRParams ----------------------- */
@@ -1859,6 +1839,10 @@
 		$urllist['Project List'] = "projects.php";
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
+		if ($_SESSION['instanceid'] == "") {
+			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top left of the page.</div><?
+		}
+		
 		?>
 		View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>
@@ -1876,7 +1860,7 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
+					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 						$id = $row['project_id'];

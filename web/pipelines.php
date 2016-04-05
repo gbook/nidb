@@ -357,7 +357,7 @@
 		
 		$sqlstring = "start transaction";
 		//PrintSQL("$sqlstring");
-		echo "<li><b>Starting transaction</b>";
+		echo "<li><b>Starting transaction</b> [$sqlstring]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		/* ------ copy the pipeline definition ------ */
@@ -453,7 +453,7 @@
 		/* ------ all done ------ */
 		$sqlstring = "commit";
 		//PrintSQL("$sqlstring");
-		echo "<li><b>Commit the transaction</b>";
+		echo "<li><b>Commit the transaction</b> [$sqlstring]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?>
 		</ol>

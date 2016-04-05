@@ -552,6 +552,61 @@
 	
 	
 	/* -------------------------------------------- */
+	/* ------- ResetQA ---------------------------- */
+	/* -------------------------------------------- */
+	function ResetQA($seriesid) {
+		$seriesid = mysql_real_escape_string($seriesid);
+		
+		if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			/* delete from the mr_qa table */
+			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete from the qc* tables */
+			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$qcmoduleseriesid = $row['qcmoduleseries_id'];
+
+				if ($qcmoduleseriesid != "") {
+					$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
+					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+					
+					$sqlstringB = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
+					$resultB = MySQLQuery($sqlstringB, __FILE__, __LINE__);
+					
+					/* delete the qa directory */
+					list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
+					
+					$qapath = "$path/qa";
+					if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
+						echo "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]<br>";
+					}
+					else {
+						/* check if the path is valid */
+						if (file_exists($qapath)) {
+							$systemstring = "rm -rv $qapath";
+							`$systemstring`;
+						}
+						else {
+							echo "[$qapath] does not exist<br>";
+						}
+					}
+					
+					?><div align="center"><span class="message">QC deleted [<?=$qcmoduleseriesid?>]</span></div><br><br><?
+				}
+				else {
+					echo "qcmoduleseries_id was blank<br>";
+				}
+			}
+		}
+		else {
+			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+		}
+	}
+
+	
+	/* -------------------------------------------- */
 	/* ------- UpdateMostRecent ------------------- */
 	/* -------------------------------------------- */
 	function UpdateMostRecent($userid, $subjectid, $studyid) {

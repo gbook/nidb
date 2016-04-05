@@ -125,6 +125,8 @@ sub DoQC {
 			my $moduleid = $row{'qcmodule_id'};
 			my $modality = lc($row{'qcm_modality'});
 			
+			WriteLog("*********************** Working on module [$moduleid][$modality] ***********************");
+			
 			# look through DB for all series (of this modality) that don't have an associated QCdata row
 			my $sqlstring = "SELECT $modality" . "series_id FROM $modality" . "_series where $modality" . "series_id not in (select series_id from qc_moduleseries where qcmodule_id = $moduleid) order by series_datetime desc";
 			WriteLog("$sqlstring");
@@ -166,6 +168,8 @@ sub DoQC {
 				WriteLog("Nothing to do");
 			}
 			
+			WriteLog("*********************** Finished module [$moduleid][$modality] ***********************");
+			
 		}
 		WriteLog("Finished all modules");
 	}
@@ -205,8 +209,8 @@ sub QC() {
 	where a.$modality" . "series_id = '$seriesid'";
 	#WriteLog("$sqlstring");
 	
-	WriteLog("Running $moduleid on $modality series $seriesid");
-	#return;
+	WriteLog("-------------- Running $moduleid on $modality series $seriesid --------------");
+
 	my $qcmoduleseriesid;
 
 	$result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
@@ -269,9 +273,9 @@ sub QC() {
 				WriteLog("Running the following file: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
 				my $systemstring = "$cfg{'qcmoduledir'}/$modulename/./$modulename.sh $qcmoduleseriesid";
 				print "About to run [$systemstring]\n";
-				WriteLog("About to run [$systemstring])");
+				WriteLog("     ===== Running [$systemstring]) =====");
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				WriteLog("Should be done running: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid]");
+				WriteLog("     ===== Finished: [$cfg{'qcmoduledir'}/$modulename/$modulename.sh $qcmoduleseriesid] =====");
 			}
 
 			# calculate the total time running
@@ -295,6 +299,7 @@ sub QC() {
 		WriteLog("No series to process");
 		# there were no series to process
 	}
+	WriteLog("-------------- Finished $moduleid on $modality series $seriesid --------------");
 }
 
 

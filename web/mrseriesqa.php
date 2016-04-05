@@ -88,6 +88,7 @@
 			
 			/* get the result name */
 			$sqlstringA = "select * from qc_resultnames where qcresultname_id = '$resultnameid'";
+			//PrintSQL($sqlstringA);
 			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringA</i><br>");
 			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
 			$resultname = $rowA['qcresult_name'];
@@ -480,15 +481,21 @@
 		<tr>
 			<td align="right"><b>Middle slice</b></td>
 			<td align="left">
-				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>"><br>
-				<!--<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_lut.png"))?>"> -->
-				<!-- <img width="15" height="<?=$thumbheight?>" style="border: solid 1px #666666" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/gradient.png"))?>"> -->
+				<? if (file_exists($thumbpath)) { ?>
+				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>">
+				<? } else { ?>
+				<span class="tiny">Thumbnail does not exist</span>
+				<? } ?>
 			</td>
 		</tr>
 		<tr>
 			<td align="right"><b>FFT (single slice)</b></td>
 			<td align="left">
+				<? if (file_exists("$qapath/thumb_fft.png")) { ?>
 				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>"><br>
+				<? } else { ?>
+				<span class="tiny">Thumbnail does not exist</span>
+				<? } ?>
 			</td>
 		</tr>
 		<tr>
@@ -497,9 +504,12 @@
 				<? if (file_exists("$qapath/histogram.png")) { ?>
 				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/histogram.png"))?>"><br>
 				(all slices)
-				<? } else { ?>
+				<? } ?>
+				<? if (file_exists("$qapath/thumb_fft_1d.png")) { ?>
 				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft_1d.png"))?>"><br>
 				(single slice)
+				<? } else { ?>
+				<span class="tiny">Thumbnail does not exist</span>
 				<? } ?>
 			</td>
 		</tr>

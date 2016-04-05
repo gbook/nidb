@@ -252,43 +252,6 @@
 		}
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- ResetQA ---------------------------- */
-	/* -------------------------------------------- */
-	function ResetQA($seriesid) {
-		$seriesid = mysql_real_escape_string($seriesid);
-		
-		if ((is_numeric($seriesid)) && ($seriesid != "")) {
-			/* delete from the mr_qa table */
-			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
-			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			
-			/* delete from the qc* tables */
-			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
-			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
-			$qcmoduleseriesid = $row['qcmoduleseries_id'];
-
-			if ($qcmoduleseriesid != "") {
-				$sqlstring = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				
-				$sqlstring = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				
-				?><div align="center"><span class="message">QC deleted</span></div><br><br><?
-			}
-		}
-		else {
-			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
-		}
-	}
-	
 
 	/* -------------------------------------------- */
 	/* ------- UpdateGenericSeries ---------------- */
@@ -532,6 +495,9 @@
 	/* ------- DisplayStudyForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudyForm($id) {
+		if ($id == "") {
+			?><div class="staticmessage">Invalid or blank study ID [<?=$id?>]</div><?
+		}
 
 		$urllist['Subject List'] = "subjects.php";
 		NavigationBar("Studies", $urllist);
@@ -690,6 +656,10 @@
 	/* ------- DisplayStudy ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, $displayfiles) {
+		
+		if ($id == "") {
+			?><div class="staticmessage">Invalid or blank study ID [<?=$id?>]</div><?
+		}
 	
 		$id = mysql_real_escape_string($id);
 		
@@ -1048,6 +1018,9 @@
 	/* ------- DisplayMRSeries -------------------- */
 	/* -------------------------------------------- */
 	function DisplayMRSeries($id, $study_num, $uid, $audit, $fix) {
+		if ($id == "") {
+			?><div class="staticmessage">Invalid or blank series ID [<?=$id?>]</div><?
+		}
 	
 		$colors = GenerateColorGradient();
 

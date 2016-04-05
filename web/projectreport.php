@@ -59,6 +59,10 @@
 	/* ----------------------------------------------- */
 	function ViewReport($enrollmentid) {
 		
+		if (($enrollmentid == "") || (!is_int($enrollmentid)) {
+			?><div class="staticmessage">Invalid or blank enrollment ID</div><?
+		}
+		
 		/* get enrollment information */
 		$sqlstring = "select a.project_id 'projectid', a.*, b.*, c.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = $enrollmentid";
 		//PrintSQL($sqlstring);
@@ -176,6 +180,10 @@
 	/* --------- ViewProjectReport ------------------- */
 	/* ----------------------------------------------- */
 	function ViewProjectReport($projectid) {
+		
+		if (($projectid == "") || (!is_int($projectid)) {
+			?><div class="staticmessage">Invalid or blank project ID</div><?
+		}
 
 		$sqlstring = "select project_name from projects where project_id = $projectid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
