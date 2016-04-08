@@ -311,9 +311,9 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 /* 2 column table (small table with 2 columns: variable, value)*/
 .twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; }
-.twocoltable>thead>tr>th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
-.twocoltable td.left { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
-.twocoltable td.right { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
+.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
+.twocoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.twocoltable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 

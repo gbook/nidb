@@ -70,7 +70,7 @@
 		
 		$sqlstring = "select a.series_num, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
 		
-		$result2 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result2 = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysql_fetch_array($result2, MYSQL_ASSOC);
 		$study_num = $row['study_num'];
 		$uid = $row['uid'];
@@ -128,7 +128,7 @@
 		
 		$sqlstring = "select a.*, b.study_num, b.study_id, d.uid, d.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
 		
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$subjectid = $row['subject_id'];
 		$uid = $row['uid'];
@@ -166,9 +166,14 @@
 		/* update the DB with the files that actually exist */
 		$filecount = count(glob("$datadir/*"));
 		$filesize = GetDirectorySize($datadir);
-		$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
+		if ($modality == "mr") {
+			$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
+		}
+		else {
+			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+		}
 		//echo "$sqlstring";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 
 		?>
 		<b>Displaying files for</b>

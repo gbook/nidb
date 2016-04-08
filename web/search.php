@@ -146,13 +146,6 @@
 	
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
-	
-	//echo "<pre>";
-	//print_r($_POST);
-	//echo "Received " . count($_POST) . " variables<br>";
-	//echo "Limit is " . ini_get('max_input_vars') . " variables<br>";
-	//echo "</pre>";
-	
 	if ($numpostvars >= $maxnumvars) {
 		?>
 		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your download request. Please go back to the search page and download less than [<?=$maxnumvars?>] data items.</div>
@@ -948,6 +941,14 @@
 	function Search($s) {
 		//print_r($s);
 		
+		$msg = ValidateSearchVariables($s);
+		
+		if ($msg != "") {
+			?><div class="staticmessage"><?=$msg?></div><?
+		}
+		else {
+		}
+		
 		/*
 			***************** steps to searching *****************
 			1) build the search string
@@ -1032,7 +1033,7 @@
 			
 			/* ---------- pipeline results ------------ */
 			if (($s_resultorder == "pipeline") || ($s_resultorder == "pipelinecsv")) {
-				SearchPipeline($result, $s_resultorder);
+				SearchPipeline($result, $s_resultorder, $s_pipelineresulttype);
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
@@ -1069,6 +1070,27 @@
 			<br>
 			<?
 		}
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ValidateSearchVariables ------------ */
+	/* -------------------------------------------- */
+	function ValidateSearchVariables($s) {
+		
+		/* check which resultorder (type of result display) was selected */
+		switch ($s['s_resultorder']) {
+			case 'pipeline':
+			case 'pipelinecsv':
+				if (trim($s['s_pipelineid']) == "") {
+					$msg = "Pipeline not selected";
+				}
+				break;
+			default:
+				break;
+		}
+		
+		return $msg;
 	}
 
 	
@@ -1865,7 +1887,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchPipeline --------------------- */
 	/* -------------------------------------------- */
-	function SearchPipeline($result, $s_resultorder) {
+	function SearchPipeline($result, $s_resultorder,$s_pipelineresulttype) {
 		if ($s_pipelineresulttype == "i") {
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
@@ -1958,86 +1980,86 @@
 			<?
 		}
 		else {
-		/* ---------------- pipeline results (values) --------------- */
-		/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
-		$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-		$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-		while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-			$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
-		}
-		/* and get the result unit (due to the same MySQL bug) */
-		$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-		$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-		while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
-			$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
-		}
+			/* ---------------- pipeline results (values) --------------- */
+			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
+			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
+			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+			}
+			/* and get the result unit (due to the same MySQL bug) */
+			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
+			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
+			}
 
-		/* load the data into a useful table */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			
-			$step = $row['analysis_step'];
-			$pipelinename = $row['pipeline_name'];
-			$uid = $row['uid'];
-			$subject_id = $row['subject_id'];
-			$study_id = $row['study_id'];
-			$study_num = $row['study_num'];
-			$birthdate = $row['birthdate'];
-			$gender = $row['gender'];
-			$study_datetime = $row['study_datetime'];
-			$type = $row['result_type'];
-			$size = $row['result_size'];
-			$name = $resultnames[$row['result_nameid']];
-			$name2 = $resultnames[$row['result_nameid']];
-			$unit = $resultunit[$row['result_unitid']];
-			$unit2 = $resultunit[$row['result_unitid']];
-			$text = $row['result_text'];
-			$value = $row['result_value'];
-			$filename = $row['result_filename'];
-			$swversion = $row['result_softwareversion'];
-			$important = $row['result_isimportant'];
-			$lastupdate = $row['result_lastupdate'];
-			
-			/* calculate age at scan */
-			list($year, $month, $day) = explode("-", $birthdate);
-			$d1 = mktime(0,0,0,$month,$day,$year);
-			list($year, $month, $day, $extra) = explode("-", $study_datetime);
-			$d2 = mktime(0,0,0,$month,$day,$year);
-			$ageatscan = number_format((($d2-$d1)/31536000),1);					
-			
-			if (strpos($unit,'^') !== false) {
-				$unit = str_replace('^','<sup>',$unit);
-				$unit .= '</sup>';
+			/* load the data into a useful table */
+			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				
+				$step = $row['analysis_step'];
+				$pipelinename = $row['pipeline_name'];
+				$uid = $row['uid'];
+				$subject_id = $row['subject_id'];
+				$study_id = $row['study_id'];
+				$study_num = $row['study_num'];
+				$birthdate = $row['birthdate'];
+				$gender = $row['gender'];
+				$study_datetime = $row['study_datetime'];
+				$type = $row['result_type'];
+				$size = $row['result_size'];
+				$name = $resultnames[$row['result_nameid']];
+				$name2 = $resultnames[$row['result_nameid']];
+				$unit = $resultunit[$row['result_unitid']];
+				$unit2 = $resultunit[$row['result_unitid']];
+				$text = $row['result_text'];
+				$value = $row['result_value'];
+				$filename = $row['result_filename'];
+				$swversion = $row['result_softwareversion'];
+				$important = $row['result_isimportant'];
+				$lastupdate = $row['result_lastupdate'];
+				
+				/* calculate age at scan */
+				list($year, $month, $day) = explode("-", $birthdate);
+				$d1 = mktime(0,0,0,$month,$day,$year);
+				list($year, $month, $day, $extra) = explode("-", $study_datetime);
+				$d2 = mktime(0,0,0,$month,$day,$year);
+				$ageatscan = number_format((($d2-$d1)/31536000),1);					
+				
+				if (strpos($unit,'^') !== false) {
+					$unit = str_replace('^','<sup>',$unit);
+					$unit .= '</sup>';
+				}
+				
+				switch($type) {
+					case "v": $thevalue = $value; break;
+					case "f": $thevalue = $filename; break;
+					case "t": $thevalue = $text; break;
+					case "h": $thevalue = $filename; break;
+					case "i":
+						?>
+						<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+						<?
+						break;
+				}
+				if (substr($name, -(strlen($unit))) != $unit) {
+					$name .= " <b>$unit</b>";
+					$name2 .= " " . $row['result_unit'];
+				}
+				$tables[$uid][$name] = $thevalue;
+				$tables[$uid][$name2] = $thevalue;
+				$tables[$uid]['age'] = $ageatscan;
+				$tables[$uid]['gender'] = $gender;
+				$tables[$uid]['subjectid'] = $subject_id;
+				$tables[$uid]['studyid'] = $study_id;
+				$tables[$uid]['studynum'] = $study_num;
+				//$names[$name] = "blah";
+				if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
+				if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
+				
+				if (($thevalue > $names2[$name2]['max']) || ($names2[$name2]['max'] == "")) { $names2[$name2]['max'] = $thevalue; }
+				if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
 			}
-			
-			switch($type) {
-				case "v": $thevalue = $value; break;
-				case "f": $thevalue = $filename; break;
-				case "t": $thevalue = $text; break;
-				case "h": $thevalue = $filename; break;
-				case "i":
-					?>
-					<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
-					<?
-					break;
-			}
-			if (substr($name, -(strlen($unit))) != $unit) {
-				$name .= " <b>$unit</b>";
-				$name2 .= " " . $row['result_unit'];
-			}
-			$tables[$uid][$name] = $thevalue;
-			$tables[$uid][$name2] = $thevalue;
-			$tables[$uid]['age'] = $ageatscan;
-			$tables[$uid]['gender'] = $gender;
-			$tables[$uid]['subjectid'] = $subject_id;
-			$tables[$uid]['studyid'] = $study_id;
-			$tables[$uid]['studynum'] = $study_num;
-			//$names[$name] = "blah";
-			if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
-			if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
-			
-			if (($thevalue > $names2[$name2]['max']) || ($names2[$name2]['max'] == "")) { $names2[$name2]['max'] = $thevalue; }
-			if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
-		}
 
 		if ($s_resultorder == "pipelinecsv") {
 			$csv = "uid,studynum,sex,age";
@@ -3608,7 +3630,7 @@
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		if (mysql_num_rows($result) < 1) {
 			?>
-			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> type series
+			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> series
 			<?
 			return "";
 		}
@@ -3690,7 +3712,13 @@
 						$wheres[] = "(`$modalitytable`.series_altdesc like '%" . trim($seriesdesc) . "%')";
 					}
 					else {
-						$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
+						/* protocol name for MR is stored in series_desc, all other modalities is series_protocol */
+						if ($modality == "mr") {
+							$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
+						}
+						else {
+							$wheres[] = "(`$modalitytable`.series_protocol like '%" . trim($seriesdesc) . "%')";
+						}
 					}
 				}
 				$sqlwhere .= implode(" or ", $wheres);

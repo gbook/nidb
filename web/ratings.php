@@ -32,12 +32,9 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes.php";
 
-	//PrintVariable($_POST, "POST");
-	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
@@ -48,12 +45,12 @@
 	$notes = GetVariable("rating_notes");
 	
 	if ($action == "addrating") {
-		//echo "Username: [$username]";
 		AddRating($username, $modality, $type, $id, $value, $notes);
 		DisplayRatings($id, $type, $modality, $username);
 	}
-	elseif ($action == "deleterating") {
+	elseif ($action == "delete") {
 		DeleteRating($ratingid);
+		DisplayRatings($id, $type, $modality, $username);
 	}
 	else {
 		DisplayRatings($id, $type, $modality, $username);
@@ -82,6 +79,7 @@
 	/* -------------------------------------------- */
 	function DeleteRating($ratingid) {
 		$sqlstring = "delete from ratings where rating_id = '$ratingid'";
+		//PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="message">Rating deleted</span><?
 	}
@@ -155,7 +153,7 @@
 						<td><?=$rating_date?></td>
 						<td style="color: <?=$rating_fcolor;?>; background-color: <?=$rating_bcolor;?>"><?=$rating_value?></td>
 						<td><?=$rating_notes?></td>
-						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>" style="color: red">X</a></td>
+						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>&type=<?=$type?>&modality=<?=$modality?>" style="color: red">X</a></td>
 					</tr>
 					<?
 				}
