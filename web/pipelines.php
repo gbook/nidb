@@ -123,7 +123,7 @@
 			break;
 		case 'update':
 			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
-			//echo "before -- UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden)";
+			echo "before -- UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden)";
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
@@ -232,7 +232,7 @@
 	/* -------------------------------------------- */
 	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
-		//echo "after -- UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden)<br>";
+		echo "after -- UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden)<br>";
 		
 		/* perform data checks */
 		$pipelinetitle = mysql_real_escape_string($pipelinetitle);
@@ -350,6 +350,12 @@
 	/* ------- CopyPipeline ----------------------- */
 	/* -------------------------------------------- */
 	function CopyPipeline($id, $newname) {
+		
+		//$sqlstring = "select * from pipelines where pipeline_id = $id";
+		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//echo "BEFORE COPY (original pipeline)<br>";
+		//PrintVariable($row);
 	
 		?>
 		<span class="tiny">
@@ -361,14 +367,14 @@
 		
 		$sqlstring = "start transaction";
 		//PrintSQL("$sqlstring");
-		echo "<li><b>Starting transaction</b> [$sqlstring]";
+		echo "<li><b>Starting transaction</b> [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		/* ------ copy the pipeline definition ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_pipeline$id select * from pipelines where pipeline_id = $id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Creating temp table from existing pipeline table spec [$sqlstring]";
+		echo "<li>Creating temp table from existing pipeline table spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* get the new pipeline id */
@@ -377,91 +383,108 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newid = $row['newid'];
-		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]";
+		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
 
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
 		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$version = $row['pipeline_version'];
-		echo "<li>Getting pipeline version [$version] [$sqlstring]";
+		echo "<li>Getting pipeline version [$version] [$sqlstring]\n";
 
 		/* make any changes to the new pipeline before inserting */
 		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = '', pipeline_lastfinish = '', pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
-		echo "<li>Making changes to new pipeline in temp table [$sqlstring]";
+		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
 		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* insert the changed row into the pipeline table */
 		$sqlstring = "insert into pipelines select * from tmp_pipeline$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Getting new pipeline ID [$sqlstring]";
+		echo "<li>Getting new pipeline ID [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_pipeline$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Deleting temp table [$sqlstring]";
+		echo "<li>Deleting temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* ------ copy the data specification ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_dataspec$id (select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version)";
 		//PrintSQL("$sqlstring");
-		echo "<li>Create temp table from existing pipeline_data_def spec [$sqlstring]";
+		echo "<li>Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* make any changes to the new pipeline before inserting */
 		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = ''";
 		//PrintSQL("$sqlstring");
-		echo "<li>Make changes to temp table [$sqlstring]";
+		echo "<li>Make changes to temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* insert the changed rows into the pipeline_data_def table */
 		$sqlstring = "insert into pipeline_data_def select * from tmp_dataspec$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Insert temp table rows into pipeline_data_def [$sqlstring]";
+		echo "<li>Insert temp table rows into pipeline_data_def [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_dataspec$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Drop temp table [$sqlstring]";
+		echo "<li>Drop temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* ------ copy the pipeline steps specification ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_steps$id (select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version)";
 		//PrintSQL("$sqlstring");
-		echo "<li>Create temp table from pipeline_steps spec [$sqlstring]";
+		echo "<li>Create temp table from pipeline_steps spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* make any changes to the new pipeline before inserting */
 		$sqlstring = "update tmp_steps$id set pipeline_id = $newid, pipeline_version = 1, pipelinestep_id = ''";
 		//PrintSQL("$sqlstring");
-		echo "<li>Make changes to temp table [$sqlstring]";
+		echo "<li>Make changes to temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* insert the changed rows into the pipeline_data_def table */
 		$sqlstring = "insert into pipeline_steps select * from tmp_steps$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Insert temp rows into pipeline_steps table [$sqlstring]";
+		echo "<li>Insert temp rows into pipeline_steps table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_steps$id";
 		//PrintSQL("$sqlstring");
-		echo "<li>Drop temp table [$sqlstring]";
+		echo "<li>Drop temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* copy any dependencies */
+		$sqlstring = "select * from pipeline_dependencies where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$parentid = $row['parent_id'];
+			$sqlstringA = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($newid,'$parentid')";
+			echo "<li>Copy dependency [$sqlstringA]\n";
+			//PrintSQL($sqlstring);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+		}
 		
 		/* ------ all done ------ */
 		$sqlstring = "commit";
 		//PrintSQL("$sqlstring");
-		echo "<li><b>Commit the transaction</b> [$sqlstring]";
+		echo "<li><b>Commit the transaction</b> [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?>
 		</ol>
 		<?
+		
+		//$sqlstring = "select * from pipelines where pipeline_id = $newid";
+		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//echo "AFTER COPY (new pipeline)<br>\n";
+		//PrintVariable($row);
 	}
 
 	
@@ -1292,9 +1315,12 @@
 							<td valign="top"><input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60"></td>
 						</tr>
 						<tr>
+							<td class="label" valign="top">Notes<br><span class="tiny">Any information about the analysis</span></td>
+							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
+						</tr>
+						<tr>
 							<td class="label" valign="top">Stats level</td>
 							<td valign="top">
-								<!--<input type="radio" name="level" id="level0" value="0" <?=$disabled?> <? if ($level == 0) echo "checked"; ?>>One-shot <span class="tiny">Runs only once. No associated data</span><br>-->
 								<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>First <span class="tiny">subject level</span><br>
 								<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>Second <span class="tiny">group level</span><br>
 							</td>
@@ -1338,18 +1364,6 @@
 							<td valign="top"><input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>> <input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="56"><br>
 							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 						</tr>
-						<!--<tr class="level1">
-							<td class="label" valign="top">Data download</td>
-							<td valign="top">
-								<input type="radio" name="dataand" value="0" <?=$disabled?> <? if ($dataand == 0) echo "checked"; ?>>or <span class="tiny">download any of the data specified below</span><br>
-								<input type="radio" name="dataand" value="1" <?=$disabled?> <? if ($dataand == 1) echo "checked"; ?>>and <span class="tiny">only download data if all of the series specified exist in the study</span><br>
-								<input type="radio" name="dataand" value="-1" <?=$disabled?> <? if ($dataand == -1) echo "checked"; ?>>none <span class="tiny">no data download. only use if the pipeline has a dependency</span>
-							</td>
-						</tr>-->
-						<!--<tr class="level1">
-							<td class="label" valign="top">Remove downloaded data?</td>
-							<td valign="top" title="<b>Remove downloaded data</b><br><br>Deletes all downloaded (raw) data after analysis is complete. Assumes that the analsysis will have copied or converted the necessary data and no longer needs it"><input type="checkbox" name="pipelineremovedata" value="1" <? if ($remove) { echo "checked"; } ?>></td>
-						</tr>-->
 						<tr>
 							<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful"></td>
 							<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
@@ -1367,7 +1381,7 @@
 							<td valign="top">
 								<table class="entrytable">
 									<tr>
-										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Dependency</td>
+										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">(it is a child pipeline of...)</span></td>
 										<td valign="top">
 											<select name="dependency[]" <?=$disabled?> multiple="multiple" size="7">
 												<option value="">(No dependency)</option>
@@ -1395,7 +1409,8 @@
 														}
 													}
 												?>
-											</select>
+											</select><br>
+											<span class="tiny">ctrl+click to select multiple</span>
 										</td>
 									</tr>
 									<tr>
@@ -1418,6 +1433,69 @@
 											<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
 											<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
 											<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
+										</td>
+									</tr>
+								</table>
+								Dependency tree
+								<?
+									if ($dependency != "") {
+										$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency) and pipeline_enabled = 1";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$parentid = $row['pipeline_id'];
+											$parents[$parentid]['name'] = $row['pipeline_name'];
+											$parents[$parentid]['desc'] = $row['pipeline_desc'];
+											$parents[$parentid]['notes'] = $row['pipeline_notes'];
+										}
+									}
+									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = $id) and pipeline_enabled = 1";
+									//PrintSQL($sqlstring);
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$childid = $row['pipeline_id'];
+										$children[$childid]['name'] = $row['pipeline_name'];
+										$children[$childid]['desc'] = $row['pipeline_desc'];
+										$children[$childid]['notes'] = $row['pipeline_notes'];
+									}
+								?>
+								<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
+									<tr>
+										<td align="center">
+											<table style="font-size:10pt">
+												<tr>
+												<?
+													if (count($parents) > 0) {
+														foreach ($parents as $parentid => $info) {
+															?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
+														}
+													}
+													else {
+														?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
+													}
+												?>
+												</tr>
+											</table>
+										</td>
+									</tr>
+									<tr>
+										<td align='center' style="border-top: 2px solid #526FAA; border-bottom: 2px solid #526FAA; font-weight: bold; background-color:#eee" title="This pipeline"><?=$title?></td>
+									</tr>
+									<tr>
+										<td align="center">
+											<table style="font-size:10pt">
+												<tr>
+												<?
+													if (count($children) > 0) {
+														foreach ($children as $child => $info) {
+															?><td align="center" style="padding: 2px 10px">&darr;<br><a href="pipelines.php?action=editpipeline&id=<?=$childid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a></td><?
+														}
+													}
+													else {
+														?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
+													}
+												?>
+												</tr>
+											</table>
 										</td>
 									</tr>
 								</table>
@@ -1450,12 +1528,9 @@
 											<?
 										}
 									?>
-								</select>
+								</select><br>
+								<span class="tiny">ctrl+click to select multiple</span>
 							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Notes<br><span class="tiny">Any information about the analysis</span></td>
-							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Hidden?</td>
@@ -1644,6 +1719,29 @@
 					<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
 					<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
 					</span>
+					<br><br><br>
+					<span style="color:#555; font-size:11pt; font-weight: bold">Pipeline not working?</span><br>
+					<details style="font-size:10pt">
+						<summary style="color: #3B5998"> Help! </summary>
+						There are several things that can cause the pipeline not to (or appear not to) process your data
+						<ol>
+							<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
+								<ul>
+									<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
+									<li>Check the "Image type". For MR, this can also vary over time.
+									<li>Make sure the data items are enabled and at least one item is not optional
+									<li>Make sure at least one data item is at the study level
+									<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
+									<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
+								</ul>
+							<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
+							<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="pipelines.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
+							<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
+							<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
+							<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
+						</ol>
+						The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
+					</details>
 				</td>
 					<?
 				}
@@ -2233,7 +2331,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			$version = $row['pipeline_version'];
 		}
 		
-		//$urllist['Analysis'] = "analysis.php";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
 		NavigationBar("Analysis", $urllist);
@@ -3472,46 +3569,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	</style>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
 	<br>
-	<!--<details>-->
-	<!-- display the cluster load -->
-	<!--<summary style="font-size:10pt; color:#666">View cluster load</summary>
-		<?
-		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
-		
-		$slotsusedcolor = "FF4500";
-		$slotsunusedcolor = "EEEEEE";
-
-		?>
-
-		<table border="0" cellspacing="0" cellpadding="0" style="font-size:8pt">
-			<?
-				foreach ($queues as $queue) {
-					$slotsused = 0;
-					$slotsunused = 0;
-					
-					foreach ($hostnames as $hostname) {
-						if (isset($report[$hostname]['queues'][$queue])) {
-							//echo "<pre>";
-							//print_r($report[$hostname]['queues'][$queue]['jobs']);
-							$slotsused += $report[$hostname]['queues'][$queue]['slotsused'];
-							$slotsunused += $report[$hostname]['queues'][$queue]['slotsavailable'];
-							//echo "</pre>";
-						}
-					}
-					?>
-					<tr>
-						<td><?=$queue?> &nbsp;</td>
-						<td>
-							<img src="horizontalchart.php?b=yes&w=200&h=12&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
-							<? if ($slotsused == 0) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>
-						</td>
-					</tr>
-					<?
-				}
-			?>
-		</table>
-		<br><br>
-	</details> -->
 	
 	<table class="smallgraydisplaytable" width="100%">
 		<thead>
@@ -3572,6 +3629,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$sqlstring = "select a.parent_id,b.pipeline_id from pipeline_dependencies a right join pipelines b on a.pipeline_id = b.pipeline_id $whereclause order by b.pipeline_group, pipeline_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//print_r($row); echo "<br>\n";
 			$childID = $row['pipeline_id'];
 			$parentID = $row['parent_id'];
 			if ($parentID == '') { $parentID = null; }
