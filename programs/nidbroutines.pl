@@ -380,64 +380,71 @@ sub SendTextEmail {
 sub SendHTMLEmail {
 	my ($to, $subject, $htmlbody) = @_;
 
-	#Create a new object with 'new'. 
-	my $smtp;
-	if (not $smtp = Net::SMTP::TLS->new($cfg{'emailserver'}, Port=>$cfg{'emailport'}, User=>$cfg{'emailusername'}, Password=>$cfg{'emailpassword'})) {
-		print "Could not connect to server\n";
-	}
-	#print "Connected to $cfg{'emailserver'}:$cfg{'emailport'} with $cfg{'emailusername'}/$cfg{'emailpassword'}\n";
+	if (($cfg{'emaillib'} eq '') || ($cfg{'emaillib'} eq 'Net-SMTP-TLS')) {
+		#Create a new object with 'new'. 
+		my $smtp;
+		if (not $smtp = Net::SMTP::TLS->new($cfg{'emailserver'}, Port=>$cfg{'emailport'}, User=>$cfg{'emailusername'}, Password=>$cfg{'emailpassword'})) {
+			print "Could not connect to server\n";
+		}
+		#print "Connected to $cfg{'emailserver'}:$cfg{'emailport'} with $cfg{'emailusername'}/$cfg{'emailpassword'}\n";
 
-	# Create arbitrary boundary text used to seperate
-	# different parts of the message
-	my ($bi, $bn, @bchrs);
-	my $boundry = "";
-	foreach $bn (48..57,65..90,97..122) {
-		$bchrs[$bi++] = chr($bn);
-	}
-	foreach $bn (0..20) {
-		$boundry .= $bchrs[rand($bi)];
-	}
-	
-	# send the header
-	$smtp->mail($cfg{'emailusername'} . "\n");
-	WriteLog("Sending mail to [$to]");
-	if (trim($to) eq "") {
-		return "No recipients";
-	}
-	my @recepients = split(/,/, $to);
-	foreach my $recp (@recepients) {
-		#print "Sending mail to [$recp]\n";
-		$smtp->to($recp . "\n");
-	}
+		# Create arbitrary boundary text used to seperate
+		# different parts of the message
+		my ($bi, $bn, @bchrs);
+		my $boundry = "";
+		foreach $bn (48..57,65..90,97..122) {
+			$bchrs[$bi++] = chr($bn);
+		}
+		foreach $bn (0..20) {
+			$boundry .= $bchrs[rand($bi)];
+		}
+		
+		# send the header
+		$smtp->mail($cfg{'emailusername'} . "\n");
+		WriteLog("Sending mail to [$to]");
+		if (trim($to) eq "") {
+			return "No recipients";
+		}
+		my @recepients = split(/,/, $to);
+		foreach my $recp (@recepients) {
+			#print "Sending mail to [$recp]\n";
+			$smtp->to($recp . "\n");
+		}
 
-	#Start the message.
-	$smtp->data();
-	#Send the message.
-	$smtp->datasend("From: $cfg{'emailusername'}\n");
-	$smtp->datasend("To: $to\n");
-	$smtp->datasend("Subject: $subject\n");
-	$smtp->datasend("MIME-Version: 1.0\n");
-	$smtp->datasend("Content-Type: multipart/mixed; BOUNDARY=\"$boundry\"\n");
-	$smtp->datasend("\n--$boundry\n");
-	$smtp->datasend("Content-Type: text/html\n");
+		#Start the message.
+		$smtp->data();
+		#Send the message.
+		$smtp->datasend("From: $cfg{'emailusername'}\n");
+		$smtp->datasend("To: $to\n");
+		$smtp->datasend("Subject: $subject\n");
+		$smtp->datasend("MIME-Version: 1.0\n");
+		$smtp->datasend("Content-Type: multipart/mixed; BOUNDARY=\"$boundry\"\n");
+		$smtp->datasend("\n--$boundry\n");
+		$smtp->datasend("Content-Type: text/html\n");
 
-	# attempt to break up the message into 15kb sections
-	# TLS has an odd limit: any string passed to datasend() must be shorter than 2^14 bytes (~16kb) or else its truncated and repeated
-	while (length($htmlbody) > 15000) {
-		my $frag = substr($htmlbody, 0, 15000);
-		$htmlbody= substr($htmlbody, 15000);
-		$smtp->datasend("$frag");
+		# attempt to break up the message into 15kb sections
+		# TLS has an odd limit: any string passed to datasend() must be shorter than 2^14 bytes (~16kb) or else its truncated and repeated
+		while (length($htmlbody) > 15000) {
+			my $frag = substr($htmlbody, 0, 15000);
+			$htmlbody= substr($htmlbody, 15000);
+			$smtp->datasend("$frag");
+		}
+		
+		$smtp->datasend("$htmlbody \n\n");
+		$smtp->datasend("\n--$boundry\n");
+		#End the message. 
+		$smtp->datasend("\n--$boundry--\n"); # send boundary end message
+		$smtp->datasend("\n");
+		$smtp->dataend();
+		#Close the connection to your server. 
+		$smtp->quit();
 	}
-	
- 	$smtp->datasend("$htmlbody \n\n");
-	$smtp->datasend("\n--$boundry\n");
-	#End the message. 
-	$smtp->datasend("\n--$boundry--\n"); # send boundary end message
-	$smtp->datasend("\n");
-	$smtp->dataend();
-	#Close the connection to your server. 
-	$smtp->quit();
-  
+	elsif ($cfg{'emaillib'} eq 'Email-Send-SMTP-Gmail') {
+		my ($mail,$error)=Email::Send::SMTP::Gmail->new( -smtp=>$cfg{'emailserver'}, -login=>$cfg{'emailusername'}, -pass=>$cfg{'emailpassword'}, -port=>$cfg{'emailport'});
+		print "session error: $error" unless ($mail!=-1);
+		$mail->send( -to=>$to, -subject=>$subject, -body=>$htmlbody, -contenttype=>'text/html');
+		$mail->bye;	
+	}
 }
 
 

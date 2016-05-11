@@ -41,6 +41,7 @@
 	require "menu.php";
 	
 	//PrintVariable($_POST,'post');
+	//exit(0);
 	
 	/* setup variables */
 	$action = GetVariable("action");
@@ -66,21 +67,24 @@
 	$enablebeta = GetVariable("enablebeta");
 	$id = GetVariable("id");
 	$instanceid = GetVariable("instanceid");
-	$protocol = GetVariable("protocol");
-	$variable = GetVariable("variable");
-	$criteria = GetVariable("criteria");
-	$value = GetVariable("value");
+	$notifications = GetVariable("notification");
+	$projectids = GetVariables("projectid");
+	//PrintVariable($projectids);
+	//$protocol = GetVariable("protocol");
+	//$variable = GetVariable("variable");
+	//$criteria = GetVariable("criteria");
+	//$value = GetVariable("value");
 
 	/* ----- determine which action to take ----- */
 	switch ($action) {
 		case 'saveoptions':
-			SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta);
+			SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids);
 			DisplayOptions($username);
 			break;
-		case 'addnot':
-			AddNotification($username, $protocol, $variable, $criteria, $value);
-			DisplayOptions($username);
-			break;
+		//case 'addnot':
+		//	AddNotification($username, $protocol, $variable, $criteria, $value);
+		//	DisplayOptions($username);
+		//	break;
 		case 'deletenot':
 			DeleteNotification($id);
 			DisplayOptions($username);
@@ -98,7 +102,7 @@
 	/* ----------------------------------------------- */
 	/* --------- SaveOptions ------------------------- */
 	/* ----------------------------------------------- */
-	function SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta) {
+	function SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids) {
 		if (IsGuest($username)) { return; }
 		
 		foreach ($c as $key => $val) {
@@ -108,11 +112,30 @@
 		$sqlstring = "select * from users where username = '$username'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
+			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$userid = $row['user_id'];
 			/* update */
 			$sqlstring = "update users set";
 			if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
 			$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete all existing notification entries */
+			$sqlstring = "delete from notification_user where user_id = $userid";
+			PrintSQL($sqlstring);
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* update the notifications */
+			foreach ($notifications as $notificationid) {
+				$pids = $projectids[$notificationid];
+				foreach ($pids as $projectid) {
+					if ($projectid == "all") { $projectid = 0; }
+					
+					$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
 		}
 		else {
 			?>
@@ -125,7 +148,7 @@
 	/* ----------------------------------------------- */
 	/* --------- AddNotification --------------------- */
 	/* ----------------------------------------------- */
-	function AddNotification($username, $protocol, $variable, $criteria, $value) {
+/* 	function AddNotification($username, $protocol, $variable, $criteria, $value) {
 		if (IsGuest($username)) { return; }
 
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -146,18 +169,18 @@
 			<?
 		}
 	}
-
+ */
 
 	/* ----------------------------------------------- */
 	/* --------- DeleteNotification ------------------ */
 	/* ----------------------------------------------- */
-	function DeleteNotification($id) {
-		if (IsGuest($username)) { return; }
-		
-		$sqlstring = "delete from notifications where id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="message">Notification deleted</span><?
-	}
+	//function DeleteNotification($id) {
+	//	if (IsGuest($username)) { return; }
+	//	
+	//	$sqlstring = "delete from notifications where id = $id";
+	//	$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+	//	?><span class="message">Notification deleted</span><?
+	//}
 
 
 	/* ----------------------------------------------- */
@@ -267,15 +290,7 @@
 					var hasError = false;
 					var passwordVal = $("#password").val();
 					var checkVal = $("#password-check").val();
-					//if (passwordVal == '') {
-					//	$("#password").after('<span class="error">Please enter a password.</span>');
-					//	hasError = true;
-					//}
-					//else if (checkVal == '') {
-					//	$("#password-check").after('<span class="error">Please re-enter your password.</span>');
-					//	hasError = true;
-					//}
-					//else
+
 					if (passwordVal != checkVal ) {
 						$("#password-check").after('<span class="error">Passwords do not match.</span>');
 						hasError = true;
@@ -304,12 +319,6 @@
 				<tr>
 					<td class="main">
 						<table class="editor">
-							<!--
-							<tr>
-								<td class="label">Login type</td>
-								<td class="value"><?=$login_type?></td>
-							</tr>
-							-->
 							<tr>
 								<td class="label">Name</td>
 								<td class="value">
@@ -704,6 +713,47 @@
 								<td><input type="password" name="password-check" id="password-check" autocomplete="off" value=""><br><br></td>
 							</tr>
 							<? } ?>
+							<tr>
+								<td class="label">Notifications</td>
+								<td>
+									<table>
+									<?
+										$sqlstring  = "select * from notifications";
+										$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+										while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+											//$userid = $row['user_id'];
+											$notificationid = $row['notiftype_id'];
+											$notificationname = $row['notiftype_name'];
+											$notificationdesc = $row['notiftype_desc'];
+											$projectid = $row['project_id'];
+											$frequency = $row['notiftype_frequency'];
+											
+											$sqlstringA = "select * from notification_user where user_id = $userid and notiftype_id = $notificationid";
+											$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+											if (mysql_num_rows($resultA) > 0) {
+												$notifenabled = "checked";
+												unset($projectids);
+												while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+													$projectids[] = $rowA['project_id'];
+												}
+												//PrintVariable($projectids);
+											}
+											else {
+												$notifenabled = "";
+											}
+											?>
+											<tr>
+												<td valign="top">
+													<div title="<?=$notificationdesc?>"><input type="checkbox" <?=$notifenabled?> name="notification[]" value="<?=$notificationid?>"> <b><?=$notificationname?></b></div>
+												</td>
+												<td valign="top"><? DisplayProjectSelectBox(0,"projectid-$notificationid"."[]",'',1,$projectids); ?></td>
+											</tr>
+											<?
+										}
+									?>
+									</table>
+								</td>
+							</tr>
 							<tr>
 								<td class="label"><input type="checkbox" name="sendmail_dailysummary" <?=$dailycheck?> value="1"></td>
 								<td class="value">Send daily summary email of NiDB activity

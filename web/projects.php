@@ -674,16 +674,18 @@
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 			
-			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 				$isprimary = $rowA['isprimary'];
 				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$altids[] = "*" . $altid;
-				}
-				else {
-					$altids[] = $altid;
+				if ($altuid != "") {
+					if ($isprimary) {
+						$altids[] = "*" . $altid;
+					}
+					else {
+						$altids[] = $altid;
+					}
 				}
 			}
 			$altuidlist = implode2(", ",$altids);

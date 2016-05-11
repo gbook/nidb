@@ -146,7 +146,6 @@ sub ProcessPipelines() {
 		
 		my $pipelinename = $row{'pipeline_name'};
 		my $pipelineversion = $row{'pipeline_version'};
-		my $pipelinedataand = $row{'pipeline_dataand'};
 		my $pipelinedependency = $row{'pipeline_dependency'};
 		my $pipelinegroupids = $row{'pipeline_groupid'} . '';
 		my $pipelinedirectory = $row{'pipeline_directory'};
@@ -200,7 +199,7 @@ sub ProcessPipelines() {
 		my $dd = ();
 		my @datadef = ();
 		if ($pipelinelevel != 0) {
-			if ( (($pipelinedataand != -1) && ($pipelinelevel == 1)) || (($pipelinelevel == 2) && ($pipelinedependency eq ''))) {
+			if (($pipelinelevel == 1) || (($pipelinelevel == 2) && ($pipelinedependency eq ''))) {
 				$dd = GetPipelineDataDef($pid, $pipelineversion);
 				if (!$dd) {
 					WriteLog("Pipeline [$pipelinename - $pid] has no data definition. Skipping.");
@@ -461,15 +460,8 @@ sub ProcessPipelines() {
 							}
 							$setuplog .= WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]"); $setuplog .= "\n";
 
-							# download the data for the study, if there is any that satisfies the search criteria
-							if ($pipelinedataand == -1) {
-								$numseries = 1;
-								$datalog = "No data downloaded in accordance with this pipeline specification";
-							}
-							else {
-								if (!$runsupplement) {
-									($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelinedataand, $pipelineversion, $pid, @datadef);
-								}
+							if (!$runsupplement) {
+								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, @datadef);
 							}
 
 							# again check if there is anything to actually run on
@@ -1026,7 +1018,7 @@ sub CreateSGEJobFile() {
 			if ($issupplement) { $supplement = "supplement-"; } else { $supplement = ""; }
 
 			# check if this is a supplement command, and if it should be run
-			if ( (($runsupplement == 1) && ($issupplement == 0)) || (($runsupplement == 0) && ($issupplement == 1)) ) {
+			if ( (($runsupplement eq '1') && ($issupplement eq '0')) || (($runsupplement eq '0') && ($issupplement eq '1')) ) {
 				next;
 			}
 			
@@ -1266,7 +1258,7 @@ sub GetUIDStudyNumListByGroup() {
 # --------- GetData ----------------------------------------
 # ----------------------------------------------------------
 sub GetData() {
-	my ($studyid, $analysispath, $uid, $analysisid, $pipelinedataand, $pipelineversion, $pid, @datadef) = @_;
+	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, @datadef) = @_;
 	
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1289,7 +1281,6 @@ sub GetData() {
 		my $studynum = $row{'study_num'};
 		
 		WriteLog("Study modality is [$modality]");
-		#WriteLog("Data AND: $pipelinedataand");
 		$datalog .= "----- Begin checking data steps -----\n";
 		
 		# ------------------------------------------------------------------------
@@ -1983,6 +1974,7 @@ sub GetPipelineDataDef() {
 	# get data definition
 	my $sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = $pipelineversion order by pdd_type, pdd_order asc";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#WriteLog("Checkin from GetPipelineDataDef");
 	if ($result->numrows > 0) {
 		my @list;
 		while (my %row = $result->fetchhash) {

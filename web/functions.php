@@ -507,6 +507,42 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- DisplayProjectSelectBox ------------ */
+	/* -------------------------------------------- */
+	/* display project <select> box with only projects
+	   to which the user has permissions and belongs the
+	   parent instance. Also highlight selected IDs */
+	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids) {
+		//PrintVariable($selectedids);
+		if (in_array(0, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
+		?>
+		<select name="<?=$varname?>" class="<?=$classname?>" <? if ($multiselect) { echo "multiple"; } ?>>
+			<option value="0" <?=$selected?>>All Projects</option>
+			<?
+				if ($currentinstanceonly) {
+					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+				}
+				else {
+					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') order by project_name";
+				}
+				
+				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$project_id = $row['project_id'];
+					$project_name = $row['project_name'];
+					$project_costcenter = $row['project_costcenter'];
+					if (in_array($project_id, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
+					?>
+					<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+					<?
+				}
+			?>
+		</select><? if ($multiselect) { echo "<br><span class='tiny'>Ctrl + click to select multiple</span>"; } ?>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
 	/* ------- implode2 --------------------------- */
 	/* -------------------------------------------- */
 	/* special implode which checks for empty array */

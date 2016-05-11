@@ -30,6 +30,7 @@ use strict;
 use warnings;
 use Mysql;
 use Net::SMTP::TLS;
+use Email::Send::SMTP::Gmail;
 use Data::Dumper;
 use File::Path;
 use File::Copy;
@@ -113,10 +114,61 @@ sub DoNotifications {
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
 
-	# do all of the notifications
-	SendNoficationImportStatus();
-	SendNoficationArchiveStatus();
-	SendNoficationPipelineStatus();
+	# get list of notification rows per subject/project and run them
+	my %notifications;
+	my $sqlstring = "select * from notification_user a left join notifications b on a.notiftype_id = b.notiftype_id left join users c on a.user_id = c.user_id";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	while (my %row = $result->fetchhash) {
+		my $userid = $row{'user_id'};
+		my $projectid = $row{'project_id'};
+		my $notificationid = $row{'notiftype_id'};
+		
+		# group the notifications by user, then by notification type, then by project
+		$notifications{$userid}{$notificationid}{$projectid} = 1;
+	}
+	print Dumper(\%notifications);
+	
+	my $frequency = 'weekly';
+	# loop through all the users and build a single email
+	foreach my $userid (keys %notifications) {
+		if (($userid eq '') || ($userid <= 0)) { next; }
+		
+		# get user information
+		my $sqlstring = "select * from users where user_id = $userid";
+		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+		my %row = $result->fetchhash;
+		my $fullname = $row{'user_fullname'};
+		if ($fullname eq "") {
+			$fullname = $row{'user_firstname'} . ' ' . $row{'user_lastname'};
+		}
+		my $email = $row{'user_email'};
+
+		print "Working on user [$userid] [$fullname] [$email]\n";
+		# build email header
+		my $body = BuildSummaryEmailHeader($email);
+		
+		# loop through all of the notificationids
+		foreach my $notificationid (keys $notifications{$userid}) {
+			print "Working on notification id [$notificationid]\n";
+				
+			# loop through all of the projects for this notification
+			foreach my $projectid (keys $notifications{$userid}{$notificationid}) {
+				print "Working on project id [$projectid]\n";
+				
+				switch ($notificationid) {
+					case 0 { $body .= ImportSummary($userid, $projectid, $frequency); }
+					case 1 { $body .= ArchiveSummary($userid, $projectid, $frequency); }
+					case 2 { $body .= PipelineSummary($userid, $projectid, $frequency); }
+				}
+			}
+		}
+		
+		# build email footer
+		$body .= BuildSummaryEmailFooter();
+
+		# send the summary email
+		SendHTMLEmail($email, "NiDB weekly summary", $body);
+	}	
 	
 	# update the stop time
 	ModuleDBCheckOut($scriptname, $db);
@@ -126,10 +178,82 @@ sub DoNotifications {
 
 
 # ----------------------------------------------------------
-# --------- SendNoficationImportStatus ---------------------
+# --------- BuildSummaryEmailHeader ------------------------
 # ----------------------------------------------------------
-sub SendNoficationImportStatus {
+sub BuildSummaryEmailHeader {
+	my ($email) = @_;
+	
+	my $site = $cfg{'siteurl'};
+	my $date = CreateCurrentDate();
+	
+	my $str = qq^
+	<html>
+	<head>
+		<title>$site summary - $date</title>
+	</head>
+	<body style='font-family: arial, helvetica, sans-serif'>
+	<div align='center'><b>NiDB weekly notification summary email</b></div>
+	<br><br>
+	^;
+	
+	return $str;
 }
+
+
+# ----------------------------------------------------------
+# --------- BuildSummaryEmailFooter ------------------------
+# ----------------------------------------------------------
+sub BuildSummaryEmailFooter {
+	my ($email) = @_;
+	
+	my $site = $cfg{'siteurl'};
+	my $date = CreateCurrentDate();
+	
+	my $str = qq^
+	<div align="center" style="font-size:8pt">To unsubscribe, login to $site. Go to username->My Account and deselect the notifications you longer wish to receive</div>
+	</body>
+	</html>
+	^;
+	
+	return $str;
+}
+
+
+# ----------------------------------------------------------
+# --------- ImportSummary ----------------------------------
+# ----------------------------------------------------------
+sub ImportSummary {
+	my ($userid, $projectid, $frequency) = @_;
+	
+	my $str;
+	
+	return $str;
+}
+
+
+# ----------------------------------------------------------
+# --------- ArchiveSummary ---------------------------------
+# ----------------------------------------------------------
+sub ArchiveSummary {
+	my ($userid, $projectid, $frequency) = @_;
+	
+	my $str;
+	
+	return $str;
+}
+
+
+# ----------------------------------------------------------
+# --------- PipelineSummary --------------------------------
+# ----------------------------------------------------------
+sub PipelineSummary {
+	my ($userid, $projectid, $frequency) = @_;
+	
+	my $str;
+	
+	return $str;
+}
+
 
 # ----------------------------------------------------------
 # --------- SendNoficationPipelineStatus -------------------
@@ -262,18 +386,6 @@ sub SendNoficationArchiveStatus {
 	
 	<table width="100%" cellspacing="0" cellpadding="1">
 	^;
-	#<tr><td colspan=6 align="center"><b>Series</b></td></tr>
-	#<tr style='color: white'>
-	#	<td bgcolor='darkblue'>UID</td>
-	#	<td bgcolor='darkblue'>Study #</td>
-	#	<td bgcolor='darkblue'>Gender</td>
-	#	<td bgcolor='darkblue'>Project</td>
-	#	<td bgcolor='darkblue'>Study date</td>
-	#	<td bgcolor='darkblue'>Operator</td>
-	#	<td bgcolor='darkblue'>Site</td>
-	#	<td bgcolor='darkblue'>Age</td>
-	#</tr>
-	#^;
 
 	my $study_id = "0";
 	my $laststudy_id = "0";
