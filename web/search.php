@@ -3250,45 +3250,42 @@
 										<tr>
 											<td valign="top" align="right">Destination</td>
 											<td valign="top">
-										<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web <span class="tiny">Download zipped file via webpage</span><br>
-										
-										<? if ($GLOBALS['isadmin']) { ?>
-										<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
-										<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
-												<td><input type="text" name="publicdownloaddesc" maxlength="255"><span class="tiny">Max 255 chars</span></td>
-											</tr>
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Release&nbsp;notes</td>
-												<td><textarea name="publicdownloadreleasenotes"></textarea></td>
-											</tr>
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></td>
-												<td><input type="password" name="publicdownloadpassword"></td>
-											</tr>
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Share download within this system<img src="images/help.gif" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></td>
-												<td><input type="checkbox" name="publicdownloadshareinternal" value="1"></td>
-											</tr>
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Require registration<img src="images/help.gif" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></td>
-												<td><input type="checkbox" name="publicdownloadregisterrequired" value="1" checked></td>
-											</tr>
-											<tr>
-												<td align="right" valign="top" width="30%" style="font-size:10pt">Expiration Date<img src="images/help.gif" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></td>
-												<td>
-													<input type="radio" name="publicdownloadexpire" value="7" checked>7 days<br>
-													<input type="radio" name="publicdownloadexpire" value="30">30 days<br>
-													<input type="radio" name="publicdownloadexpire" value="90">90 days<br>
-													<input type="radio" name="publicdownloadexpire" value="0">No expiration<br>
-												</td>
-											</tr>
-										</table>
-										<br>
-										<? } ?>
-										
-										<?
+												<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web <span class="tiny">Download zipped file via webpage</span><br>
+												<? if ($GLOBALS['isadmin']) { ?>
+												<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
+												<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
+														<td><input type="text" name="publicdownloaddesc" maxlength="255"><span class="tiny">Max 255 chars</span></td>
+													</tr>
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Release&nbsp;notes</td>
+														<td><textarea name="publicdownloadreleasenotes"></textarea></td>
+													</tr>
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></td>
+														<td><input type="password" name="publicdownloadpassword"></td>
+													</tr>
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Share download within this system<img src="images/help.gif" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></td>
+														<td><input type="checkbox" name="publicdownloadshareinternal" value="1"></td>
+													</tr>
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Require registration<img src="images/help.gif" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></td>
+														<td><input type="checkbox" name="publicdownloadregisterrequired" value="1" checked></td>
+													</tr>
+													<tr>
+														<td align="right" valign="top" width="30%" style="font-size:10pt">Expiration Date<img src="images/help.gif" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></td>
+														<td>
+															<input type="radio" name="publicdownloadexpire" value="7" checked>7 days<br>
+															<input type="radio" name="publicdownloadexpire" value="30">30 days<br>
+															<input type="radio" name="publicdownloadexpire" value="90">90 days<br>
+															<input type="radio" name="publicdownloadexpire" value="0">No expiration<br>
+														</td>
+													</tr>
+												</table>
+												<br>
+												<? } 
 											if (!$GLOBALS['cfg']['ispublic']) {
 												if ($s_resultorder != 'subject') {
 													?>
@@ -3341,6 +3338,9 @@
 												<br>
 											</td>
 										</tr>
+										<?
+										}
+									?>
 										<tr>
 											<td valign="top" align="right">Export<br><span class="tiny">Placed in local FTP</span></td>
 											<td valign="top">
@@ -3353,8 +3353,7 @@
 												<?
 												}
 											}
-										}
-									?>
+											?>
 											</td>
 										</tr>
 									</table>

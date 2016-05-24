@@ -40,6 +40,11 @@ INSERT INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numr
 INSERT INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
 (1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
 
+INSERT INTO `notifications` (`notiftype_id`, `notiftype_name`, `notiftype_desc`, `notiftype_needproject`) VALUES
+(2, 'Data collection report', 'This will send a report of collected data where study dates fall within the report range.', 1),
+(3, 'Pipeline summary', 'Summary of current or recently completed pipeline jobs', 0),
+(4, 'Missing data', 'Report on missing or potentially incomplete data', 1);
+
 INSERT INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
 (1, 1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
 (2, 1, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());

@@ -310,8 +310,8 @@
 	/* -------------------------------------------- */
 	function DisplayTransactions() {
 		
-		/* delete any transactions older than 14 days */
-		$sqlstring = "delete from import_transactions where transaction_startdate < date_sub(now(), interval 14 day)";
+		/* delete any transactions older than 21 days */
+		$sqlstring = "delete from import_transactions where transaction_startdate < date_sub(now(), interval 21 day)";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		$numdeleted1 = mysql_affected_rows();
 		
@@ -321,7 +321,7 @@
 		$numdeleted2 = mysql_affected_rows();
 		
 		?>
-		<span class="tiny">Cleanup import logs older than 14 days - Removed <?=$numdeleted1?> entries from import_transactions and <?=$numdeleted2?> entries from import_requests</span>
+		<span class="tiny">Cleanup import logs older than 21 days - Removed <?=$numdeleted1?> entries from import_transactions and <?=$numdeleted2?> entries from import_requests</span>
 		<br>
 		<table class="smallgraydisplaytable">
 			<thead>
@@ -432,12 +432,6 @@
 					<th>Site</th>
 					<th>Project</th>
 					<th>Instance</th>
-					<!--<th>UUID</th>-->
-					<!--<th>Anonymize</th>
-					<th>Permanent</th>
-					<th>Match by ID only</th>
-					<th>filename</th>
-					<th>File-is-series</th>-->
 				</tr>
 			</thead>
 		<?

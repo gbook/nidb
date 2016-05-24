@@ -122,18 +122,23 @@
 			
 			/* delete all existing notification entries */
 			$sqlstring = "delete from notification_user where user_id = $userid";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			
 			/* update the notifications */
 			foreach ($notifications as $notificationid) {
 				$pids = $projectids[$notificationid];
-				foreach ($pids as $projectid) {
-					if ($projectid == "all") { $projectid = 0; }
-					
-					$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
+				if (in_array(0,$pids) || in_array('all',$pids)) {
+					$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, 0, $notificationid)";
 					//PrintSQL($sqlstring);
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				}
+				else {
+					foreach ($pids as $projectid) {
+						$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
+						//PrintSQL($sqlstring);
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
@@ -143,44 +148,6 @@
 			<?
 		}
 	}
-
-
-	/* ----------------------------------------------- */
-	/* --------- AddNotification --------------------- */
-	/* ----------------------------------------------- */
-/* 	function AddNotification($username, $protocol, $variable, $criteria, $value) {
-		if (IsGuest($username)) { return; }
-
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
-		if (mysql_num_rows($result) > 0) {
-			$id = $row['user_id'];
-			
-			$sqlstring = "insert into notifications (user_id, notif_type, notif_protocol, notif_snrvalue, notif_snrcriteria, notif_snrvariable) values ('$id', 'snr', '$protocol', '$value', '$criteria', '$variable')";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			?>
-			<span class="message">Added notification. Notifications are sent daily IF the SNR meets your criteria.</span>
-			<?
-		}
-		else {
-			?>
-			<span class="message">User "<?=$username?>" does not exist in the database. Please contact the NIDB administrator</span>
-			<?
-		}
-	}
- */
-
-	/* ----------------------------------------------- */
-	/* --------- DeleteNotification ------------------ */
-	/* ----------------------------------------------- */
-	//function DeleteNotification($id) {
-	//	if (IsGuest($username)) { return; }
-	//	
-	//	$sqlstring = "delete from notifications where id = $id";
-	//	$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-	//	?><span class="message">Notification deleted</span><?
-	//}
 
 
 	/* ----------------------------------------------- */
@@ -725,6 +692,7 @@
 											$notificationid = $row['notiftype_id'];
 											$notificationname = $row['notiftype_name'];
 											$notificationdesc = $row['notiftype_desc'];
+											$notificationneedproject = $row['notiftype_needproject'];
 											$projectid = $row['project_id'];
 											$frequency = $row['notiftype_frequency'];
 											
@@ -746,7 +714,11 @@
 												<td valign="top">
 													<div title="<?=$notificationdesc?>"><input type="checkbox" <?=$notifenabled?> name="notification[]" value="<?=$notificationid?>"> <b><?=$notificationname?></b></div>
 												</td>
-												<td valign="top"><? DisplayProjectSelectBox(0,"projectid-$notificationid"."[]",'',1,$projectids); ?></td>
+												<? if ($notificationneedproject == 1) { ?>
+												<td valign="top"><? DisplayProjectSelectBox(0,"projectid-$notificationid"."[]",'','',1,$projectids); ?></td>
+												<? } else {?>
+												<td></td>
+												<? } ?>
 											</tr>
 											<?
 										}

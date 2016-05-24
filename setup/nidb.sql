@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 23, 2016 at 07:53 PM
+-- Generation Time: May 24, 2016 at 07:04 PM
 -- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -19,8 +19,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `nidb`
 --
-CREATE DATABASE IF NOT EXISTS `nidb` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `nidb`;
 
 DELIMITER $$
 --
@@ -767,6 +765,28 @@ CREATE TABLE IF NOT EXISTS `data_requests` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ecg_series`
+--
+
+CREATE TABLE IF NOT EXISTS `ecg_series` (
+  `ecgseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` text NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
+  `series_status` varchar(255) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `eeg_series`
 --
 
@@ -1471,13 +1491,24 @@ CREATE TABLE IF NOT EXISTS `nm_series` (
 --
 
 CREATE TABLE IF NOT EXISTS `notifications` (
+  `notiftype_id` int(11) NOT NULL,
+  `notiftype_name` varchar(255) NOT NULL,
+  `notiftype_desc` text NOT NULL,
+  `notiftype_needproject` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notification_user`
+--
+
+CREATE TABLE IF NOT EXISTS `notification_user` (
   `notif_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `notif_type` varchar(50) NOT NULL,
-  `notif_protocol` varchar(100) NOT NULL,
-  `notif_snrvalue` double NOT NULL,
-  `notif_snrcriteria` varchar(5) NOT NULL,
-  `notif_snrvariable` double NOT NULL
+  `project_id` int(11) NOT NULL,
+  `notiftype_id` int(11) NOT NULL,
+  `notif_frequency` enum('daily','weekly','monthly','yearly') NOT NULL DEFAULT 'weekly'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1540,7 +1571,6 @@ CREATE TABLE IF NOT EXISTS `pipelines` (
   `pipeline_laststart` datetime NOT NULL,
   `pipeline_lastfinish` datetime NOT NULL,
   `pipeline_lastcheck` datetime NOT NULL,
-  `pipeline_dataand` tinyint(1) NOT NULL DEFAULT '0',
   `pipeline_completefiles` text NOT NULL COMMENT 'comma separated list of files to check to assume the analysis is complete',
   `pipeline_numproc` int(11) NOT NULL COMMENT 'number of concurrent jobs allowed to run',
   `pipeline_queue` varchar(50) NOT NULL,
@@ -2367,6 +2397,7 @@ CREATE TABLE IF NOT EXISTS `xa_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2583,6 +2614,16 @@ ALTER TABLE `data_requests`
   ADD KEY `req_date` (`req_date`),
   ADD KEY `req_status` (`req_status`),
   ADD KEY `idx_data_requests` (`req_username`);
+
+--
+-- Indexes for table `ecg_series`
+--
+ALTER TABLE `ecg_series`
+  ADD PRIMARY KEY (`ecgseries_id`),
+  ADD KEY `fk_eeg_series_studies1` (`study_id`),
+  ADD KEY `series_desc` (`series_desc`),
+  ADD KEY `series_protocol` (`series_protocol`),
+  ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `eeg_series`
@@ -2835,6 +2876,12 @@ ALTER TABLE `nm_series`
 -- Indexes for table `notifications`
 --
 ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`notiftype_id`);
+
+--
+-- Indexes for table `notification_user`
+--
+ALTER TABLE `notification_user`
   ADD PRIMARY KEY (`notif_id`),
   ADD KEY `idx_notifications` (`user_id`);
 
@@ -3297,6 +3344,11 @@ ALTER TABLE `ct_series`
 ALTER TABLE `data_requests`
   MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `ecg_series`
+--
+ALTER TABLE `ecg_series`
+  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `eeg_series`
 --
 ALTER TABLE `eeg_series`
@@ -3462,9 +3514,9 @@ ALTER TABLE `nidb_sites`
 ALTER TABLE `nm_series`
   MODIFY `nmseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
--- AUTO_INCREMENT for table `notifications`
+-- AUTO_INCREMENT for table `notification_user`
 --
-ALTER TABLE `notifications`
+ALTER TABLE `notification_user`
   MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ot_series`

@@ -571,7 +571,7 @@
 			</tr>
 			<tr>
 				<td class="label">Age at scan</td>
-				<td><input type="text" name="studyageatscan" value="<?=$study_ageatscan?>"></td>
+				<td><input type="text" name="studyageatscan" value="<?=$study_ageatscan?>"> <span class="tiny">years, with decimals</span></td>
 			</tr>
 			<tr>
 				<td class="label">Height</td>

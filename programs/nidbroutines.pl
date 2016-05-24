@@ -380,6 +380,17 @@ sub SendTextEmail {
 sub SendHTMLEmail {
 	my ($to, $subject, $htmlbody) = @_;
 
+	if (trim($to) eq "") {
+		return "No recipients specified";
+	}
+	if (trim($subject) eq "") {
+		return "Empty subject line";
+	}
+	if (trim($htmlbody) eq "") {
+		return "Empty email body";
+	}
+	
+	WriteLog("Emaillib is [" . $cfg{'emaillib'} . "]");
 	if (($cfg{'emaillib'} eq '') || ($cfg{'emaillib'} eq 'Net-SMTP-TLS')) {
 		#Create a new object with 'new'. 
 		my $smtp;
@@ -402,9 +413,6 @@ sub SendHTMLEmail {
 		# send the header
 		$smtp->mail($cfg{'emailusername'} . "\n");
 		WriteLog("Sending mail to [$to]");
-		if (trim($to) eq "") {
-			return "No recipients";
-		}
 		my @recepients = split(/,/, $to);
 		foreach my $recp (@recepients) {
 			#print "Sending mail to [$recp]\n";
@@ -440,8 +448,10 @@ sub SendHTMLEmail {
 		$smtp->quit();
 	}
 	elsif ($cfg{'emaillib'} eq 'Email-Send-SMTP-Gmail') {
+		WriteLog("Using the Email::Send::SMTP::Gmail module");
 		my ($mail,$error)=Email::Send::SMTP::Gmail->new( -smtp=>$cfg{'emailserver'}, -login=>$cfg{'emailusername'}, -pass=>$cfg{'emailpassword'}, -port=>$cfg{'emailport'});
-		print "session error: $error" unless ($mail!=-1);
+		WriteLog("Connection error, if any [$error]; ");
+		#print "session error: $error" unless ($mail!=-1);
 		$mail->send( -to=>$to, -subject=>$subject, -body=>$htmlbody, -contenttype=>'text/html');
 		$mail->bye;	
 	}

@@ -28,9 +28,10 @@
 
 use strict;
 use warnings;
+no warnings 'uninitialized'; # there are lots of missing entries from the SQL results, which can get annoying with this warning enabled
 use Mysql;
 use Net::SMTP::TLS;
-use Email::Send::SMTP::Gmail;
+use Email::Send::SMTP::Gmail qw(send);
 use Data::Dumper;
 use File::Path;
 use File::Copy;
@@ -58,6 +59,10 @@ our $db;
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------
 
+# no idea why, but perl is buffering output to the screen, and these 3 statements turn off buffering
+my $old_fh = select(STDOUT);
+$| = 1;
+select($old_fh);
 
 # check if this program can run or not
 if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {
@@ -126,7 +131,7 @@ sub DoNotifications {
 		# group the notifications by user, then by notification type, then by project
 		$notifications{$userid}{$notificationid}{$projectid} = 1;
 	}
-	print Dumper(\%notifications);
+	#print Dumper(\%notifications);
 	
 	my $frequency = 'weekly';
 	# loop through all the users and build a single email
@@ -148,17 +153,21 @@ sub DoNotifications {
 		my $body = BuildSummaryEmailHeader($email);
 		
 		# loop through all of the notificationids
-		foreach my $notificationid (keys $notifications{$userid}) {
+		foreach my $notificationid (keys %{$notifications{$userid}}) {
 			print "Working on notification id [$notificationid]\n";
 				
-			# loop through all of the projects for this notification
-			foreach my $projectid (keys $notifications{$userid}{$notificationid}) {
-				print "Working on project id [$projectid]\n";
-				
-				switch ($notificationid) {
-					case 0 { $body .= ImportSummary($userid, $projectid, $frequency); }
-					case 1 { $body .= ArchiveSummary($userid, $projectid, $frequency); }
-					case 2 { $body .= PipelineSummary($userid, $projectid, $frequency); }
+			if ($notificationid == 3) {
+				$body .= PipelineSummary($userid, 0,"");
+			}
+			else {
+				# loop through all of the projects for this notification
+				foreach my $projectid (keys %{$notifications{$userid}{$notificationid}}) {
+					print "Working on project id [$projectid]\n";
+					
+					switch ($notificationid) {
+						case 2 { $body .= SeriesSummary($userid, $projectid, $frequency); }
+						case 4 { $body .= MissingDataSummary($userid, $projectid, $frequency); }
+					}
 				}
 			}
 		}
@@ -167,7 +176,8 @@ sub DoNotifications {
 		$body .= BuildSummaryEmailFooter();
 
 		# send the summary email
-		SendHTMLEmail($email, "NiDB weekly summary", $body);
+		WriteLog(SendHTMLEmail($email, "NiDB weekly summary", $body));
+		$ret = 1;
 	}	
 	
 	# update the stop time
@@ -209,7 +219,7 @@ sub BuildSummaryEmailFooter {
 	my $site = $cfg{'siteurl'};
 	my $date = CreateCurrentDate();
 	
-	my $str = qq^
+	my $str = qq^<br><br>
 	<div align="center" style="font-size:8pt">To unsubscribe, login to $site. Go to username->My Account and deselect the notifications you longer wish to receive</div>
 	</body>
 	</html>
@@ -220,24 +230,158 @@ sub BuildSummaryEmailFooter {
 
 
 # ----------------------------------------------------------
-# --------- ImportSummary ----------------------------------
+# --------- SeriesSummary ----------------------------------
 # ----------------------------------------------------------
-sub ImportSummary {
+sub SeriesSummary {
 	my ($userid, $projectid, $frequency) = @_;
 	
+	my $sqlstring;
 	my $str;
+	my %summary;
+
+	WriteLog("Inside SeriesSummary($userid, $projectid, $frequency)");
+	
+	my $sqlstringA = "select project_name from projects where project_id = $projectid";
+	WriteLog("$sqlstringA");
+	my $resultA = SQLQuery($sqlstringA,__FILE__,__LINE__);
+	my %rowA = $resultA->fetchhash;
+	my $projectname = $rowA{'project_name'};
+	
+	$str = "<b>Archive summary for $projectname</b> - Data collected, archived, or imported within the last 21 days";
+	$str .= "<tt><pre style='font-size:8pt'>";
+	
+	# loop through the modalities, and send from each modality_table
+	$sqlstringA = "select mod_code from modalities where mod_enabled = 1";
+	#print "[$sqlstringA]\n";
+	$resultA = SQLQuery($sqlstringA,__FILE__,__LINE__);
+	while (my %rowA = $resultA->fetchhash) {
+		my $modcode = lc($rowA{'mod_code'});
+		# check if the modality table exists
+		my $sqlstring2 = "show tables from " . $cfg{'mysqldatabase'} . " like '$modcode"."_series'";
+		my $result2 = SQLQuery($sqlstring2,__FILE__,__LINE__);
+		if ($result2->numrows > 0) {
+	
+			# get all the info from this modality
+			$sqlstring = "select * from $modcode"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.series_datetime > date_add(now(), interval -21 day) and c.project_id = $projectid";
+			#print "[$sqlstring]\n";
+			my $result = SQLQuery($sqlstring,__FILE__,__LINE__);
+			if ($result->numrows > 0) {
+				while (my %row = $result->fetchhash) {
+					#print "Checkpoint B\n";
+					my $uid = $row{'uid'};
+					my $studynum = $row{'study_num'};
+					my $seriesnum = $row{'series_num'};
+					my $seriesdesc;
+					if ($row{'series_desc'} ne '') {
+						$seriesdesc = $row{'series_desc'};
+					}
+					else {
+						$seriesdesc = $row{'series_protocol'};
+					}
+					my $seriesdatetime = $row{'series_datetime'};
+					my $seriessize = $row{'series_size'};
+					my $seriesnumfiles;
+					if ($row{'series_numfiles'} ne '') {
+						$seriesnumfiles = $row{'series_numfiles'};
+					}
+					else {
+						$seriesnumfiles = $row{'numfiles'};
+					}
+					
+					$summary{$uid}{$studynum}{$seriesnum}{'datetime'} = $seriesdatetime;
+					$summary{$uid}{$studynum}{$seriesnum}{'desc'} = $seriesdesc;
+					$summary{$uid}{$studynum}{$seriesnum}{'numfiles'} = $seriesnumfiles;
+					$summary{$uid}{$studynum}{$seriesnum}{'size'} = $seriessize;
+					$summary{$uid}{$studynum}{$seriesnum}{'modality'} = uc($modcode);
+				}
+			}
+		}
+		
+		# get all imports in previous 21 days, and combine into same hash as the archived data from above
+		$sqlstring = "select *, a.study_num from importlogs a left join studies b on a.studyid = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.importstartdate > date_add(now(), interval -21 day) and c.project_id = $projectid and a.modality_new = '$modcode'";
+		#print "[$sqlstring]\n";
+		my $result = SQLQuery($sqlstring,__FILE__,__LINE__);
+		print "Found [".$result->numrows."] rows from the importlogs table for [$modcode], about to parse them\n";
+		WriteLog("Found [".$result->numrows."] rows from the importlogs table for [$modcode], about to parse them");
+		while (my %row = $result->fetchhash) {
+			#print "Parsing import rows\n";
+			my $uid = $row{'subject_uid'};
+			my $studynum = $row{'study_num'};
+			my $studyid = $row{'study_id'};
+			my $seriesnum = $row{'seriesnumber_orig'};
+			my $importdatetime = $row{'importstartdate'};
+			my $importresult = $row{'result'};
+			
+			my $sqlstring1 = "select * from $modcode"."_series where series_num = $seriesnum and study_id = $studyid";
+			my $result1 = SQLQuery($sqlstring1,__FILE__,__LINE__);
+			my %row1 = $result1->fetchhash;
+			my $seriesdesc;
+			if ($row1{'series_desc'} ne '') {
+				$seriesdesc = $row1{'series_desc'};
+			}
+			else {
+				$seriesdesc = $row1{'series_protocol'};
+			}
+			my $seriesdatetime = $row1{'series_datetime'};
+			my $seriessize = $row1{'series_size'};
+			my $seriesnumfiles;
+			if ($row{'series_numfiles'} ne '') {
+				$seriesnumfiles = $row1{'series_numfiles'};
+			}
+			else {
+				$seriesnumfiles = $row1{'numfiles'};
+			}
+			
+			$summary{$uid}{$studynum}{$seriesnum}{'datetime'} = $seriesdatetime;
+			$summary{$uid}{$studynum}{$seriesnum}{'desc'} = $seriesdesc;
+			$summary{$uid}{$studynum}{$seriesnum}{'numfiles'} = $seriesnumfiles;
+			$summary{$uid}{$studynum}{$seriesnum}{'size'} = $seriessize;
+			$summary{$uid}{$studynum}{$seriesnum}{'modality'} = uc($modcode);
+			$summary{$uid}{$studynum}{$seriesnum}{'importdatetime'} = $importdatetime;
+			$summary{$uid}{$studynum}{$seriesnum}{'importresult'} = $importresult;
+		}
+	}
+	
+	#$str .= Dumper(\%summary);
+
+	if (keys %summary > 0) {
+		$str .= sprintf("UID-Study-Series     Date                 Modality Desc                           Files  Size       Import date          Import msg\n");
+	}
+	else {
+		$str .= "No series found for this project\n";
+	}
+	
+	# loop through all the UIDs
+	foreach my $uid (nsort keys %summary) {
+		foreach my $studynum (nsort keys %{$summary{$uid}}) {
+			foreach my $seriesnum (nsort keys %{$summary{$uid}{$studynum}}) {
+				my $seriesdatetime = $summary{$uid}{$studynum}{$seriesnum}{'datetime'};
+				my $seriesdesc = $summary{$uid}{$studynum}{$seriesnum}{'desc'};
+				my $seriesnumfiles = $summary{$uid}{$studynum}{$seriesnum}{'numfiles'};
+				my $seriessize = $summary{$uid}{$studynum}{$seriesnum}{'size'};
+				my $modcode = $summary{$uid}{$studynum}{$seriesnum}{'modality'};
+				my $importdatetime = $summary{$uid}{$studynum}{$seriesnum}{'importdatetime'};
+				my $importresult = $summary{$uid}{$studynum}{$seriesnum}{'importresult'};
+				$str .= sprintf("%-10s %-3s %-5s %-20s %-8s %-30s %-6s %-10s %-20s %-35s\n",$uid,$studynum,$seriesnum,$seriesdatetime,$modcode,substr($seriesdesc,0,29),$seriesnumfiles,$seriessize,$importdatetime,$importresult);
+			}
+		}
+	}
+	
+	$str .= "</pre></tt>";
+
+	print "Leaving SeriesSummary($userid, $projectid, $frequency)\n";
 	
 	return $str;
 }
 
 
 # ----------------------------------------------------------
-# --------- ArchiveSummary ---------------------------------
+# --------- MissingDataSummary -----------------------------
 # ----------------------------------------------------------
-sub ArchiveSummary {
+sub MissingDataSummary {
 	my ($userid, $projectid, $frequency) = @_;
 	
-	my $str;
+	my $str = "";
 	
 	return $str;
 }
@@ -249,8 +393,90 @@ sub ArchiveSummary {
 sub PipelineSummary {
 	my ($userid, $projectid, $frequency) = @_;
 	
-	my $str;
-	
+	my $str = "<div style='border: 1px solid #aaa; padding:5px; border-radius: 5px'><div align='center' style='font-weight: bold; font-size:12pt'>Pipeline summary</div>";
+
+	# get a list of the pipelines owned by this user
+	my $sqlstringA = "select * from pipelines where pipeline_admin = $userid";
+	my $resultA = $db->query($sqlstringA) || SQLError($sqlstringA, $db->errmsg());
+	while (my %rowA = $resultA->fetchhash) {
+		my $pipelineid = $rowA{'pipeline_id'};
+		my $pipelinename = $rowA{'pipeline_name'};
+		
+		my $sqlstringB = "select * from analysis where pipeline_id = $pipelineid and analysis_statusdatetime < now() and analysis_statusdatetime > date_add(now(), interval -7 day) and analysis_statusdatetime is not null";
+		my $resultB = $db->query($sqlstringB) || SQLError($sqlstringB, $db->errmsg());
+		if ($resultB->numrows > 0) {
+			$str .= qq^
+			<table style='font-size: 9pt'>
+				<thead>
+					<tr>
+						<th colspan="15" align="center" style="font-weight: bold; font-size:12pt; border-top: 1px solid black; border-botton: 1px solid black">$pipelinename</th>
+					</tr>
+					<tr style="font-weight: bold">
+						<th><b>Analysis ID</b></th>
+						<th><b>Pipeline version</b></th>
+						<th><b>Study ID</b></th>
+						<th><b>Status</b></th>
+						<th><b>Message</b></th>
+						<th><b>Notes</b></th>
+						<th><b>Complete?</b></th>
+						<th><b>Bad?</b></th>
+						<th><b># series</b></th>
+						<th><b>Hostname</b></th>
+						<th><b>Disk size</b></th>
+						<th><b>Start date</b></th>
+						<th><b>Cluster start date</b></th>
+						<th><b>Cluster end date</b></th>
+						<th><b>End date</b></th>
+					</tr>
+				</thead>
+			^;
+			while (my %rowB = $resultB->fetchhash) {
+				my $analysisid = $rowB{'analysis_id'};
+				my $pipeline_version = $rowB{'pipeline_version'};
+				my $study_id = $rowB{'study_id'};
+				my $analysis_status = $rowB{'analysis_status'};
+				my $analysis_statusmessage = $rowB{'analysis_statusmessage'};
+				my $analysis_statusdatetime = $rowB{'analysis_statusdatetime'};
+				my $analysis_notes = $rowB{'analysis_notes'};
+				my $analysis_iscomplete = $rowB{'analysis_iscomplete'};
+				my $analysis_isbad = $rowB{'analysis_isbad'};
+				my $analysis_numseries = $rowB{'analysis_numseries'};
+				my $analysis_hostname = $rowB{'analysis_hostname'};
+				my $analysis_disksize = $rowB{'analysis_disksize'};
+				my $analysis_startdate = $rowB{'analysis_startdate'};
+				my $analysis_clusterstartdate = $rowB{'analysis_clusterstartdate'};
+				my $analysis_clusterenddate = $rowB{'analysis_clusterenddate'};
+				my $analysis_enddate = $rowB{'analysis_enddate'};
+				
+				$str .= qq^
+					<tr>
+						<td>$analysisid</td>
+						<td>$pipeline_version</td>
+						<td>$study_id</td>
+						<td>$analysis_status</td>
+						<td>$analysis_statusmessage</td>
+						<td>$analysis_statusdatetime</td>
+						<td>$analysis_notes</td>
+						<td>$analysis_iscomplete</td>
+						<td>$analysis_isbad</td>
+						<td>$analysis_numseries</td>
+						<td>$analysis_hostname</td>
+						<td>$analysis_disksize</td>
+						<td>$analysis_startdate</td>
+						<td>$analysis_clusterstartdate</td>
+						<td>$analysis_clusterenddate</td>
+						<td>$analysis_enddate</td>
+					</tr>
+				^;
+			}
+			$str .= "</table>";
+		}
+		else {
+			$str .= "<b>$pipelinename</b> - <span style='font-size:8pt'>No activity for this pipeline</span><br>";
+		}
+	}
+
+	$str .= "</div>";
 	return $str;
 }
 

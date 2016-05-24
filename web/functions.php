@@ -511,12 +511,14 @@
 	/* -------------------------------------------- */
 	/* display project <select> box with only projects
 	   to which the user has permissions and belongs the
-	   parent instance. Also highlight selected IDs */
-	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids) {
+	   parent instance. Also highlight selected IDs.
+	   width and height are in px
+	*/
+	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids,$width=350,$height=100) {
 		//PrintVariable($selectedids);
 		if (in_array(0, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
 		?>
-		<select name="<?=$varname?>" class="<?=$classname?>" <? if ($multiselect) { echo "multiple"; } ?>>
+		<select name="<?=$varname?>" class="<?=$classname?>" style="width:<?=$width?>px;height:<?=$height?>px" <? if ($multiselect) { echo "multiple"; } ?>>
 			<option value="0" <?=$selected?>>All Projects</option>
 			<?
 				if ($currentinstanceonly) {

@@ -58,6 +58,7 @@
 	$maritalstatus = GetVariable("maritalstatus");
 	$smokingstatus = GetVariable("smokingstatus");
 	$enrollgroups = GetVariable("enrollgroup");
+	$studytable = GetVariable("studytable");
 	
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
@@ -100,6 +101,10 @@
 		case 'updatedemographics':
 			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
 			DisplayDemographics($id);
+			break;
+		case 'updatestudytable':
+			UpdateStudyTable($id,$studytable);
+			DisplayProject($id);
 			break;
 		case 'viewinstancesummary':
 			DisplayInstanceSummary($id);
@@ -242,7 +247,49 @@
 			}
 		}
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateDemographics ----------------- */
+	/* -------------------------------------------- */
+	function UpdateStudyTable($id,$studytable) {
+		/* prepare the fields for SQL */
+		$id = mysql_real_escape_string($id);
+		//$studytable = mysql_real_escape_string($studytable);
+		
+		//PrintVariable($studytable);
+		$csv = explode("\n",$studytable);
+		array_shift($csv); /* remove headers from csv */
+		foreach ($csv as $line) {
+			/* only accept valid lines with the correct # of columns */
+			if (trim($line) != '') {
+				$parts = array_map(mysql_real_escape_string, str_getcsv($line));
+				if (count($parts) == 13) {
+					//PrintVariable($parts, 'Parts');
+					$studyid = $parts[0];
+					//$uid = $parts[1];
+					$altuids = $parts[2];
+					//$uidstudynum = $parts[3];
+					//$studyid = $parts[4];
+					//$studydate = $parts[5];
+					$ageatscan = $parts[6];
+					//$modality = $parts[7];
+					//$studydesc = $parts[8];
+					//$altstudyid = $parts[9];
+					$site = $parts[11];
+					//$studyid = $parts[11];
+					
+					/* validate each variable before trying the SQL */
+					if (!ctype_digit(strval($studyid))) { echo "[$studyid] is not an integer<br>"; continue; }
+					if (!is_numeric($ageatscan)) { echo "[$ageatscan] is not double or integer<br>"; continue; }
+					
+					$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_site = '$site' where study_id = $studyid";
+					PrintSQL($sqlstring);
+				}
+			}
+		}
+	}	
+
 	
 	/* -------------------------------------------- */
 	/* ------- ChangeProject ---------------------- */
@@ -327,60 +374,20 @@
 		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
 		<script type='text/javascript' src='scripts/x/lib/xtableiterate.js'></script>
 		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script>
-		<script type='text/javascript'>
-		window.onload = function()
-
-		/* Click-n-Drag Checkboxes */
-		var gCheckedValue = null;
-		function initCheckBoxes(sTblId)
-		{
-		  xTableIterate(sTblId,
-			function(td, isRow) {
-			  if (!isRow) {
-				var cb = td.getElementsByTagName('input');
-				if (cb && cb[0].type.toLowerCase() == 'checkbox') {
-				  td.checkBoxObj = cb[0];
-				  td.onmousedown = tdOnMouseDown;
-				  td.onmouseover = tdOnMouseOver;
-				  td.onclick = tdOnClick;
-				}
-			  }
-			}
-		  );
-		}
-		function tdOnMouseDown(ev)
-		{
-		  if (this.checkBoxObj) {
-			gCheckedValue = this.checkBoxObj.checked = !this.checkBoxObj.checked;
-			document.onmouseup = docOnMouseUp;
-			document.onselectstart = docOnSelectStart; // for IE
-			xPreventDefault(ev); // cancel text selection
-		  }
-		}
-		function tdOnMouseOver(ev)
-		{
-		  if (gCheckedValue != null && this.checkBoxObj) {
-			this.checkBoxObj.checked = gCheckedValue;
-		  }
-		}
-		function docOnMouseUp()
-		{
-		  document.onmouseup = null;
-		  document.onselectstart = null;
-		  gCheckedValue = null;
-		}
-		function tdOnClick()
-		{
-		  // Cancel a click on the checkbox itself. Let it bubble up to the TD
-		  return false;
-		}
-		function docOnSelectStart(ev)
-		{
-		  return false; // cancel text selection
-		}
-		</script>
-<?		
-		
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid.js"></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_renderers.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_editors.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_validators.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_utils.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_charts.js" ></script>
+		<link rel="stylesheet" href="scripts/editablegrid/editablegrid.css" type="text/css" media="screen">
+		<style>
+			table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
+			table.testgrid td, table.testgrid th { padding: 5px; }
+			table.testgrid th { background: #E5E5E5; text-align: left; }
+			input.invalid { background: red; color: #FDFDFD; }
+		</style>
+		<?		
 		/* display studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_num asc";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -474,13 +481,46 @@
 		<input type="hidden" name="id" value="<?=$id?>">
 		<? } ?>
 
-		<table class="smallgraydisplaytable" id='table1'>
+		<script>
+			window.onload = function() {
+				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: false, caption: 'Double-click to edit table'}); 
+
+				// we build and load the metadata in Javascript
+				editableGrid.load({ metadata: [
+					{ name: "studyid", datatype: "string", editable: false },
+					{ name: "subject", datatype: "html", editable: false },
+					{ name: "altuids", datatype: "html", editable: true },
+					{ name: "study", datatype: "html", editable: false },
+					{ name: "deleted", datatype: "boolean", editable: false },
+					{ name: "studydate", datatype: "date", editable: false },
+					{ name: "ageatscan", datatype: "number", editable: true, precision: 2 },
+					{ name: "modality", datatype: "string", editable: false },
+					{ name: "studydesc", datatype: "string", editable: false },
+					{ name: "studyid", datatype: "string", editable: false },
+					{ name: "delete", datatype: "html", editable: false },
+					{ name: "site", datatype: "string", editable: true }
+				]});
+
+				// then we attach to the HTML table and render it
+				editableGrid.attachToHTMLTable('table1');
+				editableGrid.renderGrid();
+			} 
+		</script>
+		
+		<br>
+		<span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields are editable. Click <b>Save</b> when done editing<br>
+		<br>
+		
+		<table class="testgrid" id='table1'>
+			<thead>
 			<tr>
+				<th></th>
 				<th>Subject</th>
+				<th>Alt Subject IDs <span class="tiny">(comma separated)</span></th>
 				<th>Study</th>
 				<th>Deleted?</th>
-				<th>Alt Subject IDs</th>
 				<th>Study Date</th>
+				<th>Age at scan (years)</th>
 				<th>Modality</th>
 				<th>Study Desc</th>
 				<th>Study ID</th>
@@ -489,6 +529,7 @@
 				<? } ?>
 				<th>Site</th>
 			</tr>
+			</thead>
 			<script type="text/javascript">
 			$(document).ready(function() {
 				$("#checkall").click(function() {
@@ -502,6 +543,7 @@
 			<?
 			$uid = "";
 			$bgcolor = "";
+			$i = 1;
 			mysql_data_seek($result,0);
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$study_id = $row['study_id'];
@@ -512,11 +554,21 @@
 				$study_desc = $row['study_desc'];
 				$study_site = $row['study_site'];
 				$study_altid = $row['study_alternateid'];
+				$study_ageatscan = $row['study_ageatscan'];
+				$age = $row['age'];
 				$uid = $row['uid'];
 				$subjectid = $row['subject_id'];
 				$project_name = $row['project_name'];
 				$project_costcenter = $row['project_costcenter'];
 				$isactive = $row['isactive'];
+
+				/* calculate age at scan */
+				if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
+					$ageatscan = $age;
+				}
+				else {
+					$ageatscan = $study_ageatscan;
+				}
 				
 				$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -535,7 +587,7 @@
 				
 				if ($lastuid != $uid) {
 					if ($bgcolor == "") {
-						$bgcolor = "background-color: #ddd;";
+						$bgcolor = "background-color: #eee;";
 					}
 					else {
 						$bgcolor = "";
@@ -547,34 +599,59 @@
 				}
 
 				?>
-				<tr>
+				<tr id="R<?=$i?>">
+					<? if ($lastuid != $uid) { ?>
+					<td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td>
 					<td style="<?=$rowstyle?>">
 						<a href="subjects.php?id=<?=$subjectid?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?></span></a>
 					</td>
+					<td style="<?=$rowstyle?> font-family: courier; background-color: lightyellow; border: 1px solid skyblue"><?=$altuidlist?></td>
+					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>">&nbsp;</td> <td style="<?=$rowstyle?>">&nbsp;</td><? } ?>
 					<td style="<?=$rowstyle?>">
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
 					<td style="<?=$rowstyle?>"><? if (!$isactive) { echo "Deleted"; } ?></td>
-					<td style="<?=$rowstyle?>font-family: courier"><?=$altuidlist?></td>
 					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
+					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=number_format($ageatscan,1)?></td>
 					<td style="<?=$rowstyle?>"><?=$modality?></td>
 					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
 					<td style="<?=$rowstyle?>"><?=$study_altid?></td>
 					<? if ($GLOBALS['issiteadmin']) { ?>
 					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <?=$rowstyle?>><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
 					<? } ?>
-					<td style="<?=$rowstyle?>"><?=$study_site?></td>
+					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_site?></td>
 				</tr>
 				<?
 				$lastuid = $uid;
+				$i++;
 			}
 			?>
 		</table>
+		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
+		<script>
+			//$(document).ready(function() {
+				function ConvertToCSV() {
+					$("#table1").table2csv( {
+						callback: function (csv) {
+							document.getElementById("studytable").value = csv;
+							//alert('Hi');
+							//document.getElementById('savetableform').submit();
+						}
+					});
+				}
+			//});
+		</script>
+		<form method="post" action="projects.php" id="savetableform">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="action" value="updatestudytable">
+		<input type="hidden" name="studytable" id="studytable">
+		<div align="right"><input type="submit" value="Save" onMouseDown="ConvertToCSV();"></div>
+		</form>
 		
 		<br><br>
 
 		<? if ($GLOBALS['issiteadmin']) { ?>
-		<div style="position: fixed; bottom:0px; background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:100%; padding:8px; margin-left: -7px; font-size: 10pt">
+		<div style="background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:100%; padding:8px; margin-left: -7px; font-size: 10pt">
 		<table width="98%">
 			<tr>
 				<td>

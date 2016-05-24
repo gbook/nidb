@@ -658,7 +658,7 @@ sub ProcessDataRequests {
 					
 						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
 						MakePath($tmpdir);
-						if ($modality eq "mr") {
+						if (($modality eq "mr") && ($data_type eq "dicom")) {
 							$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							Anonymize($tmpdir,2,'','');
@@ -1441,6 +1441,7 @@ sub WriteNDARSeries() {
 		my $gender = $row{'gender'};
 		my $uid = $row{'uid'};
 		my $ageatscan = $row{'ageatscan'};
+		my $studyageatscan = $row{'study_ageatscan'};
 		my $seriesdesc = $row{'series_desc'};
 		my $boldreps = $row{'bold_reps'};
 	
@@ -1453,6 +1454,10 @@ sub WriteNDARSeries() {
 		}
 		if ($modality eq "mr") { $modality = "mri";}
 		$modality = uc($modality);
+		
+		if (($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
+			$ageatscan = $studyageatscan;
+		}
 		
 		# get some DICOM specific tags from the first file in the series
 		chdir($indir);
@@ -1478,10 +1483,14 @@ sub WriteNDARSeries() {
 		if (($seriesdesc =~ /perfusion/i) && ($seriessequence =~ /ep2d_perf_tra/i)) {
 			$scantype = "MR diffusion";
 		}
+		if (($seriesdesc =~ /dti/i) || ($seriesdesc =~ /dwi/i)) {
+			$scantype = "MR diffusion";
+		}
 		if ($seriesdesc =~ /T2/i) {
 			$scantype = "MR structural (T2)";
 		}
 		
+		# build the aquisition matrix
 		if (trim($AcquisitionMatrix) eq "") {
 			$AcquisitionMatrix = "0 0 0 0";
 		}
