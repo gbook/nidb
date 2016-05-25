@@ -250,13 +250,13 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- UpdateDemographics ----------------- */
+	/* ------- UpdateStudyTable ------------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyTable($id,$studytable) {
 		/* prepare the fields for SQL */
 		$id = mysql_real_escape_string($id);
-		//$studytable = mysql_real_escape_string($studytable);
 		
+		$numRowsUpdated = 0;
 		//PrintVariable($studytable);
 		$csv = explode("\n",$studytable);
 		array_shift($csv); /* remove headers from csv */
@@ -264,27 +264,72 @@
 			/* only accept valid lines with the correct # of columns */
 			if (trim($line) != '') {
 				$parts = array_map(mysql_real_escape_string, str_getcsv($line));
-				if (count($parts) == 13) {
+				//PrintVariable($parts,'Parts');
+				if (count($parts) == 15) {
 					//PrintVariable($parts, 'Parts');
-					$studyid = $parts[0];
-					//$uid = $parts[1];
-					$altuids = $parts[2];
-					//$uidstudynum = $parts[3];
-					//$studyid = $parts[4];
-					//$studydate = $parts[5];
-					$ageatscan = $parts[6];
-					//$modality = $parts[7];
-					//$studydesc = $parts[8];
-					//$altstudyid = $parts[9];
-					$site = $parts[11];
-					//$studyid = $parts[11];
+					$studyid = trim($parts[0]);
+					$subjectid = trim($parts[1]);
+					$uid = trim($parts[2]);
+					$sex = strtoupper(trim($parts[3]));
+					$altuidlist = trim($parts[4]);
+					$ageatscan = trim($parts[8]);
+					$site = trim($parts[13]);
 					
 					/* validate each variable before trying the SQL */
-					if (!ctype_digit(strval($studyid))) { echo "[$studyid] is not an integer<br>"; continue; }
-					if (!is_numeric($ageatscan)) { echo "[$ageatscan] is not double or integer<br>"; continue; }
+					if (!ctype_digit(strval($studyid))) { echo "StudyID [$studyid] is not an integer<br>"; continue; }
+					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
 					
-					$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_site = '$site' where study_id = $studyid";
-					PrintSQL($sqlstring);
+					if (is_numeric($ageatscan)) {
+						$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_site = '$site' where study_id = '$studyid'";
+						//PrintSQL($sqlstring);
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						$numRowsUpdated += mysql_affected_rows();
+					}
+					else {
+						echo "Age-at-scan [$ageatscan] is not a number<br>";
+					}
+					
+					/* update the sex, if its valid */
+					if (($sex == 'F') || ($sex == 'M') || ($sex == 'O') || ($sex == 'U')) {
+						$sqlstring = "update subjects set gender = '$sex' where subject_id = '$subjectid'";
+						//PrintSQL($sqlstring);
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						$numRowsUpdated += mysql_affected_rows();
+					}
+					
+					/* update the alternate UIDs */
+					/* get the enrollmentid */
+					$sqlstring = "select enrollment_id from studies where study_id = '$studyid'";
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$row = mysql_fetch_array($result, MYSQL_ASSOC);
+					$enrollmentid = $row['enrollment_id'];
+					
+					/* if there are no alternate IDs, skip this step */
+					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
+					
+					/* delete entries for this subject from the altuid table ... */
+					$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					/* ... and insert the new rows into the altuids table */
+					$altuids = explode(',',$altuidlist);
+					foreach ($altuids as $altuid) {
+						$altuid = trim($altuid);
+						if ($altuid == '') { continue; }
+						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
+						if (strpos($altuid, '*') !== FALSE) {
+							$altuid = str_replace('*','',$altuid);
+							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+							if ($altuid == '') { continue; }
+						}
+						else {
+							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+						}
+						//PrintSQL($sqlstring);
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						$numRowsUpdated += mysql_affected_rows();
+					}
+					
 				}
 			}
 		}
@@ -488,12 +533,14 @@
 				// we build and load the metadata in Javascript
 				editableGrid.load({ metadata: [
 					{ name: "studyid", datatype: "string", editable: false },
+					{ name: "subjectid", datatype: "string", editable: false },
 					{ name: "subject", datatype: "html", editable: false },
+					{ name: "sex", datatype: "html", editable: true },
 					{ name: "altuids", datatype: "html", editable: true },
 					{ name: "study", datatype: "html", editable: false },
 					{ name: "deleted", datatype: "boolean", editable: false },
 					{ name: "studydate", datatype: "date", editable: false },
-					{ name: "ageatscan", datatype: "number", editable: true, precision: 2 },
+					{ name: "ageatscan", datatype: "double", editable: true, precision: 2, thousands_separator: '', decimal_point: '.' },
 					{ name: "modality", datatype: "string", editable: false },
 					{ name: "studydesc", datatype: "string", editable: false },
 					{ name: "studyid", datatype: "string", editable: false },
@@ -507,16 +554,19 @@
 			} 
 		</script>
 		
-		<br>
-		<span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields are editable. Click <b>Save</b> when done editing<br>
-		<br>
+		<div align="center">
+		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
+		</div>
+		<br><br>
 		
 		<table class="testgrid" id='table1'>
 			<thead>
 			<tr>
-				<th></th>
+				<th></th><!-- studyID -->
+				<th></th><!-- subjectID -->
 				<th>Subject</th>
-				<th>Alt Subject IDs <span class="tiny">(comma separated)</span></th>
+				<th>Sex <span class="tiny" style="font-weight: normal">F, M, O, U</span></th>
+				<th>Alt Subject IDs <span class="tiny">comma separated, * next to primary ID</span></th>
 				<th>Study</th>
 				<th>Deleted?</th>
 				<th>Study Date</th>
@@ -556,6 +606,7 @@
 				$study_altid = $row['study_alternateid'];
 				$study_ageatscan = $row['study_ageatscan'];
 				$age = $row['age'];
+				$sex = $row['gender'];
 				$uid = $row['uid'];
 				$subjectid = $row['subject_id'];
 				$project_name = $row['project_name'];
@@ -602,11 +653,13 @@
 				<tr id="R<?=$i?>">
 					<? if ($lastuid != $uid) { ?>
 					<td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td>
+					<td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td>
 					<td style="<?=$rowstyle?>">
 						<a href="subjects.php?id=<?=$subjectid?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?></span></a>
 					</td>
+					<td style="<?=$rowstyle?> background-color: lightyellow; border: 1px solid skyblue"><?=$sex?></td>
 					<td style="<?=$rowstyle?> font-family: courier; background-color: lightyellow; border: 1px solid skyblue"><?=$altuidlist?></td>
-					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>">&nbsp;</td> <td style="<?=$rowstyle?>">&nbsp;</td><? } ?>
+					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td><td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td><? } ?>
 					<td style="<?=$rowstyle?>">
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
