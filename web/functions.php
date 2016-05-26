@@ -672,67 +672,67 @@
 		?>
 		<table width="100%" cellspacing="0">
 			<tr>
-				<td><span class="headertable1"><?=$title?></span>
-				<br>
+				<td>
 				<span class="headertable2">
 				<?
 				foreach ($urllist as $label => $url) {
 					?>
-					<a href="<?=$url?>"><?=$label?></a> &gt; 
+					<a href="<?=$url?>"><?=$label?></a> <span style="color: #ccc">&gt;</span> 
 					<?
 				}
 				?>
 				</span>
+				<?
+				if ($displayaccess) {
+					if ($phiaccess) {
+						if ($dataaccess) {
+							$accessmessage = "<b>Data</b> and <b>PHI</b> permissions";
+						}
+						else {
+							$accessmessage = "<b>PHI</b> permissions";
+						}
+					}
+					else {
+						if ($dataaccess) {
+							$accessmessage = "<b>Data</b> permissions";
+						}
+						else {
+							$accessmessage = "No <b>data</b> or <b>PHI</b> permissions";
+						}
+					}
+					
+					if (($phiaccess) || ($dataaccess)) {
+						$projectlist = "<ul>";
+						if (!empty($phiprojectlist)) {
+							foreach ($phiprojectlist as $phiproject) {
+								$projectlist .= "<li>[PHI] $phiproject\n";
+							}
+						}
+						if (!empty($dataprojectlist)) {
+							foreach ($dataprojectlist as $dataproject) {
+								$projectlist .= "<li>[Data] $dataproject\n";
+							}
+						}
+						$projectlist .= "</ul>";
+					}
+					
+					//print_r($phiprojectlist);
+				?>
+				<details style="font-size:8pt; margin-left:15px; color: #666666">
+				<summary><?=$accessmessage?></summary>
+				<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
+				You have access permission to this subject through the following projects
+				<?=$projectlist?>
+				</div>
+				</details>
+				<?
+				}
+				?>
+				<div align="center" class="headertable1"><?=$title?></div>
 				</td>
 			</tr>
 		</table>
 
-		<?
-		if ($displayaccess) {
-			if ($phiaccess) {
-				if ($dataaccess) {
-					$accessmessage = "<b>Data</b> and <b>PHI</b> permissions";
-				}
-				else {
-					$accessmessage = "<b>PHI</b> permissions";
-				}
-			}
-			else {
-				if ($dataaccess) {
-					$accessmessage = "<b>Data</b> permissions";
-				}
-				else {
-					$accessmessage = "No <b>data</b> or <b>PHI</b> permissions";
-				}
-			}
-			
-			if (($phiaccess) || ($dataaccess)) {
-				$projectlist = "<ul>";
-				if (!empty($phiprojectlist)) {
-					foreach ($phiprojectlist as $phiproject) {
-						$projectlist .= "<li>[PHI] $phiproject\n";
-					}
-				}
-				if (!empty($dataprojectlist)) {
-					foreach ($dataprojectlist as $dataproject) {
-						$projectlist .= "<li>[Data] $dataproject\n";
-					}
-				}
-				$projectlist .= "</ul>";
-			}
-			
-			//print_r($phiprojectlist);
-		?>
-		<details style="font-size:8pt; margin-left:15px; color: #666666">
-		<summary><?=$accessmessage?></summary>
-		<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
-		You have access permission to this subject through the following projects
-		<?=$projectlist?>
-		</div>
-		</details>
-		<?
-		}
-		?>
 		<br><br>
 		<?
 	}

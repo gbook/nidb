@@ -71,6 +71,10 @@
 	/* ------- ViewDetails ------------------------------- */
 	/* --------------------------------------------------- */
 	function ViewDetails($requestid) {
+		$urllist['Search'] = "search.php";
+		$urllist['Data export status'] = "requeststatus.php";
+		NavigationBar("Data export details", $urllist);
+		
 		$sqlstring = "select * from data_requests where request_id = $requestid";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 
@@ -95,6 +99,9 @@
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList() {
+		$urllist['Search'] = "search.php";
+		NavigationBar("Data export status", $urllist);
+		
 		?>
 		
 		<div style="border: 1px solid #aaa; border-radius:4px; font-size:10pt; padding: 5px">
@@ -267,6 +274,8 @@
 	/* ------- ShowGroup --------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowGroup($groupid, $page) {
+		$urllist['Search'] = "search.php";
+		NavigationBar("Data export status", $urllist);
 		
 		if ($page == "") { $page = 1; }
 		

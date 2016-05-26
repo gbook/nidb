@@ -148,7 +148,12 @@
 			DisplayProject($id);
 			break;
 		default:
-			DisplayProjectList();
+			if ($id == '') {
+				DisplayProjectList();
+			}
+			else {
+				DisplayProject($id);
+			}
 			break;
 	}
 	
@@ -410,9 +415,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
 		<script type='text/javascript' src='scripts/x/x.js'></script>
@@ -762,10 +767,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['Edit Demographics'] = "projects.php?action=editdemographics&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
 		<form action="projects.php" method="post">
@@ -916,10 +921,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['View Demographics'] = "projects.php?action=displaydemographics&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
 		<table class="smallgraydisplaytable">
@@ -1061,10 +1066,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 
 		/* get all of the MR params for this project */
 		$sqlstring = "select * from mr_scanparams where project_id = $id";
@@ -1447,10 +1452,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
 		<fieldset>
@@ -1523,10 +1528,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['Edit Group Protocols'] = "projects.php?action=viewuniqueseries&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $id";
@@ -1639,10 +1644,10 @@
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
 		$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
-		NavigationBar("Projects", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist,0,'','','','');
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
@@ -1721,7 +1726,7 @@
 	function DisplayInstanceSummary($id) {
 		$id = mysql_real_escape_string($id);
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
 		/* get all studies associated with this project */
@@ -1968,7 +1973,7 @@
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
 		
-		$urllist['Project List'] = "projects.php";
+		$urllist['Projects'] = "projects.php";
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
 		
 		if ($_SESSION['instanceid'] == "") {

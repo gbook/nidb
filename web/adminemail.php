@@ -61,8 +61,8 @@
 	/* ------- DisplayEmailForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayEmailForm() {
-		$urllist['Administration'] = "cleanup.php";
-		$urllist['Cleanup'] = "cleanup.php";
+		$urllist['Administration'] = "admin.php";
+		$urllist['Mass email'] = "admineamil.php";
 		NavigationBar("Admin", $urllist);
 		
 		?>

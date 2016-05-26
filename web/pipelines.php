@@ -1194,10 +1194,9 @@
 		
 		if ($numproc == "") { $numproc = 1; }
 		
-		//$urllist['Analysis'] = "analysis.php";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("$formtitle", $urllist);
 	?>
 	
 		<script type="text/javascript">
@@ -2333,7 +2332,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("$title", $urllist);
 
 		?>
 		<form method="post" action="pipelines.php" name="versionform">
@@ -2528,7 +2527,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "pipelines.php?action=viewanalyses&id=$id";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("Analyses for $pipeline_name", $urllist);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }
@@ -2918,7 +2917,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "pipelines.php?action=viewanalyses&id=$id";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 1000; }
@@ -3200,7 +3199,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
 		$urllist['Analysis list'] = "pipelines.php?action=viewanalyses&id=$pipelineid";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("Logs for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 
 		/* get list of steps for the appropriate version */
 		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
@@ -3289,7 +3288,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
 		$urllist['Analysis list'] = "pipelines.php?action=viewanalyses&id=$pipelineid";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("File list for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 		
 		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";
 		/* build the correct path */
@@ -3559,7 +3558,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist['New Pipeline'] = "pipelines.php?action=addform";
-		NavigationBar("Analysis", $urllist);
+		NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
 	?>

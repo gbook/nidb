@@ -499,10 +499,7 @@
 			?><div class="staticmessage">Invalid or blank study ID [<?=$id?>]</div><?
 		}
 
-		$urllist['Subject List'] = "subjects.php";
-		NavigationBar("Studies", $urllist);
-	
-		$sqlstring = "select * from studies where study_id = $id";
+		$sqlstring = "select a.*, c.uid, c.subject_id, d.project_id, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where study_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
@@ -527,9 +524,18 @@
 		$study_ettracking = $row['study_ettracking'];
 		$study_snpchip = $row['study_snpchip'];
 		$study_experimenter = $row['study_experimenter'];
+		$uid = $row['uid'];
+		$subjectid = $row['subject_id'];
+		$projectid = $row['project_id'];
+		$projectname = $row['project_name'];
 
+		$urllist[$projectname] = "projects.php?id=$projectid";
+		$urllist[$uid] = "subjects.php?id=$subjectid";
+		$urllist[$study_num] = "studies.php?id=$id";
+		NavigationBar("$uid$study_num", $urllist);
+		
 		$formaction = "update";
-		$formtitle = "Updating $study_num";
+		$formtitle = "Updating study $study_num";
 		$submitbuttonlabel = "Update";
 		
 		if (($study_radreaddate == "") || ($study_radreaddate == "0000-00-00 00:00:00")) { $study_radreaddate = date('Y-m-d h:i:s a'); }
@@ -603,7 +609,7 @@
 			</tr>
 			<? if (strtolower($study_modality) == "mr") { ?>
 				<tr>
-					<td class="label">Do radiological read?</td>
+					<td class="label">Radiological read done?</td>
 					<td><input type="checkbox" name="studydoradread" value="1" <? if ($study_doradread) {echo "checked";} ?>></td>
 				</tr>
 				<tr>
@@ -663,7 +669,7 @@
 	
 		$id = mysql_real_escape_string($id);
 		
-		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
+		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
@@ -699,6 +705,7 @@
 			$subjectid = $row['subject_id'];
 			$costcenter = $row['project_costcenter'];
 			$projectid = $row['project_id'];
+			$project_name = $row['project_name'];
 			
 			$ft1 = floor($study_height/0.3048);
 			$ft2 = (($study_height/0.3048)-$ft1)*12;
@@ -748,10 +755,10 @@
 			$dataaccess = 0;
 		}
 		
-		$urllist['Subject List'] = "subjects.php";
+		$urllist[$project_name] = "projects.php?id=$projectid";
 		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
 		$urllist["Study " . $study_num] = "studies.php?id=$id";
-		NavigationBar("Studies", $urllist, 1, null, $dataaccess, null, $dataprojectlist);
+		NavigationBar("$uid$study_num", $urllist, 1, null, $dataaccess, null, $dataprojectlist);
 
 		if (!$dataaccess) {
 			echo "You do not have data access to this project. Consult your NiDB administrator";
@@ -762,10 +769,6 @@
 		UpdateMostRecent($userid, '', $id);
 
 		?>
-		<div align="center">
-		<span class="uid"><?=FormatUID($uid)?></span>
-		</div>
-		<br>
 		
 		<style>
 		#preview{

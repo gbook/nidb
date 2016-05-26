@@ -276,15 +276,15 @@
 	/* -------------------------------------------- */
 	function ViewGroup($id, $measures, $columns, $groupmeasures) {
 	
-		$urllist['Group List'] = "groups.php";
-		NavigationBar("Groups", $urllist,0,'','','','');
-		
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = $id";
 		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$groupname = $row['group_name'];
 		$grouptype = $row['group_type'];
+		
+		$urllist['Groups'] = "groups.php";
+		NavigationBar("$groupname - <span style='font-weight:normal'>$grouptype<span>", $urllist,0,'','','','');
 
 		?>
 		<script>
@@ -294,9 +294,7 @@
 				}
 			); 
 		</script>
-		
-		<div align="center"><span style="color:darkblue;font-size:15pt;font-weight:bold"><?=$groupname?></span> - <i><?=$grouptype?></i> level group</div>
-		<br><br>
+
 		<?
 		/* (subject level) group statistics */
 		$totalage = 0;

@@ -331,8 +331,8 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 .headertable td.header1 { font-weight: bold; font-size: 16pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top;}
 .headertable td.header2 { font-size: 10pt; padding: 5px; white-space: nowrap; vertical-align: top; }
 
-.headertable1 { font-weight: bold; font-size: 16pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top; }
-.headertable2 { font-size: 10pt; padding: 5px; white-space: nowrap; vertical-align: top; padding-left: 25px; }
+.headertable1 { font-weight: bold; font-size: 18pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top; }
+.headertable2 { font-size: 14pt; white-space: nowrap; vertical-align: top; padding-left: 25px; }
 
 /* all links */
 /*a { color: blue; } */

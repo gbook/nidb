@@ -372,9 +372,9 @@
 		$projectcostcenter = $row['projectcostcenter'];
 
 		/* navigation bar */
-		$urllist['Subject List'] = "subjects.php";
+		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("Subjects", $urllist,'','','','');
+		NavigationBar("$uid", $urllist,'','','','');
 		
 		?>
 		<div align="center">
@@ -1339,12 +1339,13 @@
 			$phiaccess = 0;
 		}
 		
-		$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
+		$sqlstring = "select a.uid, c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
 		//PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 				$projectname = $row['project_name'];
+				$uid = $row['uid'];
 				$projectcostcenter = $row['project_costcenter'];
 				$dataprojectlist[] = "$projectname ($projectcostcenter)";
 			}
@@ -1365,8 +1366,8 @@
 			$hasenrollments = 0;
 		}
 	
-		$urllist['Subject List'] = "subjects.php";
-		NavigationBar("Subjects", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
+		$urllist['Subjects'] = "subjects.php";
+		NavigationBar("$uid", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
 
 		/* kick them out if they shouldn't be seeing anything on this page */
 		//if ((!$phiaccess) && (!$dataaccess) && (!$GLOBALS['isadmin'])) {
@@ -2181,9 +2182,9 @@
 			$phiaccess = 1;
 		}
 
-		$urllist['Subject List'] = "subjects.php";
+		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("Subjects", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
+		NavigationBar("$formtitle", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
 		
 		/* kick them out if they shouldn't be seeing anything on this page */
 		if ((!$phiaccess) && (!$dataaccess)) {
