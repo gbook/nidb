@@ -806,7 +806,7 @@
 					$ageatscan = $study_ageatscan;
 				}
 				
-				$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
+				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 				$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 					$isprimary = $rowA['isprimary'];
@@ -1168,7 +1168,7 @@
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 			
-			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 				$isprimary = $rowA['isprimary'];
@@ -1952,7 +1952,7 @@
 			$modality = strtolower($row['study_modality']);
 			$enrollmentid = $row['enrollment_id'];
 			
-			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
 			$isprimary = $rowA['isprimary'];
