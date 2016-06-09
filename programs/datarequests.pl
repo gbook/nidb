@@ -1455,8 +1455,8 @@ sub WriteNDARSeries() {
 		if ($modality eq "mr") { $modality = "mri";}
 		$modality = uc($modality);
 		
-		if (($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
-			$ageatscan = $studyageatscan;
+		if (($birthdate == "0001-01-01") || ($birthdate == "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
+			$ageatscan = $studyageatscan*12;
 		}
 		
 		# get some DICOM specific tags from the first file in the series

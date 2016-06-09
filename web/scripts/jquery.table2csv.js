@@ -26,13 +26,13 @@
             var csv = "";
             //gets th to set column headers
             $(this).find("thead tr th").each(function() {
-                csv += "\"" + $(this).text().replace(/(\")/gim, "\\\"\\\"") + "\"" + settings.delimiter; 
+                csv += "\"" + $(this).text().trim().replace(/(\")/gim, "\\\"\\\"") + "\"" + settings.delimiter; 
             });
             csv += "\n";
             //each td as a csv column
             $(this).find("tbody tr").each(function () {
                 $(this).find("td").each(function () {
-                    csv += "\"" + $(this).text().replace(/(\")/gim, "\\\"\\\"") + "\"" + settings.delimiter;
+                    csv += "\"" + $(this).text().trim().replace(/(\")/gim, "\\\"\\\"") + "\"" + settings.delimiter;
                 });
                 csv += "\n";
             });

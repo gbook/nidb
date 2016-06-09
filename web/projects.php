@@ -59,6 +59,7 @@
 	$smokingstatus = GetVariable("smokingstatus");
 	$enrollgroups = GetVariable("enrollgroup");
 	$studytable = GetVariable("studytable");
+	$subjecttable = GetVariable("subjecttable");
 	
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
@@ -101,6 +102,10 @@
 		case 'updatedemographics':
 			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
 			DisplayDemographics($id);
+			break;
+		case 'updatesubjecttable':
+			UpdateSubjectTable($id,$subjecttable);
+			DisplayDemographicsEditTable($id);
 			break;
 		case 'updatestudytable':
 			UpdateStudyTable($id,$studytable);
@@ -193,7 +198,7 @@
 		if (count($maritalstatus) != count($smokingstatus)) { echo "Error in number of items received"; return; }
 		if (count($smokingstatus) != count($enrollgroups)) { echo "Error in number of items received"; return; }
 	
-		echo "I'm here! [" . count($subjectids) . "]";
+		//echo "I'm here! [" . count($subjectids) . "]";
 		
 		for ($i=0;$i<count($subjectids);$i++) {
 			$subjectid = $subjectids[$i];
@@ -208,19 +213,19 @@
 			$smoking = $smokingstatus[$i];
 			$enrollgroup = $enrollgroups[$i];
 			
-			echo "Hi! [$i]";
+			//echo "Hi! [$i]";
 			/* only do updates if its a valid subjectid */
 			if (isInteger($subjectid)) {
 				$sqlstring = "update subjects set guid = '$guid', birthdate = '$birthdate', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', education = '$education', marital_status = '$marital', smoking_status = '$smoking' where subject_id = $subjectid";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				
 				$sqlstring = "update enrollment set enroll_subgroup = '$enrollgroup' where subject_id = $subjectid and project_id = $id";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				
 				$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $id";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				if (mysql_num_rows($result) > 0){
 					$row = mysql_fetch_array($result, MYSQL_ASSOC);
@@ -233,7 +238,7 @@
 				/* now update the alternate IDs */
 				/* ... first delete entries for this subject from the altuid table ... */
 				$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				/* ... and insert the new rows into the altuids table */
 				$altuidlist = explode(',',$altuid);
@@ -246,7 +251,183 @@
 					else {
 						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altid',0, '$enrollmentid')";
 					}
-					PrintSQL($sqlstring);
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateSubjectTable ----------------- */
+	/* -------------------------------------------- */
+	function UpdateSubjectTable($id,$subjecttable) {
+		/* prepare the fields for SQL */
+		$id = mysql_real_escape_string($id);
+		
+		$numRowsUpdated = 0;
+		//PrintVariable($studytable);
+		$csv = explode("\n",$subjecttable);
+		array_shift($csv); /* remove headers from csv */
+		foreach ($csv as $line) {
+			/* only accept valid lines with the correct # of columns */
+			if (trim($line) != '') {
+				$parts = array_map(mysql_real_escape_string, str_getcsv($line));
+				//PrintVariable($parts,'Parts');
+				if (count($parts) == 14) {
+					//PrintVariable($parts, 'Parts');
+					$subjectid = trim($parts[0]);
+					$uid = trim($parts[1]);
+					$altuidlist = trim($parts[2]);
+					$guid = trim($parts[3]);
+					$dob = trim($parts[4]);
+					$sex = strtoupper(trim($parts[5]));
+					$ethnicity1 = trim($parts[6]);
+					$ethnicity2 = trim($parts[7]);
+					$education = trim($parts[8]);
+					$handedness = trim($parts[9]);
+					$marital = trim($parts[10]);
+					$smoking = strtolower(trim($parts[11]));
+					$enrollgroup = trim($parts[12]);
+					
+					/* validate the IDs */
+					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
+					
+					/* valdiate and build the SQL update statement */
+					$sqlupdates = "";
+					if ($guid != "") { $sqlupdates[] = "guid = '$guid'"; }
+					if (($dob != "") && (strtotime($dob) != false)) { $sqlupdates[] = "birthdate = '$dob'"; }
+					if (in_array($sex,array('F','M','O','U','T'))) { $sqlupdates[] = "gender = '$sex'"; }
+					switch(strtolower($ethnicity1)) {
+						case 'hispanic':
+							$sqlupdates[] = "ethnicity1 = 'hispanic'"; break;
+						case 'nothispanic':
+						case 'not hispanic':
+							$sqlupdates[] = "ethnicity1 = 'nothispanic'"; break;
+					}
+					switch(strtolower($ethnicity2)) {
+						case 'indian':
+						case 'american indian/alaskan native':
+							$sqlupdates[] = "ethnicity2 = 'indian'"; break;
+						case 'asian':
+							$sqlupdates[] = "ethnicity2 = 'asian'"; break;
+						case 'black':
+						case 'black/african american':
+							$sqlupdates[] = "ethnicity2 = 'black'"; break;
+						case 'islander':
+						case 'hawaiian/pacific islander':
+							$sqlupdates[] = "ethnicity2 = 'asian'"; break;
+						case 'white':
+							$sqlupdates[] = "ethnicity2 = 'white'"; break;
+					}
+					switch(strtolower($education)) {
+						case '0':
+						case 'unknown':
+							$sqlupdates[] = "education = '0'"; break;
+						case '1':
+						case 'grade school':
+							$sqlupdates[] = "education = '1'"; break;
+						case '2':
+						case 'middle school':
+							$sqlupdates[] = "education = '2'"; break;
+						case '3':
+						case 'high school/ged':
+							$sqlupdates[] = "education = '3'"; break;
+						case '4':
+						case 'trade school':
+							$sqlupdates[] = "education = '4'"; break;
+						case '5':
+						case 'associates degree':
+							$sqlupdates[] = "education = '5'"; break;
+						case '6':
+						case 'bachelors degree':
+							$sqlupdates[] = "education = '6'"; break;
+						case '7':
+						case 'masters degree':
+							$sqlupdates[] = "education = '7'"; break;
+						case '8':
+						case 'doctoral degree':
+							$sqlupdates[] = "education = '8'"; break;
+					}
+					switch(strtolower($handedness)) {
+						case 'r':
+						case 'right':
+							$sqlupdates[] = "handedness = 'R'"; break;
+						case 'l':
+						case 'left':
+							$sqlupdates[] = "handedness = 'L'"; break;
+						case 'a':
+						case 'ambidextrous':
+							$sqlupdates[] = "handedness = 'A'"; break;
+						case 'u':
+						case 'unknown':
+							$sqlupdates[] = "handedness = 'U'"; break;
+					}
+					switch(strtolower($marital)) {
+						case 'unknown':
+							$sqlupdates[] = "marital_status = 'unknown'"; break;
+						case 'single':
+							$sqlupdates[] = "marital_status = 'single'"; break;
+						case 'married':
+							$sqlupdates[] = "marital_status = 'married'"; break;
+						case 'divorced':
+							$sqlupdates[] = "marital_status = 'divorced'"; break;
+						case 'separated':
+							$sqlupdates[] = "marital_status = 'separated'"; break;
+						case 'civilunion':
+						case 'civil union':
+							$sqlupdates[] = "marital_status = 'civilunion'"; break;
+						case 'cohabitating':
+							$sqlupdates[] = "marital_status = 'cohabitating'"; break;
+						case 'widowed':
+							$sqlupdates[] = "marital_status = 'widowed'"; break;
+					}
+					if ($smoking != "") {
+						$sqlupdates[] = "smoking_status = '$smoking'";
+					}
+					
+					$sqlstring = "update subjects set " . implode(", ",$sqlupdates) . " where subject_id = '$subjectid'";
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					
+					/* ----- update the alternate UIDs ----- */
+					/* get the enrollmentid */
+					$sqlstring = "select enrollment_id from enrollment where project_id = '$id' and subject_id = $subjectid";
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$row = mysql_fetch_array($result, MYSQL_ASSOC);
+					$enrollmentid = $row['enrollment_id'];
+					
+					/* if there are no alternate IDs, skip this step */
+					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
+					
+					/* delete entries for this subject from the altuid table ... */
+					$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+					//PrintSQL($sqlstring);
+					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					/* ... and insert the new rows into the altuids table */
+					$altuids = explode(',',$altuidlist);
+					foreach ($altuids as $altuid) {
+						$altuid = trim($altuid);
+						if ($altuid == '') { continue; }
+						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
+						if (strpos($altuid, '*') !== FALSE) {
+							$altuid = str_replace('*','',$altuid);
+							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+							if ($altuid == '') { continue; }
+						}
+						else {
+							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+						}
+						//PrintSQL($sqlstring);
+						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						//echo "<span class='tiny'>" . mysql_affected_rows() . " rows updated</span>";
+						$numRowsUpdated += mysql_affected_rows();
+					}
+					
+					$sqlstring = "update enrollment set enroll_subgroup = '$enrollgroup' where enrollment_id = $enrollmentid";
+					//PrintSQL($sqlstring);
 					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -334,7 +515,6 @@
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 						$numRowsUpdated += mysql_affected_rows();
 					}
-					
 				}
 			}
 		}
@@ -439,7 +619,7 @@
 		</style>
 		<?		
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_num asc";
+		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysql_num_rows($result);
 		
@@ -772,20 +952,83 @@
 		$urllist['Edit Demographics'] = "projects.php?action=editdemographics&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
+		# get the autocomplete list for the enrollgroup
+		$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
+		$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+		while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+			$enrollgroupautocomplete[] = "'" . str_replace("'","",$rowA['enroll_subgroup']) . "'";
+		}
 		?>
-		<form action="projects.php" method="post">
-		<input type="hidden" name="action" value="updatedemographics">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<table class="smallgraydisplaytable">
+		<script type='text/javascript' src='scripts/x/x.js'></script>
+		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
+		<script type='text/javascript' src='scripts/x/lib/xtableiterate.js'></script>
+		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid.js"></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_renderers.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_editors.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_validators.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_utils.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/editablegrid_charts.js" ></script>
+		<script type='text/javascript' src="scripts/editablegrid/extensions/autocomplete/autocomplete.js" ></script>
+		<link rel="stylesheet" href="scripts/editablegrid/editablegrid.css" type="text/css" media="screen">
+		<link rel="stylesheet" href="scripts/editablegrid/extensions/autocomplete/autocomplete.css" type="text/css" media="screen">
+		<style>
+			table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
+			table.testgrid td, table.testgrid th { padding: 5px; }
+			table.testgrid th { background: #E5E5E5; text-align: left; }
+			input.invalid { background: red; color: #FDFDFD; }
+			.editable { font-family: monospace; background-color: lightyellow; border: 1px solid skyblue }
+		</style>
+		
+		<script>
+			window.onload = function() {
+				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: false, caption: 'Double-click to edit table'}); 
+
+				// we build and load the metadata in Javascript
+				editableGrid.load({ metadata: [
+					{ name: "subjectid", datatype: "string", editable: false },
+					{ name: "uid", datatype: "html", editable: false },
+					{ name: "altuids", datatype: "html", editable: true },
+					{ name: "guid", datatype: "string", editable: true },
+					{ name: "birthdate", datatype: "string", editable: true },
+					{ name: "sex", datatype: "html", editable: true, values: { "": "", "F": "F", "M": "M", "T": "T", "O": "O", "U": "U"} },
+					{ name: "race", datatype: "string", editable: true, values: { "": "", "hispanic": "Hispanic", "nothispanic": "Not hispanic" } },
+					{ name: "ethnicity", datatype: "string", editable: true, values: {"": "", "indian": "American Indian/Alaskan native", "asian": "Asian", "black": "Black/African American", "islander": "Hawaiian/Pacific Islander", "white": "White" } },
+					{ name: "education", datatype: "string", editable: true, values: { "": "", "0":"Unknown", "1":"Grade school", "2":"Middle school", "3":"High school/GED", "4":"Trade school", "5":"Associates degree", "6":"Bachelors degree", "7":"Masters degree", "8":"Doctoral degree" } },
+					{ name: "handedness", datatype: "string", editable: true, values: { "": "", "R": "Right", "L": "Left", "A": "Ambidextrous", "U": "Unknown" } },
+					{ name: "marital", datatype: "string", editable: true, values: {"":"", "unknown":"Unknown", "single":"Single", "married":"Married", "divorced":"Divorced", "separated":"Separated", "civilunion":"Civil union", "cohabitating":"Cohabitating", "widowed":"Widowed"} },
+					{ name: "smoking", datatype: "string", editable: true, values: { "":"", "unknown":"unknown", "never":"never", "past":"past", "current":"current" } },
+					{ name: "enrollgroup", datatype: "html", editable: true }
+				]});
+
+				// use autocomplete on enrollgroup
+				editableGrid.setCellEditor("enrollgroup", new AutocompleteCellEditor({
+					suggestions: [<?=implode(",",$enrollgroupautocomplete)?>]
+				}));
+		
+				// then we attach to the HTML table and render it
+				editableGrid.attachToHTMLTable('table1');
+				editableGrid.renderGrid();
+			} 
+		</script>
+		
+		<div align="center">
+		<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
+		</div>
+		<br><br>
+		
+		<table class="testgrid" id='table1'>
 			<thead>
+				<th></th>
 				<th>UID</th>
 				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
 				<th>GUID</th>
-				<th>Birthdate<br><span class="tiny">YYY-MM-DD</span></th>
-				<th>Sex<br><span class="tiny">M,F,U,O</span></th>
+				<th>Birthdate (YYYY-MM-DD)</th>
+				<th>Sex</th>
 				<th>Race</th>
 				<th>Ethnicity</th>
-				<th>Handedness<br><span class="tiny">R,L,A,U</span></th>
+				<th>Education</th>
+				<th>Handedness</th>
 				<th>Marital</th>
 				<th>Smoking</th>
 				<th>Enroll group</th>
@@ -794,6 +1037,7 @@
 		/* get all subjects, and their enrollment info, associated with the project */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id order by a.uid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$i=0;
 		//PrintSQLTable($result);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$subjectid = $row['subject_id'];
@@ -809,12 +1053,15 @@
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 			
-			$sqlstringA = "select altuid from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+			//PrintSQLTable($resultA);
+			$altids = "";
 			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 				$isprimary = $rowA['isprimary'];
 				$altid = $rowA['altuid'];
-				if ($altuid != "") {
+				//echo "[$altid]<br>";
+				if ($altid != "") {
 					if ($isprimary) {
 						$altids[] = "*" . $altid;
 					}
@@ -823,87 +1070,48 @@
 					}
 				}
 			}
+			//echo "$altids<br>";
 			$altuidlist = implode2(", ",$altids);
-			$altids = "";
-			
-			$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
-			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			?>
-			<datalist id="enrollgroups">
-			<?
-				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
-					$enrollgroup = $rowA['enroll_subgroup'];
-					?><option value="<?=$enrollgroup?>"><?
-				}
-			?>
-			</datalist>
-			<tr>
-				<input type="hidden" name="subjectid[]" value="<?=$subjectid?>">
-				<td style="font-weight: bold; font-size:12pt"><tt><?=$uid?></tt></td>
-				<td><input type="text" name="altuids[]" size="30" value="<?=$altuidlist?>" style="font-family: monospace"></td>
-				<td><input type="text" name="guids[]" size="10" value="<?=$guid?>"></td>
-				<td><input type="text" name="birthdates[]" size="8" maxlength="10" value="<?=$birthdate?>"></td>
-				<td><input type="text" name="genders[]" maxlength="1" style="width:35px" value="<?=$gender?>"></td>
-				<td>
-					<select name="ethnicity1[]" style="width:100px">
-						<option value="" <? if ($ethnicity1 == "") echo "selected"; ?>></option>
-						<option value="hispanic" <? if ($ethnicity1 == "hispanic") echo "selected"; ?>>Hispanic/Latino</option>
-						<option value="nothispanic" <? if ($ethnicity1 == "nothispanic") echo "selected"; ?>>Not hispanic/latino</option>
-					</select>
-				</td>
-				<td>
-					<select name="ethnicity2[]" style="width:100px">
-						<option value="" <? if ($ethnicity2 == "") echo "selected"; ?>></option>
-						<option value="indian" <? if ($ethnicity2 == "indian") echo "selected"; ?>>American Indian/Alaska Native</option>
-						<option value="asian" <? if ($ethnicity2 == "asian") echo "selected"; ?>>Asian</option>
-						<option value="black" <? if ($ethnicity2 == "black") echo "selected"; ?>>Black/African American</option>
-						<option value="islander" <? if ($ethnicity2 == "islander") echo "selected"; ?>>Hawaiian/Pacific Islander</option>
-						<option value="white" <? if ($ethnicity2 == "white") echo "selected"; ?>>White</option>
-					</select>
-				</td>
-				<td>
-					<select name="education[]" style="width:100px">
-						<option value="" <? if ($education == "") echo "selected"; ?>></option>
-						<option value="0" <? if ($education == "0") echo "selected"; ?>>Unknown</option>
-						<option value="1" <? if ($education == "1") echo "selected"; ?>>Grade School</option>
-						<option value="2" <? if ($education == "2") echo "selected"; ?>>Middle School</option>
-						<option value="3" <? if ($education == "3") echo "selected"; ?>>High School/GED</option>
-						<option value="4" <? if ($education == "4") echo "selected"; ?>>Trade School</option>
-						<option value="5" <? if ($education == "5") echo "selected"; ?>>Associates Degree</option>
-						<option value="6" <? if ($education == "6") echo "selected"; ?>>Bachelors Degree</option>
-						<option value="7" <? if ($education == "7") echo "selected"; ?>>Masters Degree</option>
-						<option value="8" <? if ($education == "8") echo "selected"; ?>>Doctoral Degree</option>
-					</select>
-				</td>
-				<td>
-					<select name="maritalstatus[]">
-						<option value="" <? if ($maritalstatus == "") echo "selected"; ?>></option>
-						<option value="unknown" <? if ($maritalstatus == "unknown") echo "selected"; ?>>Unknown</option>
-						<option value="single" <? if ($maritalstatus == "single") echo "selected"; ?>>Single</option>
-						<option value="married" <? if ($maritalstatus == "married") echo "selected"; ?>>Married</option>
-						<option value="divorced" <? if ($maritalstatus == "divorced") echo "selected"; ?>>Divorced</option>
-						<option value="separated" <? if ($maritalstatus == "separated") echo "selected"; ?>>Separated</option>
-						<option value="civilunion" <? if ($maritalstatus == "civilunion") echo "selected"; ?>>Civil Union</option>
-						<option value="cohabitating" <? if ($maritalstatus == "cohabitating") echo "selected"; ?>>Cohabitating</option>
-						<option value="widowed" <? if ($maritalstatus == "widowed") echo "selected"; ?>>Widowed</option>
-					</select>
-				</td>
-				<td>
-					<select name="smokingstatus[]">
-						<option value="" <? if ($smokingstatus == "") echo "selected"; ?>></option>
-						<option value="unknown" <? if ($smokingstatus == "unknown") echo "selected"; ?>>Unknown</option>
-						<option value="never" <? if ($smokingstatus == "never") echo "selected"; ?>>Never</option>
-						<option value="past" <? if ($smokingstatus == "past") echo "selected"; ?>>Past</option>
-						<option value="current" <? if ($smokingstatus == "current") echo "selected"; ?>>Current</option>
-					</select>
-				</td>
-				<td><input type="text" list="enrollgroups" name="enrollgroup[]" value="<?=$enrollsubgroup?>"></td>
+			<tr id="R<?=$i?>">
+				<td class="tiny"><?=$subjectid?></td>
+				<td style="font-weight: bold; font-size:12pt"><?=$uid?></td>
+				<td class="editable"><?=$altuidlist?></td>
+				<td class="editable"><?=$guid?></td>
+				<td class="editable"><?=$birthdate?></td>
+				<td class="editable"><?=$gender?></td>
+				<td class="editable"><?=$ethnicity1?></td>
+				<td class="editable"><?=$ethnicity2?></td>
+				<td class="editable"><?=$education?></td>
+				<td class="editable"><?=$handedness?></td>
+				<td class="editable"><?=$maritalstatus?></td>
+				<td class="editable"><?=$smokingstatus?></td>
+				<td class="editable"><?=$enrollsubgroup?></td>
 			</tr>
 			<?
+			$i++;
 		}
 		?>
 		</table>
-		<input type="submit" value="Update">
+		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
+		<script>
+			//$(document).ready(function() {
+				function ConvertToCSV() {
+					$("#table1").table2csv( {
+						callback: function (csv) {
+							document.getElementById("subjecttable").value = csv;
+							//alert('Hi');
+							//document.getElementById('savetableform').submit();
+						}
+					});
+				}
+			//});
+		</script>
+		<form method="post" action="projects.php" id="savetableform">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="action" value="updatesubjecttable">
+		<input type="hidden" name="subjecttable" id="subjecttable">
+		<div align="right"><input type="submit" value="Save" onMouseDown="ConvertToCSV();"></div>
 		</form>
 		<?
 	}

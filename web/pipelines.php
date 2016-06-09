@@ -108,6 +108,7 @@
 	
 	$analysisnotes = GetVariable("analysisnotes");
 	$fileviewtype = GetVariable("fileviewtype");
+	$listtype = GetVariable("listtype");
 	
 	$returnpage = GetVariable("returnpage");
 	
@@ -127,10 +128,11 @@
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
-			AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
+		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
 		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
 		case 'deleteanalyses':
@@ -341,8 +343,11 @@
 		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_queue, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinequeue', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', '$ishidden')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$pipelineid = mysql_insert_id();
 		
 		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><?
+		
+		return $pipelineid;
 	}
 
 	
@@ -1116,6 +1121,47 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- DisplayPipelineLists --------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelineLists($id, $listtype) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
+		# get pipeline name
+		$sqlstring = "select pipeline_name from pipelines where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//PrintSQL($sqlstring);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelinename = $row['pipeline_name'];
+
+		switch ($listtype) {
+			case 'failedanalyses': $sqlstring = "select uid, study_num, study_id, subject_id, study_datetime from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc"; break;
+			case 'successfulanalyses':
+			default:
+				?>Successful analyses<br><br><?
+				$sqlstring = "select d.uid, b.study_num, b.study_id, d.subject_id, b.study_datetime, weekofyear(b.study_datetime) 'week', c.project_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc";
+				break;
+		}
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//PrintSQLTable($result);
+		echo "<textarea>\n";
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$uid = $row['uid'];
+			$studynum = $row['study_num'];
+			$studyid = $row['study_id'];
+			$subjectid = $row['subject_id'];
+			$studydatetime = $row['study_datetime'];
+			$week = $row['week'];
+			$projectid = $row['project_id'];
+			echo "mkdir -m 777 -p /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week; ln -s /home/pipeline/onrc/data/pipeline/$uid/$studynum/$pipelinename /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week/$uid$studynum\n";
+		}
+		echo "</textarea>";
+	}
+	
+	
+	/* -------------------------------------------- */
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id) {
@@ -1181,7 +1227,7 @@
 			$submitbuttonlabel = "Add Pipeline Info";
 			$remove = "0";
 			$level = 1;
-			$directory = "/home/" . $GLOBALS['username'] . "/onrc/data";
+			$directory = "/home/" . $GLOBALS['username'];
 			$readonly = false;
 		}
 		
@@ -1447,7 +1493,7 @@
 											$parents[$parentid]['notes'] = $row['pipeline_notes'];
 										}
 									}
-									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = $id) and pipeline_enabled = 1";
+									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id') and pipeline_enabled = 1";
 									//PrintSQL($sqlstring);
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1679,6 +1725,9 @@
 						<a href="pipelines.php?action=viewpipeline&id=<?=$id?>"><img src="images/printer16.png" border="0"> Print view</a> <span class="tiny">(and previous pipeline versions)</span><br><br>
 						<a href="pipelines.php?action=viewanalyses&id=<?=$id?>"><img src="images/preview.gif"> View analyses</a><br><br>
 						<a href="pipelines.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis"><img src="images/preview.gif"> View ignored studies</a><br><br>
+						<a href="pipelines.php?action=viewlists&id=<?=$id?>"><img src="images/preview.gif"> View analysis lists</a>
+						
+						<br><br><br><br>
 						
 						<form action="pipelines.php" method="post" name="copypipeline">
 						<input type="hidden" name="action" value="copy">
@@ -1824,6 +1873,9 @@
 					});
 				});
 			</script>
+			<style>
+				.row1 { background-color: lightyellow; }
+			</style>
 			<tr class="row<?=$neworder?>">
 				<td width="10" valign="top" style="padding: 5px;" align="center">
 					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>>
@@ -2823,7 +2875,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				?>
 				<script>
 				function GetDestination(){
-					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>/onrc/data");
+					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
 					if (destination != null){
 					  //document.studieslist.destination.value = desination;
 					  document.studieslist.action='pipelines.php';
@@ -2834,7 +2886,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				   }
 				}
 				function GetDestination2(){
-					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>/onrc/data");
+					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>");
 					if (destination != null){
 					  document.studieslist.action='pipelines.php';
 					  $("#studieslistaction").attr("value", "createlinks");
@@ -3113,7 +3165,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				?>
 				<script>
 				function GetDestination(){
-					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>/onrc/data");
+					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
 					if (destination != null){
 					  //document.studieslist.destination.value = desination;
 					  document.studieslist.action='pipelines.php';
@@ -3124,7 +3176,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				   }
 				}
 				function GetDestination2(){
-					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>/onrc/data");
+					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>");
 					if (destination != null){
 					  document.studieslist.action='pipelines.php';
 					  $("#studieslistaction").attr("value", "createlinks");
