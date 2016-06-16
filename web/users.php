@@ -40,9 +40,6 @@
 	require "includes.php";
 	require "menu.php";
 	
-	//PrintVariable($_POST,'post');
-	//exit(0);
-	
 	/* setup variables */
 	$action = GetVariable("action");
 	$password = GetVariable("password");
@@ -69,11 +66,6 @@
 	$instanceid = GetVariable("instanceid");
 	$notifications = GetVariable("notification");
 	$projectids = GetVariables("projectid");
-	//PrintVariable($projectids);
-	//$protocol = GetVariable("protocol");
-	//$variable = GetVariable("variable");
-	//$criteria = GetVariable("criteria");
-	//$value = GetVariable("value");
 
 	/* ----- determine which action to take ----- */
 	switch ($action) {
@@ -81,10 +73,6 @@
 			SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids);
 			DisplayOptions($username);
 			break;
-		//case 'addnot':
-		//	AddNotification($username, $protocol, $variable, $criteria, $value);
-		//	DisplayOptions($username);
-		//	break;
 		case 'deletenot':
 			DeleteNotification($id);
 			DisplayOptions($username);
@@ -104,6 +92,7 @@
 	/* ----------------------------------------------- */
 	function SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids) {
 		if (IsGuest($username)) { return; }
+		if (trim($username) == "") { return; }
 		
 		foreach ($c as $key => $val) {
 			$c[$key] = mysql_real_escape_string($val);
@@ -114,37 +103,45 @@
 		if (mysql_num_rows($result) > 0) {
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$userid = $row['user_id'];
-			/* update */
-			$sqlstring = "update users set";
-			if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
-			$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			
-			/* delete all existing notification entries */
-			$sqlstring = "delete from notification_user where user_id = $userid";
-			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			
-			/* update the notifications */
-			foreach ($notifications as $notificationid) {
-				$pids = $projectids[$notificationid];
-				if (in_array(0,$pids) || in_array('all',$pids)) {
-					$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, 0, $notificationid)";
-					//PrintSQL($sqlstring);
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					foreach ($pids as $projectid) {
-						$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
+			if ((trim($userid) == '') || ($userid == 0)) {
+				?>
+				<span class="staticmessage">UserID is blank</span>
+				<?
+			}
+			else {
+				/* update */
+				$sqlstring = "update users set";
+				if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
+				$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				/* delete all existing notification entries */
+				$sqlstring = "delete from notification_user where user_id = $userid";
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				/* update the notifications */
+				foreach ($notifications as $notificationid) {
+					$pids = $projectids[$notificationid];
+					if (in_array(0,$pids) || in_array('all',$pids)) {
+						$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, 0, $notificationid)";
 						//PrintSQL($sqlstring);
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						foreach ($pids as $projectid) {
+							$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
+							//PrintSQL($sqlstring);
+							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						}
 					}
 				}
 			}
 		}
 		else {
 			?>
-			<span class="message">How did you get this far? You should already have a row in the user table from when you first logged in.</span>
+			<span class="staticmessage">How did you get this far? You should already have a row in the user table from when you first logged in.</span>
 			<?
 		}
 	}
@@ -154,12 +151,23 @@
 	/* --------- SendJoinInstanceRequest ------------- */
 	/* ----------------------------------------------- */
 	function SendJoinInstanceRequest($instanceid) {
-		$sqlstring = "select * from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') and instance_id = $instanceid";
+		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$userid = $row['user_id'];
+		
+		if (($userid == "") || ($userid == 0)) {
+			?>
+			<span class="staticmessage">userid is blank</span>
+			<?
+		}
+		
+		$sqlstring = "select * from user_instance where user_id = '$userid' and instance_id = $instanceid";
 		//PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$sendemail = 0;
 		if (mysql_num_rows($result) < 1) {
-			$sqlstringA = "insert into user_instance (user_id, instance_id, instance_joinrequest) values ((select user_id from users where username = '" . $GLOBALS['username'] . "'), $instanceid, 1)";
+			$sqlstringA = "insert into user_instance (user_id, instance_id, instance_joinrequest) values ($userid, $instanceid, 1)";
 			//PrintSQL($sqlstringA);
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			$sendemail = 1;
@@ -174,7 +182,7 @@
 		
 		if ($sendemail) {
 			/* send an email to the owner of the instance */
-			$sqlstring = "select * from users where user_id = (select instance_ownerid from instance where instance_id = $instanceid)";
+			$sqlstring = "select * from users where user_id = $userid";
 			//PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
@@ -182,7 +190,7 @@
 			$oFullname = $row['user_fullname'];
 			
 			/* get the user in-question's information */
-			$sqlstring = "select * from users where user_id = (select instance_ownerid from instance where instance_id = $instanceid)";
+			$sqlstring = "select * from users where user_id = $userid";
 			//PrintSQL($sqlstring);
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
@@ -198,7 +206,7 @@
 			
 			$body = "$oFullname,<br><br><b>$uFullname ($uEmail)</b> has requested to join your Neuroinformatics Database (NiDB) instance: <b>$instancename</b>\n\nTo accept or reject this request, login to NiDB and go to Admin->Instances and click Accept or Reject";
 			
-			if (!SendGmail($uEmail,'NiDB instance join request',$body,0)) {
+			if (!SendGmail($oEmail,'NiDB instance join request',$body,0)) {
 				echo "System error. Unable to send email!";
 			}
 			else {
@@ -215,6 +223,12 @@
 	function DisplayOptions($username) {
 
 		if (IsGuest($username)) { return; }
+		if (trim($username) == '') {
+			?>
+			<span class="staticmessage">username is blank</span>
+			<?
+			return;
+		}
 		
 		/* get the range of years that studies have occured */
 		$sqlstring = "select * from users where username = '$username'";
@@ -688,7 +702,6 @@
 										$sqlstring  = "select * from notifications";
 										$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 										while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-											//$userid = $row['user_id'];
 											$notificationid = $row['notiftype_id'];
 											$notificationname = $row['notiftype_name'];
 											$notificationdesc = $row['notiftype_desc'];

@@ -506,6 +506,9 @@ sub DeleteAnalysis() {
 		if (!defined($studynum)) { WriteLog("Something was wrong, studynum was not initialized"); return; }
 		if (!defined($pipelinename)) { WriteLog("Something was wrong, pipelinename was not initialized"); return; }
 		if (trim($cfg{'analysisdir'}) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); return; }
+		if (trim($cfg{'analysisdir'}) eq '/') { WriteLog("Something was wrong, cfg->analysisdir is '/'"); return; }
+		if (trim($cfg{'analysisdir'}) eq '/home') { WriteLog("Something was wrong, cfg->analysisdir is '/home'"); return; }
+		if (trim($cfg{'analysisdir'}) eq '/root') { WriteLog("Something was wrong, cfg->analysisdir is '/root'"); return; }
 		if (trim($uid) eq '') { WriteLog("Something was wrong, uid was blank"); return; }
 		if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); return; }
 		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); return; }
@@ -522,10 +525,33 @@ sub DeleteAnalysis() {
 		
 			# check if the directory still exists
 			if (-e $datapath) {
-				my $sqlstringA = "update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = $analysisid";
-				WriteLog($sqlstringA);
-				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-				InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Analysis directory not deleted. Probably because permissions have changed and I dont have permission to delete the directory [$datapath]");
+				if ($datapath ne "") {
+					$systemstring = "sudo rm -rfv $datapath";
+					WriteLog("Deleting directory [$datapath] using sudo" . `$systemstring 2>&1`);
+					
+					# check again if it still exists
+					if (-e $datapath) {
+						my $sqlstringA = "update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = $analysisid";
+						WriteLog($sqlstringA);
+						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [$datapath]");
+					}
+					else {
+						# clear the entry from the database
+						my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
+						WriteLog($sqlstringA);
+						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+								
+						my $sqlstringB = "delete from analysis_results where analysis_id = $analysisid";
+						WriteLog($sqlstringB);
+						my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+
+						my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
+						WriteLog($sqlstringC);
+						my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
+					}
+				}
 			}
 			else {
 				# clear the entry from the database

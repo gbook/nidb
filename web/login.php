@@ -37,6 +37,34 @@
 <body>
 <link rel="stylesheet" type="text/css" href="style.css">
 <br><br>
+<noscript>Javascript is required to use NiDB</noscript>
+<div id="cookiemessage" style="font-weight:bold; border: 2px solid orange; text-align: center; width: 98%"></div>
+<script type="text/javascript">
+<!--
+function AreCookiesEnabled()
+{
+    var cookieEnabled = (navigator.cookieEnabled) ? true : false;
+
+    if (typeof navigator.cookieEnabled == "undefined" && !cookieEnabled)
+    { 
+        document.cookie="testcookie";
+        cookieEnabled = (document.cookie.indexOf("testcookie") != -1) ? true : false;
+    }
+	
+	var div = document.getElementById('cookiemessage');
+    if (!cookieEnabled) {
+		div.innerHTML = 'This site requires cookies to be enabled';
+	}
+	else {
+		div.style.display = 'none';
+		div.style.visibility = 'hidden';
+	}
+};
+
+window.onload = AreCookiesEnabled;
+-->
+</script>
+<br><br>
 <?
 
 	/* ----- setup variables ----- */
@@ -381,7 +409,6 @@
 									<b>Interested in NeuroInformatics Database?</b> <span style="font-size:8pt">This instance of NiDB is hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> and <a href="http://www.harthosp.org">Hartford Hospital</a><br></span>
 									<ul>
 										<li><b>Want to share data?</b> <span style="font-size:8pt">Contact gregory.book@hhchealth.org</span>
-										<!--<li><b>Use NiDB as a primary database</b> <span style="font-size:8pt">Commercial hosting provided by <a href="http://neuroinfodb.com">NeuroInfoDB.com LLC</a></span>-->
 										<li><b>NiDB is open source</b> <span style="font-size:8pt">Download on <a href="https://github.com/gbook/nidb">github</a></span>
 									</ul>
 									</span>

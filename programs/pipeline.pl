@@ -201,7 +201,9 @@ sub ProcessPipelines() {
 		if ($pipelinelevel != 0) {
 			if (($pipelinelevel == 1) || (($pipelinelevel == 2) && ($pipelinedependency eq ''))) {
 				$dd = GetPipelineDataDef($pid, $pipelineversion);
-				if (!$dd) {
+				
+				# if there is no data definition and no dependency
+				if ((!$dd) && ($pipelinedependency eq '')) {
 					WriteLog("Pipeline [$pipelinename - $pid] has no data definition. Skipping.");
 					
 					# update the statuses, and stop the modules

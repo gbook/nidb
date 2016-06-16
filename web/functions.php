@@ -24,6 +24,11 @@
 	/* this file includes the database connection, cookies, global functions, and loads the configuration file */
 	require_once "Mail.php";
 	require_once "Mail/mime.php";
+	
+	/* global variables */
+	$username = "";
+	$instanceid = "";
+	$instancename = "";
 
 	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
  	$cfg = LoadConfig();
@@ -65,11 +70,18 @@
 		if ($_SESSION['validlogin'] != "true") {
 			header("Location: login.php");
 		}
+		if (trim($username) == "") {
+			?>
+			<span class="staticmessage">username is blank. Contact NiDB administrator</span>
+			<?
+			exit(0);
+		}
 	}
 	else {
 		/* no login */
 	}
 
+	
 	$instanceid = $_SESSION['instanceid'];
 	
 	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
