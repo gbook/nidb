@@ -1940,32 +1940,11 @@
 						<summary style="padding:0px; font-size:9pt">Options</summary>
 						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
 							<tr>
-								<td class="label">Data format</td>
-								<td>
-									<select class="small" name="dd_dataformat[<?=$neworder?>]">
-										<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
-										<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
-										<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
-										<option value="nifti4d" <? if ($dd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
-										<option value="analyze3d" <? if ($dd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
-										<option value="analyze4d" <? if ($dd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
 								<td class="label">Image type</td>
 								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
 							</tr>
 							<tr>
-								<td class="label">g-zip</td>
-								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
-							</tr>
-							<tr>
-								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
-								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
-							</tr>
-							<tr>
-								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+								<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
 								<td>
 									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
 										<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
@@ -1980,6 +1959,30 @@
 							<tr>
 								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
 								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
+							</tr>
+							<tr>
+								<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
+							</tr>
+							<tr>
+								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
+							</tr>
+							<tr>
+								<td class="label">Data format</td>
+								<td>
+									<select class="small" name="dd_dataformat[<?=$neworder?>]">
+										<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
+										<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
+										<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
+										<option value="nifti4d" <? if ($dd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
+										<option value="analyze3d" <? if ($dd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
+										<option value="analyze4d" <? if ($dd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">g-zip</td>
+								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
 							</tr>
 							<tr>
 								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></td>
@@ -2086,32 +2089,11 @@
 						<summary style="padding:0px; font-size:9pt">Options</summary>
 						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
 							<tr>
-								<td class="label">Data format</td>
-								<td>
-									<select class="small" name="dd_dataformat[<?=$neworder?>]">
-										<option value="native" selected>Native</option>
-										<option value="dicom">DICOM</option>
-										<option value="nifti3d">Nifti 3D</option>
-										<option value="nifti4d">Nifti 4D</option>
-										<option value="analyze3d">Analyze 3D</option>
-										<option value="analyze4d">Analyze 4D</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
 								<td class="label">Image type</td>
 								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30"></td>
 							</tr>
 							<tr>
-								<td class="label">g-zip</td>
-								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
-							</tr>
-							<tr>
-								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
-								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
-							</tr>
-							<tr>
-								<td class="label">Criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+								<td class="label">Sedries criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
 								<td>
 									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
 										<option value="all" selected>All</option>
@@ -2126,6 +2108,30 @@
 							<tr>
 								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
 								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]"></td>
+							</tr>
+							<tr>
+								<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
+							</tr>
+							<tr>
+								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
+							</tr>
+							<tr>
+								<td class="label">Data format</td>
+								<td>
+									<select class="small" name="dd_dataformat[<?=$neworder?>]">
+										<option value="native" selected>Native</option>
+										<option value="dicom">DICOM</option>
+										<option value="nifti3d">Nifti 3D</option>
+										<option value="nifti4d">Nifti 4D</option>
+										<option value="analyze3d">Analyze 3D</option>
+										<option value="analyze4d">Analyze 4D</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td class="label">g-zip</td>
+								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
 							</tr>
 							<tr>
 								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"</td>

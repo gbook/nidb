@@ -161,8 +161,8 @@ sub ProcessPipelines() {
 		my $testing = $row{'pipeline_testing'};
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
-		print "Working on pipeline [$pid] - [$pipelinename] Submitting to queue [$pipelinequeue] through host [$pipelinesubmithost]\n";
-		WriteLog("Working on pipeline [$pid] - [$pipelinename] Submitting to queue [$pipelinequeue] through host [$pipelinesubmithost]");
+		print "Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]\n";
+		WriteLog("Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]");
 
 		SetPipelineProcessStatus('running',$pid,0);
 		
@@ -211,7 +211,9 @@ sub ProcessPipelines() {
 					SetPipelineStopped($pid);
 					next PIPELINE;
 				}
-				@datadef = @$dd;
+				if (defined($dd)) {
+					@datadef = @$dd;
+				}
 			}
 		}
 
@@ -458,16 +460,16 @@ sub ProcessPipelines() {
 								}
 							}
 							else {
-								
+								$pipelinedep = 0;
 							}
 							$setuplog .= WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]"); $setuplog .= "\n";
 
 							if (!$runsupplement) {
-								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, @datadef);
+								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
 							}
 
 							# again check if there is anything to actually run on
-							if (($numseries > 0) || ($rerunresults eq "1") || ($runsupplement)) {
+							if (($numseries > 0) || ($rerunresults eq "1") || ($runsupplement) || (($pipelinedep != 0) && ($numseries < 1)) ) {
 								#print "11\n";
 								WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- ");
 								$setuplog .= " ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- \n";
@@ -613,7 +615,7 @@ sub ProcessPipelines() {
 						}
 						
 						# mark the study in the analysis table
-						if ($numseries > 0) {
+						if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0))) {
 							#$datalog = EscapeMySQLString($datalog);
 							if (($rerunresults eq "1") || ($runsupplement)) {
 								$sqlstring = "update analysis set analysis_status = 'pending' where analysis_id = $analysisRowID";
@@ -1260,7 +1262,7 @@ sub GetUIDStudyNumListByGroup() {
 # --------- GetData ----------------------------------------
 # ----------------------------------------------------------
 sub GetData() {
-	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, @datadef) = @_;
+	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, $pipelinedep, @datadef) = @_;
 	
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1430,6 +1432,12 @@ sub GetData() {
 		}
 		$datalog .= "----- Done checking data steps -----\n";
 		
+		# if there is a dependency, don't worry about the previous checks
+		if ($pipelinedep != 0) {
+			$stepIsInvalid = 0;
+		}
+		
+		# check for any bad data items
 		if ($stepIsInvalid) {
 			# bail out of this function, the data spec didn't work out for this subject
 			return (0,$datalog, $datareport);
@@ -1806,6 +1814,7 @@ sub GetData() {
 				$datalog .= "This data item [$protocol] is not enabled\n";
 			}
 		}
+		$datalog .= "Leaving GetData(). Copied [$numdownloaded] series\n";
 		WriteLog("Leaving GetData() successfully => ret($numdownloaded, $datalog)");
 		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Finished copying data [$numdownloaded] series downloaded");
 		return ($numdownloaded, $datalog, $datareport);
