@@ -55,7 +55,7 @@
 		$C3 = mt_rand(0,9);
 		$C4 = mt_rand(0,9);
 		
-		$badarray = array('fuck','shit','piss','tits','dick','cunt','twat','jism','jizz','arse','damn','fart','hell','wang','wank','gook','kike','kike','spic','arse','dyke','cock','muff','pusy','butt','crap','poop','slut','dumb','snot','boob','dead','anus','clit','homo','poon','tard','kunt','tity','tit','ass','dic','dik','fuk');
+		$badarray = array('fuck','shit','piss','tits','dick','cunt','twat','jism','jizz','arse','damn','fart','hell','wang','wank','gook','kike','kyke','spic','arse','dyke','cock','muff','pusy','butt','crap','poop','slut','dumb','snot','boob','dead','anus','clit','homo','poon','tard','kunt','tity','tit','ass','dic','dik','fuk');
 		$safe = false;
 		
 		while (!$safe) {

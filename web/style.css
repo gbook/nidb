@@ -317,6 +317,11 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
+/* enrollment table */
+.enrolltable { border: 2px solid #444; border-collapse: collapse; }
+.enrolltable td.cell { border: 1px solid #ccc; padding: 5px; }
+.enrolltable td.headercell { border-top: 2px solid #444; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; border-right: 1px solid #ccc; padding: 5px; background-color: #ddd; font-weight: bold }
+
 /* 2 column table (small table with 2 columns: variable, value)*/
 .multicoltable { border-spacing: 0px; padding: 0px; border: 1px solid #AAA; border-collapse:collapse; }
 .multicoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; border-right: 1px solid #AAA }

@@ -1744,7 +1744,7 @@
 										<td class="label" style="width: 200px; text-align: left; vertical-align: top;">
 											<?=$project_name?> (<?=$costcenter?>)<br><br>
 											<div style="font-size:10pt; font-weight: normal;">
-											Enrolled: <span style="color: darkblue"><?=$enrolldate?></span><br>
+											Enrolled: <a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a><br>
 											<? if ($phiaccess) { ?>
 											Group: <span id="enroll_subgroup" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
 											<? } ?>

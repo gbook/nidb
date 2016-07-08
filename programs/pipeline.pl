@@ -1494,6 +1494,10 @@ sub GetData() {
 			else {
 				$imagetypes = "'$imagetype'";
 			}
+			
+			# expand the comparison into SQL
+			my ($comparison, $num) = GetSQLComparison($numboldreps);
+			
 			WriteLog("Working on step [$i]: $id");
 
 			# check to see if we should even run this step
@@ -1514,39 +1518,24 @@ sub GetData() {
 					if ($level eq 'study') {
 						
 						$datalog .= "This data step is study-level [$protocols] criteria: [$criteria] imagetype: [$imagetype]\n";
+						
+						$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
+						if ($imagetypes ne "''") { $sqlstring .= " and image_type in ($imagetypes)"; }
+						if (($comparison != 0) && ($num != 0)) { $sqlstring .= " and numfiles $comparison $num"; }
+						
 						if ($criteria eq 'first') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
-							if ($imagetypes ne "''") {
-								$sqlstring .= " and image_type in ($imagetypes)";
-							}
 							$sqlstring .= " order by series_num asc limit 1";
 						}
 						elsif ($criteria eq 'last') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
-							if ($imagetypes ne "''") {
-								$sqlstring .= " and image_type in ($imagetypes)";
-							}
 							$sqlstring .= " order by series_num desc limit 1";
 						}
 						elsif ($criteria eq 'largestsize') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
-							if ($imagetypes ne "''") {
-								$sqlstring .= " and image_type in ($imagetypes)";
-							}
 							$sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1";
 						}
 						elsif ($criteria eq 'smallestsize') {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
-							if ($imagetypes ne "''") {
-								$sqlstring .= " and image_type in ($imagetypes)";
-							}
 							$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
 						}
 						else {
-							$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
-							if ($imagetypes ne "''") {
-								$sqlstring .= " and image_type in ($imagetypes)";
-							}
 							$sqlstring .= " order by series_num asc";
 						}
 					}
@@ -1587,39 +1576,30 @@ sub GetData() {
 								}
 								
 								$datalog .= "Still within the subject-level data search [$protocols] criteria: [$criteria] imagetype [$imagetypes]\n";
+
+								# base SQL string
+								$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
+								if ($imagetypes ne "''") {
+									$sqlstring .= " and image_type in ($imagetypes)";
+								}
+								if (($comparison != 0) && ($num != 0)) {
+									$sqlstring .= " and numfiles $comparison $num";
+								}
+								
+								# determine the ORDERing and LIMITs
 								if ($criteria eq 'first') {
-									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
-									if ($imagetypes ne "''") {
-										$sqlstring .= " and image_type in ($imagetypes)";
-									}
 									$sqlstring .= " order by series_num asc limit 1";
 								}
 								elsif ($criteria eq 'last') {
-									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
-									if ($imagetypes ne "''") {
-										$sqlstring .= " and image_type in ($imagetypes)";
-									}
 									$sqlstring .= " order by series_num desc limit 1";
 								}
 								elsif ($criteria eq 'largestsize') {
-									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
-									if ($imagetypes ne "''") {
-										$sqlstring .= " and image_type in ($imagetypes)";
-									}
 									$sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1";
 								}
 								elsif ($criteria eq 'smallestsize') {
-									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
-									if ($imagetypes ne "''") {
-										$sqlstring .= " and image_type in ($imagetypes)";
-									}
 									$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
 								}
 								else {
-									$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
-									if ($imagetypes ne "''") {
-										$sqlstring .= " and image_type in ($imagetypes)";
-									}
 									$sqlstring .= " order by series_num asc";
 								}
 								
@@ -1633,6 +1613,9 @@ sub GetData() {
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 								}
+								if (($comparison != 0) && ($num != 0)) {
+									$sqlstring .= " and numfiles $comparison $num";
+								}
 							}
 							else {
 								# find the data from the same subject and modality that has the same study_type
@@ -1641,6 +1624,9 @@ sub GetData() {
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
+								}
+								if (($comparison != 0) && ($num != 0)) {
+									$sqlstring .= " and numfiles $comparison $num";
 								}
 								$sqlstring .= " and `studies`.study_type = '$studytype'";
 							}

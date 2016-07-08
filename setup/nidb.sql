@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jun 09, 2016 at 05:24 PM
+-- Generation Time: Jul 08, 2016 at 12:58 PM
 -- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -819,9 +819,25 @@ CREATE TABLE IF NOT EXISTS `enrollment` (
   `enroll_subgroup` varchar(50) NOT NULL,
   `enroll_startdate` datetime DEFAULT NULL,
   `enroll_enddate` datetime NOT NULL,
+  `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `enrollment_checklist`
+--
+
+CREATE TABLE IF NOT EXISTS `enrollment_checklist` (
+  `enrollmentchecklist_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `projectchecklist_id` int(11) NOT NULL,
+  `notes` text NOT NULL,
+  `date_completed` datetime NOT NULL,
+  `completedby` varchar(255) NOT NULL COMMENT 'username, not ID, in case the user_id is deleted'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -1597,7 +1613,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '0',
   `pdd_order` int(11) NOT NULL,
-  `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest') NOT NULL DEFAULT 'all',
+  `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest','usesizecriteria') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
   `pdd_level` enum('study','subject') NOT NULL,
   `pdd_assoctype` enum('nearesttime','samestudytype','nearestintime') NOT NULL,
@@ -1812,6 +1828,25 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `project_status` varchar(15) DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_checklist`
+--
+
+CREATE TABLE IF NOT EXISTS `project_checklist` (
+  `projectchecklist_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `item_name` varchar(50) NOT NULL,
+  `item_desc` text NOT NULL,
+  `item_order` int(11) NOT NULL,
+  `modality` varchar(25) NOT NULL COMMENT 'MR, CT, assessment, measure, etc',
+  `protocol_name` text NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
+  `count` int(11) NOT NULL COMMENT 'total number of this item',
+  `frequency` int(11) NOT NULL COMMENT 'spacing between the items',
+  `frequency_unit` enum('hour','day','week','month','year') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2644,6 +2679,12 @@ ALTER TABLE `enrollment`
   ADD KEY `subject_id` (`subject_id`);
 
 --
+-- Indexes for table `enrollment_checklist`
+--
+ALTER TABLE `enrollment_checklist`
+  ADD PRIMARY KEY (`enrollmentchecklist_id`);
+
+--
 -- Indexes for table `et_series`
 --
 ALTER TABLE `et_series`
@@ -2975,6 +3016,12 @@ ALTER TABLE `projects`
   ADD UNIQUE KEY `project_costcenter` (`project_costcenter`),
   ADD KEY `fk_projects_users` (`project_admin`),
   ADD KEY `fk_projects_users1` (`project_pi`);
+
+--
+-- Indexes for table `project_checklist`
+--
+ALTER TABLE `project_checklist`
+  ADD PRIMARY KEY (`projectchecklist_id`);
 
 --
 -- Indexes for table `project_protocol`
@@ -3359,6 +3406,11 @@ ALTER TABLE `eeg_series`
 ALTER TABLE `enrollment`
   MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `enrollment_checklist`
+--
+ALTER TABLE `enrollment_checklist`
+  MODIFY `enrollmentchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `et_series`
 --
 ALTER TABLE `et_series`
@@ -3578,6 +3630,11 @@ ALTER TABLE `prescriptionnames`
 --
 ALTER TABLE `projects`
   MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `project_checklist`
+--
+ALTER TABLE `project_checklist`
+  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `project_protocol`
 --
