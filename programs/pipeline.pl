@@ -1497,8 +1497,9 @@ sub GetData() {
 			
 			# expand the comparison into SQL
 			my ($comparison, $num) = GetSQLComparison($numboldreps);
-			
+			WriteLog("BOLD reps comparison [$comparison] [$num]");
 			WriteLog("Working on step [$i]: $id");
+			$datalog .= "BOLD reps comparison [$comparison] [$num]\n";
 
 			# check to see if we should even run this step
 			if ($enabled) {
@@ -1516,12 +1517,13 @@ sub GetData() {
 				
 					# get a list of series satisfying the search criteria, if it exists
 					if ($level eq 'study') {
+						WriteLog("BOLD reps comparison [$comparison] [$num] inside StudyLevel");
+						$datalog .= "BOLD reps comparison [$comparison] [$num] inside StudyLevel\n";
 						
 						$datalog .= "This data step is study-level [$protocols] criteria: [$criteria] imagetype: [$imagetype]\n";
 						
 						$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
 						if ($imagetypes ne "''") { $sqlstring .= " and image_type in ($imagetypes)"; }
-						if (($comparison != 0) && ($num != 0)) { $sqlstring .= " and numfiles $comparison $num"; }
 						
 						if ($criteria eq 'first') {
 							$sqlstring .= " order by series_num asc limit 1";
@@ -1535,9 +1537,14 @@ sub GetData() {
 						elsif ($criteria eq 'smallestsize') {
 							$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
 						}
+						elsif ($criteria eq 'usesizecriteria') {
+							$sqlstring .= " and numfiles $comparison '$num' order by series_num asc";
+						}
 						else {
 							$sqlstring .= " order by series_num asc";
 						}
+						
+						$datalog .= "... at the end of the study level section, SQL [$sqlstring]\n";
 					}
 					else {
 						$datalog .= "This data step is subject-level [$protocols], association type [$assoctype], imagetype: [$imagetypes]\n";
@@ -1582,9 +1589,9 @@ sub GetData() {
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and image_type in ($imagetypes)";
 								}
-								if (($comparison != 0) && ($num != 0)) {
-									$sqlstring .= " and numfiles $comparison $num";
-								}
+								#if (($comparison != 0) && ($num != 0)) {
+								#	$sqlstring .= " and numfiles $comparison $num";
+								#}
 								
 								# determine the ORDERing and LIMITs
 								if ($criteria eq 'first') {
@@ -1598,6 +1605,9 @@ sub GetData() {
 								}
 								elsif ($criteria eq 'smallestsize') {
 									$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
+								}
+								elsif ($criteria eq 'usesizecriteria') {
+									$sqlstring .= " and numfiles $comparison '$num' order by series_num asc";
 								}
 								else {
 									$sqlstring .= " order by series_num asc";
