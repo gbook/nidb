@@ -165,6 +165,8 @@ sub ParseDirectory {
 	
 	my $useImportFields = 0;
 	my $importStatus = '';
+	my $importModality = '';
+	my $importDatatype = '';
 	# if there is an importRowID, check to see how that thing is doing
 	my $sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -172,6 +174,8 @@ sub ParseDirectory {
 		WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
 		$importStatus = $row{'import_status'};
+		$importModality = $row{'import_modality'};
+		$importDatatype = $row{'import_datatype'};
 		
 		#if (($importStatus ne 'complete') && ($importStatus ne "")) {
 		if (($importStatus eq 'complete') || ($importStatus eq "") || ($importStatus eq "received") || ($importStatus eq "error")) { }
@@ -245,7 +249,7 @@ sub ParseDirectory {
 						$i++;
 					}
 					elsif (lc($file) =~ /\.rec$/) { WriteLog("Filetype is a .rec"); }
-					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/)) {
+					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/) || (lc($importModality eq 'eeg')) || (lc($importDatatype eq 'eeg')) ) {
 						WriteLog("Filetype is .cnt .3dd or .dat");
 						my $ret = InsertEEG($file, $importRowID);
 						if ($ret ne "") {
@@ -709,8 +713,23 @@ sub InsertDICOM {
 	
 	WriteLog("$PatientID - $StudyDescription");
 	
-	# check if project and subject exist
-	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid = '$PatientID' or a.uid = SHA1('$PatientID') or b.altuid = '$PatientID' or b.altuid = SHA1('$PatientID')) 'subjectcount'";
+	my @altuidlist = '';
+	my @idsearchlist;
+	if ($importAltUIDs ne "") {
+		@altuidlist = split(/,/, $importAltUIDs);
+	}
+	push @idsearchlist, $PatientID;
+	push @idsearchlist, @altuidlist;
+	my $SQLIDs;
+	if (@idsearchlist > 1) {
+		$SQLIDs = "'" . join("','",@idsearchlist) . "'";
+	}
+	else {
+		$SQLIDs = "'$PatientID'";
+	}
+	
+	# check if the project and subject exist
+	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
 	#WriteLog("[$sqlstring]");
 	WriteLog("Checking if the subject exists by UID [$PatientID] or AltUID [$PatientID]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -763,7 +782,7 @@ sub InsertDICOM {
 			
 			# insert the PatientID as an alternate UID
 			if (trim($PatientID) ne '') {
-				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$PatientID')";
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ('$subjectRowID', '$PatientID')";
 				#WriteLog("[$sqlstring]");
 				WriteLog("Adding alternate UID [$PatientID]");
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -773,15 +792,16 @@ sub InsertDICOM {
 	}
 	else {
 		# get the existing subject ID, and UID! (the PatientID may be an alternate UID)
-		$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid = '$PatientID' or a.uid = SHA1('$PatientID') or b.altuid = '$PatientID' or b.altuid = SHA1('$PatientID')";
+		$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($row{'uid'});
+		WriteLog("Found [$subjectRealUID,$subjectRowID] using [SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')]");
 		
 		# insert the PatientID as an alternate UID
 		if (trim($PatientID) ne '') {
-			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$PatientID')";
+			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ('$subjectRowID', '$PatientID')";
 			#WriteLog("[$sqlstring]");
 			WriteLog("Adding alternate UID [$PatientID]");
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -866,6 +886,17 @@ sub InsertDICOM {
 		$enrollmentRowID = $result2->insertid;
 		WriteLog("Subject was not enrolled in this project. New enrollment [$enrollmentRowID]");
 		$IL_enrollmentcreated = 1;
+	}
+
+	# update alternate IDs, if there are any
+	if (@altuidlist > 0) {
+		foreach my $altuid (@altuidlist) {
+			if ($altuid ne "") {
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, enrollment_id) values ('$subjectRowID', '$altuid', '$enrollmentRowID')";
+				WriteLog("[$sqlstring]");
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
 	}
 	
 	# now determine if this study exists or not...
@@ -1776,6 +1807,8 @@ sub InsertEEG {
 	my $importAnonymize = '';
 	my $importUUID = '';
 	my $importEquipment = '';
+	my $importSeriesNotes = '';
+	my $importAltUIDs = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1789,6 +1822,8 @@ sub InsertEEG {
 		$importAnonymize = $row{'import_anonymize'};
 		$importUUID = $row{'import_uuid'};
 		$importEquipment = $row{'import_equipment'};
+		$importSeriesNotes = $row{'import_seriesnotes'};
+		$importAltUIDs = $row{'import_altuids'};
 	}
 	else {
 		WriteLog("ImportID [$importRowID] not found. Using default import parameters");
@@ -1916,14 +1951,14 @@ sub InsertEEG {
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$seriesRowID = $row{'eegseries_id'};
-		$sqlstring = "update eeg_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_status = 'complete' where eegseries_id = $seriesRowID";
+		$sqlstring = "update eeg_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete' where eegseries_id = $seriesRowID";
 		WriteLog("[$sqlstring]");
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
-		$sqlstring = "insert into eeg_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', 'complete', 'parsedicom.pl')";
+		$sqlstring = "insert into eeg_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_notes, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', '$importSeriesNotes', 'complete', 'parsedicom.pl')";
 		WriteLog("[$sqlstring]");
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
@@ -1947,6 +1982,7 @@ sub InsertEEG {
 
 	# insert an import log record
 	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', 'EEG', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
+	WriteLog("Inside InsertEEG() [$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log

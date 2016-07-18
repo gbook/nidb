@@ -1340,7 +1340,6 @@
 		}
 		
 		$sqlstring = "select a.uid, c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
-		//PrintSQL($sqlstring);
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
 			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
@@ -1369,12 +1368,6 @@
 		$urllist['Subjects'] = "subjects.php";
 		NavigationBar("$uid", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
 
-		/* kick them out if they shouldn't be seeing anything on this page */
-		//if ((!$phiaccess) && (!$dataaccess) && (!$GLOBALS['isadmin'])) {
-		//if ((!$phiaccess) && (!$dataaccess) && ($hasenrollments)) {
-		//	return;
-		//}
-
 		/* update the mostrecent table */
 		UpdateMostRecent($userid, $id,'');
 		
@@ -1396,6 +1389,7 @@
 		$uid = $row['uid'];
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
+		$isactive = $row['isactive'];
 
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
@@ -1451,9 +1445,14 @@
 			case 7: $education = "Masters Degree"; break;
 			case 8: $education = "Doctoral Degree"; break;
 		}
+
+		/* display a message if this subject has been deleted */
+		if (!$isactive) {
+			?><div class="staticmessage">This subject is marked as inactive (DELETED)</div><?
+		}
 		
 		?>
-
+		
 		<br>
 		
 		<style>
@@ -1723,7 +1722,7 @@
 									$projectaccess = 0;
 								}
 								
-								$subjectaltids = implode2(',',GetAlternateUIDs($id, $enrollmentid));
+								$subjectaltids = implode2(', ',GetAlternateUIDs($id, $enrollmentid));
 						?>
 						<script type="text/javascript">
 							$(document).ready(function(){

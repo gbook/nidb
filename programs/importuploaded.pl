@@ -220,13 +220,13 @@ sub DoImportUploaded {
 				
 				WriteLog("Should see me...");
 				# unzip anything in the directory before parsing it
-				my $systemstring = "cd $uploaddir; unzip *.zip;";
+				my $systemstring = "cd $uploaddir; unzip *.zip; rm *.zip";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				$systemstring = "cd $uploaddir; tar -xzvf *.tar.gz;";
+				$systemstring = "cd $uploaddir; tar -xzvf *.tar.gz; rm *.tar.gz";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				$systemstring = "cd $uploaddir; gunzip *.gz;";
+				$systemstring = "cd $uploaddir; gunzip *.gz; rm *.gz";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				$systemstring = "cd $uploaddir; bunzip2 *.bz2;";
+				$systemstring = "cd $uploaddir; bunzip2 *.bz2; rm *.bz2";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 				
 				my @files;

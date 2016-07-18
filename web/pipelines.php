@@ -1329,7 +1329,7 @@
 				<tr>
 					<td class="label" valign="top">Status<br><br></td>
 					<td valign="top" style="font-size: 10pt">
-						<b>Status</b> <?=$pipeline_status ?> <? if ($pipeline_status == "running") { ?>(<a href="pipelines.php?action=reset&id=<?=$info['id']?>" style="color: darkred" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)<? } ?><br>
+						<b>Status</b> <?=$pipeline_status ?> <? if ($pipeline_status == "running") { ?>(<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: darkred" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)<? } ?><br>
 						<b>Status message</b> <?=$pipeline_statusmessage ?><br>
 						<b>Last start</b> <?=$pipeline_laststart ?><br>
 						<b>Last finish</b> <?=$pipeline_lastfinish ?><br>

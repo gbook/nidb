@@ -652,6 +652,7 @@
 		<?
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQLTable($result,"importlog.php?action=displaylog",$orderby,8);
+		//PrintSQLTable($result);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$patientid = $row['patientid_orig'];
 			$patientname = $row['patientname_orig'];
