@@ -331,7 +331,6 @@
 					<th>Start date</th>
 					<th>End date</th>
 					<th>Status</th>
-					<th>Source</th>
 					<th># upload blocks</th>
 					<th>View upload</th>
 					<th>% blocks archived</th>
@@ -389,6 +388,14 @@
 			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
 			$numblank = $rowA['numblank'];
 			
+			if ($transaction_status == 'uploading') {
+				$status = "Receiving";
+				$status_message = "An upload transaction has started. Data is currently being received by NiDB";
+			}
+			elseif ($transaction_status == 'uploadcomplete') {
+				$status = "Upload complete";
+				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
+			}
 			//echo "[$numuploading] [$numpending] [$numreceiving] [$numreceived] [$numarchiving] [$numarchived] [$numblank]<br>";
 			?>
 			<tr>
@@ -396,8 +403,7 @@
 				<td><?=$transactionid?></td>
 				<td><?=$transaction_startdate?></td>
 				<td><?=$transaction_enddate?></td>
-				<td><?=$transaction_status?></td>
-				<td><?=$transaction_source?></td>
+				<td><a href="" title="<?=$status_message?>"><?=$status?></a></td>
 				<td align="right"><?=$numblocks?></td>
 				<td><a href="importlog.php?action=viewuploadblocks&transactionid=<?=$transactionid?>">summary</a> / 
 				<a href="importlog.php?action=viewsingletransaction&transactionid=<?=$transactionid?>">detail</a></td>
@@ -418,6 +424,9 @@
 	/* -------------------------------------------- */
 	function DisplayUploadBlocks($transactionid) {
 		?>
+		<style>
+			.highlighted:hover { border: 1px solid orange; }
+		</style>
 		<table class="smallgraydisplaytable">
 			<thead>
 				<tr>
@@ -555,7 +564,10 @@
 				<td><?=$import_modality?></td>
 				<td style="font-size:8pt"><?=$import_startdate?></td>
 				<td style="font-size:8pt">
-					<span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span>&nbsp;&nbsp;&nbsp;<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
+					<span title="api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
+					<span title="importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
+					<span title="parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
+					<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
 				</td>
 				<td><?=$import_message?></td>
 				<td style="font-size:8pt"><?=$import_enddate?></td>

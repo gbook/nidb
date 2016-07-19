@@ -656,7 +656,7 @@ sub DeleteSubject() {
 			# move all archive data to the deleted directory
 			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
 			mkpath($newpath, { verbose => 1, mode => 0777 });
-			my $systemstring = "mv " . $cfg{'archivedir'} . "/$uid $newpath/";
+			my $systemstring = "mv -v " . $cfg{'archivedir'} . "/$uid $newpath/";
 			WriteLog("Running [$systemstring]");
 			WriteLog(`$systemstring 2>&1`);
 			
@@ -790,7 +790,7 @@ sub RearchiveStudy() {
 			# move the study directory to the deleted directory
 			my $newpath = $cfg{'deletedpath'} . "/$uid-$studynum-" . GenerateRandomString(10);
 			mkpath($newpath, { verbose => 1, mode => 0777 });
-			my $systemstring = "mv $studypath $newpath";
+			my $systemstring = "mv -v $studypath $newpath";
 			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
 
 			$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
@@ -865,7 +865,7 @@ sub RearchiveSubject() {
 			# move the study directory to the deleted directory
 			my $newpath = $cfg{'deletedpath'} . "/$uid-" . GenerateRandomString(10);
 			mkpath($newpath, { verbose => 1, mode => 0777 });
-			my $systemstring = "mv $subjectpath $newpath";
+			my $systemstring = "mv -v $subjectpath $newpath";
 			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
 
 			$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
@@ -931,7 +931,7 @@ sub MoveDICOMs {
 		#WriteLog("Checking $file");
 		if (IsDICOMFile($file)) {
 			# move the file to the incomingdir
-			my $systemstring = "mv $file $outdir";
+			my $systemstring = "mv -v $file $outdir";
 			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
 		}
 	}

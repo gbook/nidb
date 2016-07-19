@@ -75,7 +75,7 @@
 		<td width="50px">
 			&nbsp;
 		</td>
-		<td valign="top" style="background-color: 526faa; border-radius:5px; padding:5px">
+		<td valign="top" style="background-color: 526faa; border-radius:5px; padding:5px; height: 30px">
 			<div id="bluemenu" class="bluetabs">
 				<ul>
 					<li><span><a href="index.php">Home</a></span></li>
@@ -176,20 +176,59 @@
 				<a href="login.php?action=logout">Logout</a>
 			</div>
 		</td>
-		<script type="text/javascript">
-		tabdropdown.init("bluemenu")
-		</script>
-
-		<form action="subjects.php" method="post">
-		<input type="hidden" name="action" value="search">
-		<input type="hidden" name="searchactive" value="1">
 		<td align="right" valign="bottom">
+			<form action="subjects.php" method="post">
+			<input type="hidden" name="action" value="search">
+			<input type="hidden" name="searchactive" value="1">
 			<input placeholder="UID search" name="searchuid" type="text" size="9" style="background-color: #526FAA; color: white; border:1px solid #526FAA">
+			<input type="submit" style="display:none; width: 0px height: 0px">
+			</form>
 		</td>
-		<input type="submit" style="display:none">
-		</form>
 	</tr>
 </table>
+<script type="text/javascript">
+	tabdropdown.init("bluemenu")
+</script>
+
+<!-- display system status -->
+<?
+	# get number of fileio operations pending
+	$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
+	$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$numiopending = $row['numiopending'];
+	
+	# get number of directories in dicomincoming directory
+	$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
+	$numdicomdirs = count($dirs);
+	
+	# get number of files in dicomincoming directory
+	$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
+	$numdicomfiles = count($files);
+	
+	# get number of import requests
+	$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
+	$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$numimportpending = $row['numimportpending'];
+	
+	# get number of directories in dicomincoming directory
+	$dirs = glob($GLOBALS['cfg']['uploadedpath'].'/*', GLOB_ONLYDIR);
+	$numimportdirs = count($dirs);
+	
+	/* get system load & number of cores */
+	$load = sys_getloadavg();
+	$cmd = "cat /proc/cpuinfo | grep processor | wc -l";
+	$cpuCoreNo = intval(trim(shell_exec($cmd)));
+	$percentLoad = number_format(($load[0]/$cpuCoreNo)*100.0,2);
+	
+?>
+<table width="100%" cellspacing="0" cellpadding="0">
+	<tr>
+		<td width="100%" style="font-size: 8pt; padding: 2px"><a href="status.php">System status</a>: &nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations</td>
+	</tr>
+</table>
+
 <?
 /* check for system status messages */
 	$sqlstring = "select * from system_messages where message_status = 'active' order by message_date desc";

@@ -234,12 +234,13 @@ sub ParseDirectory {
 						my $ret = InsertParRec($file, $importRowID);
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
+							$ret = EscapeMySQLString(trim($ret));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'PARREC', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 							# change the import status to reflect the error
-							$sqlstring = "update import_requests set import_status = 'error', import_enddate = now() where importrequest_id = '$importRowID'";
+							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting PAR/REC: $ret', import_enddate = now() where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
 							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
@@ -254,11 +255,12 @@ sub ParseDirectory {
 						my $ret = InsertEEG($file, $importRowID);
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
+							$ret = EscapeMySQLString(trim($ret));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'EEG', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 							# change the import status to reflect the error
-							$sqlstring = "update import_requests set import_status = 'error', import_enddate = now() where importrequest_id = '$importRowID'";
+							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting EEG: $ret', import_enddate = now() where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
 							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
@@ -374,7 +376,7 @@ sub ParseDirectory {
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 		}
-		$sqlstring = "update import_requests set import_status = 'archived', import_enddate = now() where importrequest_id = '$importRowID'";
+		$sqlstring = "update import_requests set import_status = 'archived', import_message = 'DICOM successfuly archived', import_enddate = now() where importrequest_id = '$importRowID'";
 		WriteLog($sqlstring);
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
@@ -713,24 +715,23 @@ sub InsertDICOM {
 	
 	WriteLog("$PatientID - $StudyDescription");
 	
+	# create the possible ID search lists and arrays
 	my @altuidlist = '';
 	my @idsearchlist;
-	if ($importAltUIDs ne "") {
+	if (trim($importAltUIDs) ne "") {
 		@altuidlist = split(/,/, $importAltUIDs);
 	}
 	push @idsearchlist, $PatientID;
 	push @idsearchlist, @altuidlist;
-	my $SQLIDs;
-	if (@idsearchlist > 1) {
-		$SQLIDs = "'" . join("','",@idsearchlist) . "'";
+	my $SQLIDs = "'$PatientID'";
+	foreach my $tmpID (@idsearchlist) {
+		if (trim($tmpID) ne '') {
+			$SQLIDs .= ",'$tmpID'";
+		}
 	}
-	else {
-		$SQLIDs = "'$PatientID'";
-	}
-	
 	# check if the project and subject exist
 	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
-	#WriteLog("[$sqlstring]");
+	WriteLog("[$sqlstring]");
 	WriteLog("Checking if the subject exists by UID [$PatientID] or AltUID [$PatientID]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
@@ -1510,8 +1511,22 @@ sub InsertParRec {
 	
 	WriteLog("$PatientID - $StudyDescription");
 	
-	# check if project and subject exist
-	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` WHERE uid = '$PatientID') 'subjectcount'";
+	# create the possible ID search lists and arrays
+	my @altuidlist = '';
+	my @idsearchlist;
+	if (trim($importAltUIDs) ne "") {
+		@altuidlist = split(/,/, $importAltUIDs);
+	}
+	push @idsearchlist, $PatientID;
+	push @idsearchlist, @altuidlist;
+	my $SQLIDs = "'$PatientID'";
+	foreach my $tmpID (@idsearchlist) {
+		if (trim($tmpID) ne '') {
+			$SQLIDs .= ",'$tmpID'";
+		}
+	}
+	# check if the project and subject exist
+	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
 	WriteLog("[$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
@@ -1872,8 +1887,25 @@ sub InsertEEG {
 	# ----- check if this subject/study/series/etc exists -----
 	WriteLog("$PatientID - $StudyDescription");
 	
+	# create the possible ID search lists and arrays
+	my @altuidlist = '';
+	my @idsearchlist;
+	if (trim($importAltUIDs) ne "") {
+		@altuidlist = split(/,/, $importAltUIDs);
+	}
+	push @idsearchlist, $PatientID;
+	push @idsearchlist, @altuidlist;
+	my $SQLIDs = "'$PatientID'";
+	foreach my $tmpID (@idsearchlist) {
+		if (trim($tmpID) ne '') {
+			$SQLIDs .= ",'$tmpID'";
+		}
+	}
+	# check if the project and subject exist
+	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
+
 	# check if subject exists and get the rowID
-	$sqlstring = "select b.subject_id, b.uid from subject_altuid a right join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
+	#$sqlstring = "select b.subject_id, b.uid from subject_altuid a right join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
 	WriteLog("SQL: [$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
@@ -1883,7 +1915,7 @@ sub InsertEEG {
 	}
 	else {
 		# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
-		return "Subject [$PatientID] does not exist";
+		return "Subject with ID [$PatientID] does not exist";
 	}
 	
 	# get the generic projectRowID if the requested one is empty

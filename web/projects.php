@@ -37,7 +37,7 @@
 	require "includes.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
+	PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -708,7 +708,7 @@
 		<br><br>
 
 		<? if ($GLOBALS['issiteadmin']) { ?>
-		<form action="projects.php" method="post" name="theform">
+		<form action="projects.php" method="post" name="theform" id="theform">
 		<input type="hidden" name="action" value="changeproject">
 		<input type="hidden" name="id" value="<?=$id?>">
 		<? } ?>
@@ -881,6 +881,7 @@
 				}
 			//});
 		</script>
+		</form>
 		<form method="post" action="projects.php" id="savetableform">
 		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="updatestudytable">
@@ -914,13 +915,13 @@
 						}
 					?>
 					</select>
-					<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php';document.theform.action.value='changeproject'" style="font-size:10pt">
+					<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()" style="font-size:10pt">
 					&nbsp;&nbsp;&nbsp;&nbsp;
 					<span title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects"><input type="checkbox" name="matchidonly" value="1" checked>Match ID only</span>
 					&nbsp;&nbsp;
-					<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php';document.theform.action.value='rearchivestudies'" style="color: red; font-size:10pt">
+					<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()" style="color: red; font-size:10pt">
 					&nbsp;&nbsp;&nbsp;&nbsp;
-					<input type="submit" value="Re-archive Subjects" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php';document.theform.action.value='rearchivesubjects'" style="color: red; font-size:10pt">
+					<input type="submit" value="Re-archive Subjects" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()" style="color: red; font-size:10pt">
 				</td>
 			</tr>
 			<tr>
@@ -930,7 +931,6 @@
 				</td>
 			</tr>
 		</table>
-		</form>
 		<? } ?>
 		</div>
 		<?
@@ -2142,7 +2142,7 @@
 			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Studies [<?=implode(', ',$studyids)?>] queued for re-archiving</div>
+		<div align="center" class="staticmessage">Studies [<?=implode(', ',$studyids)?>] queued for re-archiving</div>
 		<?
 	}
 
