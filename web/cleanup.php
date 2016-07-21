@@ -26,7 +26,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Import Log</title>
+		<title>NiDB - Cleanup</title>
 	</head>
 
 <body>
@@ -63,6 +63,11 @@
 		case 'deactivatesubjects':
 			DisplayMenu();
 			DeactivateSubjects($subjectids);
+			DisplayEmptySubjects();
+			break;
+		case 'obliteratesubjects':
+			DisplayMenu();
+			ObliterateSubjects($subjectids);
 			DisplayEmptySubjects();
 			break;
 		case 'deleteenrollments':
@@ -151,7 +156,7 @@
 		}
 		?>
 			<tr>
-				<td colspan="6" align="right"><input type="submit" value="Deactivate"></td>
+				<td colspan="6" align="right"><input type="submit" value="Deactivate" onClick="document.theform.action.value='obliteratesubjects'; document.theform.submit()"> &nbsp; <input type="submit" value="Obliterate" onClick="document.theform.action.value='obliteratesubjects'; document.theform.submit()"></td>
 			</tr>
 			</tbody>
 		</table>
@@ -234,6 +239,7 @@
 	/* ------- DeactiveateSubjects ---------------- */
 	/* -------------------------------------------- */
 	function DeactivateSubjects($subjectids) {
+		$subjectids = mysql_real_escape_array($subjectids);
 
 		echo "<tt style='font-size:8pt'>";
 		foreach ($subjectids as $id) {
@@ -243,8 +249,33 @@
 		}
 		echo "</tt>";
 	}
+
 	
-	
+	/* -------------------------------------------- */
+	/* ------- ObliterateSubjects ----------------- */
+	/* -------------------------------------------- */
+	function ObliterateSubjects($subjectids) {
+		$subjectids = mysql_real_escape_array($subjectids);
+		
+		/* get list of subjects from the studyids */
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',',$subjectids) . ")";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$ids[] = $row['subject_id'];
+			$uids[] = $row['uid'];
+		}
+		
+		/* delete all information about this SUBJECT from the database */
+		foreach ($ids as $id) {
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
+		<?
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DeleteEnrollments ------------------ */
 	/* -------------------------------------------- */

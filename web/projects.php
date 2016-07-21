@@ -881,23 +881,16 @@
 				}
 			//});
 		</script>
-		</form>
-		<form method="post" action="projects.php" id="savetableform">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<input type="hidden" name="action" value="updatestudytable">
-		<input type="hidden" name="studytable" id="studytable">
-		<div align="right"><input type="submit" value="Save" onMouseDown="ConvertToCSV();"></div>
-		</form>
 		
 		<br><br>
 
 		<? if ($GLOBALS['issiteadmin']) { ?>
-		<div style="background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:100%; padding:8px; margin-left: -7px; font-size: 10pt">
-		<table width="98%">
+		<div style="background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:70%; padding:8px; margin-left: -7px; font-size: 10pt">
+		<table>
 			<tr>
 				<td>
 					<b>Powerful Tools:</b>
-					<select name="newprojectid">
+					<select name="newprojectid" id="newprojectid">
 					<?
 						$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -926,13 +919,21 @@
 			</tr>
 			<tr>
 				<td align="right">
-					<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'" style="color: red; font-size:10pt"> &nbsp; &nbsp;
-					<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'" style="color: red; font-size:10pt">
+					<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()" style="color: red; font-size:10pt"> &nbsp; &nbsp;
+					<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()" style="color: red; font-size:10pt">
 				</td>
 			</tr>
 		</table>
 		<? } ?>
+		<!-- save the form -->
+		</form>
 		</div>
+		<form method="post" action="projects.php" id="savetableform">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="action" value="updatestudytable">
+		<input type="hidden" name="studytable" id="studytable">
+		<div align="right"><input type="submit" value="Save/Update Table" onMouseDown="ConvertToCSV();" style="font-size: 16pt"></div>
+		</form>
 		<?
 	}
 
