@@ -530,6 +530,19 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 
 .question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }
 
+/* generic drop shadow */
+.dropshadow {
+	-webkit-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
+	-moz-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
+	box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
+	border-radius: 5px;
+	border: 1px solid #ccc;
+}
+/* for the menu on the project page */
+td.menuheader { border: 1px solid #ddd; text-align: center; vertical-align: top; padding: 5px; border-radius: 5px; font-size: 14pt; }
+td.menuheader:hover { border: 1px solid black; text-align: center; vertical-align: top; padding: 5px; border-radius: 5px; font-size: 14pt; }
+td.menuheaderactive { border: 2px solid orange; text-align: center; padding: 5px; border-radius: 5px; font-size: 14pt; font-weight: bold; background-color: lightyellow; }
+
 input.required { border: 1px solid #888; background-color: #FBFFC4}
 
 .table-header-rotated {

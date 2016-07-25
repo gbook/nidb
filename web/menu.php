@@ -204,7 +204,7 @@
 	
 	# get number of files in dicomincoming directory
 	$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
-	$numdicomfiles = count($files);
+	$numdicomfiles = count($files) - $numdicomdirs;
 	
 	# get number of import requests
 	$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";

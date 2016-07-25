@@ -37,7 +37,7 @@
 	require "includes.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -93,6 +93,9 @@
 			break;
 		case 'viewaltseriessummary':
 			DisplayAltSeriesSummary($id);
+			break;
+		case 'displayprojectinfo':
+			DisplayProjectInfo($id);
 			break;
 		case 'editdemographics':
 			DisplayDemographicsEditTable($id);
@@ -415,11 +418,11 @@
 						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
 						if (strpos($altuid, '*') !== FALSE) {
 							$altuid = str_replace('*','',$altuid);
-							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
 							if ($altuid == '') { continue; }
 						}
 						else {
-							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
 						}
 						//PrintSQL($sqlstring);
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -506,11 +509,11 @@
 						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
 						if (strpos($altuid, '*') !== FALSE) {
 							$altuid = str_replace('*','',$altuid);
-							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
 							if ($altuid == '') { continue; }
 						}
 						else {
-							$sqlstring = "insert into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
 						}
 						//PrintSQL($sqlstring);
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -521,6 +524,123 @@
 		}
 	}	
 
+
+	/* -------------------------------------------- */
+	/* ------- ResetProjectQA --------------------- */
+	/* -------------------------------------------- */
+	function ResetProjectQA($id) {
+		$id = mysql_real_escape_string($id);
+		if ($id == "") {
+			?><div class="staticmessage">Invalid project ID</div><?
+		}
+		
+		/* get list of series associated with this project */
+		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$seriesid = $row['mrseries_id'];
+			echo "$seriesid<br>";
+			ResetQA($seriesid);
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- ObliterateSubject ------------------ */
+	/* -------------------------------------------- */
+	function ObliterateSubject($studyids) {
+		$studyids = mysql_real_escape_array($studyids);
+		
+		/* get list of subjects from the studyids */
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$ids[] = $row['subject_id'];
+			$uids[] = $row['uid'];
+		}
+		
+		/* delete all information about this SUBJECT from the database */
+		foreach ($ids as $id) {
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ObliterateStudy -------------------- */
+	/* -------------------------------------------- */
+	function ObliterateStudy($studyids) {
+		$studyids = mysql_real_escape_array($studyids);
+		
+		/* delete all information about this SUBJECT from the database */
+		foreach ($studyids as $id) {
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
+			PrintSQL($sqlstring);
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- RearchiveStudies ------------------- */
+	/* -------------------------------------------- */
+	function RearchiveStudies($studyids, $matchidonly) {
+		$studyids = mysql_real_escape_array($studyids);
+		$matchidonly = mysql_real_escape_string($matchidonly);
+		
+		/* rearchive all the studies */
+		foreach ($studyids as $id) {
+			if ($matchidonly) {
+				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'study', $id,'" . $GLOBALS['username'] . "', now())";
+			}
+			else {
+				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'study', $id,'" . $GLOBALS['username'] . "', now())";
+			}
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="staticmessage">Studies [<?=implode(', ',$studyids)?>] queued for re-archiving</div>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- RearchiveSubjects ------------------ */
+	/* -------------------------------------------- */
+	function RearchiveSubjects($studyids, $matchidonly) {
+		$studyids = mysql_real_escape_array($studyids);
+		$matchidonly = mysql_real_escape_string($matchidonly);
+		
+		/* get list of subjects from the studyids */
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$ids[] = $row['subject_id'];
+			$uids[] = $row['uid'];
+		}
+		
+		/* delete all information about this subject from the database */
+		foreach ($ids as $id) {
+			if ($matchidonly) {
+				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
+			}
+			else {
+				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
+			}
+			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for re-archiving</div>
+		<?
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- ChangeProject ---------------------- */
@@ -575,6 +695,168 @@
 				echo "Moved study from enrollment $existingEnrollmentRowID to $enrollmentRowID<br>";
 				//exit(0);
 			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ChangeSeriesAlternateNames --------- */
+	/* -------------------------------------------- */
+	function ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames) {
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		$id = mysql_real_escape_string($id);
+		
+		/* get all studies associated with this project */
+		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$numrowsaffected = 0;
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$studyid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$uid = $row['uid'];
+			
+			foreach ($modalities as $i => $modality) {
+				$modality = mysql_real_escape_string($modality);
+				$oldname = mysql_real_escape_string($oldnames[$i]);
+				$newname = mysql_real_escape_string($newnames[$i]);
+				if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
+					$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
+					$numupdates = 0;
+					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+					$numupdates = mysql_affected_rows();
+					$numrowsaffected += $numupdates;
+					if ($numupdates > 0) {
+						//echo "[$sqlstringA]<br>";
+						echo "<b>Added alternate series description for $uid$studynum. $oldname &rarr; $newname</b><br>";
+					}
+				}
+			}
+		}
+		echo "Updated [$numrowsaffected] rows<br>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- LoadMRParams ----------------------- */
+	/* -------------------------------------------- */
+	function LoadMRParams($id, $study, $series) {
+		$id = mysql_real_escape_string($id);
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		$study = mysql_real_escape_string(trim($study));
+		$series = mysql_real_escape_string(trim($series));
+		
+		$uid = substr($study,0,8);
+		$studynum = substr($study,8);
+		
+		/* check if its a valid subject, valid study num, and is MR modality */
+		$sqlstring = "select c.study_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where a.uid = '$uid' and c.study_num = '$studynum' and c.study_modality = 'MR'";
+		//PrintSQL($sqlstring);
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		if (mysql_num_rows($result) > 0){
+			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$studyid = $row['study_id'];
+			if ($studyid > 0) {
+				/* get the mr_series rows */
+				if ($series == "") {
+					$sqlstring = "select * from mr_series where study_id = $studyid";
+				}
+				else {
+					$sqlstring = "select * from mr_series where study_id = $studyid and series_num = '$series'";
+				}
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				if (mysql_num_rows($result) > 0){
+					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$series_desc = $row['series_desc'];
+						$series_protocol = $row['series_protocol'];
+						$sequence = $row['series_sequencename'];
+						$tr = $row['series_tr'];
+						$te = $row['series_te'];
+						$ti = $row['series_ti'];
+						$flip = $row['series_flip'];
+						$slicethickness = $row['slicethickness'];
+						$slicespacing = $row['slicespacing'];
+						$dimx = $row['dimX'];
+						$dimy = $row['dimY'];
+						$dimz = $row['dimZ'];
+						$dimt = $row['dimT'];
+						$bandwidth = $row['bandwidth'];
+						
+						if (strlen($series_desc) != "") {
+							$protocol = $series_desc;
+						}
+						else {
+							$protocol = $series_protocol;
+						}
+						$param_rowid[] = "";
+						$param_protocol[] = $protocol;
+						$param_sequence[] = $sequence;
+						$param_tr[] = (double)$tr;
+						$param_te[] = (double)$te;
+						$param_ti[] = (double)$ti;
+						$param_flip[] = (double)$flip;
+						$param_xdim[] = (double)$dimx;
+						$param_ydim[] = (double)$dimy;
+						$param_zdim[] = (double)$dimz;
+						$param_tdim[] = (double)$dimt;
+						$param_slicethickness[] = (double)$slicethickness;
+						$param_slicespacing[] = (double)$slicespacing;
+						$param_bandwidth[] = (double)$bandwidth;
+						echo "Adding row [$protocol]<br>";
+					}
+					
+					/* we have all the params, now do the inserts into the scan params table */
+					UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth);
+				}
+				else {
+					?><span class="staticmessage">No MR series found for [<?=$study?>]</span><?
+				}
+			}
+		}
+		else {
+			?><span class="staticmessage">Invalid study ID [<?=$study?>]. Incorrect UID, study number, or study does not contain MR series</span><?
+		}
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateMRParams --------------------- */
+	/* -------------------------------------------- */
+	function UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth) {
+		
+		$i=0;
+		foreach ($param_rowid as $paramid) {
+			$paramid = mysql_real_escape_string($paramid);
+			
+			$protocol = mysql_real_escape_string(trim($param_protocol[$i]));
+			$sequence = mysql_real_escape_string(trim($param_sequence[$i]));
+			$tr = number_format(mysql_real_escape_string(trim($param_tr[$i])),3,'.','');
+			$te = number_format(mysql_real_escape_string(trim($param_te[$i])),3,'.','');
+			$ti = number_format(mysql_real_escape_string(trim($param_ti[$i])),3,'.','');
+			$flip = number_format(mysql_real_escape_string(trim($param_flip[$i])),3,'.','');
+			$xdim = number_format(mysql_real_escape_string(trim($param_xdim[$i])),3,'.','');
+			$ydim = number_format(mysql_real_escape_string(trim($param_ydim[$i])),3,'.','');
+			$zdim = number_format(mysql_real_escape_string(trim($param_zdim[$i])),3,'.','');
+			$tdim = number_format(mysql_real_escape_string(trim($param_tdim[$i])),3,'.','');
+			$slicethickness = number_format(mysql_real_escape_string(trim($param_slicethickness[$i])),3,'.','');
+			$slicespacing = number_format(mysql_real_escape_string(trim($param_slicespacing[$i])),3,'.','');
+			$bandwidth = number_format(mysql_real_escape_string(trim($param_bandwidth[$i])),3,'.','');
+			
+			if ($protocol != "") {
+				if ($paramid == "") {
+					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr, te, ti, flip, xdim, ydim, zdim, tdim, slicethickness, slicespacing, bandwidth) values ('$protocol', '$sequence', '$id', '$tr', '$te', '$ti', '$flip', '$xdim', '$ydim', '$zdim', '$tdim', '$slicethickness', '$slicespacing', '$bandwidth')";
+				}
+				else {
+					$sqlstring = "update ignore mr_scanparams set protocol_name = '$protocol', sequence_name = '$sequence', tr = '$tr', te = '$te', ti = '$ti', flip = '$flip', xdim = '$xdim', ydim = '$ydim', zdim = '$zdim', tdim = '$tdim', slicethickness = '$slicethickness', slicespacing = '$slicespacing', bandwidth = '$bandwidth' where mrscanparam_id = $paramid";
+				}
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			}
+			if (($protocol == "") && ($paramid != "")) {
+				$sqlstring = "delete from mr_scanparams where mrscanparam_id = $paramid";
+				//PrintSQL($sqlstring);
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			}
+			$i++;
 		}
 	}
 	
@@ -645,68 +927,7 @@
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
 		?>
-		<table>
-			<tr>
-				<td width="50%" valign="top">
-					<fieldset style="border-radius: 5px; border: 1px solid #999">
-						<legend><b>Project Info</b></legend>
-						<table class="twocoltable">
-							<thead>
-								<tr>
-									<th colspan="2"><?=$name?></th>
-								</tr>
-							</thead>
-							<tr>
-								<td class="left">Subjects</td>
-								<td class="right"><?=count($uids)?></td>
-							</tr>
-							<tr>
-								<td class="left">Age (years)</td>
-								<td class="right">
-									<table style="font-size: 9pt">
-										<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
-										<tr><td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
-										<?
-											foreach ($genders as $sex => $a) {
-												list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
-										?>
-										<tr><td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
-										<?
-											}
-										?>
-									</table>
-								</td>
-							</tr>
-							<tr>
-								<td class="left">Studies</td>
-								<td class="right"><?=$numstudies?></td>
-							</tr>
-							<tr>
-								<td class="left">Study date range</td>
-								<td class="right"><?=$lowdate?> to <?=$highdate?></td>
-							</tr>
-						</table>
-					</fieldset>
-				</td>
-				<td width="50%" valign="top">
-					<fieldset style="border-radius: 5px; border: 1px solid #999">
-						<legend><b>Available actions for project</b></legend>
-						<a class="linkbutton" href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>">Edit Project Checklist</a> &nbsp; <a class="linkbutton" href="projectchecklist.php?projectid=<?=$id?>">View Project Checklist</a><br>
-						<a class="linkbutton" href="projectreport.php?action=viewprojectreport&id=<?=$id?>">View Project Report</a><br>
-						<a class="linkbutton" href="projects.php?action=viewuniqueseries&id=<?=$id?>">Edit Alt Series Names</a> &nbsp; <a class="linkbutton" href="projects.php?action=viewaltseriessummary&id=<?=$id?>">View Alt Series Names</a><br>
-						<a class="linkbutton" href="projects.php?action=editdemographics&id=<?=$id?>">Edit Demographics & IDs</a> &nbsp; <a class="linkbutton" href="projects.php?action=displaydemographics&id=<?=$id?>">View Demographics & IDs</a><br>
-						<a class="linkbutton" href="projects.php?action=editmrparams&id=<?=$id?>">Edit MR scan params</a> &nbsp; <a class="linkbutton" href="projects.php?action=viewmrparams&id=<?=$id?>">View MR scan QC</a>
-						<? if ($GLOBALS['isadmin']) { ?>
-						<br><br>
-						<b style="color:red">Danger area</b><br>
-						<a class="redlinkbutton" href="projects.php?action=resetqa&id=<?=$id?>">Reset MRI QA</a>
-						<? } ?>
-					</fieldset>
-				</td>
-			</tr>
-		</table>
-		<br><br>
-
+		
 		<? if ($GLOBALS['issiteadmin']) { ?>
 		<form action="projects.php" method="post" name="theform" id="theform">
 		<input type="hidden" name="action" value="changeproject">
@@ -741,12 +962,13 @@
 			} 
 		</script>
 		
+		<? DisplayMenu('studies', $id); ?>
+		<br><br>
 		<div align="center">
 		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 		</div>
-		<br><br>
-		
-		<table class="testgrid" id='table1'>
+		<br>
+		<table class="testgrid dropshadow" id='table1'>
 			<thead>
 			<tr>
 				<th></th><!-- studyID -->
@@ -882,58 +1104,65 @@
 			//});
 		</script>
 		
-		<br><br>
+		<br>
 
-		<? if ($GLOBALS['issiteadmin']) { ?>
-		<div style="background-color: #FFFF99; border-bottom: 2px solid #4C4C1F; border-top: 2px solid #4C4C1F; width:70%; padding:8px; margin-left: -7px; font-size: 10pt">
-		<table>
+		<table width="100%">
 			<tr>
-				<td>
-					<b>Powerful Tools:</b>
-					<select name="newprojectid" id="newprojectid">
-					<?
-						$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-							$project_id = $row['project_id'];
-							$project_name = $row['project_name'];
-							$project_costcenter = $row['project_costcenter'];
-							$project_enddate = $row['project_enddate'];
-							$user_fullname = $row['user_fullname'];
-							
-							if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-							?>
-							<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-							<?
-						}
-					?>
-					</select>
-					<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()" style="font-size:10pt">
-					&nbsp;&nbsp;&nbsp;&nbsp;
-					<span title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects"><input type="checkbox" name="matchidonly" value="1" checked>Match ID only</span>
-					&nbsp;&nbsp;
-					<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()" style="color: red; font-size:10pt">
-					&nbsp;&nbsp;&nbsp;&nbsp;
-					<input type="submit" value="Re-archive Subjects" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()" style="color: red; font-size:10pt">
+				<? if ($GLOBALS['issiteadmin']) { ?>
+				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; padding:8px; font-size: 10pt" width="70%">
+					<table>
+						<tr>
+							<td>
+								<b style="font-size: 12pt">Powerful Tools</b> &nbsp; &nbsp;
+								<select name="newprojectid" id="newprojectid">
+								<?
+									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
+									$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+									while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+										$project_id = $row['project_id'];
+										$project_name = $row['project_name'];
+										$project_costcenter = $row['project_costcenter'];
+										$project_enddate = $row['project_enddate'];
+										$user_fullname = $row['user_fullname'];
+										
+										if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
+										?>
+										<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<?
+									}
+								?>
+								</select>
+								<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()" style="font-size:10pt">
+								&nbsp;&nbsp;&nbsp;&nbsp;
+								<span title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects"><input type="checkbox" name="matchidonly" value="1" checked>Match ID only</span>
+								&nbsp;&nbsp;
+								<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()" style="color: red; font-size:10pt">
+								&nbsp;&nbsp;&nbsp;&nbsp;
+								<input type="submit" value="Re-archive Subjects" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()" style="color: red; font-size:10pt">
+							</td>
+						</tr>
+						<tr>
+							<td align="right">
+								<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()" style="color: red; font-size:10pt"> &nbsp; &nbsp;
+								<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()" style="color: red; font-size:10pt">
+							</td>
+						</tr>
+					</table>
 				</td>
-			</tr>
-			<tr>
-				<td align="right">
-					<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()" style="color: red; font-size:10pt"> &nbsp; &nbsp;
-					<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()" style="color: red; font-size:10pt">
+				<? } ?>
+			</form>
+
+				<td align="right" valign="top">
+					<!-- save the form -->
+					<form method="post" action="projects.php" id="savetableform">
+					<input type="hidden" name="id" value="<?=$id?>">
+					<input type="hidden" name="action" value="updatestudytable">
+					<input type="hidden" name="studytable" id="studytable">
+					<div align="right"><input type="submit" value="Save Studies Table" onMouseDown="ConvertToCSV();" style="font-size: 14pt; font-weight: bold"></div>
+					</form>
 				</td>
 			</tr>
 		</table>
-		<? } ?>
-		<!-- save the form -->
-		</form>
-		</div>
-		<form method="post" action="projects.php" id="savetableform">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<input type="hidden" name="action" value="updatestudytable">
-		<input type="hidden" name="studytable" id="studytable">
-		<div align="right"><input type="submit" value="Save/Update Table" onMouseDown="ConvertToCSV();" style="font-size: 16pt"></div>
-		</form>
 		<?
 	}
 
@@ -1015,11 +1244,12 @@
 			} 
 		</script>
 		
+		<? DisplayMenu("subjects", $id); ?>
+		<br><br>
 		<div align="center">
 		<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 		</div>
-		<br><br>
-		
+		<br>
 		<table class="testgrid" id='table1'>
 			<thead>
 				<th></th>
@@ -1138,7 +1368,10 @@
 		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
-		<table class="smallgraydisplaytable">
+		<? DisplayMenu("subjects", $id); ?>
+		<div align="center">
+		<br>
+		<table class="graydisplaytable">
 			<thead>
 				<th>UID</th>
 				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
@@ -1241,27 +1474,8 @@
 		}
 		?>
 		</table>
+		</div>
 		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- ResetProjectQA --------------------- */
-	/* -------------------------------------------- */
-	function ResetProjectQA($id) {
-		$id = mysql_real_escape_string($id);
-		if ($id == "") {
-			?><div class="staticmessage">Invalid project ID</div><?
-		}
-		
-		/* get list of series associated with this project */
-		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$seriesid = $row['mrseries_id'];
-			echo "$seriesid<br>";
-			ResetQA($seriesid);
-		}
 	}
 
 
@@ -1282,6 +1496,8 @@
 		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 
+		DisplayMenu('mrqc', $id);
+		
 		/* get all of the MR params for this project */
 		$sqlstring = "select * from mr_scanparams where project_id = $id";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1484,131 +1700,6 @@
 		}
 	}
 	
-	
-	/* -------------------------------------------- */
-	/* ------- LoadMRParams ----------------------- */
-	/* -------------------------------------------- */
-	function LoadMRParams($id, $study, $series) {
-		$id = mysql_real_escape_string($id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$study = mysql_real_escape_string(trim($study));
-		$series = mysql_real_escape_string(trim($series));
-		
-		$uid = substr($study,0,8);
-		$studynum = substr($study,8);
-		
-		/* check if its a valid subject, valid study num, and is MR modality */
-		$sqlstring = "select c.study_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where a.uid = '$uid' and c.study_num = '$studynum' and c.study_modality = 'MR'";
-		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0){
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
-			$studyid = $row['study_id'];
-			if ($studyid > 0) {
-				/* get the mr_series rows */
-				if ($series == "") {
-					$sqlstring = "select * from mr_series where study_id = $studyid";
-				}
-				else {
-					$sqlstring = "select * from mr_series where study_id = $studyid and series_num = '$series'";
-				}
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0){
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-						$series_desc = $row['series_desc'];
-						$series_protocol = $row['series_protocol'];
-						$sequence = $row['series_sequencename'];
-						$tr = $row['series_tr'];
-						$te = $row['series_te'];
-						$ti = $row['series_ti'];
-						$flip = $row['series_flip'];
-						$slicethickness = $row['slicethickness'];
-						$slicespacing = $row['slicespacing'];
-						$dimx = $row['dimX'];
-						$dimy = $row['dimY'];
-						$dimz = $row['dimZ'];
-						$dimt = $row['dimT'];
-						$bandwidth = $row['bandwidth'];
-						
-						if (strlen($series_desc) != "") {
-							$protocol = $series_desc;
-						}
-						else {
-							$protocol = $series_protocol;
-						}
-						$param_rowid[] = "";
-						$param_protocol[] = $protocol;
-						$param_sequence[] = $sequence;
-						$param_tr[] = (double)$tr;
-						$param_te[] = (double)$te;
-						$param_ti[] = (double)$ti;
-						$param_flip[] = (double)$flip;
-						$param_xdim[] = (double)$dimx;
-						$param_ydim[] = (double)$dimy;
-						$param_zdim[] = (double)$dimz;
-						$param_tdim[] = (double)$dimt;
-						$param_slicethickness[] = (double)$slicethickness;
-						$param_slicespacing[] = (double)$slicespacing;
-						$param_bandwidth[] = (double)$bandwidth;
-						echo "Adding row [$protocol]<br>";
-					}
-					
-					/* we have all the params, now do the inserts into the scan params table */
-					UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth);
-				}
-				else {
-					?><span class="staticmessage">No MR series found for [<?=$study?>]</span><?
-				}
-			}
-		}
-		else {
-			?><span class="staticmessage">Invalid study ID [<?=$study?>]. Incorrect UID, study number, or study does not contain MR series</span><?
-		}
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- UpdateMRParams --------------------- */
-	/* -------------------------------------------- */
-	function UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth) {
-		
-		$i=0;
-		foreach ($param_rowid as $paramid) {
-			$paramid = mysql_real_escape_string($paramid);
-			
-			$protocol = mysql_real_escape_string(trim($param_protocol[$i]));
-			$sequence = mysql_real_escape_string(trim($param_sequence[$i]));
-			$tr = number_format(mysql_real_escape_string(trim($param_tr[$i])),3,'.','');
-			$te = number_format(mysql_real_escape_string(trim($param_te[$i])),3,'.','');
-			$ti = number_format(mysql_real_escape_string(trim($param_ti[$i])),3,'.','');
-			$flip = number_format(mysql_real_escape_string(trim($param_flip[$i])),3,'.','');
-			$xdim = number_format(mysql_real_escape_string(trim($param_xdim[$i])),3,'.','');
-			$ydim = number_format(mysql_real_escape_string(trim($param_ydim[$i])),3,'.','');
-			$zdim = number_format(mysql_real_escape_string(trim($param_zdim[$i])),3,'.','');
-			$tdim = number_format(mysql_real_escape_string(trim($param_tdim[$i])),3,'.','');
-			$slicethickness = number_format(mysql_real_escape_string(trim($param_slicethickness[$i])),3,'.','');
-			$slicespacing = number_format(mysql_real_escape_string(trim($param_slicespacing[$i])),3,'.','');
-			$bandwidth = number_format(mysql_real_escape_string(trim($param_bandwidth[$i])),3,'.','');
-			
-			if ($protocol != "") {
-				if ($paramid == "") {
-					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr, te, ti, flip, xdim, ydim, zdim, tdim, slicethickness, slicespacing, bandwidth) values ('$protocol', '$sequence', '$id', '$tr', '$te', '$ti', '$flip', '$xdim', '$ydim', '$zdim', '$tdim', '$slicethickness', '$slicespacing', '$bandwidth')";
-				}
-				else {
-					$sqlstring = "update ignore mr_scanparams set protocol_name = '$protocol', sequence_name = '$sequence', tr = '$tr', te = '$te', ti = '$ti', flip = '$flip', xdim = '$xdim', ydim = '$ydim', zdim = '$zdim', tdim = '$tdim', slicethickness = '$slicethickness', slicespacing = '$slicespacing', bandwidth = '$bandwidth' where mrscanparam_id = $paramid";
-				}
-				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-			if (($protocol == "") && ($paramid != "")) {
-				$sqlstring = "delete from mr_scanparams where mrscanparam_id = $paramid";
-				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$i++;
-		}
-	}
-	
 
 	/* -------------------------------------------- */
 	/* ------- EditMRScanParams ------------------- */
@@ -1616,7 +1707,7 @@
 	function EditMRScanParams($id) {
 		$id = mysql_real_escape_string($id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-	
+
 		DisplayMRScanParamHeader($id);
 		
 		/* get all of the existing scan parameters */
@@ -1668,7 +1759,10 @@
 		$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
+		DisplayMenu('mrqc', $id);
+		
 		?>
+		<br><br>
 		<fieldset>
 			<legend>Add scan parameters from existing study</legend>
 			<form>
@@ -1770,7 +1864,10 @@
 			}
 		}
 		
+		DisplayMenu('mrqc', $id);
+		
 		?>
+		<br><br>
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="changealternatenames">
 		<input type="hidden" name="id" value="<?=$id?>">
@@ -1804,43 +1901,6 @@
 		</table>
 
 		<?
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- ChangeSeriesAlternateNames --------- */
-	/* -------------------------------------------- */
-	function ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames) {
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$id = mysql_real_escape_string($id);
-		
-		/* get all studies associated with this project */
-		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$numrowsaffected = 0;
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$uid = $row['uid'];
-			
-			foreach ($modalities as $i => $modality) {
-				$modality = mysql_real_escape_string($modality);
-				$oldname = mysql_real_escape_string($oldnames[$i]);
-				$newname = mysql_real_escape_string($newnames[$i]);
-				if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
-					$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
-					$numupdates = 0;
-					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-					$numupdates = mysql_affected_rows();
-					$numrowsaffected += $numupdates;
-					if ($numupdates > 0) {
-						//echo "[$sqlstringA]<br>";
-						echo "<b>Added alternate series description for $uid$studynum. $oldname &rarr; $newname</b><br>";
-					}
-				}
-			}
-		}
-		echo "Updated [$numrowsaffected] rows<br>";
 	}
 
 
@@ -1882,7 +1942,10 @@
 			}
 		}
 		
+		DisplayMenu('mrqc', $id);
+		
 		?>
+		<br><br>
 		<table class="graydisplaytable">
 			<thead>
 				<tr>
@@ -1930,6 +1993,98 @@
 		<?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayProjectInfo ----------------- */
+	/* -------------------------------------------- */
+	function DisplayProjectInfo($id) {
+		$id = mysql_real_escape_string($id);
+		
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$name = $row['project_name'];
+		$admin = $row['project_admin'];
+		$pi = $row['project_pi'];
+		$costcenter = $row['project_costcenter'];
+		$sharing = $row['project_sharing'];
+		$startdate = $row['project_startdate'];
+		$enddate = $row['project_enddate'];
+	
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		NavigationBar("$name", $urllist,0,'','','','');
+		
+		/* get studies associated with this project */
+		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$numstudies = mysql_num_rows($result);
+		
+		//PrintSQLTable($result);
+		/* get some stats about the project */
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$uid = $row['uid'];
+			$uids[$uid]['sex'] = $row['gender']; /* create hash of UID and sex */
+			$studydates[] = $row['study_datetime']; /* get list of study dates */
+			$genders[$row['gender']]['count']++; /* get the count of each gender */
+			if ($row['study_ageatscan'] > 0) {
+				$ages[] = $row['study_ageatscan'];
+				$genders[$row['gender']]['ages'][] = $row['study_ageatscan'];
+			}
+			else {
+				$ages[] = $row['age'];
+				$genders[$row['gender']]['ages'][] = $row['age'];
+			}
+		}
+		//PrintVariable($genders);
+		
+		$lowdate = min($studydates);
+		$highdate = max($studydates);
+		
+		DisplayMenu("info", $id);
+		?>
+		<div align="center">
+		<br><br>
+		<table class="twocoltable">
+			<thead>
+				<tr>
+					<th colspan="2"><?=$name?></th>
+				</tr>
+			</thead>
+			<tr>
+				<td class="left">Subjects</td>
+				<td class="right"><?=count($uids)?></td>
+			</tr>
+			<tr>
+				<td class="left">Age (years)</td>
+				<td class="right">
+					<table style="font-size: 9pt">
+						<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
+						<tr><td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
+						<?
+							foreach ($genders as $sex => $a) {
+								list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
+						?>
+						<tr><td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
+						<?
+							}
+						?>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="left">Studies</td>
+				<td class="right"><?=$numstudies?></td>
+			</tr>
+			<tr>
+				<td class="left">Study date range</td>
+				<td class="right"><?=$lowdate?> to <?=$highdate?></td>
+			</tr>
+		</table>
+		</div>
+		<?
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- DisplayInstanceSummary ------------- */
@@ -2083,103 +2238,6 @@
 	
 
 	/* -------------------------------------------- */
-	/* ------- ObliterateSubject ------------------ */
-	/* -------------------------------------------- */
-	function ObliterateSubject($studyids) {
-		$studyids = mysql_real_escape_array($studyids);
-		
-		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$ids[] = $row['subject_id'];
-			$uids[] = $row['uid'];
-		}
-		
-		/* delete all information about this SUBJECT from the database */
-		foreach ($ids as $id) {
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
-		<?
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- ObliterateStudy -------------------- */
-	/* -------------------------------------------- */
-	function ObliterateStudy($studyids) {
-		$studyids = mysql_real_escape_array($studyids);
-		
-		/* delete all information about this SUBJECT from the database */
-		foreach ($studyids as $id) {
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
-		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- RearchiveStudies ------------------- */
-	/* -------------------------------------------- */
-	function RearchiveStudies($studyids, $matchidonly) {
-		$studyids = mysql_real_escape_array($studyids);
-		$matchidonly = mysql_real_escape_string($matchidonly);
-		
-		/* rearchive all the studies */
-		foreach ($studyids as $id) {
-			if ($matchidonly) {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			else {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="staticmessage">Studies [<?=implode(', ',$studyids)?>] queued for re-archiving</div>
-		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- RearchiveSubjects ------------------ */
-	/* -------------------------------------------- */
-	function RearchiveSubjects($studyids, $matchidonly) {
-		$studyids = mysql_real_escape_array($studyids);
-		$matchidonly = mysql_real_escape_string($matchidonly);
-		
-		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$ids[] = $row['subject_id'];
-			$uids[] = $row['uid'];
-		}
-		
-		/* delete all information about this subject from the database */
-		foreach ($ids as $id) {
-			if ($matchidonly) {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			else {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for re-archiving</div>
-		<?
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- DisplayProjectList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
@@ -2279,6 +2337,105 @@
 		</table>
 		<?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayMenu ------------------------ */
+	/* -------------------------------------------- */
+	function DisplayMenu($menuitem, $id) {
+		switch ($menuitem) {
+			case "info":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "subjects":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheaderactive">
+							<a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a><br>
+							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a>
+						</td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "studies":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "checklist":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheaderactive">
+							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
+							<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>">Edit checklist</a>
+						</td>
+						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "mrqc":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheaderactive">
+							<a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a><br>
+							<a href="projects.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit MR params</a><br>
+							<a href="projects.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
+							<a href="projects.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a>
+							<? if ($GLOBALS['isadmin']) { ?>
+								<br><br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal" onClick="return confirm('Are you absolutely sure you want to delete all of the MRI QC data?')">Reset MRI QA</a>
+							<? } ?>
+						</td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+		}
+	}
+	
 ?>
 
 <br><br><br><br>

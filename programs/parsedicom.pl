@@ -1912,6 +1912,10 @@ sub InsertEEG {
 		%row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($row{'uid'});
+		if (trim($subjectRowID) eq '') {
+			# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
+			return "Subject with ID [$PatientID] or alternate IDs [$SQLIDs] does not exist";
+		}
 	}
 	else {
 		# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
