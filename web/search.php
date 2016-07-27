@@ -1913,9 +1913,9 @@
 				$gender = $row['gender'];
 				$study_id = $row['study_id'];
 				$study_num = $row['study_num'];
+				$visittype = $row['study_type'];
 				$type = $row['result_type'];
 				$size = $row['result_size'];
-				//$name = $row['result_name'];
 				$name = $resultnames[$row['result_nameid']];
 				$unit = $resultunit[$row['result_unitid']];
 				$filename = $row['result_filename'];
@@ -1934,6 +1934,7 @@
 				$tables["$uid$study_num"]['subjectid'] = $subject_id;
 				$tables["$uid$study_num"]['studyid'] = $study_id;
 				$tables["$uid$study_num"]['studynum'] = $study_num;
+				$tables["$uid$study_num"]['visittype'] = $visittype;
 				$names[$name] = "blah";
 			}
 			//PrintVariable($tables,'Tables');
@@ -2002,10 +2003,11 @@
 				$uid = $row['uid'];
 				$subject_id = $row['subject_id'];
 				$study_id = $row['study_id'];
-				$study_num = $row['study_num'];
+				$studynum = $row['study_num'];
 				$birthdate = $row['birthdate'];
 				$gender = $row['gender'];
 				$study_datetime = $row['study_datetime'];
+				$visittype = $row['study_type'];
 				$type = $row['result_type'];
 				$size = $row['result_size'];
 				$name = $resultnames[$row['result_nameid']];
@@ -2046,13 +2048,14 @@
 					$name .= " <b>$unit</b>";
 					$name2 .= " " . $row['result_unit'];
 				}
-				$tables[$uid][$name] = $thevalue;
-				$tables[$uid][$name2] = $thevalue;
-				$tables[$uid]['age'] = $ageatscan;
-				$tables[$uid]['gender'] = $gender;
-				$tables[$uid]['subjectid'] = $subject_id;
-				$tables[$uid]['studyid'] = $study_id;
-				$tables[$uid]['studynum'] = $study_num;
+				$tables["$uid$studynum"][$name] = $thevalue;
+				$tables["$uid$studynum"][$name2] = $thevalue;
+				$tables["$uid$studynum"]['age'] = $ageatscan;
+				$tables["$uid$studynum"]['gender'] = $gender;
+				$tables["$uid$studynum"]['subjectid'] = $subject_id;
+				$tables["$uid$studynum"]['studyid'] = $study_id;
+				$tables["$uid$studynum"]['studynum'] = $studynum;
+				$tables["$uid$studynum"]['visittype'] = $visittype;
 				//$names[$name] = "blah";
 				if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
 				if (($thevalue < $names[$name]['min']) || ($names[$name]['min'] == "")) { $names[$name]['min'] = $thevalue; }
@@ -2061,28 +2064,28 @@
 				if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
 			}
 
-		if ($s_resultorder == "pipelinecsv") {
-			$csv = "uid,studynum,sex,age";
-			foreach ($names2 as $name2 => $blah) {
-				$csv .= ",$name2";
-			}
-			$csv .= "\n";
-			foreach ($tables as $uid => $valuepair) {
-				$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+			if ($s_resultorder == "pipelinecsv") {
+				$csv = "uid,studynum,sex,age";
 				foreach ($names2 as $name2 => $blah) {
-					$csv .= ',' . $tables[$uid][$name2];
+					$csv .= ",$name2";
 				}
 				$csv .= "\n";
+				foreach ($tables as $uid => $valuepair) {
+					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+					foreach ($names2 as $name2 => $blah) {
+						$csv .= ',' . $tables[$uid][$name2];
+					}
+					$csv .= "\n";
+				}
+				$filename = "query" . GenerateRandomString(10) . ".csv";
+				file_put_contents("/tmp/" . $filename, $csv);
+				?>
+				<br><br>
+				<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
+				Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
+				</div>
+				<?
 			}
-			$filename = "query" . GenerateRandomString(10) . ".csv";
-			file_put_contents("/tmp/" . $filename, $csv);
-			?>
-			<br><br>
-			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-			Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
-			</div>
-			<?
-		}
 		else {
 		?>
 			<br><br><br><br><br>
@@ -2097,6 +2100,7 @@
 					<td>UID</td>
 					<td>Sex</td>
 					<td>Age</td>
+					<td>Visit</td>
 					<?
 					$csv = "studyid,sex,age";
 					foreach ($names as $name => $blah) {
@@ -2113,10 +2117,11 @@
 						?>
 						<tr style="font-weight: <?=$bold?>" class="rowhover">
 							<td>
-							<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b><?=$tables[$uid]['studynum']?></a>
+							<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
 							</td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['visittype']?></td>
 							<?
 							$stats[0][$tables[$uid]['gender']]++;
 							$stats[1][] = $tables[$uid]['age'];
@@ -3913,7 +3918,7 @@
 		/* first setup the SELECT, depending on the type of query ... */
 		if ($s_resultorder == "pipeline") {
 			Debug(__FILE__, __LINE__, "Checkpoint G");
-			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, studies.study_type, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
 		elseif ($s_resultorder == "pipelinelong") {
 			Debug(__FILE__, __LINE__, "Checkpoint H");

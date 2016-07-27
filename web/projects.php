@@ -279,21 +279,22 @@
 			if (trim($line) != '') {
 				$parts = array_map(mysql_real_escape_string, str_getcsv($line));
 				//PrintVariable($parts,'Parts');
-				if (count($parts) == 14) {
+				if (count($parts) == 15) {
 					//PrintVariable($parts, 'Parts');
 					$subjectid = trim($parts[0]);
 					$uid = trim($parts[1]);
-					$altuidlist = trim($parts[2]);
-					$guid = trim($parts[3]);
-					$dob = trim($parts[4]);
-					$sex = strtoupper(trim($parts[5]));
-					$ethnicity1 = trim($parts[6]);
-					$ethnicity2 = trim($parts[7]);
-					$education = trim($parts[8]);
-					$handedness = trim($parts[9]);
-					$marital = trim($parts[10]);
-					$smoking = strtolower(trim($parts[11]));
-					$enrollgroup = trim($parts[12]);
+					$primaryid = trim($parts[2]);
+					$altuidlist = trim($parts[3]);
+					$guid = trim($parts[4]);
+					$dob = trim($parts[5]);
+					$sex = strtoupper(trim($parts[6]));
+					$ethnicity1 = trim($parts[7]);
+					$ethnicity2 = trim($parts[8]);
+					$education = trim($parts[9]);
+					$handedness = trim($parts[10]);
+					$marital = trim($parts[11]);
+					$smoking = strtolower(trim($parts[12]));
+					$enrollgroup = trim($parts[13]);
 					
 					/* validate the IDs */
 					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
@@ -1214,23 +1215,24 @@
 		
 		<script>
 			window.onload = function() {
-				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: false, caption: 'Double-click to edit table'}); 
+				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: true, caption: 'Double-click to edit table'}); 
 
 				// we build and load the metadata in Javascript
 				editableGrid.load({ metadata: [
 					{ name: "subjectid", datatype: "string", editable: false },
-					{ name: "uid", datatype: "html", editable: false },
+					{ name: "uid", datatype: "string", editable: false },
+					{ name: "primaryid", datatype: "string", editable: false },
 					{ name: "altuids", datatype: "html", editable: true },
 					{ name: "guid", datatype: "string", editable: true },
 					{ name: "birthdate", datatype: "string", editable: true },
-					{ name: "sex", datatype: "html", editable: true, values: { "": "", "F": "F", "M": "M", "T": "T", "O": "O", "U": "U"} },
+					{ name: "sex", datatype: "string", editable: true, values: { "": "", "F": "F", "M": "M", "T": "T", "O": "O", "U": "U"} },
 					{ name: "race", datatype: "string", editable: true, values: { "": "", "hispanic": "Hispanic", "nothispanic": "Not hispanic" } },
 					{ name: "ethnicity", datatype: "string", editable: true, values: {"": "", "indian": "American Indian/Alaskan native", "asian": "Asian", "black": "Black/African American", "islander": "Hawaiian/Pacific Islander", "white": "White" } },
 					{ name: "education", datatype: "string", editable: true, values: { "": "", "0":"Unknown", "1":"Grade school", "2":"Middle school", "3":"High school/GED", "4":"Trade school", "5":"Associates degree", "6":"Bachelors degree", "7":"Masters degree", "8":"Doctoral degree" } },
 					{ name: "handedness", datatype: "string", editable: true, values: { "": "", "R": "Right", "L": "Left", "A": "Ambidextrous", "U": "Unknown" } },
 					{ name: "marital", datatype: "string", editable: true, values: {"":"", "unknown":"Unknown", "single":"Single", "married":"Married", "divorced":"Divorced", "separated":"Separated", "civilunion":"Civil union", "cohabitating":"Cohabitating", "widowed":"Widowed"} },
 					{ name: "smoking", datatype: "string", editable: true, values: { "":"", "unknown":"unknown", "never":"never", "past":"past", "current":"current" } },
-					{ name: "enrollgroup", datatype: "html", editable: true }
+					{ name: "enrollgroup", datatype: "string", editable: true }
 				]});
 
 				// use autocomplete on enrollgroup
@@ -1254,7 +1256,8 @@
 			<thead>
 				<th></th>
 				<th>UID</th>
-				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
+				<th>Primary ID</th>
+				<th>Alt IDs<br><span class="tiny">Comma separated, * next to primary ID</span></th>
 				<th>GUID</th>
 				<th>Birthdate (YYYY-MM-DD)</th>
 				<th>Sex</th>
@@ -1290,6 +1293,7 @@
 			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
 			//PrintSQLTable($resultA);
 			$altids = "";
+			$primaryaltuid = "";
 			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
 				$isprimary = $rowA['isprimary'];
 				$altid = $rowA['altuid'];
@@ -1305,10 +1309,12 @@
 			}
 			//echo "$altids<br>";
 			$altuidlist = implode2(", ",$altids);
+			$primaryaltuid = $altids[0];
 			?>
 			<tr id="R<?=$i?>">
 				<td class="tiny"><?=$subjectid?></td>
 				<td style="font-weight: bold; font-size:12pt"><?=$uid?></td>
+				<td><?=$primaryaltuid?></td>
 				<td class="editable"><?=$altuidlist?></td>
 				<td class="editable"><?=$guid?></td>
 				<td class="editable"><?=$birthdate?></td>
