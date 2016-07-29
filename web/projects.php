@@ -101,11 +101,14 @@
 			DisplayDemographicsEditTable($id);
 			break;
 		case 'displaydemographics':
-			DisplayDemographics($id);
+			DisplayDemographics($id,1);
 			break;
 		case 'updatedemographics':
 			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
-			DisplayDemographics($id);
+			DisplayDemographics($id,1);
+			break;
+		case 'displaydeletedsubjects':
+			DisplayDemographics($id,0);
 			break;
 		case 'updatesubjecttable':
 			UpdateSubjectTable($id,$subjecttable);
@@ -456,22 +459,23 @@
 			if (trim($line) != '') {
 				$parts = array_map(mysql_real_escape_string, str_getcsv($line));
 				//PrintVariable($parts,'Parts');
-				if (count($parts) == 15) {
+				if (count($parts) == 16) {
 					//PrintVariable($parts, 'Parts');
 					$studyid = trim($parts[0]);
 					$subjectid = trim($parts[1]);
 					$uid = trim($parts[2]);
 					$sex = strtoupper(trim($parts[3]));
 					$altuidlist = trim($parts[4]);
-					$ageatscan = trim($parts[8]);
-					$site = trim($parts[13]);
+					$visit = trim($parts[6]);
+					$ageatscan = trim($parts[9]);
+					$site = trim($parts[14]);
 					
 					/* validate each variable before trying the SQL */
 					if (!ctype_digit(strval($studyid))) { echo "StudyID [$studyid] is not an integer<br>"; continue; }
 					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
 					
 					if (is_numeric($ageatscan)) {
-						$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_site = '$site' where study_id = '$studyid'";
+						$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_type = '$visit', study_site = '$site' where study_id = '$studyid'";
 						//PrintSQL($sqlstring);
 						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 						$numRowsUpdated += mysql_affected_rows();
@@ -947,6 +951,7 @@
 					{ name: "sex", datatype: "html", editable: true },
 					{ name: "altuids", datatype: "html", editable: true },
 					{ name: "study", datatype: "html", editable: false },
+					{ name: "visit", datatype: "string", editable: true },
 					{ name: "deleted", datatype: "boolean", editable: false },
 					{ name: "studydate", datatype: "date", editable: false },
 					{ name: "ageatscan", datatype: "double", editable: true, precision: 2, thousands_separator: '', decimal_point: '.' },
@@ -977,7 +982,8 @@
 				<th>Subject</th>
 				<th>Sex <span class="tiny" style="font-weight: normal">F, M, O, U</span></th>
 				<th>Alt Subject IDs <span class="tiny">comma separated, * next to primary ID</span></th>
-				<th>Study</th>
+				<th>Study Num</th>
+				<th>Visit</th>
 				<th>Deleted?</th>
 				<th>Study Date</th>
 				<th>Age at scan (years)</th>
@@ -1012,6 +1018,7 @@
 				$study_site = $row['study_site'];
 				$study_num = $row['study_num'];
 				$study_desc = $row['study_desc'];
+				$study_visit = $row['study_type'];
 				$study_site = $row['study_site'];
 				$study_altid = $row['study_alternateid'];
 				$study_ageatscan = $row['study_ageatscan'];
@@ -1073,6 +1080,7 @@
 					<td style="<?=$rowstyle?>">
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
+					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_visit?></td>
 					<td style="<?=$rowstyle?>"><? if (!$isactive) { echo "Deleted"; } ?></td>
 					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
 					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=number_format($ageatscan,1)?></td>
@@ -1211,6 +1219,7 @@
 			table.testgrid th { background: #E5E5E5; text-align: left; }
 			input.invalid { background: red; color: #FDFDFD; }
 			.editable { font-family: monospace; background-color: lightyellow; border: 1px solid skyblue }
+			.deleted { color: #aaa; }
 		</style>
 		
 		<script>
@@ -1271,7 +1280,7 @@
 			</thead>
 		<?
 		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id order by a.uid";
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$i=0;
 		//PrintSQLTable($result);
@@ -1280,6 +1289,7 @@
 			$uid = $row['uid'];
 			$guid = $row['guid'];
 			$gender = $row['gender'];
+			$active = $row['isactive'];
 			$birthdate = $row['birthdate'];
 			$ethnicity1 = $row['ethnicity1'];
 			$ethnicity2 = $row['ethnicity2'];
@@ -1310,10 +1320,17 @@
 			//echo "$altids<br>";
 			$altuidlist = implode2(", ",$altids);
 			$primaryaltuid = $altids[0];
+			
+			if ($active) {
+				$deleted = "";
+			}
+			else {
+				$deleted = " (DEL)";
+			}
 			?>
 			<tr id="R<?=$i?>">
 				<td class="tiny"><?=$subjectid?></td>
-				<td style="font-weight: bold; font-size:12pt"><?=$uid?></td>
+				<td style="font-weight: bold; font-size:12pt;"><?=$uid?> <?=$deleted?></td>
 				<td><?=$primaryaltuid?></td>
 				<td class="editable"><?=$altuidlist?></td>
 				<td class="editable"><?=$guid?></td>
@@ -1359,7 +1376,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDemographics ---------------- */
 	/* -------------------------------------------- */
-	function DisplayDemographics($id) {
+	function DisplayDemographics($id, $isactive=1) {
 		$id = mysql_real_escape_string($id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
@@ -1394,7 +1411,7 @@
 			</thead>
 		<?
 		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id order by a.uid";
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 			$subjectid = $row['subject_id'];
@@ -2373,7 +2390,8 @@
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheaderactive">
 							<a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a><br>
-							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a>
+							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a><br>
+							<a href="projects.php?action=displaydeletedsubjects&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View deleted</a>
 						</td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>

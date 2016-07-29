@@ -1030,10 +1030,9 @@
 			}
 			</script>
 			<?
-			
 			/* ---------- pipeline results ------------ */
 			if (($s_resultorder == "pipeline") || ($s_resultorder == "pipelinecsv")) {
-				SearchPipeline($result, $s_resultorder, $s_pipelineresulttype);
+				SearchPipeline($result, $s_resultorder, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats);
 			}
 			elseif ($s_resultorder == 'subject') {
 				/* display only subject data */
@@ -1887,7 +1886,7 @@
 	/* -------------------------------------------- */
 	/* ------- SearchPipeline --------------------- */
 	/* -------------------------------------------- */
-	function SearchPipeline($result, $s_resultorder,$s_pipelineresulttype) {
+	function SearchPipeline($result, $s_resultorder, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats) {
 		if ($s_pipelineresulttype == "i") {
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
