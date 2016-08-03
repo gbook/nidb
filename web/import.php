@@ -1084,9 +1084,10 @@ question_num, question_text, datatype, values, comment</div>
 					echo "Column 3 (Measure name) is blank. Line $L<br>";
 					$numErrors++;
 				}
+				/* blank values are OK, don't check for them */
 				if ($value == "") {
-					echo "Column 4 (Measure value) is blank. Line $L<br>";
-					$numErrors++;
+					echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
+					//$numErrors++;
 				}
 				
 				$L++;
@@ -1139,8 +1140,8 @@ question_num, question_text, datatype, values, comment</div>
 							$measure = $measures[$col];
 							/* check for blank entries in other columns */
 							if ($value == "") {
-								echo "Column 4 (Measure value) is blank. Line $L<br>";
-								$numErrors++;
+								echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
+								//$numErrors++;
 							}
 						}
 						
