@@ -488,12 +488,16 @@
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
 		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-			$isprimary = $row['isprimary'];
-			if ($isprimary) {
-				$altuids[] = '*'. $row['altuid'];
-			}
-			else {
-				$altuids[] = $row['altuid'];
+			$altuid = trim($row['altuid']);
+			
+			if ($altuid != '') {
+				$isprimary = $row['isprimary'];
+				if ($isprimary) {
+					$altuids[] = '*'. $altuid;
+				}
+				else {
+					$altuids[] = $altuid;
+				}
 			}
 		}
 		

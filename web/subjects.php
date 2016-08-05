@@ -39,11 +39,7 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	if ($debug) {
-		echo "<pre>";
-		print_r($_POST);
-		echo "</pre>";
-	}
+	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -68,6 +64,7 @@
 	$maritalstatus = GetVariable("maritalstatus");
 	$smokingstatus = GetVariable("smokingstatus");
 	$cancontact = GetVariable("cancontact");
+	$enrollgroup = GetVariable("enrollgroup");
 	$uid = GetVariable("uid");
 	$altuids = GetVariable("altuids");
 	$enrollmentids = GetVariable("enrollmentids");
@@ -128,10 +125,10 @@
 			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			break;
 		case 'merge':
-			DisplayMergeSubjects($mergeuids);
+			DisplayMergeSubjects($mergeuids, $returnpage);
 			break;
 		case 'mergesubjects':
-			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email,$maritalstatus,$smokingstatus, $altuid, $guid, $cancontact);
+			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $enrollgroup, $returnpage);
 			break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
@@ -413,28 +410,33 @@
 		echo "<ol>";
 		
 		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
-		$sqlstring = "select a.uid, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
+		$sqlstring = "select a.uid, a.subject_id, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$olduid = $row['uid'];
+		$oldenrollmentid = $row['enrollment_id'];
 		$oldsubjectid = $row['subject_id'];
 		$oldprojectid = $row['project_id'];
 		$oldstudynum = $row['study_num'];
+		echo "<li>Got rowIDs from current subject/study: [$sqlstring]<br>";
+		
+		//PrintVariable($row);
 	
 		/* get subjectid from UID */
 		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysql_fetch_array($result, MYSQL_ASSOC);
 		$newsubjectid = $row['subject_id'];
-		echo "<li>Got new subjectid: $newsubjectid<br>";
+		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]<br>";
 		
 		/* check if the new subject is enrolled in the project, if not, enroll them */
-		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = $oldprojectid";
+		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = '$oldprojectid'";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		if (mysql_num_rows($result) > 0) {
 			$row = mysql_fetch_array($result, MYSQL_ASSOC);
 			$newenrollmentid = $row['enrollment_id'];
-			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid<br>";
+			$enrollgroup = $row['enroll_subgroup'];
+			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
 		}
 		else {
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
@@ -447,21 +449,31 @@
 		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		$newstudynum = mysql_num_rows($result) + 1;
-		echo "<li>Got new study number: $newstudynum<br>";
+		echo "<li>Got new study number: $newstudynum [$sqlstring]<br>";
 		
 		/* change the enrollment_id associated with the studyid */
 		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
-		echo "<li>$sqlstring<br>";
+		echo "<li>Change enrollment ID of the study [$sqlstring]<br>";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-
+		
+		/* move the alternate IDs from the old to new enrollment */
+		$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
+		echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
+		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		
 		/* move the data */
 		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
 		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
 		
 		//mkdir($newpath);
 		$systemstring = "mv $oldpath $newpath";
-		echo "<li><tt>$systemstring</tt>";
+		echo "<li>Moving data within archive directory: <tt>$systemstring</tt>";
 		echo shell_exec($systemstring);
+
+		/* delete the old enrollment */
+		//$sqlstring = "delete from enrollment where enrollment_id = $oldenrollmentid";
+		//echo "<li>Delete old enrollment [$sqlstring]<br>";
+		//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
 		echo "</ol>";
 		?><div align="center"><span class="message">Study moved to subject <?=$newuid?></span></div><br><br><?
@@ -471,7 +483,7 @@
 	/* -------------------------------------------- */
 	/* ------- DoMergeSubjects -------------------- */
 	/* -------------------------------------------- */
-	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact) {
+	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact, $enrollgroup, $returnpage) {
 
 		?>
 		<span class="tiny">
@@ -503,8 +515,10 @@
 		$guid = mysql_real_escape_string($guid[$selectedid]);
 		$altuids = explode(',',$altuid);
 
+		PrintVariable($enrollgroup);
+		
 		$sqlstring = "start transaction";
-		echo "<li><b>Starting transaction [$sqlstring]</b>";
+		echo "<li><b>Starting transaction</b> [$sqlstring]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* move all of the studies from the other subjects to the primary subject */
@@ -540,40 +554,52 @@
 		echo "<li>Updating subject [$sqlstring]";
 		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		
-		/* delete entries for this subject from the altuid table ... */
-		$sqlstring = "delete from subject_altuid where subject_id = $selectedid";
-		echo "<li>Deleting alternate IDs [$sqlstring]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		/* update the enrollment group */
+		foreach ($enrollgroup as $enrollid => $value) {
+			if (trim($value) != '') {
+				$value = mysql_real_escape_string($value);
+				$sqlstring = "update enrollment set enroll_subgroup = '$value' where subject_id = $selectedid and enrollment_id = $enrollid";
+				echo "<li>Updating enrollment group [$sqlstring]";
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
 		
-		echo "<ol>";
+		//echo "<ol>";
 		/* ... and insert the new rows into the altuids table */
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
-			if (strpos($altuid, '*') !== FALSE) {
-				$altuid = str_replace('*','',$altuid);
-				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',1)";
+			if ($altuid != '') {
+				if (strpos($altuid, '*') !== FALSE) {
+					$altuid = str_replace('*','',$altuid);
+					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',1)";
+				}
+				else {
+					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',0)";
+				}
+				echo "<li>Inserting new alternate UIDs [$sqlstring]";
+				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 			}
-			else {
-				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',0)";
-			}
-			echo "<li>Inserting new alternate UIDs [$sqlstring]";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		/* ------ all done ------ */
 		$sqlstring = "commit";
 		//PrintSQL("$sqlstring");
-		echo "<li><b>Commit the transaction</b>";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li><b>Commit the transaction</b> [$sqlstring]";
 		
-		?></ol></ol><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br><?
+		?></ol>
+		</ol>
+		
+		</span><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br>
+		<b>Merge complete. Go <a href="<?=$returnpage?>"><u>back</u></a> to original page</b><br>
+		<?
 	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayMergeSubjects --------------- */
 	/* -------------------------------------------- */
-	function DisplayMergeSubjects($mergeuids) {
+	function DisplayMergeSubjects($mergeuids, $returnpage) {
 
 		$i = 0;
 		foreach ($mergeuids as $uid) {
@@ -601,10 +627,12 @@
 			$altuids = GetAlternateUIDs($row['subject_id'],0);
 			$subjects[$i]['altuid'] = implode2(',',$altuids);
 			
+			//PrintVariable($altuids);
+			
 			$i++;
 		}
 		
-		PrintVariable($subjects);
+		//PrintVariable($subjects);
 		
 		/* display one column for each subject with a radio button to "merge all studies into this subject" */
 		?>
@@ -614,6 +642,7 @@
 		<br>
 		<form action="subjects.php" method="post">
 		<input type="hidden" name="action" value="mergesubjects">
+		<input type="hidden" name="returnpage" value="<?=$returnpage?>">
 		<table cellspacing="0" cellpadding="1">
 			<tr>
 				<td style="text-align: right; font-weight: bold; border-right: solid 2px black">UID</td>
@@ -758,12 +787,12 @@
 				?>
 			</tr>
 			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray; white-space:nowrap;">Alternate UID 1</td>
+				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray; white-space:nowrap;">Global alternate subject ID</td>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['altuid'] != $subjects[0]['altuid']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
 						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="altuid[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>" required="required"></td>
+							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="altuids[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>"></td>
 						<?
 					}
 				?>
@@ -780,7 +809,7 @@
 				?>
 			</tr>
 			
-				<td style="text-align: right; vertical-align: top; font-weight: bold; border-right: solid 2px gray">Studies</td>
+				<td style="text-align: right; vertical-align: top; font-weight: bold; border-right: solid 2px gray">Studies (with enrollment group)</td>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 					?>
@@ -792,16 +821,27 @@
 									while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
 										$enrollmentid = $row['enrollment_id'];
 										//$enroll_startdate = $row['enroll_startdate'];
-										//$enroll_enddate = $row['enroll_enddate'];
+										$enrollgroup = $row['enroll_subgroup'];
 										$project_name = $row['project_name'];
 										$costcenter = $row['project_costcenter'];
 										//$project_enddate = $row['project_enddate'];
 										
 										if ($row['irb_consent'] != "") { $irb = "Y"; }
 										else { $irb = "N"; }
+										
+										$altuids = GetAlternateUIDs($subjects[$i]['id'], $enrollmentid);
+										$altuidlist = implode2(',',$altuids);
+										
 								?>
 								<tr>
-									<td colspan="4" style="font-size:9pt; border-bottom: 1px solid gray; background-color:lightyellow"><b><?=$project_name?></b> (<?=$costcenter?>)</td>
+									<td colspan="4" style="font-size:9pt; background-color:#0F4D92; padding: 4px">
+										<table cellpadding="0" cellspacing="0" width="100%">
+											<tr>
+												<td style="color: white"><b><?=$project_name?></b> (<?=$costcenter?>)</td>
+												<td align="right"><input type="text" name="enrollgroup[<?=$enrollmentid?>]" value="<?=$enrollgroup?>" placeholder="Enrollment group"></td>
+											</tr>
+										</table>
+									</td>
 								</tr>
 									<?
 									$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
