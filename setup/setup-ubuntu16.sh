@@ -4,7 +4,7 @@
 
 # if you change the default path, NiDB is not guaranteed to work correctly
 NIDBROOT="/nidb"
-WWWROOT="/var/www/html"
+WWWROOT="/var/www"
 NIDBUSER="nidb"
 
 clear
@@ -15,7 +15,7 @@ echo "******************************************************"
 echo 
 echo "           " Neuroimaging Database Setup
 echo 
-echo "     (installing in ${NIDBROOT} and /var/www/html)"
+echo "     (installing in ${NIDBROOT} and ${WWWROOT})"
 echo 
 echo "  Maximize this terminal window to read all instructions"
 echo 
@@ -31,7 +31,7 @@ read -p "Press [enter] to continue"
 echo "${redb}${whitef}${boldon}--------------- Creating nidb user account ----------------${reset}"
 echo "Please enter the Linux account under which NiDB will run (it will be created if it does not exist)"
 read NIDBUSER
-useradd -m -s /bin/bash $NIDBUSER
+useradd $NIDBUSER -m -s /bin/bash
 echo "Enter the password for the NiDB account"
 passwd $NIDBUSER
 
@@ -120,24 +120,24 @@ systemctl start apache2
 systemctl start mariadb
 
 echo "------ Configuring PHP variables ------"
-sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php.ini
-sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php.ini
-sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php.ini
-sed -i 's/^upload_tmp_dir = .*/upload_tmp_dir = \/${NIDBROOT}\/uploadtmp/g' /etc/php.ini
-sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 5000M/g' /etc/php.ini
-sed -i 's/^max_file_uploads = .*/max_file_uploads = 1000/g' /etc/php.ini
-sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php.ini
-sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php.ini
-sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
-sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
-sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php.ini
+sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^upload_tmp_dir = .*/upload_tmp_dir = \/${NIDBROOT}\/uploadtmp/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 5000M/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^max_file_uploads = .*/max_file_uploads = 1000/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php7.0/apache2/php.ini
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php7.0/apache2/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
-sed -i "s/User apache/User $NIDBUSER/" /etc/httpd/conf/httpd.conf
-sed -i "s/Group apache/Group $NIDBUSER/" /etc/httpd/conf/httpd.conf
+sed -i "s/User apache/User $NIDBUSER/" /etc/apache2/conf/httpd.conf
+sed -i "s/Group apache/Group $NIDBUSER/" /etc/apache2/conf/httpd.conf
 chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
 echo "------ Restarting httpd ------"
-systemctl restart httpd.service
+systemctl restart apache2
 
 echo "------ Setting up MySQL database - default password is 'password' ------"
 mysqladmin -u root password 'password'
@@ -148,19 +148,6 @@ rm ~/tempsql.txt
 
 echo "------ Installing phpMyAdmin (follow prompts) ------"
 apt-get install phpmyadmin
-#wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
-#unzip phpMyAdmin-4.4.7-english.zip
-#mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
-#chmod 777 /var/www/html
-#chown -R $NIDBUSER:$NIDBUSER /var/www/html
-#sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
-#sed '$ i $cfg[''LoginCookieValidity''] = 28800;' /var/www/html/phpMyAdmin/config.sample.inc.php;
-##echo "Rename config.sample.inc.php to config.inc.php"
-#cp /var/www/html/phpMyAdmin/config.sample.inc.php /var/www/html/phpMyAdmin/config.inc.php
-#chmod 755 /var/www/html/phpMyAdmin/config.inc.php
-#echo "You should be able to see this" >> /var/www/html/index.php
-#echo "Check to make sure you can see http://$HOSTNAME/index.php"
-#read -p "Press [enter] to continue"
 systemctl restart apache2
 
 # --------- install all nidb files and db ----------
@@ -186,11 +173,11 @@ cd ${NIDBROOT}
 svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
 cp -Rv programs/* ${NIDBROOT}/programs
-cp -Rv web/* /var/www/html/
+cp -Rv web/* ${WWWROOT}
 chown -R $NIDBUSER:$NIDBUSER ${NIDBROOT}
-chown -R $NIDBUSER:$NIDBUSER /var/www/html
+chown -R $NIDBUSER:$NIDBUSER ${WWWROOT}
 
-sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!g' /var/www/html/functions.php
+sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!g' ${WWWROOT}/functions.php
 
 # create default database from .sql file
 echo "Creating default database"
@@ -224,7 +211,7 @@ rm ~/tempcron.txt
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
 echo " *** Install FSL to the default path [/usr/local/fsl] ***"
-echo "Edit /etc/php.ini to reflect your timezone"
+echo "Edit /etc/php7.0/apache2/php.ini to reflect your timezone"
 echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
 echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
