@@ -4,6 +4,8 @@
 
 # if you change the default path, NiDB is not guaranteed to work correctly
 NIDBROOT="/nidb"
+WWWROOT="/var/www/html"
+NIDBUSER="nidb"
 
 clear
 echo 
@@ -37,28 +39,22 @@ passwd $NIDBUSER
 echo "----------------- Installing YUM based packages -----------------"
 echo "Because of Perl dependency issues, all perl packages will be installed"
 apt-get -yqf install vim
-apt-get -yqf install perl*
-apt-get -yqf install cpan
+apt-get -yqf install perl
 apt-get -yqf install php
 apt-get -yqf install php-mysql
 apt-get -yqf install php-gd
-apt-get -yqf install php-process
 apt-get -yqf install php-pear
 apt-get -yqf install php-mcrypt
 apt-get -yqf install php-mbstring
-apt-get -yqf install httpd
-apt-get -yqf install mysql
-apt-get -yqf install mysql-server
-apt-get -yqf install mariadb
+apt-get -yqf install apache2
 apt-get -yqf install mariadb-server
 apt-get -yqf install git
 apt-get -yqf install gcc
-apt-get -yqf install gcc-c++
-apt-get -yqf install gedit*
-apt-get -yqf install iptraf*
-apt-get -yqf install java
-apt-get -yqf install ImageMagick
-apt-get -yqf install iptables-services
+apt-get -yqf install gedit
+apt-get -yqf install iptraf
+apt-get -yqf install imagemagick
+apt-get -yqf install iptables
+apt-get -yqf install subversion
 
 # --------- extra Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
@@ -116,23 +112,14 @@ iptables-save > /etc/sysconfig/iptables
 systemctl start iptables
 echo "Done setting up port forwarding and disabling the firewall"
 
-# ---------- Web based installs ----------
-echo "----------------- Web based installs (Webmin, phpMyAdmin) -----------------"
-#echo "------ Installing Webmin... ------"
-#wget http://prdownloads.sourceforge.net/webadmin/webmin-1.750-1.noarch.rpm
-#rpm -U webmin-1.750-1.noarch.rpm
-
 echo "------ Enabling services at boot ------"
-systemctl enable httpd.service
-systemctl enable mariadb.service
+systemctl enable apache2
+systemctl enable mariadb
 echo "------ Starting services ------"
-systemctl start httpd.service
-systemctl start mariadb.service
+systemctl start apache2
+systemctl start mariadb
 
-#echo "------ Manually configure PHP variables ------"
-#echo "Go to https://$HOSTNAME:10000"
-#echo "then go to Others -> PHP Configuration -> Manage -> Other Settings ... change PHP Timezone to your timezone"
-
+echo "------ Configuring PHP variables ------"
 sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php.ini
 sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php.ini
 sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php.ini
@@ -159,20 +146,22 @@ echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
 mysql -uroot -ppassword < ~/tempsql.txt
 rm ~/tempsql.txt
 
-echo "------ Install phpMyAdmin ------"
-wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
-unzip phpMyAdmin-4.4.7-english.zip
-mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
-chmod 777 /var/www/html
-chown -R $NIDBUSER:$NIDBUSER /var/www/html
-sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
-sed '$ i $cfg[''LoginCookieValidity''] = 28800;' /var/www/html/phpMyAdmin/config.sample.inc.php;
-#echo "Rename config.sample.inc.php to config.inc.php"
-cp /var/www/html/phpMyAdmin/config.sample.inc.php /var/www/html/phpMyAdmin/config.inc.php
-chmod 755 /var/www/html/phpMyAdmin/config.inc.php
-echo "You should be able to see this" >> /var/www/html/index.php
-echo "Check to make sure you can see http://$HOSTNAME/index.php"
-read -p "Press [enter] to continue"
+echo "------ Installing phpMyAdmin (follow prompts) ------"
+apt-get install phpmyadmin
+#wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
+#unzip phpMyAdmin-4.4.7-english.zip
+#mv phpMyAdmin-4.4.7-english /var/www/html/phpMyAdmin
+#chmod 777 /var/www/html
+#chown -R $NIDBUSER:$NIDBUSER /var/www/html
+#sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
+#sed '$ i $cfg[''LoginCookieValidity''] = 28800;' /var/www/html/phpMyAdmin/config.sample.inc.php;
+##echo "Rename config.sample.inc.php to config.inc.php"
+#cp /var/www/html/phpMyAdmin/config.sample.inc.php /var/www/html/phpMyAdmin/config.inc.php
+#chmod 755 /var/www/html/phpMyAdmin/config.inc.php
+#echo "You should be able to see this" >> /var/www/html/index.php
+#echo "Check to make sure you can see http://$HOSTNAME/index.php"
+#read -p "Press [enter] to continue"
+systemctl restart apache2
 
 # --------- install all nidb files and db ----------
 echo "----------------- Copying nidb program/html files -----------------"
