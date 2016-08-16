@@ -30,8 +30,7 @@ read -p "Press [enter] to continue"
 #---------------create an nidb account --------------
 echo "${redb}${whitef}${boldon}--------------- Creating nidb user account ----------------${reset}"
 echo "Please enter the Linux account under which NiDB will run (it will be created if it does not exist)"
-read NIDBUSER
-useradd $NIDBUSER -m -s /bin/bash
+useradd $NIDBUSER
 echo "Enter the password for the NiDB account"
 passwd $NIDBUSER
 
@@ -40,13 +39,14 @@ echo "----------------- Installing YUM based packages -----------------"
 echo "Because of Perl dependency issues, all perl packages will be installed"
 apt-get -yqf install vim
 apt-get -yqf install perl
+apt-get -yqf install apache2
+apt-get -yqf install libapache2-mod-php
 apt-get -yqf install php
 apt-get -yqf install php-mysql
 apt-get -yqf install php-gd
 apt-get -yqf install php-pear
 apt-get -yqf install php-mcrypt
 apt-get -yqf install php-mbstring
-apt-get -yqf install apache2
 apt-get -yqf install mariadb-server
 apt-get -yqf install git
 apt-get -yqf install gcc
@@ -83,12 +83,6 @@ cp -rv Mysql* /usr/local/lib64/perl5/
 
 # ---------- configure system based services ----------
 echo "----------------- Configuring system services -----------------"
-echo "------ Disable SELinux ------"
-setenforce 0
-#echo "SELinux is now temporarily disabled. To permanently disable it, the following must be done"
-#echo "This step must be done manually. edit /etc/selinux/config and change SELINUX=enforcing to SELINUX=disabled"
-sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config
-#read -p "Press [enter] to continue"
 
 echo "Setting up port forwarding to forward 8104 to 104"
 # configure the firewall to accept everything, and still forward port 104 to 8104 (using iptables)
