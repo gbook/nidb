@@ -97,21 +97,21 @@
 		
 		$sqlstringA = "select measurename_id from measurenames where measure_name = '$measurename'";
 		//echo "$sqlstringA\n";
-		$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><b>$sqlstringA</b><br>");
-		if (mysql_num_rows($resultA) > 0) {
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		if (mysqli_num_rows($resultA) > 0) {
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$measurenameid = $rowA['measurename_id'];
 		}
 		else {
 			$sqlstringA = "insert into measurenames (measure_name) values ('$measurename')";
 			//echo "$sqlstringA\n";
-			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><b>$sqlstringA</b><br>");
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			$measurenameid = mysql_insert_id();
 		}
 		
 		$sqlstring = "insert into measures (enrollment_id, measure_dateentered, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_instrument, measure_isdoubleentered, measure_datecomplete) values ($enrollmentid, now(), $measurenameid, '$measuretype','$valuestring','$valuenum', '$measurerater', '$measureinstrument', 0, '$measuredatecompleted')";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");	
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
 	}
 
 
@@ -121,7 +121,7 @@
 	function DeleteMeasure($id) {
 		$sqlstring = "delete from measures where measure_id = $id";
 		//echo "[$sqlstring]";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Measure deleted</span></div><br><br><?
 	}
@@ -137,8 +137,8 @@
 
 		/* get the original row to compare against */
 		$sqlstring = "select * from measures where measure_id = $measureid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$measure_dateentered = $row['measure_dateentered'];
 		$measure_dateentered2 = $row['measure_dateentered2'];
 		$measure_name = $row['measure_name'];
@@ -173,7 +173,7 @@
 		if ($good) {
 			$sqlstring = "update measures set measure_dateentered2 = now(), measure_rater2 = '" . $GLOBALS['username'] . "', measure_isdoubleentered = 1 where measure_id = $measureid";
 			//PrintSQL($sqlstring);
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");	
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
 		}
 	}
 
@@ -184,8 +184,8 @@
 	function DisplayMeasureList($enrollmentid) {
 		/* get subject's info for the breadcrumb list */
 		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
@@ -240,8 +240,8 @@
 				</form>
 				<?
 					$sqlstring = "select * from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid order by measure_name";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$measureid = $row['measure_id'];
 						$measure_dateentered = $row['measure_dateentered'];
 						$measure_dateentered2 = $row['measure_dateentered2'];

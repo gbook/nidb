@@ -29,8 +29,8 @@
 	$returnarray = array();
 	
 	$sqlstring = "select * from assessment_formfields where form_id = $formid order by formfield_order+0 asc";
-	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 		$formfieldid = $row['formfield_id'];
 		$formfieldorder = $row['formfield_order'];
 		$formfielddesc = $row['formfield_desc'];

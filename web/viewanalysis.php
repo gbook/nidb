@@ -421,8 +421,8 @@
 			else {
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysisid order by d.result_name";
 			}
-			$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				//$step = $row['analysis_step'];
 				$pipelinename = $row2['pipeline_name'];
 				$type = $row2['result_type'];
@@ -499,9 +499,9 @@
 			</thead>
 		<?
 		$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		/* get the first event to get the starting time */
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_version = $row['pipeline_version'];
 		$analysis_event = $row['analysis_event'];
 		$analysis_hostname = $row['analysis_hostname'];
@@ -519,7 +519,7 @@
 		</tr>
 		<?
 		/* continue on with the rest of the events */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$pipeline_version = $row['pipeline_version'];
 			$analysis_event = $row['analysis_event'];
 			$analysis_hostname = $row['analysis_hostname'];

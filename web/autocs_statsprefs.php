@@ -174,7 +174,7 @@
 
 		$sqlstring  = "insert into task_stats_prefs ( taskid, description, shortname, extralines, startdate, enddate, do_behmatchup, do_stats, do_censor, do_autoslice, do_db, beh_queue, beh_digits, stats_makeasciis, stats_asciiscriptpath, stats_behdirname, stats_relativepath, stats_dirname, stats_pattern, stats_behunits, stats_volterra, stats_basisfunction, stats_onsetfiles, stats_durationfiles, stats_regressorfiles, stats_regressornames, stats_paramnames, stats_paramorders, stats_paramfiles, stats_censorfiles, stats_fit_xbflength, stats_fit_xbforder, stats_timemodulation, stats_parametricmodulation, stats_globalfx, stats_highpasscutoff, stats_serialcorr, stats_tcontrasts, stats_tcontrastnames, autoslice_cons, autoslice_p, autoslice_background, autoslice_slices, autoslice_emailcons, db_overwritebeta, db_fileprefix, db_betanums, db_threshold, db_smoothkernel, db_imcalcs, db_imnames ) values ($taskid, '$edit_description', '$edit_shortname', '$edit_extralines', now(), '3000-01-01 00:00:00', $edit_do_behmatchup, $edit_do_stats, $edit_do_censor, $edit_do_autoslice, $edit_do_db, '$edit_beh_queue', '$edit_beh_digits', $edit_stat_makeasciis, '$edit_stat_asciiscript', '$edit_stat_behdirname', '$edit_stat_relativepath', '$edit_stat_dirname', '$edit_stat_pattern', '$edit_stat_behunits', $edit_stat_volterra, $edit_stats_basisfunction, '$edit_stat_onsetfiles', '$edit_stat_durationfiles', '$edit_stat_regressorfiles', '$edit_stat_regressornames', '$edit_stat_parameternames', '$edit_stat_parameterorders', '$edit_stat_parameterfiles', '$edit_stat_censorfiles', '$edit_stat_xbflength', '$edit_stat_xbforder', '$edit_stat_timemodulation', '$edit_stat_parametricmodulation', $edit_stat_globalfx, $edit_stat_highpasscutoff, $edit_stat_serialcorr, '$edit_stat_tcontrasts', '$edit_stat_tcontrastnames', '$edit_stat_autoslicecons', '$edit_stat_autoslicep', '$edit_stat_autoslicebackground', '$edit_stat_autosliceslices', '$edit_stat_autosliceemailcons', $edit_db_overwritebeta, '$edit_db_fileprefix', '$edit_db_betanums', '$edit_db_threshold', '$edit_db_smoothkernel', '$edit_db_imcalcs', '$edit_db_imnames')";
 		echo "$sqlstring<br>";
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$prefsid = mysql_insert_id();
 
 		?><div class="message">Stats Pref file added</div><br><?
@@ -188,8 +188,8 @@
 	/* -------------------------------------------- */
 	function CopyToNew($taskid, $oldid) {
 		$sqlstring = "select * from task_stats_prefs where id = $oldid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		//$id = $row['id'];
 		//$taskid = $row['taskid'];
 		$description = mysql_real_escape_string($row['description']);
@@ -246,7 +246,7 @@
 		$sqlstring  = "insert into task_stats_prefs ( taskid, description, shortname, extralines, startdate, enddate, do_behmatchup, do_stats, do_censor, do_autoslice, do_db, beh_queue, beh_digits, stats_makeasciis, stats_asciiscriptpath, stats_behdirname, stats_relativepath, stats_dirname, stats_pattern, stats_behunits, stats_volterra, stats_basisfunction, stats_onsetfiles, stats_durationfiles, stats_regressorfiles, stats_regressornames, stats_paramnames, stats_paramorders, stats_paramfiles, stats_censorfiles, stats_fit_xbflength, stats_fit_xbforder, stats_timemodulation, stats_parametricmodulation, stats_globalfx, stats_highpasscutoff, stats_serialcorr, stats_tcontrasts, stats_tcontrastnames, autoslice_cons, autoslice_p, autoslice_background, autoslice_slices, autoslice_emailcons, db_overwritebeta, db_fileprefix, db_betanums, db_threshold, db_smoothkernel, db_imcalcs, db_imnames ) values ($taskid, '$description', '$shortname', '$extralines', now(), '3000-01-01 00:00:00', '$do_behmatchup', '$do_stats', '$do_censor', '$do_autoslice', '$do_db', '$beh_queue', '$beh_digits', '$stats_makeasciis', '$stats_asciiscript', '$stats_behdirname', '$stats_relativepath', '$stats_dirname', '$stats_pattern', '$stats_behunits', '$stats_volterra', '$stats_basisfunction', '$stats_onsetfiles', '$stats_durationfiles', '$stats_regressorfiles', '$stats_regressornames', '$stats_parameternames', '$stats_parameterorders', '$stats_parameterfiles', '$stats_censorfiles', '$stats_xbflength', '$stats_xbforder', '$stats_timemodulation', '$stats_parametricmodulation', '$stats_globalfx', '$stats_highpasscutoff', '$stats_serialcorr', '$stats_tcontrasts', '$stats_tcontrastnames', '$autoslice_cons', '$autoslice_p', '$autoslice_background', '$autoslice_slices', '$autoslice_emailcons', '$db_overwritebeta', '$db_fileprefix', '$db_betanums', '$db_threshold', '$db_smoothkernel', '$db_imcalcs', '$db_imnames')";
 		//echo "$sqlstring<br>";
 		//exit(0);
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$prefsid = mysql_insert_id();
 
 		?><div class="message">Stats Pref file added</div><br><?
@@ -344,7 +344,7 @@
 	/* -------------------------------------------- */
 	function DeletePrefs($id) {
 		$sqlstring = "update task_stats_prefs set enddate = now() where id = $id";
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		?><div class="message">File '<? echo $id ?>' deleted</div><br>
 		<a href="tasks.php">Back to list of tasks</a>
@@ -357,8 +357,8 @@
 	/* -------------------------------------------- */
 	function AddPrefsForm($taskid) {
 		$sqlstring = "select task_shortname, task_autocsver from tasks where taskid = $taskid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$taskname = $row['task_shortname'];
 		$autocsver = $row['task_autocsver'];
 		
@@ -1141,8 +1141,8 @@
 	function DisplayPrefs($id, $viewtype) {
 		/* get the preprocessing information */
 		$sqlstring = "select * from task_stats_prefs where id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$id = $row['id'];
 		$taskid = $row['taskid'];
 		$description = $row['description'];
@@ -1198,8 +1198,8 @@
 
 		/* get task related information */
 		$sqlstring = "select a.*, b.datadirpath from tasks a, server_datadirs b where a.taskid = $taskid and a.task_datadirid = b.id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$autocsver = $row['task_autocsver'];
 		$taskpath = $row['task_shortpath'];
 		$taskname = $row['task_shortname'];
@@ -1636,8 +1636,8 @@ spm_defaults;
 	function CheckPrefs($id) {
 		/* get the preprocessing information */
 		$sqlstring = "select * from task_stats_prefs where id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$id = $row['id'];
 		$taskid = $row['taskid'];
 		$description = $row['description'];
@@ -1684,8 +1684,8 @@ spm_defaults;
 
 		/* get task related information */
 		$sqlstring = "select a.*, b.datadirpath from tasks a, server_datadirs b where a.taskid = $taskid and a.task_datadirid = b.id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$taskpath = $row['taskpath'];
 		$taskname = $row['task_shortname'];
 		$scandirpattern = $row['scandirpattern'];
@@ -1905,8 +1905,8 @@ spm_defaults;
 	/* -------------------------------------------- */
 	function DisplaySummary($taskid) {
 		$sqlstring = "SELECT task_shortname FROM tasks WHERE taskid = $taskid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$taskname = $row['task_shortname'];
 		?>
 		<table><tr><td><img src="images/back16.png"></td><td><a href="tasks.php?action=viewtask&taskid=<? echo $taskid; ?>" class="link">Back</a> to <? echo $taskname; ?></td></tr></table><br>
@@ -1927,8 +1927,8 @@ spm_defaults;
 						<select name="oldprefid">
 						<?
 							$sqlstring = "SELECT a.shortname, b.task_shortname, a.id, b.task_autocsver FROM task_stats_prefs a left join tasks b on a.taskid = b.taskid WHERE a.enddate > now() and b.task_enddate > now() order by b.task_shortname";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$taskshortname = $row['task_shortname'];
 								$prefsshortname = $row['shortname'];
 								$id = $row['id'];
@@ -1960,9 +1960,9 @@ spm_defaults;
 			</tr>
 			<?
 				$sqlstring = "select * from task_stats_prefs where taskid = $taskid and enddate > now()";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['id'];
 						$createdate = $row['startdate'];
 						$shortname = $row['shortname'];

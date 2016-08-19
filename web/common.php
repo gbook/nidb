@@ -100,7 +100,7 @@
 		}
 		
 		$sqlstring = "insert into common (common_type, common_group, common_name, common_desc, common_number, common_text, common_file, common_size) values ('$type', '$group', '$name', '$desc', '$number', '$text', '$filename', $size)";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");	
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
 	}
 
 
@@ -110,8 +110,8 @@
 	function DeleteCommonObject($id) {
 		/* get information to figure out the path */
 		$sqlstring = "select * from common where common_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$type = $row['common_type'];
 		$group = $row['common_group'];
 		$name = $row['common_name'];
@@ -132,7 +132,7 @@
 		
 		$sqlstring = "delete from common where common_id = $id";
 		//echo "[$sqlstring]";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series deleted</span></div><br><br><?
 	}
@@ -193,8 +193,8 @@
 				</form>
 				<?
 					$sqlstring = "select * from common order by common_group, common_name";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$common_id = $row['common_id'];
 						$type = $row['common_type'];
 						$group = $row['common_group'];

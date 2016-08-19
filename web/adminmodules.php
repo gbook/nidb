@@ -77,7 +77,7 @@
 		
 		/* update the module */
 		$sqlstring = "update modules set module_name = '$modulename', module_desc = '$moduledesc', module_admin = '$admin' where module_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$modulename?> updated</span></div><br><br><?
 	}
@@ -93,7 +93,7 @@
 		
 		/* insert the new module */
 		$sqlstring = "insert into modules (module_name, module_desc, module_admin, module_createdate, module_status) values ('$modulename', '$moduledesc', '$admin', now(), 'active')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$modulename?> added</span></div><br><br><?
 	}
@@ -133,7 +133,7 @@
 	/* -------------------------------------------- */
 	function EnableModule($id) {
 		$sqlstring = "update modules set module_isactive = 1 where module_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -142,7 +142,7 @@
 	/* -------------------------------------------- */
 	function DisableModule($id) {
 		$sqlstring = "update modules set module_isactive = 0 where module_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	
@@ -152,8 +152,8 @@
 	function ResetModule($id) {
 		/* get module name */
 		$sqlstring = "select module_name from modules where module_id = $id";
-		$result = mysql_query($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$scriptname = $row['module_name'];
 		
 		/* delete all lock files */
@@ -171,7 +171,7 @@
 		/* update DB to have 0 instances, status=stopped and lastfinish=now() */
 		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = $id";
 		//echo "$sqlstring<br>";
-		$result = mysql_query($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
+		$result = MySQLiQuery($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
 	}
 
 	
@@ -201,8 +201,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from modules order by module_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['module_id'];
 					$module_name = $row['module_name'];
 					$module_status = $row['module_status'];

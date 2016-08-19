@@ -77,8 +77,8 @@ window.onload = AreCookiesEnabled;
 
 
 	/* database connection */
-	$link = mysql_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
 	/* connect to CAS if enabled */
 	if ($GLOBALS['cfg']['enablecas']){
@@ -166,8 +166,8 @@ window.onload = AreCookiesEnabled;
 	function DoLogin($username) {
 		/* check if they are an admin */
 		$sqlstring = "select user_isadmin from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		if ($row['user_isadmin'] == '1')
 			$isadmin = true;
 		else
@@ -175,29 +175,29 @@ window.onload = AreCookiesEnabled;
 
 		/* check if they are an admin */
 		$sqlstring = "select user_isadmin from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		if ($row['user_isadmin'] == '1')
 			$isadmin = true;
 		else
 			$isadmin = false;
 		
-		if (mysql_num_rows($result) > 0) {
+		if (mysqli_num_rows($result) > 0) {
 			$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 			$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
 			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values ('$username', 'NIS', now(), 1, 1)";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 			
 		//$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-		//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-		//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$_SESSION['username'] = $username;
 		$_SESSION['validlogin'] = "true";
@@ -205,23 +205,23 @@ window.onload = AreCookiesEnabled;
 		else $_SESSION['isadmin'] = "false";
 		
 		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instanceid = $row['instance_id'];
 		//echo "[$sqlstring] - [$instanceid]<br>";
 		if ($instanceid == '') {
 			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			$sqlstring = "select instance_id from instance where instance_default = 1";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$instanceid = $row['instance_id'];
 		}
 		
 		$sqlstring = "select instance_name from instance where instance_id = $instanceid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instancename = $row['instance_name'];
 		//echo "[$sqlstring] - [$instancename]<br>";
 		
@@ -262,8 +262,8 @@ window.onload = AreCookiesEnabled;
 			
 		$sqlstring = "select user_id from users where username = '$username' and password = sha1('$password') and user_enabled = 1";
 		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser(): [$sqlstring]");
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0)
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0)
 			return true;
 		else
 			return false;

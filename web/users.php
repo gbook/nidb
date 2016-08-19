@@ -99,9 +99,9 @@
 		}
 		
 		$sqlstring = "select * from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$userid = $row['user_id'];
 			
 			if ((trim($userid) == '') || ($userid == 0)) {
@@ -114,12 +114,12 @@
 				$sqlstring = "update users set";
 				if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
 				$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				
 				/* delete all existing notification entries */
 				$sqlstring = "delete from notification_user where user_id = $userid";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				
 				/* update the notifications */
 				foreach ($notifications as $notificationid) {
@@ -127,13 +127,13 @@
 					if (in_array(0,$pids) || in_array('all',$pids)) {
 						$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, 0, $notificationid)";
 						//PrintSQL($sqlstring);
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					}
 					else {
 						foreach ($pids as $projectid) {
 							$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
 							//PrintSQL($sqlstring);
-							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						}
 					}
 				}
@@ -152,8 +152,8 @@
 	/* ----------------------------------------------- */
 	function SendJoinInstanceRequest($instanceid) {
 		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 		
 		if (($userid == "") || ($userid == 0)) {
@@ -164,16 +164,16 @@
 		
 		$sqlstring = "select * from user_instance where user_id = '$userid' and instance_id = $instanceid";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$sendemail = 0;
-		if (mysql_num_rows($result) < 1) {
+		if (mysqli_num_rows($result) < 1) {
 			$sqlstringA = "insert into user_instance (user_id, instance_id, instance_joinrequest) values ($userid, $instanceid, 1)";
 			//PrintSQL($sqlstringA);
-			$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			$sendemail = 1;
 		}
 		else {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$joinrequest = $row['instance_joinrequest'];
 			if ($joinrequest) {
 				$sendemail = 1;
@@ -184,24 +184,24 @@
 			/* send an email to the owner of the instance */
 			$sqlstring = "select * from users where user_id = $userid";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$oEmail = $row['user_email'];
 			$oFullname = $row['user_fullname'];
 			
 			/* get the user in-question's information */
 			$sqlstring = "select * from users where user_id = $userid";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$uEmail = $row['user_email'];
 			$uFullname = $row['user_fullname'];
 
 			/* get the instance information */
 			$sqlstring = "select * from instance where instance_id = $instanceid";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$instancename = $row['instance_name'];
 			
 			$body = "$oFullname,<br><br><b>$uFullname ($uEmail)</b> has requested to join your Neuroinformatics Database (NiDB) instance: <b>$instancename</b>\n\nTo accept or reject this request, login to NiDB and go to Admin->Instances and click Accept or Reject";
@@ -232,8 +232,8 @@
 		
 		/* get the range of years that studies have occured */
 		$sqlstring = "select * from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 		$password = $row['password'];
 		$email = $row['user_email'];
@@ -700,8 +700,8 @@
 									<table>
 									<?
 										$sqlstring  = "select * from notifications";
-										$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-										while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$notificationid = $row['notiftype_id'];
 											$notificationname = $row['notiftype_name'];
 											$notificationdesc = $row['notiftype_desc'];
@@ -710,11 +710,11 @@
 											$frequency = $row['notiftype_frequency'];
 											
 											$sqlstringA = "select * from notification_user where user_id = $userid and notiftype_id = $notificationid";
-											$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-											if (mysql_num_rows($resultA) > 0) {
+											$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+											if (mysqli_num_rows($resultA) > 0) {
 												$notifenabled = "checked";
 												unset($projectids);
-												while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+												while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 													$projectids[] = $rowA['project_id'];
 												}
 												//PrintVariable($projectids);
@@ -768,8 +768,8 @@
 			<tbody>
 			<?
 				$sqlstring = "select * from instance order by instance_name";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$instanceid = $row['instance_id'];
 					$uid = $row['instance_uid'];
 					$name = $row['instance_name'];
@@ -785,9 +785,9 @@
 					}
 					
 					$sqlstringA = "select * from user_instance where user_id = (select user_id from users where username = '$username') and instance_id = $instanceid";
-					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysql_num_rows($resultA) > 0) {
-						$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					if (mysqli_num_rows($resultA) > 0) {
+						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$joinrequest = $rowA['instance_joinrequest'];
 						if ($joinrequest) {
 							?><td style="color: #888">Request Sent</td></tr><?
@@ -823,8 +823,8 @@
 		if (trim($username) == "") { return false; }
 		
 		$sqlstring = "select login_type from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$type = $row['login_type'];
 		
 		if ($type == "Guest") {

@@ -6,7 +6,7 @@
 <? include("menu.php") ?>
 <br><br>
 <?
-	mysql_select_db("calendar") or die ("Could not select database<br>");
+	mysqli_select_db("calendar") or die ("Could not select database<br>");
 	
 	/* get variables */
 	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
@@ -70,8 +70,8 @@
 		<?
 		$sqlstring = "select a.*, b.*, c.* from allocations a left join calendars b on a.alloc_calendarid = b.calendar_id left join calendar_projects c on a.alloc_projectid = c.project_id";
 		//$sqlstring = "select * from calendars where calendar_deletedate > now()";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['alloc_id'];
 			$calendarname = $row['calendar_name'];
 			$projectname = $row['project_name'];
@@ -109,7 +109,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "insert into allocations (alloc_timeperiod, alloc_calendarid, alloc_projectid, alloc_amount) values ('$timeperiod','$calendar_id','$project_id','$amount')";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -127,7 +127,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "update calendars set calendar_name = '$name', calendar_description = '$description', calendar_location = '$location' where calendar_id = '$id'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -137,7 +137,7 @@
 	/* ----------------------------------------------- */
 	function Delete($id) {
 		$sqlstring = "delete from allocations where alloc_id = '$id'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 	
@@ -177,8 +177,8 @@
 					<select name="calendar_id">
 					<?
 						$sqlstring = "select calendar_id, calendar_name from calendars where calendar_deletedate > now()";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$id = $row['calendar_id'];
 							$name = $row['calendar_name'];
 					?>
@@ -195,8 +195,8 @@
 					<select name="project_id">
 					<?
 						$sqlstring = "select project_id, project_name from calendar_projects where project_enddate > now()";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$id = $row['project_id'];
 							$name = $row['project_name'];
 					?>
@@ -220,8 +220,8 @@
 	function EditForm($message, $id) {
 	
 		$sqlstring = "select * from calendars where calendar_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['calendar_name'];
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];

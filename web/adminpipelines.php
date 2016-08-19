@@ -81,7 +81,7 @@
 		
 		/* update the pipeline */
 		$sqlstring = "update pipelines set pipeline_name = '$pipelinename', pipeline_desc = '$pipelinedesc', pipeline_admin = '$admin' where pipeline_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$pipelinename?> updated</span></div><br><br><?
 	}
@@ -97,7 +97,7 @@
 		
 		/* insert the new pipeline */
 		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_admin, pipeline_createdate, pipeline_status) values ('$pipelinename', '$pipelinedesc', '$admin', now(), 'active')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$pipelinename?> added</span></div><br><br><?
 	}
@@ -108,7 +108,7 @@
 	/* -------------------------------------------- */
 	function DeletePipeline($id) {
 		$sqlstring = "delete from pipelines where pipeline_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -120,8 +120,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from pipelines where pipeline_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			//$id = $row['pipeline_id'];
 			$name = $row['pipeline_name'];
 			$admin = $row['pipeline_admin'];
@@ -167,8 +167,8 @@
 					<select name="admin">
 						<?
 							$sqlstring = "select * from users where user_enabled = true order by user_fullname";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
 								$username = $row['username'];
 								$fullname = $row['user_fullname'];
@@ -216,8 +216,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname' from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_status = 'active' order by a.pipeline_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['pipeline_id'];
 					$name = $row['pipeline_name'];
 					$adminusername = $row['adminusername'];

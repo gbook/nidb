@@ -1050,11 +1050,11 @@
 		}
 		
 		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_startdate is null)";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?><div align="center"><span class="message">Reset analyses: <?echo mysql_affected_rows(); ?> analysis <b>data</b> rows deleted</span></div><?
 	
 		$sqlstring = "delete from analysis where analysis_startdate is null and pipeline_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?><div align="center"><span class="message">Reset analyses: <?echo mysql_affected_rows(); ?> analysis rows deleted</span></div><?
 	}	
 
@@ -1594,35 +1594,35 @@
 					<?
 						/* gather statistics about the analyses */
 						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$totaltime = $row['cluster_time'];
 						$totaltime = number_format(($totaltime/60/60),2);
 						
 						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$totaltimesuccess = $row['cluster_timesuccess'];
 						$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
 						
 						$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$numcomplete = $row['numcomplete'];
 
 						$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$numcompletesuccess = $row['numcompletesuccess'];
 						
 						$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$numprocessing = $row['numprocessing'];
 						
 						$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysql_fetch_array($result, MYSQL_ASSOC);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$numpending = $row['numpending'];
 						
 						/* get mean processing times */

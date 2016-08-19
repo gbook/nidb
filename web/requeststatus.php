@@ -62,7 +62,7 @@
 	/* --------------------------------------------------- */
 	function CancelGroup($groupid) {
 		$sqlstring = "update data_requests set req_status = 'cancelled' where req_groupid = $groupid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="message">Group download <?=$groupid?> cancelled</span><?
 	}
 
@@ -76,7 +76,7 @@
 		NavigationBar("Data export details", $urllist);
 		
 		$sqlstring = "select * from data_requests where request_id = $requestid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		$fields_num = mysql_num_fields($result);
 		for($i=0; $i<$fields_num; $i++)
@@ -85,7 +85,7 @@
 			$fields[] = $field->name;
 		}
 		?><div style="column-count 3; -moz-column-count:3; -webkit-column-count:3"><?
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		foreach ($fields as $f) {
 			if (($f != 'req_results') && (stripos($f,'password') === false)) {
 				echo "<b>$f</b> - " . $row[$f] . "<br>";
@@ -131,14 +131,14 @@
 		
 		/* get the average processing time */
 		$sqlstring = "SELECT avg(req_cputime) 'cpu' FROM `data_requests` where req_status = 'complete'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$avgcputime = $row['cpu'] + 0.5; /* add .5 sec just for yuks */
 
 		/* get the number processing or still pending */
 		$sqlstring = "SELECT count(*) 'count' FROM `data_requests` where req_status = 'pending' or req_status = 'processing' or req_status = ''";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numpending = $row['count']; /* add .5 sec just for yuks */
 		
 		$waittime = ($avgcputime + 0.5) * $numpending; /* in seconds */
@@ -146,8 +146,8 @@
 
 		/* get the number processing or still pending */
 		$sqlstring = "select date_add(now(), interval +$waittime second) 'waittime'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$completedate = $row['waittime'];
 		
 		/* get the groups that occur in the last 7 days */
@@ -157,21 +157,21 @@
 		else {
 			$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
 		}
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$groupid = $row['groupid'];
 			$modality = strtolower($row['req_modality']);
 			
 			$sqlstring = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id where a.req_groupid = $groupid";
-			$result2 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row2 = mysql_fetch_array($result2, MYSQL_ASSOC);
+			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 			$totalbytes = $row2['totalbytes'];
 			
 			$total = 0;
 			unset($totals);
 			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(req_status) 'count', req_date, req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
-			$result2 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$requestdate = date("M j, Y G:i",strtotime($row2['req_date']));
 				$requestingip = $row2['req_ip'];
 				$username = $row2['req_username'];
@@ -280,20 +280,20 @@
 		if ($page == "") { $page = 1; }
 		
 		$sqlstring = "select distinct(req_modality) from data_requests where req_groupid = $groupid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$modality = $row['req_modality'];
 
 		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$numrows = mysql_num_rows($result);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numrows = mysqli_num_rows($result);
 
 		$numperpage = 500;
 		$limit = $numperpage * ($page-1);
 		
 		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	?>
 		<b>Showing <?=$numrows?> requests from the last 7 days</b>
 		<br>
@@ -325,7 +325,7 @@
 				<td style="font-weight:bold; border-bottom: solid 2pt black">Status</td>
 			</tr>
 		<?
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$requestid = $row['request_id'];
 				$series_id = $row[$modality . 'series_id'];
 				$series_desc = $row['series_desc'];

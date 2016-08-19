@@ -80,7 +80,7 @@
 		
 		/* update the analysis */
 		$sqlstring = "update analysis set analysis_name = '$analysisname', analysis_desc = '$analysisdesc', analysis_admin = '$admin' where analysis_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$analysisname?> updated</span></div><br><br><?
 	}
@@ -96,7 +96,7 @@
 		
 		/* insert the new analysis */
 		$sqlstring = "insert into analysis (analysis_name, analysis_desc, analysis_admin, analysis_createdate, analysis_status) values ('$analysisname', '$analysisdesc', '$admin', now(), 'active')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$analysisname?> added</span></div><br><br><?
 	}
@@ -107,7 +107,7 @@
 	/* -------------------------------------------- */
 	function DeleteAnalysis($id) {
 		$sqlstring = "delete from analysis where analysis_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -119,8 +119,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from analysis where analysis_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			//$id = $row['analysis_id'];
 			$name = $row['analysis_name'];
 			$admin = $row['analysis_admin'];
@@ -166,8 +166,8 @@
 					<select name="admin">
 						<?
 							$sqlstring = "select * from users where user_enabled = true order by user_fullname";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
 								$username = $row['username'];
 								$fullname = $row['user_fullname'];

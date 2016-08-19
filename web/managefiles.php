@@ -70,8 +70,8 @@
 		
 		$sqlstring = "select a.series_num, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
 		
-		$result2 = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result2, MYSQL_ASSOC);
+		$result2 = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 		$study_num = $row['study_num'];
 		$uid = $row['uid'];
 		$series_num = $row['series_num'];
@@ -128,8 +128,8 @@
 		
 		$sqlstring = "select a.*, b.study_num, b.study_id, d.uid, d.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
 		
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$subjectid = $row['subject_id'];
 		$uid = $row['uid'];
 		$study_num = $row['study_num'];
@@ -173,7 +173,7 @@
 			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
 		}
 		//echo "$sqlstring";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		?>
 		<b>Displaying files for</b>

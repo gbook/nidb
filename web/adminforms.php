@@ -96,7 +96,7 @@
 		
 		/* update the form */
 		$sqlstring = "update forms set form_title = '$formtitle', form_desc = '$formdesc' where form_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		
 		?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
 	}
@@ -113,7 +113,7 @@
 		
 		/* insert the new form */
 		$sqlstring = "insert into forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle', '$formdesc', '$username', now())";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		
 		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><br><br><?
 	}
@@ -129,7 +129,7 @@
 		
 		/* delete all previous formfields */
 		$sqlstring = "delete from formfields where form_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		
 		/* insert all the new fields */
 		for($i=0; $i<count($datatype); $i++) {
@@ -139,7 +139,7 @@
 				$order[$i] = mysql_real_escape_string($order[$i]);
 			
 				$sqlstring = "insert into formfields (form_id, formfield_desc, formfield_values, formfield_datatype, formfield_haslinebreak, formfield_scored, formfield_order) values ($id, '$field[$i]', '$values[$i]', '$datatype[$i]', '$linebreaks[$i]', '$scored[$i]', '$order[$i]')";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
 		}
 		
@@ -152,7 +152,7 @@
 	/* -------------------------------------------- */
 	function DeleteForm($id) {
 		$sqlstring = "delete from forms where form_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		?><div align="center"><span class="message"><?=$id?> deleted</span></div><br><br><?
 	}	
 
@@ -162,7 +162,7 @@
 	/* -------------------------------------------- */
 	function PublishForm($id) {
 		$sqlstring = "update forms set form_ispublished = 1 where form_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 		?><div align="center"><span class="message"><?=$id?> published</span></div><br><br><?
 	}	
 	
@@ -175,8 +175,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from forms where form_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$title = $row['form_title'];
 			$desc = $row['form_desc'];
 		
@@ -244,8 +244,8 @@
 					$neworder = 1;
 					/* display all other rows, sorted by order */
 					$sqlstring = "select * from formfields where form_id = $id order by formfield_order + 0";
-					$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$formfield_id = $row['formfield_id'];
 						$formfield_desc = $row['formfield_desc'];
 						$formfield_datatype = $row['formfield_datatype'];
@@ -365,8 +365,8 @@
 	function DisplayForm($id) {
 	
 		$sqlstring = "select * from forms where form_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
@@ -394,8 +394,8 @@
 			<?
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from formfields where form_id = $id order by formfield_order + 0";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$formfield_id = $row['formfield_id'];
 					$formfield_desc = $row['formfield_desc'];
 					$formfield_values = $row['formfield_values'];
@@ -493,8 +493,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select a.*, b.username 'creatorusername', b.user_fullname 'creatorfullname' from forms a left join users b on a.form_creator = b.user_id order by a.form_title";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['form_id'];
 					$title = $row['form_title'];
 					$desc = $row['form_desc'];

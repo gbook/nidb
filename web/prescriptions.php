@@ -82,21 +82,21 @@
 
 		$sqlstringA = "select rxname_id from prescriptionnames where rx_name = '$rxname'";
 		//echo "$sqlstringA\n";
-		$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><b>$sqlstringA</b><br>");
-		if (mysql_num_rows($resultA) > 0) {
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		if (mysqli_num_rows($resultA) > 0) {
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$rxnameid = $rowA['rxname_id'];
 		}
 		else {
 			$sqlstringA = "insert into prescriptionnames (rx_name) values ('$rxname')";
 			//echo "$sqlstringA\n";
-			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><b>$sqlstringA</b><br>");
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			$rxnameid = mysql_insert_id();
 		}
 		
 		$sqlstring = "insert into prescriptions (enrollment_id, rx_startdate, rx_enddate, rx_doseamount, rx_dosefrequency, rx_route, rxname_id) values ($enrollmentid, '$rxstartdate', '$rxenddate', '$rxdose', '$rxfreq', '$rxroute', '$rxnameid')";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");	
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
 	}
 
 
@@ -106,7 +106,7 @@
 	function DeletePrescription($id) {
 		$sqlstring = "delete from prescriptions where rx_id = $id";
 		//echo "[$sqlstring]";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Prescription deleted</span></div><br><br><?
 	}
@@ -118,8 +118,8 @@
 	function DisplayPrescriptionList($enrollmentid) {
 		/* get subject's info for the breadcrumb list */
 		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
@@ -160,8 +160,8 @@
 				</form>
 				<?
 					$sqlstring = "select * from prescriptions a left join prescriptionnames b on a.rxname_id = b.rxname_id where enrollment_id = $enrollmentid order by rx_name";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><b>$sqlstring</b><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$rxid = $row['rx_id'];
 						$rx_name = $row['rx_name'];
 						$rx_route = $row['rx_route'];

@@ -64,35 +64,35 @@
 		/* get the range of years that studies have occured */
 		$sqlstring = "select * from users where username = '$username'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		if (mysql_num_rows($result) > 0) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
 			/* update */
 			$sqlstring = "update users set user_email = '$email' where username = '$username'";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
 			/* insert */
 			$sqlstring = "insert into users (username, user_email) values ('$username', '$email')";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		$sqlstring = "select * from users where username = '$username'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$user_id = $row['user_id'];
 
 		$sqlstring = "delete from calendar_notifications where not_userid = $user_id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		foreach ($calendar_ids as $cal_id) {
 			$sqlstring = "insert into calendar_notifications (not_userid, not_calendarid) values ($user_id, $cal_id)";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 
 		$sqlstring = "delete from project_notifications where not_userid = $user_id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		foreach ($project_ids as $prj_id) {
 			$sqlstring = "insert into project_notifications (not_userid, not_projectid) values ($user_id, $prj_id)";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 	}
 	
@@ -105,9 +105,9 @@
 		/* get the range of years that studies have occured */
 		$sqlstring = "select * from users where username = '$username'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$email = $row['user_email'];
 			$user_id = $row['user_id'];
 		}
@@ -136,15 +136,15 @@
 			<!--<br><span class="sublabel">This will send an email whenever your automatic processes are complete.</span>-->
 			<?
 				$sqlstring = "select * from calendar_notifications where not_userid = $user_id";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$cal_ids[] = $row['not_calendarid'];
 				}
 				//print_r($cal_ids);
 			
 				$sqlstring = "select * from calendars where calendar_createdate < now() and calendar_deletedate > now()";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$calendar_id = $row['calendar_id'];
 					$calendar_name = $row['calendar_name'];
 					$calendar_desc = $row['calendar_description'];
@@ -171,15 +171,15 @@
 			<!--<br><span class="sublabel">This will send an email whenever your automatic processes are complete.</span>-->
 			<?
 				$sqlstring = "select * from project_notifications where not_userid = $user_id";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$prj_ids[] = $row['not_projectid'];
 				}
 				//print_r($cal_ids);
 			
 				$sqlstring = "select * from calendar_projects where project_startdate < now() and project_enddate > now()";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$project_id = $row['project_id'];
 					$project_name = $row['project_name'];
 					$project_desc = $row['project_description'];

@@ -77,7 +77,7 @@
 		/* insert the new project */
 		$sqlstring = "insert ignore into project_protocol (project_id, protocolgroup_id, pp_criteria, pp_perstudyquantity, pp_perprojectquantity) values ($projectid, $protocolgroupid, '$criteria', '$numpersession', '$numtotal')";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="staticmessage">Protocol added</span><?
 	}
 
@@ -88,7 +88,7 @@
 	function DeleteProjectProtocol($projectprotocolid) {
 		$sqlstring = "delete from project_protocol where projectprotocol_id = $projectprotocolid";
 		//PrintSQl($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="staticmessage">Protocol deleted</span><?
 	}	
 	
@@ -118,8 +118,8 @@
 					<option value="">(Select protocol group)</option>
 				<?
 					$sqlstring = "select * from protocol_group order by protocolgroup_modality, protocolgroup_name";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$pgid = $row['protocolgroup_id'];
 						$name = $row['protocolgroup_name'];
 						$modality = strtoupper($row['protocolgroup_modality']);
@@ -140,8 +140,8 @@
 			<?
 				$sqlstring = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = $projectid";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectprotocolid = $row['projectprotocol_id'];
 					//$projectid = $row['project_id'];
 					$protocolgroupid = $row['protocolgroup_id'];

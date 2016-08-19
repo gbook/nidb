@@ -85,16 +85,16 @@
 		<tbody>
 			<?
 				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['group_id'];
 					$name = $row['group_name'];
 					$ownerusername = $row['ownerusername'];
 					$grouptype = $row['group_type'];
 					
 					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
-					$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
-					$row2 = mysql_fetch_array($result2, MYSQL_ASSOC);
+					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 					$count = $row2['count'];
 			?>
 			<tr>
@@ -121,8 +121,8 @@
 		NavigationBar("Longitudinal QC", $urllist,0,'','','','');
 		
 		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$name = $row['group_name'];
 			$ownerusername = $row['ownerusername'];
 			$grouptype = $row['group_type'];
@@ -146,8 +146,8 @@
 		if ($grouptype == "study") {
 			foreach ($modalities as $key => $value) {
 				$sqlstring = "select distinct series_desc, series_altdesc, series_protocol, series_sequencename from $key" . "_series where study_id in ($studyids)";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$desc = $row['series_desc'];
 					$altdesc = $row['series_altdesc'];
 					$protocol = $row['series_protocol'];
@@ -179,8 +179,8 @@
 		# this only works for study groups
 		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$name = $row['group_name'];
 			$ownerusername = $row['ownerusername'];
 			$grouptype = $row['group_type'];
@@ -190,8 +190,8 @@
 			
 			$sqlstringA = "select *, unix_timestamp(DATE(series_datetime)) 'seriesdate' from $modality"."_series where study_id = $studyid and series_desc = '$protocol' order by seriesdate asc";
 			//PrintSQL($sqlstringA);
-			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringA</i><br>");
-			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$seriesid = $rowA[$modality."series_id"];
 				$seriesdate = $rowA['seriesdate'];
 				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
@@ -200,8 +200,8 @@
 				//echo "$qadir: ";
 				
 				$sqlstringB = "select * from mr_qa where mrseries_id = $seriesid";
-				$resultB = mysql_query($sqlstringB) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringB</i><br>");
-				$rowB = mysql_fetch_array($resultB, MYSQL_ASSOC);
+				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 				$iosnr = $rowB["io_snr"];
 				$pvsnr = $rowB["pv_snr"];
 				$motion_rsq = $rowB["motion_rsq"];

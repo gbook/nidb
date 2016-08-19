@@ -83,12 +83,12 @@
 		
 		/* update the instance */
 		$sqlstring = "update instance set instance_name = '$instancename' where instance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* add the users to the user_instance table */
 		foreach ($users as $userid) {
 			$sqlstring = "insert ignore into user_instance (instance_id, user_id) values ($id, $userid)";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		?><div align="center"><span class="message"><?=$instancename?> updated</span></div><br><br><?
@@ -106,18 +106,18 @@
 		do {
 			$instanceuid = NIDB\CreateUID('I');
 			$sqlstring = "SELECT * FROM `instance` WHERE instance_uid = '$instanceuid'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$count = mysql_num_rows($result);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$count = mysqli_num_rows($result);
 		} while ($count > 0);
 		
 		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$ownerid = $row['user_id'];
 		
 		/* insert the new instance */
 		$sqlstring = "insert into instance (instance_uid, instance_name, instance_ownerid) values ('$instanceuid', '$instancename', '$ownerid')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$instancename?> added</span></div><?
 	}
@@ -128,7 +128,7 @@
 	/* -------------------------------------------- */
 	function DeletePrefs($id) {
 		$sqlstring = "delete from instance where instance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
 	
@@ -140,8 +140,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from cs_prefs where csprefs_id = $id";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$instanceid = $row['instance_id'];
 			$uid = $row['instance_uid'];
 			$name = $row['instance_name'];
@@ -1396,8 +1396,8 @@
 	/* -------------------------------------------- */
 	function GetDistinctDBField($field, $table) {
 		$sqlstring = "SELECT distinct($field) 'tag' from `$table` where realign_pattern <> ''";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tag = $row['tag'];
 			$str .= "\"$tag\",";
 		}
@@ -1429,8 +1429,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from cs_prefs order by shortname";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$prefid = $row['csprefs_id'];
 					$shortname = $row['shortname'];
 					$desc = $row['description'];

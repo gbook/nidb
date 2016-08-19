@@ -125,8 +125,8 @@
 				<select name="currentcal" style="border: 1px solid #AAAAAA; font-size:8pt" onChange="pageform.submit()">
 				<?
 				$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['calendar_id'];
 					$name = $row['calendar_name'];
 					$description = $row['calendar_description'];
@@ -253,8 +253,8 @@
 					else {
 						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
 					}
-					$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['appt_id'];
 						$username = $row['appt_username'];
 						$projectname = $row['project_name'];
@@ -482,8 +482,8 @@
 						else {
 							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
 						}
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$id = $row['appt_id'];
 							$username = $row['appt_username'];
 							$projectname = $row['project_name'];
@@ -633,8 +633,8 @@
 							else {
 								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
 							}
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$id = $row['appt_id'];
 								$username = $row['appt_username'];
 								$projectname = $row['project_name'];

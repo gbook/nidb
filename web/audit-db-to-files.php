@@ -30,16 +30,16 @@
 	date_default_timezone_set("America/New_York");
 	
 	/* database connection (nidb) */
-	$link2 = mysql_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link2 = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 	
 	$archivedir = $GLOBALS['cfg']['archivedir'];
 
 	echo "UID\tStudy\tSeries\tInconsistency";
 	
 	$sqlstring = "select * from subjects where isactive = 1 order by uid";
-	$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 		$subjectid = $row['subject_id'];
 		$uid = $row['uid'];
 		
@@ -47,8 +47,8 @@
 		if (file_exists("$archivedir/$uid")) {
 			//echo "$uid\t-\t-\tExists\n";
 			$sqlstringA = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = $subjectid order by a.study_num";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$studyid = $rowA['study_id'];
 				$studynum = $rowA['study_num'];
 				$modality = strtolower($rowA['study_modality']);
@@ -56,8 +56,8 @@
 				/* check if the subject directory exists */
 				if (file_exists("$archivedir/$uid/$studynum")) {
 					$sqlstringB = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id where b.study_id = $studyid order by a.series_num";
-					$resultB = MySQLQuery($sqlstringB,__FILE__,__LINE__);
-					while ($rowB = mysql_fetch_array($resultB, MYSQL_ASSOC)) {
+					$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+					while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 						$seriesid = $rowB[$modality . 'series_id'];
 						$seriesnum = $rowB['series_num'];
 						$numfiles = $rowB['numfiles'];
@@ -109,9 +109,9 @@
 			
 				/* check if this subject is in the database */
 				$sqlstring = "select * from subjects where uid = '$subject'";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
-				if (mysql_num_rows($result) < 1) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				if (mysqli_num_rows($result) < 1) {
 					echo "$subject\t-\t-not in DB\n";
 					//echo "$subject\t$study\t$series\tstudy|scanid\t$filescanid\t$studyaltid\t$subjectid\t$studyid\t$seriesid\n";
 				}
@@ -127,9 +127,9 @@
 						if ((is_dir("$archivedir/$subject/$study")) && ( $study != "." ) && ( $study != ".." ) ) {
 							/* check if this study is in the database */
 							$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where a.uid = '$subject' and c.study_num = $study";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							$row = mysql_fetch_array($result, MYSQL_ASSOC);
-							if (mysql_num_rows($result) < 1) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							if (mysqli_num_rows($result) < 1) {
 								echo "$subject\t$study\t-\tnot in DB\n";
 							}
 							else {
@@ -146,9 +146,9 @@
 										$found = 0;
 										/* check if this series is in the database */
 										$sqlstring = "select * from mr_series where study_id = $studyid and series_num = '$series'";
-										$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-										$row = mysql_fetch_array($result, MYSQL_ASSOC);
-										if (mysql_num_rows($result) > 0) {
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										if (mysqli_num_rows($result) > 0) {
 											$found = 1;
 											$seriesid = $row['mrseries_id'];
 											$numfiles = $row['numfiles'];
@@ -156,23 +156,23 @@
 											//echo "DB num files: $numfiles\n";
 										}
 										$sqlstring = "select * from eeg_series where study_id = $studyid and series_num = '$series'";
-										$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-										$row = mysql_fetch_array($result, MYSQL_ASSOC);
-										if (mysql_num_rows($result) > 0) {
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										if (mysqli_num_rows($result) > 0) {
 											$found = 1;
 											$seriesid = $row['eegseries_id'];
 										}
 										$sqlstring = "select * from et_series where study_id = $studyid and series_num = '$series'";
-										$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-										$row = mysql_fetch_array($result, MYSQL_ASSOC);
-										if (mysql_num_rows($result) > 0) {
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										if (mysqli_num_rows($result) > 0) {
 											$found = 1;
 											$seriesid = $row['etseries_id'];
 										}
 										$sqlstring = "select * from ppi_series where study_id = $studyid and series_num = '$series'";
-										$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-										$row = mysql_fetch_array($result, MYSQL_ASSOC);
-										if (mysql_num_rows($result) > 0) {
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										if (mysqli_num_rows($result) > 0) {
 											$found = 1;
 											$seriesid = $row['ppiseries_id'];
 										}

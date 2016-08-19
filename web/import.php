@@ -858,7 +858,7 @@ question_num, question_text, datatype, values, comment</div>
 		/* get next import ID */
 		$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_siteid, import_projectid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','$siteid','$projectid','$anonymize','$permanent')";
 		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadID = mysql_insert_id();
 		
 		//echo "I'm still here\n";
@@ -897,7 +897,7 @@ question_num, question_text, datatype, values, comment</div>
 		echo "</ul>";
 		
 		$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	
@@ -909,7 +909,7 @@ question_num, question_text, datatype, values, comment</div>
 		/* get next import ID */
 		$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_siteid, import_projectid) values ('dicom',now(),'created','$siteid','$projectid')";
 		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadID = mysql_insert_id();
 		
 		if (is_array($importdirs)) {
@@ -917,14 +917,14 @@ question_num, question_text, datatype, values, comment</div>
 			foreach ($importdirs as $importdir) {
 				$sqlstring = "insert into import_requestdirs (importrequest_id, dir_num, dir_type) values ($uploadID, $i, '$importdir')";
 				//echo "[[$sqlstring]]";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$i++;
 			}
 		}
 		else {
 			$sqlstring = "insert into import_requestdirs (importrequest_id, dir_num, dir_type) values ($uploadID, 0, '$importdirs')";
 			//echo "[[$sqlstring]]";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		if ($uploadID != '') {
 			echo "Upload created with ID <b>$uploadID</b>. When you've copied your data to /upload/$uploadID, come back and mark it as ready-to-import";
@@ -1053,15 +1053,15 @@ question_num, question_text, datatype, values, comment</div>
 				/* check if the UID exists in any format anywhere */
 				$uid = mysql_real_escape_string(trim($uid));
 				$sqlstring = "select subject_id from subjects where uid = '$uid'";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$validid = true;
 				}
 				else {
 					$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid')";
 					//PrintSQL($sqlstring);
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					if (mysql_num_rows($result) > 0) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
 						$validid = true;
 					}
 				}
@@ -1244,15 +1244,15 @@ question_num, question_text, datatype, values, comment</div>
 			/* check if the UID exists in any format anywhere */
 			$uid = mysql_real_escape_string(trim($uid));
 			$sqlstring = "select subject_id from subjects where uid = '$uid'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			if (mysql_num_rows($result) > 0) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
 				$validid = true;
 			}
 			else {
 				$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid') or altuid = sha1(upper('$uid')) or altuid = sha1(lower('$uid'))";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$validid = true;
 				}
 			}
@@ -1329,7 +1329,7 @@ question_num, question_text, datatype, values, comment</div>
 				$sqlstring .= " where subject_id = $subjectRowID";
 			
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				//echo "[" . mysql_affected_rows() . "]<br>";
 				$numupdated += mysql_affected_rows();
 			}
@@ -1415,15 +1415,15 @@ question_num, question_text, datatype, values, comment</div>
 			/* check if the UID exists in any format anywhere */
 			$uid = mysql_real_escape_string(trim($uid));
 			$sqlstring = "select subject_id from subjects where uid = '$uid'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			if (mysql_num_rows($result) > 0) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
 				$validid = true;
 			}
 			else {
 				$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid') or altuid = sha1(upper('$uid')) or altuid = sha1(lower('$uid'))";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$validid = true;
 				}
 			}
@@ -1497,7 +1497,7 @@ question_num, question_text, datatype, values, comment</div>
 				$sqlstring = "update studies set study_ageatscan = '$age' where date(study_datetime) = '$scandate' and enrollment_id in (select enrollment_id from enrollment where subject_id = $subjectRowID)";
 			
 				PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				echo "[" . mysql_affected_rows() . "]<br>";
 				$numupdated += mysql_affected_rows();
 			}
@@ -1520,17 +1520,17 @@ question_num, question_text, datatype, values, comment</div>
 		$uid = mysql_real_escape_string(trim($uid));
 		$sqlstring = "select subject_id from subjects where uid = '$uid'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$subjectRowID = $row['subject_id'];
 		}
 		else {
 			$sqlstring = "select subject_id from subject_altuid where altuid = '$uid' or altuid = sha1('$uid')";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			if (mysql_num_rows($result) > 0) {
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$subjectRowID = $row['subject_id'];
 			}
 		}
@@ -1545,15 +1545,15 @@ question_num, question_text, datatype, values, comment</div>
 	function EnrollSubject($subjectRowID, $projectRowID) {
 		$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$enrollmentRowID = $row['enrollment_id'];
 		}
 		else {
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$enrollmentRowID = mysql_insert_id();
 		}
 		
@@ -1567,15 +1567,15 @@ question_num, question_text, datatype, values, comment</div>
 	function InsertInstrumentName($instrument) {
 		$sqlstring = "select measureinstrument_id from measureinstruments where instrument_name = '$instrument'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$measureinstrumentnameid = $row['measureinstrument_id'];
 		}
 		else {
 			$sqlstring = "insert into measureinstruments (instrument_name) values ('$instrument')";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$measureinstrumentnameid = mysql_insert_id();
 		}
 		return $measureinstrumentnameid;
@@ -1588,15 +1588,15 @@ question_num, question_text, datatype, values, comment</div>
 	function InsertMeasureName($measure) {
 		$sqlstring = "select measurename_id from measurenames where measure_name = '$measure'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$measurenameid = $row['measurename_id'];
 		}
 		else {
 			$sqlstring = "insert into measurenames (measure_name) values ('$measure')";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$measurenameid = mysql_insert_id();
 		}
 		return $measurenameid;
@@ -1705,7 +1705,7 @@ question_num, question_text, datatype, values, comment</div>
 							
 							$sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measure_dateentered2, instrumentname_id, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_rater2, measure_isdoubleentered, measure_datecomplete) values ($enrollmentRowID, now(), now(), '$instrumentnameid', '$measurenameid', '$type', '$valuestring','$valuenum', 'Imported', 'Imported', 1, now())";
 							//PrintSQL($sqlstring);
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							$c++;
 						}
 						$col++;
@@ -1857,7 +1857,7 @@ question_num, question_text, datatype, values, comment</div>
 
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle','$formdesc','" . $GLOBALS['username'] . "',now())";
 		PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$assessmentID = mysql_insert_id();
 		
 		for ($i=2;$i<=count($lines);$i++) {
@@ -1878,12 +1878,12 @@ question_num, question_text, datatype, values, comment</div>
 			
 			$sqlstring = "insert into assessment_formfields (form_id, formfield_desc, formfield_values, formfield_datatype, formfield_order) values ($assessmentID,'$question','$values','$type','$qnum')";
 			PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		$sqlstring = "update assessment_forms set form_ispublished = 1 where form_id = $assessmentID";
 		PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -1892,16 +1892,16 @@ question_num, question_text, datatype, values, comment</div>
 	/* -------------------------------------------- */
 	function DisplayAssessmentFormTemplate($id) {
 		$sqlstring = "select * from assessment_forms where form_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$csv = "$id\n";
 		/* display all other rows, sorted by order */
 		$sqlstring = "select * from assessment_formfields where form_id = $id order by formfield_order + 0";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$formfield_order = $row['formfield_order'];
 			$orders[] = $formfield_order;
 		}
@@ -1921,8 +1921,8 @@ question_num, question_text, datatype, values, comment</div>
 	function DisplayAssessmentForm($id) {
 	
 		$sqlstring = "select * from assessment_forms where form_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
@@ -1950,8 +1950,8 @@ question_num, question_text, datatype, values, comment</div>
 			<?
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from assessment_formfields where form_id = $id order by formfield_order + 0";
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$formfield_id = $row['formfield_id'];
 					$formfield_desc = $row['formfield_desc'];
 					$formfield_values = $row['formfield_values'];

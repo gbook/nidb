@@ -60,8 +60,8 @@
 				<option value="">Select Instance...</option>
 				<?
 					$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$instance_id = $row['instance_id'];
 						$instance_name = $row['instance_name'];
 						?>
@@ -111,9 +111,9 @@
 				<br><span style="color: #CCC">Most recent subjects</span>
 				<?
 				$sqlstring = "select a.mostrecent_date, a.subject_id, b.uid from mostrecent a left join subjects b on a.subject_id = b.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null order by a.mostrecent_date desc";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$subjectid = $row['subject_id'];
 						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
 						$uid = $row['uid'];
@@ -128,9 +128,9 @@
 				<?
 				$sqlstring = "select a.mostrecent_date, a.study_id, b.study_num, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null order by a.mostrecent_date desc";
 				//PrintSQL($sqlstring);
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studyid = $row['study_id'];
 						$studynum = $row['study_num'];
 						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
@@ -194,8 +194,8 @@
 <?
 	# get number of fileio operations pending
 	$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
-	$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$numiopending = $row['numiopending'];
 	
 	# get number of directories in dicomincoming directory
@@ -208,8 +208,8 @@
 	
 	# get number of import requests
 	$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
-	$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$numimportpending = $row['numimportpending'];
 	
 	# get number of directories in dicomincoming directory
@@ -232,8 +232,8 @@
 <?
 /* check for system status messages */
 	$sqlstring = "select * from system_messages where message_status = 'active' order by message_date desc";
-	$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-	if (mysql_num_rows($result) > 0) {
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	if (mysqli_num_rows($result) > 0) {
 ?>
 <table width="100%" cellspacing="0" cellpadding="0">
 	<tr>
@@ -241,7 +241,7 @@
 			<div style="color: white; background-color: #FF5500; padding: 5px">System messages</div>
 			<ul>
 			<?
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$message = $row['message'];
 				$message_date = $row['message_date'];
 			?>

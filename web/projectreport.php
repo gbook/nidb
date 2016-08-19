@@ -66,8 +66,8 @@
 		/* get enrollment information */
 		$sqlstring = "select a.project_id 'projectid', a.*, b.*, c.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = $enrollmentid";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$enroll_startdate = $row['enroll_startdate'];
 		$enroll_enddate = $row['enroll_enddate'];
@@ -83,8 +83,8 @@
 		$projectaccess = 1;
 		$sqlstring2 = "select view_data from user_project where project_id = $projectid and view_data = 1 and user_id in (select user_id from users where username = '" . $_SESSION['username'] . "')";
 		//PrintSQL($sqlstring2);
-		$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-		if (mysql_num_rows($result2) < 1) {
+		$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+		if (mysqli_num_rows($result2) < 1) {
 			$projectaccess = 0;
 			echo "You do not have permissions to view this project";
 			//return;
@@ -102,8 +102,8 @@
 		/* get the project protocol info about this project */
 		$sqlstring = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = $projectid";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$projectprotocolid = $row['projectprotocol_id'];
 			//$projectid = $row['project_id'];
 			$protocolgroupid = $row['protocolgroup_id'];
@@ -120,19 +120,19 @@
 			$found = 0;
 			$foundinenroll = 0;
 			$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = $protocolgroupid";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$count = mysql_num_rows($resultA);
-			while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$count = mysqli_num_rows($resultA);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$p = $rowA['pgitem_protocol'];
 				$pgitemid = $rowA['pgitem_id'];
 				$modality = strtolower($modality);
 				
 				$sqlstringB = "select a.*, b.enrollment_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc = '$p' and c.subject_id = $subjectid";
-				$resultB = MySQLQuery($sqlstringB,__FILE__,__LINE__);
-				//$count = mysql_num_rows($resultB);
+				$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+				//$count = mysqli_num_rows($resultB);
 				//PrintSQL($sqlstringB);
 				//echo "[count] [$count]<br>";
-				while ($rowB = mysql_fetch_array($resultB, MYSQL_ASSOC)) {
+				while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 					$seriesid = $rowB['series_id'];
 					$enrollid = $rowB['enrollment_id'];
 					$found = 1;
@@ -186,8 +186,8 @@
 		}
 
 		$sqlstring = "select project_name from projects where project_id = $projectid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectname = $row['project_name'];
 		
 		$urllist['Project List'] = "projects.php";
@@ -202,8 +202,8 @@
 		/* get the project protocol info about this project */
 		$sqlstring2 = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = $projectid order by protocolgroup_modality, protocolgroup_name";
 		//PrintSQL($sqlstring);
-		$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-		while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+		$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+		while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 			$projectprotocolid = $row2['projectprotocol_id'];
 			$protocolgroupid = $row2['protocolgroup_id'];
 			$name = $row2['protocolgroup_name'];
@@ -219,8 +219,8 @@
 	
 		/* get enrollment list for this project */
 		$sqlstring = "select a.enrollment_id, b.* from enrollment a left join subjects b on a.subject_id = b.subject_id where a.project_id = $projectid order by b.uid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			$subjectid = $row['subject_id'];
@@ -232,8 +232,8 @@
 			/* get enrollment information */
 			$sqlstring1 = "select a.project_id 'projectid', a.*, b.*, c.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = $enrollmentid";
 			//PrintSQL($sqlstring);
-			$result1 = MySQLQuery($sqlstring1, __FILE__, __LINE__);
-			$row1 = mysql_fetch_array($result1, MYSQL_ASSOC);
+			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
+			$row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC);
 			$enrollmentid = $row1['enrollment_id'];
 			$enroll_startdate = $row1['enroll_startdate'];
 			$enroll_enddate = $row1['enroll_enddate'];
@@ -249,8 +249,8 @@
 			$projectaccess = 1;
 			$sqlstring2 = "select view_data from user_project where project_id = $projectid and view_data = 1 and user_id in (select user_id from users where username = '" . $_SESSION['username'] . "')";
 			//PrintSQL($sqlstring2);
-			$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-			if (mysql_num_rows($result2) < 1) {
+			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			if (mysqli_num_rows($result2) < 1) {
 				$projectaccess = 0;
 				echo "You do not have permissions to view this project";
 				return;
@@ -258,8 +258,8 @@
 			/* get the project protocol info about this project */
 			$sqlstring2 = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = $projectid order by protocolgroup_modality, protocolgroup_name";
 			//PrintSQL($sqlstring);
-			$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$projectprotocolid = $row2['projectprotocol_id'];
 				//$projectid = $row2['project_id'];
 				$protocolgroupid = $row2['protocolgroup_id'];
@@ -277,20 +277,20 @@
 				$foundlocations = '';
 				$rowcount = 0;
 				$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = $protocolgroupid";
-				$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-				$count = mysql_num_rows($resultA);
-				while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				$count = mysqli_num_rows($resultA);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$p = $rowA['pgitem_protocol'];
 					$pgitemid = $rowA['pgitem_id'];
 					$modality = strtolower($modality);
 					
 					//$count = 0;
 					$sqlstringB = "select a.*, b.enrollment_id, b.study_id, b.study_num, d.project_name from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id where a.series_desc = '$p' and c.subject_id = $subjectid";
-					$resultB = MySQLQuery($sqlstringB,__FILE__,__LINE__);
-					//$count = mysql_num_rows($resultB);
+					$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+					//$count = mysqli_num_rows($resultB);
 					//PrintSQL($sqlstringB);
 					//echo "[count] [$count]<br>";
-					while ($rowB = mysql_fetch_array($resultB, MYSQL_ASSOC)) {
+					while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 						$seriesid = $rowB['series_id'];
 						$enrollid = $rowB['enrollment_id'];
 						$studyid = $rowB['study_id'];

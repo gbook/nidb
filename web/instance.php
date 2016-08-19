@@ -103,7 +103,7 @@
 
 		/* update the contact */
 		$sqlstring = "update contacts set contact_fullname = '$contactfullname', contact_title = '$contacttitle', contact_address1 = '$contactaddress1', contact_address2 = '$contactaddress2', contact_address3 = '$contactaddress3', contact_city = '$contactcity', contact_state = '$contactstate', contact_country = '$contactcountry', contact_phone1 = '$contactphone1', contact_phone2 = '$contactphone1', contact_phone3 = '$contactphone3', contact_email1 = '$contactemail1', contact_email2 = '$contactemail2', contact_email3 = '$contactemail3', contact_website = '$contactwebsite', contact_company = '$contactcompany', contact_department = '$contactdepartment'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$username?> updated</span></div><br><br><?
 	}
@@ -134,12 +134,12 @@
 		
 		/* insert the new user */
 		$sqlstring = "insert into contacts (contact_fullname, contact_title, contact_address1, contact_address2, contact_address3, contact_city, contact_state, contact_country, contact_phone1, contact_phone2, contact_phone3, contact_email1, contact_email2, contact_email3, contact_website, contact_company, contact_department) values ('$contactfullname', '$contacttitle', '$contactaddress1', '$contactaddress2', '$contactaddress3', '$contactcity', '$contactstate', '$contactcountry', '$contactphone1', '$contactphone2', '$contactphone3', '$contactemail1', '$contactemail2', '$contactemail3', '$contactwebsite', '$contactcompany', '$contactdepartment')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$contactid = mysql_insert_id();
 		
 		/* associate the contact with the instace */
 		$sqlstring = "insert into instance_contact (instance_id, contact_id) values ($id, $contactid)";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$contactfullname?> added</span></div><br><br><?
 	}
@@ -151,11 +151,11 @@
 	function DeleteContact($contactid) {
 		/* remove the contact */
 		$sqlstring = "delete from contacts where contact_id = $contactid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* remove the associations in the instance_contact table */
 		$sqlstring = "delete from instance_contact where contact_id = $contactid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -167,8 +167,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from contacts where contact_id = $contactid";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$contactfullname = $row['contact_fullname'];
 			$contacttitle = $row['contact_title'];
 			$contactaddress1 = $row['contact_address1'];
@@ -634,8 +634,8 @@
 			<tbody>
 			<?
 				$sqlstring = "select * from instance where instance_ownerid = (select user_id from users where username = '" . $_SESSION['username'] . "') order by instance_name";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$instanceid = $row['instance_id'];
 					$uid = $row['instance_uid'];
 					$name = $row['instance_name'];
@@ -667,9 +667,9 @@
 			</thead>
 			<?
 				$sqlstring = "select * from contacts where contact_id in (select contact_id from instance_contact where instance_id = $id)";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$contactid = $row['contact_id'];
 						$name = $row['contact_fullname'];
 						$email = $row['contact_email1'];
@@ -720,9 +720,9 @@
 			</script>
 			<?
 				$sqlstring = "select * from instance_pricing where (now() between pricing_startdate and pricing_enddate) and pricing_internal <> 1";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$priceid = $row['pricing_id'];
 						$item = $row['pricing_itemname'];
 						$notes = $row['pricing_comments'];
@@ -783,9 +783,9 @@
 			</thead>
 			<?
 				$sqlstring = "select * from instance_usage a left join instance_pricing b on a.pricing_id = b.pricing_id where a.instance_id = $id order by a.usage_date";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$usagedate = $row['usage_date'];
 						$usageamount = $row['usage_amount'];
 						$item = $row['pricing_itemname'];

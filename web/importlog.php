@@ -152,8 +152,8 @@
 			</thead>
 			<tbody>
 		<?
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$patientid = $row['patientid_orig'];
 			$patientname = $row['patientname_orig'];
 			$institution = $row['institution_orig'];
@@ -233,8 +233,8 @@
 	/* -------------------------------------------- */
 	function DisplayAllImportReceived() {
 		$sqlstring = "select * from import_received order by import_uploadid, import_filename";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uploadid = $row['import_uploadid'];
 			$filename = $row['import_filename'];
 			$importdate = $row['import_datetime'];
@@ -312,12 +312,12 @@
 		
 		/* delete any transactions older than 21 days */
 		$sqlstring = "delete from import_transactions where transaction_startdate < date_sub(now(), interval 21 day)";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numdeleted1 = mysql_affected_rows();
 		
 		/* delete import_requests that are not in the transaction table */
 		$sqlstring = "delete from import_requests where import_transactionid not in (select importtrans_id from import_transactions)";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numdeleted2 = mysql_affected_rows();
 		
 		?>
@@ -338,8 +338,8 @@
 			</thead>
 		<?
 		$sqlstring = "select * from import_transactions order by transaction_startdate desc";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$transactionid = $row['importtrans_id'];
 			$transaction_startdate = $row['transaction_startdate'];
 			$transaction_enddate = $row['transaction_enddate'];
@@ -348,44 +348,44 @@
 			$transaction_username = $row['transaction_username'];
 			
 			$sqlstringA = "select count(*) 'numblocks' from import_requests where import_transactionid = $transactionid";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numblocks = $rowA['numblocks'];
 			
 			/* get the number in each state */
 			$sqlstringA = "select count(*) 'numuploading' from import_requests where import_transactionid = $transactionid and import_status = 'uploading'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numuploading = $rowA['numuploading'];
 
 			$sqlstringA = "select count(*) 'numpending' from import_requests where import_transactionid = $transactionid and import_status = 'pending'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numpending = $rowA['numpending'];
 
 			$sqlstringA = "select count(*) 'numreceiving' from import_requests where import_transactionid = $transactionid and import_status = 'receiving'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numreceiving = $rowA['numreceiving'];
 
 			$sqlstringA = "select count(*) 'numreceived' from import_requests where import_transactionid = $transactionid and import_status = 'received'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numreceived = $rowA['numreceived'];
 
 			$sqlstringA = "select count(*) 'numarchiving' from import_requests where import_transactionid = $transactionid and import_status = 'archiving'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numarchiving = $rowA['numarchiving'];
 
 			$sqlstringA = "select count(*) 'numarchived' from import_requests where import_transactionid = $transactionid and import_status = 'archived'";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numarchived = $rowA['numarchived'];
 			
 			$sqlstringA = "select count(*) 'numblank' from import_requests where import_transactionid = $transactionid and import_status = ''";
-			$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$numblank = $rowA['numblank'];
 			
 			if ($transaction_status == 'uploading') {
@@ -445,8 +445,8 @@
 			</thead>
 		<?
 		$sqlstring = "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = $transactionid order by import_datetime desc";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$importrequestid = $row['importrequest_id'];
 			$import_datatype = $row['import_datatype'];
 			$import_modality = $row['import_modality'];
@@ -596,8 +596,8 @@
 	/* -------------------------------------------- */
 	function DisplaySingleTransaction($transactionid) {
 		$sqlstring = "select * from import_requests where import_transactionid = $transactionid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$groupids[] = $row['importrequest_id'];
 		}
 		$grouplist = implode2(',',$groupids);
@@ -662,10 +662,10 @@
 			</thead>
 			<tbody>
 		<?
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQLTable($result,"importlog.php?action=displaylog",$orderby,8);
 		//PrintSQLTable($result);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$patientid = $row['patientid_orig'];
 			$patientname = $row['patientname_orig'];
 			$institution = $row['institution_orig'];

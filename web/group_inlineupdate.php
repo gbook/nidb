@@ -27,15 +27,15 @@
 	
 	if (isset($_POST['element_id'])) {
 		/* database connection */
-		$link = mysql_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-		mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+		$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+		mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
 		$id = $_POST['id'];
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];
 		$value = mysql_real_escape_string($_POST['update_value']);
 		$sqlstring = "update enrollment set $field = '$value' where enrollment_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($_POST['update_value'] == "") { $dispvalue = " "; } else { $dispvalue = $_POST['update_value']; }
 		echo str_replace('\n',"<br>",$dispvalue);
 	}

@@ -106,8 +106,8 @@
 	function DisplayEmptySubjects() {
 
 		$sqlstring = "select * from subjects where subject_id not in (select subject_id from enrollment) and isactive = 1";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$numrows = mysql_num_rows($result)
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result)
 		?>
 		
 		<form action="cleanup.php" method="post" name="theform">
@@ -136,7 +136,7 @@
 			});
 			</script>
 		<?
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subject_id = $row['subject_id'];
 			$name = $row['name'];
 			$uid = $row['uid'];
@@ -171,8 +171,8 @@
 	function DisplayEmptyEnrollments() {
 
 		$sqlstring = "select a.*, b.uid, b.subject_id, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from measures) and a.enrollment_id not in (select enrollment_id from prescriptions) and b.isactive = 1 order by a.lastupdate";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$numrows = mysql_num_rows($result)
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result)
 		?>
 		
 		<form action="cleanup.php" method="post" name="theform">
@@ -203,7 +203,7 @@
 			});
 			</script>
 		<?
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollment_id = $row['enrollment_id'];
 			$project_name = $row['project_name'];
 			$uid = $row['uid'];
@@ -244,7 +244,7 @@
 		echo "<tt style='font-size:8pt'>";
 		foreach ($subjectids as $id) {
 			$sqlstring = "update subjects set isactive = 0 where subject_id = '$id'";
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			echo "Deactivated $id: " . mysql_affected_rows() . " altered rows<br>";
 		}
 		echo "</tt>";
@@ -259,8 +259,8 @@
 		
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',',$subjectids) . ")";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ids[] = $row['subject_id'];
 			$uids[] = $row['uid'];
 		}
@@ -268,7 +268,7 @@
 		/* delete all information about this SUBJECT from the database */
 		foreach ($ids as $id) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
 		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
@@ -285,7 +285,7 @@
 		foreach ($enrollmentids as $id) {
 			$sqlstring = "delete from enrollment where enrollment_id = '$id'";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			echo "Deleted $id: " . mysql_affected_rows() . " altered rows<br>";
 		}
 		echo "</tt>";

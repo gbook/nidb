@@ -84,9 +84,9 @@
 	function SendEmail($emailbody, $emailsubject, $emailto) {
 
 		$sqlstring = "select user_email from users where user_email <> ''";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$numrows = mysql_num_rows($result);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$emailto = $row['user_email'];
 			/* send the email */
 			if (!SendGmail($emailto,$emailsubject,$emailbody, 1, 0)) {

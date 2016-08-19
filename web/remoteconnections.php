@@ -94,7 +94,7 @@
 		/* insert the new site */
 		$sqlstring = "insert into remote_connections (conn_name, user_id, remote_server, remote_username, remote_password, remote_instanceid, remote_projectid, remote_siteid) values ('$connname', (select user_id from users where username = '" . $GLOBALS['username'] . "'), '$remoteserver', '$remoteusername', sha1('$remotepassword'), '$remoteinstanceid', '$remoteprojectid', '$remotesiteid')";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
@@ -116,7 +116,7 @@
 		/* insert the new site */
 		$sqlstring = "update remote_connections set conn_name = '$connname', remote_server = '$remoteserver', remote_username = '$remoteusername', remote_password = sha1('$remotepassword'), remote_instanceid = '$remoteinstanceid', remote_projectid = '$remoteprojectid', remote_siteid = '$remotesiteid' where remoteconn_id = $id";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
@@ -127,7 +127,7 @@
 	/* -------------------------------------------- */
 	function DeleteConnection($id) {
 		$sqlstring = "delete from remote_connections where remoteconn_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Connection <?=$id?> deleted</span></div><br><br><?
 	}	
@@ -141,8 +141,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from remote_connections where remoteconn_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$connname = $row['conn_name'];
 			$remoteserver = $row['remote_server'];
 			$remoteusername = $row['remote_username'];
@@ -240,8 +240,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['remoteconn_id'];
 					$connname = $row['conn_name'];
 					$remoteserver = $row['remote_server'];

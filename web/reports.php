@@ -77,8 +77,8 @@
 					<?
 					/* get a list of modalities */
 					$sqlstring = "select distinct(study_modality) 'modality' from studies";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$modality = $row['modality'];
 						
 						?>
@@ -88,8 +88,8 @@
 						$years = array();
 						/* get the range of years that studies have occured */
 						$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_modality = '$modality' order by year(study_datetime) desc";
-						$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
-						while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 							array_push($years, $row2['theyear']);
 						}
 						foreach ($years as $year) {
@@ -107,8 +107,8 @@
 					<?
 					/* get a list of modalities */
 					$sqlstring = "select distinct(study_site) 'study_site' from studies";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studysite = mysql_real_escape_string($row['study_site']);
 						
 						?>
@@ -118,8 +118,8 @@
 						$years = array();
 						/* get the range of years that studies have occured */
 						$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_site = '$studysite' order by year(study_datetime) desc";
-						$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
-						while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 							array_push($years, $row2['theyear']);
 						}
 						foreach ($years as $year) {
@@ -305,8 +305,8 @@
 				$sqlstring = "SELECT count(*) 'count' FROM studies WHERE dayofyear(study_datetime) = $doy and year(study_datetime) = $year and study_modality = '$modality'";
 			}
 			//echo $sqlstring;
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numstudies = $row['count'];
 			if ($type == "studies") {
 				$percent = round(($numstudies/12)*100);
@@ -384,8 +384,8 @@
 				<th>Read findings</th>
 			</tr>
 		<?
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$gender = $row['gender'];
 			$subjectid = $row['subject_id'];
@@ -424,8 +424,8 @@
 	function ViewSeries($datestart, $dateend) {
 		$sqlstring = "select * from series where series_datetime between '$datestart' and '$dateend' order by series_datetime";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$seriesid = $row['seriesid'];
 			$studyid = $row['studyid'];
 			$series_datetime = $row['series_datetime'];

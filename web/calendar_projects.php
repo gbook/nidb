@@ -6,7 +6,7 @@
 <? include("menu.php") ?>
 <br><br>
 <?
-	mysql_select_db("calendar") or die ("Could not select database<br>");
+	mysqli_select_db("calendar") or die ("Could not select database<br>");
 	
 	/* get variables */
 	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
@@ -68,8 +68,8 @@
 		</tr>
 		<?
 		$sqlstring = "select * from projects where project_enddate > now()";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['project_id'];
 			$name = $row['project_name'];
 			$admin = $row['project_admin'];
@@ -106,7 +106,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "insert into projects (project_name, project_description, project_admin, project_startdate, project_enddate) values ('$name','$description','$admin',now(),'3000-01-01 00:00:00')";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -128,7 +128,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "update projects set project_name = '$name', project_description = '$description', project_admin = '$admin' where project_id = '$id'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -138,7 +138,7 @@
 	/* ----------------------------------------------- */
 	function Delete($id) {
 		$sqlstring = "update projects set project_enddate = now() where project_id = '$id'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -185,8 +185,8 @@
 	function EditForm($message, $id) {
 	
 		$sqlstring = "select * from projects where project_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		$description = $row['project_description'];
 		$admin = $row['project_admin'];

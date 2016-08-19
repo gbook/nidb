@@ -95,12 +95,12 @@
 		
 		/* update the instance */
 		$sqlstring = "update instance set instance_name = '$instancename' where instance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* add the users to the user_instance table */
 		foreach ($users as $userid) {
 			$sqlstring = "insert ignore into user_instance (instance_id, user_id) values ($id, $userid)";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		?><div align="center"><span class="message"><?=$instancename?> updated</span></div><br><br><?
@@ -118,18 +118,18 @@
 		do {
 			$instanceuid = NIDB\CreateUID('I');
 			$sqlstring = "SELECT * FROM `instance` WHERE instance_uid = '$instanceuid'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$count = mysql_num_rows($result);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$count = mysqli_num_rows($result);
 		} while ($count > 0);
 		
 		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$ownerid = $row['user_id'];
 		
 		/* insert the new instance */
 		$sqlstring = "insert into instance (instance_uid, instance_name, instance_ownerid) values ('$instanceuid', '$instancename', '$ownerid')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$instancename?> added</span></div><?
 	}
@@ -140,7 +140,7 @@
 	/* -------------------------------------------- */
 	function DeleteInstance($id) {
 		$sqlstring = "delete from instance where instance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
 
@@ -149,10 +149,10 @@
 	/* -------------------------------------------- */
 	function SetDefaultInstance($id) {
 		$sqlstring = "update instance set instance_default = 1 where instance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		$sqlstring = "update instance set instance_default = 0 where instance_id <> $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
 	
@@ -161,7 +161,7 @@
 	/* -------------------------------------------- */
 	function AcceptJoin($id) {
 		$sqlstring = "update user_instance set instance_joinrequest = 0 where userinstance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><div class="message">Request accepted</div><?
 	}
 
@@ -171,7 +171,7 @@
 	/* -------------------------------------------- */
 	function RejectJoin($id) {
 		$sqlstring = "delete from user_instance where userinstance_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><div class="message">Request accepted</div><?
 	}
 
@@ -184,8 +184,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from instance where instance_id = $id";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$instanceid = $row['instance_id'];
 			$uid = $row['instance_uid'];
 			$name = $row['instance_name'];
@@ -250,15 +250,15 @@
 					</tr>
 					<?
 						$sqlstring = "select user_id from user_instance where instance_id = $id";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$userids[] = $row['user_id'];
 						}
 						
 						$sqlstring = "select * from users order by username";
 						//echo "$sqlstring<br>";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$user_id = $row['user_id'];
 							$username = $row['username'];
 							$user_fullname = $row['user_fullname'];
@@ -320,8 +320,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from instance a left join users b on a.instance_ownerid = b.user_id order by a.instance_name";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['instance_id'];
 					$uid = $row['instance_uid'];
 					$name = $row['instance_name'];
@@ -361,8 +361,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from user_instance a left join users b on a.user_id = b.user_id left join instance c on a.instance_id = c.instance_id where instance_joinrequest = 1 order by c.instance_name";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['userinstance_id'];
 					$uid = $row['instance_uid'];
 					$name = $row['instance_name'];

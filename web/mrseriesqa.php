@@ -32,8 +32,8 @@
 
 	/* get the path to the QA info */
 	$sqlstring = "select a.*, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.mrseries_id = $id";
-	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$series_num = $row['series_num'];
 	$study_num = $row['study_num'];
 	$uid = $row['uid'];
@@ -74,9 +74,9 @@
 	<?
 		$sqlstring = "select *, uncompress(qcresults_valuetext) 'valuetext' from qc_moduleseries a left join qc_results b on a.qcmoduleseries_id = b.qcmoduleseries_id left join qc_modules c on a.qcmodule_id = c.qcmodule_id where a.series_id = $id and a.modality = 'mr' order by a.qcmodule_id";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$graphnum = 0;
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			//PrintVariable($row,'row');
 			$number = $row['qcresults_valuenumber'];
 			$text = $row['valuetext'];
@@ -89,8 +89,8 @@
 			/* get the result name */
 			$sqlstringA = "select * from qc_resultnames where qcresultname_id = '$resultnameid'";
 			//PrintSQL($sqlstringA);
-			$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringA</i><br>");
-			$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$resultname = $rowA['qcresult_name'];
 			$resulttype = $rowA['qcresult_type'];
 			$units = $rowA['qcresult_units'];

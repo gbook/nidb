@@ -270,9 +270,9 @@
 				// /* ignore allocations (for now) */
 				// /* check if there are any allocations for this calendar/project */
 				// $sqlstring = "select * from allocations where alloc_calendarid = $calendarid and alloc_projectid = $projectid";
-				// $result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				// if (mysql_num_rows($result) > 0) {
-					// $row = mysql_fetch_array($result, MYSQL_ASSOC);
+				// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				// if (mysqli_num_rows($result) > 0) {
+					// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 					// $alloc_days = $row['alloc_timeperiod'];
 					// $alloc_hours = $row['alloc_amount'];
 					
@@ -285,9 +285,9 @@
 					// else {
 						// $sqlstring = "SELECT unix_timestamp(appt_startdate)/3600 'appt_startdate', unix_timestamp(appt_enddate)/3600 'appt_enddate' FROM `calendar_appointments` WHERE appt_startdate between (date_add('$startdatetime', interval -$allocdays day)) and (date_add('$startdatetime', interval $allocdays day)) and appt_calendarid = $calendarid and appt_projectid = $projectid and appt_isalldayevent = 0 and appt_istimerequest = 0 and appt_deletedate > now() and appt_canceldate > now() and appt_id != $id";
 					// }
-					// $result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					// $total = 0;
-					// while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						// $start = $row['appt_startdate'];
 						// $end = $row['appt_enddate'];
 						// $apptlength = $end - $start;
@@ -310,9 +310,9 @@
 					$sqlstring = "select * from calendar_appointments where ( (appt_startdate > '$startdatetime' and appt_startdate < '$enddatetime') or (appt_enddate > '$startdatetime' and appt_enddate < '$enddatetime') or (appt_startdate = '$startdatetime' and appt_enddate = '$enddatetime') or (appt_startdate < '$startdatetime' and appt_enddate > '$startdatetime') or (appt_startdate < '$enddatetime' and appt_enddate > '$enddatetime') ) and appt_calendarid = $calendarid and appt_deletedate > now() and appt_canceldate > now() and appt_id != $id and appt_istimerequest <> 1";
 				}
 				//echo "<br>$sqlstring<br>";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$tstart = $row['appt_startdate'];
 						$tend = $row['appt_enddate'];
 						$ttitle = $row['appt_title'];
@@ -327,20 +327,20 @@
 			if ($method == "add") {
 				$sqlstring = "insert into calendar_appointments (appt_groupid, appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values ('$groupid', '$username', $calendarid, $projectid, '$title', '$details', '$startdatetime', '$enddatetime', $isalldayevent, $istimerequest)";
 				//echo "$sqlstring<br>";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* CALULATE&POPULATE GROUP ID */
 				if ($groupid == "") {
 					$groupid = mysql_insert_id();
 					$sqlstring = "update calendar_appointments set appt_groupid = $groupid where appt_id = $groupid";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
 			}
 			else {
 				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 1) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 1) {
 					$repeats = true;
 				}
 				
@@ -357,7 +357,7 @@
 				}
 				//echo "$sqlstring<br>";
 				//exit(0);
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		?>
@@ -385,7 +385,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "update calendars set calendar_name = '$name', calendar_description = '$description', calendar_location = '$location' where calendar_id = '$id'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -402,7 +402,7 @@
 			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = '$id'";
 		}
 		echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
 		Appointment deleted<br><br>
 		<a href="calendar.php" class="link">Back</a> to calendar
@@ -416,8 +416,8 @@
 	function Cancel($id, $currentcal, $cancelreason, $notifyusers, $cancelall) {
 		/* get appointment info before changing it */
 		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = '$id'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$calid = $row['appt_calendarid'];
 		$prjid = $row['appt_projectid'];
 		$startdate = date('M j, Y', strtotime($row['appt_startdate']));
@@ -434,7 +434,7 @@
 			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_id = '$id'";
 		}
 		echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* send an email if necessary */
 		if ($notifyusers != "") {
@@ -443,8 +443,8 @@
 			
 			/* get a list of users who care about this calendar and send an email */
 			$sqlstring = "select b.user_email 'email' from calendar_notifications a left join users b on a.not_userid = b.user_id where not_calendarid = $calid";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$recipients[] = $row['email'];
 			}
 			Sendmail($body, $recipients, $subject);
@@ -501,8 +501,8 @@
 			
 			$sqlstring = "select * from calendar_appointments where appt_id = $id";
 			//echo $sqlstring;
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$groupid = $row['appt_groupid'];
 			$username = $row['appt_username'];
 			$calendarid = $row['appt_calendarid'];
@@ -518,8 +518,8 @@
 			$details = $row['appt_details'];
 
 			$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			if (mysql_num_rows($result) > 1) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 1) {
 				$pagetitle = "Edit Recurring Appointment";
 				$repeats = true;
 			}
@@ -670,8 +670,8 @@
 					<select name="calendarid">
 					<?
 						$sqlstring = "select calendar_id, calendar_name from calendars where calendar_deletedate > now()";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$calid = $row['calendar_id'];
 							$name = $row['calendar_name'];
 							if ($calid == $calendarid) { $selected = "selected"; } else { $selected = ""; }
@@ -689,8 +689,8 @@
 					<select name="projectid">
 					<?
 						$sqlstring = "select project_id, project_name from calendar_projects where project_enddate > now()";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$prjid = $row['project_id'];
 							$name = $row['project_name'];
 							if ($prjid == $projectid) { $selected = "selected"; } else { $selected = ""; }

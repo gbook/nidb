@@ -65,7 +65,7 @@
 		
 		/* update the site */
 		$sqlstring = "update public_downloads set pd_password = '$pwd' where pd_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$id?> updated</span></div><br><br><?
 	}
@@ -76,7 +76,7 @@
 	/* -------------------------------------------- */
 	function DeleteDownload($id) {
 		//$sqlstring = "delete from nidb_sites where site_id = $id";
-		//$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 
@@ -109,8 +109,8 @@
 			<?
 				$sqlstring = "select * from public_downloads where pd_createdby = '" . $_SESSION['username'] . "' or pd_shareinternal = 1 order by pd_createdate desc";
 				//PrintSQL($sqlstring);
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['pd_id'];
 					$createdate = $row['pd_createdate'];
 					$expiredate = $row['pd_expiredate'];

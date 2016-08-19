@@ -93,7 +93,7 @@
 		
 		/* update the modality */
 		$sqlstring = "update modalities set modality_name = '$modalityname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		?><div align="center"><span class="message"><?=$modalityname?> updated</span></div><br><br><?
 	}
@@ -110,7 +110,7 @@
 		/* insert the new modality */
 		$sqlstring = "insert into modalities (modality_name, modality_desc, modality_admin, modality_createdate, modality_status) values ('$modalityname', '$modalitydesc', '$admin', now(), 'active')";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		?><div align="center"><span class="message"><?=$modalityname?> added</span></div><br><br><?
 	}
@@ -126,12 +126,12 @@
 		NavigationBar("Admin", $urllist);
 	
 		$sqlstring = "select mod_code from modalities where mod_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$modality = strtolower($row['mod_code']);
 	
 		$sqlstring = "show columns from $modality" . "_series";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		$fields_num = mysql_num_fields($result);
 
@@ -152,7 +152,7 @@
 		?>
 			</thead>
 		<?
-		if (mysql_num_rows($result) > 0) {
+		if (mysqli_num_rows($result) > 0) {
 			// printing table rows
 			while($row = mysql_fetch_row($result))
 			{
@@ -188,7 +188,7 @@
 	/* -------------------------------------------- */
 	function EnableModality($id) {
 		$sqlstring = "update modalities set mod_enabled = 1 where mod_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
 
@@ -197,7 +197,7 @@
 	/* -------------------------------------------- */
 	function DisableModality($id) {
 		$sqlstring = "update modalities set mod_enabled = 0 where mod_id = $id";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
 	
@@ -206,7 +206,7 @@
 	/* -------------------------------------------- */
 	function DeleteProtocolGroupItem($pgitemid) {
 		$sqlstring = "delete from protocolgroup_items where pgitem_id = $pgitemid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
 	
@@ -222,16 +222,16 @@
 		
 		$sqlstring = "select * from protocol_group where protocolgroup_name = '$thegroup'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$numrows = mysql_num_rows($result);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numrows = mysqli_num_rows($result);
 		if ($numrows > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$protocolgroupid = $row['protocolgroup_id'];
 		}
 		else {
 			$sqlstring = "insert into protocol_group (protocolgroup_name, protocolgroup_modality) values ('$thegroup','$modality')";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$protocolgroupid = mysql_insert_id();
 		}
 		
@@ -239,7 +239,7 @@
 			$protocol = mysql_real_escape_string($protocol);
 			$sqlstring = "insert ignore into protocolgroup_items (protocolgroup_id, pgitem_protocol) values ($protocolgroupid,'$protocol')";
 			//PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 	}
 	
@@ -256,8 +256,8 @@
 		$modalityname = mysql_real_escape_string($modalityname);
 		
 		$sqlstring = "select * from modalities where mod_id = '$id' or mod_code = '$modality'";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$modality = strtolower($row['mod_code']);
 
 		?>
@@ -281,8 +281,8 @@
 							<datalist id="protocolgroups">
 							<?
 							$sqlstring = "select distinct(`protocolgroup_name`) 'group' from protocol_group where protocolgroup_modality = '$modality'";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$group = $row['group'];
 								?><option value="<?=$group?>"><?
 							}
@@ -291,15 +291,15 @@
 						<?
 							
 						$sqlstring = "select distinct(series_desc), count(series_desc) 'count' from $modality" . "_series where trim(series_desc) <> '' group by series_desc order by series_desc";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$seriesdesc = $row['series_desc'];
 							$count = $row['count'];
 							$rows[$seriesdesc] += $count;
 						}
 						$sqlstring = "select distinct(series_protocol), count(series_protocol) 'count' from $modality" . "_series where trim(series_protocol) <> '' group by series_protocol order by series_protocol";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$seriesprotocol = $row['series_protocol'];
 							$count = $row['count'];
 							$rows[$seriesprotocol] += $count;
@@ -334,14 +334,14 @@
 						<tbody>
 						<?
 						$sqlstring = "select * from protocol_group where protocolgroup_modality = '$modality'";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$groupid = $row['protocolgroup_id'];
 							$groupname = $row['protocolgroup_name'];
 							
 							$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = $groupid";
-							$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-							$count = mysql_num_rows($resultA);
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							$count = mysqli_num_rows($resultA);
 							?>
 							<tr>
 								<td><?=$groupname?></td>
@@ -350,7 +350,7 @@
 										<summary style="font-size:9pt"><?=$count?> protocols</summary>
 										<table class="smallgraydisplaytable">
 										<?
-											while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$p = $rowA['pgitem_protocol'];
 												$pgitemid = $rowA['pgitem_id'];
 												?>
@@ -399,8 +399,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from modalities order by mod_code";
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['mod_id'];
 					$name = $row['mod_code'];
 					$desc = $row['mod_desc'];
@@ -412,16 +412,16 @@
 					
 					/* get information about the modality table */
 					$sqlstringA = "show table status like '" . strtolower($name) . "_series'";
-					$resultA = MySQLQuery($sqlstringA,__FILE__,__LINE__);
-					$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 					$rows = $rowA['Rows'];
 					$tablesize = $rowA['Data_length'];
 					$indexsize = $rowA['Index_length'];
 
 					/* get info about the modality protocol group */
 					//$sqlstringB = "select count(*) 'count' from modality_protocolgroup where modality = '$name'";
-					//$resultB = mysql_query($sqlstringB) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringB</i><br>");
-					//$rowB = mysql_fetch_array($resultB, MYSQL_ASSOC);
+					//$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					//$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 					//$grouprowcount = $rowB['count'];
 					
 					?>

@@ -72,8 +72,8 @@
 		
 		# get number of fileio operations pending
 		$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numiopending = $row['numiopending'];
 		
 		# get number of directories in dicomincoming directory
@@ -86,8 +86,8 @@
 		
 		# get number of import requests
 		$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numimportpending = $row['numimportpending'];
 		
 		# get number of directories in dicomincoming directory
@@ -140,8 +140,8 @@ echo $value . "\n";
 						<tbody>
 							<?
 								$sqlstring = "select * from modules order by module_name";
-								$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$id = $row['module_id'];
 									$module_name = $row['module_name'];
 									$module_status = $row['module_status'];
@@ -239,8 +239,8 @@ echo $value . "\n";
 					<tbody>
 					<?
 						$sqlstring = "select a.*, b.pipeline_name from pipeline_procs a left join pipelines b on a.pp_currentpipeline = b.pipeline_id order by a.pp_lastcheckin";
-						$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$pp_processid = $row['pp_processid'];
 							$pp_status = $row['pp_status'];
 							$pp_startdate = $row['pp_startdate'];

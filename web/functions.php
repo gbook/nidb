@@ -46,8 +46,9 @@
 	/* database connection */
 	if ($isdevserver) {
 		/* php-mysql */
-		$link = mysql_connect($cfg['mysqldevhost'],$cfg['mysqldevuser'],$cfg['mysqldevpassword']) or die ("Could not connect: " . mysql_error());
-		mysql_select_db($cfg['mysqldevdatabase']) or die ("Could not select database<br>");
+		//$link = mysqli_connect($cfg['mysqldevhost'],$cfg['mysqldevuser'],$cfg['mysqldevpassword']) or die ("Could not connect: " . mysql_error());
+		//mysqli_select_db($cfg['mysqldevdatabase']) or die ("Could not select database<br>");
+		
 		/* php-mysqli */
 		$linki = mysqli_connect($cfg['mysqldevhost'],$cfg['mysqldevuser'],$cfg['mysqldevpassword'],$cfg['mysqldevdatabase']) or die ("Could not connect: " . mysqli_connect_error());
 		
@@ -55,8 +56,9 @@
 	}
 	else {
 		/* php-mysql */
-		$link = mysql_connect($cfg['mysqlhost'],$cfg['mysqluser'],$cfg['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-		mysql_select_db($cfg['mysqldatabase']) or die ("Could not select database<br>");
+		//$link = mysqli_connect($cfg['mysqlhost'],$cfg['mysqluser'],$cfg['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+		//mysqli_select_db($cfg['mysqldatabase']) or die ("Could not select database<br>");
+		
 		/* php-mysqli */
 		$linki = mysqli_connect($cfg['mysqlhost'],$cfg['mysqluser'],$cfg['mysqlpassword'],$cfg['mysqldatabase']) or die ("Could not connect: " . mysqli_connect_error());
 		
@@ -86,8 +88,8 @@
 	
 	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
 	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta from users where username = '$username'";
-	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$isadmin = $row['user_isadmin'];
 	$issiteadmin = $row['user_issiteadmin'];
 	$enablebeta = $row['user_enablebeta'];
@@ -101,8 +103,8 @@
 	
 	/* each user can only be associated with 1 instance, so display that instance name at the top of the page */
 	$sqlstring = "select instance_name from instance where instance_id in (select instance_id from users where username = '$username')";
-	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	$row = mysql_fetch_array($result, MYSQL_ASSOC);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$instancename = $row['instance_name'];
 	
 
@@ -365,7 +367,7 @@
 			<?
 		}
 		echo "</tr>\n";
-		if (mysql_num_rows($result) > 0) {
+		if (mysqli_num_rows($result) > 0) {
 			// printing table rows
 			while($row = mysql_fetch_row($result))
 			{
@@ -390,11 +392,11 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- MySQLQuery ------------------------- */
+	/* ------- MySQLiQuery ------------------------- */
 	/* -------------------------------------------- */
-	function MySQLQuery($sqlstring,$file,$line,$error="") {
+	function MySQLiQuery($sqlstring,$file,$line,$error="") {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
-		$result = mysql_query($sqlstring);
+		$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 		if ($result == false) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
@@ -416,10 +418,10 @@
 	/* -------------------------------------------- */
 	/* ------- MySQLiQuery ------------------------ */
 	/* -------------------------------------------- */
-	function MySQLiQuery($sqlstring,$file,$line,$error="") {
-		$result = mysqli_query($GLOBALS['linki'],$sqlstring) or die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px'><b>Query failed</b> $file (line $line) <b>" . mysqli_error($GLOBALS['linki']) . "</b><br><br><tt>$sqlstring</tt><br></div>");
-		return $result;
-	}
+	//function MySQLiQuery($sqlstring,$file,$line,$error="") {
+	//	$result = mysqli_query($GLOBALS['linki'],$sqlstring) or die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px'><b>Query failed</b> $file (line $line) <b>" . mysqli_error($GLOBALS['linki']) . "</b><br><br><tt>$sqlstring</tt><br></div>");
+	//	return $result;
+	//}
 	
 	
 	/* -------------------------------------------- */
@@ -437,8 +439,8 @@
 	/* -------------------------------------------- */
 	function GetInstanceID() {
 		$sqlstring = "select user_instanceid from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instanceid = $row['user_instanceid'];
 		return $instanceid;
 	}
@@ -449,8 +451,8 @@
 	/* -------------------------------------------- */
 	function GetInstanceName($id) {
 		$sqlstring = "select instance_name from instance where instance_id = '$id'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$n = $row['instance_name'];
 		return $n;
 	}	
@@ -463,8 +465,8 @@
 		$modality = strtolower($modality);
 		
 		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$seriesnum = $row['series_num'];
@@ -486,8 +488,8 @@
 		}
 	
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$altuid = trim($row['altuid']);
 			
 			if ($altuid != '') {
@@ -515,9 +517,9 @@
 		}
 		
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = (select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid) order by isprimary desc limit 1";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQL($sqlstring);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		return $row['altuid'];
 	}
 
@@ -544,8 +546,8 @@
 					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') order by project_name";
 				}
 				
-				$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$project_id = $row['project_id'];
 					$project_name = $row['project_name'];
 					$project_costcenter = $row['project_costcenter'];
@@ -614,20 +616,20 @@
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			/* delete from the mr_qa table */
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			/* delete from the qc* tables */
 			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$qcmoduleseriesid = $row['qcmoduleseries_id'];
 
 				if ($qcmoduleseriesid != "") {
 					$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-					$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 					
 					$sqlstringB = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-					$resultB = MySQLQuery($sqlstringB, __FILE__, __LINE__);
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 					
 					/* delete the qa directory */
 					list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
@@ -671,12 +673,12 @@
 		/* insert the new most recent entry */
 		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, mostrecent_date) values ($userid, $subjectid, $studyid, now())";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete rows other than the most recent 15 items */
 		$sqlstring = "DELETE FROM `mostrecent` WHERE mostrecent_id NOT IN ( SELECT mostrecent_id FROM ( SELECT mostrecent_id FROM `mostrecent` where user_id = $userid ORDER BY mostrecent_date DESC LIMIT 15) foo) and user_id = $userid";
 		//PrintSQL($sqlstring);
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 	}
 	

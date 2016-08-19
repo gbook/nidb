@@ -83,7 +83,7 @@
 		
 		/* update the site */
 		$sqlstring = "update nidb_sites set site_name = '$sitename', site_contact = '$sitecontact', site_address = '$siteaddress' where site_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$sitename?> updated</span></div><br><br><?
 	}
@@ -102,7 +102,7 @@
 		
 		/* insert the new site */
 		$sqlstring = "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values ('$siteuid', uuid(), '$sitename', '$siteaddress', '$sitecontact')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
@@ -113,7 +113,7 @@
 	/* -------------------------------------------- */
 	function DeleteSite($id) {
 		$sqlstring = "delete from nidb_sites where site_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -125,8 +125,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from nidb_sites where site_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$siteid = $row['site_id'];
 			$uuid = $row['site_uuid'];
 			$name = $row['site_name'];
@@ -217,8 +217,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select * from nidb_sites order by site_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['site_id'];
 					$uuid = $row['site_uuid'];
 					$name = $row['site_name'];

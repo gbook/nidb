@@ -236,7 +236,7 @@
 		'$edit_fi_pattern', '$edit_fi_cutofffreq',
 		'$edit_se_pattern', '$edit_se_gmoutput', '$edit_se_wmoutput', '$edit_se_csfoutput', $edit_se_biascor, $edit_se_cleanup)";
 		//echo "$sqlstring<br>";
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$prefsid = mysql_insert_id();
 
 		?><div class="message">Preprocessing Pref file added</div><br><?
@@ -250,7 +250,7 @@
 	/* -------------------------------------------- */
 	function DeletePrefs($id) {
 		$sqlstring = "update task_preprocess_prefs set enddate = now() where taskid = $id";
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		?><div class="message">File '<? echo $id ?>' deleted</div><br>
 		<a href="tasks.php">Back to list of tasks</a>
@@ -264,8 +264,8 @@
 	function CopyToNew($taskid, $oldid) {
 		/* get the preprocessing information */
 		$sqlstring = "select * from task_preprocess_prefs where id = $oldid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		//$id = $row['id'];
 		//$taskid = $row['taskid'];
 		$description = mysql_real_escape_string($row['description']);
@@ -359,7 +359,7 @@
 		'$segment_pattern', '$segment_outputgm', '$segment_outputwm', '$segment_outputcsf', '$segment_outputbiascor', '$segment_outputcleanup')";
 		
 		//echo "$sqlstring<br>";
-		mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$prefsid = mysql_insert_id();
 
 		?><div class="message">Pre-processing Pref file added</div><br><?
@@ -373,8 +373,8 @@
 	/* -------------------------------------------- */
 	function AddPrefsForm($taskid) {
 		$sqlstring = "select task_shortname, task_autocsver from tasks where taskid = $taskid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$taskname = $row['task_shortname'];
 		$autocsver = $row['task_autocsver'];
 
@@ -852,8 +852,8 @@
 	/* -------------------------------------------- */
 	function GetDistinctDBField($field, $table) {
 		$sqlstring = "SELECT distinct($field) 'tag' from `$table` where realign_pattern <> ''";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tag = $row['tag'];
 			$str .= "\"$tag\",";
 		}
@@ -867,8 +867,8 @@
 	function DisplayPrefs($id, $viewtype) {
 		/* get the preprocessing information */
 		$sqlstring = "select * from task_preprocess_prefs where id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$id = $row['id'];
 		$taskid = $row['taskid'];
 		$description = $row['description'];
@@ -937,8 +937,8 @@
 
 		/* get task related information */
 		$sqlstring = "select a.*, b.datadirpath from tasks a, server_datadirs b where a.taskid = $taskid and a.task_datadirid = b.id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$autocsver = $row['task_autocsver'];
 		$taskpath = $row['task_shortpath'];
 		$taskname = $row['task_shortname'];
@@ -1337,8 +1337,8 @@ spm_defaults;
 	/* -------------------------------------------- */
 	function DisplaySummary($taskid) {
 		$sqlstring = "SELECT task_shortname FROM tasks WHERE taskid = $taskid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$taskname = $row['task_shortname'];
 		?>
 		<table><tr><td><img src="images/back16.png"></td><td><a href="tasks.php?action=viewtask&taskid=<? echo $taskid; ?>" class="link">Back</a> to <? echo $taskname; ?></td></tr></table><br>
@@ -1359,8 +1359,8 @@ spm_defaults;
 						<select name="oldprefid">
 						<?
 							$sqlstring = "SELECT a.shortname, b.task_shortname, a.id, b.task_autocsver FROM task_preprocess_prefs a left join tasks b on a.taskid = b.taskid WHERE a.enddate > now() and b.task_enddate > now() order by b.task_shortname";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$taskshortname = $row['task_shortname'];
 								$prefsshortname = $row['shortname'];
 								$id = $row['id'];
@@ -1391,9 +1391,9 @@ spm_defaults;
 			</tr>
 			<?
 				$sqlstring = "select * from task_preprocess_prefs where taskid = $taskid and enddate > now()";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['id'];
 						$createdate = $row['startdate'];
 						$shortname = $row['shortname'];

@@ -69,8 +69,8 @@
 	}
 	
 	/* database connection */
-	$link = mysql_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link = mysqli_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
 	/* validate the key and redirect as necessary */
 	if ($a != "") {
@@ -108,9 +108,9 @@
 		/* check if the key exists in the users_pending table */
 		$sqlstring = "select * from public_downloads where pd_key = '$k'";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$id = $row['pd_id'];
 			$createdate = $row['pd_createdate'];
 			$expiredate = $row['pd_expiredate'];
@@ -174,7 +174,7 @@
 			<?
 			/* increment the numdownload for this download... i know, its not really accurate, but it'll be a ballpark figure. Chances are if they're coming to this page, they're only here to click this download link */
 			$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = $id";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		return 1;
 	}

@@ -28,8 +28,8 @@
 	$returnarray = array();
 	
 	$sqlstring = "select uid from subjects where uid like '%$term%'";
-	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 		$uid = $row['uid'];
 		$arr['id'] = $uid;
 		$arr['label'] = $uid;

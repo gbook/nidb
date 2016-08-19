@@ -96,24 +96,24 @@
 		
 		/* update the project */
 		$sqlstring = "update projects set project_name = '$projectname', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		/* delete all previous rows from the db for this project */
 		$sqlstring = "delete from user_project where project_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update/insert view rows */
 		if (is_array($datausers)) {
 			foreach ($datausers as $userid) {
 				$sqlstring = "select * from user_project where user_id = $userid and project_id = $id";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_data = 1, view_phi = 0 where user_id = $userid and project_id = $id";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($userid, $id, 1, 0)";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -122,14 +122,14 @@
 		if (is_array($phiusers)) {
 			foreach ($phiusers as $userid) {
 				$sqlstring = "select * from user_project where user_id = $userid and project_id = $id";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_phi = 1 where user_id = $userid and project_id = $id";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($userid, $id, 0, 1)";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -155,7 +155,7 @@
 		
 		/* insert the new project */
 		$sqlstring = "insert into projects (project_uid, project_name, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$projectname?> added</span></div><br><br><?
 	}
@@ -166,7 +166,7 @@
 	/* -------------------------------------------- */
 	function DeleteProject($id) {
 		$sqlstring = "delete from projects where project_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -178,8 +178,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from projects where project_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			//$id = $row['project_id'];
 			$name = $row['project_name'];
 			$admin = $row['project_admin'];
@@ -227,8 +227,8 @@
 						<option value="">Select Instance...</option>
 					<?
 						$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$instance_id = $row['instance_id'];
 							$instance_uid = $row['instance_uid'];
 							$instance_name = $row['instance_name'];
@@ -248,8 +248,8 @@
 					<select name="admin">
 						<?
 							$sqlstring = "select * from users order by user_fullname, username";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
 								$username = $row['username'];
 								$fullname = $row['user_fullname'];
@@ -268,8 +268,8 @@
 					<select name="pi">
 						<?
 							$sqlstring = "select * from users order by user_fullname, username";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
 								$username = $row['username'];
 								$fullname = $row['user_fullname'];
@@ -340,16 +340,16 @@
 					$bgcolor = "#EEFFEE";
 					$sqlstring = "select * from users where user_id in (select user_id from user_instance where instance_id = $instanceid) order by username";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$user_id = $row['user_id'];
 						$username = $row['username'];
 						$user_fullname = $row['user_fullname'];
 						
 						$sqlstringA = "select * from user_project where user_id = $user_id and project_id = '$id'";
-						$resultA = mysql_query($sqlstringA) or die("Query failed: " . mysql_error() . "<br><i>$sqlstringA</i><br>");
-						if (mysql_num_rows($resultA) > 0) {
-							$rowA = mysql_fetch_array($resultA, MYSQL_ASSOC);
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						if (mysqli_num_rows($resultA) > 0) {
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$view_data = $rowA['view_data'];
 							$view_phi = $rowA['view_phi'];
 							$access_none = $rowA['access_none'];
@@ -390,8 +390,8 @@
 				<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="70%" height="400px" frameborder="0"></iframe>
 				<?
 					$sqlstring = "select * from project_protocol where project_id = $id";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$user_id = $row['user_id'];
 					}
 				?>
@@ -441,8 +441,8 @@
 					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
 				}
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['project_id'];
 					$projectuid = $row['project_uid'];
 					$name = $row['project_name'];

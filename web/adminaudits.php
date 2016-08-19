@@ -79,7 +79,7 @@
 		else {
 			$sqlstring = "select * from audit_results order by $orderby";
 		}
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		PrintSQLTable($result,"adminaudits.php?action=displaylog",$orderby,8);
 	}

@@ -63,15 +63,15 @@
 	function AddRating($username, $modality, $type, $id, $value, $notes) {
 		/* get user_id */
 		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 
 		$notes = mysql_real_escape_string($notes);
 		
 		$sqlstring = "insert into ratings (rater_id, data_id, data_modality, rating_type, rating_value, rating_notes, rating_date) values ($userid, $id, '$modality', '$type', $value, '$notes', now())";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	/* -------------------------------------------- */
@@ -80,7 +80,7 @@
 	function DeleteRating($ratingid) {
 		$sqlstring = "delete from ratings where rating_id = '$ratingid'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="message">Rating deleted</span><?
 	}
 
@@ -131,8 +131,8 @@
 			<?
 			if ($type == "series") {
 				$sqlstring = "select * from ratings a left join users b on a.rater_id = b.user_id where a.data_id = $id";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$username = $row['username'];
 					$rating_id = $row['rating_id'];
 					$rating_value = $row['rating_value'];

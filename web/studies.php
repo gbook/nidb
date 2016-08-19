@@ -163,12 +163,12 @@
 	function AddRating($seriesid, $modality, $value, $username) {
 		$sqlstring = "select user_id from users where username = '$username'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$user_id = $row['user_id'];
 		
 		$sqlstring = "insert into manual_qa (series_id, modality, rater_id, value) values ($seriesid, '$modality', $user_id, $value) on duplicate key update value = $value";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -198,7 +198,7 @@
 		
 		/* update the user */
 		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Study updated</span></div><br><br><?
 	}
@@ -213,7 +213,7 @@
 		$series_datetime = mysql_real_escape_string($series_datetime);
 
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($id, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series Added</span></div><br><br><?
 	}
@@ -227,7 +227,7 @@
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			$sqlstring = "update mr_series set ishidden = 1 where mrseries_id = $seriesid";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			?><div align="center"><span class="message">Series hidden</span></div><br><br><?
 		}
 		else {
@@ -244,7 +244,7 @@
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			$sqlstring = "update mr_series set ishidden = 0 where mrseries_id = $seriesid";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			?><div align="center"><span class="message">Series unhidden</span></div><br><br><?
 		}
 		else {
@@ -263,7 +263,7 @@
 		//echo "hello!";
 		$sqlstring = "update " . strtolower($modality) . "_series set series_datetime = '$series_datetime', series_protocol = '$protocol', series_notes  = '$notes' where " . strtolower($modality) . "series_id = $seriesid";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series Updated</span></div><br><br><?
 	}
@@ -274,8 +274,8 @@
 	/* -------------------------------------------- */
 	function DeleteConfirm($id) {
 		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$study_num = $row['study_num'];
 		$study_datetime = $row['study_datetime'];
 		$uid = $row['uid'];
@@ -307,8 +307,8 @@
 	/* -------------------------------------------- */
 	function Delete($id) {
 		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$study_num = $row['study_num'];
 		$study_datetime = $row['study_datetime'];
 		$uid = $row['uid'];
@@ -322,7 +322,7 @@
 		
 		/* get all existing info about this subject */
 		$sqlstring = "delete from studies where study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
 		<div align="center" class="message">Study deleted</div>
 		<?
@@ -339,8 +339,8 @@
 		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
 		$sqlstring = "select a.uid, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
 		echo "<li>Getting enrollment information [$sqlstring]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$olduid = $row['uid'];
 		$oldsubjectid = $row['subject_id'];
 		$oldprojectid = $row['project_id'];
@@ -348,8 +348,8 @@
 	
 		/* get subjectid from UID */
 		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newsubjectid = $row['subject_id'];
 		
 		if ($newsubjectid == "") {
@@ -364,29 +364,29 @@
 		/* check if the new subject is enrolled in the project, if not, enroll them */
 		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = $oldprojectid";
 		echo "<li>Checking if the new subject is already enrolled in this project [$sqlstring]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$newenrollmentid = $row['enrollment_id'];
 			echo "<li>Already enrolled: $newenrollmentid [$sqlstring]";
 		}
 		else {
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$newenrollmentid = mysql_insert_id();
 			echo "<li>Not already enrolled. Creating enrollment: $newenrollmentid [$sqlstring]";
 		}
 		
 		/* get the next study number for the new subject */
 		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$newstudynum = mysql_num_rows($result) + 1;
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$newstudynum = mysqli_num_rows($result) + 1;
 		echo "<li>Created new study in new subject: $newstudynum [$sqlstring]";
 		
 		/* change the enrollment_id associated with the studyid */
 		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
 		echo "<li>Updated existing studies to new enrollment [$sqlstring]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		/* move the data */
 		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
@@ -406,13 +406,13 @@
 	function MoveStudyToProject($subjectid, $studyid, $newprojectid) {
 		/* get the subject project id which has this subject and the new projectid */
 		$sqlstring = "select * from enrollment where project_id = $newprojectid and subject_id = $subjectid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		
 		$sqlstring = "update studies set enrollment_id = $enrollmentid where study_id = $studyid";
 		echo $sqlstring;
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><div align="center"><span class="message">Study moved to project <?=$newprojectid?></span></div><br><br><?
 	}
 
@@ -425,8 +425,8 @@
 		
 		$sqlstring = "select a.uid, c.study_num, d.series_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on c.enrollment_id = b.enrollment_id left join $modality" . "_series d on d.study_id = c.study_id where d.$modality" . "series_id = $seriesid";
 		//echo "[[$sqlstring]]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$seriesnum = $row['series_num'];
@@ -456,7 +456,7 @@
 		
 		$sqlstring = "update $modality" . "_series set series_numfiles = $filecount, series_size = $filesize where $modality" . "series_id = $seriesid";
 		//echo "$sqlstring";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	
@@ -500,8 +500,8 @@
 		}
 
 		$sqlstring = "select a.*, c.uid, c.subject_id, d.project_id, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$equipmentid = $row['equipment_id'];
 		$study_num = $row['study_num'];
@@ -558,8 +558,8 @@
 					<select name="modality">
 					<?
 						$sqlstring = "select * from modalities order by mod_desc";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mod_code = $row['mod_code'];
 							$mod_desc = $row['mod_desc'];
 							if ($mod_code == $study_modality) { $selected = "selected"; } else { $selected = ""; }
@@ -670,9 +670,9 @@
 		$id = mysql_real_escape_string($id);
 		
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$study_id = $row['study_id'];
 			$enrollmentid = $row['enrollment_id'];
 			//$equipmentid = $row['equipment_id'];
@@ -736,15 +736,15 @@
 		/* get privacy information */
 		$username = $_SESSION['username'];
 		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 
 		$sqlstring = "select b.* from user_project a left join projects b on a.project_id = b.project_id where a.project_id = $projectid and a.view_data = 1 and a.user_id = '$userid'";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$projectname = $row['project_name'];
 				$projectcostcenter = $row['project_costcenter'];
 				$dataprojectlist[] = "$projectname ($projectcostcenter)";
@@ -960,8 +960,8 @@
 							<?
 								$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
 								echo $sqlstringB;
-								$resultB = MySQLQuery($sqlstringB, __FILE__, __LINE__);
-								while ($rowB = mysql_fetch_array($resultB, MYSQL_ASSOC)) {
+								$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+								while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 									$project_id = $rowB['project_id'];
 									$project_name = $rowB['project_name'];
 									$project_costcenter = $rowB['project_costcenter'];
@@ -1029,9 +1029,9 @@
 
 		/* get the subject information */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$dbsubjectname = $row['name'];
 			$dbsubjectdob = $row['birthdate'];
 			$dbsubjectsex = $row['gender'];
@@ -1044,8 +1044,8 @@
 		/* get the movement & SNR stats by sequence name */
 		$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
 		//echo "$sqlstring2<br>";
-		$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-		while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+		$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+		while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 			$sequence = $row2['series_sequencename'];
 			$pstats[$sequence]['rangex'] = abs($row2['minx']) + abs($row2['maxx']);
 			$pstats[$sequence]['rangey'] = abs($row2['miny']) + abs($row2['maxy']);
@@ -1123,8 +1123,8 @@
 				<?
 					/* just get a list of MR series ids */
 					$sqlstring = "select mrseries_id from mr_series where study_id = $id order by series_num";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$mrseriesids[] = $row['mrseries_id'];
 					}
 				
@@ -1139,8 +1139,8 @@
 					else {
 						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = 'MR' and data_id in (" . implode(',',$mrseriesids) . ")";
 						
-						$result3 = MySQLQuery($sqlstring3, __FILE__, __LINE__);
-						while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
+						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 							$ratingseriesid = $row3['data_id'];
 							$ratings[$ratingseriesid][] = $row3['rating_value'];
 						}
@@ -1149,8 +1149,8 @@
 						/* get the actual MR series info */
 						mysql_data_seek($result,0);
 						$sqlstring = "select * from mr_series where study_id = $id order by series_num";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mrseries_id = $row['mrseries_id'];
 							$series_datetime = date('g:ia',strtotime($row['series_datetime']));
 							$protocol = $row['series_protocol'];
@@ -1214,7 +1214,7 @@
 								}
 								if ($numfiles_beh > 0) {
 									$sqlstring5 = "update mr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
-									$result5 = MySQLQuery($sqlstring5, __FILE__, __LINE__);
+									$result5 = MySQLiQuery($sqlstring5, __FILE__, __LINE__);
 								}
 							}
 							
@@ -1268,8 +1268,8 @@
 							$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 
 							$sqlstring2 = "select * from mr_qa where mrseries_id = $mrseries_id";
-							$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-							$row2 = mysql_fetch_array($result2, MYSQL_ASSOC);
+							$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+							$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 							$iosnr = $row2['io_snr'];
 							$pvsnr = $row2['pv_snr'];
 							$move_minx = $row2['move_minx'];
@@ -1394,8 +1394,8 @@
 							/* get manually entered QA info */
 							$sqlstringC = "select avg(value) 'avgrating', count(value) 'count' from manual_qa where series_id = $mrseries_id and modality = 'MR'";
 							//PrintSQL($sqlstringC);
-							$resultC = MySQLQuery($sqlstringC, __FILE__, __LINE__);
-							$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
+							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+							$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 							$avgrating = $rowC['avgrating'];
 							$ratingcount = $rowC['count'];
 							if ($avgrating < 0.5) { $manualqacolor = "black"; }
@@ -1576,7 +1576,7 @@
 										
 										/* update the database with the new info */
 										$sqlstring5 = "update mr_series set series_size = $dcmsize, numfiles = $dcmcount where mrseries_id = $mrseries_id";
-										$result5 = MySQLQuery($sqlstring5, __FILE__, __LINE__);
+										$result5 = MySQLiQuery($sqlstring5, __FILE__, __LINE__);
 									}
 								}
 							}
@@ -1733,7 +1733,7 @@
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 							<?
 							mysql_data_seek($result,0); /* reset the sql result, so we can loop through it again */
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$mrseries_id = $row['mrseries_id'];
 								?>
 								var uploader<?=$mrseries_id?> = new qq.FileUploader({
@@ -1766,9 +1766,9 @@
 
 		/* get the subject information */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$dbsubjectname = $row['name'];
 			$dbsubjectdob = $row['birthdate'];
 			$dbsubjectsex = $row['gender'];
@@ -1826,8 +1826,8 @@
 			<tbody>
 				<?
 					$sqlstring = "select * from ct_series where study_id = $id order by series_num";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$ctseries_id = $row['ctseries_id'];
 						$series_datetime = date('g:ia',strtotime($row['series_datetime']));
 						$series_desc = $row['series_desc'];
@@ -2013,7 +2013,7 @@
 									
 									/* update the database with the new info */
 									$sqlstring5 = "update ct_series set series_size = $dcmsize, numfiles = $dcmcount where ctseries_id = $ctseries_id";
-									$result5 = MySQLQuery($sqlstring5, __FILE__, __LINE__);
+									$result5 = MySQLiQuery($sqlstring5, __FILE__, __LINE__);
 								}
 							}
 						}
@@ -2079,15 +2079,15 @@
 		
 		/* get information to figure out the path */
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$study_num = $row['study_num'];
 		$uid = $row['uid'];
 		
 		/* get series number */
 		$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $series_id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$series_num = $row['series_num'];
 
 		/* reconstruct the series path and delete */
@@ -2100,7 +2100,7 @@
 		
 		$sqlstring = "delete from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $series_id";
 		echo "[$sqlstring]";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series deleted</span></div><br><br><?
 	}
@@ -2111,8 +2111,8 @@
 	/* -------------------------------------------- */
 	function EditGenericSeries($id, $modality) {
 		$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$series_id = $row[strtolower($modality) . "series_id"];
 		$series_num = $row['series_num'];
 		$series_datetime = $row['series_datetime'];
@@ -2136,8 +2136,8 @@
 					<select name="protocol">
 					<?
 						$sqlstring = "select * from modality_protocol where modality = '$modality'";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$protocolB = $row['protocol'];
 							?>
 							<option value="<?=$protocolB?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><?=$protocolB?></option>
@@ -2204,8 +2204,8 @@
 				<?
 					$max_seriesnum = 0;
 					$sqlstring = "select * from `" . strtolower($modality) . "_series` where study_id = $id order by series_num";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$series_id = $row[strtolower($modality) . "series_id"];
 						$series_num = $row['series_num'];
 						if ($series_num > $max_seriesnum) { $max_seriesnum = $series_num; }
@@ -2262,7 +2262,7 @@
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 					<?
 					mysql_data_seek($result,0); /* reset the sql result, so we can loop through it again */
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$series_id = $row[strtolower($modality) . "series_id"];
 						?>
 								var uploader<?=$series_id?> = new qq.FileUploader({
@@ -2289,8 +2289,8 @@
 						<select name="protocol">
 						<?
 							$sqlstring = "select * from modality_protocol where modality = '$modality'";
-							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$protocol = $row['protocol'];
 								?>
 								<option value="<?=$protocol?>"><?=$protocol?></option>
@@ -2480,10 +2480,10 @@
 		<?
 		$sqlstring = "select * from analysis a left join pipelines b on a.pipeline_id = b.pipeline_id where a.study_id = $studyid and analysis_statusdatetime is not null";
 		
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$pipelinename = $row['pipeline_name'];
 				$pipelineversion = $row['pipeline_version'];
 				$analysis_id = $row['analysis_id'];
@@ -2499,8 +2499,8 @@
 				?>
 				<table class="smalldisplaytable">
 					<?
-						$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-						while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 							//$step = $row['analysis_step'];
 							$pipelinename = $row2['pipeline_name'];
 							$type = $row2['result_type'];
@@ -2561,8 +2561,8 @@
 		}
 		
 		return
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
 		?>
 		<style>
 			.smallsearchbox { border: 1px solid #BBBBBB; font-size:9pt}
@@ -2578,8 +2578,8 @@
 						<select name="search_pipelineid">
 							<option value="">Select pipeline</option>
 						<?
-							$result2 = MySQLQuery($sqlstring2, __FILE__, __LINE__);
-							while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+							$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+							while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 								$pipelineid = $row2['pipeline_id'];
 								$pipelinename = $row2['pipeline_name'];
 								?>
@@ -2633,8 +2633,8 @@
 					$maximgwidth = $pagewidth/$imgperline;
 					$maximgwidth -= ($maximgwidth*0.05); /* subtract 5% of image width to give a gap between them */
 					$i = 0;
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$pipelinename = $row['pipeline_name'];
 						$name = $row['result_name'];
 						$filename = $row['result_filename'];
@@ -2677,8 +2677,8 @@
 			else { ?>
 			<tbody>
 				<?
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						//$step = $row['analysis_step'];
 						$pipelinename = $row['pipeline_name'];
 						$type = $row['result_type'];

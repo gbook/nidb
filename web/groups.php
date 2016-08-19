@@ -99,13 +99,13 @@
 
 		/* get userid */
 		$sqlstring = "select * from users where username = '$owner'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 		
 		/* insert the new group */
 		$sqlstring = "insert into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$groupname?> added</span></div><br><br><?
 	}
@@ -120,21 +120,21 @@
 		if (!empty($uids)) {
 			foreach ($uids as $uid) {
 				$sqlstring = "select subject_id from subjects where uid = '$uid'";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$uidid = $row['subject_id'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> already in this group</span></div><?
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
 				}
 			}
@@ -144,21 +144,21 @@
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
 				$sqlstring = "select c.subject_id from ".$modality."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.".$modality."series_id = $seriesid";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$uidid = $row['subject_id'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> already in this group</span></div><?
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
 				}
 			}
@@ -176,21 +176,21 @@
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
 				$sqlstring = "select study_id from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$studyid = $row['study_id'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
 				}
 				else {
 					/* insert the seriesids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
 				}
 			}
@@ -200,21 +200,21 @@
 			foreach ($studyids as $studyid) {
 				/* get the modality for this study */
 				$sqlstring = "select study_modality from studies where study_id = $studyid";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$row = mysql_fetch_array($result, MYSQL_ASSOC);
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$modality = $row['modality'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> already in this group</span></div><?
 				}
 				else {
 					/* insert the studyids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					//echo "$sqlstring<br>";
-					$result = mysql_query($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> added</span></div><?
 				}
 			}
@@ -231,15 +231,15 @@
 		foreach ($seriesids as $seriesid) {
 			/* check if its already in the db */
 			$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $seriesid and modality = '$modality'";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			if (mysql_num_rows($result) > 0) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
 				?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
 			}
 			else {
 				/* insert the seriesids */
 				$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $seriesid, '$modality')";
 				//echo "$sqlstring<br>";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
 			}
 		}
@@ -255,7 +255,7 @@
 		foreach ($itemid as $item) {
 			$sqlstring = "delete from group_data where subjectgroup_id = $item";
 			//echo "$sqlstring<br>";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			?><div align="center"><span class="message">Item <?=$item?> deleted</span></div><?
 		}
 		return;
@@ -267,7 +267,7 @@
 	/* -------------------------------------------- */
 	function DeleteGroup($id) {
 		$sqlstring = "delete from groups where group_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
 	
@@ -278,8 +278,8 @@
 	
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$groupname = $row['group_name'];
 		$grouptype = $row['group_type'];
 		
@@ -309,8 +309,8 @@
 		if ($grouptype == "subject") {
 			/* get the actual group data (subject level) */
 			$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$subjectid = $row['subject_id'];
 				$name = $row['name'];
 				$birthdate = $row['birthdate'];
@@ -383,7 +383,7 @@
 						<?
 						/* reset the result pointer to 0 to iterate through the results again */
 						mysql_data_seek($result,0);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$itemid = $row['subjectgroup_id'];
 							$subjectid = $row['subject_id'];
 							$name = $row['name'];
@@ -441,8 +441,8 @@
 			
 			/* get the demographics (study level) */
 			$sqlstring = "select c.enroll_subgroup, b.study_id, b.study_ageatscan,d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyid = $row['study_id'];
 				$studynum = $row['study_num'];
 				$studydesc = $row['study_desc'];
@@ -505,11 +505,11 @@
 			if ($measures == "all") {
 				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
 				//PrintSQL($sqlstringD);
-				$resultD = MySQLQuery($sqlstringD,__FILE__,__LINE__);
+				$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 				
 				if ($groupmeasures == "byvalue") {
 					$mnames = array('ANTDX','AVDDX','AX1Com1_Code','AX1Com2_Code','AX1Com3_Code','AX1Com4_Code','AX1Com5_Code','AX1Com6_Code','AX1Com7_Code','AX1Pri_Code','AXIIDX','BRDDX','DPNDX','DSM-Axis','DSM-Axis1','DSM-Axis2','DSM-Axis295.3','DSM-Axis304.3','DSM-AxisV71.09','DSM_IV_TR','DXGROUP_1','DX_GROUP','MiniDxn','MiniDxnFollowUp','NARDX','OBCDX','PARDX','ProbandGroup','Psychosis','relnm1','SAsubtype','SCZDX','status','SubjectType','SZTDX');
-					while ($rowD = mysql_fetch_array($resultD, MYSQL_ASSOC)) {
+					while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
 						$subjectid = $rowD['subject_id'];
 						$measurename = $rowD['measure_name'];
 
@@ -552,7 +552,7 @@
 					natsort($measurenames);
 				}
 				else {
-					while ($rowD = mysql_fetch_array($resultD, MYSQL_ASSOC)) {
+					while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
 						if ($rowD['measure_type'] == 's') {
 							$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'][] = $rowD['measure_valuestring'];
 						}
@@ -657,9 +657,9 @@
 
 						/* reset the result pointer to 0 to iterate through the results again */
 						$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						//mysql_data_seek($result,0);
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$studyid = $row['study_id'];
 							$studynum = $row['study_num'];
 							$studydesc = $row['study_desc'];
@@ -801,8 +801,8 @@
 		if ($grouptype == "series") {
 			/* get a distinct list of modalities... then get a list of series for each modality */
 			$sqlstring = "select distinct(modality) from group_data where group_id = $id order by modality";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$modalities[] = $row['modality'];
 			}
 			
@@ -810,8 +810,8 @@
 				$modality = strtolower($modality);
 				/* get the demographics (series level) */
 				$sqlstring = "select b.*,c.enroll_subgroup, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null group by e.uid";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$studyid = $row['study_id'];
 					$studynum = $row['study_num'];
 					$studydesc = $row['study_desc'];
@@ -904,9 +904,9 @@
 							/* get the demographics (series level) */
 							$sqlstring = "select b.*, c.study_num, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
 							//print "[$sqlstring]<br>";
-							$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							mysql_data_seek($result,0);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$seriesdesc = $row['series_desc'];
 								$seriesprotocol = $row['series_protocol'];
 								$seriesdatetime = $row['series_datetime'];
@@ -979,7 +979,7 @@
 		}
 		$sqlstring = "SELECT series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols, count(*) 'count' FROM `mr_series` where study_id in ($studies) and is_derived <> 1 group by series_altdesc, series_tr, series_te, series_flip, phaseencodedir, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
 		<details>
 		<summary>MR protocol summary</summary>
@@ -1001,7 +1001,7 @@
 			</thead>
 			<tbody>
 			<?
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$seriesdesc = $row['series_altdesc'];
 				$series_tr = $row['series_tr'];
 				$series_te = $row['series_te'];
@@ -1209,16 +1209,16 @@
 			</form>
 			<?
 				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['group_id'];
 					$name = $row['group_name'];
 					$ownerusername = $row['ownerusername'];
 					$grouptype = $row['group_type'];
 					
 					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
-					$result2 = mysql_query($sqlstring2) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring2</i><br>");
-					$row2 = mysql_fetch_array($result2, MYSQL_ASSOC);
+					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 					$count = $row2['count'];
 			?>
 			<tr style="<?=$style?>">

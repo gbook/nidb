@@ -208,8 +208,8 @@ if ($modality == "mr") {
 elseif ($modality == "mrbeh") {
 	$sqlstring = "select a.series_num, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.mrseries_id = $seriesid";
 	
-	$result2 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	$row = mysql_fetch_array($result2, MYSQL_ASSOC);
+	$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 	$study_num = $row['study_num'];
 	$uid = $row['uid'];
 	$series_num = $row['series_num'];
@@ -221,8 +221,8 @@ elseif ($modality == "mrbeh") {
 else {
 	$sqlstring = "select a.series_num, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
 	//echo "$sqlstring\n";
-	$result2 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-	$row = mysql_fetch_array($result2, MYSQL_ASSOC);
+	$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 	$study_num = $row['study_num'];
 	$uid = $row['uid'];
 	$series_num = $row['series_num'];
@@ -255,7 +255,7 @@ if ($result['success'] == 1) {
 		
 		$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
 		//echo "$sqlstring";
-		$result3 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result3 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* copy the uploaded files and directories to the backup directory */
 		$backupdir = $GLOBALS['backuppath'] . "/$uid/$study_num/$series_num";
@@ -288,7 +288,7 @@ if ($result['success'] == 1) {
 		
 		$sqlstring = "update $modality" . "_series set series_numfiles = $filecount, series_size = $filesize where $modality" . "series_id = $seriesid";
 		//echo "$sqlstring";
-		$result3 = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result3 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 }
 

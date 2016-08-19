@@ -60,8 +60,8 @@
 	$password = GetVariable("password");
 
 	/* database connection */
-	$link = mysql_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link = mysqli_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
 	
 	/* ----- determine which action to take ----- */
@@ -136,8 +136,8 @@
 		/* check if the username or email address is already in the users table */
 		$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$count = $row['count'];
 		//echo "Count [$count]<br>";
 		if ($count > 0) {
@@ -147,8 +147,8 @@
 		/* check if the username or email address is already in the users_pending table */
 		$sqlstring = "select count(*) 'count' from users_pending where username = '$email' or user_email = '$email'";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$count = $row['count'];
 		//echo "Count [$count]<br>";
 		if ($count > 0) {
@@ -160,13 +160,13 @@
 		//$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$email',sha1('$password'),'Standard','$instance','$name','$institution','$country','$email',0)";
 		$sqlstring = "insert into users_pending (username, password, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values ('$email',sha1('$password'),'$firstname','$midname','$lastname','$institution','$country','$email',sha1(now()), now())";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$rowid = mysql_insert_id();
 		
 		/* get the generated SHA1 hash */
 		$sqlstring = "select emailkey from users_pending where user_id = $rowid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$emailkey = $row['emailkey'];
 		
 		$body = "<b>Thank for you signing up for NiDB</b><br><br>Click the link below to activate your account (or copy and paste into a browser)\n" . $GLOBALS['cfg']['siteurl'] . "/v.php?k=$emailkey";
@@ -174,7 +174,7 @@
 		if (!SendGmail($email,'Acitvate your NiDB account',$body, 0)) {
 			return "System error. Unable to send email!";
 			$sqlstring = "delete from users_pending where user_id = $rowid";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
 			return "";
@@ -613,8 +613,8 @@
 		/* check if the username or email address is already in the users table */
 		$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$count = $row['count'];
 		//echo "Count [$count]<br>";
 		if ($count > 0) {
@@ -624,8 +624,8 @@
 			/* check if the username or email address is already in the users_pending table */
 			$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
 			//echo "$sqlstring<br>";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$count = $row['count'];
 			//echo "Count [$count]<br>";
 			if ($count > 0) {
@@ -646,11 +646,11 @@
 		if (!SendGmail($email,'NiDB password reset',$body, 0)) {
 			echo "System error. Unable to send email!";
 			//$sqlstring = "delete from users_pending where user_id = $rowid";
-			//$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
 			$sqlstring = "update users set password = sha1('$newpass') where user_email = '$email'";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			echo "Email sent to '$email'. Check it and get back to me";
 		}
 		?><?

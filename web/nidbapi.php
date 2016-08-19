@@ -29,8 +29,8 @@
 	/* -------------------------------------------- */
 	function GetModalityList($withdesc = false) {
 		$sqlstring = "select * from modalities order by mod_desc";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$modalities[] = $row['mod_code'];
 			$descriptions[] = $row['mod_code'];
 		}

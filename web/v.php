@@ -40,8 +40,8 @@
 	$k = GetVariable("k");
 
 	/* database connection */
-	$link = mysql_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysql_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link = mysqli_connect($GLOBALS['db_hostname'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
+	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
 
 	/* validate the key and redirect as necessary */
 	if (Validate($k)) {
@@ -91,9 +91,9 @@
 		/* check if the key exists in the users_pending table */
 		$sqlstring = "select * from users_pending where emailkey = '$k'";
 		//echo "$sqlstring<br>";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$userpendingid = $row['user_id'];
 			$username = $row['username'];
 			$password = $row['password'];
@@ -109,17 +109,17 @@
 		/* if no errors were found so far, insert the row, with the user disabled */
 		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$username','$password','Standard','$fullname','$institution','$country','$email',1)";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$userid = mysql_insert_id();
 		
 		$sqlstring = "delete from users_pending where user_id = $userpendingid";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* insert a row into the instance permissions for the default instance */
 		$sqlstring = "insert into user_instance (user_id, instance_id) values ($userid, (select instance_id from instance where instance_default = 1))";
 		//PrintSQL($sqlstring);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		$body = "<b>Your NiDB account on " . $GLOBALS['cfg']['siteurl'] . " account is active and you are joined to the main instance</b><br><br>Login now: " . $GLOBALS['cfg']['siteurl'] . "/login.php<br><br>Follow these steps to join other instances<ol><li>Login to NiDB: " . $GLOBALS['cfg']['siteurl'] . "/login.php<li>Click your username at the top of the page<li>Find the instance you want to join on the list of available instances<li>The owner of the instance will receive notification that you want to join<li>You will receive a notifiication of the owners response to your join request</ol><br><br>";
 		/* send the email */

@@ -80,7 +80,7 @@
 		
 		/* update the modality */
 		$sqlstring = "update qc_modules set qcm_name = '$qcmname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$qcmname?> updated</span></div><br><br><?
 	}
@@ -96,7 +96,7 @@
 		
 		/* insert the new modality */
 		$sqlstring = "insert into qc_modules (qcm_name, qcm_modality) values ('$modulename', '$modality')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$modulename?> added</span></div><br><br><?
 	}
@@ -107,7 +107,7 @@
 	/* -------------------------------------------- */
 	function EnableQCModule($id) {
 		$sqlstring = "update qc_modules set qcm_isenabled = 1 where qcmodule_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -116,7 +116,7 @@
 	/* -------------------------------------------- */
 	function DisableQCModule($id) {
 		$sqlstring = "update qc_modules set qcm_isenabled = 0 where qcmodule_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	
@@ -159,8 +159,8 @@
 			</tr>
 			<?
 				$sqlstring = "select * from qc_modules order by qcm_name";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['qcmodule_id'];
 					$modality = $row['qcm_modality'];
 					$name = $row['qcm_name'];

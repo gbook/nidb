@@ -82,19 +82,19 @@
 		
 		//if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
 		//	$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-		//	$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//	return true;
 		//}
 		//else {
 			//echo "Not a UNIX account, trying standard account";
 			if (AuthenticateStandardUser($username, $password)) {
 				$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				return true;
 			}
 			else {
 				$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'failure')";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				return false;
 			}
 		//}
@@ -114,9 +114,9 @@
 			
 		$sqlstring = "select user_id from users where (username = '$username' or username = sha1('$username')) and (password = sha1('$password') or password = '$password') and user_enabled = 1";
 		//echo "[SQL: $sqlstring]";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		if (mysql_num_rows($result) > 0) {
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$GLOBALS['userid'] = $row['user_id'];
 			return true;
 		}
@@ -160,7 +160,7 @@
 	/* -------------------------------------------- */
 	function StartTransaction($u, $source) {
 		$sqlstring = "insert into import_transactions (transaction_startdate, transaction_source, transaction_status, transaction_username) values (now(), '$source', 'uploading', '$u')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$tid = mysql_insert_id();
 		echo $tid;
 	}
@@ -171,7 +171,7 @@
 	/* -------------------------------------------- */
 	function EndTransaction($tid) {
 		$sqlstring = "update import_transactions set transaction_enddate = now(), transaction_status = 'uploadcomplete' where importtrans_id = $tid";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		echo "Ok";
 	}
 
@@ -183,8 +183,8 @@
 		$altuid = mysql_real_escape_string($altuid);
 
 		$sqlstring = "select uid from subjects where subject_id in (select subject_id from subject_altuid where altuid = '$altuid')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uids[] = $row['uid'];
 		}
 		if (is_array($uids)) {
@@ -200,8 +200,8 @@
 		$u = mysql_real_escape_string($u);
 
 		$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '$u')) order by instance_name";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$instanceuid = $row['instance_uid'];
 			$instancename = $row['instance_name'];
 			$instances[] = "$instanceuid|$instancename";
@@ -221,8 +221,8 @@
 		
 		$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id left join users c on b.user_id = c.user_id where c.username = '$u' and a.instance_id = (select instance_id from instance where instance_uid = '$instance') and (b.view_data = 1 or b.view_phi = 1 or b.write_data = 1 or b.write_phi = 1) order by a.project_name";
 		//echo "$sqlstring";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$projectuid = $row['project_uid'];
 			$projectname = $row['project_name'];
 			$projects[] = "$projectuid|$projectname";
@@ -242,8 +242,8 @@
 		
 		$sqlstring = "select * from nidb_sites order by site_name";
 		//echo "$sqlstring";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$siteuid = $row['site_uid'];
 			$sitename = $row['site_name'];
 			$sites[] = "$siteuid|$sitename";
@@ -260,8 +260,8 @@
 	function GetEquipmentList() {
 		$sqlstring = "select distinct(study_site) 'equipment' from studies where study_site <> '' order by study_site";
 		//echo "$sqlstring";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$equipment = $row['equipment'];
 			$sites[] = "$equipment|$equipment";
 		}
@@ -295,8 +295,8 @@
 		/* get the instanceRowID */
 		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
 		//echo "[[$sqlstring]]\n";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instanceRowID = $row['instance_id'];
 		if ($instanceRowID == "") {
 			echo "ERROR_INVALID_INSTANCEID";
@@ -306,8 +306,8 @@
 		/* get the projectRowID */
 		$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
 		//echo "[[$sqlstring]]\n";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectRowID = $row['project_id'];
 		if ($projectRowID == "") {
 			echo "ERROR_INVALID_PROJECTID";
@@ -317,8 +317,8 @@
 		/* get the siteRowID */
 		$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
 		//echo "[[$sqlstring]]\n";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$siteRowID = $row['site_id'];
 		if ($siteRowID == "") {
 			echo "ERROR_INVALID_SITEID";
@@ -327,7 +327,7 @@
 		
 		/* clear out the older stuff */
 		$sqlstring = "DELETE FROM import_received WHERE import_datetime < DATE_SUB(NOW(), INTERVAL 30 DAY)";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
@@ -336,7 +336,7 @@
 				/* get next import ID */
 				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
 				//echo "[[$sqlstring]]\n";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysql_insert_id();
 				
 				$numfilessuccess = 0;
@@ -374,7 +374,7 @@
 					/* record this received file in the import_received table */
 					$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
 					//echo "$sqlstring\n";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
 				/* go through all the beh files and save them */
@@ -396,12 +396,12 @@
 						}
 						/* record this received file in the import_received table */
 						$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-						$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					}
 				}
 				
 				$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			else {
 				echo "UPLOADERROR";

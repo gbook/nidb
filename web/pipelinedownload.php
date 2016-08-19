@@ -94,7 +94,7 @@
 		/* update the pipeline */
 		$sqlstring = "update pipeline_download set pipeline_id = '$pipeline_id', pd_admin = '$admin', pd_protocol = '$protocol', pd_dirformat = '$dirformat', pd_nfsdir = '$nfsdir', pd_anonymize = '$anonymize', pd_gzip = '$gzip', pd_preserveseries = '$preserveseries', pd_groupbyprotocol = '$groupbyprotocol', pd_onlynew = '$onlynew', pd_filetype = '$filetype', pd_modality = '$modality', pd_behformat = '$behformat', pd_behdirrootname = '$behdirrootname' where pipelinedownload_id = $id";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$id?> updated</span></div><br><br><?
 	}
@@ -111,7 +111,7 @@
 		
 		/* insert the new pipeline */
 		$sqlstring = "insert into pipeline_download (pipeline_id, pd_admin, pd_protocol, pd_dirformat, pd_nfsdir, pd_anonymize, pd_gzip, pd_preserveseries, pd_groupbyprotocol, pd_onlynew, pd_filetype, pd_modality, pd_behformat, pd_behdirrootname, pd_createdate, pd_status) values ($pipeline_id, $admin, '$protocol', '$dirformat', '$nfsdir', '$anonymize', '$gzip', '$preserveseries', '$groupbyprotocol', '$onlynew', '$filetype', '$modality', '$behformat', '$behdirrootname', now(), 'active')";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Pipeline for <?=$protocol?> added</span></div><br><br><?
 	}
@@ -122,7 +122,7 @@
 	/* -------------------------------------------- */
 	function DeletePipelineDownload($id) {
 		$sqlstring = "delete from pipeline_download where pipelinedownload_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 	
 	
@@ -134,8 +134,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from pipeline_download where pipelinedownload_id = $id";
-			$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			//$id = $row['pipelinedownload_id'];
 			$pipeline_id = $row['pipeline_id'];
 			$admin_id = $row['pd_admin'];
@@ -191,8 +191,8 @@
 					<select name="pipeline_id">
 						<?
 							$sqlstring = "select * from pipelines where pipeline_status = 'active' order by pipeline_name";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$pipe_id = $row['pipeline_id'];
 								$pipeline_name = $row['pipeline_name'];
 
@@ -251,8 +251,8 @@
 					<select name="admin">
 						<?
 							$sqlstring = "select * from users where user_enabled = true order by user_fullname";
-							$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
 								$username = $row['username'];
 								$fullname = $row['user_fullname'];
@@ -285,8 +285,8 @@
 					<select name="modality">
 					<?
 						$sqlstring = "select * from modalities order by mod_desc";
-						$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-						while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mod_code = $row['mod_code'];
 							$mod_desc = $row['mod_desc'];
 							if ($mod_code == $modality) { $selected = "selected"; } else { $selected = ""; }
@@ -361,8 +361,8 @@
 		<tbody>
 			<?
 				$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.pipeline_name from pipeline_download a left join users b on a.pd_admin = b.user_id left join pipelines c on a.pipeline_id = c.pipeline_id where a.pd_status = 'active' order by a.pd_protocol";
-				$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['pipelinedownload_id'];
 					$pipeline_name = $row['pipeline_name'];
 					$adminusername = $row['adminusername'];

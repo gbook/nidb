@@ -57,8 +57,8 @@
 	/* ----------------------------------------------- */
 	function DisplayMenu() {
 		$sqlstring = "select * from calendars where calendar_deletedate > now()";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['calendar_id'];
 			$name = $row['calendar_name'];
 			$description = $row['calendar_description'];
@@ -78,8 +78,8 @@
 	/* ----------------------------------------------- */
 	function SetCalendar($calid) {
 		$sqlstring = "select * from calendars where calendar_id = $calid";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$calname = $row['calendar_name'];
 	
 		if ($calid == 0) { $calname = "All Calendars"; }

@@ -100,8 +100,8 @@
 		</tr>
 		<?
 		$sqlstring = "select * from calendars where calendar_deletedate > now()";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['calendar_id'];
 			$name = $row['calendar_name'];
 			$description = $row['calendar_description'];
@@ -138,7 +138,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "insert into calendars (calendar_name, calendar_description, calendar_location, calendar_createdate, calendar_deletedate) values ('$name','$description','$location',now(),'3000-01-01 00:00:00')";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -156,7 +156,7 @@
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "update calendars set calendar_name = '$name', calendar_description = '$description', calendar_location = '$location' where calendar_id = '$id'";
 		//echo $sqlstring;
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 
@@ -166,7 +166,7 @@
 	/* ----------------------------------------------- */
 	function Delete($id) {
 		$sqlstring = "update calendars set calendar_deletedate = now() where calendar_id = '$id'";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		DisplayList();
 	}	
 	
@@ -213,8 +213,8 @@
 	function EditForm($message, $id) {
 	
 		$sqlstring = "select * from calendars where calendar_id = $id";
-		$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['calendar_name'];
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];

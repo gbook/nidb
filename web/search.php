@@ -346,8 +346,8 @@
 							<option value="">Select a group</option>
 						<?
 							$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
@@ -381,8 +381,8 @@
 							<option value="all">All Projects</option>
 							<?
 								$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-								$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$project_id = $row['project_id'];
 									$project_name = $row['project_name'];
 									$project_costcenter = $row['project_costcenter'];
@@ -402,8 +402,8 @@
 						<datalist id="s_enrollsubgroup">
 						<?
 							$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								?><option value="<?=$row['enroll_subgroup']?>"><?
 							}
 						?>
@@ -424,8 +424,8 @@
 						<datalist id="s_studyinstitution">
 						<?
 							$sqlstring = "select distinct(study_institution) from studies order by study_institution";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								?><option value="<?=$row['study_institution']?>"><?
 							}
 						?>
@@ -439,8 +439,8 @@
 							<option value="">Select equipment</option>
 						<?
 							$sqlstring = "select distinct(study_site) from studies order by study_site";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$study_site = $row['study_site'];
 								
 								if ($study_site != "") {
@@ -473,15 +473,15 @@
 						<select name="s_studymodality" class="importantfield">
 						<?
 							$sqlstring = "select * from modalities order by mod_desc";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$mod_code = $row['mod_code'];
 								$mod_desc = $row['mod_desc'];
 								
 								/* check if the modality table exists */
 								$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-								$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
-								if (mysql_num_rows($result2) > 0) {
+								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+								if (mysqli_num_rows($result2) > 0) {
 								
 									/* if the table does exist, allow the user to search on it */
 									if (($mod_code == "MR") && ($searchvars['s_studymodality'] == "")) {
@@ -511,8 +511,8 @@
 							<datalist id="s_studydesc">
 							<?
 								$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
-								$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									?><option value="<?=trim($row['study_desc'])?>"><?
 								}
 							?>
@@ -526,8 +526,8 @@
 							<datalist id="s_studyphysician">
 							<?
 								$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
-								$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									?><option value="<?=trim($row['study_performingphysician'])?>"><?
 								}
 							?>
@@ -541,8 +541,8 @@
 							<datalist id="s_studyoperator">
 							<?
 								$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
-								$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									?><option value="<?=trim($row['study_operator'])?>"><?
 								}
 							?>
@@ -556,8 +556,8 @@
 							<datalist id="s_studytype">
 							<?
 								$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
-								$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									?><option value="<?=trim($row['study_type'])?>"><?
 								}
 							?>
@@ -571,8 +571,8 @@
 							<option value="">Select a group</option>
 						<?
 							$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
@@ -637,8 +637,8 @@
 							<option value="">Select a group</option>
 						<?
 							$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
@@ -701,8 +701,8 @@
 															<td>
 															<?
 																$sqlstring = "select measure_name from measurenames order by measure_name";
-																$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-																while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+																$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+																while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 																	$tags[] = '"' . $row['measure_name'] . '"';
 																}
 															?>
@@ -800,8 +800,8 @@
 													<option value="">Select pipeline</option>
 												<?
 													$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
-													$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
-													while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+													$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+													while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 														$pipelineid = $row2['pipeline_id'];
 														$pipelinename = $row2['pipeline_name'];
 														?>
@@ -879,8 +879,8 @@
 											<option value="all">ALL available variables
 											<?
 												$sqlstring2 = "select * from qc_resultnames where qcresult_type = 'number' order by qcresult_name";
-												$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
-												while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+												$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+												while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 													$qcresultnameid = $row2['qcresultname_id'];
 													$qcresultname = $row2['qcresult_name'];
 													$qcresultunits = $row2['qcresult_units'];
@@ -974,12 +974,12 @@
 		
 		/* ---------- [2] run the query ----------- */
 		$starttime = microtime(true);
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$querytime = microtime(true) - $starttime;
 		
 		if ($s_resultorder == "debug") {
 			?>
-			<span class="sublabel">Query returned <?=mysql_num_rows($result)?> rows in <?=number_format($querytime, 4)?> sec</span>
+			<span class="sublabel">Query returned <?=mysqli_num_rows($result)?> rows in <?=number_format($querytime, 4)?> sec</span>
 			<div style="background-color: #EEEEEE"><?=$sqlstring?></div><br>
 			<div style="background-color: #EEEEEE"><?=getFormattedSQL($sqlstring)?></div>
 			<br><br><br><br>
@@ -988,12 +988,12 @@
 		}
 
 		/* display the results */
-		if (mysql_num_rows($result) > 0) {
+		if (mysqli_num_rows($result) > 0) {
 		
-			if ((mysql_num_rows($result) > 100000) && ($s_resultorder != "pipelinecsv")) {
+			if ((mysqli_num_rows($result) > 100000) && ($s_resultorder != "pipelinecsv")) {
 				?>
 				<div style="border: 2px solid darkred; background-color: #FFEEEE; text-align: left; padding:5px; border-radius: 5px">
-				<b>Your search returned <? echo number_format(mysql_num_rows($result),0); ?> results... which is a lot</b>
+				<b>Your search returned <? echo number_format(mysqli_num_rows($result),0); ?> results... which is a lot</b>
 				<br>
 				Try changing the search criteria to return fewer results or select a .csv format
 				</div>
@@ -1007,7 +1007,7 @@
 			
 			/* display the number of rows and the search time */
 			?>
-			<span class="sublabel">Query returned <? echo number_format(mysql_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
+			<span class="sublabel">Query returned <? echo number_format(mysqli_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
 			<details>
 				<summary style="font-size:9pt">View SQL query:</summary>
 				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>
@@ -1061,7 +1061,7 @@
 		}
 		else {
 			?>
-			<span class="sublabel">Query returned <? echo number_format(mysql_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
+			<span class="sublabel">Query returned <? echo number_format(mysqli_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
 			<details>
 				<summary style="font-size:9pt">View SQL query:</summary>
 				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>
@@ -1109,8 +1109,8 @@
 		/* ---------------- regular search --------------- */
 		$s_studymodality = strtolower($s_studymodality);
 		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
-		$result3 = MySQLQuery($sqlstring3,__FILE__,__LINE__);
-		while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
+		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 			$ratingseriesid = $row3['data_id'];
 			$ratings[$ratingseriesid][] = $row3['rating_value'];
 		}
@@ -1125,8 +1125,8 @@
 		if (strtolower($s_studymodality) == "mr") {
 			/* get the movement & SNR stats by sequence name */
 			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
-			$result2 = MySQLQuery($sqlstring2,__FILE__,__LINE__);
-			while ($row2 = mysql_fetch_array($result2, MYSQL_ASSOC)) {
+			$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$sequence = $row2['series_sequencename'];
 				$pstats[$sequence]['avgpvsnr'] = $row2['avgpvsnr'];
 				$pstats[$sequence]['stdpvsnr'] = $row2['stdpvsnr'];
@@ -1155,8 +1155,8 @@
 		
 		/* get a list of previously downloaded series and their dates */
 		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = '" . $_SESSION['username'] ."' and req_modality = '$s_studymodality'";
-		$result3 = MySQLQuery($sqlstring3,__FILE__,__LINE__);
-		while ($row3 = mysql_fetch_array($result3, MYSQL_ASSOC)) {
+		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 			$req_seriesid = $row3['req_seriesid'];
 			$downloadhistory[$req_seriesid]['date'] = $row3['req_completedate'];
 			$downloadhistory[$req_seriesid]['dest'] = $row3['req_destinationtype'];
@@ -1184,20 +1184,20 @@
 
 		/* get the users id */
 		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
-		$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 		$userid = $rowC['user_id'];
 				
 		/* check to see which projects this user has access to view */
 		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
 		//print "$sqlstringC<br>";
-		$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
-		while ($rowC = mysql_fetch_array($resultC, MYSQL_ASSOC)) {
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
 			$projectids[] = $rowC['projectid'];
 		}
 		
 		/* tell the user if there are results for projects they don't have access to */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$projectid = $row['project_id'];
 			$projectname = $row['project_name'];
 			$studyid = $row['study_id'];
@@ -1250,8 +1250,8 @@
 				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjects) . ") and d.measure_name in (" . MakeSQLList($s_measurelist) . ")";
 			}
 			
-			$resultD = MySQLQuery($sqlstringD,__FILE__,__LINE__);
-			while ($rowD = mysql_fetch_array($resultD, MYSQL_ASSOC)) {
+			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
+			while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
 				if ($rowD['measure_type'] == 's') {
 					$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'] = $rowD['measure_valuestring'];
 				}
@@ -1275,8 +1275,8 @@
 
 			/* get list of UIDs from the list of alternate UIDs */
 			$sqlstringX = "select altuid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid in (" . MakeSQLList($s['s_subjectaltuid']) . ")";
-			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$altuids[] = $rowX['altuid'];
 			}
 			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
@@ -1286,8 +1286,8 @@
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
 			if (count($missingstudies) > 0) {
 				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
-				$resultY = MySQLQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysql_fetch_array($resultY, MYSQL_ASSOC)) {
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
 				}
 			}
@@ -1297,14 +1297,14 @@
 			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
 				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
-				$resultY = MySQLQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysql_fetch_array($resultY, MYSQL_ASSOC)) {
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
 				}
 			}
 		}
 		?>
-		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysql_num_rows($result)?> series</b> matching your query
+		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysqli_num_rows($result)?> series</b> matching your query
 		<?
 			if (count($missinguids) > 0) {
 			?>
@@ -1366,7 +1366,7 @@
 		mysql_data_seek($result,0); /* rewind the record pointer */
 		$laststudy_id = "";
 		$headeradded = 0;
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
 			$project_id = $row['project_id'];
 			/* if the user doesn't have view access to this project, skip to the next record */
@@ -1890,19 +1890,19 @@
 		if ($s_pipelineresulttype == "i") {
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
 			}
 			/* and get the result unit (due to the same MySQL bug) */
 			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
 			}
 			
 			/* ---------------- pipeline results (images) --------------- */
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				//PrintVariable($row,'row');
 			
 				$step = $row['analysis_step'];
@@ -1983,19 +1983,19 @@
 			/* ---------------- pipeline results (values) --------------- */
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
 			}
 			/* and get the result unit (due to the same MySQL bug) */
 			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-			$resultX = MySQLQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
 			}
 
 			/* load the data into a useful table */
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				
 				$step = $row['analysis_step'];
 				$pipelinename = $row['pipeline_name'];
@@ -2312,7 +2312,7 @@
 				</tr>
 			</thead>
 		<?
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$subject_id = $row['subject_id'];
 			$study_id = $row['study_id'];
@@ -2363,7 +2363,7 @@
 				</tr>
 			</thead>
 		<?
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$subject_id = $row['subject_id'];
 			$enrollment_id = $row['enrollment_id'];
@@ -2426,7 +2426,7 @@
 		
 		$modality = '';
 		/* gather scans into longitudinal format */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$studyid = $row['study_id'];
 			$studynum = $row['study_num'];
@@ -2524,8 +2524,8 @@
 						/* get a list of alternate UIDs */
 						$altuids = null;
 						$sqlstringC = "select * from subject_altuid where subject_id in (select subject_id from subjects where uid = '$uid')";
-						$resultC = MySQLQuery($sqlstringC,__FILE__,__LINE__);
-						while ($rowC = mysql_fetch_array($resultC, MYSQL_ASSOC)) {
+						$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+						while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
 							$altuids[] = $rowC['altuid'];
 						}
 						?>
@@ -2575,8 +2575,8 @@
 						foreach ($seriesids as $ser) {
 							list($seriesid,$studyid,$studynum) = explode(',',$ser);
 							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = '$seriesid'";
-							$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-							$row = mysql_fetch_array($result, MYSQL_ASSOC);
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$seriesnum = $row['series_num'];
 							$seriesdate = date("M j, Y h:m:s a", strtotime($row['series_datetime']));
 							$protocol = $row['series_desc'];
@@ -2648,7 +2648,7 @@
 		$modality = '';
 		$i = 0;
 		/* gather scans into longitudinal format */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = strtoupper(trim($row['uid']));
 			$encuid = crc32(strtoupper(trim($row['uid'])));
 			$studyid = $row['study_id'];
@@ -2717,8 +2717,8 @@
 		
 		foreach ($series as $resultid) {
 			$sqlstring = "select result_name from analysis_resultnames where resultname_id = '$resultid'";
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$resultname = $row['result_name'];
 			?>
 			<?=$resultname?> [<?=$resultid?>]<br>
@@ -2823,7 +2823,7 @@
 		//PrintSQLTable($result);
 		
 		/* gather scans into longitudinal format */
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = strtoupper(trim($row['uid']));
 			$studydate = trim($row['studydate']);
 			$seriesdesc = trim($row['series_desc']);
@@ -3166,15 +3166,15 @@
 								<td class="main">
 									<?
 										$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-										$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-										$row = mysql_fetch_array($result, MYSQL_ASSOC);
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 										$userid = $row['user_id'];
 									?>
 									<select name="subjectgroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
-											$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 												$groupid = $row['group_id'];
 												$groupname = $row['group_name'];
 												?>
@@ -3195,8 +3195,8 @@
 									<select name="studygroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-											$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 												$groupid = $row['group_id'];
 												$groupname = $row['group_name'];
 												?>
@@ -3216,8 +3216,8 @@
 									<select name="seriesgroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-											$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 												$groupid = $row['group_id'];
 												$groupname = $row['group_name'];
 												?>
@@ -3311,8 +3311,8 @@
 															<option value="">(Select connection)</option>
 															<?
 																$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-																$result = mysql_query($sqlstring) or die("Query failed: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-																while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+																$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+																while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 																	$connid = $row['remoteconn_id'];
 																	$connname = $row['conn_name'];
 																	$remoteserver = $row['remote_server'];
@@ -3630,8 +3630,8 @@
 		
 		/* check if modality_series table actually exists */
 		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '$modalitytable'";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		if (mysql_num_rows($result) < 1) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) < 1) {
 			?>
 			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> series
 			<?
@@ -3670,8 +3670,8 @@
 		}
 		else {
 			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		
-			$tmpresult = MySQLQuery($tmpsqlstring,__FILE__,__LINE__);
-			while ($tmprow = mysql_fetch_array($tmpresult, MYSQL_ASSOC)) {
+			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
+			while ($tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC)) {
 				if ($tmprow['project_id'] != "") {
 					$projectids[] = $tmprow['project_id'];
 				}
@@ -3812,8 +3812,8 @@
 		}
 		if ($s_measuresearch != "") {
 			$tmpsqlstring = "select measurename_id from measurenames where measure_name = '$s_measures'";
-			$tmpresult = MySQLQuery($tmpsqlstring,__FILE__,__LINE__);
-			$tmprow = mysql_fetch_array($tmpresult, MYSQL_ASSOC);
+			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
+			$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
 			$measurenameid = $tmprow['measurename_id'];
 			
 			if (is_numeric($measurevalue)) {
@@ -3838,8 +3838,8 @@
 		if ($s_formvalue[0] != "") {
 			/* get the formfield datatype to make sure we compare against the correct assessment_data value */
 			$tmpsqlstring = "select * from assessment_formfields where formfield_id = $s_formfieldid[0]";
-			$tmpresult = MySQLQuery($tmpsqlstring,__FILE__,__LINE__);
-			$tmprow = mysql_fetch_array($tmpresult, MYSQL_ASSOC);
+			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
+			$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
 			$datatype = $tmprow['formfield_datatype'];
 			
 			switch ($datatype) {
@@ -3870,9 +3870,9 @@
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultname_id from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__);
-				if (mysql_num_rows($resultX) > 0) {
-					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultX = MySQLiQuery($sqlstringX, __FILE__, __LINE__);
+				if (mysqli_num_rows($resultX) > 0) {
+					while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 						$resultnames[] = $rowX['resultname_id'];
 					}
 					$resultnames[] = 5429; /* hack... to always include ICV */
@@ -3889,9 +3889,9 @@
 				
 				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
 				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-				$resultX = MySQLQuery($sqlstringX, __FILE__, __LINE__);
-				if (mysql_num_rows($resultX) > 0) {
-					while ($rowX = mysql_fetch_array($resultX, MYSQL_ASSOC)) {
+				$resultX = MySQLiQuery($sqlstringX, __FILE__, __LINE__);
+				if (mysqli_num_rows($resultX) > 0) {
+					while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 						$resultunit[] = $rowX['resultunit_id'];
 					}
 					$resultunitlist = implode2(',',$resultunit);
@@ -4014,8 +4014,8 @@
 	/* -------------------------------------------- */
 	function GetIDListFromGroup($groupid) {
 		$sqlstring = "select data_id from group_data where group_id = $groupid";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$groupids[] = $row['data_id'];
 		}
 		return implode2(',',$groupids);
@@ -4176,7 +4176,7 @@
 		foreach ($seriesids as $seriesid) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, anonymize_fields, request_status, username, requestdate) values ('anonymize','series',$seriesid,'$modality','$dicomtags','pending','$username',now())";
 			PrintSQL($sqlstring);
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 	}
 	
@@ -4321,14 +4321,14 @@
 		
 		/* get the next group ID */
 		$sqlstring  = "select max(req_groupid) 'max' from data_requests";
-		$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$groupid = $row['max'] + 1;
 		
 		/* if this is a public download, create the row in the public_download table, and get the ID */
 		if ($destinationtype == "publicdownload") {
 			$sqlstring = "insert into public_downloads (pd_createdby, pd_desc, pd_notes, pd_password, pd_shareinternal, pd_registerrequired, pd_expiredays, pd_status) values ('$username', '$publicdownloaddesc', '$publicdownloadreleasenotes', sha1('$publicdownloadpassword'), '$publicdownloadshareinternal', '$publicdownloadregisterrequired', '$publicdownloadexpire', 'started')";
-			$result = MySQLQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDownloadRowID = mysql_insert_id();
 		}
 		
@@ -4359,9 +4359,9 @@
 				$enrollmentidlist = implode2(",", $enrollmentids);
 				/* get modality list from studies table */
 				$sqlstring = "select distinct(study_modality) 'study_modality' from studies where enrollment_id in ($enrollmentidlist)";
-				$result = MySQLQuery($sqlstring, __FILE__ , __LINE__);
-				$numseries = mysql_num_rows($result);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+				$numseries = mysqli_num_rows($result);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$modalities[] = strtolower($row['study_modality']);
 				}
 				//print_r($modalities);
@@ -4383,11 +4383,11 @@
 			
 			//echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 			
-			$result = MySQLQuery($sqlstring, __FILE__ , __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
 			//PrintSQLTable($result);
 			
-			$numseries += mysql_num_rows($result);
-			while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$numseries += mysqli_num_rows($result);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
 				//echo "(B) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 				$safe = true;
@@ -4441,8 +4441,8 @@
 					
 					if (trim($remoteconnid) != "") {
 						$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
-						$resultC = MySQLQuery($sqlstringC, __FILE__ , __LINE__);
-						$rowC = mysql_fetch_array($resultC, MYSQL_ASSOC);
+						$resultC = MySQLiQuery($sqlstringC, __FILE__ , __LINE__);
+						$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 						$remotenidbserver = $rowC['remote_server'];
 						$remotenidbusername = $rowC['remote_username'];
 						$remotenidbpassword = $rowC['remote_password'];
@@ -4453,7 +4453,7 @@
 					
 					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
 					//PrintSQL($sqlstringA);
-					$resultA = MySQLQuery($sqlstringA, __FILE__ , __LINE__);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__ , __LINE__);
 					
 					?>
 						<tr>

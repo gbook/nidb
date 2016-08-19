@@ -110,8 +110,8 @@
 
 		/* determine their current login type */
 		$sqlstring = "select login_type from users where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysql_fetch_array($result, MYSQL_ASSOC);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$logintype = $row['login_type'];
 		if ($logintype = "Standard") {
 			if ($isguest) {
@@ -129,33 +129,33 @@
 		$sqlstring = "update users set username = '$username'";
 		if ($password != "") { $sqlstring .= ", password = sha1('$password')"; }
 		$sqlstring .= ", user_fullname = '$fullname', user_email = '$email', user_enabled = '$enabled', user_isadmin = '$isadmin', login_type = '$logintype' where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete all previous rows from the user_instance table for this user */
 		$sqlstring = "delete from user_instance where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
 			$sqlstring = "insert into user_instance (user_id, instance_id) values ($id, $instid)";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		/* delete all previous rows from the user_project table for this user */
 		$sqlstring = "delete from user_project where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update/insert user_project view rows */
 		if (count($dataprojects) > 0) {
 			foreach ($dataprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_data = 1, view_phi = 0 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($id, $projectid, 1, 0)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -164,14 +164,14 @@
 		if (count($phiprojects) > 0) {
 			foreach ($phiprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($id, $projectid, 0, 1)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -180,14 +180,14 @@
 		if (count($writedataprojects) > 0) {
 			foreach ($writedataprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set write_data = 1, write_phi = 0 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi) values ($id, $projectid, 1, 0)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -196,14 +196,14 @@
 		if (count($writephiprojects) > 0) {
 			foreach ($writephiprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi) values ($id, $projectid, 0, 1)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -232,27 +232,27 @@
 		
 		/* insert the new user */
 		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_email, user_lastlogin, user_logincount, user_enabled, user_isadmin) values ('$username', sha1('$password'), '$logintype', '$fullname', '$email', now(), 0, 1, '$isadmin')";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$id = mysql_insert_id();
 		
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
 			$sqlstring = "insert into user_instance (user_id, instance_id) values ($id, $instid)";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		/* update/insert view rows */
 		if (is_array($dataprojects)) {
 			foreach ($dataprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_data) values ($id, $projectid, 1)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -261,14 +261,14 @@
 		if (is_array($phiprojects)) {
 			foreach ($phiprojects as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				if (mysql_num_rows($result) > 0) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
 					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
 					$sqlstring = "insert into user_project (user_id, project_id, view_phi) values ($id, $projectid, 1)";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
@@ -281,7 +281,7 @@
 	/* -------------------------------------------- */
 	function DeleteUser($id) {
 		$sqlstring = "delete from users where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
 
@@ -290,7 +290,7 @@
 	/* -------------------------------------------- */
 	function EnableUser($id) {
 		$sqlstring = "update users set user_enabled = 1 where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -299,7 +299,7 @@
 	/* -------------------------------------------- */
 	function DisableUser($id) {
 		$sqlstring = "update users set user_enabled = 0 where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -308,7 +308,7 @@
 	/* -------------------------------------------- */
 	function MakeAdminUser($id) {
 		$sqlstring = "update users set user_isadmin = 1 where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -317,7 +317,7 @@
 	/* -------------------------------------------- */
 	function MakeNotAdminUser($id) {
 		$sqlstring = "update users set user_isadmin = 0 where user_id = $id";
-		$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 	
 	
@@ -329,8 +329,8 @@
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from users where user_id = $id";
-			$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$username = $row['username'];
 			$email = $row['user_email'];
 			$fullname = $row['user_fullname'];
@@ -512,15 +512,15 @@
 						</tr>
 				<?
 					$sqlstring = "select * from user_instance where user_id = '$id'";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$instanceids[] = $row['instance_id'];
 					}
 					
 					/* start listing all instances and projects */
 					$sqlstring = "select * from instance order by instance_name";
-					$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$instance_id = $row['instance_id'];
 						$instance_uid = $row['instance_uid'];
 						$instance_name = $row['instance_name'];
@@ -543,17 +543,17 @@
 						<?
 							$bgcolor = "#EEFFEE";
 							$sqlstringA = "select * from projects where instance_id = $instance_id order by project_name";
-							$resultA = MySQLQuery($sqlstringA, __FILE__, __LINE__);
-							while ($rowA = mysql_fetch_array($resultA, MYSQL_ASSOC)) {
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 								$project_id = $rowA['project_id'];
 								$project_name = $rowA['project_name'];
 								$project_costcenter = $rowA['project_costcenter'];
 								
 								if ($id != "") {
 									$sqlstringB = "select * from user_project where user_id = $id and project_id = $project_id";
-									$resultB = MySQLQuery($sqlstringB, __FILE__, __LINE__);
-									if (mysql_num_rows($resultB) > 0) {
-										$rowB = mysql_fetch_array($resultB, MYSQL_ASSOC);
+									$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+									if (mysqli_num_rows($resultB) > 0) {
+										$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 										$view_data = $rowB['view_data'];
 										$view_phi = $rowB['view_phi'];
 										$write_data = $rowB['write_data'];
@@ -627,8 +627,8 @@
 			<?
 				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' order by username";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];
 					$username = $row['username'];
 					$fullname = $row['user_fullname'];
@@ -676,8 +676,8 @@
 			<?
 				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '' or b.instance_id is null order by username";
 				//PrintSQL($sqlstring);
-				$result = MySQLQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];
 					$username = $row['username'];
 					$fullname = $row['user_fullname'];
