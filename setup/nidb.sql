@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 08, 2016 at 12:58 PM
+-- Generation Time: Aug 18, 2016 at 07:19 PM
 -- Server version: 10.0.21-MariaDB-log
 -- PHP Version: 5.4.16
 
@@ -1547,6 +1547,7 @@ CREATE TABLE IF NOT EXISTS `ot_series` (
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
   `numfiles` int(11) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL,
   `bold_reps` int(11) NOT NULL,
   `modality` varchar(50) NOT NULL,
   `data_type` varchar(255) NOT NULL,

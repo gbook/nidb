@@ -6,6 +6,8 @@
 NIDBROOT="/nidb"
 WWWROOT="/var/www"
 NIDBUSER="nidb"
+MYSQLUSER="root"
+MYSQLPASS="password"
 
 clear
 echo 
@@ -34,9 +36,8 @@ useradd $NIDBUSER
 echo "Enter the password for the NiDB account"
 passwd $NIDBUSER
 
-# ---------- yum based installs ----------
-echo "----------------- Installing YUM based packages -----------------"
-echo "Because of Perl dependency issues, all perl packages will be installed"
+# ---------- package manager based installs ----------
+echo "----------------- Installing packages -----------------"
 apt-get -yqf install vim
 apt-get -yqf install perl
 apt-get -yqf install apache2
@@ -114,17 +115,17 @@ systemctl start apache2
 systemctl start mariadb
 
 echo "------ Configuring PHP variables ------"
-sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^upload_tmp_dir = .*/upload_tmp_dir = \/${NIDBROOT}\/uploadtmp/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 5000M/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^max_file_uploads = .*/max_file_uploads = 1000/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php7.0/apache2/php.ini
-sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php7.0/apache2/php.ini
+sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^session.gc_maxlifetime = .*/session.gc_maxlifetime = 28800/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^memory_limit = .*/memory_limit = 5000M/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^upload_tmp_dir = .*/upload_tmp_dir = \/${NIDBROOT}\/uploadtmp/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 5000M/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^max_file_uploads = .*/max_file_uploads = 1000/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php/7.0/apache2/php.ini
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php/7.0/apache2/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
 sed -i "s/User apache/User $NIDBUSER/" /etc/apache2/conf/httpd.conf
@@ -133,11 +134,11 @@ chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
 echo "------ Restarting httpd ------"
 systemctl restart apache2
 
-echo "------ Setting up MySQL database - default password is 'password' ------"
-mysqladmin -u root password 'password'
-echo "Assigning permissions to mysql root account"
-echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
-mysql -uroot -ppassword < ~/tempsql.txt
+echo "------ Setting up MySQL database ------"
+mysqladmin -u ${MYSQLUSER} password '${MYSQLPASS}'
+echo "Assigning permissions to mysql [${MYSQLUSER}] account"
+echo "GRANT ALL PRIVILEGES on *.* to ${MYSQLUSER}@'%'" >> ~/tempsql.txt
+mysql -u ${MYSQLUSER} -p${MYSQLPASS} < ~/tempsql.txt
 rm ~/tempsql.txt
 
 echo "------ Installing phpMyAdmin (follow prompts) ------"
@@ -163,21 +164,26 @@ mkdir -pv ${NIDBROOT}/programs/logs
 mkdir -pv ${NIDBROOT}/uploadtmp
 mkdir -pv ${NIDBROOT}/uploaded
 
+# clear the default apache index page
+rm -f /var/www/html/index.html
+
+# copy in the NiDB files
 cd ${NIDBROOT}
 svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
-cp -Rv programs/* ${NIDBROOT}/programs
-cp -Rv web/* ${WWWROOT}
+cp -R programs/* ${NIDBROOT}/programs
+cp -R web/* ${WWWROOT}
 chown -R $NIDBUSER:$NIDBUSER ${NIDBROOT}
 chown -R $NIDBUSER:$NIDBUSER ${WWWROOT}
 
-sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!g' ${WWWROOT}/functions.php
+sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("${NIDBROOT}/programs/nidb.cfg");!g' ${WWWROOT}/functions.php
 
 # create default database from .sql file
 echo "Creating default database"
 cd ${NIDBROOT}/install/setup
-mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by 'password'; flush privileges;"
-mysql -uroot -ppassword nidb < nidb.sql
+mysql -u ${MYSQLUSER} -p${MYSQLPASS} -e "create database if not exists nidb; grant all on *.* to '${MYSQLUSER}'@'localhost' identified by '${MYSQLPASS}'; flush privileges;"
+mysql -u ${MYSQLUSER} -p${MYSQLPASS} nidb < nidb.sql
+mysql -u ${MYSQLUSER} -p${MYSQLPASS} nidb < nidb-data.sql
 
 # ---------- dcm4che ----------
 echo "----------------- Installing DICOM receiver -----------------"
@@ -198,15 +204,14 @@ echo "* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR
 echo "* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
-echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
+echo "@daily /usr/bin/mysqldump nidb -u ${MYSQLUSER} -p${MYSQLPASS} | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
 rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
 echo " *** Install FSL to the default path [/usr/local/fsl] ***"
-echo "Edit /etc/php7.0/apache2/php.ini to reflect your timezone"
-echo "Your default mysql account is root, password is 'password'. Change these as soon as possible"
+echo "Edit /etc/php/7.0/apache2/php.ini to reflect your timezone"
 echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
 echo "TIP: A reboot can be useful to make sure everything works"
