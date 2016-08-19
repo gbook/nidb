@@ -128,9 +128,9 @@ sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php/7.0/apache2/php.i
 sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php/7.0/apache2/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
-sed -i "s/User apache/User $NIDBUSER/" /etc/apache2/conf/httpd.conf
-sed -i "s/Group apache/Group $NIDBUSER/" /etc/apache2/conf/httpd.conf
-chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
+sed -i "s/User apache/User $NIDBUSER/" /etc/apache2/apache2.conf
+sed -i "s/Group apache/Group $NIDBUSER/" /etc/apache2/apache2.conf
+chown -Rv $NIDBUSER:$NIDBUSER /var/lib/php/sessions
 echo "------ Restarting httpd ------"
 systemctl restart apache2
 
@@ -193,7 +193,7 @@ echo "Installing dcm4che receiver to listen on port 8104"
 cp ${NIDBROOT}/install/programs/dcmrcv /etc/init.d
 sed -i "s/su nidb/su $NIDBUSER/" /etc/init.d/dcmrcv
 chmod 755 /etc/init.d/dcmrcv
-chkconfig --add dcmrcv
+update-rc.d dcmrcv defaults
 
 # ---------- setup cron jobs ----------
 echo "----------------- Setup scheduled cron jobs -----------------"
