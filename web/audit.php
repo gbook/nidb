@@ -31,8 +31,7 @@
 	date_default_timezone_set("America/New_York");
 	
 	/* database connection (nidb) */
-	$link2 = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword']) or die ("Could not connect: " . mysql_error());
-	mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database<br>");
+	$link2 = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" __FILE__ "] Line [ " . __LINE__ . "]");
 	
 	$archivedir = $GLOBALS['cfg']['archivedir'];
 
