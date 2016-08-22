@@ -46,13 +46,13 @@
 	/* database connection */
 	if ($isdevserver) {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" __FILE__ "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitenamedev'];
 	}
 	else {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" __FILE__ "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitename'];
 	}

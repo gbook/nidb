@@ -75,7 +75,7 @@ window.onload = AreCookiesEnabled;
 	$password = GetVariable("password");
 
 	/* database connection */
-	$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" __FILE__ "] Line [ " . __LINE__ . "]");
+	$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 
 	/* connect to CAS if enabled */
 	if ($GLOBALS['cfg']['enablecas']){
