@@ -78,11 +78,11 @@
 	/* ------- AddMeasure ------------------------- */
 	/* -------------------------------------------- */
 	function AddMeasure($enrollmentid, $measurename, $measurevalue, $measuredatecompleted, $measurerater, $measureinstrument) {
-		$measurename = mysql_real_escape_string($measurename);
-		$measurevalue = mysql_real_escape_string($measurevalue);
-		$measuredatecompleted = mysql_real_escape_string($measuredatecompleted);
-		$measurerater = mysql_real_escape_string($measurerater);
-		$measureinstrument = mysql_real_escape_string($measureinstrument);
+		$measurename = mysqli_real_escape_string($measurename);
+		$measurevalue = mysqli_real_escape_string($measurevalue);
+		$measuredatecompleted = mysqli_real_escape_string($measuredatecompleted);
+		$measurerater = mysqli_real_escape_string($measurerater);
+		$measureinstrument = mysqli_real_escape_string($measureinstrument);
 
 		if (is_numeric($measurevalue)) {
 			$measuretype = 'n';
@@ -131,9 +131,9 @@
 	/* ------- DoubleEnter ------------------------ */
 	/* -------------------------------------------- */
 	function DoubleEnter($measureid, $measurevalue2, $measuredatecompleted2, $measureinstrument2) {
-		$measurevalue2 = mysql_real_escape_string(trim($measurevalue2));
-		$measuredatecompleted2 = mysql_real_escape_string(trim($measuredatecompleted2));
-		$measureinstrument2 = mysql_real_escape_string(trim($measureinstrument2));
+		$measurevalue2 = mysqli_real_escape_string(trim($measurevalue2));
+		$measuredatecompleted2 = mysqli_real_escape_string(trim($measuredatecompleted2));
+		$measureinstrument2 = mysqli_real_escape_string(trim($measureinstrument2));
 
 		/* get the original row to compare against */
 		$sqlstring = "select * from measures where measure_id = $measureid";

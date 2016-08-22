@@ -114,43 +114,43 @@
 	/* -------------------------------------------- */
 	function AddPrefs($taskid, $edit_description, $edit_shortname, $edit_extralines, $edit_do_behmatchup, $edit_do_stats, $edit_do_censor, $edit_do_autoslice, $edit_do_db, $edit_beh_queue, $edit_beh_digits, $edit_stat_makeasciis, $edit_stat_asciiscript, $edit_stat_behdirname, $edit_stat_relativepath, $edit_stat_dirname, $edit_stat_pattern, $edit_stat_behunits, $edit_stat_volterra, $edit_stats_basisfunction, $edit_stat_onsetfiles, $edit_stat_durationfiles, $edit_stat_regressorfiles, $edit_stat_regressornames, $edit_stat_parameternames, $edit_stat_parameterorders, $edit_stat_parameterfiles, $edit_stat_censorfiles, $edit_stat_contrastmatrix, $edit_stat_xbflength, $edit_stat_xbforder, $edit_stat_timemodulation, $edit_stat_parametricmodulation, $edit_stat_globalfx, $edit_stat_highpasscutoff, $edit_stat_serialcorr, $edit_stat_autoslicecons, $edit_stat_autoslicep, $edit_stat_autoslicebackground, $edit_stat_autosliceslices, $edit_stat_autosliceemailcons, $edit_db_overwritebeta, $edit_db_fileprefix, $edit_db_betanums, $edit_db_threshold, $edit_db_smoothkernel, $edit_db_imcalcs, $edit_db_imnames) {
 
-		$edit_description = mysql_real_escape_string($edit_description);
-		$edit_shortname = mysql_real_escape_string($edit_shortname);
-		$edit_extralines = mysql_real_escape_string($edit_extralines);
+		$edit_description = mysqli_real_escape_string($edit_description);
+		$edit_shortname = mysqli_real_escape_string($edit_shortname);
+		$edit_extralines = mysqli_real_escape_string($edit_extralines);
 		if ($edit_do_behmatchup == "yes") { $edit_do_behmatchup = "1"; } else { $edit_do_behmatchup = "0"; }
 		if ($edit_do_stats == "yes") { $edit_do_stats = "1"; } else { $edit_do_stats = "0"; }
 		if ($edit_do_censor == "yes") { $edit_do_censor = "1"; } else { $edit_do_censor = "0"; }
 		if ($edit_do_autoslice == "yes") { $edit_do_autoslice = "1"; } else { $edit_do_autoslice = "0"; }
 		if ($edit_do_db == "yes") { $edit_do_db = "1"; } else { $edit_do_db = "0"; }
-		$edit_beh_queue = mysql_real_escape_string($edit_beh_queue);
-		$edit_beh_digits = mysql_real_escape_string($edit_beh_digits);
-		$edit_stat_behdirname = mysql_real_escape_string($edit_stat_behdirname);
+		$edit_beh_queue = mysqli_real_escape_string($edit_beh_queue);
+		$edit_beh_digits = mysqli_real_escape_string($edit_beh_digits);
+		$edit_stat_behdirname = mysqli_real_escape_string($edit_stat_behdirname);
 		if ($edit_stat_relativepath == "yes") { $edit_stat_relativepath = "1"; } else { $edit_stat_relativepath = "0"; }
 		if ($edit_stat_makeasciis == "yes") { $edit_stat_makeasciis = "1"; } else { $edit_stat_makeasciis = "0"; }
-		$edit_stat_asciiscript = mysql_real_escape_string($edit_stat_asciiscript);
-		$edit_beh_digits = mysql_real_escape_string($edit_beh_digits);
-		$edit_stat_dirname = mysql_real_escape_string($edit_stat_dirname);
-		$edit_stat_pattern = mysql_real_escape_string($edit_stat_pattern);
-		$edit_stat_behunits = mysql_real_escape_string($edit_stat_behunits);
+		$edit_stat_asciiscript = mysqli_real_escape_string($edit_stat_asciiscript);
+		$edit_beh_digits = mysqli_real_escape_string($edit_beh_digits);
+		$edit_stat_dirname = mysqli_real_escape_string($edit_stat_dirname);
+		$edit_stat_pattern = mysqli_real_escape_string($edit_stat_pattern);
+		$edit_stat_behunits = mysqli_real_escape_string($edit_stat_behunits);
 		if ($edit_stat_volterra == "yes") { $edit_stat_volterra = "1"; } else { $edit_stat_volterra = "0"; }
-		$edit_stats_basisfunction = mysql_real_escape_string($edit_stats_basisfunction);
-		$edit_stat_onsetfiles = mysql_real_escape_string(FormatMatrix($edit_stat_onsetfiles));
-		$edit_stat_durationfiles = mysql_real_escape_string(FormatMatrix($edit_stat_durationfiles));
-		$edit_stat_regressorfiles = mysql_real_escape_string(FormatMatrix($edit_stat_regressorfiles));
-		$edit_stat_regressornames = mysql_real_escape_string(FormatMatrix($edit_stat_regressornames));
-		$edit_stat_parameternames = mysql_real_escape_string(FormatMatrix($edit_stat_parameternames));
-		$edit_stat_parameterorders = mysql_real_escape_string(FormatMatrix($edit_stat_parameterorders));
-		$edit_stat_parameterfiles = mysql_real_escape_string(FormatMatrix($edit_stat_parameterfiles));
-		$edit_stat_censorfiles = mysql_real_escape_string(FormatMatrix($edit_stat_censorfiles));
-		$edit_stat_timemodulation = mysql_real_escape_string($edit_stat_timemodulation);
-		$edit_stat_parametricmodulation = mysql_real_escape_string($edit_stat_parametricmodulation);
+		$edit_stats_basisfunction = mysqli_real_escape_string($edit_stats_basisfunction);
+		$edit_stat_onsetfiles = mysqli_real_escape_string(FormatMatrix($edit_stat_onsetfiles));
+		$edit_stat_durationfiles = mysqli_real_escape_string(FormatMatrix($edit_stat_durationfiles));
+		$edit_stat_regressorfiles = mysqli_real_escape_string(FormatMatrix($edit_stat_regressorfiles));
+		$edit_stat_regressornames = mysqli_real_escape_string(FormatMatrix($edit_stat_regressornames));
+		$edit_stat_parameternames = mysqli_real_escape_string(FormatMatrix($edit_stat_parameternames));
+		$edit_stat_parameterorders = mysqli_real_escape_string(FormatMatrix($edit_stat_parameterorders));
+		$edit_stat_parameterfiles = mysqli_real_escape_string(FormatMatrix($edit_stat_parameterfiles));
+		$edit_stat_censorfiles = mysqli_real_escape_string(FormatMatrix($edit_stat_censorfiles));
+		$edit_stat_timemodulation = mysqli_real_escape_string($edit_stat_timemodulation);
+		$edit_stat_parametricmodulation = mysqli_real_escape_string($edit_stat_parametricmodulation);
 
 		$cons = FormatContrastMatrix($edit_stat_contrastmatrix);
 		$edit_stat_tcontrasts = $cons[0];
 		//$edit_stat_tcon_columnlabels = $cons[1];
-		$edit_stat_tcontrastnames = mysql_real_escape_string($cons[2]);
-		//$edit_stat_tcontrasts = mysql_real_escape_string($edit_stat_tcontrasts);
-		//$edit_stat_tcontrastnames = mysql_real_escape_string($edit_stat_tcontrastnames);
+		$edit_stat_tcontrastnames = mysqli_real_escape_string($cons[2]);
+		//$edit_stat_tcontrasts = mysqli_real_escape_string($edit_stat_tcontrasts);
+		//$edit_stat_tcontrastnames = mysqli_real_escape_string($edit_stat_tcontrastnames);
 
 		//echo "<pre>";
 		//print_r($edit_stat_tcontrasts);
@@ -160,16 +160,16 @@
 
 		if ($edit_stat_globalfx == "yes") { $edit_stat_globalfx = "1"; } else { $edit_stat_globalfx = "0"; }
 		if ($edit_stat_serialcorr == "yes") { $edit_stat_serialcorr = "1"; } else { $edit_stat_serialcorr = "0"; }
-		$edit_stat_autoslicecons = mysql_real_escape_string($edit_stat_autoslicecons);
-		$edit_stat_autoslicebackground = mysql_real_escape_string($edit_stat_autoslicebackground);
-		$edit_stat_autosliceslices = mysql_real_escape_string($edit_stat_autosliceslices);
-		$edit_stat_autosliceemailcons = mysql_real_escape_string($edit_stat_autosliceemailcons);
+		$edit_stat_autoslicecons = mysqli_real_escape_string($edit_stat_autoslicecons);
+		$edit_stat_autoslicebackground = mysqli_real_escape_string($edit_stat_autoslicebackground);
+		$edit_stat_autosliceslices = mysqli_real_escape_string($edit_stat_autosliceslices);
+		$edit_stat_autosliceemailcons = mysqli_real_escape_string($edit_stat_autosliceemailcons);
 		if ($edit_db_overwritebeta == "yes") { $edit_db_overwritebeta = "1"; } else { $edit_db_overwritebeta = "0"; }
-		$edit_db_fileprefix = mysql_real_escape_string($edit_db_fileprefix);
-		$edit_db_betanums = mysql_real_escape_string($edit_db_betanums);
-		$edit_db_smoothkernel = mysql_real_escape_string($edit_db_smoothkernel);
-		$edit_db_imcalcs = mysql_real_escape_string(FormatMatrix($edit_db_imcalcs));
-		$edit_db_imnames = mysql_real_escape_string(FormatMatrix($edit_db_imnames));
+		$edit_db_fileprefix = mysqli_real_escape_string($edit_db_fileprefix);
+		$edit_db_betanums = mysqli_real_escape_string($edit_db_betanums);
+		$edit_db_smoothkernel = mysqli_real_escape_string($edit_db_smoothkernel);
+		$edit_db_imcalcs = mysqli_real_escape_string(FormatMatrix($edit_db_imcalcs));
+		$edit_db_imnames = mysqli_real_escape_string(FormatMatrix($edit_db_imnames));
 
 
 		$sqlstring  = "insert into task_stats_prefs ( taskid, description, shortname, extralines, startdate, enddate, do_behmatchup, do_stats, do_censor, do_autoslice, do_db, beh_queue, beh_digits, stats_makeasciis, stats_asciiscriptpath, stats_behdirname, stats_relativepath, stats_dirname, stats_pattern, stats_behunits, stats_volterra, stats_basisfunction, stats_onsetfiles, stats_durationfiles, stats_regressorfiles, stats_regressornames, stats_paramnames, stats_paramorders, stats_paramfiles, stats_censorfiles, stats_fit_xbflength, stats_fit_xbforder, stats_timemodulation, stats_parametricmodulation, stats_globalfx, stats_highpasscutoff, stats_serialcorr, stats_tcontrasts, stats_tcontrastnames, autoslice_cons, autoslice_p, autoslice_background, autoslice_slices, autoslice_emailcons, db_overwritebeta, db_fileprefix, db_betanums, db_threshold, db_smoothkernel, db_imcalcs, db_imnames ) values ($taskid, '$edit_description', '$edit_shortname', '$edit_extralines', now(), '3000-01-01 00:00:00', $edit_do_behmatchup, $edit_do_stats, $edit_do_censor, $edit_do_autoslice, $edit_do_db, '$edit_beh_queue', '$edit_beh_digits', $edit_stat_makeasciis, '$edit_stat_asciiscript', '$edit_stat_behdirname', '$edit_stat_relativepath', '$edit_stat_dirname', '$edit_stat_pattern', '$edit_stat_behunits', $edit_stat_volterra, $edit_stats_basisfunction, '$edit_stat_onsetfiles', '$edit_stat_durationfiles', '$edit_stat_regressorfiles', '$edit_stat_regressornames', '$edit_stat_parameternames', '$edit_stat_parameterorders', '$edit_stat_parameterfiles', '$edit_stat_censorfiles', '$edit_stat_xbflength', '$edit_stat_xbforder', '$edit_stat_timemodulation', '$edit_stat_parametricmodulation', $edit_stat_globalfx, $edit_stat_highpasscutoff, $edit_stat_serialcorr, '$edit_stat_tcontrasts', '$edit_stat_tcontrastnames', '$edit_stat_autoslicecons', '$edit_stat_autoslicep', '$edit_stat_autoslicebackground', '$edit_stat_autosliceslices', '$edit_stat_autosliceemailcons', $edit_db_overwritebeta, '$edit_db_fileprefix', '$edit_db_betanums', '$edit_db_threshold', '$edit_db_smoothkernel', '$edit_db_imcalcs', '$edit_db_imnames')";
@@ -192,34 +192,34 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		//$id = $row['id'];
 		//$taskid = $row['taskid'];
-		$description = mysql_real_escape_string($row['description']);
-		$shortname = "copy_of_" . mysql_real_escape_string($row['shortname']);
-		$extralines = mysql_real_escape_string($row['extralines']);
+		$description = mysqli_real_escape_string($row['description']);
+		$shortname = "copy_of_" . mysqli_real_escape_string($row['shortname']);
+		$extralines = mysqli_real_escape_string($row['extralines']);
 		//$startdate = $row['startdate'];
 		$do_behmatchup = $row['do_behmatchup'];
 		$do_stats = $row['do_stats'];
 		$do_censor = $row['do_censor'];
 		$do_autoslice = $row['do_autoslice'];
 		$do_db = $row['do_db'];
-		$beh_queue = mysql_real_escape_string($row['beh_queue']);
-		$beh_digits = mysql_real_escape_string($row['beh_digits']);
+		$beh_queue = mysqli_real_escape_string($row['beh_queue']);
+		$beh_digits = mysqli_real_escape_string($row['beh_digits']);
 		$stats_makeasciis = $row['stats_makeasciis'];
-		$stats_asciiscriptpath = mysql_real_escape_string($row['stats_asciiscriptpath']);
-		$stats_behdirname = mysql_real_escape_string($row['stats_behdirname']);
-		$stats_relativepath = mysql_real_escape_string($row['stats_relativepath']);
-		$stats_dirname = mysql_real_escape_string($row['stats_dirname']);
-		$stats_pattern = mysql_real_escape_string($row['stats_pattern']);
+		$stats_asciiscriptpath = mysqli_real_escape_string($row['stats_asciiscriptpath']);
+		$stats_behdirname = mysqli_real_escape_string($row['stats_behdirname']);
+		$stats_relativepath = mysqli_real_escape_string($row['stats_relativepath']);
+		$stats_dirname = mysqli_real_escape_string($row['stats_dirname']);
+		$stats_pattern = mysqli_real_escape_string($row['stats_pattern']);
 		$stats_behunits = $row['stats_behunits'];
 		$stats_volterra = $row['stats_volterra'];
 		$stats_basisfunction = $row['stats_basisfunction'];
-		$stats_onsetfiles = mysql_real_escape_string($row['stats_onsetfiles']);
-		$stats_durationfiles = mysql_real_escape_string($row['stats_durationfiles']);
-		$stats_regressorfiles = mysql_real_escape_string($row['stats_regressorfiles']);
-		$stats_regressornames = mysql_real_escape_string($row['stats_regressornames']);
-		$stats_paramnames = mysql_real_escape_string($row['stats_paramnames']);
-		$stats_paramorders = mysql_real_escape_string($row['stats_paramorders']);
-		$stats_paramfiles = mysql_real_escape_string($row['stats_paramfiles']);
-		$stats_censorfiles = mysql_real_escape_string($row['stats_censorfiles']);
+		$stats_onsetfiles = mysqli_real_escape_string($row['stats_onsetfiles']);
+		$stats_durationfiles = mysqli_real_escape_string($row['stats_durationfiles']);
+		$stats_regressorfiles = mysqli_real_escape_string($row['stats_regressorfiles']);
+		$stats_regressornames = mysqli_real_escape_string($row['stats_regressornames']);
+		$stats_paramnames = mysqli_real_escape_string($row['stats_paramnames']);
+		$stats_paramorders = mysqli_real_escape_string($row['stats_paramorders']);
+		$stats_paramfiles = mysqli_real_escape_string($row['stats_paramfiles']);
+		$stats_censorfiles = mysqli_real_escape_string($row['stats_censorfiles']);
 		//$stats_censorfiles_format = $row['stats_censorfiles'];
 		$stats_fit_xbflength = $row['stats_fit_xbflength'];
 		$stats_fit_xbforder = $row['stats_fit_xbforder'];
@@ -228,20 +228,20 @@
 		$stats_globalfx = $row['stats_globalfx'];
 		$stats_highpasscutoff = $row['stats_highpasscutoff'];
 		$stats_serialcorr = $row['stats_serialcorr'];
-		$stats_tcontrasts = mysql_real_escape_string($row['stats_tcontrasts']);
-		$stats_tcontrastnames = mysql_real_escape_string($row['stats_tcontrastnames']);
-		$autoslice_cons = mysql_real_escape_string($row['autoslice_cons']);
-		$autoslice_p = mysql_real_escape_string($row['autoslice_p']);
+		$stats_tcontrasts = mysqli_real_escape_string($row['stats_tcontrasts']);
+		$stats_tcontrastnames = mysqli_real_escape_string($row['stats_tcontrastnames']);
+		$autoslice_cons = mysqli_real_escape_string($row['autoslice_cons']);
+		$autoslice_p = mysqli_real_escape_string($row['autoslice_p']);
 		$autoslice_background = $row['autoslice_background'];
 		$autoslice_slices = $row['autoslice_slices'];
 		$autoslice_emailcons = $row['autoslice_emailcons'];
 		$db_overwritebeta = $row['db_overwritebeta'];
-		$db_fileprefix = mysql_real_escape_string($row['db_fileprefix']);
+		$db_fileprefix = mysqli_real_escape_string($row['db_fileprefix']);
 		$db_betanums = $row['db_betanums'];
 		$db_threshold = $row['db_threshold'];
 		$db_smoothkernel = $row['db_smoothkernel'];
-		$db_imcalcs = mysql_real_escape_string($row['db_imcalcs']);
-		$db_imnames = mysql_real_escape_string($row['db_imnames']);
+		$db_imcalcs = mysqli_real_escape_string($row['db_imcalcs']);
+		$db_imnames = mysqli_real_escape_string($row['db_imnames']);
 		
 		$sqlstring  = "insert into task_stats_prefs ( taskid, description, shortname, extralines, startdate, enddate, do_behmatchup, do_stats, do_censor, do_autoslice, do_db, beh_queue, beh_digits, stats_makeasciis, stats_asciiscriptpath, stats_behdirname, stats_relativepath, stats_dirname, stats_pattern, stats_behunits, stats_volterra, stats_basisfunction, stats_onsetfiles, stats_durationfiles, stats_regressorfiles, stats_regressornames, stats_paramnames, stats_paramorders, stats_paramfiles, stats_censorfiles, stats_fit_xbflength, stats_fit_xbforder, stats_timemodulation, stats_parametricmodulation, stats_globalfx, stats_highpasscutoff, stats_serialcorr, stats_tcontrasts, stats_tcontrastnames, autoslice_cons, autoslice_p, autoslice_background, autoslice_slices, autoslice_emailcons, db_overwritebeta, db_fileprefix, db_betanums, db_threshold, db_smoothkernel, db_imcalcs, db_imnames ) values ($taskid, '$description', '$shortname', '$extralines', now(), '3000-01-01 00:00:00', '$do_behmatchup', '$do_stats', '$do_censor', '$do_autoslice', '$do_db', '$beh_queue', '$beh_digits', '$stats_makeasciis', '$stats_asciiscript', '$stats_behdirname', '$stats_relativepath', '$stats_dirname', '$stats_pattern', '$stats_behunits', '$stats_volterra', '$stats_basisfunction', '$stats_onsetfiles', '$stats_durationfiles', '$stats_regressorfiles', '$stats_regressornames', '$stats_parameternames', '$stats_parameterorders', '$stats_parameterfiles', '$stats_censorfiles', '$stats_xbflength', '$stats_xbforder', '$stats_timemodulation', '$stats_parametricmodulation', '$stats_globalfx', '$stats_highpasscutoff', '$stats_serialcorr', '$stats_tcontrasts', '$stats_tcontrastnames', '$autoslice_cons', '$autoslice_p', '$autoslice_background', '$autoslice_slices', '$autoslice_emailcons', '$db_overwritebeta', '$db_fileprefix', '$db_betanums', '$db_threshold', '$db_smoothkernel', '$db_imcalcs', '$db_imnames')";
 		//echo "$sqlstring<br>";

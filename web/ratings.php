@@ -67,7 +67,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 
-		$notes = mysql_real_escape_string($notes);
+		$notes = mysqli_real_escape_string($notes);
 		
 		$sqlstring = "insert into ratings (rater_id, data_id, data_modality, rating_type, rating_value, rating_notes, rating_date) values ($userid, $id, '$modality', '$type', $value, '$notes', now())";
 		//echo "$sqlstring<br>";

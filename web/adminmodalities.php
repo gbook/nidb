@@ -88,8 +88,8 @@
 	/* -------------------------------------------- */
 	function Updatemodality($id, $modalityname, $modalitydesc, $admin) {
 		/* perform data checks */
-		$modalityname = mysql_real_escape_string($modalityname);
-		$modalitydesc = mysql_real_escape_string($modalitydesc);
+		$modalityname = mysqli_real_escape_string($modalityname);
+		$modalitydesc = mysqli_real_escape_string($modalitydesc);
 		
 		/* update the modality */
 		$sqlstring = "update modalities set modality_name = '$modalityname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
@@ -104,8 +104,8 @@
 	/* -------------------------------------------- */
 	function Addmodality($modalityname, $modalitydesc, $admin) {
 		/* perform data checks */
-		$modalityname = mysql_real_escape_string($modalityname);
-		$modalitydesc = mysql_real_escape_string($modalitydesc);
+		$modalityname = mysqli_real_escape_string($modalityname);
+		$modalitydesc = mysqli_real_escape_string($modalitydesc);
 		
 		/* insert the new modality */
 		$sqlstring = "insert into modalities (modality_name, modality_desc, modality_admin, modality_createdate, modality_status) values ('$modalityname', '$modalitydesc', '$admin', now(), 'active')";
@@ -215,8 +215,8 @@
 	/* -------------------------------------------- */
 	function UpdateProtocolGroup($protocols, $thegroup, $modality) {
 		/* perform data checks */
-		$modality = mysql_real_escape_string(strtoupper($modality));
-		$thegroup = mysql_real_escape_string($thegroup);
+		$modality = mysqli_real_escape_string(strtoupper($modality));
+		$thegroup = mysqli_real_escape_string($thegroup);
 		
 		//PrintVariable($protocols, 'protocol');
 		
@@ -236,7 +236,7 @@
 		}
 		
 		foreach ($protocols as $protocol) {
-			$protocol = mysql_real_escape_string($protocol);
+			$protocol = mysqli_real_escape_string($protocol);
 			$sqlstring = "insert ignore into protocolgroup_items (protocolgroup_id, pgitem_protocol) values ($protocolgroupid,'$protocol')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -253,7 +253,7 @@
 		NavigationBar("Admin", $urllist);
 
 		/* perform data checks */
-		$modalityname = mysql_real_escape_string($modalityname);
+		$modalityname = mysqli_real_escape_string($modalityname);
 		
 		$sqlstring = "select * from modalities where mod_id = '$id' or mod_code = '$modality'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

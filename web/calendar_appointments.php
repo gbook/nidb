@@ -131,8 +131,8 @@
 		if (!strtotime($startdatetime)) { DisplayForm("", "'Start date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($enddatetime)) { DisplayForm("", "'End date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		
-		$details = mysql_real_escape_string($details);
-		$title = mysql_real_escape_string($title);
+		$details = mysqli_real_escape_string($details);
+		$title = mysqli_real_escape_string($title);
 
 		/* check if this appointment repeats */
 		if (!$repeats) {

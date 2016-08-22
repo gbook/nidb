@@ -167,20 +167,20 @@
 	/* -------------------------------------------- */
 	function UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid) {
 		/* perform data checks */
-		$name = mysql_real_escape_string("$lastname^$firstname");
-		$dob = mysql_real_escape_string($dob);
-		$gender = mysql_real_escape_string($gender);
-		$ethnicity1 = mysql_real_escape_string($ethnicity1);
-		$ethnicity2 = mysql_real_escape_string($ethnicity2);
-		$handedness = mysql_real_escape_string($handedness);
-		$education = mysql_real_escape_string($education);
-		$phone = mysql_real_escape_string($phone);
-		$email = mysql_real_escape_string($email);
-		$maritalstatus = mysql_real_escape_string($maritalstatus);
-		$smokingstatus = mysql_real_escape_string($smokingstatus);
-		$cancontact = mysql_real_escape_string($cancontact);
+		$name = mysqli_real_escape_string("$lastname^$firstname");
+		$dob = mysqli_real_escape_string($dob);
+		$gender = mysqli_real_escape_string($gender);
+		$ethnicity1 = mysqli_real_escape_string($ethnicity1);
+		$ethnicity2 = mysqli_real_escape_string($ethnicity2);
+		$handedness = mysqli_real_escape_string($handedness);
+		$education = mysqli_real_escape_string($education);
+		$phone = mysqli_real_escape_string($phone);
+		$email = mysqli_real_escape_string($email);
+		$maritalstatus = mysqli_real_escape_string($maritalstatus);
+		$smokingstatus = mysqli_real_escape_string($smokingstatus);
+		$cancontact = mysqli_real_escape_string($cancontact);
 		$altuidlist = $altuids;
-		$guid = mysql_real_escape_string($guid);
+		$guid = mysqli_real_escape_string($guid);
 		
 		//print_r($altuids);
 		//print_r($enrollmentids);
@@ -196,7 +196,7 @@
 		/* ... and insert the new rows into the altuids table */
 		$i=0;
 		foreach ($altuidlist as $altuidsublist) {
-			$altuidsublist = mysql_real_escape_string($altuidsublist);
+			$altuidsublist = mysqli_real_escape_string($altuidsublist);
 			//echo($altuidsublist);
 			$altuids = explode(',',$altuidsublist);
 			foreach ($altuids as $altuid) {
@@ -229,20 +229,20 @@
 			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
 		}
 		/* perform data checks */
-		$name = mysql_real_escape_string("$lastname^$firstname");
-		$dob = mysql_real_escape_string($dob);
-		$gender = mysql_real_escape_string($gender);
-		$ethnicity1 = mysql_real_escape_string($ethnicity1);
-		$ethnicity2 = mysql_real_escape_string($ethnicity2);
-		$handedness = mysql_real_escape_string($handedness);
-		$education = mysql_real_escape_string($education);
-		$phone = mysql_real_escape_string($phone);
-		$email = mysql_real_escape_string($email);
-		$maritalstatus = mysql_real_escape_string($maritalstatus);
-		$smokingstatus = mysql_real_escape_string($smokingstatus);
-		$cancontact = mysql_real_escape_string($cancontact);
-		$altuid = mysql_real_escape_string($altuid);
-		$guid = mysql_real_escape_string($guid);
+		$name = mysqli_real_escape_string("$lastname^$firstname");
+		$dob = mysqli_real_escape_string($dob);
+		$gender = mysqli_real_escape_string($gender);
+		$ethnicity1 = mysqli_real_escape_string($ethnicity1);
+		$ethnicity2 = mysqli_real_escape_string($ethnicity2);
+		$handedness = mysqli_real_escape_string($handedness);
+		$education = mysqli_real_escape_string($education);
+		$phone = mysqli_real_escape_string($phone);
+		$email = mysqli_real_escape_string($email);
+		$maritalstatus = mysqli_real_escape_string($maritalstatus);
+		$smokingstatus = mysqli_real_escape_string($smokingstatus);
+		$cancontact = mysqli_real_escape_string($cancontact);
+		$altuid = mysqli_real_escape_string($altuid);
+		$guid = mysqli_real_escape_string($guid);
 		$altuids = explode(',',$altuid);
 
 		# create a new uid
@@ -499,20 +499,20 @@
 		
 		/* update the primary subject with the info */
 		/* perform data checks */
-		$name = mysql_real_escape_string($name[$selectedid]);
-		$dob = mysql_real_escape_string($dob[$selectedid]);
-		$gender = mysql_real_escape_string($gender[$selectedid]);
-		$ethnicity1 = mysql_real_escape_string($ethnicity1[$selectedid]);
-		$ethnicity2 = mysql_real_escape_string($ethnicity2[$selectedid]);
-		$handedness = mysql_real_escape_string($handedness[$selectedid]);
-		$education = mysql_real_escape_string($education[$selectedid]);
-		$phone1 = mysql_real_escape_string($phone1[$selectedid]);
-		$email = mysql_real_escape_string($email[$selectedid]);
-		$maritalstatus = mysql_real_escape_string($maritalstatus[$selectedid]);
-		$smokingstatus = mysql_real_escape_string($smokingstatus[$selectedid]);
-		$cancontact = mysql_real_escape_string($cancontact[$selectedid]);
-		$altuid = mysql_real_escape_string($altuid[$selectedid]);
-		$guid = mysql_real_escape_string($guid[$selectedid]);
+		$name = mysqli_real_escape_string($name[$selectedid]);
+		$dob = mysqli_real_escape_string($dob[$selectedid]);
+		$gender = mysqli_real_escape_string($gender[$selectedid]);
+		$ethnicity1 = mysqli_real_escape_string($ethnicity1[$selectedid]);
+		$ethnicity2 = mysqli_real_escape_string($ethnicity2[$selectedid]);
+		$handedness = mysqli_real_escape_string($handedness[$selectedid]);
+		$education = mysqli_real_escape_string($education[$selectedid]);
+		$phone1 = mysqli_real_escape_string($phone1[$selectedid]);
+		$email = mysqli_real_escape_string($email[$selectedid]);
+		$maritalstatus = mysqli_real_escape_string($maritalstatus[$selectedid]);
+		$smokingstatus = mysqli_real_escape_string($smokingstatus[$selectedid]);
+		$cancontact = mysqli_real_escape_string($cancontact[$selectedid]);
+		$altuid = mysqli_real_escape_string($altuid[$selectedid]);
+		$guid = mysqli_real_escape_string($guid[$selectedid]);
 		$altuids = explode(',',$altuid);
 
 		PrintVariable($enrollgroup);
@@ -557,7 +557,7 @@
 		/* update the enrollment group */
 		foreach ($enrollgroup as $enrollid => $value) {
 			if (trim($value) != '') {
-				$value = mysql_real_escape_string($value);
+				$value = mysqli_real_escape_string($value);
 				$sqlstring = "update enrollment set enroll_subgroup = '$value' where subject_id = $selectedid and enrollment_id = $enrollid";
 				echo "<li>Updating enrollment group [$sqlstring]";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2478,12 +2478,12 @@
 	/* -------------------------------------------- */
 	function DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive) {
 	
-		$searchuid = mysql_real_escape_string($searchuid);
-		$searchaltuid = mysql_real_escape_string($searchaltuid);
-		$searchname = mysql_real_escape_string($searchname);
-		$searchgender = mysql_real_escape_string($searchgender);
-		$searchdob = mysql_real_escape_string($searchdob);
-		$searchactive = mysql_real_escape_string($searchactive);
+		$searchuid = mysqli_real_escape_string($searchuid);
+		$searchaltuid = mysqli_real_escape_string($searchaltuid);
+		$searchname = mysqli_real_escape_string($searchname);
+		$searchgender = mysqli_real_escape_string($searchgender);
+		$searchdob = mysqli_real_escape_string($searchdob);
+		$searchactive = mysqli_real_escape_string($searchactive);
 	?>
 	<script>
 		$(document).ready(function() {

@@ -251,8 +251,8 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function AuthenticateStandardUser($username, $password) {
 		/* attempt to authenticate a standard user */
-		$username = mysql_real_escape_string($username);
-		$password = mysql_real_escape_string($password);
+		$username = mysqli_real_escape_string($username);
+		$password = mysqli_real_escape_string($password);
 		
 		if ((trim($username) == "") || (trim($password) == ""))
 			return false;

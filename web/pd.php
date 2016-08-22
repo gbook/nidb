@@ -97,7 +97,7 @@
 	/* ------- DisplayDownload -------------------- */
 	/* -------------------------------------------- */
 	function DisplayDownload($k, $p) {
-		$k = mysql_real_escape_string($k);
+		$k = mysqli_real_escape_string($k);
 
 		if (trim($k) == "") {
 			DisplayInvalidLink();

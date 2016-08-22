@@ -177,24 +177,24 @@
 	/* -------------------------------------------- */
 	function UpdateStudy($id, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter) {
 		/* perform data checks */
-		$modality = mysql_real_escape_string($modality);
-		$studydatetime = mysql_real_escape_string($studydatetime);
-		$studyageatscan = mysql_real_escape_string($studyageatscan);
-		$studyheight = mysql_real_escape_string($studyheight);
-		$studyweight = mysql_real_escape_string($studyweight);
-		$studytype = mysql_real_escape_string($studytype);
-		$studyoperator = mysql_real_escape_string($studyoperator);
-		$studyphysician = mysql_real_escape_string($studyphysician);
-		$studysite = mysql_real_escape_string($studysite);
-		$studynotes = mysql_real_escape_string($studynotes);
-		$studyradreaddate = mysql_real_escape_string($studyradreaddate);
-		$studyradreadfindings = mysql_real_escape_string($studyradreadfindings);
-		$studyetsnellchart = mysql_real_escape_string($studyetsnellchart);
-		$studyetvergence = mysql_real_escape_string($studyetvergence);
-		$studyettracking = mysql_real_escape_string($studyettracking);
-		$studysnpchip = mysql_real_escape_string($studysnpchip);
-		$studyaltid = mysql_real_escape_string($studyaltid);
-		$studyexperimenter = mysql_real_escape_string($studyexperimenter);
+		$modality = mysqli_real_escape_string($modality);
+		$studydatetime = mysqli_real_escape_string($studydatetime);
+		$studyageatscan = mysqli_real_escape_string($studyageatscan);
+		$studyheight = mysqli_real_escape_string($studyheight);
+		$studyweight = mysqli_real_escape_string($studyweight);
+		$studytype = mysqli_real_escape_string($studytype);
+		$studyoperator = mysqli_real_escape_string($studyoperator);
+		$studyphysician = mysqli_real_escape_string($studyphysician);
+		$studysite = mysqli_real_escape_string($studysite);
+		$studynotes = mysqli_real_escape_string($studynotes);
+		$studyradreaddate = mysqli_real_escape_string($studyradreaddate);
+		$studyradreadfindings = mysqli_real_escape_string($studyradreadfindings);
+		$studyetsnellchart = mysqli_real_escape_string($studyetsnellchart);
+		$studyetvergence = mysqli_real_escape_string($studyetvergence);
+		$studyettracking = mysqli_real_escape_string($studyettracking);
+		$studysnpchip = mysqli_real_escape_string($studysnpchip);
+		$studyaltid = mysqli_real_escape_string($studyaltid);
+		$studyexperimenter = mysqli_real_escape_string($studyexperimenter);
 		
 		/* update the user */
 		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $id";
@@ -208,9 +208,9 @@
 	/* ------- AddGenericSeries ------------------- */
 	/* -------------------------------------------- */
 	function AddGenericSeries($id, $modality, $series_num, $protocol, $series_datetime, $notes) {
-		$protocol = mysql_real_escape_string($protocol);
-		$notes = mysql_real_escape_string($notes);
-		$series_datetime = mysql_real_escape_string($series_datetime);
+		$protocol = mysqli_real_escape_string($protocol);
+		$notes = mysqli_real_escape_string($notes);
+		$series_datetime = mysqli_real_escape_string($series_datetime);
 
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($id, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -223,7 +223,7 @@
 	/* ------- HideMRSeries ----------------------- */
 	/* -------------------------------------------- */
 	function HideMRSeries($seriesid) {
-		$seriesid = mysql_real_escape_string($seriesid);
+		$seriesid = mysqli_real_escape_string($seriesid);
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			$sqlstring = "update mr_series set ishidden = 1 where mrseries_id = $seriesid";
@@ -240,7 +240,7 @@
 	/* ------- UnhideMRSeries ----------------------- */
 	/* -------------------------------------------- */
 	function UnhideMRSeries($seriesid) {
-		$seriesid = mysql_real_escape_string($seriesid);
+		$seriesid = mysqli_real_escape_string($seriesid);
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			$sqlstring = "update mr_series set ishidden = 0 where mrseries_id = $seriesid";
@@ -257,9 +257,9 @@
 	/* ------- UpdateGenericSeries ---------------- */
 	/* -------------------------------------------- */
 	function UpdateGenericSeries($seriesid, $modality, $protocol, $series_datetime, $notes) {
-		$protocol = mysql_real_escape_string($protocol);
-		$notes = mysql_real_escape_string($notes);
-		$series_datetime = mysql_real_escape_string($series_datetime);
+		$protocol = mysqli_real_escape_string($protocol);
+		$notes = mysqli_real_escape_string($notes);
+		$series_datetime = mysqli_real_escape_string($series_datetime);
 		//echo "hello!";
 		$sqlstring = "update " . strtolower($modality) . "_series set series_datetime = '$series_datetime', series_protocol = '$protocol', series_notes  = '$notes' where " . strtolower($modality) . "series_id = $seriesid";
 		//echo "$sqlstring<br>";
@@ -667,7 +667,7 @@
 			?><div class="staticmessage">Invalid or blank study ID [<?=$id?>]</div><?
 		}
 	
-		$id = mysql_real_escape_string($id);
+		$id = mysqli_real_escape_string($id);
 		
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$id'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

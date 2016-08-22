@@ -33,7 +33,7 @@
 		$id = $_POST['id'];
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];
-		$value = mysql_real_escape_string($_POST['update_value']);
+		$value = mysqli_real_escape_string($_POST['update_value']);
 		$sqlstring = "update $modality" . "_series set $field = '$value' where $modality" . "series_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($_POST['update_value'] == "") { $dispvalue = " "; } else { $dispvalue = $_POST['update_value']; }

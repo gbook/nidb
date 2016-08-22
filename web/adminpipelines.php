@@ -76,8 +76,8 @@
 	/* -------------------------------------------- */
 	function UpdatePipeline($id, $pipelinename, $pipelinedesc, $admin) {
 		/* perform data checks */
-		$pipelinename = mysql_real_escape_string($pipelinename);
-		$pipelinedesc = mysql_real_escape_string($pipelinedesc);
+		$pipelinename = mysqli_real_escape_string($pipelinename);
+		$pipelinedesc = mysqli_real_escape_string($pipelinedesc);
 		
 		/* update the pipeline */
 		$sqlstring = "update pipelines set pipeline_name = '$pipelinename', pipeline_desc = '$pipelinedesc', pipeline_admin = '$admin' where pipeline_id = $id";
@@ -92,8 +92,8 @@
 	/* -------------------------------------------- */
 	function AddPipeline($pipelinename, $pipelinedesc, $admin) {
 		/* perform data checks */
-		$pipelinename = mysql_real_escape_string($pipelinename);
-		$pipelinedesc = mysql_real_escape_string($pipelinedesc);
+		$pipelinename = mysqli_real_escape_string($pipelinename);
+		$pipelinedesc = mysqli_real_escape_string($pipelinedesc);
 		
 		/* insert the new pipeline */
 		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_admin, pipeline_createdate, pipeline_status) values ('$pipelinename', '$pipelinedesc', '$admin', now(), 'active')";

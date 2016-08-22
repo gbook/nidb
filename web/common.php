@@ -71,10 +71,10 @@
 	/* ------- AddCommonObject -------------------- */
 	/* -------------------------------------------- */
 	function AddCommonObject($type, $group, $name, $desc, $value) {
-		$group = mysql_real_escape_string($group);
-		$name = mysql_real_escape_string($name);
-		$desc = mysql_real_escape_string($desc);
-		$value = mysql_real_escape_string($value);
+		$group = mysqli_real_escape_string($group);
+		$name = mysqli_real_escape_string($name);
+		$desc = mysqli_real_escape_string($desc);
+		$value = mysqli_real_escape_string($value);
 		
 		$size = strlen($value);
 		

@@ -131,9 +131,9 @@
 		if ($description == "") { AddForm("'Description' is blank",$name, $description, $location); return; }
 		if ($location == "") { AddForm("'Location' is blank",$name, $description, $location); return; }
 
-		$name = mysql_real_escape_string($name);
-		$description = mysql_real_escape_string($description);
-		$location = mysql_real_escape_string($location);
+		$name = mysqli_real_escape_string($name);
+		$description = mysqli_real_escape_string($description);
+		$location = mysqli_real_escape_string($location);
 		
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "insert into calendars (calendar_name, calendar_description, calendar_location, calendar_createdate, calendar_deletedate) values ('$name','$description','$location',now(),'3000-01-01 00:00:00')";

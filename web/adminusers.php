@@ -103,10 +103,10 @@
 	/* -------------------------------------------- */
 	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects) {
 		/* perform data checks */
-		$username = mysql_real_escape_string($username);
-		$fullname = mysql_real_escape_string($fullname);
-		$email = mysql_real_escape_string($email);
-		$password = mysql_real_escape_string($password);
+		$username = mysqli_real_escape_string($username);
+		$fullname = mysqli_real_escape_string($fullname);
+		$email = mysqli_real_escape_string($email);
+		$password = mysqli_real_escape_string($password);
 
 		/* determine their current login type */
 		$sqlstring = "select login_type from users where user_id = $id";
@@ -217,10 +217,10 @@
 	/* -------------------------------------------- */
 	function AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects) {
 		/* perform data checks */
-		$username = mysql_real_escape_string($username);
-		$fullname = mysql_real_escape_string($fullname);
-		$email = mysql_real_escape_string($email);
-		$password = mysql_real_escape_string($password);
+		$username = mysqli_real_escape_string($username);
+		$fullname = mysqli_real_escape_string($fullname);
+		$email = mysqli_real_escape_string($email);
+		$password = mysqli_real_escape_string($password);
 		
 		/* determine their current login type */
 		if ($isguest) {

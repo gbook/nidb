@@ -103,13 +103,13 @@
 	/* ------- CreateAccount ---------------------- */
 	/* -------------------------------------------- */
 	function CreateAccount($email, $firstname, $midname, $lastname, $institution, $instance, $country, $password) {
-		$email = mysql_real_escape_string($email);
-		$firstname = mysql_real_escape_string($firstname);
-		$midname = mysql_real_escape_string($midname);
-		$lastname = mysql_real_escape_string($lastname);
-		$institution = mysql_real_escape_string($institution);
-		$country = mysql_real_escape_string($country);
-		$password = mysql_real_escape_string($password);
+		$email = mysqli_real_escape_string($email);
+		$firstname = mysqli_real_escape_string($firstname);
+		$midname = mysqli_real_escape_string($midname);
+		$lastname = mysqli_real_escape_string($lastname);
+		$institution = mysqli_real_escape_string($institution);
+		$country = mysqli_real_escape_string($country);
+		$password = mysqli_real_escape_string($password);
 		
 		$securimage = new Securimage();
 		if ($securimage->check($_POST['captcha_code']) == false) {
@@ -596,7 +596,7 @@
 	/* ------- ResetPassword ---------------------- */
 	/* -------------------------------------------- */
 	function ResetPassword($email) {
-		$email = mysql_real_escape_string($email);
+		$email = mysqli_real_escape_string($email);
 
 		$safetoemail = 0;
 		

@@ -573,7 +573,7 @@
 	/* ------- mysql_real_escape_array ------------ */
 	/* -------------------------------------------- */
 	function mysql_real_escape_array ($a) {
-		return array_map ("mysql_real_escape_string",$a); 
+		return array_map ("mysqli_real_escape_string",$a); 
 	}
 	
 	
@@ -603,7 +603,7 @@
 	/* ------- ResetQA ---------------------------- */
 	/* -------------------------------------------- */
 	function ResetQA($seriesid) {
-		$seriesid = mysql_real_escape_string($seriesid);
+		$seriesid = mysqli_real_escape_string($seriesid);
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			/* delete from the mr_qa table */

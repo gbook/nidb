@@ -86,13 +86,13 @@
 	/* -------------------------------------------- */
 	function UpdateProject($id, $projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
-		$projectname = mysql_real_escape_string($projectname);
-		$admin = mysql_real_escape_string($admin);
-		$pi = mysql_real_escape_string($pi);
-		$sharing = mysql_real_escape_string($sharing);
-		$costcenter = mysql_real_escape_string($costcenter);
-		$startdate = mysql_real_escape_string($startdate);
-		$enddate = mysql_real_escape_string($enddate);
+		$projectname = mysqli_real_escape_string($projectname);
+		$admin = mysqli_real_escape_string($admin);
+		$pi = mysqli_real_escape_string($pi);
+		$sharing = mysqli_real_escape_string($sharing);
+		$costcenter = mysqli_real_escape_string($costcenter);
+		$startdate = mysqli_real_escape_string($startdate);
+		$enddate = mysqli_real_escape_string($enddate);
 		
 		/* update the project */
 		$sqlstring = "update projects set project_name = '$projectname', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
@@ -143,13 +143,13 @@
 	/* -------------------------------------------- */
 	function AddProject($projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
-		$projectname = mysql_real_escape_string($projectname);
-		$admin = mysql_real_escape_string($admin);
-		$pi = mysql_real_escape_string($pi);
-		$sharing = mysql_real_escape_string($sharing);
-		$costcenter = mysql_real_escape_string($costcenter);
-		$startdate = mysql_real_escape_string($startdate);
-		$enddate = mysql_real_escape_string($enddate);
+		$projectname = mysqli_real_escape_string($projectname);
+		$admin = mysqli_real_escape_string($admin);
+		$pi = mysqli_real_escape_string($pi);
+		$sharing = mysqli_real_escape_string($sharing);
+		$costcenter = mysqli_real_escape_string($costcenter);
+		$startdate = mysqli_real_escape_string($startdate);
+		$enddate = mysqli_real_escape_string($enddate);
 		
 		$projectuid = NIDB\CreateUID('P',4);
 		

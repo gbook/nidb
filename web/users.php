@@ -95,7 +95,7 @@
 		if (trim($username) == "") { return; }
 		
 		foreach ($c as $key => $val) {
-			$c[$key] = mysql_real_escape_string($val);
+			$c[$key] = mysqli_real_escape_string($val);
 		}
 		
 		$sqlstring = "select * from users where username = '$username'";

@@ -153,9 +153,9 @@
 		$edit_se_pattern, $edit_se_gmoutput, $edit_se_wmoutput, $edit_se_csfoutput, $edit_se_biascor, $edit_se_cleanup) {
 
 		/* fix the variables before putting them into the database */
-		$edit_description = mysql_real_escape_string($edit_description);
-		$edit_shortname = mysql_real_escape_string($edit_shortname);
-		$edit_extralines = mysql_real_escape_string($edit_extralines);
+		$edit_description = mysqli_real_escape_string($edit_description);
+		$edit_shortname = mysqli_real_escape_string($edit_shortname);
+		$edit_extralines = mysqli_real_escape_string($edit_extralines);
 		if ($edit_do_dicomconvert == "yes") { $edit_do_dicomconvert = "1"; } else { $edit_do_dicomconvert = "0"; }
 		if ($edit_do_reorient == "yes") { $edit_do_reorient = "1"; } else { $edit_do_reorient = "0"; }
 		if ($edit_do_realign == "yes") { $edit_do_realign = "1"; } else { $edit_do_realign = "0"; }
@@ -167,47 +167,47 @@
 		if ($edit_do_artrepair == "yes") { $edit_do_artrepair = "1"; } else { $edit_do_artrepair = "0"; }
 		if ($edit_do_filter == "yes") { $edit_do_filter = "1"; } else { $edit_do_filter = "0"; }
 		if ($edit_do_segment == "yes") { $edit_do_segment = "1"; } else { $edit_do_segment = "0"; }
-		$edit_di_filepattern = mysql_real_escape_string($edit_di_filepattern);
-		$edit_di_format = mysql_real_escape_string($edit_di_format);
-		$edit_di_writefileprefix = mysql_real_escape_string($edit_di_writefileprefix);
-		$edit_di_outputdir = mysql_real_escape_string($edit_di_outputdir);
-		$edit_ro_pattern = mysql_real_escape_string($edit_ro_pattern);
-		$edit_ro_vector = mysql_real_escape_string($edit_ro_vector);
+		$edit_di_filepattern = mysqli_real_escape_string($edit_di_filepattern);
+		$edit_di_format = mysqli_real_escape_string($edit_di_format);
+		$edit_di_writefileprefix = mysqli_real_escape_string($edit_di_writefileprefix);
+		$edit_di_outputdir = mysqli_real_escape_string($edit_di_outputdir);
+		$edit_ro_pattern = mysqli_real_escape_string($edit_ro_pattern);
+		$edit_ro_vector = mysqli_real_escape_string($edit_ro_vector);
 		if ($edit_ro_write == "yes") { $edit_ro_write = 1; } else { $edit_ro_write = "0"; }
 		if ($edit_re_coregister == "yes") { $edit_re_coregister = 1; } else { $edit_re_coregister = "0"; }
 		if ($edit_re_reslice == "yes") { $edit_re_reslice = "1"; } else { $edit_re_reslice = "0"; }
 		if ($edit_re_useinrialign == "yes") { $edit_re_useinrialign = "1"; } else { $edit_re_useinrialign = "0"; }
-		$edit_re_realignpattern = mysql_real_escape_string($edit_re_realignpattern);
-		$edit_re_inrialignrho = mysql_real_escape_string($edit_re_inrialignrho);
+		$edit_re_realignpattern = mysqli_real_escape_string($edit_re_realignpattern);
+		$edit_re_inrialignrho = mysqli_real_escape_string($edit_re_inrialignrho);
 		if ($edit_re_rtm == "yes") { $edit_re_rtm = "1"; } else { $edit_re_rtm = "0"; }
-		$edit_re_pw = mysql_real_escape_string($edit_re_pw);
+		$edit_re_pw = mysqli_real_escape_string($edit_re_pw);
 		if ($edit_re_writemean == "yes") { $edit_re_writemean = "1"; } else { $edit_re_writemean = "0"; }
 		if ($edit_co_run == "yes") { $edit_co_run = "1"; } else { $edit_co_run = "0"; }
 		if ($edit_co_runreslice == "yes") { $edit_co_runreslice = "1"; } else { $edit_co_runreslice = "0"; }
-		$edit_co_ref = mysql_real_escape_string($edit_co_ref);
-		$edit_co_source = mysql_real_escape_string($edit_co_source);
-		$edit_co_otherpattern = mysql_real_escape_string($edit_co_otherpattern);
-		$edit_co_writeref = mysql_real_escape_string($edit_co_writeref);
-		$edit_st_pattern = mysql_real_escape_string($edit_st_pattern);
-		$edit_st_sliceorder = mysql_real_escape_string($edit_st_sliceorder);
-		$edit_st_refslice = mysql_real_escape_string($edit_st_refslice);
-		$edit_st_ta = mysql_real_escape_string($edit_st_ta);
+		$edit_co_ref = mysqli_real_escape_string($edit_co_ref);
+		$edit_co_source = mysqli_real_escape_string($edit_co_source);
+		$edit_co_otherpattern = mysqli_real_escape_string($edit_co_otherpattern);
+		$edit_co_writeref = mysqli_real_escape_string($edit_co_writeref);
+		$edit_st_pattern = mysqli_real_escape_string($edit_st_pattern);
+		$edit_st_sliceorder = mysqli_real_escape_string($edit_st_sliceorder);
+		$edit_st_refslice = mysqli_real_escape_string($edit_st_refslice);
+		$edit_st_ta = mysqli_real_escape_string($edit_st_ta);
 		if ($edit_no_determineparams == "yes") { $edit_no_determineparams = "1"; } else { $edit_no_determineparams = "0"; }
 		if ($edit_no_writenormalized == "yes") { $edit_no_writenormalized = "1"; } else { $edit_no_writenormalized = "0"; }
-		$edit_no_paramtemplate = mysql_real_escape_string($edit_no_paramtemplate);
-		$edit_no_parampattern = mysql_real_escape_string($edit_no_parampattern);
-		$edit_no_paramsourceweight = mysql_real_escape_string($edit_no_paramsourceweight);
-		$edit_no_matname = mysql_real_escape_string($edit_no_matname);
-		$edit_no_writenormpattern = mysql_real_escape_string($edit_no_writenormpattern);
-		$edit_no_writenormmatname = mysql_real_escape_string($edit_no_writenormmatname);
-		$edit_sm_kernel = mysql_real_escape_string($edit_sm_kernel);
-		$edit_sm_pattern = mysql_real_escape_string($edit_sm_pattern);
-		$edit_ar_pattern = mysql_real_escape_string($edit_ar_pattern);
-		$edit_fi_pattern = mysql_real_escape_string($edit_fi_pattern);
-		$edit_se_pattern = mysql_real_escape_string($edit_se_pattern);
-		$edit_se_gmoutput = mysql_real_escape_string($edit_se_gmoutput);
-		$edit_se_wmoutput = mysql_real_escape_string($edit_se_wmoutput);
-		$edit_se_csfoutput = mysql_real_escape_string($edit_se_csfoutput);
+		$edit_no_paramtemplate = mysqli_real_escape_string($edit_no_paramtemplate);
+		$edit_no_parampattern = mysqli_real_escape_string($edit_no_parampattern);
+		$edit_no_paramsourceweight = mysqli_real_escape_string($edit_no_paramsourceweight);
+		$edit_no_matname = mysqli_real_escape_string($edit_no_matname);
+		$edit_no_writenormpattern = mysqli_real_escape_string($edit_no_writenormpattern);
+		$edit_no_writenormmatname = mysqli_real_escape_string($edit_no_writenormmatname);
+		$edit_sm_kernel = mysqli_real_escape_string($edit_sm_kernel);
+		$edit_sm_pattern = mysqli_real_escape_string($edit_sm_pattern);
+		$edit_ar_pattern = mysqli_real_escape_string($edit_ar_pattern);
+		$edit_fi_pattern = mysqli_real_escape_string($edit_fi_pattern);
+		$edit_se_pattern = mysqli_real_escape_string($edit_se_pattern);
+		$edit_se_gmoutput = mysqli_real_escape_string($edit_se_gmoutput);
+		$edit_se_wmoutput = mysqli_real_escape_string($edit_se_wmoutput);
+		$edit_se_csfoutput = mysqli_real_escape_string($edit_se_csfoutput);
 
 		$sqlstring  = "insert into task_preprocess_prefs (
 		taskid, description, shortname, extralines, startdate, enddate, 
@@ -268,9 +268,9 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		//$id = $row['id'];
 		//$taskid = $row['taskid'];
-		$description = mysql_real_escape_string($row['description']);
-		$shortname = "copy_of_" . mysql_real_escape_string($row['shortname']);
-		$extralines = mysql_real_escape_string($row['extralines']);
+		$description = mysqli_real_escape_string($row['description']);
+		$shortname = "copy_of_" . mysqli_real_escape_string($row['shortname']);
+		$extralines = mysqli_real_escape_string($row['extralines']);
 		//$startdate = $row['startdate'];
 		$do_dicomconvert = $row['do_dicomconvert'];
 		$do_reorient = $row['do_reorient'];
@@ -284,53 +284,53 @@
 		$do_filter = $row['do_filter'];
 		$do_segment = $row['do_segment'];
 		$dicom_filepattern = $row['dicom_filepattern'];
-		$dicom_format = mysql_real_escape_string($row['dicom_format']);
-		$dicom_writefileprefix = mysql_real_escape_string($row['dicom_writefileprefix']);
-		$dicom_outputdir = mysql_real_escape_string($row['dicom_outputdir']);
-		$reorient_pattern = mysql_real_escape_string($row['reorient_pattern']);
+		$dicom_format = mysqli_real_escape_string($row['dicom_format']);
+		$dicom_writefileprefix = mysqli_real_escape_string($row['dicom_writefileprefix']);
+		$dicom_outputdir = mysqli_real_escape_string($row['dicom_outputdir']);
+		$reorient_pattern = mysqli_real_escape_string($row['reorient_pattern']);
 		$reorient_vector = $row['reorient_vector'];
 		$reorient_write = $row['reorient_write'];
 		$realign_coregister = $row['realign_coregister'];
 		$realign_reslice = $row['realign_reslice'];
 		$realign_useinrialign = $row['realign_useinrialign'];
-		$realign_pattern = mysql_real_escape_string($row['realign_pattern']);
+		$realign_pattern = mysqli_real_escape_string($row['realign_pattern']);
 		$realign_inri_rho = $row['realign_inri_rho'];
 		$realign_inri_cutoff = $row['realign_inri_cutoff'];
 		$realign_inri_quality = $row['realign_inri_quality'];
 		$realign_fwhm = $row['realign_fwhm'];
 		$realign_tomean = $row['realign_tomean'];
-		$realign_pathtoweight = mysql_real_escape_string($row['realign_pathtoweight']);
+		$realign_pathtoweight = mysqli_real_escape_string($row['realign_pathtoweight']);
 		$realign_writeresliceimg = $row['realign_writeresliceimg'];
 		$realign_writemean = $row['realign_writemean'];
 		$coreg_run = $row['coreg_run'];
 		$coreg_runreslice = $row['coreg_runreslice'];
 		$coreg_ref = $row['coreg_ref'];
-		$coreg_source = mysql_real_escape_string($row['coreg_source']);
-		$coreg_otherpattern = mysql_real_escape_string($row['coreg_otherpattern']);
+		$coreg_source = mysqli_real_escape_string($row['coreg_source']);
+		$coreg_otherpattern = mysqli_real_escape_string($row['coreg_otherpattern']);
 		$coreg_writeref = $row['coreg_writeref'];
-		$slicetime_pattern = mysql_real_escape_string($row['slicetime_pattern']);
+		$slicetime_pattern = mysqli_real_escape_string($row['slicetime_pattern']);
 		$slicetime_sliceorder = $row['slicetime_sliceorder'];
 		$slicetime_refslice = $row['slicetime_refslice'];
 		$slicetime_ta = $row['slicetime_ta'];
 		$norm_determineparams = $row['norm_determineparams'];
 		$norm_writeimages = $row['norm_writeimages'];
-		$norm_paramstemplate = mysql_real_escape_string($row['norm_paramstemplate']);
-		$norm_paramspattern = mysql_real_escape_string($row['norm_paramspattern']);
+		$norm_paramstemplate = mysqli_real_escape_string($row['norm_paramstemplate']);
+		$norm_paramspattern = mysqli_real_escape_string($row['norm_paramspattern']);
 		$norm_paramssourceweight = $row['norm_paramssourceweight'];
-		$norm_paramsmatname = mysql_real_escape_string($row['norm_paramsmatname']);
+		$norm_paramsmatname = mysqli_real_escape_string($row['norm_paramsmatname']);
 		$norm_writepattern = $row['norm_writepattern'];
 		$norm_writematname = $row['norm_writematname'];
 		$smooth_kernel = $row['smooth_kernel'];
-		$smooth_pattern = mysql_real_escape_string($row['smooth_pattern']);
-		$art_pattern = mysql_real_escape_string($row['art_pattern']);
-		$filter_pattern = mysql_real_escape_string($row['filter_pattern']);
+		$smooth_pattern = mysqli_real_escape_string($row['smooth_pattern']);
+		$art_pattern = mysqli_real_escape_string($row['art_pattern']);
+		$filter_pattern = mysqli_real_escape_string($row['filter_pattern']);
 		$filter_cuttofffreq = $row['filter_cuttofffreq'];
-		$segment_pattern = mysql_real_escape_string($row['segment_pattern']);
-		$segment_outputgm = mysql_real_escape_string($row['segment_outputgm']);
-		$segment_outputwm = mysql_real_escape_string($row['segment_outputwm']);
-		$segment_outputcsf = mysql_real_escape_string($row['segment_outputcsf']);
-		$segment_outputbiascor = mysql_real_escape_string($row['segment_outputbiascor']);
-		$segment_outputcleanup = mysql_real_escape_string($row['segment_outputcleanup']);
+		$segment_pattern = mysqli_real_escape_string($row['segment_pattern']);
+		$segment_outputgm = mysqli_real_escape_string($row['segment_outputgm']);
+		$segment_outputwm = mysqli_real_escape_string($row['segment_outputwm']);
+		$segment_outputcsf = mysqli_real_escape_string($row['segment_outputcsf']);
+		$segment_outputbiascor = mysqli_real_escape_string($row['segment_outputbiascor']);
+		$segment_outputcleanup = mysqli_real_escape_string($row['segment_outputcleanup']);
 
 		$sqlstring  = "insert into task_preprocess_prefs (
 		taskid, description, shortname, extralines, startdate, enddate, 

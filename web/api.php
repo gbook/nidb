@@ -77,8 +77,8 @@
 	/* ------- Authenticate ----------------------- */
 	/* -------------------------------------------- */
 	function Authenticate($username, $password) {
-		$username = mysql_real_escape_string($username);
-		$password = mysql_real_escape_string($password);
+		$username = mysqli_real_escape_string($username);
+		$password = mysqli_real_escape_string($password);
 		
 		//if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
 		//	$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
@@ -106,8 +106,8 @@
 	/* -------------------------------------------- */
 	function AuthenticateStandardUser($username, $password) {
 		/* attempt to authenticate a standard user */
-		$username = mysql_real_escape_string($username);
-		$password = mysql_real_escape_string($password);
+		$username = mysqli_real_escape_string($username);
+		$password = mysqli_real_escape_string($password);
 		
 		if ((trim($username) == "") || (trim($password) == ""))
 			return false;
@@ -180,7 +180,7 @@
 	/* ------- GetUIDFromAltUID ------------------- */
 	/* -------------------------------------------- */
 	function GetUIDFromAltUID($altuid) {
-		$altuid = mysql_real_escape_string($altuid);
+		$altuid = mysqli_real_escape_string($altuid);
 
 		$sqlstring = "select uid from subjects where subject_id in (select subject_id from subject_altuid where altuid = '$altuid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -197,7 +197,7 @@
 	/* ------- GetInstanceList -------------------- */
 	/* -------------------------------------------- */
 	function GetInstanceList($u) {
-		$u = mysql_real_escape_string($u);
+		$u = mysqli_real_escape_string($u);
 
 		$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '$u')) order by instance_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -216,8 +216,8 @@
 	/* ------- GetProjectList --------------------- */
 	/* -------------------------------------------- */
 	function GetProjectList($u, $instance) {
-		$u = mysql_real_escape_string($u);
-		$instance = mysql_real_escape_string($instance);
+		$u = mysqli_real_escape_string($u);
+		$instance = mysqli_real_escape_string($instance);
 		
 		$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id left join users c on b.user_id = c.user_id where c.username = '$u' and a.instance_id = (select instance_id from instance where instance_uid = '$instance') and (b.view_data = 1 or b.view_phi = 1 or b.write_data = 1 or b.write_phi = 1) order by a.project_name";
 		//echo "$sqlstring";
@@ -237,8 +237,8 @@
 	/* ------- GetSiteList ------------------------ */
 	/* -------------------------------------------- */
 	function GetSiteList($u, $instance) {
-		$u = mysql_real_escape_string($u);
-		$instance = mysql_real_escape_string($instance);
+		$u = mysqli_real_escape_string($u);
+		$instance = mysqli_real_escape_string($instance);
 		
 		$sqlstring = "select * from nidb_sites order by site_name";
 		//echo "$sqlstring";
@@ -279,18 +279,18 @@
 		//print_r($_POST);
 		//echo "\n";
 		
-		$uuid = mysql_real_escape_string($uuid);
-		$anonymize = mysql_real_escape_string($anonymize);
-		$dataformat = mysql_real_escape_string($dataformat);
-		$equipmentid = mysql_real_escape_string($equipmentid);
-		$siteid = mysql_real_escape_string($siteid);
-		$projectid = mysql_real_escape_string($projectid);
-		$instanceid = mysql_real_escape_string($instanceid);
-		$matchidonly = mysql_real_escape_string($matchidonly);
-		$transactionid = mysql_real_escape_string($transactionid);
-		$seriesnotes = mysql_real_escape_string($seriesnotes);
-		$altuids = mysql_real_escape_string($altuids);
-		$numfiles = mysql_real_escape_string($numfiles);
+		$uuid = mysqli_real_escape_string($uuid);
+		$anonymize = mysqli_real_escape_string($anonymize);
+		$dataformat = mysqli_real_escape_string($dataformat);
+		$equipmentid = mysqli_real_escape_string($equipmentid);
+		$siteid = mysqli_real_escape_string($siteid);
+		$projectid = mysqli_real_escape_string($projectid);
+		$instanceid = mysqli_real_escape_string($instanceid);
+		$matchidonly = mysqli_real_escape_string($matchidonly);
+		$transactionid = mysqli_real_escape_string($transactionid);
+		$seriesnotes = mysqli_real_escape_string($seriesnotes);
+		$altuids = mysqli_real_escape_string($altuids);
+		$numfiles = mysqli_real_escape_string($numfiles);
 		
 		/* get the instanceRowID */
 		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";

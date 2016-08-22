@@ -237,23 +237,23 @@
 		//echo "after -- UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden)<br>";
 		
 		/* perform data checks */
-		$pipelinetitle = mysql_real_escape_string($pipelinetitle);
-		$pipelinedesc = mysql_real_escape_string($pipelinedesc);
-		$pipelinegroup = mysql_real_escape_string($pipelinegroup);
-		$pipelinenumproc = mysql_real_escape_string($pipelinenumproc);
-		$pipelinesubmithost = mysql_real_escape_string($pipelinesubmithost);
-		$pipelinequeue = mysql_real_escape_string($pipelinequeue);
-		$pipelineremovedata = mysql_real_escape_string($pipelineremovedata);
-		$pipelinedirectory = mysql_real_escape_string($pipelinedirectory);
-		$pipelineusetmpdir = mysql_real_escape_string($pipelineusetmpdir);
-		$pipelinetmpdir = mysql_real_escape_string($pipelinetmpdir);
-		$pipelinenotes = mysql_real_escape_string($pipelinenotes);
-		$pipelineresultsscript = mysql_real_escape_string($pipelineresultsscript);
-		$completefiles = mysql_real_escape_string($completefiles);
-		$deplevel = mysql_real_escape_string($deplevel);
-		$depdir = mysql_real_escape_string($depdir);
-		$deplinktype = mysql_real_escape_string($deplinktype);
-		$ishidden = mysql_real_escape_string($ishidden);
+		$pipelinetitle = mysqli_real_escape_string($pipelinetitle);
+		$pipelinedesc = mysqli_real_escape_string($pipelinedesc);
+		$pipelinegroup = mysqli_real_escape_string($pipelinegroup);
+		$pipelinenumproc = mysqli_real_escape_string($pipelinenumproc);
+		$pipelinesubmithost = mysqli_real_escape_string($pipelinesubmithost);
+		$pipelinequeue = mysqli_real_escape_string($pipelinequeue);
+		$pipelineremovedata = mysqli_real_escape_string($pipelineremovedata);
+		$pipelinedirectory = mysqli_real_escape_string($pipelinedirectory);
+		$pipelineusetmpdir = mysqli_real_escape_string($pipelineusetmpdir);
+		$pipelinetmpdir = mysqli_real_escape_string($pipelinetmpdir);
+		$pipelinenotes = mysqli_real_escape_string($pipelinenotes);
+		$pipelineresultsscript = mysqli_real_escape_string($pipelineresultsscript);
+		$completefiles = mysqli_real_escape_string($completefiles);
+		$deplevel = mysqli_real_escape_string($deplevel);
+		$depdir = mysqli_real_escape_string($depdir);
+		$deplinktype = mysqli_real_escape_string($deplinktype);
+		$ishidden = mysqli_real_escape_string($ishidden);
 		
 		//PrintVariable($dependency);
 		
@@ -306,22 +306,22 @@
 	/* -------------------------------------------- */
 	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
 		/* perform data checks */
-		$pipelinetitle = mysql_real_escape_string($pipelinetitle);
-		$pipelinedesc = mysql_real_escape_string($pipelinedesc);
-		$pipelinegroup = mysql_real_escape_string($pipelinegroup);
-		$pipelinenumproc = mysql_real_escape_string($pipelinenumproc);
-		$pipelinesubmithost = mysql_real_escape_string($pipelinesubmithost);
-		$pipelinequeue = mysql_real_escape_string($pipelinequeue);
-		$pipelineremovedata = mysql_real_escape_string($pipelineremovedata);
-		$pipelineresultsscript = mysql_real_escape_string($pipelineresultsscript);
-		$pipelinedirectory = mysql_real_escape_string($pipelinedirectory);
-		$pipelineusetmpdir = mysql_real_escape_string($pipelineusetmpdir);
-		$pipelinetmpdir = mysql_real_escape_string($pipelinetmpdir);
-		$pipelinenotes = mysql_real_escape_string($pipelinenotes);
-		$completefiles = mysql_real_escape_string($completefiles);
-		$deplevel = mysql_real_escape_string($deplevel);
-		$depdir = mysql_real_escape_string($depdir);
-		$deplinktype = mysql_real_escape_string($deplinktype);
+		$pipelinetitle = mysqli_real_escape_string($pipelinetitle);
+		$pipelinedesc = mysqli_real_escape_string($pipelinedesc);
+		$pipelinegroup = mysqli_real_escape_string($pipelinegroup);
+		$pipelinenumproc = mysqli_real_escape_string($pipelinenumproc);
+		$pipelinesubmithost = mysqli_real_escape_string($pipelinesubmithost);
+		$pipelinequeue = mysqli_real_escape_string($pipelinequeue);
+		$pipelineremovedata = mysqli_real_escape_string($pipelineremovedata);
+		$pipelineresultsscript = mysqli_real_escape_string($pipelineresultsscript);
+		$pipelinedirectory = mysqli_real_escape_string($pipelinedirectory);
+		$pipelineusetmpdir = mysqli_real_escape_string($pipelineusetmpdir);
+		$pipelinetmpdir = mysqli_real_escape_string($pipelinetmpdir);
+		$pipelinenotes = mysqli_real_escape_string($pipelinenotes);
+		$completefiles = mysqli_real_escape_string($completefiles);
+		$deplevel = mysqli_real_escape_string($deplevel);
+		$depdir = mysqli_real_escape_string($depdir);
+		$deplinktype = mysqli_real_escape_string($deplinktype);
 		if (is_array($dependency)) {
 			$dependencies = implode(",",$dependency);
 		}
@@ -566,12 +566,12 @@
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($command[$i]) != "") {
 				/* perform data checks */
-				$steporder[$i] = trim(mysql_real_escape_string($steporder[$i]));
-				$command[$i] = rtrim(mysql_real_escape_string($command[$i]));
-				$workingdir[$i] = trim(mysql_real_escape_string($workingdir[$i]));
-				$description[$i] = trim(mysql_real_escape_string($description[$i]));
-				$stepenabled[$i] = trim(mysql_real_escape_string($stepenabled[$i]));
-				$logged[$i] = trim(mysql_real_escape_string($logged[$i]));
+				$steporder[$i] = trim(mysqli_real_escape_string($steporder[$i]));
+				$command[$i] = rtrim(mysqli_real_escape_string($command[$i]));
+				$workingdir[$i] = trim(mysqli_real_escape_string($workingdir[$i]));
+				$description[$i] = trim(mysqli_real_escape_string($description[$i]));
+				$stepenabled[$i] = trim(mysqli_real_escape_string($stepenabled[$i]));
+				$logged[$i] = trim(mysqli_real_escape_string($logged[$i]));
 				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 0, '$command[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
 				//printSQL($sqlstring);
 				echo "<li>Inserted step $i: [$command[$i]]\n";
@@ -626,12 +626,12 @@
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($supplementcommand[$i]) != "") {
 				/* perform data checks */
-				$steporder[$i] = trim(mysql_real_escape_string($steporder[$i]));
-				$supplementcommand[$i] = rtrim(mysql_real_escape_string($supplementcommand[$i]));
-				$workingdir[$i] = trim(mysql_real_escape_string($workingdir[$i]));
-				$description[$i] = trim(mysql_real_escape_string($description[$i]));
-				$stepenabled[$i] = trim(mysql_real_escape_string($stepenabled[$i]));
-				$logged[$i] = trim(mysql_real_escape_string($logged[$i]));
+				$steporder[$i] = trim(mysqli_real_escape_string($steporder[$i]));
+				$supplementcommand[$i] = rtrim(mysqli_real_escape_string($supplementcommand[$i]));
+				$workingdir[$i] = trim(mysqli_real_escape_string($workingdir[$i]));
+				$description[$i] = trim(mysqli_real_escape_string($description[$i]));
+				$stepenabled[$i] = trim(mysqli_real_escape_string($stepenabled[$i]));
+				$logged[$i] = trim(mysqli_real_escape_string($logged[$i]));
 				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 1, '$supplementcommand[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
 				//printSQL($sqlstring);
 				echo "<li>Inserted step $i: [$supplementcommand[$i]]\n";
@@ -646,24 +646,24 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = mysql_real_escape_string($dd_enabled[$i]);
-				$dd_order[$i] = mysql_real_escape_string($dd_order[$i]);
-				$dd_protocol[$i] = mysql_real_escape_string($dd_protocol[$i]);
-				$dd_modality[$i] = mysql_real_escape_string($dd_modality[$i]);
-				$dd_datalevel[$i] = mysql_real_escape_string($dd_datalevel[$i]);
-				$dd_studyassoc[$i] = mysql_real_escape_string($dd_studyassoc[$i]);
-				$dd_dataformat[$i] = mysql_real_escape_string($dd_dataformat[$i]);
-				$dd_imagetype[$i] = mysql_real_escape_string($dd_imagetype[$i]);
-				$dd_gzip[$i] = mysql_real_escape_string($dd_gzip[$i]);
-				$dd_location[$i] = mysql_real_escape_string($dd_location[$i]);
-				$dd_seriescriteria[$i] = mysql_real_escape_string($dd_seriescriteria[$i]);
-				$dd_numboldreps[$i] = mysql_real_escape_string($dd_numboldreps[$i]);
-				$dd_behformat[$i] = mysql_real_escape_string($dd_behformat[$i]);
-				$dd_behdir[$i] = mysql_real_escape_string($dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = mysql_real_escape_string($dd_useseriesdirs[$i]);
-				$dd_optional[$i] = mysql_real_escape_string($dd_optional[$i]);
-				$dd_preserveseries[$i] = mysql_real_escape_string($dd_preserveseries[$i]);
-				$dd_usephasedir[$i] = mysql_real_escape_string($dd_usephasedir[$i]);
+				$dd_enabled[$i] = mysqli_real_escape_string($dd_enabled[$i]);
+				$dd_order[$i] = mysqli_real_escape_string($dd_order[$i]);
+				$dd_protocol[$i] = mysqli_real_escape_string($dd_protocol[$i]);
+				$dd_modality[$i] = mysqli_real_escape_string($dd_modality[$i]);
+				$dd_datalevel[$i] = mysqli_real_escape_string($dd_datalevel[$i]);
+				$dd_studyassoc[$i] = mysqli_real_escape_string($dd_studyassoc[$i]);
+				$dd_dataformat[$i] = mysqli_real_escape_string($dd_dataformat[$i]);
+				$dd_imagetype[$i] = mysqli_real_escape_string($dd_imagetype[$i]);
+				$dd_gzip[$i] = mysqli_real_escape_string($dd_gzip[$i]);
+				$dd_location[$i] = mysqli_real_escape_string($dd_location[$i]);
+				$dd_seriescriteria[$i] = mysqli_real_escape_string($dd_seriescriteria[$i]);
+				$dd_numboldreps[$i] = mysqli_real_escape_string($dd_numboldreps[$i]);
+				$dd_behformat[$i] = mysqli_real_escape_string($dd_behformat[$i]);
+				$dd_behdir[$i] = mysqli_real_escape_string($dd_behdir[$i]);
+				$dd_useseriesdirs[$i] = mysqli_real_escape_string($dd_useseriesdirs[$i]);
+				$dd_optional[$i] = mysqli_real_escape_string($dd_optional[$i]);
+				$dd_preserveseries[$i] = mysqli_real_escape_string($dd_preserveseries[$i]);
+				$dd_usephasedir[$i] = mysqli_real_escape_string($dd_usephasedir[$i]);
 				
 				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
@@ -712,7 +712,7 @@
 			return;
 		}
 		
-		$notes = mysql_real_escape_string($notes);
+		$notes = mysqli_real_escape_string($notes);
 		$sqlstring = "update analysis set analysis_notes = '$notes' where analysis_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQL($sqlstring);
@@ -803,7 +803,7 @@
 			return;
 		}
 	
-		$destination = mysql_real_escape_string($destination);
+		$destination = mysqli_real_escape_string($destination);
 		
 		foreach ($analysisids as $analysisid) {
 		
@@ -834,7 +834,7 @@
 			return;
 		}
 	
-		$destination = mysql_real_escape_string($destination);
+		$destination = mysqli_real_escape_string($destination);
 		
 		foreach ($analysisids as $analysisid) {
 		
