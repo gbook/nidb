@@ -279,7 +279,7 @@ window.onload = AreCookiesEnabled;
 		//if($pwent == false)
 		//	return false;
 			
-		$autharray = split(":",`ypmatch $username passwd`);
+		$autharray = explode(":",`ypmatch $username passwd`);
 		if ($autharray[0] != $username) {
 			return false;
 		}
