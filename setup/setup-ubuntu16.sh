@@ -125,11 +125,11 @@ sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php/7.0/apache2/php.
 sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php/7.0/apache2/php.ini
 sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php/7.0/apache2/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php/7.0/apache2/php.ini
-sed -i 's/^error_reporting = .*/error_reporting = E_ALL & \~E_DEPRECATED & \~E_STRICT & \~E_NOTICE/' /etc/php/7.0/apache2/php.ini
+sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& \~E_DEPRECATED \& \~E_STRICT \& \~E_NOTICE/g' /etc/php/7.0/apache2/php.ini
 
 echo "------ Modifying httpd to run as nidb user ------"
-sed -i "s/User apache/User $NIDBUSER/" /etc/apache2/apache2.conf
-sed -i "s/Group apache/Group $NIDBUSER/" /etc/apache2/apache2.conf
+sed -i "s/APACHE_RUN_USER.*/APACHE_RUN_USER=$NIDBUSER/" /etc/apache2/envvars
+sed -i "s/APACHE_RUN_GROUP.*/APACHE_RUN_GROUP=$NIDBUSER/" /etc/apache2/envvars
 chown -Rv $NIDBUSER:$NIDBUSER /var/lib/php/sessions
 echo "------ Restarting httpd ------"
 systemctl restart apache2
@@ -171,12 +171,12 @@ rm -f /var/www/html/index.html
 cd ${NIDBROOT}
 svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
-cp -R programs/* ${NIDBROOT}/programs
-cp -R web/* ${WWWROOT}
+cp -Ru programs/* ${NIDBROOT}/programs
+cp -Ru web/* ${WWWROOT}
 chown -R $NIDBUSER:$NIDBUSER ${NIDBROOT}
 chown -R $NIDBUSER:$NIDBUSER ${WWWROOT}
 
-sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("${NIDBROOT}/programs/nidb.cfg");!g' ${WWWROOT}/functions.php
+sed -i "s!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig(\"$NIDBROOT/programs/nidb.cfg\");!g" ${WWWROOT}/functions.php
 
 # create default database from .sql file
 echo "Creating default database"
