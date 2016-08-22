@@ -171,8 +171,8 @@ rm -f /var/www/html/index.html
 cd ${NIDBROOT}
 svn export https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
-cp -Ru programs/* ${NIDBROOT}/programs
-cp -Ru web/* ${WWWROOT}
+cp -Rf programs/* ${NIDBROOT}/programs
+cp -Rf web/* ${WWWROOT}
 chown -R $NIDBUSER:$NIDBUSER ${NIDBROOT}
 chown -R $NIDBUSER:$NIDBUSER ${WWWROOT}
 
