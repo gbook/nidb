@@ -109,10 +109,10 @@ echo "Done setting up port forwarding and disabling the firewall"
 
 echo "------ Enabling services at boot ------"
 systemctl enable apache2
-systemctl enable mariadb
+systemctl enable mysql
 echo "------ Starting services ------"
 systemctl start apache2
-systemctl start mariadb
+systemctl start mysql
 
 echo "------ Configuring PHP variables ------"
 sed -i 's/^short_open_tag = .*/short_open_tag = On/g' /etc/php/7.0/apache2/php.ini
@@ -169,7 +169,7 @@ rm -f /var/www/html/index.html
 
 # copy in the NiDB files
 cd ${NIDBROOT}
-svn export https://github.com/gbook/nidb/trunk install
+svn export --force https://github.com/gbook/nidb/trunk install
 cd ${NIDBROOT}/install
 cp -Rf programs/* ${NIDBROOT}/programs
 cp -Rf web/* ${WWWROOT}
