@@ -4,7 +4,7 @@
 
 # if you change the default path, NiDB is not guaranteed to work correctly
 NIDBROOT="/nidb"
-WWWROOT="/var/www"
+WWWROOT="/var/www/html"
 NIDBUSER="nidb"
 MYSQLUSER="root"
 MYSQLPASS="password"
