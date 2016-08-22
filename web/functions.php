@@ -572,9 +572,9 @@
 	/* -------------------------------------------- */
 	/* ------- mysqli_real_escape_array ------------ */
 	/* -------------------------------------------- */
-	function mysqli_real_escape_array ($a) {
-		return array_map ("mysqli_real_escape_string",$a); 
-	}
+	//function mysqli_real_escape_array ($a) {
+	//	return array_map ("mysqli_real_escape_string",$a); 
+	//}
 	
 	
 	/* -------------------------------------------- */
