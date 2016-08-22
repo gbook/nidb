@@ -69,7 +69,7 @@
 	}
 	
 	/* database connection */
-	$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 
 	/* validate the key and redirect as necessary */
 	if ($a != "") {
@@ -97,7 +97,7 @@
 	/* ------- DisplayDownload -------------------- */
 	/* -------------------------------------------- */
 	function DisplayDownload($k, $p) {
-		$k = mysqli_real_escape_string($k);
+		$k = mysqli_real_escape_string($GLOBALS['linki'], $k);
 
 		if (trim($k) == "") {
 			DisplayInvalidLink();

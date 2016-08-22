@@ -60,7 +60,7 @@
 	$password = GetVariable("password");
 
 	/* database connection */
-	$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 
 	
 	/* ----- determine which action to take ----- */
@@ -103,13 +103,13 @@
 	/* ------- CreateAccount ---------------------- */
 	/* -------------------------------------------- */
 	function CreateAccount($email, $firstname, $midname, $lastname, $institution, $instance, $country, $password) {
-		$email = mysqli_real_escape_string($email);
-		$firstname = mysqli_real_escape_string($firstname);
-		$midname = mysqli_real_escape_string($midname);
-		$lastname = mysqli_real_escape_string($lastname);
-		$institution = mysqli_real_escape_string($institution);
-		$country = mysqli_real_escape_string($country);
-		$password = mysqli_real_escape_string($password);
+		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
+		$firstname = mysqli_real_escape_string($GLOBALS['linki'], $firstname);
+		$midname = mysqli_real_escape_string($GLOBALS['linki'], $midname);
+		$lastname = mysqli_real_escape_string($GLOBALS['linki'], $lastname);
+		$institution = mysqli_real_escape_string($GLOBALS['linki'], $institution);
+		$country = mysqli_real_escape_string($GLOBALS['linki'], $country);
+		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
 		
 		$securimage = new Securimage();
 		if ($securimage->check($_POST['captcha_code']) == false) {
@@ -596,7 +596,7 @@
 	/* ------- ResetPassword ---------------------- */
 	/* -------------------------------------------- */
 	function ResetPassword($email) {
-		$email = mysqli_real_escape_string($email);
+		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 
 		$safetoemail = 0;
 		

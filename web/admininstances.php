@@ -91,7 +91,7 @@
 	/* -------------------------------------------- */
 	function UpdateInstance($id, $instancename, $users) {
 		/* perform data checks */
-		$instancename = mysqli_real_escape_string($instancename);
+		$instancename = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
 		
 		/* update the instance */
 		$sqlstring = "update instance set instance_name = '$instancename' where instance_id = $id";
@@ -112,7 +112,7 @@
 	/* -------------------------------------------- */
 	function AddInstance($instancename) {
 		/* perform data checks */
-		$instancename = mysqli_real_escape_string($instancename);
+		$instancename = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
 		
 		# create a new instance uid
 		do {

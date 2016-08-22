@@ -88,9 +88,9 @@
 	/* -------------------------------------------- */
 	function UpdateForm($id, $formtitle, $formdesc, $username) {
 		/* perform data checks */
-		$formtitle = mysqli_real_escape_string($formtitle);
-		$formdesc = mysqli_real_escape_string($formdesc);
-		$username = mysqli_real_escape_string($username);
+		$formtitle = mysqli_real_escape_string($GLOBALS['linki'], $formtitle);
+		$formdesc = mysqli_real_escape_string($GLOBALS['linki'], $formdesc);
+		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		
 		/* update the form */
 		$sqlstring = "update assessment_forms set form_title = '$formtitle', form_desc = '$formdesc' where form_id = $id";
@@ -105,9 +105,9 @@
 	/* -------------------------------------------- */
 	function AddForm($formtitle, $formdesc, $username) {
 		/* perform data checks */
-		$formtitle = mysqli_real_escape_string($formtitle);
-		$formdesc = mysqli_real_escape_string($formdesc);
-		$username = mysqli_real_escape_string($username);
+		$formtitle = mysqli_real_escape_string($GLOBALS['linki'], $formtitle);
+		$formdesc = mysqli_real_escape_string($GLOBALS['linki'], $formdesc);
+		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		
 		/* insert the new form */
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle', '$formdesc', '$username', now())";
@@ -132,9 +132,9 @@
 		/* insert all the new fields */
 		for($i=1; $i<=count($datatype); $i++) {
 			if (trim($field[$i]) != "") {
-				$field[$i] = mysqli_real_escape_string($field[$i]);
-				$values[$i] = mysqli_real_escape_string($values[$i]);
-				$order[$i] = mysqli_real_escape_string($order[$i]);
+				$field[$i] = mysqli_real_escape_string($GLOBALS['linki'], $field[$i]);
+				$values[$i] = mysqli_real_escape_string($GLOBALS['linki'], $values[$i]);
+				$order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $order[$i]);
 			
 				$sqlstring = "insert into assessment_formfields (form_id, formfield_desc, formfield_values, formfield_datatype, formfield_haslinebreak, formfield_scored, formfield_order) values ($id, '$field[$i]', '$values[$i]', '$datatype[$i]', '$linebreaks[$i]', '$scored[$i]', '$order[$i]')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");

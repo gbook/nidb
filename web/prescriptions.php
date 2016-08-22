@@ -72,13 +72,13 @@
 	/* ------- AddPrescription ------------------------- */
 	/* -------------------------------------------- */
 	function AddPrescription($enrollmentid, $rxname, $rxdose, $rxfreq, $rxroute, $rxdatestart, $rxdateend, $rxrater) {
-		$rxname = mysqli_real_escape_string($rxname);
-		$rxdose = mysqli_real_escape_string($rxdose);
-		$rxfreq = mysqli_real_escape_string($rxfreq);
-		$rxroute = mysqli_real_escape_string($rxroute);
-		$rxdatestart = mysqli_real_escape_string($rxdatestart);
-		$rxdateend = mysqli_real_escape_string($rxdateend);
-		$rxrater = mysqli_real_escape_string($rxrater);
+		$rxname = mysqli_real_escape_string($GLOBALS['linki'], $rxname);
+		$rxdose = mysqli_real_escape_string($GLOBALS['linki'], $rxdose);
+		$rxfreq = mysqli_real_escape_string($GLOBALS['linki'], $rxfreq);
+		$rxroute = mysqli_real_escape_string($GLOBALS['linki'], $rxroute);
+		$rxdatestart = mysqli_real_escape_string($GLOBALS['linki'], $rxdatestart);
+		$rxdateend = mysqli_real_escape_string($GLOBALS['linki'], $rxdateend);
+		$rxrater = mysqli_real_escape_string($GLOBALS['linki'], $rxrater);
 
 		$sqlstringA = "select rxname_id from prescriptionnames where rx_name = '$rxname'";
 		//echo "$sqlstringA\n";

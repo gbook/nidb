@@ -965,7 +965,7 @@
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($s[$key]); }
+			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
 			else { $$key = $s[$key]; }
 		}
 		
@@ -1102,7 +1102,7 @@
 	
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($s[$key]); }
+			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
 			else { $$key = $s[$key]; }
 		}
 
@@ -3615,7 +3615,7 @@
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
 			if (is_scalar($value)) {
-				$$key = trim(mysqli_real_escape_string($s[$key]));
+				$$key = trim(mysqli_real_escape_string($GLOBALS['linki'], $s[$key]));
 			}
 			else {
 				$$key = $s[$key];
@@ -4166,7 +4166,7 @@
 	function Anonymize($r, $username) {
 		$seriesids = $r['seriesid'];
 		$modality = $r['modality'];
-		$dicomtags = mysqli_real_escape_string($r['dicomtags']);
+		$dicomtags = mysqli_real_escape_string($GLOBALS['linki'], $r['dicomtags']);
 		
 		if (($seriesids == "") && ($enrollmentids == "")) {
 			echo "You didn't select any series or subjects to download/export! Go back and select something<br>";

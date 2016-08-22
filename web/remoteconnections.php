@@ -83,13 +83,13 @@
 	/* -------------------------------------------- */
 	function AddConnection($connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid) {
 		/* perform data checks */
-		$connname = mysqli_real_escape_string($connname);
-		$remoteserver = mysqli_real_escape_string($remoteserver);
-		$remoteusername = mysqli_real_escape_string($remoteusername);
-		$remotepassword = mysqli_real_escape_string($remotepassword);
-		$remoteinstanceid = mysqli_real_escape_string($remoteinstanceid);
-		$remoteprojectid = mysqli_real_escape_string($remoteprojectid);
-		$remotesiteid = mysqli_real_escape_string($remotesiteid);
+		$connname = mysqli_real_escape_string($GLOBALS['linki'], $connname);
+		$remoteserver = mysqli_real_escape_string($GLOBALS['linki'], $remoteserver);
+		$remoteusername = mysqli_real_escape_string($GLOBALS['linki'], $remoteusername);
+		$remotepassword = mysqli_real_escape_string($GLOBALS['linki'], $remotepassword);
+		$remoteinstanceid = mysqli_real_escape_string($GLOBALS['linki'], $remoteinstanceid);
+		$remoteprojectid = mysqli_real_escape_string($GLOBALS['linki'], $remoteprojectid);
+		$remotesiteid = mysqli_real_escape_string($GLOBALS['linki'], $remotesiteid);
 
 		/* insert the new site */
 		$sqlstring = "insert into remote_connections (conn_name, user_id, remote_server, remote_username, remote_password, remote_instanceid, remote_projectid, remote_siteid) values ('$connname', (select user_id from users where username = '" . $GLOBALS['username'] . "'), '$remoteserver', '$remoteusername', sha1('$remotepassword'), '$remoteinstanceid', '$remoteprojectid', '$remotesiteid')";
@@ -105,13 +105,13 @@
 	/* -------------------------------------------- */
 	function UpdateConnection($id, $connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid) {
 		/* perform data checks */
-		$connname = mysqli_real_escape_string($connname);
-		$remoteserver = mysqli_real_escape_string($remoteserver);
-		$remoteusername = mysqli_real_escape_string($remoteusername);
-		$remotepassword = mysqli_real_escape_string($remotepassword);
-		$remoteinstanceid = mysqli_real_escape_string($remoteinstanceid);
-		$remoteprojectid = mysqli_real_escape_string($remoteprojectid);
-		$remotesiteid = mysqli_real_escape_string($remotesiteid);
+		$connname = mysqli_real_escape_string($GLOBALS['linki'], $connname);
+		$remoteserver = mysqli_real_escape_string($GLOBALS['linki'], $remoteserver);
+		$remoteusername = mysqli_real_escape_string($GLOBALS['linki'], $remoteusername);
+		$remotepassword = mysqli_real_escape_string($GLOBALS['linki'], $remotepassword);
+		$remoteinstanceid = mysqli_real_escape_string($GLOBALS['linki'], $remoteinstanceid);
+		$remoteprojectid = mysqli_real_escape_string($GLOBALS['linki'], $remoteprojectid);
+		$remotesiteid = mysqli_real_escape_string($GLOBALS['linki'], $remotesiteid);
 
 		/* insert the new site */
 		$sqlstring = "update remote_connections set conn_name = '$connname', remote_server = '$remoteserver', remote_username = '$remoteusername', remote_password = sha1('$remotepassword'), remote_instanceid = '$remoteinstanceid', remote_projectid = '$remoteprojectid', remote_siteid = '$remotesiteid' where remoteconn_id = $id";

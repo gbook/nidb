@@ -99,9 +99,9 @@
 		if ($description == "") { AddForm("'Description' is blank",$name, $description, $admin); return; }
 		if ($admin == "") { AddForm("'Admin Username' is blank",$name, $description, $admin); return; }
 
-		$name = mysqli_real_escape_string($name);
-		$description = mysqli_real_escape_string($description);
-		$admin = mysqli_real_escape_string($admin);
+		$name = mysqli_real_escape_string($GLOBALS['linki'], $name);
+		$description = mysqli_real_escape_string($GLOBALS['linki'], $description);
+		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "insert into projects (project_name, project_description, project_admin, project_startdate, project_enddate) values ('$name','$description','$admin',now(),'3000-01-01 00:00:00')";
@@ -121,9 +121,9 @@
 		if ($description == "") { EditForm("'<b>Description</b>' was blank, original values now displayed",$id); return; }
 		if ($admin == "") { EditForm("'<b>Admin Username</b>' was blank, original values now displayed",$id); return; }
 		
-		$name = mysqli_real_escape_string($name);
-		$description = mysqli_real_escape_string($description);
-		$admin = mysqli_real_escape_string($admin);
+		$name = mysqli_real_escape_string($GLOBALS['linki'], $name);
+		$description = mysqli_real_escape_string($GLOBALS['linki'], $description);
+		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		
 		/* if we get to this point, its safe to add to the database */
 		$sqlstring = "update projects set project_name = '$name', project_description = '$description', project_admin = '$admin' where project_id = '$id'";

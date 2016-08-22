@@ -179,18 +179,18 @@
 		
 		PrintVariable($subjectids);
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($id);
-		$subjectids = mysql_real_escape_array($subjectids);
-		$altuids = mysql_real_escape_array($altuids);
-		$guids = mysql_real_escape_array($guids);
-		$birthdates = mysql_real_escape_array($birthdates);
-		$genders = mysql_real_escape_array($genders);
-		$ethnicity1s = mysql_real_escape_array($ethnicity1s);
-		$ethnicity2s = mysql_real_escape_array($ethnicity2s);
-		$educations = mysql_real_escape_array($educations);
-		$maritalstatus = mysql_real_escape_array($maritalstatus);
-		$smokingstatus = mysql_real_escape_array($smokingstatus);
-		$enrollgroups = mysql_real_escape_array($enrollgroups);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$subjectids = mysqli_real_escape_array($subjectids);
+		$altuids = mysqli_real_escape_array($altuids);
+		$guids = mysqli_real_escape_array($guids);
+		$birthdates = mysqli_real_escape_array($birthdates);
+		$genders = mysqli_real_escape_array($genders);
+		$ethnicity1s = mysqli_real_escape_array($ethnicity1s);
+		$ethnicity2s = mysqli_real_escape_array($ethnicity2s);
+		$educations = mysqli_real_escape_array($educations);
+		$maritalstatus = mysqli_real_escape_array($maritalstatus);
+		$smokingstatus = mysqli_real_escape_array($smokingstatus);
+		$enrollgroups = mysqli_real_escape_array($enrollgroups);
 		PrintVariable($subjectids);
 		
 		/* check to see if each array has the same number of elements */
@@ -271,7 +271,7 @@
 	/* -------------------------------------------- */
 	function UpdateSubjectTable($id,$subjecttable) {
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$numRowsUpdated = 0;
 		//PrintVariable($studytable);
@@ -448,7 +448,7 @@
 	/* -------------------------------------------- */
 	function UpdateStudyTable($id,$studytable) {
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$numRowsUpdated = 0;
 		//PrintVariable($studytable);
@@ -534,7 +534,7 @@
 	/* ------- ResetProjectQA --------------------- */
 	/* -------------------------------------------- */
 	function ResetProjectQA($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if ($id == "") {
 			?><div class="staticmessage">Invalid project ID</div><?
 		}
@@ -554,7 +554,7 @@
 	/* ------- ObliterateSubject ------------------ */
 	/* -------------------------------------------- */
 	function ObliterateSubject($studyids) {
-		$studyids = mysql_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($studyids);
 		
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
@@ -579,7 +579,7 @@
 	/* ------- ObliterateStudy -------------------- */
 	/* -------------------------------------------- */
 	function ObliterateStudy($studyids) {
-		$studyids = mysql_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($studyids);
 		
 		/* delete all information about this SUBJECT from the database */
 		foreach ($studyids as $id) {
@@ -597,8 +597,8 @@
 	/* ------- RearchiveStudies ------------------- */
 	/* -------------------------------------------- */
 	function RearchiveStudies($studyids, $matchidonly) {
-		$studyids = mysql_real_escape_array($studyids);
-		$matchidonly = mysqli_real_escape_string($matchidonly);
+		$studyids = mysqli_real_escape_array($studyids);
+		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
 		/* rearchive all the studies */
 		foreach ($studyids as $id) {
@@ -620,8 +620,8 @@
 	/* ------- RearchiveSubjects ------------------ */
 	/* -------------------------------------------- */
 	function RearchiveSubjects($studyids, $matchidonly) {
-		$studyids = mysql_real_escape_array($studyids);
-		$matchidonly = mysqli_real_escape_string($matchidonly);
+		$studyids = mysqli_real_escape_array($studyids);
+		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
@@ -651,10 +651,10 @@
 	/* ------- ChangeProject ---------------------- */
 	/* -------------------------------------------- */
 	function ChangeProject($projectRowID, $studyids) {
-		$projectRowID = mysqli_real_escape_string($projectRowID);
+		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
 	
 		foreach ($studyids as $studyRowID) {
-			$studyRowID = mysqli_real_escape_string($studyRowID);
+			$studyRowID = mysqli_real_escape_string($GLOBALS['linki'], $studyRowID);
 			
 			/* get the subject ID */
 			$sqlstring = "select a.subject_id, b.enrollment_id from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where b.study_id = $studyRowID";
@@ -709,7 +709,7 @@
 	/* -------------------------------------------- */
 	function ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames) {
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
@@ -721,9 +721,9 @@
 			$uid = $row['uid'];
 			
 			foreach ($modalities as $i => $modality) {
-				$modality = mysqli_real_escape_string($modality);
-				$oldname = mysqli_real_escape_string($oldnames[$i]);
-				$newname = mysqli_real_escape_string($newnames[$i]);
+				$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+				$oldname = mysqli_real_escape_string($GLOBALS['linki'], $oldnames[$i]);
+				$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
 				if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
 					$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
 					$numupdates = 0;
@@ -745,10 +745,10 @@
 	/* ------- LoadMRParams ----------------------- */
 	/* -------------------------------------------- */
 	function LoadMRParams($id, $study, $series) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$study = mysqli_real_escape_string(trim($study));
-		$series = mysqli_real_escape_string(trim($series));
+		$study = mysqli_real_escape_string($GLOBALS['linki'], trim($study));
+		$series = mysqli_real_escape_string($GLOBALS['linki'], trim($series));
 		
 		$uid = substr($study,0,8);
 		$studynum = substr($study,8);
@@ -830,21 +830,21 @@
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
-			$paramid = mysqli_real_escape_string($paramid);
+			$paramid = mysqli_real_escape_string($GLOBALS['linki'], $paramid);
 			
-			$protocol = mysqli_real_escape_string(trim($param_protocol[$i]));
-			$sequence = mysqli_real_escape_string(trim($param_sequence[$i]));
-			$tr = number_format(mysqli_real_escape_string(trim($param_tr[$i])),3,'.','');
-			$te = number_format(mysqli_real_escape_string(trim($param_te[$i])),3,'.','');
-			$ti = number_format(mysqli_real_escape_string(trim($param_ti[$i])),3,'.','');
-			$flip = number_format(mysqli_real_escape_string(trim($param_flip[$i])),3,'.','');
-			$xdim = number_format(mysqli_real_escape_string(trim($param_xdim[$i])),3,'.','');
-			$ydim = number_format(mysqli_real_escape_string(trim($param_ydim[$i])),3,'.','');
-			$zdim = number_format(mysqli_real_escape_string(trim($param_zdim[$i])),3,'.','');
-			$tdim = number_format(mysqli_real_escape_string(trim($param_tdim[$i])),3,'.','');
-			$slicethickness = number_format(mysqli_real_escape_string(trim($param_slicethickness[$i])),3,'.','');
-			$slicespacing = number_format(mysqli_real_escape_string(trim($param_slicespacing[$i])),3,'.','');
-			$bandwidth = number_format(mysqli_real_escape_string(trim($param_bandwidth[$i])),3,'.','');
+			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
+			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
+			$tr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr[$i])),3,'.','');
+			$te = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te[$i])),3,'.','');
+			$ti = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti[$i])),3,'.','');
+			$flip = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip[$i])),3,'.','');
+			$xdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim[$i])),3,'.','');
+			$ydim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim[$i])),3,'.','');
+			$zdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim[$i])),3,'.','');
+			$tdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim[$i])),3,'.','');
+			$slicethickness = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness[$i])),3,'.','');
+			$slicespacing = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing[$i])),3,'.','');
+			$bandwidth = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth[$i])),3,'.','');
 			
 			if ($protocol != "") {
 				if ($paramid == "") {
@@ -870,7 +870,7 @@
 	/* ------- DisplayProject --------------------- */
 	/* -------------------------------------------- */
 	function DisplayProject($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 	
 		$sqlstring = "select * from projects where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1180,7 +1180,7 @@
 	/* ------- DisplayDemographicsEditTable ------- */
 	/* -------------------------------------------- */
 	function DisplayDemographicsEditTable($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
 		$sqlstring = "select * from projects where project_id = $id";
@@ -1377,7 +1377,7 @@
 	/* ------- DisplayDemographics ---------------- */
 	/* -------------------------------------------- */
 	function DisplayDemographics($id, $isactive=1) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
 		$sqlstring = "select * from projects where project_id = $id";
@@ -1506,7 +1506,7 @@
 	/* ------- ViewMRParams ----------------------- */
 	/* -------------------------------------------- */
 	function ViewMRParams($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
 		$sqlstring = "select * from projects where project_id = $id";
@@ -1728,7 +1728,7 @@
 	/* ------- EditMRScanParams ------------------- */
 	/* -------------------------------------------- */
 	function EditMRScanParams($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 
 		DisplayMRScanParamHeader($id);
@@ -1848,7 +1848,7 @@
 	/* ------- DisplayUniqueSeries ---------------- */
 	/* -------------------------------------------- */
 	function DisplayUniqueSeries($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
 		$sqlstring = "select * from projects where project_id = $id";
@@ -1931,7 +1931,7 @@
 	/* ------- DisplayAltSeriesSummary ------------ */
 	/* -------------------------------------------- */
 	function DisplayAltSeriesSummary($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		$sqlstring = "select * from projects where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2021,7 +2021,7 @@
 	/* ------- DisplayProjectInfo ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectInfo($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$sqlstring = "select * from projects where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2113,7 +2113,7 @@
 	/* ------- DisplayInstanceSummary ------------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceSummary($id) {
-		$id = mysqli_real_escape_string($id);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$urllist['Projects'] = "projects.php";
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');

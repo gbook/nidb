@@ -59,7 +59,7 @@
 	/* ----------------------------------------------- */
 	function SaveOptions($username, $email, $calendar_ids, $project_ids) {
 
-		$email = mysqli_real_escape_string($email);
+		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		
 		/* get the range of years that studies have occured */
 		$sqlstring = "select * from users where username = '$username'";

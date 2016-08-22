@@ -87,9 +87,9 @@
 	/* -------------------------------------------- */
 	function UpdatePipelineDownload($id, $pipeline_id, $protocol, $dirformat, $nfsdir, $anonymize, $gzip, $preserveseries, $groupbyprotocol, $onlynew, $admin, $filetype, $modality, $behformat, $behdirrootname) {
 		/* perform data checks */
-		$protocol = mysqli_real_escape_string($protocol);
-		$nfsdir = mysqli_real_escape_string($nfsdir);
-		$behdirrootname = mysqli_real_escape_string($behdirrootname);
+		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
+		$nfsdir = mysqli_real_escape_string($GLOBALS['linki'], $nfsdir);
+		$behdirrootname = mysqli_real_escape_string($GLOBALS['linki'], $behdirrootname);
 		
 		/* update the pipeline */
 		$sqlstring = "update pipeline_download set pipeline_id = '$pipeline_id', pd_admin = '$admin', pd_protocol = '$protocol', pd_dirformat = '$dirformat', pd_nfsdir = '$nfsdir', pd_anonymize = '$anonymize', pd_gzip = '$gzip', pd_preserveseries = '$preserveseries', pd_groupbyprotocol = '$groupbyprotocol', pd_onlynew = '$onlynew', pd_filetype = '$filetype', pd_modality = '$modality', pd_behformat = '$behformat', pd_behdirrootname = '$behdirrootname' where pipelinedownload_id = $id";
@@ -105,9 +105,9 @@
 	/* -------------------------------------------- */
 	function AddPipelineDownload($pipeline_id, $protocol, $dirformat, $nfsdir, $anonymize, $gzip, $preserveseries, $groupbyprotocol, $onlynew, $admin, $filetype, $modality, $behformat, $behdirrootname) {
 		/* perform data checks */
-		$protocol = mysqli_real_escape_string($protocol);
-		$nfsdir = mysqli_real_escape_string($nfsdir);
-		$behdirrootname = mysqli_real_escape_string($behdirrootname);
+		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
+		$nfsdir = mysqli_real_escape_string($GLOBALS['linki'], $nfsdir);
+		$behdirrootname = mysqli_real_escape_string($GLOBALS['linki'], $behdirrootname);
 		
 		/* insert the new pipeline */
 		$sqlstring = "insert into pipeline_download (pipeline_id, pd_admin, pd_protocol, pd_dirformat, pd_nfsdir, pd_anonymize, pd_gzip, pd_preserveseries, pd_groupbyprotocol, pd_onlynew, pd_filetype, pd_modality, pd_behformat, pd_behdirrootname, pd_createdate, pd_status) values ($pipeline_id, $admin, '$protocol', '$dirformat', '$nfsdir', '$anonymize', '$gzip', '$preserveseries', '$groupbyprotocol', '$onlynew', '$filetype', '$modality', '$behformat', '$behdirrootname', now(), 'active')";

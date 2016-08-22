@@ -75,8 +75,8 @@
 	/* -------------------------------------------- */
 	function UpdateAnalysis($id, $analysisname, $analysisdesc, $admin) {
 		/* perform data checks */
-		$analysisname = mysqli_real_escape_string($analysisname);
-		$analysisdesc = mysqli_real_escape_string($analysisdesc);
+		$analysisname = mysqli_real_escape_string($GLOBALS['linki'], $analysisname);
+		$analysisdesc = mysqli_real_escape_string($GLOBALS['linki'], $analysisdesc);
 		
 		/* update the analysis */
 		$sqlstring = "update analysis set analysis_name = '$analysisname', analysis_desc = '$analysisdesc', analysis_admin = '$admin' where analysis_id = $id";
@@ -91,8 +91,8 @@
 	/* -------------------------------------------- */
 	function AddAnalysis($analysisname, $analysisdesc, $admin) {
 		/* perform data checks */
-		$analysisname = mysqli_real_escape_string($analysisname);
-		$analysisdesc = mysqli_real_escape_string($analysisdesc);
+		$analysisname = mysqli_real_escape_string($GLOBALS['linki'], $analysisname);
+		$analysisdesc = mysqli_real_escape_string($GLOBALS['linki'], $analysisdesc);
 		
 		/* insert the new analysis */
 		$sqlstring = "insert into analysis (analysis_name, analysis_desc, analysis_admin, analysis_createdate, analysis_status) values ('$analysisname', '$analysisdesc', '$admin', now(), 'active')";

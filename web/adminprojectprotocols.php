@@ -70,9 +70,9 @@
 	/* -------------------------------------------- */
 	function AddProjectProtocol($projectid, $protocolgroupid, $criteria, $numpersession, $numtotal) {
 		/* perform data checks */
-		$criteria = mysqli_real_escape_string($criteria);
-		$numpersession = mysqli_real_escape_string($numpersession);
-		$numtotal = mysqli_real_escape_string($numtotal);
+		$criteria = mysqli_real_escape_string($GLOBALS['linki'], $criteria);
+		$numpersession = mysqli_real_escape_string($GLOBALS['linki'], $numpersession);
+		$numtotal = mysqli_real_escape_string($GLOBALS['linki'], $numtotal);
 		
 		/* insert the new project */
 		$sqlstring = "insert ignore into project_protocol (project_id, protocolgroup_id, pp_criteria, pp_perstudyquantity, pp_perprojectquantity) values ($projectid, $protocolgroupid, '$criteria', '$numpersession', '$numtotal')";

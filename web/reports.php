@@ -109,7 +109,7 @@
 					$sqlstring = "select distinct(study_site) 'study_site' from studies";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$studysite = mysqli_real_escape_string($row['study_site']);
+						$studysite = mysqli_real_escape_string($GLOBALS['linki'], $row['study_site']);
 						
 						?>
 						<tr>

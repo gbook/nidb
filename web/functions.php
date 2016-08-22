@@ -570,10 +570,22 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- mysql_real_escape_array ------------ */
+	/* ------- mysqli_real_escape_array ------------ */
 	/* -------------------------------------------- */
-	function mysql_real_escape_array ($a) {
+	function mysqli_real_escape_array ($a) {
 		return array_map ("mysqli_real_escape_string",$a); 
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- mysqli_real_escape_array ----------- */
+	/* -------------------------------------------- */
+	function mysqli_real_escape_array ($a) {
+		foreach ($a as $i => $val) {
+			$a[$i] = mysqli_real_escape_string($GLOBALS['linki'], $val);
+		}
+		
+		return $a; 
 	}
 	
 	
@@ -603,7 +615,7 @@
 	/* ------- ResetQA ---------------------------- */
 	/* -------------------------------------------- */
 	function ResetQA($seriesid) {
-		$seriesid = mysqli_real_escape_string($seriesid);
+		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
 		
 		if ((is_numeric($seriesid)) && ($seriesid != "")) {
 			/* delete from the mr_qa table */

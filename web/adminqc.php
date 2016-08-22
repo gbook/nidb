@@ -75,8 +75,8 @@
 	/* -------------------------------------------- */
 	function UpdateQCModule($id, $qcmname, $modalitydesc, $admin) {
 		/* perform data checks */
-		$qcmname = mysqli_real_escape_string($qcmname);
-		$modalitydesc = mysqli_real_escape_string($modalitydesc);
+		$qcmname = mysqli_real_escape_string($GLOBALS['linki'], $qcmname);
+		$modalitydesc = mysqli_real_escape_string($GLOBALS['linki'], $modalitydesc);
 		
 		/* update the modality */
 		$sqlstring = "update qc_modules set qcm_name = '$qcmname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
@@ -91,8 +91,8 @@
 	/* -------------------------------------------- */
 	function AddQCmodule($modulename,$modality) {
 		/* perform data checks */
-		$modulename = mysqli_real_escape_string($modulename);
-		$modality = mysqli_real_escape_string($modality);
+		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 		
 		/* insert the new modality */
 		$sqlstring = "insert into qc_modules (qcm_name, qcm_modality) values ('$modulename', '$modality')";

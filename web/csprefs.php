@@ -79,7 +79,7 @@
 	/* -------------------------------------------- */
 	function UpdatePrefs($id, $prefsname, $users) {
 		/* perform data checks */
-		$prefsname = mysqli_real_escape_string($instancename);
+		$prefsname = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
 		
 		/* update the instance */
 		$sqlstring = "update instance set instance_name = '$instancename' where instance_id = $id";
@@ -100,7 +100,7 @@
 	/* -------------------------------------------- */
 	function AddPrefs($prefsname) {
 		/* perform data checks */
-		$instancename = mysqli_real_escape_string($instancename);
+		$instancename = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
 		
 		# create a new instance uid
 		do {

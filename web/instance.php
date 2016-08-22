@@ -83,23 +83,23 @@
 	/* -------------------------------------------- */
 	function UpdateContact($id, $contactid, $contactfullname, $contacttitle, $contactaddress1, $contactaddress2, $contactaddress3, $contactcity, $contactstate, $contactcountry, $contactphone1, $contactphone2, $contactphone3, $contactemail1, $contactemail2, $contactemail3, $contactwebsite, $contactcompany, $contactdepartment) {
 		/* perform data checks */
-		$contactfullname = mysqli_real_escape_string($contactfullname);
-		$contacttitle = mysqli_real_escape_string($contacttitle);
-		$contactaddress1 = mysqli_real_escape_string($contactaddress1);
-		$contactaddress2 = mysqli_real_escape_string($contactaddress2);
-		$contactaddress3 = mysqli_real_escape_string($contactaddress3);
-		$contactcity = mysqli_real_escape_string($contactcity);
-		$contactstate = mysqli_real_escape_string($contactstate);
-		$contactcountry = mysqli_real_escape_string($contactcountry);
-		$contactphone1 = mysqli_real_escape_string($contactphone1);
-		$contactphone2 = mysqli_real_escape_string($contactphone2);
-		$contactphone3 = mysqli_real_escape_string($contactphone3);
-		$contactemail1 = mysqli_real_escape_string($contactemail1);
-		$contactemail2 = mysqli_real_escape_string($contactemail2);
-		$contactemail3 = mysqli_real_escape_string($contactemail3);
-		$contactwebsite = mysqli_real_escape_string($contactwebsite);
-		$contactcompany = mysqli_real_escape_string($contactcompany);
-		$contactdepartment = mysqli_real_escape_string($contactdepartment);
+		$contactfullname = mysqli_real_escape_string($GLOBALS['linki'], $contactfullname);
+		$contacttitle = mysqli_real_escape_string($GLOBALS['linki'], $contacttitle);
+		$contactaddress1 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress1);
+		$contactaddress2 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress2);
+		$contactaddress3 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress3);
+		$contactcity = mysqli_real_escape_string($GLOBALS['linki'], $contactcity);
+		$contactstate = mysqli_real_escape_string($GLOBALS['linki'], $contactstate);
+		$contactcountry = mysqli_real_escape_string($GLOBALS['linki'], $contactcountry);
+		$contactphone1 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone1);
+		$contactphone2 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone2);
+		$contactphone3 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone3);
+		$contactemail1 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail1);
+		$contactemail2 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail2);
+		$contactemail3 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail3);
+		$contactwebsite = mysqli_real_escape_string($GLOBALS['linki'], $contactwebsite);
+		$contactcompany = mysqli_real_escape_string($GLOBALS['linki'], $contactcompany);
+		$contactdepartment = mysqli_real_escape_string($GLOBALS['linki'], $contactdepartment);
 
 		/* update the contact */
 		$sqlstring = "update contacts set contact_fullname = '$contactfullname', contact_title = '$contacttitle', contact_address1 = '$contactaddress1', contact_address2 = '$contactaddress2', contact_address3 = '$contactaddress3', contact_city = '$contactcity', contact_state = '$contactstate', contact_country = '$contactcountry', contact_phone1 = '$contactphone1', contact_phone2 = '$contactphone1', contact_phone3 = '$contactphone3', contact_email1 = '$contactemail1', contact_email2 = '$contactemail2', contact_email3 = '$contactemail3', contact_website = '$contactwebsite', contact_company = '$contactcompany', contact_department = '$contactdepartment'";
@@ -114,23 +114,23 @@
 	/* -------------------------------------------- */
 	function AddContact($id, $contactfullname, $contacttitle, $contactaddress1, $contactaddress2, $contactaddress3, $contactcity, $contactstate, $contactcountry, $contactphone1, $contactphone2, $contactphone3, $contactemail1, $contactemail2, $contactemail3, $contactwebsite, $contactcompany, $contactdepartment) {
 		/* perform data checks */
-		$contactfullname = mysqli_real_escape_string($contactfullname);
-		$contacttitle = mysqli_real_escape_string($contacttitle);
-		$contactaddress1 = mysqli_real_escape_string($contactaddress1);
-		$contactaddress2 = mysqli_real_escape_string($contactaddress2);
-		$contactaddress3 = mysqli_real_escape_string($contactaddress3);
-		$contactcity = mysqli_real_escape_string($contactcity);
-		$contactstate = mysqli_real_escape_string($contactstate);
-		$contactcountry = mysqli_real_escape_string($contactcountry);
-		$contactphone1 = mysqli_real_escape_string($contactphone1);
-		$contactphone2 = mysqli_real_escape_string($contactphone2);
-		$contactphone3 = mysqli_real_escape_string($contactphone3);
-		$contactemail1 = mysqli_real_escape_string($contactemail1);
-		$contactemail2 = mysqli_real_escape_string($contactemail2);
-		$contactemail3 = mysqli_real_escape_string($contactemail3);
-		$contactwebsite = mysqli_real_escape_string($contactwebsite);
-		$contactcompany = mysqli_real_escape_string($contactcompany);
-		$contactdepartment = mysqli_real_escape_string($contactdepartment);
+		$contactfullname = mysqli_real_escape_string($GLOBALS['linki'], $contactfullname);
+		$contacttitle = mysqli_real_escape_string($GLOBALS['linki'], $contacttitle);
+		$contactaddress1 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress1);
+		$contactaddress2 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress2);
+		$contactaddress3 = mysqli_real_escape_string($GLOBALS['linki'], $contactaddress3);
+		$contactcity = mysqli_real_escape_string($GLOBALS['linki'], $contactcity);
+		$contactstate = mysqli_real_escape_string($GLOBALS['linki'], $contactstate);
+		$contactcountry = mysqli_real_escape_string($GLOBALS['linki'], $contactcountry);
+		$contactphone1 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone1);
+		$contactphone2 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone2);
+		$contactphone3 = mysqli_real_escape_string($GLOBALS['linki'], $contactphone3);
+		$contactemail1 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail1);
+		$contactemail2 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail2);
+		$contactemail3 = mysqli_real_escape_string($GLOBALS['linki'], $contactemail3);
+		$contactwebsite = mysqli_real_escape_string($GLOBALS['linki'], $contactwebsite);
+		$contactcompany = mysqli_real_escape_string($GLOBALS['linki'], $contactcompany);
+		$contactdepartment = mysqli_real_escape_string($GLOBALS['linki'], $contactdepartment);
 		
 		/* insert the new user */
 		$sqlstring = "insert into contacts (contact_fullname, contact_title, contact_address1, contact_address2, contact_address3, contact_city, contact_state, contact_country, contact_phone1, contact_phone2, contact_phone3, contact_email1, contact_email2, contact_email3, contact_website, contact_company, contact_department) values ('$contactfullname', '$contacttitle', '$contactaddress1', '$contactaddress2', '$contactaddress3', '$contactcity', '$contactstate', '$contactcountry', '$contactphone1', '$contactphone2', '$contactphone3', '$contactemail1', '$contactemail2', '$contactemail3', '$contactwebsite', '$contactcompany', '$contactdepartment')";

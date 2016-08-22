@@ -77,9 +77,9 @@
 	/* -------------------------------------------- */
 	function UpdateSite($id, $sitename, $siteaddress, $sitecontact) {
 		/* perform data checks */
-		$sitename = mysqli_real_escape_string($sitename);
-		$siteaddress = mysqli_real_escape_string($siteaddress);
-		$sitecontact = mysqli_real_escape_string($sitecontact);
+		$sitename = mysqli_real_escape_string($GLOBALS['linki'], $sitename);
+		$siteaddress = mysqli_real_escape_string($GLOBALS['linki'], $siteaddress);
+		$sitecontact = mysqli_real_escape_string($GLOBALS['linki'], $sitecontact);
 		
 		/* update the site */
 		$sqlstring = "update nidb_sites set site_name = '$sitename', site_contact = '$sitecontact', site_address = '$siteaddress' where site_id = $id";
@@ -94,9 +94,9 @@
 	/* -------------------------------------------- */
 	function AddSite($sitename, $siteaddress, $sitecontact) {
 		/* perform data checks */
-		$sitename = mysqli_real_escape_string($sitename);
-		$siteaddress = mysqli_real_escape_string($siteaddress);
-		$sitecontact = mysqli_real_escape_string($sitecontact);
+		$sitename = mysqli_real_escape_string($GLOBALS['linki'], $sitename);
+		$siteaddress = mysqli_real_escape_string($GLOBALS['linki'], $siteaddress);
+		$sitecontact = mysqli_real_escape_string($GLOBALS['linki'], $sitecontact);
 
 		$siteuid = NIDB\CreateUID('T',4);
 		

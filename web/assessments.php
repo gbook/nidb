@@ -100,9 +100,9 @@
 	/* -------------------------------------------- */
 	function SaveForm($enrollmentid, $formid, $val_strings, $val_numbers, $val_texts, $val_dates, $val_files, $experimentor, $experimentdate, $username, $label, $notes) {
 
-		$experimentor = mysqli_real_escape_string($experimentor);
-		$label = mysqli_real_escape_string($label);
-		$notes = mysqli_real_escape_string($notes);
+		$experimentor = mysqli_real_escape_string($GLOBALS['linki'], $experimentor);
+		$label = mysqli_real_escape_string($GLOBALS['linki'], $label);
+		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		
 		$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes) values ($enrollmentid, $formid, '$experimentdate', '$experimentor', '$username', '$label', '$notes')";
 		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
@@ -112,7 +112,7 @@
 		if (isset($val_strings)) {
 			foreach ($val_strings as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -121,7 +121,7 @@
 		if (isset($val_numbers)) {
 			foreach ($val_numbers as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -130,7 +130,7 @@
 		if (isset($val_texts)) {
 			foreach ($val_texts as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -140,7 +140,7 @@
 		if (isset($val_dates)) {
 			foreach ($val_dates as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -154,9 +154,9 @@
 	/* -------------------------------------------- */
 	function UpdateForm($experimentid, $enrollmentid, $formid, $val_strings, $val_numbers, $val_texts, $val_dates, $val_files, $experimentor, $experimentdate, $username, $label, $notes) {
 	
-		$experimentor = mysqli_real_escape_string($experimentor);
-		$label = mysqli_real_escape_string($label);
-		$notes = mysqli_real_escape_string($notes);
+		$experimentor = mysqli_real_escape_string($GLOBALS['linki'], $experimentor);
+		$label = mysqli_real_escape_string($GLOBALS['linki'], $label);
+		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 
 		$sqlstring = "update assessments set exp_admindate = '$experimentdate', experimentor = '$experimentor', label = '$label', notes = '$notes' where experiment_id = $experimentid";
 		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
@@ -169,7 +169,7 @@
 		if (isset($val_strings['string'])) {
 			foreach ($val_strings['string'] as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -178,7 +178,7 @@
 		if (isset($val_numbers['number'])) {
 			foreach ($val_numbers['number'] as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -187,7 +187,7 @@
 		if (isset($val_texts)) {
 			foreach ($val_texts as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}
@@ -196,7 +196,7 @@
 		if (isset($val_dates['date'])) {
 			foreach ($val_dates['date'] as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
-				$value = mysqli_real_escape_string(trim($value));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
 			}

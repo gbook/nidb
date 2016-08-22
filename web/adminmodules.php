@@ -72,8 +72,8 @@
 	/* -------------------------------------------- */
 	function Updatemodule($id, $modulename, $moduledesc, $admin) {
 		/* perform data checks */
-		$modulename = mysqli_real_escape_string($modulename);
-		$moduledesc = mysqli_real_escape_string($moduledesc);
+		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
+		$moduledesc = mysqli_real_escape_string($GLOBALS['linki'], $moduledesc);
 		
 		/* update the module */
 		$sqlstring = "update modules set module_name = '$modulename', module_desc = '$moduledesc', module_admin = '$admin' where module_id = $id";
@@ -88,8 +88,8 @@
 	/* -------------------------------------------- */
 	function Addmodule($modulename, $moduledesc, $admin) {
 		/* perform data checks */
-		$modulename = mysqli_real_escape_string($modulename);
-		$moduledesc = mysqli_real_escape_string($moduledesc);
+		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
+		$moduledesc = mysqli_real_escape_string($GLOBALS['linki'], $moduledesc);
 		
 		/* insert the new module */
 		$sqlstring = "insert into modules (module_name, module_desc, module_admin, module_createdate, module_status) values ('$modulename', '$moduledesc', '$admin', now(), 'active')";

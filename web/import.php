@@ -246,11 +246,11 @@
 		$urllist['ID mapper'] = "import.php?action=idmapper";
 		NavigationBar("Import", $urllist);
 
-		//$idlist = mysqli_real_escape_string($idlist);
+		//$idlist = mysqli_real_escape_string($GLOBALS['linki'], $idlist);
 		$idlist = preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $idlist);
 		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $idlist);
 		foreach ($parts as $part) {
-			$ids[] = mysqli_real_escape_string(trim($part));
+			$ids[] = mysqli_real_escape_string($GLOBALS['linki'], trim($part));
 		}
 		$ids = array_unique($ids);
 		#$idlist = implode2(",", $newparts);
@@ -1044,14 +1044,14 @@ question_num, question_text, datatype, values, comment</div>
 				}
 				
 				/* separate out the columns */
-				$uid = mysqli_real_escape_string(trim($parts[0]));
-				$instrument = mysqli_real_escape_string(trim($parts[1]));
-				$measure = mysqli_real_escape_string(trim($parts[2]));
-				$value = mysqli_real_escape_string(trim($parts[3]));
+				$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+				$instrument = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+				$measure = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
 				
 				/* ----- check each column ----- */
 				/* check if the UID exists in any format anywhere */
-				$uid = mysqli_real_escape_string(trim($uid));
+				$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($uid));
 				$sqlstring = "select subject_id from subjects where uid = '$uid'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -1110,11 +1110,11 @@ question_num, question_text, datatype, values, comment</div>
 				
 				if ($i == 0) {
 					/* get the first line, the instruments */
-					$instruments = mysqli_real_escape_string(array_shift($parts));
+					$instruments = mysqli_real_escape_string($GLOBALS['linki'], array_shift($parts));
 				}
 				elseif ($i == 1) {
 					/* get the second line, the measures */
-					$measures = mysqli_real_escape_string(array_shift($parts));
+					$measures = mysqli_real_escape_string($GLOBALS['linki'], array_shift($parts));
 				}
 				else {
 					/* otherwise, it should be a real line... with data */
@@ -1122,7 +1122,7 @@ question_num, question_text, datatype, values, comment</div>
 					/* separate out the columns */
 					$col=0;
 					foreach ($parts as $part) {
-						$value = mysqli_real_escape_string(trim($part));
+						$value = mysqli_real_escape_string($GLOBALS['linki'], trim($part));
 						
 						if ($col == 0) {
 							$uid = $value;
@@ -1230,19 +1230,19 @@ question_num, question_text, datatype, values, comment</div>
 			}
 			
 			/* separate out the columns */
-			$uid = mysqli_real_escape_string(trim($parts[0]));
-			$dob = mysqli_real_escape_string(trim($parts[1]));
-			$sex = mysqli_real_escape_string(trim($parts[2]));
-			$ethnicity = mysqli_real_escape_string(trim($parts[3]));
-			$race = mysqli_real_escape_string(trim($parts[4]));
-			$handedness = mysqli_real_escape_string(trim($parts[5]));
-			$education = mysqli_real_escape_string(trim($parts[6]));
-			$marital = mysqli_real_escape_string(trim($parts[7]));
-			$smoking = mysqli_real_escape_string(trim($parts[8]));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+			$dob = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+			$sex = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
+			$ethnicity = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
+			$race = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[4]));
+			$handedness = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[5]));
+			$education = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[6]));
+			$marital = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[7]));
+			$smoking = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[8]));
 			
 			/* ----- check each column ----- */
 			/* check if the UID exists in any format anywhere */
-			$uid = mysqli_real_escape_string(trim($uid));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($uid));
 			$sqlstring = "select subject_id from subjects where uid = '$uid'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
@@ -1298,15 +1298,15 @@ question_num, question_text, datatype, values, comment</div>
 			$parts = str_getcsv($line);
 			
 			/* separate out the columns */
-			$uid = mysqli_real_escape_string(trim($parts[0]));
-			$dob = mysqli_real_escape_string(trim($parts[1]));
-			$sex = mysqli_real_escape_string(trim($parts[2]));
-			$ethnicity = mysqli_real_escape_string(trim($parts[3]));
-			$race = mysqli_real_escape_string(trim($parts[4]));
-			$handedness = mysqli_real_escape_string(trim($parts[5]));
-			$education = mysqli_real_escape_string(trim($parts[6]));
-			$marital = mysqli_real_escape_string(trim($parts[7]));
-			$smoking = mysqli_real_escape_string(trim($parts[8]));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+			$dob = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+			$sex = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
+			$ethnicity = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
+			$race = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[4]));
+			$handedness = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[5]));
+			$education = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[6]));
+			$marital = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[7]));
+			$smoking = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[8]));
 			
 			/* ----- check each column ----- */
 			/* get subjectID */
@@ -1407,13 +1407,13 @@ question_num, question_text, datatype, values, comment</div>
 			}
 			
 			/* separate out the columns */
-			$uid = mysqli_real_escape_string(trim($parts[0]));
-			$scandate = mysqli_real_escape_string(trim($parts[1]));
-			$age = mysqli_real_escape_string(trim($parts[2]));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+			$scandate = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+			$age = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
 			
 			/* ----- check each column ----- */
 			/* check if the UID exists in any format anywhere */
-			$uid = mysqli_real_escape_string(trim($uid));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($uid));
 			$sqlstring = "select subject_id from subjects where uid = '$uid'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
@@ -1483,9 +1483,9 @@ question_num, question_text, datatype, values, comment</div>
 			$parts = str_getcsv($line);
 			
 			/* separate out the columns */
-			$uid = mysqli_real_escape_string(trim($parts[0]));
-			$scandate = mysqli_real_escape_string(trim($parts[1]));
-			$age = mysqli_real_escape_string(trim($parts[2]));
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+			$scandate = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+			$age = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
 			
 			/* ----- check each column ----- */
 			/* get subjectID */
@@ -1517,7 +1517,7 @@ question_num, question_text, datatype, values, comment</div>
 		$subjectRowID = 0;
 		
 		/* check if the UID exists in any format anywhere */
-		$uid = mysqli_real_escape_string(trim($uid));
+		$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($uid));
 		$sqlstring = "select subject_id from subjects where uid = '$uid'";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1619,10 +1619,10 @@ question_num, question_text, datatype, values, comment</div>
 				$parts = str_getcsv($line);
 				
 				/* separate out the columns */
-				$uid = mysqli_real_escape_string(trim($parts[0]));
-				$instrument = mysqli_real_escape_string(trim($parts[1]));
-				$measure = mysqli_real_escape_string(trim($parts[2]));
-				$value = mysqli_real_escape_string(trim($parts[3]));
+				$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+				$instrument = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+				$measure = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
+				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
 				
 				/* ----- check each column ----- */
 				/* get subjectID */
@@ -1673,7 +1673,7 @@ question_num, question_text, datatype, values, comment</div>
 					/* separate out the columns */
 					$col=0;
 					foreach ($parts as $part) {
-						$value = mysqli_real_escape_string(trim($part));
+						$value = mysqli_real_escape_string($GLOBALS['linki'], trim($part));
 						
 						//echo "Working on column $col<br>";
 						if ($col == 0) {
@@ -1851,9 +1851,9 @@ question_num, question_text, datatype, values, comment</div>
 		$lines = file($f);
 
 		$parts = str_getcsv($lines[0]);
-		$formtitle = mysqli_real_escape_string(trim($parts[0]));
+		$formtitle = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
 		$parts = str_getcsv($lines[1]);
-		$formdesc = mysqli_real_escape_string(trim($parts[0]));
+		$formdesc = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
 
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle','$formdesc','" . $GLOBALS['username'] . "',now())";
 		PrintSQL($sqlstring);
@@ -1866,13 +1866,13 @@ question_num, question_text, datatype, values, comment</div>
 			$c = count($parts);
 			
 			/* separate out the columns */
-			$qnum = mysqli_real_escape_string(trim($parts[0]));
-			$question = mysqli_real_escape_string(trim($parts[1]));
-			$type = mysqli_real_escape_string(trim($parts[2]));
+			$qnum = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
+			$question = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
+			$type = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
 			if ($c > 3) {
-				$values = mysqli_real_escape_string(trim($parts[3]));
+				$values = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
 				if ($c > 4) {
-					$comment = mysqli_real_escape_string(trim($parts[4]));
+					$comment = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[4]));
 				}
 			}
 			

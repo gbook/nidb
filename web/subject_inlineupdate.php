@@ -26,12 +26,12 @@
 	
 	if (isset($_POST['element_id'])) {
 		/* database connection */
-		$link = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 
 		$id = $_POST['id'];
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];
-		$value = mysqli_real_escape_string($_POST['update_value']);
+		$value = mysqli_real_escape_string($GLOBALS['linki'], $_POST['update_value']);
 		$sqlstring = "update subjects set $field = '$value' where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($_POST['update_value'] == "") { $dispvalue = " "; } else { $dispvalue = $_POST['update_value']; }
