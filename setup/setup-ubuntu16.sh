@@ -211,15 +211,14 @@ echo "#* * * * * cd ${NIDBROOT}/programs; perl parseincoming.pl > /dev/null 2>&1
 echo "* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mriqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> tempcron.txt
-echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "@daily /usr/bin/mysqldump nidb -u ${MYSQLUSER} -p${MYSQLPASS} | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
-rm ~/tempcron.txt
+rm tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
 echo " *** Install FSL to the default path [/usr/local/fsl] ***"
 echo "Edit /etc/php/7.0/apache2/php.ini to reflect your timezone"
-echo "Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
+echo " *** Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg ***"
 echo "Some modules are disabled in cron. Use crontab -e to enable them"
 echo "TIP: A reboot can be useful to make sure everything works"
