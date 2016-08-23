@@ -71,6 +71,14 @@ cpan Digest::MD5
 cpan Digest::MD5::File
 cpan Statistics::Basic
 cpan Email::Send::SMTP::Gmail
+cpan Switch
+cpan XML::Writer
+cpan XML::Generator::DBI
+cpan XML::Handler::YAWriter
+cpan XML::Bare
+cpan File::Slurp
+cpan Math::Derivative
+cpan Math::Round
 
 # copy the installed Perl modules to a directory accessible by the nidb account
 cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/

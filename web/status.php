@@ -68,7 +68,7 @@
 		$dbconnect = true;
 		$devdbconnect = true;
 		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
-		$dbStatus = explode("  ", mysql_stat());
+		$dbStatus = explode("  ", mysqli_stat());
 		
 		# get number of fileio operations pending
 		$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
