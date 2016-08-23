@@ -81,14 +81,14 @@ cpan Math::Derivative
 cpan Math::Round
 
 # copy the installed Perl modules to a directory accessible by the nidb account
-cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/
+#cp -rv /root/perl5/lib/perl/* /usr/local/lib64/perl5/
 
 echo "----------------- Installing PHP modules from pear -----------------"
 pear install Mail
 pear install Mail_Mime
 pear install Net_SMTP
 
-cp -rv Mysql* /usr/local/lib64/perl5/
+#cp -rv Mysql* /usr/local/lib64/perl5/
 
 # ---------- configure system based services ----------
 echo "----------------- Configuring system services -----------------"
@@ -112,7 +112,7 @@ iptables -P OUTPUT ACCEPT
 iptables -A FORWARD -p tcp --destination-port 104 -j ACCEPT
 iptables -t nat -A PREROUTING -j REDIRECT -p tcp --destination-port 104 --to-port 8104
 iptables-save > /etc/sysconfig/iptables
-systemctl start iptables
+systemctl start ufw
 echo "Done setting up port forwarding and disabling the firewall"
 
 echo "------ Enabling services at boot ------"
