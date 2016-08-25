@@ -106,7 +106,7 @@
 			$sqlstringA = "insert into measurenames (measure_name) values ('$measurename')";
 			//echo "$sqlstringA\n";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$measurenameid = mysqli_insert_id();
+			$measurenameid = mysqli_insert_id($GLOBALS['linki']);
 		}
 		
 		$sqlstring = "insert into measures (enrollment_id, measure_dateentered, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_instrument, measure_isdoubleentered, measure_datecomplete) values ($enrollmentid, now(), $measurenameid, '$measuretype','$valuestring','$valuenum', '$measurerater', '$measureinstrument', 0, '$measuredatecompleted')";

@@ -232,7 +232,7 @@
 			$sqlstring = "insert into protocol_group (protocolgroup_name, protocolgroup_modality) values ('$thegroup','$modality')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$protocolgroupid = mysqli_insert_id();
+			$protocolgroupid = mysqli_insert_id($GLOBALS['linki']);
 		}
 		
 		foreach ($protocols as $protocol) {

@@ -135,7 +135,7 @@
 		/* insert the new user */
 		$sqlstring = "insert into contacts (contact_fullname, contact_title, contact_address1, contact_address2, contact_address3, contact_city, contact_state, contact_country, contact_phone1, contact_phone2, contact_phone3, contact_email1, contact_email2, contact_email3, contact_website, contact_company, contact_department) values ('$contactfullname', '$contacttitle', '$contactaddress1', '$contactaddress2', '$contactaddress3', '$contactcity', '$contactstate', '$contactcountry', '$contactphone1', '$contactphone2', '$contactphone3', '$contactemail1', '$contactemail2', '$contactemail3', '$contactwebsite', '$contactcompany', '$contactdepartment')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$contactid = mysqli_insert_id();
+		$contactid = mysqli_insert_id($GLOBALS['linki']);
 		
 		/* associate the contact with the instace */
 		$sqlstring = "insert into instance_contact (instance_id, contact_id) values ($id, $contactid)";

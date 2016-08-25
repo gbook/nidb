@@ -161,7 +161,7 @@
 	function StartTransaction($u, $source) {
 		$sqlstring = "insert into import_transactions (transaction_startdate, transaction_source, transaction_status, transaction_username) values (now(), '$source', 'uploading', '$u')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$tid = mysqli_insert_id();
+		$tid = mysqli_insert_id($GLOBALS['linki']);
 		echo $tid;
 	}
 
@@ -337,7 +337,7 @@
 				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
 				//echo "[[$sqlstring]]\n";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$uploadID = mysqli_insert_id();
+				$uploadID = mysqli_insert_id($GLOBALS['linki']);
 				
 				$numfilessuccess = 0;
 				$numfilestotal = 0;

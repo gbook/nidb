@@ -91,7 +91,7 @@
 			$sqlstringA = "insert into prescriptionnames (rx_name) values ('$rxname')";
 			//echo "$sqlstringA\n";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rxnameid = mysqli_insert_id();
+			$rxnameid = mysqli_insert_id($GLOBALS['linki']);
 		}
 		
 		$sqlstring = "insert into prescriptions (enrollment_id, rx_startdate, rx_enddate, rx_doseamount, rx_dosefrequency, rx_route, rxname_id) values ($enrollmentid, '$rxstartdate', '$rxenddate', '$rxdose', '$rxfreq', '$rxroute', '$rxnameid')";

@@ -682,7 +682,7 @@
 				$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				echo "Creating enrollment [$sqlstring]<br>";
-				$enrollmentRowID = mysqli_insert_id();
+				$enrollmentRowID = mysqli_insert_id($GLOBALS['linki']);
 			}
 			
 			/* check if the study is already associated with the enrollment, and if not, move the study to the enrollment */

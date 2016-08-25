@@ -373,7 +373,7 @@
 		else {
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$newenrollmentid = mysqli_insert_id();
+			$newenrollmentid = mysqli_insert_id($GLOBALS['linki']);
 			echo "<li>Not already enrolled. Creating enrollment: $newenrollmentid [$sqlstring]";
 		}
 		

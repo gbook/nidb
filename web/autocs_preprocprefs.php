@@ -237,7 +237,7 @@
 		'$edit_se_pattern', '$edit_se_gmoutput', '$edit_se_wmoutput', '$edit_se_csfoutput', $edit_se_biascor, $edit_se_cleanup)";
 		//echo "$sqlstring<br>";
 		MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$prefsid = mysqli_insert_id();
+		$prefsid = mysqli_insert_id($GLOBALS['linki']);
 
 		?><div class="message">Preprocessing Pref file added</div><br><?
 		
@@ -360,7 +360,7 @@
 		
 		//echo "$sqlstring<br>";
 		MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$prefsid = mysqli_insert_id();
+		$prefsid = mysqli_insert_id($GLOBALS['linki']);
 
 		?><div class="message">Pre-processing Pref file added</div><br><?
 		

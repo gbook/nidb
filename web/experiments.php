@@ -108,7 +108,7 @@
 		
 		$sqlstring = "insert into experiments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes) values ($enrollmentid, $formid, '$experimentdate', '$experimentor', '$username', '$label', '$notes')";
 		$result = MySQLiQuery($sqlstring);
-		$experimentid = mysqli_insert_id();
+		$experimentid = mysqli_insert_id($GLOBALS['linki']);
 		
 		/* insert all the strings */
 		if (isset($val_strings)) {

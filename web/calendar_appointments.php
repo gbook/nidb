@@ -330,7 +330,7 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* CALULATE&POPULATE GROUP ID */
 				if ($groupid == "") {
-					$groupid = mysqli_insert_id();
+					$groupid = mysqli_insert_id($GLOBALS['linki']);
 					$sqlstring = "update calendar_appointments set appt_groupid = $groupid where appt_id = $groupid";
 					//echo "$sqlstring<br>";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

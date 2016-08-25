@@ -175,7 +175,7 @@
 		$sqlstring  = "insert into task_stats_prefs ( taskid, description, shortname, extralines, startdate, enddate, do_behmatchup, do_stats, do_censor, do_autoslice, do_db, beh_queue, beh_digits, stats_makeasciis, stats_asciiscriptpath, stats_behdirname, stats_relativepath, stats_dirname, stats_pattern, stats_behunits, stats_volterra, stats_basisfunction, stats_onsetfiles, stats_durationfiles, stats_regressorfiles, stats_regressornames, stats_paramnames, stats_paramorders, stats_paramfiles, stats_censorfiles, stats_fit_xbflength, stats_fit_xbforder, stats_timemodulation, stats_parametricmodulation, stats_globalfx, stats_highpasscutoff, stats_serialcorr, stats_tcontrasts, stats_tcontrastnames, autoslice_cons, autoslice_p, autoslice_background, autoslice_slices, autoslice_emailcons, db_overwritebeta, db_fileprefix, db_betanums, db_threshold, db_smoothkernel, db_imcalcs, db_imnames ) values ($taskid, '$edit_description', '$edit_shortname', '$edit_extralines', now(), '3000-01-01 00:00:00', $edit_do_behmatchup, $edit_do_stats, $edit_do_censor, $edit_do_autoslice, $edit_do_db, '$edit_beh_queue', '$edit_beh_digits', $edit_stat_makeasciis, '$edit_stat_asciiscript', '$edit_stat_behdirname', '$edit_stat_relativepath', '$edit_stat_dirname', '$edit_stat_pattern', '$edit_stat_behunits', $edit_stat_volterra, $edit_stats_basisfunction, '$edit_stat_onsetfiles', '$edit_stat_durationfiles', '$edit_stat_regressorfiles', '$edit_stat_regressornames', '$edit_stat_parameternames', '$edit_stat_parameterorders', '$edit_stat_parameterfiles', '$edit_stat_censorfiles', '$edit_stat_xbflength', '$edit_stat_xbforder', '$edit_stat_timemodulation', '$edit_stat_parametricmodulation', $edit_stat_globalfx, $edit_stat_highpasscutoff, $edit_stat_serialcorr, '$edit_stat_tcontrasts', '$edit_stat_tcontrastnames', '$edit_stat_autoslicecons', '$edit_stat_autoslicep', '$edit_stat_autoslicebackground', '$edit_stat_autosliceslices', '$edit_stat_autosliceemailcons', $edit_db_overwritebeta, '$edit_db_fileprefix', '$edit_db_betanums', '$edit_db_threshold', '$edit_db_smoothkernel', '$edit_db_imcalcs', '$edit_db_imnames')";
 		echo "$sqlstring<br>";
 		MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$prefsid = mysqli_insert_id();
+		$prefsid = mysqli_insert_id($GLOBALS['linki']);
 
 		?><div class="message">Stats Pref file added</div><br><?
 		
@@ -247,7 +247,7 @@
 		//echo "$sqlstring<br>";
 		//exit(0);
 		MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$prefsid = mysqli_insert_id();
+		$prefsid = mysqli_insert_id($GLOBALS['linki']);
 
 		?><div class="message">Stats Pref file added</div><br><?
 		
