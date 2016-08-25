@@ -133,7 +133,7 @@
 				$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes, iscomplete) values ($enrollmentRowID, $formid, '$datetime', '$rater', '$rater', '$visit', '$notes', 1)";
 				echo "[$sqlstring]<br>";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$ExperimentRowID = mysql_insert_id();
+				$ExperimentRowID = mysqli_insert_id();
 			}
 			
 			/* check if the question has already been filled in */
@@ -148,7 +148,7 @@
 				$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes, iscomplete) values ($enrollmentRowID, $formid, '$datetime', '$rater', '$rater', '$visit', '$notes', 1)";
 				echo "[$sqlstring]<br>";
 				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-				$ExperimentRowID = mysql_insert_id();
+				$ExperimentRowID = mysqli_insert_id();
 			}
 			/* insert the question value */
 			$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, value_date, update_username) values ($questionid,$ExperimentRowID,'$value','$datetime','WebsiteImporter')";

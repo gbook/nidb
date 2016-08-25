@@ -4329,7 +4329,7 @@
 		if ($destinationtype == "publicdownload") {
 			$sqlstring = "insert into public_downloads (pd_createdby, pd_desc, pd_notes, pd_password, pd_shareinternal, pd_registerrequired, pd_expiredays, pd_status) values ('$username', '$publicdownloaddesc', '$publicdownloadreleasenotes', sha1('$publicdownloadpassword'), '$publicdownloadshareinternal', '$publicdownloadregisterrequired', '$publicdownloadexpire', 'started')";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$publicDownloadRowID = mysql_insert_id();
+			$publicDownloadRowID = mysqli_insert_id();
 		}
 		
 		$i = 1;

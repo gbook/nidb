@@ -342,7 +342,7 @@
 		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_queue, pipeline_clustertype, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinequeue', '$pipelineclustertype', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$pipelineid = mysql_insert_id();
+		$pipelineid = mysqli_insert_id();
 		
 		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><?
 		

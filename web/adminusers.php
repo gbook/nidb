@@ -233,7 +233,7 @@
 		/* insert the new user */
 		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_email, user_lastlogin, user_logincount, user_enabled, user_isadmin) values ('$username', sha1('$password'), '$logintype', '$fullname', '$email', now(), 0, 1, '$isadmin')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$id = mysql_insert_id();
+		$id = mysqli_insert_id();
 		
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {

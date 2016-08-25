@@ -106,7 +106,7 @@
 		
 		$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes) values ($enrollmentid, $formid, '$experimentdate', '$experimentor', '$username', '$label', '$notes')";
 		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
-		$experimentid = mysql_insert_id();
+		$experimentid = mysqli_insert_id();
 		
 		/* insert all the strings */
 		if (isset($val_strings)) {

@@ -109,7 +109,7 @@
 		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$username','$password','Standard','$fullname','$institution','$country','$email',1)";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$userid = mysql_insert_id();
+		$userid = mysqli_insert_id();
 		
 		$sqlstring = "delete from users_pending where user_id = $userpendingid";
 		//PrintSQL($sqlstring);

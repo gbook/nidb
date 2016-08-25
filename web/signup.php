@@ -160,7 +160,7 @@
 		$sqlstring = "insert into users_pending (username, password, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values ('$email',sha1('$password'),'$firstname','$midname','$lastname','$institution','$country','$email',sha1(now()), now())";
 		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$rowid = mysql_insert_id();
+		$rowid = mysqli_insert_id();
 		
 		/* get the generated SHA1 hash */
 		$sqlstring = "select emailkey from users_pending where user_id = $rowid";

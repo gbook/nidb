@@ -859,7 +859,7 @@ question_num, question_text, datatype, values, comment</div>
 		$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_siteid, import_projectid, import_anonymize, import_permanent) values ('dicom',now(),'uploading','$siteid','$projectid','$anonymize','$permanent')";
 		//echo "[[$sqlstring]]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$uploadID = mysql_insert_id();
+		$uploadID = mysqli_insert_id();
 		
 		//echo "I'm still here\n";
 		$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
@@ -910,7 +910,7 @@ question_num, question_text, datatype, values, comment</div>
 		$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_siteid, import_projectid) values ('dicom',now(),'created','$siteid','$projectid')";
 		//echo "[[$sqlstring]]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$uploadID = mysql_insert_id();
+		$uploadID = mysqli_insert_id();
 		
 		if (is_array($importdirs)) {
 			$i = 0;
@@ -1554,7 +1554,7 @@ question_num, question_text, datatype, values, comment</div>
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$enrollmentRowID = mysql_insert_id();
+			$enrollmentRowID = mysqli_insert_id();
 		}
 		
 		return $enrollmentRowID;
@@ -1576,7 +1576,7 @@ question_num, question_text, datatype, values, comment</div>
 			$sqlstring = "insert into measureinstruments (instrument_name) values ('$instrument')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$measureinstrumentnameid = mysql_insert_id();
+			$measureinstrumentnameid = mysqli_insert_id();
 		}
 		return $measureinstrumentnameid;
 	}
@@ -1597,7 +1597,7 @@ question_num, question_text, datatype, values, comment</div>
 			$sqlstring = "insert into measurenames (measure_name) values ('$measure')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$measurenameid = mysql_insert_id();
+			$measurenameid = mysqli_insert_id();
 		}
 		return $measurenameid;
 	}
@@ -1858,7 +1858,7 @@ question_num, question_text, datatype, values, comment</div>
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle','$formdesc','" . $GLOBALS['username'] . "',now())";
 		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$assessmentID = mysql_insert_id();
+		$assessmentID = mysqli_insert_id();
 		
 		for ($i=2;$i<=count($lines);$i++) {
 			$line = $lines[$i];

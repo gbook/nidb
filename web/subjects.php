@@ -270,13 +270,13 @@
 		$sqlstring = "insert into subjects (name, birthdate, gender, ethnicity1, ethnicity2, handedness, education, phone1, email, marital_status, smoking_status, uid, uuid, guid, cancontact) values ('$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$phone', '$email', '$maritalstatus', '$smokingstatus', '$uid', ucase(md5(concat(RemoveNonAlphaNumericChars('$name'), RemoveNonAlphaNumericChars('$dob'),RemoveNonAlphaNumericChars('$gender')))), '$guid', '$cancontact')";
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring); }
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$SubjectRowID = mysql_insert_id();
+		$SubjectRowID = mysqli_insert_id();
 		
 		# create familyRowID if it doesn't exist
 		$sqlstring2 = "insert into families (family_uid, family_createdate, family_name) values ('$familyuid', now(), 'Proband-$uid')";
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring2); }
 		$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-		$familyRowID = mysql_insert_id();
+		$familyRowID = mysqli_insert_id();
 	
 		$sqlstring3 = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $SubjectRowID, now())";
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring3); }
@@ -361,7 +361,7 @@
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, '$modality', now(), '', '', '', 'pending')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$studyRowID = mysql_insert_id();
+		$studyRowID = mysqli_insert_id();
 		
 		$sqlstring = "select (select uid from subjects where subject_id = '$id') 'uid', (select project_name from projects where project_id = $project_id) 'projectname', (select project_costcenter from projects where project_id = $project_id) 'projectcostcenter' ";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -443,7 +443,7 @@
 		else {
 			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$newenrollmentid = mysql_insert_id();
+			$newenrollmentid = mysqli_insert_id();
 			echo "<li>Inserted row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
 		}
 		
@@ -939,7 +939,7 @@
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($newprojectid, $subjectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			echo "<li>Creating enrollment in new project [$sqlstring]";
-			$new_spid = mysql_insert_id();
+			$new_spid = mysqli_insert_id();
 			
 			/* change all old enrollmentids to the new id in the studies and assessments tables */
 			$sqlstring = "update studies set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
