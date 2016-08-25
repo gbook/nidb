@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.4.11
--- http://www.phpmyadmin.net
+-- version 4.6.4
+-- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 18, 2016 at 07:19 PM
--- Server version: 10.0.21-MariaDB-log
--- PHP Version: 5.4.16
+-- Generation Time: Aug 25, 2016 at 03:11 PM
+-- Server version: 10.0.26-MariaDB
+-- PHP Version: 5.5.38
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -17,15 +17,14 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `nidb`
+-- Database: `ado2`
 --
 
 DELIMITER $$
 --
 -- Functions
 --
-CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars`(`prm_strInput` VARCHAR(255)) RETURNS varchar(255) CHARSET utf8
-    NO SQL
+CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars` (`prm_strInput` VARCHAR(255)) RETURNS VARCHAR(255) CHARSET utf8 NO SQL
     DETERMINISTIC
 BEGIN
   DECLARE i INT DEFAULT 1;
@@ -53,13 +52,13 @@ DELIMITER ;
 -- Table structure for table `analysis`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis` (
+CREATE TABLE `analysis` (
   `analysis_id` bigint(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '0',
   `pipeline_dependency` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
-  `analysis_qsubid` bigint(20) unsigned NOT NULL,
+  `analysis_qsubid` bigint(20) UNSIGNED NOT NULL,
   `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
@@ -88,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `analysis` (
 -- Table structure for table `analysis_data`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_data` (
+CREATE TABLE `analysis_data` (
   `analysisdata_id` int(11) NOT NULL,
   `analysis_id` bigint(20) NOT NULL,
   `data_id` int(11) NOT NULL,
@@ -101,7 +100,7 @@ CREATE TABLE IF NOT EXISTS `analysis_data` (
 -- Table structure for table `analysis_group`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_group` (
+CREATE TABLE `analysis_group` (
   `analysisgroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '0',
@@ -125,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `analysis_group` (
 -- Table structure for table `analysis_history`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_history` (
+CREATE TABLE `analysis_history` (
   `analysishistory_id` bigint(20) NOT NULL,
   `analysis_id` bigint(20) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
@@ -143,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `analysis_history` (
 -- Table structure for table `analysis_resultnames`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_resultnames` (
+CREATE TABLE `analysis_resultnames` (
   `resultname_id` int(11) NOT NULL,
   `result_name` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 PACK_KEYS=0;
@@ -154,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `analysis_resultnames` (
 -- Table structure for table `analysis_results`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_results` (
+CREATE TABLE `analysis_results` (
   `analysisresults_id` int(11) NOT NULL,
   `analysis_id` bigint(20) NOT NULL,
   `result_type` char(1) NOT NULL COMMENT 'image, file, text, value',
@@ -164,7 +163,7 @@ CREATE TABLE IF NOT EXISTS `analysis_results` (
   `result_unitid` int(11) NOT NULL,
   `result_filename` text,
   `result_isimportant` tinyint(1) DEFAULT NULL,
-  `result_count` smallint(5) unsigned DEFAULT '0'
+  `result_count` smallint(5) UNSIGNED DEFAULT '0'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -173,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `analysis_results` (
 -- Table structure for table `analysis_resultunit`
 --
 
-CREATE TABLE IF NOT EXISTS `analysis_resultunit` (
+CREATE TABLE `analysis_resultunit` (
   `resultunit_id` int(11) NOT NULL,
   `result_unit` varchar(25) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -184,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `analysis_resultunit` (
 -- Table structure for table `assessments`
 --
 
-CREATE TABLE IF NOT EXISTS `assessments` (
+CREATE TABLE `assessments` (
   `experiment_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `form_id` int(11) DEFAULT NULL,
@@ -204,7 +203,7 @@ CREATE TABLE IF NOT EXISTS `assessments` (
 -- Table structure for table `assessment_data`
 --
 
-CREATE TABLE IF NOT EXISTS `assessment_data` (
+CREATE TABLE `assessment_data` (
   `formdata_id` int(11) NOT NULL,
   `formfield_id` int(11) NOT NULL,
   `experiment_id` int(11) NOT NULL,
@@ -223,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `assessment_data` (
 -- Table structure for table `assessment_formfields`
 --
 
-CREATE TABLE IF NOT EXISTS `assessment_formfields` (
+CREATE TABLE `assessment_formfields` (
   `formfield_id` int(11) NOT NULL,
   `form_id` int(11) DEFAULT NULL,
   `formfield_desc` text COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
@@ -242,7 +241,7 @@ CREATE TABLE IF NOT EXISTS `assessment_formfields` (
 -- Table structure for table `assessment_forms`
 --
 
-CREATE TABLE IF NOT EXISTS `assessment_forms` (
+CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
   `form_title` varchar(100) DEFAULT NULL,
   `form_desc` text,
@@ -258,7 +257,7 @@ CREATE TABLE IF NOT EXISTS `assessment_forms` (
 -- Table structure for table `assessment_series`
 --
 
-CREATE TABLE IF NOT EXISTS `assessment_series` (
+CREATE TABLE `assessment_series` (
   `assessmentseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -279,7 +278,7 @@ CREATE TABLE IF NOT EXISTS `assessment_series` (
 -- Table structure for table `audio_series`
 --
 
-CREATE TABLE IF NOT EXISTS `audio_series` (
+CREATE TABLE `audio_series` (
   `audioseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
   `series_num` int(11) NOT NULL,
@@ -301,7 +300,7 @@ CREATE TABLE IF NOT EXISTS `audio_series` (
 -- Table structure for table `audit_results`
 --
 
-CREATE TABLE IF NOT EXISTS `audit_results` (
+CREATE TABLE `audit_results` (
   `auditresult_id` int(11) NOT NULL,
   `audit_num` int(11) NOT NULL,
   `compare_direction` enum('dbtofile','filetodb','consistency','orphan') NOT NULL,
@@ -331,7 +330,7 @@ CREATE TABLE IF NOT EXISTS `audit_results` (
 -- Table structure for table `binary_series`
 --
 
-CREATE TABLE IF NOT EXISTS `binary_series` (
+CREATE TABLE `binary_series` (
   `binaryseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
   `series_datetime` datetime NOT NULL,
@@ -350,7 +349,7 @@ CREATE TABLE IF NOT EXISTS `binary_series` (
 -- Table structure for table `calendars`
 --
 
-CREATE TABLE IF NOT EXISTS `calendars` (
+CREATE TABLE `calendars` (
   `calendar_id` int(11) NOT NULL,
   `calendar_name` varchar(50) NOT NULL,
   `calendar_description` varchar(255) NOT NULL,
@@ -365,7 +364,7 @@ CREATE TABLE IF NOT EXISTS `calendars` (
 -- Table structure for table `calendar_allocations`
 --
 
-CREATE TABLE IF NOT EXISTS `calendar_allocations` (
+CREATE TABLE `calendar_allocations` (
   `alloc_id` int(11) NOT NULL,
   `alloc_timeperiod` int(50) NOT NULL COMMENT 'yearly, monthly, weekly, daily',
   `alloc_calendarid` int(11) NOT NULL,
@@ -379,7 +378,7 @@ CREATE TABLE IF NOT EXISTS `calendar_allocations` (
 -- Table structure for table `calendar_appointments`
 --
 
-CREATE TABLE IF NOT EXISTS `calendar_appointments` (
+CREATE TABLE `calendar_appointments` (
   `appt_id` int(11) NOT NULL,
   `appt_groupid` int(11) NOT NULL,
   `appt_username` varchar(50) NOT NULL,
@@ -402,7 +401,7 @@ CREATE TABLE IF NOT EXISTS `calendar_appointments` (
 -- Table structure for table `calendar_notifications`
 --
 
-CREATE TABLE IF NOT EXISTS `calendar_notifications` (
+CREATE TABLE `calendar_notifications` (
   `not_id` int(11) NOT NULL,
   `not_userid` int(11) NOT NULL,
   `not_calendarid` int(11) NOT NULL
@@ -414,7 +413,7 @@ CREATE TABLE IF NOT EXISTS `calendar_notifications` (
 -- Table structure for table `calendar_projectnotifications`
 --
 
-CREATE TABLE IF NOT EXISTS `calendar_projectnotifications` (
+CREATE TABLE `calendar_projectnotifications` (
   `not_id` int(11) NOT NULL,
   `not_userid` int(11) NOT NULL,
   `not_projectid` int(11) NOT NULL
@@ -426,7 +425,7 @@ CREATE TABLE IF NOT EXISTS `calendar_projectnotifications` (
 -- Table structure for table `calendar_projects`
 --
 
-CREATE TABLE IF NOT EXISTS `calendar_projects` (
+CREATE TABLE `calendar_projects` (
   `project_id` int(11) NOT NULL,
   `project_name` varchar(50) NOT NULL,
   `project_admin` varchar(50) NOT NULL,
@@ -441,7 +440,7 @@ CREATE TABLE IF NOT EXISTS `calendar_projects` (
 -- Table structure for table `changelog`
 --
 
-CREATE TABLE IF NOT EXISTS `changelog` (
+CREATE TABLE `changelog` (
   `changelog_id` int(11) NOT NULL,
   `performing_userid` int(11) NOT NULL,
   `affected_userid` int(11) NOT NULL,
@@ -463,7 +462,7 @@ CREATE TABLE IF NOT EXISTS `changelog` (
 -- Table structure for table `common`
 --
 
-CREATE TABLE IF NOT EXISTS `common` (
+CREATE TABLE `common` (
   `common_id` int(11) NOT NULL,
   `common_type` enum('number','file','text') NOT NULL,
   `common_group` varchar(100) NOT NULL,
@@ -481,7 +480,7 @@ CREATE TABLE IF NOT EXISTS `common` (
 -- Table structure for table `consent_series`
 --
 
-CREATE TABLE IF NOT EXISTS `consent_series` (
+CREATE TABLE `consent_series` (
   `consentseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -502,7 +501,7 @@ CREATE TABLE IF NOT EXISTS `consent_series` (
 -- Table structure for table `contacts`
 --
 
-CREATE TABLE IF NOT EXISTS `contacts` (
+CREATE TABLE `contacts` (
   `contact_id` int(11) NOT NULL,
   `contact_fullname` varchar(255) NOT NULL,
   `contact_title` varchar(255) NOT NULL,
@@ -530,7 +529,7 @@ CREATE TABLE IF NOT EXISTS `contacts` (
 -- Table structure for table `cr_series`
 --
 
-CREATE TABLE IF NOT EXISTS `cr_series` (
+CREATE TABLE `cr_series` (
   `crseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -551,7 +550,7 @@ CREATE TABLE IF NOT EXISTS `cr_series` (
 -- Table structure for table `cs_prefs`
 --
 
-CREATE TABLE IF NOT EXISTS `cs_prefs` (
+CREATE TABLE `cs_prefs` (
   `csprefs_id` int(11) NOT NULL,
   `userid` int(11) NOT NULL,
   `description` text NOT NULL,
@@ -675,7 +674,7 @@ CREATE TABLE IF NOT EXISTS `cs_prefs` (
 -- Table structure for table `ct_series`
 --
 
-CREATE TABLE IF NOT EXISTS `ct_series` (
+CREATE TABLE `ct_series` (
   `ctseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -717,7 +716,7 @@ CREATE TABLE IF NOT EXISTS `ct_series` (
 -- Table structure for table `data_requests`
 --
 
-CREATE TABLE IF NOT EXISTS `data_requests` (
+CREATE TABLE `data_requests` (
   `request_id` int(11) NOT NULL,
   `req_username` varchar(50) NOT NULL,
   `req_ip` varchar(30) NOT NULL,
@@ -768,7 +767,7 @@ CREATE TABLE IF NOT EXISTS `data_requests` (
 -- Table structure for table `ecg_series`
 --
 
-CREATE TABLE IF NOT EXISTS `ecg_series` (
+CREATE TABLE `ecg_series` (
   `ecgseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -790,7 +789,7 @@ CREATE TABLE IF NOT EXISTS `ecg_series` (
 -- Table structure for table `eeg_series`
 --
 
-CREATE TABLE IF NOT EXISTS `eeg_series` (
+CREATE TABLE `eeg_series` (
   `eegseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -812,7 +811,7 @@ CREATE TABLE IF NOT EXISTS `eeg_series` (
 -- Table structure for table `enrollment`
 --
 
-CREATE TABLE IF NOT EXISTS `enrollment` (
+CREATE TABLE `enrollment` (
   `enrollment_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL,
   `subject_id` int(11) DEFAULT NULL,
@@ -830,7 +829,7 @@ CREATE TABLE IF NOT EXISTS `enrollment` (
 -- Table structure for table `enrollment_checklist`
 --
 
-CREATE TABLE IF NOT EXISTS `enrollment_checklist` (
+CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `projectchecklist_id` int(11) NOT NULL,
@@ -845,7 +844,7 @@ CREATE TABLE IF NOT EXISTS `enrollment_checklist` (
 -- Table structure for table `et_series`
 --
 
-CREATE TABLE IF NOT EXISTS `et_series` (
+CREATE TABLE `et_series` (
   `etseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -866,7 +865,7 @@ CREATE TABLE IF NOT EXISTS `et_series` (
 -- Table structure for table `families`
 --
 
-CREATE TABLE IF NOT EXISTS `families` (
+CREATE TABLE `families` (
   `family_id` int(11) NOT NULL,
   `family_uid` varchar(10) NOT NULL,
   `family_createdate` datetime NOT NULL,
@@ -881,7 +880,7 @@ CREATE TABLE IF NOT EXISTS `families` (
 -- Table structure for table `family_members`
 --
 
-CREATE TABLE IF NOT EXISTS `family_members` (
+CREATE TABLE `family_members` (
   `familymember_id` int(11) NOT NULL,
   `family_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
@@ -894,7 +893,7 @@ CREATE TABLE IF NOT EXISTS `family_members` (
 -- Table structure for table `fileio_requests`
 --
 
-CREATE TABLE IF NOT EXISTS `fileio_requests` (
+CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
   `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
@@ -916,7 +915,7 @@ CREATE TABLE IF NOT EXISTS `fileio_requests` (
 -- Table structure for table `groups`
 --
 
-CREATE TABLE IF NOT EXISTS `groups` (
+CREATE TABLE `groups` (
   `group_id` int(11) NOT NULL,
   `group_name` varchar(255) NOT NULL,
   `group_type` varchar(25) NOT NULL COMMENT 'subject, study, series',
@@ -930,7 +929,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
 -- Table structure for table `group_data`
 --
 
-CREATE TABLE IF NOT EXISTS `group_data` (
+CREATE TABLE `group_data` (
   `subjectgroup_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `data_id` int(11) NOT NULL,
@@ -943,7 +942,7 @@ CREATE TABLE IF NOT EXISTS `group_data` (
 -- Table structure for table `gsr_series`
 --
 
-CREATE TABLE IF NOT EXISTS `gsr_series` (
+CREATE TABLE `gsr_series` (
   `gsrseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -964,7 +963,7 @@ CREATE TABLE IF NOT EXISTS `gsr_series` (
 -- Table structure for table `importlogs`
 --
 
-CREATE TABLE IF NOT EXISTS `importlogs` (
+CREATE TABLE `importlogs` (
   `importlog_id` bigint(20) NOT NULL,
   `filename_orig` text NOT NULL,
   `filename_new` varchar(255) NOT NULL,
@@ -1031,7 +1030,7 @@ CREATE TABLE IF NOT EXISTS `importlogs` (
 -- Table structure for table `import_received`
 --
 
-CREATE TABLE IF NOT EXISTS `import_received` (
+CREATE TABLE `import_received` (
   `importreceived_id` bigint(20) NOT NULL,
   `import_transactionid` int(11) NOT NULL,
   `import_uploadid` int(11) NOT NULL,
@@ -1053,7 +1052,7 @@ CREATE TABLE IF NOT EXISTS `import_received` (
 -- Table structure for table `import_requestdirs`
 --
 
-CREATE TABLE IF NOT EXISTS `import_requestdirs` (
+CREATE TABLE `import_requestdirs` (
   `importrequestdir_id` int(11) NOT NULL,
   `importrequest_id` int(11) NOT NULL,
   `dir_num` int(11) NOT NULL,
@@ -1066,7 +1065,7 @@ CREATE TABLE IF NOT EXISTS `import_requestdirs` (
 -- Table structure for table `import_requests`
 --
 
-CREATE TABLE IF NOT EXISTS `import_requests` (
+CREATE TABLE `import_requests` (
   `importrequest_id` int(11) NOT NULL,
   `import_transactionid` int(11) NOT NULL,
   `import_datatype` enum('dicom','measures','nondicom','parrec','nifti','eeg') NOT NULL,
@@ -1098,7 +1097,7 @@ CREATE TABLE IF NOT EXISTS `import_requests` (
 -- Table structure for table `import_transactions`
 --
 
-CREATE TABLE IF NOT EXISTS `import_transactions` (
+CREATE TABLE `import_transactions` (
   `importtrans_id` int(11) NOT NULL,
   `transaction_startdate` datetime NOT NULL,
   `transaction_enddate` datetime NOT NULL,
@@ -1113,7 +1112,7 @@ CREATE TABLE IF NOT EXISTS `import_transactions` (
 -- Table structure for table `instance`
 --
 
-CREATE TABLE IF NOT EXISTS `instance` (
+CREATE TABLE `instance` (
   `instance_id` int(11) NOT NULL,
   `instance_uid` varchar(25) NOT NULL,
   `instance_name` varchar(255) NOT NULL,
@@ -1127,7 +1126,7 @@ CREATE TABLE IF NOT EXISTS `instance` (
 -- Table structure for table `instance_billing`
 --
 
-CREATE TABLE IF NOT EXISTS `instance_billing` (
+CREATE TABLE `instance_billing` (
   `billingitem_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `invoice_id` int(11) NOT NULL,
@@ -1144,7 +1143,7 @@ CREATE TABLE IF NOT EXISTS `instance_billing` (
 -- Table structure for table `instance_contact`
 --
 
-CREATE TABLE IF NOT EXISTS `instance_contact` (
+CREATE TABLE `instance_contact` (
   `instancecontact_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `contact_id` int(11) NOT NULL
@@ -1156,7 +1155,7 @@ CREATE TABLE IF NOT EXISTS `instance_contact` (
 -- Table structure for table `instance_invoice`
 --
 
-CREATE TABLE IF NOT EXISTS `instance_invoice` (
+CREATE TABLE `instance_invoice` (
   `invoice_id` int(11) NOT NULL,
   `invoice_number` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
@@ -1172,7 +1171,7 @@ CREATE TABLE IF NOT EXISTS `instance_invoice` (
 -- Table structure for table `instance_pricing`
 --
 
-CREATE TABLE IF NOT EXISTS `instance_pricing` (
+CREATE TABLE `instance_pricing` (
   `pricing_id` int(11) NOT NULL,
   `pricing_startdate` datetime NOT NULL,
   `pricing_enddate` datetime NOT NULL,
@@ -1189,7 +1188,7 @@ CREATE TABLE IF NOT EXISTS `instance_pricing` (
 -- Table structure for table `instance_usage`
 --
 
-CREATE TABLE IF NOT EXISTS `instance_usage` (
+CREATE TABLE `instance_usage` (
   `instanceusage_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `usage_date` date NOT NULL,
@@ -1203,7 +1202,7 @@ CREATE TABLE IF NOT EXISTS `instance_usage` (
 -- Table structure for table `manual_qa`
 --
 
-CREATE TABLE IF NOT EXISTS `manual_qa` (
+CREATE TABLE `manual_qa` (
   `manualqa_id` int(11) NOT NULL,
   `series_id` int(11) NOT NULL,
   `modality` varchar(10) NOT NULL,
@@ -1217,7 +1216,7 @@ CREATE TABLE IF NOT EXISTS `manual_qa` (
 -- Table structure for table `measureinstruments`
 --
 
-CREATE TABLE IF NOT EXISTS `measureinstruments` (
+CREATE TABLE `measureinstruments` (
   `measureinstrument_id` int(11) NOT NULL,
   `instrument_name` varchar(255) NOT NULL,
   `instrument_group` varchar(255) NOT NULL,
@@ -1230,7 +1229,7 @@ CREATE TABLE IF NOT EXISTS `measureinstruments` (
 -- Table structure for table `measurenames`
 --
 
-CREATE TABLE IF NOT EXISTS `measurenames` (
+CREATE TABLE `measurenames` (
   `measurename_id` int(11) NOT NULL,
   `measure_name` varchar(255) NOT NULL,
   `measure_group` varchar(255) NOT NULL,
@@ -1244,7 +1243,7 @@ CREATE TABLE IF NOT EXISTS `measurenames` (
 -- Table structure for table `measures`
 --
 
-CREATE TABLE IF NOT EXISTS `measures` (
+CREATE TABLE `measures` (
   `measure_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `measure_dateentered` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -1269,7 +1268,7 @@ CREATE TABLE IF NOT EXISTS `measures` (
 -- Table structure for table `modalities`
 --
 
-CREATE TABLE IF NOT EXISTS `modalities` (
+CREATE TABLE `modalities` (
   `mod_id` int(11) NOT NULL,
   `mod_code` varchar(15) NOT NULL,
   `mod_desc` varchar(255) NOT NULL,
@@ -1282,7 +1281,7 @@ CREATE TABLE IF NOT EXISTS `modalities` (
 -- Table structure for table `modality_protocol`
 --
 
-CREATE TABLE IF NOT EXISTS `modality_protocol` (
+CREATE TABLE `modality_protocol` (
   `modality` varchar(10) NOT NULL,
   `protocol` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -1293,7 +1292,7 @@ CREATE TABLE IF NOT EXISTS `modality_protocol` (
 -- Table structure for table `modules`
 --
 
-CREATE TABLE IF NOT EXISTS `modules` (
+CREATE TABLE `modules` (
   `module_id` int(11) NOT NULL,
   `module_name` varchar(200) NOT NULL,
   `module_status` varchar(25) NOT NULL,
@@ -1309,7 +1308,7 @@ CREATE TABLE IF NOT EXISTS `modules` (
 -- Table structure for table `module_prefs`
 --
 
-CREATE TABLE IF NOT EXISTS `module_prefs` (
+CREATE TABLE `module_prefs` (
   `mp_id` int(11) NOT NULL,
   `mp_module` varchar(50) NOT NULL,
   `mp_pref` varchar(255) NOT NULL,
@@ -1322,7 +1321,7 @@ CREATE TABLE IF NOT EXISTS `module_prefs` (
 -- Table structure for table `mostrecent`
 --
 
-CREATE TABLE IF NOT EXISTS `mostrecent` (
+CREATE TABLE `mostrecent` (
   `mostrecent_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
@@ -1336,7 +1335,7 @@ CREATE TABLE IF NOT EXISTS `mostrecent` (
 -- Table structure for table `mr_qa`
 --
 
-CREATE TABLE IF NOT EXISTS `mr_qa` (
+CREATE TABLE `mr_qa` (
   `mrqa_id` int(11) NOT NULL,
   `mrseries_id` int(11) DEFAULT NULL,
   `io_snr` double DEFAULT NULL,
@@ -1371,7 +1370,7 @@ CREATE TABLE IF NOT EXISTS `mr_qa` (
 -- Table structure for table `mr_scanparams`
 --
 
-CREATE TABLE IF NOT EXISTS `mr_scanparams` (
+CREATE TABLE `mr_scanparams` (
   `mrscanparam_id` int(11) NOT NULL,
   `protocol_name` varchar(255) NOT NULL,
   `sequence_name` varchar(255) NOT NULL,
@@ -1395,7 +1394,7 @@ CREATE TABLE IF NOT EXISTS `mr_scanparams` (
 -- Table structure for table `mr_series`
 --
 
-CREATE TABLE IF NOT EXISTS `mr_series` (
+CREATE TABLE `mr_series` (
   `mrseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
@@ -1452,7 +1451,7 @@ CREATE TABLE IF NOT EXISTS `mr_series` (
 -- Table structure for table `mr_studyqa`
 --
 
-CREATE TABLE IF NOT EXISTS `mr_studyqa` (
+CREATE TABLE `mr_studyqa` (
   `mrstudyqa_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `t1_numcompared` int(11) NOT NULL,
@@ -1471,7 +1470,7 @@ CREATE TABLE IF NOT EXISTS `mr_studyqa` (
 -- Table structure for table `nidb_sites`
 --
 
-CREATE TABLE IF NOT EXISTS `nidb_sites` (
+CREATE TABLE `nidb_sites` (
   `site_id` int(11) NOT NULL,
   `site_uid` varchar(20) NOT NULL,
   `site_uuid` varchar(255) NOT NULL,
@@ -1486,7 +1485,7 @@ CREATE TABLE IF NOT EXISTS `nidb_sites` (
 -- Table structure for table `nm_series`
 --
 
-CREATE TABLE IF NOT EXISTS `nm_series` (
+CREATE TABLE `nm_series` (
   `nmseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -1506,7 +1505,7 @@ CREATE TABLE IF NOT EXISTS `nm_series` (
 -- Table structure for table `notifications`
 --
 
-CREATE TABLE IF NOT EXISTS `notifications` (
+CREATE TABLE `notifications` (
   `notiftype_id` int(11) NOT NULL,
   `notiftype_name` varchar(255) NOT NULL,
   `notiftype_desc` text NOT NULL,
@@ -1519,7 +1518,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 -- Table structure for table `notification_user`
 --
 
-CREATE TABLE IF NOT EXISTS `notification_user` (
+CREATE TABLE `notification_user` (
   `notif_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
@@ -1533,7 +1532,7 @@ CREATE TABLE IF NOT EXISTS `notification_user` (
 -- Table structure for table `ot_series`
 --
 
-CREATE TABLE IF NOT EXISTS `ot_series` (
+CREATE TABLE `ot_series` (
   `otseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
@@ -1565,7 +1564,7 @@ CREATE TABLE IF NOT EXISTS `ot_series` (
 -- Table structure for table `pipelines`
 --
 
-CREATE TABLE IF NOT EXISTS `pipelines` (
+CREATE TABLE `pipelines` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_name` varchar(50) NOT NULL,
   `pipeline_desc` varchar(255) DEFAULT NULL,
@@ -1609,7 +1608,7 @@ CREATE TABLE IF NOT EXISTS `pipelines` (
 -- Table structure for table `pipeline_data_def`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
+CREATE TABLE `pipeline_data_def` (
   `pipelinedatadef_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '0',
@@ -1640,7 +1639,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_data_def` (
 -- Table structure for table `pipeline_dependencies`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_dependencies` (
+CREATE TABLE `pipeline_dependencies` (
   `pipelinedep_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `parent_id` int(11) DEFAULT NULL
@@ -1652,7 +1651,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_dependencies` (
 -- Table structure for table `pipeline_download`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_download` (
+CREATE TABLE `pipeline_download` (
   `pipelinedownload_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pd_admin` int(11) NOT NULL,
@@ -1679,7 +1678,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_download` (
 -- Table structure for table `pipeline_groups`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_groups` (
+CREATE TABLE `pipeline_groups` (
   `pipelinegroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `group_id` int(11) DEFAULT NULL
@@ -1691,7 +1690,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_groups` (
 -- Table structure for table `pipeline_history`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_history` (
+CREATE TABLE `pipeline_history` (
   `analysis_id` bigint(20) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL,
@@ -1708,7 +1707,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_history` (
 -- Table structure for table `pipeline_procs`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_procs` (
+CREATE TABLE `pipeline_procs` (
   `pp_processid` int(11) NOT NULL,
   `pp_status` varchar(50) NOT NULL,
   `pp_startdate` datetime NOT NULL,
@@ -1724,7 +1723,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_procs` (
 -- Table structure for table `pipeline_status`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_status` (
+CREATE TABLE `pipeline_status` (
   `pipelinestatus_id` int(11) NOT NULL,
   `pipeline_modulerunnum` bigint(20) NOT NULL,
   `pipeline_modulestarttime` datetime NOT NULL,
@@ -1743,7 +1742,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_status` (
 -- Table structure for table `pipeline_steps`
 --
 
-CREATE TABLE IF NOT EXISTS `pipeline_steps` (
+CREATE TABLE `pipeline_steps` (
   `pipelinestep_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT '1',
@@ -1762,7 +1761,7 @@ CREATE TABLE IF NOT EXISTS `pipeline_steps` (
 -- Table structure for table `ppi_series`
 --
 
-CREATE TABLE IF NOT EXISTS `ppi_series` (
+CREATE TABLE `ppi_series` (
   `ppiseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -1783,7 +1782,7 @@ CREATE TABLE IF NOT EXISTS `ppi_series` (
 -- Table structure for table `prescriptionnames`
 --
 
-CREATE TABLE IF NOT EXISTS `prescriptionnames` (
+CREATE TABLE `prescriptionnames` (
   `rxname_id` int(11) NOT NULL,
   `rx_name` varchar(255) NOT NULL,
   `rx_group` varchar(255) NOT NULL
@@ -1795,7 +1794,7 @@ CREATE TABLE IF NOT EXISTS `prescriptionnames` (
 -- Table structure for table `prescriptions`
 --
 
-CREATE TABLE IF NOT EXISTS `prescriptions` (
+CREATE TABLE `prescriptions` (
   `rx_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `rx_startdate` datetime NOT NULL,
@@ -1814,7 +1813,7 @@ CREATE TABLE IF NOT EXISTS `prescriptions` (
 -- Table structure for table `projects`
 --
 
-CREATE TABLE IF NOT EXISTS `projects` (
+CREATE TABLE `projects` (
   `project_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL DEFAULT '0',
   `project_uid` varchar(20) NOT NULL,
@@ -1836,7 +1835,7 @@ CREATE TABLE IF NOT EXISTS `projects` (
 -- Table structure for table `project_checklist`
 --
 
-CREATE TABLE IF NOT EXISTS `project_checklist` (
+CREATE TABLE `project_checklist` (
   `projectchecklist_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   `item_name` varchar(50) NOT NULL,
@@ -1855,7 +1854,7 @@ CREATE TABLE IF NOT EXISTS `project_checklist` (
 -- Table structure for table `project_protocol`
 --
 
-CREATE TABLE IF NOT EXISTS `project_protocol` (
+CREATE TABLE `project_protocol` (
   `projectprotocol_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   `protocolgroup_id` int(11) NOT NULL,
@@ -1870,7 +1869,7 @@ CREATE TABLE IF NOT EXISTS `project_protocol` (
 -- Table structure for table `protocolgroup_items`
 --
 
-CREATE TABLE IF NOT EXISTS `protocolgroup_items` (
+CREATE TABLE `protocolgroup_items` (
   `pgitem_id` int(11) NOT NULL,
   `protocolgroup_id` int(11) NOT NULL,
   `pgitem_protocol` varchar(255) NOT NULL
@@ -1882,7 +1881,7 @@ CREATE TABLE IF NOT EXISTS `protocolgroup_items` (
 -- Table structure for table `protocol_group`
 --
 
-CREATE TABLE IF NOT EXISTS `protocol_group` (
+CREATE TABLE `protocol_group` (
   `protocolgroup_id` int(11) NOT NULL,
   `protocolgroup_name` varchar(50) NOT NULL,
   `protocolgroup_modality` varchar(40) NOT NULL
@@ -1894,7 +1893,7 @@ CREATE TABLE IF NOT EXISTS `protocol_group` (
 -- Table structure for table `pr_series`
 --
 
-CREATE TABLE IF NOT EXISTS `pr_series` (
+CREATE TABLE `pr_series` (
   `prseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -1915,7 +1914,7 @@ CREATE TABLE IF NOT EXISTS `pr_series` (
 -- Table structure for table `public_downloads`
 --
 
-CREATE TABLE IF NOT EXISTS `public_downloads` (
+CREATE TABLE `public_downloads` (
   `pd_id` int(11) NOT NULL,
   `pd_createdate` datetime NOT NULL,
   `pd_expiredate` datetime NOT NULL,
@@ -1942,7 +1941,7 @@ CREATE TABLE IF NOT EXISTS `public_downloads` (
 -- Table structure for table `qc_modules`
 --
 
-CREATE TABLE IF NOT EXISTS `qc_modules` (
+CREATE TABLE `qc_modules` (
   `qcmodule_id` int(11) NOT NULL,
   `qcm_modality` varchar(20) NOT NULL,
   `qcm_name` varchar(255) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
@@ -1955,7 +1954,7 @@ CREATE TABLE IF NOT EXISTS `qc_modules` (
 -- Table structure for table `qc_moduleseries`
 --
 
-CREATE TABLE IF NOT EXISTS `qc_moduleseries` (
+CREATE TABLE `qc_moduleseries` (
   `qcmoduleseries_id` int(11) NOT NULL,
   `qcmodule_id` int(11) NOT NULL,
   `series_id` int(11) NOT NULL,
@@ -1969,7 +1968,7 @@ CREATE TABLE IF NOT EXISTS `qc_moduleseries` (
 -- Table structure for table `qc_resultnames`
 --
 
-CREATE TABLE IF NOT EXISTS `qc_resultnames` (
+CREATE TABLE `qc_resultnames` (
   `qcresultname_id` int(11) NOT NULL,
   `qcresult_name` varchar(255) NOT NULL DEFAULT '',
   `qcresult_type` enum('graph','image','histogram','minmax','number','textfile') NOT NULL DEFAULT 'number',
@@ -1983,7 +1982,7 @@ CREATE TABLE IF NOT EXISTS `qc_resultnames` (
 -- Table structure for table `qc_results`
 --
 
-CREATE TABLE IF NOT EXISTS `qc_results` (
+CREATE TABLE `qc_results` (
   `qcresults_id` int(11) NOT NULL,
   `qcmoduleseries_id` int(11) NOT NULL,
   `qcresultname_id` int(11) NOT NULL,
@@ -2000,7 +1999,7 @@ CREATE TABLE IF NOT EXISTS `qc_results` (
 -- Table structure for table `ratings`
 --
 
-CREATE TABLE IF NOT EXISTS `ratings` (
+CREATE TABLE `ratings` (
   `rating_id` int(11) NOT NULL,
   `rater_id` int(11) NOT NULL,
   `data_id` int(11) NOT NULL,
@@ -2017,7 +2016,7 @@ CREATE TABLE IF NOT EXISTS `ratings` (
 -- Table structure for table `remote_connections`
 --
 
-CREATE TABLE IF NOT EXISTS `remote_connections` (
+CREATE TABLE `remote_connections` (
   `remoteconn_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `conn_name` varchar(255) NOT NULL,
@@ -2035,7 +2034,7 @@ CREATE TABLE IF NOT EXISTS `remote_connections` (
 -- Table structure for table `remote_logins`
 --
 
-CREATE TABLE IF NOT EXISTS `remote_logins` (
+CREATE TABLE `remote_logins` (
   `remotelogin_id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `ip` varchar(100) NOT NULL,
@@ -2049,11 +2048,11 @@ CREATE TABLE IF NOT EXISTS `remote_logins` (
 -- Table structure for table `snps`
 --
 
-CREATE TABLE IF NOT EXISTS `snps` (
+CREATE TABLE `snps` (
   `snp_id` int(11) NOT NULL,
   `snp` varchar(255) NOT NULL,
   `position` int(11) NOT NULL,
-  `chromosome` tinyint(3) unsigned NOT NULL,
+  `chromosome` tinyint(3) UNSIGNED NOT NULL,
   `reference_allele` char(2) NOT NULL,
   `genetic_distance` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -2064,7 +2063,7 @@ CREATE TABLE IF NOT EXISTS `snps` (
 -- Table structure for table `snp_alleles`
 --
 
-CREATE TABLE IF NOT EXISTS `snp_alleles` (
+CREATE TABLE `snp_alleles` (
   `snpallele_id` int(11) NOT NULL,
   `snp_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
@@ -2077,7 +2076,7 @@ CREATE TABLE IF NOT EXISTS `snp_alleles` (
 -- Table structure for table `snp_series`
 --
 
-CREATE TABLE IF NOT EXISTS `snp_series` (
+CREATE TABLE `snp_series` (
   `snpseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -2098,7 +2097,7 @@ CREATE TABLE IF NOT EXISTS `snp_series` (
 -- Table structure for table `sr_series`
 --
 
-CREATE TABLE IF NOT EXISTS `sr_series` (
+CREATE TABLE `sr_series` (
   `srseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -2119,7 +2118,7 @@ CREATE TABLE IF NOT EXISTS `sr_series` (
 -- Table structure for table `studies`
 --
 
-CREATE TABLE IF NOT EXISTS `studies` (
+CREATE TABLE `studies` (
   `study_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `study_num` int(11) NOT NULL,
@@ -2159,7 +2158,7 @@ CREATE TABLE IF NOT EXISTS `studies` (
 -- Table structure for table `subjects`
 --
 
-CREATE TABLE IF NOT EXISTS `subjects` (
+CREATE TABLE `subjects` (
   `subject_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `birthdate` date DEFAULT NULL,
@@ -2191,7 +2190,7 @@ CREATE TABLE IF NOT EXISTS `subjects` (
 -- Table structure for table `subject_altuid`
 --
 
-CREATE TABLE IF NOT EXISTS `subject_altuid` (
+CREATE TABLE `subject_altuid` (
   `subjectaltuid_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `altuid` varchar(50) NOT NULL,
@@ -2205,7 +2204,7 @@ CREATE TABLE IF NOT EXISTS `subject_altuid` (
 -- Table structure for table `subject_relation`
 --
 
-CREATE TABLE IF NOT EXISTS `subject_relation` (
+CREATE TABLE `subject_relation` (
   `subjectrelation_id` int(11) NOT NULL,
   `subjectid1` int(11) NOT NULL,
   `subjectid2` int(11) NOT NULL,
@@ -2218,7 +2217,7 @@ CREATE TABLE IF NOT EXISTS `subject_relation` (
 -- Table structure for table `surgery_series`
 --
 
-CREATE TABLE IF NOT EXISTS `surgery_series` (
+CREATE TABLE `surgery_series` (
   `surgeryseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -2238,7 +2237,7 @@ CREATE TABLE IF NOT EXISTS `surgery_series` (
 -- Table structure for table `system_messages`
 --
 
-CREATE TABLE IF NOT EXISTS `system_messages` (
+CREATE TABLE `system_messages` (
   `message_id` int(11) NOT NULL,
   `message` text NOT NULL,
   `message_date` datetime NOT NULL,
@@ -2248,10 +2247,28 @@ CREATE TABLE IF NOT EXISTS `system_messages` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tags`
+--
+
+CREATE TABLE `tags` (
+  `tag_id` int(11) NOT NULL,
+  `series_id` int(11) DEFAULT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `subject_id` int(11) DEFAULT NULL,
+  `enrollment_id` int(11) DEFAULT NULL,
+  `analysis_id` int(11) DEFAULT NULL,
+  `pipeline_id` int(11) DEFAULT NULL,
+  `modality` varchar(20) DEFAULT NULL,
+  `tag` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `task_series`
 --
 
-CREATE TABLE IF NOT EXISTS `task_series` (
+CREATE TABLE `task_series` (
   `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -2272,7 +2289,7 @@ CREATE TABLE IF NOT EXISTS `task_series` (
 -- Table structure for table `users`
 --
 
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE `users` (
   `user_id` int(11) NOT NULL,
   `username` varchar(45) DEFAULT NULL,
   `password` varchar(45) DEFAULT NULL,
@@ -2312,7 +2329,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Table structure for table `users_pending`
 --
 
-CREATE TABLE IF NOT EXISTS `users_pending` (
+CREATE TABLE `users_pending` (
   `user_id` int(11) NOT NULL,
   `username` varchar(45) DEFAULT NULL,
   `password` varchar(45) DEFAULT NULL,
@@ -2334,7 +2351,7 @@ CREATE TABLE IF NOT EXISTS `users_pending` (
 -- Table structure for table `user_favorites`
 --
 
-CREATE TABLE IF NOT EXISTS `user_favorites` (
+CREATE TABLE `user_favorites` (
   `favorite_id` int(11) NOT NULL,
   `favorite_type` set('project','subject') NOT NULL,
   `favorite_objectid` int(11) NOT NULL,
@@ -2347,7 +2364,7 @@ CREATE TABLE IF NOT EXISTS `user_favorites` (
 -- Table structure for table `user_instance`
 --
 
-CREATE TABLE IF NOT EXISTS `user_instance` (
+CREATE TABLE `user_instance` (
   `userinstance_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
@@ -2361,7 +2378,7 @@ CREATE TABLE IF NOT EXISTS `user_instance` (
 -- Table structure for table `user_project`
 --
 
-CREATE TABLE IF NOT EXISTS `user_project` (
+CREATE TABLE `user_project` (
   `userproject_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
@@ -2378,7 +2395,7 @@ CREATE TABLE IF NOT EXISTS `user_project` (
 -- Table structure for table `us_series`
 --
 
-CREATE TABLE IF NOT EXISTS `us_series` (
+CREATE TABLE `us_series` (
   `usseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -2399,7 +2416,7 @@ CREATE TABLE IF NOT EXISTS `us_series` (
 -- Table structure for table `video_series`
 --
 
-CREATE TABLE IF NOT EXISTS `video_series` (
+CREATE TABLE `video_series` (
   `videoseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
   `series_num` int(11) NOT NULL,
@@ -2422,7 +2439,7 @@ CREATE TABLE IF NOT EXISTS `video_series` (
 -- Table structure for table `xa_series`
 --
 
-CREATE TABLE IF NOT EXISTS `xa_series` (
+CREATE TABLE `xa_series` (
   `xaseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
@@ -3185,6 +3202,13 @@ ALTER TABLE `system_messages`
   ADD PRIMARY KEY (`message_id`);
 
 --
+-- Indexes for table `tags`
+--
+ALTER TABLE `tags`
+  ADD PRIMARY KEY (`tag_id`),
+  ADD KEY `tag` (`tag`);
+
+--
 -- Indexes for table `task_series`
 --
 ALTER TABLE `task_series`
@@ -3746,6 +3770,11 @@ ALTER TABLE `surgery_series`
 --
 ALTER TABLE `system_messages`
   MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `tags`
+--
+ALTER TABLE `tags`
+  MODIFY `tag_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `task_series`
 --

@@ -530,6 +530,8 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 
 .question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }
 
+.tag { background-color: #f4cbbe; border-radius: 4px; padding: 3px 5px; margin: 3px; color: black; }
+
 /* generic drop shadow */
 .dropshadow {
 	-webkit-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);

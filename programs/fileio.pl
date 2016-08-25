@@ -392,7 +392,8 @@ sub CreateLinks() {
 					$newpath .= "/$part";
 					if (!-e $newpath) {
 						WriteLog("Attempting to make [$newpath]");
-						mkpath($newpath, { verbose => 1, mode => 0777 });
+						mkpath($newpath, { verbose => 1, mode => 0777, error => \my $err });
+						WriteLog("Error (if any) [$err]");
 					}
 					else {
 						WriteLog("[$newpath] already exists");

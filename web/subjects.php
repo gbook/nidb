@@ -64,6 +64,7 @@
 	$maritalstatus = GetVariable("maritalstatus");
 	$smokingstatus = GetVariable("smokingstatus");
 	$cancontact = GetVariable("cancontact");
+	$tags = GetVariable("tags");
 	$enrollgroup = GetVariable("enrollgroup");
 	$uid = GetVariable("uid");
 	$altuids = GetVariable("altuids");
@@ -128,24 +129,24 @@
 			DisplayMergeSubjects($mergeuids, $returnpage);
 			break;
 		case 'mergesubjects':
-			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $enrollgroup, $returnpage);
+			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $tags, $enrollgroup, $returnpage);
 			break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
 			DisplaySubject($id);
 			break;
 		case 'confirmupdate':
-			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid);
+			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
 			break;
 		case 'confirmadd':
-			Confirm("add", "", $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, "", $altuids, $enrollmentids, $guid);
+			Confirm("add", "", $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, "", $altuids, $enrollmentids, $guid);
 			break;
 		case 'update':
-			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid);
+			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
 			DisplaySubject($id);
 			break;
 		case 'add':
-			$id = AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $altuid, $guid);
+			$id = AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $altuid, $guid);
 			DisplaySubject($id);
 			break;
 		default:
@@ -165,7 +166,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateSubject ---------------------- */
 	/* -------------------------------------------- */
-	function UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid) {
+	function UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid) {
 		/* perform data checks */
 		$name = mysqli_real_escape_string($GLOBALS['linki'], "$lastname^$firstname");
 		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob);
@@ -179,16 +180,19 @@
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
 		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
 		
-		//print_r($altuids);
-		//print_r($enrollmentids);
+		$tags = explode(',',$tags);
 		
 		/* update the subject */
 		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $id";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		/* update the tags */
+		SetTags('subject',$id,$tags);
 		
 		/* delete entries for this subject from the altuid table ... */
 		$sqlstring = "delete from subject_altuid where subject_id = $id";
@@ -223,7 +227,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddSubject ------------------------- */
 	/* -------------------------------------------- */
-	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid) {
+	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $altuid, $guid) {
 	
 		if ($GLOBALS['debug']) {
 			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
@@ -241,6 +245,7 @@
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
 		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
 		$altuids = explode(',',$altuid);
@@ -277,10 +282,7 @@
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring3); }
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		
-		//$sqlstring = "select uid from subjects where subject_id = $SubjectRowID";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//$uid = $row['uid'];
+		SetTags('subject',$SubjectRowID,$tags);
 		
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
@@ -483,7 +485,7 @@
 	/* -------------------------------------------- */
 	/* ------- DoMergeSubjects -------------------- */
 	/* -------------------------------------------- */
-	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact, $enrollgroup, $returnpage) {
+	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact, $tags, $enrollgroup, $returnpage) {
 
 		?>
 		<span class="tiny">
@@ -511,6 +513,7 @@
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus[$selectedid]);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus[$selectedid]);
 		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact[$selectedid]);
+		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags[$selectedid]);
 		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid[$selectedid]);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
 		$altuids = explode(',',$altuid);
@@ -622,10 +625,11 @@
 			$subjects[$i]['uid'] = $row['uid'];
 			$subjects[$i]['guid'] = $row['guid'];
 			$subjects[$i]['cancontact'] = $row['cancontact'];
+			$subjects[$i]['tags'] = $row['tags'];
 			
 			/* get list of alternate subject UIDs */
 			$altuids = GetAlternateUIDs($row['subject_id'],0);
-			$subjects[$i]['altuid'] = implode2(',',$altuids);
+			$subjects[$i]['altuid'] = implode2(', ',$altuids);
 			
 			//PrintVariable($altuids);
 			
@@ -808,6 +812,17 @@
 					}
 				?>
 			</tr>
+			<tr>
+				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Tags</td>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['tags'] != $subjects[0]['tags']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
+						?>
+							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="tags[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['tags'];?>"></td>
+						<?
+					}
+				?>
+			</tr>
 			
 				<td style="text-align: right; vertical-align: top; font-weight: bold; border-right: solid 2px gray">Studies (with enrollment group)</td>
 				<?
@@ -830,7 +845,7 @@
 										else { $irb = "N"; }
 										
 										$altuids = GetAlternateUIDs($subjects[$i]['id'], $enrollmentid);
-										$altuidlist = implode2(',',$altuids);
+										$altuidlist = implode2(', ',$altuids);
 										
 								?>
 								<tr>
@@ -1009,6 +1024,7 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 
+		$tags = GetTags('subject', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
 		list($lastname, $firstname) = explode("^",$name);
@@ -1078,6 +1094,10 @@
 						<tr>
 							<td class="label">Can contact?</td>
 							<td class="value"><?=$cancontact?></td>
+						</tr>
+						<tr>
+							<td class="label">Tags</td>
+							<td class="value"><?=implode2(', ',$tags)?></td>
 						</tr>
 					</table>
 				</td>
@@ -1204,12 +1224,7 @@
 	/* -------------------------------------------- */
 	/* ------- Confirm ---------------------------- */
 	/* -------------------------------------------- */
-	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid) {
-
-		//echo "Calling Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $uid, $altuids, $enrollmentids, $guid)";
-		//PrintVariable($altuids);
-		//PrintVariable($enrollmentids);
-		
+	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid) {
 		$encdob = $dob;
 		if (($encrypt) && ($type != 'update')) {
 			$fullname = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $lastname) . '^' . preg_replace('/[^A-Za-z0-9]/', '', $firstname));
@@ -1308,6 +1323,10 @@
 				<td class="value"><?=$cancontact?></td>
 			</tr>
 			<tr>
+				<td class="label">Tags</td>
+				<td class="value"><?=$tags?></td>
+			</tr>
+			<tr>
 				<td colspan="2" align="center">
 					<br>
 					<span class="staticmessage">Are you sure this subject's information is correct and not a duplicate?</span>
@@ -1335,6 +1354,7 @@
 				<input type="hidden" name="maritalstatus" value="<?=$maritalstatus?>">
 				<input type="hidden" name="smokingstatus" value="<?=$smokingstatus?>">
 				<input type="hidden" name="cancontact" value="<?=$cancontact?>">
+				<input type="hidden" name="tags" value="<?=$tags?>">
 				<input type="hidden" name="uid" value="<?=$uid?>">
 				<? foreach ($altuids as $altuid) { ?>
 				<input type="hidden" name="altuids[]" value="<?=$altuid?>">
@@ -1431,6 +1451,8 @@
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
 
+		$tags = GetTags('subject', $id);
+		
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1591,6 +1613,10 @@
 									<tr>
 										<td class="label">Can contact?</td>
 										<td class="value"><?=$cancontact?></td>
+									</tr>
+									<tr>
+										<td class="label">Tags</td>
+										<td class="value"><?=DisplayTags($tags, 'subject')?></td>
 									</tr>
 								</table>
 								<br>
@@ -1794,7 +1820,8 @@
 											<? } ?>
 											<? if ($phiaccess) { ?>
 											<!--Project end date: <?=$project_enddate;?>-->
-											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a>
+											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a><br><br>
+											Tags: <?=DisplayTags(GetTags('enrollment',$enrollmentid), 'enrollment')?>
 											</div>
 											<? if (($enrolled) && ($GLOBALS['isadmin'])) { ?>
 											<form action="subjects.php" method="post">
@@ -2171,6 +2198,7 @@
 			$guid = $row['guid'];
 			$cancontact = $row['cancontact'];
 			
+			$tags = GetTags('subject',$id);
 			list($lastname, $firstname) = explode("^",$name);
 		
 			/* get privacy information */
@@ -2294,7 +2322,7 @@
 						</thead>
 						<tr>
 							<td align="right" style="padding-right: 8px">All projects</td>
-							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,0))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
+							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,0))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
@@ -2307,7 +2335,7 @@
 								?>
 								<tr>
 									<td align="right" style="padding-right: 8px"><?=$projectname?></td>
-									<td><input type="text" size="50" name="altuids[]" value="<?=implode2(',',GetAlternateUIDs($id,$enrollmentid))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
+									<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,$enrollmentid))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
 									<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
 								</tr>
 								<?
@@ -2444,6 +2472,10 @@
 			<tr>
 				<td class="label">Can contact?</td>
 				<td><input type="checkbox" name="cancontact" value="1" <? if ($cancontact) echo "checked"; ?>></td>
+			</tr>
+			<tr>
+				<td class="label">Tags<br><span class="tiny">comma separated list</span></td>
+				<td><input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject',$id))?>"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
