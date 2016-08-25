@@ -245,7 +245,7 @@
 		foreach ($subjectids as $id) {
 			$sqlstring = "update subjects set isactive = 0 where subject_id = '$id'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			echo "Deactivated $id: " . mysql_affected_rows() . " altered rows<br>";
+			echo "Deactivated $id: " . mysqli_affected_rows() . " altered rows<br>";
 		}
 		echo "</tt>";
 	}
@@ -286,7 +286,7 @@
 			$sqlstring = "delete from enrollment where enrollment_id = '$id'";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			echo "Deleted $id: " . mysql_affected_rows() . " altered rows<br>";
+			echo "Deleted $id: " . mysqli_affected_rows() . " altered rows<br>";
 		}
 		echo "</tt>";
 	}

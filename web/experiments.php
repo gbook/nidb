@@ -93,7 +93,7 @@
 	/* -------------------------------------------- */
 	function SetAsComplete($experimentid) {
 		$sqlstring = "update experiments set iscomplete = 1 where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 	}
 
 	
@@ -107,7 +107,7 @@
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		
 		$sqlstring = "insert into experiments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes) values ($enrollmentid, $formid, '$experimentdate', '$experimentor', '$username', '$label', '$notes')";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$experimentid = mysqli_insert_id();
 		
 		/* insert all the strings */
@@ -116,7 +116,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the numbers */
@@ -125,7 +125,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the texts */
@@ -134,7 +134,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the dates */
@@ -144,7 +144,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		return $experimentid;
@@ -161,11 +161,11 @@
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 
 		$sqlstring = "update experiments set exp_admindate = '$experimentdate', experimentor = '$experimentor', label = '$label', notes = '$notes' where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 
 		/* delete all old experimentdata entries */
 		$sqlstring = "delete from experimentdata where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		
 		/* insert all the strings */
 		if (isset($val_strings['string'])) {
@@ -173,7 +173,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the numbers */
@@ -182,7 +182,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the texts */
@@ -191,7 +191,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 		/* insert all the dates */
@@ -200,7 +200,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into experimentdata (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 			}
 		}
 	}
@@ -211,13 +211,13 @@
 	function CreateForm($enrollmentid, $formid, $username) {
 	
 		$sqlstring = "select * from forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -267,7 +267,7 @@
 			<?
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from formfields where form_id = $formid order by formfield_order + 0";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$formfield_id = $row['formfield_id'];
 					$formfield_desc = $row['formfield_desc'];
@@ -350,7 +350,7 @@
 	function ViewForm($experimentid, $viewtype) {
 	
 		$sqlstring = "select * from experiments where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$formid = $row['form_id'];
@@ -362,13 +362,13 @@
 		$notes = $row['notes'];
 
 		$sqlstring = "select * from forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -435,7 +435,7 @@
 				/* display all other rows, sorted by order */
 				$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM formfields a left outer join experimentdata b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
 				//echo $sqlstring;
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//print_r($row);
 					$formfield_id = $row['formfield_id'];
@@ -593,7 +593,7 @@
 	function PrintForm($experimentid) {
 	
 		$sqlstring = "select * from experiments where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$formid = $row['form_id'];
@@ -603,13 +603,13 @@
 		$lastupdate = date("M n, Y g:i a",strtotime($row['lastupdate']));
 
 		$sqlstring = "select * from forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -662,7 +662,7 @@
 				/* display all other rows, sorted by order */
 				$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM formfields a left outer join experimentdata b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
 				//echo $sqlstring;
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//print_r($row);
 					$formfield_id = $row['formfield_id'];

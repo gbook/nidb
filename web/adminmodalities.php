@@ -133,7 +133,7 @@
 		$sqlstring = "show columns from $modality" . "_series";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		$fields_num = mysql_num_fields($result);
+		$fields_num = mysqli_num_fields($result);
 
 		?>
 		<table class="graydisplaytable">
@@ -143,7 +143,7 @@
 		// printing table headers
 		for($i=0; $i<$fields_num; $i++)
 		{
-			$field = mysql_fetch_field($result);
+			$field = mysqli_fetch_field($result);
 			$fieldname = $field->name;
 			?>
 			<th><?=$fieldname?></th>
@@ -154,7 +154,7 @@
 		<?
 		if (mysqli_num_rows($result) > 0) {
 			// printing table rows
-			while($row = mysql_fetch_row($result))
+			while($row = mysqli_fetch_row($result))
 			{
 				echo "<tr>";
 
@@ -173,7 +173,7 @@
 			echo "</table>";
 			
 			/* reset the pointer so not to confuse any subsequent data access */
-			mysql_data_seek($result, 0);
+			mysqli_data_seek($result, 0);
 		}
 		else {
 			echo "</table>";

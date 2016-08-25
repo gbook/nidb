@@ -430,8 +430,8 @@
 						}
 						//PrintSQL($sqlstring);
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						//echo "<span class='tiny'>" . mysql_affected_rows() . " rows updated</span>";
-						$numRowsUpdated += mysql_affected_rows();
+						//echo "<span class='tiny'>" . mysqli_affected_rows() . " rows updated</span>";
+						$numRowsUpdated += mysqli_affected_rows();
 					}
 					
 					$sqlstring = "update enrollment set enroll_subgroup = '$enrollgroup' where enrollment_id = $enrollmentid";
@@ -478,7 +478,7 @@
 						$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_type = '$visit', study_site = '$site' where study_id = '$studyid'";
 						//PrintSQL($sqlstring);
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysql_affected_rows();
+						$numRowsUpdated += mysqli_affected_rows();
 					}
 					else {
 						echo "Age-at-scan [$ageatscan] is not a number<br>";
@@ -489,7 +489,7 @@
 						$sqlstring = "update subjects set gender = '$sex' where subject_id = '$subjectid'";
 						//PrintSQL($sqlstring);
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysql_affected_rows();
+						$numRowsUpdated += mysqli_affected_rows();
 					}
 					
 					/* update the alternate UIDs */
@@ -522,7 +522,7 @@
 						}
 						//PrintSQL($sqlstring);
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysql_affected_rows();
+						$numRowsUpdated += mysqli_affected_rows();
 					}
 				}
 			}
@@ -728,7 +728,7 @@
 					$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
 					$numupdates = 0;
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$numupdates = mysql_affected_rows();
+					$numupdates = mysqli_affected_rows();
 					$numrowsaffected += $numupdates;
 					if ($numupdates > 0) {
 						//echo "[$sqlstringA]<br>";
@@ -1010,7 +1010,7 @@
 			$uid = "";
 			$bgcolor = "";
 			$i = 1;
-			mysql_data_seek($result,0);
+			mysqli_data_seek($result,0);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$study_id = $row['study_id'];
 				$modality = $row['study_modality'];

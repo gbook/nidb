@@ -176,13 +176,13 @@
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
 				$sqlstring = "select study_id from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$studyid = $row['study_id'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
 				}
@@ -190,7 +190,7 @@
 					/* insert the seriesids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					//echo "$sqlstring<br>";
-					$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring);
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
 				}
 			}
@@ -200,13 +200,13 @@
 			foreach ($studyids as $studyid) {
 				/* get the modality for this study */
 				$sqlstring = "select study_modality from studies where study_id = $studyid";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$modality = $row['modality'];
 				
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				if (mysqli_num_rows($result) > 0) {
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> already in this group</span></div><?
 				}
@@ -214,7 +214,7 @@
 					/* insert the studyids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					//echo "$sqlstring<br>";
-					$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+					$result = MySQLiQuery($sqlstring);
 					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> added</span></div><?
 				}
 			}
@@ -382,7 +382,7 @@
 							<th>Remove<br>from group</th>
 						<?
 						/* reset the result pointer to 0 to iterate through the results again */
-						mysql_data_seek($result,0);
+						mysqli_data_seek($result,0);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$itemid = $row['subjectgroup_id'];
 							$subjectid = $row['subject_id'];
@@ -658,7 +658,7 @@
 						/* reset the result pointer to 0 to iterate through the results again */
 						$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						//mysql_data_seek($result,0);
+						//mysqli_data_seek($result,0);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$studyid = $row['study_id'];
 							$studynum = $row['study_num'];
@@ -905,7 +905,7 @@
 							$sqlstring = "select b.*, c.study_num, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
 							//print "[$sqlstring]<br>";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							mysql_data_seek($result,0);
+							mysqli_data_seek($result,0);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$seriesdesc = $row['series_desc'];
 								$seriesprotocol = $row['series_protocol'];

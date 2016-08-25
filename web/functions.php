@@ -46,13 +46,13 @@
 	/* database connection */
 	if ($isdevserver) {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitenamedev'];
 	}
 	else {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysql_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitename'];
 	}
@@ -393,7 +393,7 @@
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
-			<b>Error:</b> " . mysql_error() . "<br>
+			<b>Error:</b> " . mysqli_error() . "<br>
 			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
 			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>

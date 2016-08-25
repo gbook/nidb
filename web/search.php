@@ -1363,7 +1363,7 @@
 		}
 		
 		/* ----- loop through the results and display them ----- */
-		mysql_data_seek($result,0); /* rewind the record pointer */
+		mysqli_data_seek($result,0); /* rewind the record pointer */
 		$laststudy_id = "";
 		$headeradded = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {

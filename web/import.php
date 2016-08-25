@@ -1330,8 +1330,8 @@ question_num, question_text, datatype, values, comment</div>
 			
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				//echo "[" . mysql_affected_rows() . "]<br>";
-				$numupdated += mysql_affected_rows();
+				//echo "[" . mysqli_affected_rows() . "]<br>";
+				$numupdated += mysqli_affected_rows();
 			}
 			
 			$c++;
@@ -1498,8 +1498,8 @@ question_num, question_text, datatype, values, comment</div>
 			
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				echo "[" . mysql_affected_rows() . "]<br>";
-				$numupdated += mysql_affected_rows();
+				echo "[" . mysqli_affected_rows() . "]<br>";
+				$numupdated += mysqli_affected_rows();
 			}
 			
 			$c++;

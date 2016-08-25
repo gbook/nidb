@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 25, 2016 at 03:11 PM
+-- Generation Time: Aug 25, 2016 at 05:29 PM
 -- Server version: 10.0.26-MariaDB
 -- PHP Version: 5.5.38
 
@@ -1591,6 +1591,7 @@ CREATE TABLE `pipelines` (
   `pipeline_numproc` int(11) NOT NULL COMMENT 'number of concurrent jobs allowed to run',
   `pipeline_queue` varchar(50) NOT NULL,
   `pipeline_submithost` varchar(255) NOT NULL,
+  `pipeline_clustertype` enum('','sge','slurm') NOT NULL,
   `pipeline_notes` text NOT NULL,
   `pipeline_removedata` tinyint(1) NOT NULL,
   `pipeline_resultsscript` text NOT NULL,

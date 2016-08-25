@@ -76,7 +76,7 @@
 			if (count($subjectids) > 1) { $subjid = implode("','",$subjectids); }
 			else { $subjid = "'$subjectids[0]'"; }
 			$sqlstring = "select subject_id, uid from subjects where uid in ($subjid) or altuid1 in ($subjid) or altuid2 in ($subjid) or altuid3 in ($subjid)";
-			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring);
 			if (mysqli_num_rows($result) == 0) {
 				echo "Subject $subjid not found in database<br>";
 				continue;
@@ -101,7 +101,7 @@
 			/* check if the subject is enrolled in the project, return the  enrollmentRowID */
 			$sqlstring = "select enrollment_id from enrollment a left join projects b on a.project_id = b.project_id where b.project_costcenter = '$costcenter' and a.subject_id = $SubjectRowID";
 			//echo "[$sqlstring]<br>";
-			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring);
 			if (mysqli_num_rows($result) > 0) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
@@ -114,7 +114,7 @@
 			/* check if we need to create a new groupid */
 			if ($filegroupid != $lastfilegroupid) {
 				$sqlstring = "select (max(exp_groupid) + 1) 'newgroupid' from assessments";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$groupid = $row['newgroupid'];
 			}
@@ -122,7 +122,7 @@
 			/* check if the experiment exists, and if the question is already filled out, if it is filled out skip it and create a new experiment */
 			$sqlstring = "select * from assessments where enrollment_id = $enrollmentRowID and form_id = $formid";
 			echo "[$sqlstring]<br>";
-			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring);
 			if (mysqli_num_rows($result) > 0) {
 				/* get the ExperimentRowID */
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -132,7 +132,7 @@
 				/* create the experiment, get the rowID */
 				$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes, iscomplete) values ($enrollmentRowID, $formid, '$datetime', '$rater', '$rater', '$visit', '$notes', 1)";
 				echo "[$sqlstring]<br>";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				$ExperimentRowID = mysqli_insert_id();
 			}
 			
@@ -140,20 +140,20 @@
 			/* if the question has already been filled, create a new experiment and get the ExperimentRowID */
 			$sqlstring = "select * from assessment_data where experiment_id = $ExperimentRowID and formfield_id = $questionid";
 			echo "[$sqlstring]<br>";
-			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring);
 			if (mysqli_num_rows($result) > 0) {
 				/* this question has already been filled out...
                    no need to overwrite imported data so create a new experiment to put the question into */
 				/* create the experiment, get the rowID */
 				$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes, iscomplete) values ($enrollmentRowID, $formid, '$datetime', '$rater', '$rater', '$visit', '$notes', 1)";
 				echo "[$sqlstring]<br>";
-				$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+				$result = MySQLiQuery($sqlstring);
 				$ExperimentRowID = mysqli_insert_id();
 			}
 			/* insert the question value */
 			$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, value_date, update_username) values ($questionid,$ExperimentRowID,'$value','$datetime','WebsiteImporter')";
 			echo "[$sqlstring]<br>";
-			$result = MySQLiQuery($sqlstring) or die("Query failed [" . __FILE__ . "(line " . __LINE__ . ")]: " . mysql_error() . "<br><i>$sqlstring</i><br>");
+			$result = MySQLiQuery($sqlstring);
 			
 			$lastfilegroupid = $filegroupid;
 		}

@@ -152,7 +152,7 @@
 	function ResetModule($id) {
 		/* get module name */
 		$sqlstring = "select module_name from modules where module_id = $id";
-		$result = MySQLiQuery($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
+		$result = MySQLiQuery($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$scriptname = $row['module_name'];
 		
@@ -171,7 +171,7 @@
 		/* update DB to have 0 instances, status=stopped and lastfinish=now() */
 		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = $id";
 		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring) or die(SQLError(__FILE__, __LINE__, mysql_error(), $sqlstring));
+		$result = MySQLiQuery($sqlstring);
 	}
 
 	

@@ -78,10 +78,10 @@
 		$sqlstring = "select * from data_requests where request_id = $requestid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
-		$fields_num = mysql_num_fields($result);
+		$fields_num = mysqli_num_fields($result);
 		for($i=0; $i<$fields_num; $i++)
 		{
-			$field = mysql_fetch_field($result);
+			$field = mysqli_fetch_field($result);
 			$fields[] = $field->name;
 		}
 		?><div style="column-count 3; -moz-column-count:3; -webkit-column-count:3"><?

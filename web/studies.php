@@ -1147,7 +1147,7 @@
 						//print_r($ratings);
 					
 						/* get the actual MR series info */
-						mysql_data_seek($result,0);
+						mysqli_data_seek($result,0);
 						$sqlstring = "select * from mr_series where study_id = $id order by series_num";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1732,7 +1732,7 @@
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 							<?
-							mysql_data_seek($result,0); /* reset the sql result, so we can loop through it again */
+							mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$mrseries_id = $row['mrseries_id'];
 								?>
@@ -2261,7 +2261,7 @@
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 					<?
-					mysql_data_seek($result,0); /* reset the sql result, so we can loop through it again */
+					mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$series_id = $row[strtolower($modality) . "series_id"];
 						?>
