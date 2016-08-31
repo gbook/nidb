@@ -61,6 +61,7 @@
 	$enrollgroups = GetVariable("enrollgroup");
 	$studytable = GetVariable("studytable");
 	$subjecttable = GetVariable("subjecttable");
+	$tags = GetVariable("tags");
 	
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
@@ -97,25 +98,29 @@
 		case 'displayprojectinfo':
 			DisplayProjectInfo($id);
 			break;
-		case 'editdemographics':
-			DisplayDemographicsEditTable($id);
+		case 'editsubjects':
+			DisplayEditSubjectsTable($id);
 			break;
-		case 'displaydemographics':
-			DisplayDemographics($id,1);
+		case 'displaysubjects':
+			DisplaySubjects($id,1);
 			break;
 		case 'updatedemographics':
 			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
-			DisplayDemographics($id,1);
+			DisplaySubjects($id,1);
 			break;
 		case 'displaydeletedsubjects':
-			DisplayDemographics($id,0);
+			DisplaySubjects($id,0);
 			break;
 		case 'updatesubjecttable':
 			UpdateSubjectTable($id,$subjecttable);
-			DisplayDemographicsEditTable($id);
+			DisplayEditSubjectsTable($id);
 			break;
 		case 'updatestudytable':
 			UpdateStudyTable($id,$studytable);
+			DisplayProject($id);
+			break;
+		case 'applytags':
+			ApplyTags($id, $studyids, $tags);
 			DisplayProject($id);
 			break;
 		case 'viewinstancesummary':
@@ -265,6 +270,43 @@
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- ApplyTags -------------------------- */
+	/* -------------------------------------------- */
+	function ApplyTags($id, $studyids, $tags) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$studyids = mysqli_real_escape_array($studyids);
+		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
+		//PrintVariable($tags);
+		$taglist = explode(',', $tags);
+		//PrintVariable($taglist);
+		
+		$studyids = implode2(",", $studyids);
+		
+		if (count($studyids) > 0) {
+			/* get list of enrollments from these studies */
+			$sqlstring = "select enrollment_id from studies where study_id in ($studyids)";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0){
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$enrollmentid = $row['enrollment_id'];
+
+					foreach ($taglist as $tag) {
+						$sqlstringA = "insert ignore into tags (tagtype, enrollment_id, tag) values ('dx', $enrollmentid, '$tag')";
+						//PrintSQL($sqlstringA);
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						?><div class="message">Applied tag [<?=$tag?>] to enrollmentid [<?=$enrollmentid?>]</div><?
+					}
+				}
+			}
+		}
+		else {
+			?><div class="staticmessage">No studies selected</div><?
+		}
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- UpdateSubjectTable ----------------- */
@@ -457,7 +499,7 @@
 		foreach ($csv as $line) {
 			/* only accept valid lines with the correct # of columns */
 			if (trim($line) != '') {
-				$parts = array_map(mysqli_real_escape_string, str_getcsv($line));
+				$parts = mysqli_real_escape_array(str_getcsv($line));
 				//PrintVariable($parts,'Parts');
 				if (count($parts) == 16) {
 					//PrintVariable($parts, 'Parts');
@@ -974,6 +1016,27 @@
 		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 		</div>
 		<br>
+		<script type="text/javascript">
+			//$(document).ready(function() {
+			//	$('#checkall').click(function() {
+			//		//alert('Something happened again');
+			//		var checked_status = this.checked;
+			//		$(".allcheck").find("input[type='checkbox']").each(function() {
+			//			this.checked = checked_status;
+			//		});
+			//	});
+			//});
+			
+			function CheckAll(checkbox) {
+				//alert('Hi there');
+				var checked_status = checkbox.checked;
+				/* document.getElementById("checkall") */
+				//alert(checked_status);
+				$(".allcheck").find("input[type='checkbox']").each(function() {
+					this.checked = checked_status;
+				});
+			}
+		</script>
 		<table class="testgrid dropshadow" id='table1'>
 			<thead>
 			<tr>
@@ -991,21 +1054,11 @@
 				<th>Study Desc</th>
 				<th>Study ID</th>
 				<? if ($GLOBALS['issiteadmin']) { ?>
-				<th><input type="checkbox" id="checkall"></th>
+				<th><input type="checkbox" id="checkall" onClick="CheckAll(this)"></th>
 				<? } ?>
 				<th>Site</th>
 			</tr>
 			</thead>
-			<script type="text/javascript">
-			$(document).ready(function() {
-				$("#checkall").click(function() {
-					var checked_status = this.checked;
-					$(".allcheck").find("input[type='checkbox']").each(function() {
-						this.checked = checked_status;
-					});
-				});
-			});
-			</script>
 			<?
 			$uid = "";
 			$bgcolor = "";
@@ -1105,8 +1158,8 @@
 					$("#table1").table2csv( {
 						callback: function (csv) {
 							document.getElementById("studytable").value = csv;
-							//alert('Hi');
-							//document.getElementById('savetableform').submit();
+							alert('Hi');
+							document.getElementById('savetableform').submit();
 						}
 					});
 				}
@@ -1118,11 +1171,37 @@
 		<table width="100%">
 			<tr>
 				<? if ($GLOBALS['issiteadmin']) { ?>
-				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; padding:8px; font-size: 10pt" width="70%">
-					<table>
+				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px; font-size: 10pt" width="70%">
+					<table cellpadding="5">
 						<tr>
+							<td colspan="2"><b style="font-size: 14pt">Powerful Tools</b><br>Perform the following operations on the selected studies...<br><br></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; color: #555; font-weight: bold">
+								Apply enrollment tag(s)
+							</td>
 							<td>
-								<b style="font-size: 12pt">Powerful Tools</b> &nbsp; &nbsp;
+								<input type="text" name="tags" id="tags" list="taglist" multiple> <span class="tiny">comma separated</span>
+								<datalist id="taglist">
+								<?
+									$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$tag = $row['tag'];
+										?>
+										<option value="<?=$tag?>">
+										<?
+									}
+								?>
+								</datalist>
+								<input type="submit" value="Apply tag(s)" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()" style="font-size:10pt">
+							<td>
+						</tr>
+						<tr>
+							<td style="text-align: right; color: #555; font-weight: bold">
+								Move studies to new project
+							</td>
+							<td>
 								<select name="newprojectid" id="newprojectid">
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
@@ -1142,7 +1221,13 @@
 								?>
 								</select>
 								<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()" style="font-size:10pt">
-								&nbsp;&nbsp;&nbsp;&nbsp;
+							<td>
+						</tr>
+						<tr>
+							<td style="text-align: right; color: #555; font-weight: bold">
+								Re-archive
+							</td>
+							<td>
 								<span title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects"><input type="checkbox" name="matchidonly" value="1" checked>Match ID only</span>
 								&nbsp;&nbsp;
 								<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()" style="color: red; font-size:10pt">
@@ -1151,7 +1236,10 @@
 							</td>
 						</tr>
 						<tr>
-							<td align="right">
+							<td style="text-align: right; color: #555; font-weight: bold">
+								Obliterate
+							</td>
+							<td>
 								<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()" style="color: red; font-size:10pt"> &nbsp; &nbsp;
 								<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()" style="color: red; font-size:10pt">
 							</td>
@@ -1177,9 +1265,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayDemographicsEditTable ------- */
+	/* ------- DisplayEditSubjectsTable ----------- */
 	/* -------------------------------------------- */
-	function DisplayDemographicsEditTable($id) {
+	function DisplayEditSubjectsTable($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
@@ -1190,7 +1278,7 @@
 		
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
-		$urllist['Edit Demographics'] = "projects.php?action=editdemographics&id=$id";
+		$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
 		# get the autocomplete list for the enrollgroup
@@ -1374,9 +1462,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayDemographics ---------------- */
+	/* ------- DisplaySubjects -------------------- */
 	/* -------------------------------------------- */
-	function DisplayDemographics($id, $isactive=1) {
+	function DisplaySubjects($id, $isactive=1) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
@@ -1387,7 +1475,7 @@
 		
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
-		$urllist['View Demographics'] = "projects.php?action=displaydemographics&id=$id";
+		$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
@@ -2373,7 +2461,7 @@
 				<table width="50%">
 					<tr>
 						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
@@ -2389,8 +2477,8 @@
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheaderactive">
-							<a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a><br>
-							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a><br>
+							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
+							<a href="projects.php?action=displaysubjects&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a><br>
 							<a href="projects.php?action=displaydeletedsubjects&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View deleted</a>
 						</td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
@@ -2407,7 +2495,7 @@
 				<table width="50%">
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
@@ -2422,7 +2510,7 @@
 				<table width="50%">
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheaderactive">
 							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
@@ -2440,7 +2528,7 @@
 				<table width="50%">
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editdemographics&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheaderactive">

@@ -344,8 +344,10 @@
 	/* -------------------------------------------- */
 	function PrintSQLTable($result,$url,$orderby,$size) {
 		$fields_num = mysqli_num_fields($result);
+		$numrows = mysqli_num_rows($result);
 
 		?>
+		Displaying [<?=$numrows?>] rows<br><br>
 		<table cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-size:<?=$size?>pt; white-space:nowrap;">
 			<tr>
 		<?
@@ -1090,82 +1092,74 @@
 	/* -------------------------------------------- */
 	/* ------- GetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function GetTags($tagtype, $id, $modality='') {
+	function GetTags($idtype, $tagtype, $id, $modality='') {
 		
 		$sqlstring = "";
 		$tags = "";
 		
-		switch ($tagtype) {
-			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality'"; break;
-			case 'study': $sqlstring = "select tag from tags where study_id = '$id'"; break;
-			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id'"; break;
-			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id'"; break;
-			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id'"; break;
-			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id'"; break;
+		switch ($idtype) {
+			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
+			case 'study': $sqlstring = "select tag from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
 		}
 		
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tags[] = $row['tag'];
 		}
 		
-		return $tags;
+		return array_unique($tags);
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function SetTags($tagtype, $id, $tags, $modality='') {
-
-		//PrintVariable($tags);
-		
+	function SetTags($idtype, $tagtype, $id, $tags, $modality='') {
 		/* trim all the tags */
 		$tags = array_map("trim", $tags);
-		//PrintVariable($tags);
 		
 		/* remove duplicates */
 		$tags = array_unique($tags, SORT_STRING);
-		//PrintVariable($tags);
 		
 		/* remove tags that are NULL, FALSE, or empty strings */
 		$tags = array_filter($tags, 'strlen');
-		//PrintVariable($tags);
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete any old tags */
-		switch ($tagtype) {
-			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality'"; break;
-			case 'study': $sqlstring = "delete from tags where study_id = '$id'"; break;
-			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id'"; break;
-			case 'subject': $sqlstring = "delete from tags where subject_id = '$id'"; break;
-			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id'"; break;
-			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id'"; break;
+		switch ($idtype) {
+			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
+			case 'study': $sqlstring = "delete from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'subject': $sqlstring = "delete from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
 		}
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		foreach ($tags as $tag) {
 			$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
-			switch ($tagtype) {
-				case 'series': $sqlstring = "insert into tags (series_id, modality, tag) values ('$id', '$modality', '$tag')"; break;
-				case 'study': $sqlstring = "insert into tags (study_id, tag) values ('$id', '$tag')"; break;
-				case 'enrollment': $sqlstring = "insert into tags (enrollment_id, tag) values ('$id', '$tag')"; break;
-				case 'subject': $sqlstring = "insert into tags (subject_id, tag) values ('$id', '$tag')"; break;
-				case 'analysis': $sqlstring = "insert into tags (analysis_id, tag) values ('$id', '$tag')"; break;
-				case 'pipeline': $sqlstring = "insert into tags (pipeline_id, tag) values ('$id', '$tag')"; break;
+			switch ($idtype) {
+				case 'series': $sqlstring = "insert ignore into tags (tagtype, series_id, modality, tag) values ('$tagtype', '$id', '$modality', '$tag')"; break;
+				case 'study': $sqlstring = "insert ignore into tags (tagtype, study_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'enrollment': $sqlstring = "insert ignore into tags (tagtype, enrollment_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'subject': $sqlstring = "insert ignore into tags (tagtype, subject_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'analysis': $sqlstring = "insert ignore into tags (tagtype, analysis_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'pipeline': $sqlstring = "insert ignore into tags (tagtype, pipeline_id, tag) values ('$tagtype', '$id', '$tag')"; break;
 			}
-			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
 		/* commit the transaction */
 		$sqlstring = "commit";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
@@ -1173,10 +1167,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTags ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayTags($tags, $tagtype) {
+	function DisplayTags($tags, $idtype, $tagtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<span class='tag'><a href='tags.php?tagtype=$tagtype&tag=$tag' title='Show all $tagtype"."s with the <i>$tag</i> tag'>$tag</a></span>";
+			$html .= "<span class='tag'><a href='tags.php?idtype=$idtype&tagtype=$tagtype&tag=$tag' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
 		}
 		return $html;
 	}

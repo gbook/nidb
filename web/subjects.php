@@ -1024,7 +1024,7 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 
-		$tags = GetTags('subject', $id);
+		$tags = GetTags('subject', 'dx', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
 		list($lastname, $firstname) = explode("^",$name);
@@ -1451,7 +1451,7 @@
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
 
-		$tags = GetTags('subject', $id);
+		$tags = GetTags('subject', '', $id);
 		
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
@@ -1599,11 +1599,11 @@
 										<td class="value"><?=$email?></td>
 									</tr>
 									<tr>
-										<td class="label">Marital Status</td>
+										<td class="label">Marital status</td>
 										<td class="value"><?=$maritalstatus?></td>
 									</tr>
 									<tr>
-										<td class="label">Smoking&nbsp;Status</td>
+										<td class="label">Smoking&nbsp;status</td>
 										<td class="value"><?=$smokingstatus?></td>
 									</tr>
 									<tr>
@@ -1615,7 +1615,7 @@
 										<td class="value"><?=$cancontact?></td>
 									</tr>
 									<tr>
-										<td class="label">Tags</td>
+										<td class="label">Subject tags</td>
 										<td class="value"><?=DisplayTags($tags, 'subject')?></td>
 									</tr>
 								</table>
@@ -1821,7 +1821,7 @@
 											<? if ($phiaccess) { ?>
 											<!--Project end date: <?=$project_enddate;?>-->
 											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a><br><br>
-											Tags: <?=DisplayTags(GetTags('enrollment',$enrollmentid), 'enrollment')?>
+											Diagnosis Tags: <?=DisplayTags('dx', GetTags('enrollment','dx',$enrollmentid), 'enrollment')?>
 											</div>
 											<? if (($enrolled) && ($GLOBALS['isadmin'])) { ?>
 											<form action="subjects.php" method="post">
@@ -2198,7 +2198,7 @@
 			$guid = $row['guid'];
 			$cancontact = $row['cancontact'];
 			
-			$tags = GetTags('subject',$id);
+			$tags = GetTags('subject','dx',$id);
 			list($lastname, $firstname) = explode("^",$name);
 		
 			/* get privacy information */
@@ -2475,7 +2475,7 @@
 			</tr>
 			<tr>
 				<td class="label">Tags<br><span class="tiny">comma separated list</span></td>
-				<td><input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject',$id))?>"></td>
+				<td><input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
