@@ -1158,7 +1158,7 @@
 					$("#table1").table2csv( {
 						callback: function (csv) {
 							document.getElementById("studytable").value = csv;
-							alert('Hi');
+							//alert('Hi');
 							document.getElementById('savetableform').submit();
 						}
 					});
@@ -1349,7 +1349,7 @@
 		<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 		</div>
 		<br>
-		<table class="testgrid" id='table1'>
+		<table class="testgrid dropshadow" id='table1'>
 			<thead>
 				<th></th>
 				<th>UID</th>
@@ -1482,7 +1482,7 @@
 		<? DisplayMenu("subjects", $id); ?>
 		<div align="center">
 		<br>
-		<table class="graydisplaytable">
+		<table class="graydisplaytable dropshadow">
 			<thead>
 				<th>UID</th>
 				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
@@ -2156,7 +2156,7 @@
 		?>
 		<div align="center">
 		<br><br>
-		<table class="twocoltable">
+		<table class="twocoltable dropshadow">
 			<thead>
 				<tr>
 					<th colspan="2"><?=$name?></th>

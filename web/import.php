@@ -1067,26 +1067,26 @@ question_num, question_text, datatype, values, comment</div>
 				}
 				
 				if (!$validid) {
-					echo "Column 1 (UID) does not contain a valid UID [$uid]. Line $L<br>";
+					echo "Row $L, Column 1 (UID) does not contain a valid UID [$uid]<br>";
 					$numErrors++;
 				}
 				
 				/* check for blank entries in other columns */
 				if ($uid == "") {
-					echo "Column 1 (UID) is blank. Line $L<br>";
+					echo "Row $L, Column 1 (UID) is blank<br>";
 					$numErrors++;
 				}
 				if ($measure == "") {
-					echo "Column 2 (Instrument name) is blank. Line $L<br>";
+					echo "Row $L, Column 2 (Instrument name) is blank<br>";
 					$numErrors++;
 				}
 				if ($measure == "") {
-					echo "Column 3 (Measure name) is blank. Line $L<br>";
+					echo "Row $L, Column 3 (Measure name) is blank<br>";
 					$numErrors++;
 				}
 				/* blank values are OK, don't check for them */
 				if ($value == "") {
-					echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
+					//echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
 					//$numErrors++;
 				}
 				
@@ -1131,7 +1131,7 @@ question_num, question_text, datatype, values, comment</div>
 							//echo "SubjectRowID for UID [$uid]: [$subjectRowID]<br>";
 							
 							if ($subjectRowID < 1) {
-								echo "Column 1 (UID) does not contain a valid UID [$uid]. Line $L<br>";
+								echo "Row $L, Column 1 (UID) does not contain a valid UID [$uid]<br>";
 								$numErrors++;
 							}
 						}
@@ -1140,7 +1140,7 @@ question_num, question_text, datatype, values, comment</div>
 							$measure = $measures[$col];
 							/* check for blank entries in other columns */
 							if ($value == "") {
-								echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
+								//echo "Warning (not an error) column $col (Measure value) is blank. Line $L<br>";
 								//$numErrors++;
 							}
 						}

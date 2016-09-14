@@ -151,6 +151,7 @@ sub ProcessPipelines() {
 		my $pipelinedirectory = $row{'pipeline_directory'};
 		my $usetmpdir = $row{'pipeline_usetmpdir'};
 		my $tmpdir = $row{'pipeline_tmpdir'};
+		my $clustertype = $row{'pipeline_clustertype'};
 		my $pipelinequeue = $row{'pipeline_queue'};
 		my $pipelinesubmithost;
 		if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
@@ -285,7 +286,7 @@ sub ProcessPipelines() {
 			my $analysisRowID = $result->insertid;
 			
 			# create the SGE job file
-			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
 		
 			$systemstring = "chmod -Rf 777 $analysispath";
 			WriteLog("[$systemstring]");
@@ -549,7 +550,7 @@ sub ProcessPipelines() {
 								$realanalysispath =~ s/\/mount//g;
 								
 								# create the SGE job file
-								my $sgebatchfile = CreateSGEJobFile($analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $runsupplement, @pipelinesteps);
+								my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $runsupplement, @pipelinesteps);
 							
 								`chmod -Rf 777 $analysispath`;
 								# submit the SGE job
@@ -815,7 +816,7 @@ sub ProcessPipelines() {
 			my $studydatetime = $row{'studydatetime'};
 				
 			# create the SGE job file
-			my $sgebatchfile = CreateSGEJobFile($analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
 		
 			`chmod -Rf 777 $groupanalysispath`;
 			WriteLog($sgebatchfile);
@@ -939,10 +940,10 @@ sub IsQueueFilled() {
 
 
 # ----------------------------------------------------------
-# --------- CreateSGEJobFile -------------------------------
+# --------- CreateClusterJobFile -------------------------------
 # ----------------------------------------------------------
-sub CreateSGEJobFile() {
-	my ($analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $runsupplement, @pipelinesteps) = @_;
+sub CreateClusterJobFile() {
+	my ($clustertype, $analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $runsupplement, @pipelinesteps) = @_;
 
 	# (re)connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -965,18 +966,34 @@ sub CreateSGEJobFile() {
 	WriteLog("Working Analysis path (temp directory): $workinganalysispath");
 	print "Working Analysis path (temp dir): $workinganalysispath\n";
 	
-	$jobfile .= "#!/bin/sh\n";
-	if ($runsupplement) {
-		$jobfile .= "#\$ -N $pipelinename-supplement\n";
+	# different submission parameters for slurm
+	if ($clustertype = "slurm") {
+		$jobfile .= "#!/bin/sh\n";
+		if ($runsupplement) {
+			$jobfile .= "#\$ -J $pipelinename-supplement\n";
+		}
+		else {
+			$jobfile .= "#\$ -J $pipelinename\n";
+		}
+		$jobfile .= "#\$ -o $analysispath/pipeline\n";
+		$jobfile .= "#\$ --export=ALL\n";
+		$jobfile .= "#\$ --uid=" . $cfg{'queueuser'} . "\n\n";
 	}
-	else {
-		$jobfile .= "#\$ -N $pipelinename\n";
+	else { # assuming SGE or derivative if not slurm
+		$jobfile .= "#!/bin/sh\n";
+		if ($runsupplement) {
+			$jobfile .= "#\$ -N $pipelinename-supplement\n";
+		}
+		else {
+			$jobfile .= "#\$ -N $pipelinename\n";
+		}
+		$jobfile .= "#\$ -S /bin/sh\n";
+		$jobfile .= "#\$ -j y\n";
+		$jobfile .= "#\$ -o $analysispath/pipeline\n";
+		$jobfile .= "#\$ -V\n";
+		$jobfile .= "#\$ -u " . $cfg{'queueuser'} . "\n\n";
 	}
-	$jobfile .= "#\$ -S /bin/sh\n";
-	$jobfile .= "#\$ -j y\n";
-	$jobfile .= "#\$ -o $analysispath/pipeline\n";
-	$jobfile .= "#\$ -V\n";
-	$jobfile .= "#\$ -u onrc\n\n";
+	
 	$jobfile .= "echo Hostname: `hostname`\n";
 	$jobfile .= "echo Hostname: `whoami`\n\n";
 	if ((trim($resultscript) ne "") && ($rerunresults)) {

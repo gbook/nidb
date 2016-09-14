@@ -1616,7 +1616,7 @@
 									</tr>
 									<tr>
 										<td class="label">Subject tags</td>
-										<td class="value"><?=DisplayTags($tags, 'subject')?></td>
+										<td class="value"><?=DisplayTags($tags, '', 'subject')?></td>
 									</tr>
 								</table>
 								<br>
@@ -1821,7 +1821,7 @@
 											<? if ($phiaccess) { ?>
 											<!--Project end date: <?=$project_enddate;?>-->
 											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a><br><br>
-											Diagnosis Tags: <?=DisplayTags('dx', GetTags('enrollment','dx',$enrollmentid), 'enrollment')?>
+											Diagnosis Tags: <?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?>
 											</div>
 											<? if (($enrolled) && ($GLOBALS['isadmin'])) { ?>
 											<form action="subjects.php" method="post">

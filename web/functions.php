@@ -1121,14 +1121,17 @@
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
 	function SetTags($idtype, $tagtype, $id, $tags, $modality='') {
-		/* trim all the tags */
-		$tags = array_map("trim", $tags);
 		
-		/* remove duplicates */
-		$tags = array_unique($tags, SORT_STRING);
+		if (count($tags) > 1) {
+			/* trim all the tags */
+			$tags = array_map("trim", $tags);
 		
-		/* remove tags that are NULL, FALSE, or empty strings */
-		$tags = array_filter($tags, 'strlen');
+			/* remove duplicates */
+			$tags = array_unique($tags, SORT_STRING);
+		
+			/* remove tags that are NULL, FALSE, or empty strings */
+			$tags = array_filter($tags, 'strlen');
+		}
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -1143,6 +1146,7 @@
 			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
 			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
 		}
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		foreach ($tags as $tag) {
@@ -1155,6 +1159,7 @@
 				case 'analysis': $sqlstring = "insert ignore into tags (tagtype, analysis_id, tag) values ('$tagtype', '$id', '$tag')"; break;
 				case 'pipeline': $sqlstring = "insert ignore into tags (tagtype, pipeline_id, tag) values ('$tagtype', '$id', '$tag')"; break;
 			}
+			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
@@ -1170,7 +1175,7 @@
 	function DisplayTags($tags, $idtype, $tagtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<span class='tag'><a href='tags.php?idtype=$idtype&tagtype=$tagtype&tag=$tag' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
+			$html .= "<span class='tag'><a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
 		}
 		return $html;
 	}
