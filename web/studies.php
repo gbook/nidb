@@ -91,7 +91,7 @@
 			DisplayStudy($id, 0, 0, '', '', '', '','','','', false);
 			break;
 		case 'movestudytosubject':
-			MoveStudyToSubject($studyid, $enrollmentid, $newuid);
+			MoveStudyToSubject($studyid, $newuid);
 			break;
 		case 'movestudytoproject':
 			MoveStudyToProject($subjectid, $studyid, $newprojectid);
@@ -326,77 +326,6 @@
 		?>
 		<div align="center" class="message">Study deleted</div>
 		<?
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- MoveStudyToSubject ----------------- */
-	/* -------------------------------------------- */
-	function MoveStudyToSubject($studyid, $enrollmentid, $newuid) {
-	
-		?><ol style="font-size: 9pt; color: darkred"><?
-		
-		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
-		$sqlstring = "select a.uid, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
-		echo "<li>Getting enrollment information [$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$olduid = $row['uid'];
-		$oldsubjectid = $row['subject_id'];
-		$oldprojectid = $row['project_id'];
-		$oldstudynum = $row['study_num'];
-	
-		/* get subjectid from UID */
-		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newsubjectid = $row['subject_id'];
-		
-		if ($newsubjectid == "") {
-			?>
-			<div style="background-color: red"><?$newuid?> not found. Unable to move study.</div>
-			<?
-			return;
-		}
-		
-		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]";
-		
-		/* check if the new subject is enrolled in the project, if not, enroll them */
-		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = $oldprojectid";
-		echo "<li>Checking if the new subject is already enrolled in this project [$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$newenrollmentid = $row['enrollment_id'];
-			echo "<li>Already enrolled: $newenrollmentid [$sqlstring]";
-		}
-		else {
-			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$newenrollmentid = mysqli_insert_id($GLOBALS['linki']);
-			echo "<li>Not already enrolled. Creating enrollment: $newenrollmentid [$sqlstring]";
-		}
-		
-		/* get the next study number for the new subject */
-		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$newstudynum = mysqli_num_rows($result) + 1;
-		echo "<li>Created new study in new subject: $newstudynum [$sqlstring]";
-		
-		/* change the enrollment_id associated with the studyid */
-		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
-		echo "<li>Updated existing studies to new enrollment [$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-		/* move the data */
-		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
-		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
-		
-		$systemstring = "mv $oldpath $newpath";
-		echo "Moving the data [$systemstring]";
-		echo shell_exec($systemstring);
-		
-		?></ol><div align="center"><span class="message">Study moved to subject <?=$newuid?></span></div><br><br><?
 	}
 
 

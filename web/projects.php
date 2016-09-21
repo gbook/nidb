@@ -182,7 +182,7 @@
 	/* -------------------------------------------- */
 	function UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups) {
 		
-		PrintVariable($subjectids);
+		//PrintVariable($subjectids);
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		$subjectids = mysqli_real_escape_array($subjectids);
@@ -196,7 +196,7 @@
 		$maritalstatus = mysqli_real_escape_array($maritalstatus);
 		$smokingstatus = mysqli_real_escape_array($smokingstatus);
 		$enrollgroups = mysqli_real_escape_array($enrollgroups);
-		PrintVariable($subjectids);
+		//PrintVariable($subjectids);
 		
 		/* check to see if each array has the same number of elements */
 		if (count($subjectids) != count($altuids)) { echo "Error in number of items received"; return; }
@@ -322,24 +322,24 @@
 		foreach ($csv as $line) {
 			/* only accept valid lines with the correct # of columns */
 			if (trim($line) != '') {
-				$parts = array_map(mysqli_real_escape_string, str_getcsv($line));
+				$parts = str_getcsv($line);
 				//PrintVariable($parts,'Parts');
 				if (count($parts) == 15) {
 					//PrintVariable($parts, 'Parts');
-					$subjectid = trim($parts[0]);
-					$uid = trim($parts[1]);
-					$primaryid = trim($parts[2]);
-					$altuidlist = trim($parts[3]);
-					$guid = trim($parts[4]);
-					$dob = trim($parts[5]);
-					$sex = strtoupper(trim($parts[6]));
-					$ethnicity1 = trim($parts[7]);
-					$ethnicity2 = trim($parts[8]);
-					$education = trim($parts[9]);
-					$handedness = trim($parts[10]);
-					$marital = trim($parts[11]);
-					$smoking = strtolower(trim($parts[12]));
-					$enrollgroup = trim($parts[13]);
+					$subjectid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[0]));
+					$uid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[1]));
+					$primaryid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[2]));
+					$altuidlist = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[3]));
+					$guid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[4]));
+					$dob = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[5]));
+					$sex = mysqli_real_escape_string($GLOBALS['linki'],strtoupper(trim($parts[6])));
+					$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[7]));
+					$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[8]));
+					$education = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[9]));
+					$handedness = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[10]));
+					$marital = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[11]));
+					$smoking = mysqli_real_escape_string($GLOBALS['linki'],strtolower(trim($parts[12])));
+					$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[13]));
 					
 					/* validate the IDs */
 					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
@@ -501,16 +501,29 @@
 			if (trim($line) != '') {
 				$parts = mysqli_real_escape_array(str_getcsv($line));
 				//PrintVariable($parts,'Parts');
-				if (count($parts) == 16) {
+				if ((count($parts) == 16) || (count($parts) == 15)) {
 					//PrintVariable($parts, 'Parts');
-					$studyid = trim($parts[0]);
-					$subjectid = trim($parts[1]);
-					$uid = trim($parts[2]);
-					$sex = strtoupper(trim($parts[3]));
-					$altuidlist = trim($parts[4]);
-					$visit = trim($parts[6]);
-					$ageatscan = trim($parts[9]);
-					$site = trim($parts[14]);
+					
+					if (count($parts) == 16) {
+						$studyid = trim($parts[0]);
+						$subjectid = trim($parts[1]);
+						$uid = trim($parts[2]);
+						$sex = strtoupper(trim($parts[3]));
+						$altuidlist = trim($parts[4]);
+						$visit = trim($parts[6]);
+						$ageatscan = trim($parts[9]);
+						$site = trim($parts[14]);
+					}
+					else {
+						$studyid = trim($parts[0]);
+						$subjectid = trim($parts[1]);
+						$uid = trim($parts[2]);
+						$sex = strtoupper(trim($parts[3]));
+						$altuidlist = trim($parts[4]);
+						$visit = trim($parts[6]);
+						$ageatscan = trim($parts[9]);
+						$site = trim($parts[13]);
+					}
 					
 					/* validate each variable before trying the SQL */
 					if (!ctype_digit(strval($studyid))) { echo "StudyID [$studyid] is not an integer<br>"; continue; }

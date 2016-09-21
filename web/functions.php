@@ -27,6 +27,7 @@
 	
 	/* global variables */
 	$username = "";
+	$userid = "";
 	$instanceid = "";
 	$instancename = "";
 
@@ -46,13 +47,13 @@
 	/* database connection */
 	if ($isdevserver) {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysqli_error($linki) . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitenamedev'];
 	}
 	else {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error($linki) . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
 		
 		$sitename = $cfg['sitename'];
 	}
@@ -79,9 +80,10 @@
 	$instanceid = $_SESSION['instanceid'];
 	
 	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
-	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta from users where username = '$username'";
+	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta, user_id from users where username = '$username'";
 	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	$userid = $row['user_id'];
 	$isadmin = $row['user_isadmin'];
 	$issiteadmin = $row['user_issiteadmin'];
 	$enablebeta = $row['user_enablebeta'];
@@ -103,7 +105,7 @@
 	/* -------------------------------------------- */
 	/* ------- LoadConfig ------------------------- */
 	/* -------------------------------------------- */
-	// this function loads the config file into a hash called $cfg
+	// this function loads the config file into a GLOBAL variable called $cfg
 	// ----------------------------------------------------------
 	function LoadConfig() {
 		$file = "";
@@ -395,7 +397,7 @@
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
-			<b>Error:</b> " . mysqli_error() . "<br>
+			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
 			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
 			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
@@ -1178,6 +1180,114 @@
 			$html .= "<span class='tag'><a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
 		}
 		return $html;
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- MoveStudyToSubject ----------------- */
+	/* -------------------------------------------- */
+	function MoveStudyToSubject($studyid, $newuid) {
+		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$newuid = mysqli_real_escape_string($GLOBALS['linki'], $newuid);
+	
+		echo "<ol>";
+		
+		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
+		$sqlstring = "select a.uid, a.subject_id, b.enrollment_id, b.project_id, c.study_num, c.study_datetime from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$olduid = $row['uid'];
+		$oldenrollmentid = $row['enrollment_id'];
+		$oldsubjectid = $row['subject_id'];
+		$oldprojectid = $row['project_id'];
+		$oldstudynum = $row['study_num'];
+		$oldstudydatetime = $row['study_datetime'];
+		
+		$now = time();
+		$studytime = strtotime($oldstudydatetime);
+		
+		if (($now - $studytime) < 86400) {
+			?>
+			<span class="staticmessage">This study was collected in the past 24 hours<br>The study may not be completely archived, so no changes can be made until 1 day after the study's start time</span>
+			<?
+			return;
+		}
+		
+		echo "<li>Got rowIDs from current subject/study: [$sqlstring]<br>";
+		
+		//PrintVariable($row);
+	
+		/* get subjectid from UID */
+		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$newsubjectid = $row['subject_id'];
+		
+		if ($newsubjectid == '') {
+			?><span class="staticmessage">The destination UID [<?=$newuid?>] was not found</span><?
+			return;
+		}
+		
+		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]<br>";
+		
+		/* check if the new subject is enrolled in the project, if not, enroll them */
+		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = '$oldprojectid'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$newenrollmentid = $row['enrollment_id'];
+			$enrollgroup = $row['enroll_subgroup'];
+			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
+		}
+		else {
+			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$newenrollmentid = mysqli_insert_id($GLOBALS['linki']);
+			echo "<li>Inserted row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
+		}
+		
+		/* get the next study number for the new subject */
+		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$newstudynum = mysqli_num_rows($result) + 1;
+		echo "<li>Got new study number: $newstudynum [$sqlstring]<br>";
+		
+		/* change the enrollment_id associated with the studyid */
+		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
+		echo "<li>Change enrollment ID of the study [$sqlstring]<br>";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		/* move the alternate IDs from the old to new enrollment */
+		$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
+		echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		/* copy the data, don't move in case there is a problem */
+		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
+		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
+		$systemstring = "mv -v $oldpath $newpath 2>&1";
+		if (!file_exists($oldpath)) {
+			?><span class="staticmessage">The original path [<?=$oldpath?>] does not exist</span><?
+			return;
+		}
+		if (!file_exists($newpath)) {
+			?><span class="staticmessage">The new path [<?=$newpath?>] does not exist</span><?
+			return;
+		}
+		echo "<li>Moving data within archive directory (may take a while): <tt>$systemstring</tt>";
+		$copyresults = shell_exec($systemstring);
+		echo "<pre><tt>$copyresults</tt></pre>";
+
+		$copyresults = mysqli_real_escape_string($GLOBALS['linki'], $copyresults);
+		/* insert a changelog */
+		$instanceid = $GLOBALS['instanceid'];
+		$userid = $GLOBALS['userid'];
+		$sqlstring = "insert into changelog (performing_userid, affected_userid, affected_instanceid1, affected_instanceid2, affected_siteid1, affected_siteid2, affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, affected_seriesid1, affected_seriesid2, change_datetime, change_event, change_desc) values ('$userid', '', '$instanceid', '', '', '', '$oldprojectid', '$oldprojectid', '$oldsubjectid', '$newsubjectid', '$oldenrollmentid', '$newenrollmentid', '$studyid', '$studyid', '', '', now(), 'MoveStudyFromSubject1toSubject2', 'Moved study [$olduid$oldstudynum] to [$newuid$newstudynum]. Results [$copyresults]')";
+		echo "<li>Insert changelog [$sqlstring]<br>";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		echo "</ol>";
+		?><div align="center"><span class="message">Study [<?=$olduid?><?=$oldstudynum?>] moved to subject [<?=$newuid?>]</span></div><br><br><?
 	}
 	
 	

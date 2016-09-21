@@ -40,6 +40,7 @@
 	require "menu.php";
 
 	//PrintVariable($_POST);
+	//PrintVariable($GLOBALS);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -402,83 +403,6 @@
 			<span class="message">Subject already enrolled in this project</span>
 			<?
 		}
-	}
-
-	/* -------------------------------------------- */
-	/* ------- MoveStudyToSubject ----------------- */
-	/* -------------------------------------------- */
-	function MoveStudyToSubject($studyid, $newuid) {
-	
-		echo "<ol>";
-		
-		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
-		$sqlstring = "select a.uid, a.subject_id, b.enrollment_id, b.project_id, c.study_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$olduid = $row['uid'];
-		$oldenrollmentid = $row['enrollment_id'];
-		$oldsubjectid = $row['subject_id'];
-		$oldprojectid = $row['project_id'];
-		$oldstudynum = $row['study_num'];
-		echo "<li>Got rowIDs from current subject/study: [$sqlstring]<br>";
-		
-		//PrintVariable($row);
-	
-		/* get subjectid from UID */
-		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newsubjectid = $row['subject_id'];
-		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]<br>";
-		
-		/* check if the new subject is enrolled in the project, if not, enroll them */
-		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = '$oldprojectid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$newenrollmentid = $row['enrollment_id'];
-			$enrollgroup = $row['enroll_subgroup'];
-			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
-		}
-		else {
-			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$newenrollmentid = mysqli_insert_id($GLOBALS['linki']);
-			echo "<li>Inserted row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
-		}
-		
-		/* get the next study number for the new subject */
-		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$newstudynum = mysqli_num_rows($result) + 1;
-		echo "<li>Got new study number: $newstudynum [$sqlstring]<br>";
-		
-		/* change the enrollment_id associated with the studyid */
-		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
-		echo "<li>Change enrollment ID of the study [$sqlstring]<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* move the alternate IDs from the old to new enrollment */
-		$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
-		echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* move the data */
-		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
-		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
-		
-		//mkdir($newpath);
-		$systemstring = "mv $oldpath $newpath";
-		echo "<li>Moving data within archive directory: <tt>$systemstring</tt>";
-		echo shell_exec($systemstring);
-
-		/* delete the old enrollment */
-		//$sqlstring = "delete from enrollment where enrollment_id = $oldenrollmentid";
-		//echo "<li>Delete old enrollment [$sqlstring]<br>";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		echo "</ol>";
-		?><div align="center"><span class="message">Study moved to subject <?=$newuid?></span></div><br><br><?
 	}
 
 	

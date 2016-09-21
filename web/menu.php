@@ -50,12 +50,128 @@
 
 <!-- menu -->
 
-<table width="100%" cellspacing="0" cellpadding="0" style="background-color: 3b5998; padding:10px; border-bottom: 2px solid #35486D">
+<table width="100%" cellspacing="0" cellpadding="0" style="background-color: 3b5998; padding:0px; border-bottom: 2px solid #35486D">
 	<tr>
-		<td width="250px">
-			<form method="post" action="index.php" id="instanceform">
+		<td style="width: 350px; color: white; background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding: 2px 10px; font-size: 16pt; font-weight: bold">
+			<?=$GLOBALS['cfg']['sitename']?>
+		</td>
+		<td valign="top" style="background-color: 526faa; padding: 10px">
+			<style>
+				/* main menu */
+				#menu-bar { width: 95%; margin: 0px 0px 0px 0px; padding: 0px; height: 32px; line-height: 100%; background: #526FAA; border: none; position:relative; z-index:999; }
+				#menu-bar li { margin: 0px 0px 6px 0px; padding: 0px 5px 0px 5px; float: left; position: relative; list-style: none; }
+				#menu-bar a { font-family: arial; font-style: normal; font-size: 14px; color: #fff; text-decoration: none; display: block; padding: 6px 10px 6px 10px; margin: 0; margin-bottom: 0px; }
+				#menu-bar li ul li a { margin: 0; }
+				#menu-bar .active a, #menu-bar li:hover > a { background: #405785; color: #fff; height: 19px; }
+				#menu-bar ul li:hover a, #menu-bar li:hover li a { background: #405785; border: none; color: #fff; height: 19px; }
+				#menu-bar ul a:hover { background: #fff !important; color: #000 !important; }
+				#menu-bar li:hover > ul { display: block; }
+				#menu-bar ul { background: #98bce5; display: none; margin: 0; padding: 0; width: 185px; position: absolute; top: 30px; left: 0; border: 1px solid #405785; }
+				#menu-bar ul li { float: none; margin: 0; padding: 0; color: #fff; }
+				#menu-bar ul a { padding:8px 0px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: normal; }
+				.menuheading { padding:8px 0px 8px 13px; margin:8px 0px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: bold; background: #405785; }
+				#menu-bar:after { content: "."; display: block; clear: both; visibility: hidden; line-height: 0; height: 0; }
+				#menu-bar { display: inline-block; }
+				  html[xmlns] #menu-bar { display: block; }
+				* html #menu-bar { height: 1%; }			
+			</style>
+			<ul id="menu-bar">
+				<li class="active"><a href="index.php">Home</a></li>
+				<li><a href="subjects.php">Subjects</a>
+					<ul>
+						<li><a href="groups.php">Groups</a></li>
+						<li class="menuheading">Most Recent Subjects</li>
+						<?
+						$sqlstring = "select a.mostrecent_date, a.subject_id, b.uid from mostrecent a left join subjects b on a.subject_id = b.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null order by a.mostrecent_date desc";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$subjectid = $row['subject_id'];
+								$date = date('M j g:ia',strtotime($row['mostrecent_date']));
+								$uid = $row['uid'];
+								?>
+								<li><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></li>
+								<?
+							}
+						}
+						?>
+						<li class="menuheading">Most Recent Studies</li>
+						<?
+						$sqlstring = "select a.mostrecent_date, a.study_id, b.study_num, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null order by a.mostrecent_date desc";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$studyid = $row['study_id'];
+								$studynum = $row['study_num'];
+								$date = date('M j g:ia',strtotime($row['mostrecent_date']));
+								$uid = $row['uid'];
+								?>
+								<li><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></li>
+								<?
+							}
+						}
+						?>
+					</ul>
+				</li>
+				<li><a href="search.php"><b>Search</b></a>
+					<ul>
+						<li><a href="requeststatus.php">Data request status</a></li>
+						<li><a href="publicdownloads.php">Public Downloads</a></li>
+					</ul>
+				</li>
+				<li><a href="projects.php">Projects</a></li>
+				<li><a href="pipelines.php">Analysis</a>
+					<ul>
+						<li><a href="pipelines.php">Pipelines</a></li>
+						<li><a href="common.php">Common Objects</a></li>
+						<li><a href="cluster.php">Cluster Stats</a></li>
+					</ul>
+				</li>
+				<li><a href="import.php">Import</a></li>
+				<li><a href="downloads.php">Downloads</a></li>
+				<li><a href="calendar.php">Calendar</a>
+					<? if ($GLOBALS['isadmin']) { ?>
+					<ul>
+						<li><a href="calendar_calendars.php">Manage</a></li>
+					</ul>
+					<? } ?>
+				</li>
+			 
+				<li><a href="admin.php">Admin</a>
+					<ul>
+						<li><a href="adminprojects.php">Projects</a></li>
+						<li><a href="adminassessmentforms.php">Assessment Forms</a></li>
+						<li><a href="adminmodules.php">Modules</a></li>
+						<li><a href="adminmodalities.php">Modalities</a></li>
+						<li><a href="adminsites.php">Sites</a></li>
+						<li><a href="reports.php">Reports</a></li>
+						<li><a href="adminqc.php">QC</a></li>
+						<li><a href="importlog.php">Import Logs</a></li>
+						<? if ($GLOBALS['issiteadmin']) { ?>
+						<li><a href="admininstances.php">Instances</a></li>
+						<? } ?>
+						<li><a href="adminaudits.php">Audits</a></li>
+						<li><a href="cleanup.php">Clean-up</a></li>
+						<li><a href="system.php">Configuration</a></li>
+						<li><a href="stats.php">Usage stats</a></li>
+						<li><a href="longqc.php">Longitudinal QC</a></li>
+					</ul>
+				</li>
+				<li><a href="users.php">My Account</a>
+					<ul>
+						<li><a href="users.php">My Account</a></li>
+						<li><a href="remoteconnections.php">Remote Connections</a></li>
+						<li><a href="login.php?action=logout">Logout</a></li>
+					</ul>
+				</li>
+			</ul>
+			
+		</td>
+		<td align="left" style="color: white; padding: 8px 15px">
+			<form method="post" action="index.php" id="instanceform" style="margin:0px">
 			<input type="hidden" name="action" value="switchinstance">
-			<span style="font-size: 16pt; color: white; font-weight: normal; -webkit-font-smoothing: antialiased;"><?=$_SESSION['instancename']?></span>
+			<span style="font-size:9pt"><i>Instance</i></span><br>
+			<span style="font-size: 12pt; color: white; font-weight: normal; -webkit-font-smoothing: antialiased;"><?=$_SESSION['instancename']?></span>
 			<select name="instanceid" style="background-color: #3B5998; border: 1px solid #526FAA; width: 20px; color: white" title="Switch instance" onChange="instanceform.submit()">
 				<option value="">Select Instance...</option>
 				<?
@@ -72,118 +188,16 @@
 			</select>
 			</form>
 		</td>
-		<td width="50px">
-			&nbsp;
-		</td>
-		<td valign="top" style="background-color: 526faa; border-radius:5px; padding:5px; height: 30px">
-			<div id="bluemenu" class="bluetabs">
-				<ul>
-					<li><span><a href="index.php">Home</a></span></li>
-					<li><a href="subjects.php" rel="subjects_menu">Subjects</a></li>
-					<li><a href="search.php" rel="search_menu"><b>Search</b></a></li>
-					<li><a href="projects.php">Projects</a></li>
-					<li><a href="pipelines.php" rel="analysis_menu">Analysis</a></li>
-					<li><a href="import.php">Import</a></li>
-					<li><a href="downloads.php">Downloads</a></li>
-					<li><a href="calendar.php" rel="calendar_menu">Calendar</a></li>
-					<? if ($GLOBALS['isadmin']) { ?>
-					<li><a href="admin.php" rel="admin_menu">Admin</a></li>
-					<? } ?>
-					<li><a href="users.php" style="padding-left:50px" rel="user_menu"><?=$username?></a>
-				</ul>
-			</div>
-
-			<div id="analysis_menu" class="dropmenudiv_b">
-				<a href="pipelines.php">Pipelines</a>
-				<!--<a href="csprefs.php">CenterScripts</a>-->
-				<a href="common.php">Common objects</a>
-				<a href="cluster.php">Cluster Stats</a>
-			</div>
-			
-			<div id="calendar_menu" class="dropmenudiv_b">
-				<? if ($GLOBALS['isadmin']) { ?>
-				<a href="calendar_calendars.php">Manage</a>
-				<? } ?>
-			</div>
-			
-			<div id="subjects_menu" class="dropmenudiv_b">
-				<a href="groups.php">Groups</a>
-				<br><span style="color: #CCC">Most recent subjects</span>
-				<?
-				$sqlstring = "select a.mostrecent_date, a.subject_id, b.uid from mostrecent a left join subjects b on a.subject_id = b.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null order by a.mostrecent_date desc";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$subjectid = $row['subject_id'];
-						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
-						$uid = $row['uid'];
-						?>
-						<a href="subjects.php?id=<?=$subjectid?>" style="font-size:10pt"><?=$uid?></a>
-						<?
-					}
-				}
-				?>
-				
-				<span style="color: #CCC">Most recent studies</span>
-				<?
-				$sqlstring = "select a.mostrecent_date, a.study_id, b.study_num, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null order by a.mostrecent_date desc";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$studyid = $row['study_id'];
-						$studynum = $row['study_num'];
-						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
-						$uid = $row['uid'];
-						?>
-						<a href="studies.php?id=<?=$studyid?>" style="font-size:10pt"><?=$uid?><?=$studynum?></a>
-						<?
-					}
-				}
-				?>
-			</div>
-			
-			<div id="search_menu" class="dropmenudiv_b">
-				<a href="requeststatus.php">Data request status</a>
-				<a href="publicdownloads.php">Public Downloads</a>
-			</div>
-			
-			<? if ($GLOBALS['isadmin']) { ?>
-			<div id="admin_menu" class="dropmenudiv_b">
-				<a href="adminusers.php">Users</a>
-				<a href="adminprojects.php">Projects</a>
-				<a href="adminassessmentforms.php">Assessment Forms</a>
-				<a href="adminmodules.php">Modules</a>
-				<a href="adminmodalities.php">Modalities</a>
-				<a href="adminsites.php">Sites</a>
-				<a href="reports.php">Reports</a>
-				<a href="adminqc.php">QC</a>
-				<a href="importlog.php">Import Logs</a>
-				<? if ($GLOBALS['issiteadmin']) { ?>
-				<a href="admininstances.php">Instances</a>
-				<? } ?>
-				<a href="adminaudits.php">Audits</a>
-				<a href="cleanup.php">Clean-up</a>
-				<a href="system.php">Configuration</a>
-				<a href="stats.php">Usage stats</a>
-				<a href="longqc.php">Longitudinal QC</a>
-			</div>
-			<? } ?>
-			
-			<div id="user_menu" class="dropmenudiv_b">
-				<a href="users.php">My Account</a>
-				<a href="remoteconnections.php">Remote Connections</a>
-				<a href="login.php?action=logout">Logout</a>
-			</div>
-		</td>
-		<td align="right" valign="bottom">
-			<form action="subjects.php" method="post">
+		<td align="center" valign="middle">
+			<form action="subjects.php" method="post" style="margin: 0px">
 			<input type="hidden" name="action" value="search">
 			<input type="hidden" name="searchactive" value="1">
 			<input placeholder="UID search" name="searchuid" type="text" size="9" style="background-color: #526FAA; color: white; border:1px solid #526FAA">
 			<input type="submit" style="display:none; width: 0px height: 0px">
 			</form>
+			
 		</td>
+		
 	</tr>
 </table>
 <script type="text/javascript">
