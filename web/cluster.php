@@ -19,11 +19,12 @@
 
 	/* ----- determine which action to take ----- */
 	switch ($action) {
-		case 'list': DisplayList(); break;
-		case 'summary': DisplaySummary(); break;
-		case 'graph': DisplayGraph(); break;
+		case 'qstatjobs': DisplayQstatJobs(); break;
+		case 'qstatusage': DisplayQstatUsage(); break;
+		case 'nodes': DisplayNodes(); break;
+		case 'queues': DisplayQueues(); break;
 		default:
-			DisplayList();
+			DisplayQstatJobs();
 	}
 
 
@@ -33,27 +34,12 @@
 	function DisplayStatsMenu() {
 		?>
 		<div align="center">
-			<a href="cluster.php?action=list">List</a> &nbsp; 
-			<a href="cluster.php?action=summary">Summary</a> &nbsp; 
-			<a href="cluster.php?action=graph">Graph</a> &nbsp; 
+			<a href="cluster.php?action=qstatjobs"><tt>qstat</tt> job output</a> &nbsp; &nbsp; 
+			<a href="cluster.php?action=qstatusage"><tt>qstat</tt> usage output</a> &nbsp; &nbsp; 
+			<a href="cluster.php?action=nodes">Nodes</a> &nbsp; &nbsp; 
+			<a href="cluster.php?action=queues">Queues</a> &nbsp; &nbsp; 
 		</div>
-		<br><Br>
-		<script>
-			$(function() {
-				$( document ).tooltip({show:{effect:'appear'}, hide:{duration:0}});
-			});
-		</script>
-		<style>
-			.ui-tooltip {
-				padding: 7px 7px;
-				border-radius: 5px;
-				font-size: 10px;
-				font-family: monospace;
-				/*white-space: pre;*/
-				border: 1px solid black;
-			}
-		</style>
-
+		<br><br>
 		<?
 	}	
 
@@ -66,10 +52,7 @@
 		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'";
 		$statsoutput = explode("\n",shell_exec($command));
 		
-		echo "<pre>";
-		echo "Running: [$command]<br>";
-		print_r($statsoutput);
-		echo "</pre>";
+		//PrintVariable($statsoutput);
 
 		$hostname = $queue = "";
 		$hostnames = $queues = null;
@@ -87,7 +70,7 @@
 
 				//echo "$line\n";
 				if (strstr($line, '@')) {
-					list($queuehost, $unk, $usage, $cpu, $arch) = preg_split('/\s+/', $line);
+					list($queuehost, $unk, $usage, $cpu, $arch, $states) = preg_split('/\s+/', $line);
 					list($queue, $hostname) = explode('@',$queuehost);
 					//echo "[$usage]\n";
 					list($slotsres,$slotsused,$slotsavailable) = explode('/',$usage);
@@ -97,6 +80,7 @@
 					$report[$hostname]['arch'] = $arch;
 					$report[$hostname]['queues'][$queue]['slotsused'] = $slotsused;
 					$report[$hostname]['queues'][$queue]['slotsavailable'] = $slotsavailable;
+					$report[$hostname]['states'] = $states;
 					
 					if ( (!isset($hostnames)) || (!in_array($hostname, $hostnames)) ) {
 						$hostnames[] = $hostname;
@@ -113,46 +97,73 @@
 				}
 			}
 		}
-		//print_r($hostnames);
-		//print_r($queues);
-		//print_r($report);
-		
 		sort($hostnames);
 		sort($queues);
+		
+		//PrintVariable($hostnames);
+		//PrintVariable($queues);
+		//PrintVariable($report);
 		
 		return array($statsoutput,$report,$queues,$hostnames);
 	}
 
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayList ------------------------ */
+	/* ------- DisplayQstatJobs ------------------- */
 	/* -------------------------------------------- */
-	function DisplayList() {
+	function DisplayQstatJobs() {
 	
 		$urllist['Cluster Stats'] = "cluster.php";
 		NavigationBar("Cluster Stats", $urllist);
-
-		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		
 		DisplayStatsMenu();
+
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat";
+		$statsoutput = explode("\n",shell_exec($command));
 		
 		?>
-		<pre>
-		<?
+		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?
 			foreach ($statsoutput as $line) {
 				$line = trim($line);
-				echo "$line\n";
+echo "$line\n";
 			}
 		?>
-		</pre>
+		</div>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayQstatUsage ------------------ */
+	/* -------------------------------------------- */
+	function DisplayQstatUsage() {
+	
+		$urllist['Cluster Stats'] = "cluster.php";
+		NavigationBar("Cluster Stats", $urllist);
+		
+		DisplayStatsMenu();
+
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'";
+		$statsoutput = explode("\n",shell_exec($command));
+		
+		?>
+		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?
+			foreach ($statsoutput as $line) {
+				if (!strstr($line,'------')) {
+					$line = trim($line);
+echo "$line\n";
+				}
+			}
+		?>
+		</div>
 		<?
 	}
 
 	
 	/* -------------------------------------------- */
-	/* ------- DisplaySummary --------------------- */
+	/* ------- DisplayNodes ----------------------- */
 	/* -------------------------------------------- */
-	function DisplaySummary() {
+	function DisplayNodes() {
 	
 		$urllist['Cluster Stats'] = "cluster.php";
 		NavigationBar("Cluster Stats", $urllist);
@@ -161,60 +172,72 @@
 		
 		DisplayStatsMenu();
 
-		$slotsusedcolor = "FF4500";
+		$slotsusedcolor = "e89b9f";
 		$slotsunusedcolor = "EEEEEE";
 		
 		?>
 
-		<table cellpadding="2" style="border: 1px solid #ccc; border-collapse: collapse;">
-			<tr>
-				<td style="border: 1px solid #ccc"><b>Hostname</b> (load)</td>
-			<?
-				foreach ($queues as $queue) {
-				?>
-					<td style="border: 1px solid #ccc"><b><?=$queue?></b></td>
-				<?
-				}
-			?>
-				<td align="center"><b>% slots used</b></td>
-			</tr>
+		<table class="graydisplaytable dropshadow">
+			<thead>
+				<tr>
+					<th>Node</th>
+					<th>Arch</th>
+					<th>States</th>
+					<th>Load</th>
+					<th>Total slots</th>
+					<th>% slots in use</th>
+				</tr>
+			</thead>
 			<?
 				foreach ($hostnames as $hostname) {
+					//PrintVariable($report[$hostname]);
+
+					$slotsavailable = 0;
+					$slotsused = 0;
+					foreach ($report[$hostname]['queues'] as $queue => $info) {
+						//PrintVariable($info);
+						$slotsavailable += $info['slotsavailable'];
+						$slotsused += $info['slotsused'];
+					}
+					
+					$totalClusterSlotsAvailable += $slotsavailable;
+					$totalClusterSlotsUsed += $slotsused;
+					
+					$load = $report[$hostname]['cpu'];
+					$arch = $report[$hostname]['arch'];
+					$states = $report[$hostname]['states'];
+					
 					?>
 					<tr>
-						<td style="border: 1px solid #ccc"><b><?=$hostname?></b> (<?=$report[$hostname]['cpu']?>)</td>
-						<?
-							foreach ($queues as $queue) {
-								$hosts[$hostname]['slotsused'] += $report[$hostname]['queues'][$queue]['slotsused'];
-								$hosts[$hostname]['slotsavailable'] += $report[$hostname]['queues'][$queue]['slotsavailable'];
-								if ((isset($report[$hostname]['queues'][$queue])) && ($report[$hostname]['queues'][$queue]['slotsused'] > 0)) {
-									$joblist = implode('<br>',$report[$hostname]['queues'][$queue]['jobs']);
-									//$joblist = str_replace(' ','&nbsp;',$joblist);
-								?>
-									<td style="border: 1px solid #ccc" title="<?=$joblist?>"><?=$report[$hostname]['queues'][$queue]['slotsused']?>/<?=$report[$hostname]['queues'][$queue]['slotsavailable']?></td>
-								<?
-								}
-								else {
-									?><td style="border: 1px solid #ccc">&nbsp;</td> <?
-								}
-							}
-							$slotsused = $hosts[$hostname]['slotsused'];
-							$slotsavailable = $hosts[$hostname]['slotsavailable'];
-						?>
-						<td style="border: 1px solid #ccc"><img src="horizontalchart.php?b=yes&w=300&h=15&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$hosts[$hostname]['slotsused']?> of <?=$slotsavailable?></span></td>
+						<td><?=$hostname?></td>
+						<td><?=$arch?></td>
+						<td><?=$states?></td>
+						<td><?=$load?></td>
+						<td><?=$slotsavailable?></td>
+						
+						<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
 					</tr>
 					<?
 				}
 			?>
+			<tr>
+				<td style="font-weight: bold; font-size:14pt">Totals</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td style="font-weight: bold; font-size:14pt"><?=$totalClusterSlotsAvailable?></td>
+				<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
+			</tr>
 		</table>
+		<br><br><br><br>
 	<?
 	}
 
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayGraph ----------------------- */
+	/* ------- DisplayQueues ---------------------- */
 	/* -------------------------------------------- */
-	function DisplayGraph() {
+	function DisplayQueues() {
 	
 		$urllist['Cluster Stats'] = "cluster.php";
 		NavigationBar("Cluster Stats", $urllist);
@@ -269,3 +292,7 @@
 	}
 	
 ?>
+
+<br><br><br><br>
+
+<? include("footer.php") ?>

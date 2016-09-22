@@ -538,7 +538,7 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 	-moz-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
 	box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
 	border-radius: 5px;
-	border: 1px solid #ccc;
+	border: 1px solid #aaa !important;
 }
 /* for the menu on the project page */
 td.menuheader { border: 1px solid #ddd; text-align: center; vertical-align: top; padding: 5px; border-radius: 5px; font-size: 14pt; }

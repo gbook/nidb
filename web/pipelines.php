@@ -2098,7 +2098,7 @@
 								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30"></td>
 							</tr>
 							<tr>
-								<td class="label">Sedries criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+								<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
 								<td>
 									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
 										<option value="all" selected>All</option>
@@ -3623,11 +3623,30 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
+		
+		$pipelinetree = GetPipelineTree($viewall);
+		
+		global $imgdata;
+		/* create the graphs for each pipeline group */
+		$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines where pipeline_group <> ''";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$group = $row['pipeline_group'];
+			//$imgdata[$group] = CreatePipelineGraph($group);
+		}
+		$myusage = GetPipelineInfo();
+		
 	?>
 	<style>
-		.ui-tooltip { padding: 7px 7px; border-radius: 5px; font-size: 10px; border: 1px solid black; }
 		a { color: #224ea5; }
 	</style>
+	<span style="font-size: 10pt">
+		<b>My usage</b><br>
+		<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
+		<b># running</b> <?=$myusage['totalrunning']?><br>
+		<b># complete</b> <?=$myusage['totalcomplete']?><br>
+	</span>
+	<br>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
 	<br>
 	
@@ -3637,13 +3656,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 				<th style="font-size:12pt">Pipeline Group</th>
 				<th style="font-size:12pt">Name <span class="tiny">Mouseover for description</span></th>
 				<th style="font-size:12pt" align="right">Level</th>
-				<!--<th style="font-size:12pt">Study Group(s)</th>-->
-				<th style="font-size:12pt">Owner<br>
-					<!--<span style="font-weight: normal; font-size:8pt">
-					<a class="linkhighlight" href="pipelines.php?action=viewpipelinelist&viewname=<?=$viewname?>&viewlevel=<?=$viewlevel?>&viewowner=all&viewstatus=<?=$viewstatus?>&viewenabled=<?=$viewenabled?>">All</a><br>
-					<a class="linkhighlight" href="pipelines.php?action=viewpipelinelist&viewname=<?=$viewname?>&viewlevel=<?=$viewlevel?>&viewowner=mine&viewstatus=<?=$viewstatus?>&viewenabled=<?=$viewenabled?>">Mine</a>
-					</span>-->
-				</th>
+				<th style="font-size:12pt">Owner<br></th>
 				<th style="font-size:12pt">Status</th>
 				<th style="font-size:12pt" align="right" title="processing / complete">Analyses</th>
 				<th style="font-size:12pt" align="right">Disk size</th>
@@ -3653,17 +3666,6 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 		</thead>
 		<tbody>
 			<?
-				$pipelinetree = GetPipelineTree($viewall);
-				
-				global $imgdata;
-				/* create the graphs for each pipeline group */
-				$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines where pipeline_group <> ''";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$group = $row['pipeline_group'];
-					//$imgdata[$group] = CreatePipelineGraph($group);
-				}
-				GetPipelineInfo();
 				PrintTree($pipelinetree,0);
 			?>
 		</tbody>
@@ -3934,10 +3936,17 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 			$info[$id]['numcomplete'] = $row3['numcomplete'];
 			
+			if ($info[$id]['creatorusername'] == $GLOBALS['username']) {
+				$myusage['totaldisk'] += $info[$id]['disksize'];
+				$myusage['totalcomplete'] += $info[$id]['numcomplete'];
+				$myusage['totalrunning'] += $info[$id]['numrunning'];
+			}
+			
 			MarkTime("GetPipelineInfo($id) post counts");
 		}
 		
-		//return $info;
+		//PrintVariable($myusage);
+		return $myusage;
 	}
 
 
