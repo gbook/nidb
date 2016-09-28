@@ -523,11 +523,13 @@
 		$commands = explode("\n",$commandlist);
 		$step = 1;
 		foreach ($commands as $line) {
-			//echo "[$step] $line ";
-			//$line = trim($line);
-			if ($line == "") {
-				continue;
-			}
+			/* remove any trailing carriage returns or whitespace */
+			$line = rtrim($line);
+			
+			/* remove empty lines */
+			//if ($line == "") {
+			//	continue;
+			//}
 			
 			/* check if the command should be logged */
 			if (stristr($line, '{NOLOG}') === false) {
@@ -538,30 +540,33 @@
 				$line = str_replace('{NOLOG}','',$line);
 			}
 			
-			/* check if the command should be enabled */
-			if (substr($line,0,1) == '#') {
+			/* check if the command should be enabled... or if the first character is a comment */
+			if (preg_match('/^\s*\#/', $line)) {
 				$stepenabled[$step] = 0;
-				$subline = ltrim($line, '#');
-				$description[$step] = substr(stristr($subline, '#'),1);
-				$command[$step] = stristr($subline, '#', true);
+				$parts = preg_split("/\s+\#/", $line);
+				$command[$step] = $parts[0];
+				$description[$step] = $parts[1];
 				if ($command[$step] == "") {
-					$command[$step] = $subline;
+					$command[$step] = " ";
 				}
 			}
 			else {
 				$stepenabled[$step] = 1;
-				$description[$step] = substr(stristr($line, '#'),1);
-				$command[$step] = stristr($line, '#', true);
+				$parts = preg_split("/\s+\#/", $line);
+				$command[$step] = $parts[0];
+				$description[$step] = $parts[1];
 				if ($command[$step] == "") {
 					$command[$step] = $line;
 				}
 			}
+			
+			//echo "[$line] --> command [" . $command[$step] . "] comment [" . $description[$step] . "]<br>";
 
 			$workingdir[$step] = "";
 			$steporder[$step] = $step;
 			$step++;
 		}
-		
+		//PrintVariable($command);
 		/* insert all the new fields with NEW version # */
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($command[$i]) != "") {
@@ -583,8 +588,7 @@
 		$supplementcommands = explode("\n",$supplementcommandlist);
 		$step = 1;
 		foreach ($supplementcommands as $line) {
-			//echo "[$step] $line ";
-			//$line = trim($line);
+			/* check if the line is blank */
 			if ($line == "") {
 				continue;
 			}
@@ -598,20 +602,21 @@
 				$line = str_replace('{NOLOG}','',$line);
 			}
 			
-			/* check if the command should be enabled */
-			if (substr($line,0,1) == '#') {
+			/* check if the command should be enabled... or if the first character is a comment */
+			if (preg_match('/^\s*\#/', $line)) {
 				$stepenabled[$step] = 0;
-				$subline = ltrim($line, '#');
-				$description[$step] = substr(stristr($subline, '#'),1);
-				$supplementcommand[$step] = stristr($subline, '#', true);
+				$parts = preg_split("/\s+\#/", $line);
+				$supplementcommand[$step] = $parts[0];
+				$supplementdescription[$step] = $parts[1];
 				if ($supplementcommand[$step] == "") {
-					$supplementcommand[$step] = $subline;
+					$supplementcommand[$step] = " ";
 				}
 			}
 			else {
 				$stepenabled[$step] = 1;
-				$description[$step] = substr(stristr($line, '#'),1);
-				$supplementcommand[$step] = stristr($line, '#', true);
+				$parts = preg_split("/\s+\#/", $line);
+				$supplementcommand[$step] = $parts[0];
+				$supplementdescription[$step] = $parts[1];
 				if ($supplementcommand[$step] == "") {
 					$supplementcommand[$step] = $line;
 				}
@@ -629,10 +634,10 @@
 				$steporder[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $steporder[$i]));
 				$supplementcommand[$i] = rtrim(mysqli_real_escape_string($GLOBALS['linki'], $supplementcommand[$i]));
 				$workingdir[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $workingdir[$i]));
-				$description[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $description[$i]));
+				$supplementdescription[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $supplementdescription[$i]));
 				$stepenabled[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $stepenabled[$i]));
 				$logged[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $logged[$i]));
-				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 1, '$supplementcommand[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
+				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 1, '$supplementcommand[$i]', '$workingdir[$i]', '$steporder[$i]', '$supplementdescription[$i]', '$stepenabled[$i]', '$logged[$i]')";
 				//printSQL($sqlstring);
 				echo "<li>Inserted step $i: [$supplementcommand[$i]]\n";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -2205,9 +2210,12 @@
 		<table>
 			<tr>
 				<td valign="top">
-		<textarea name="commandlist" style="font-weight:normal"><?
+				<?
 			$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			//PrintSQLTable($result);
+			?>
+		<textarea name="commandlist" style="font-weight:normal"><?
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$pipelinestep_id = $row['pipelinestep_id'];
 				$ps_desc = $row['ps_description'];
@@ -2218,7 +2226,15 @@
 				$ps_logged = $row['ps_logged'];
 				if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
 				if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-echo "$enabled$ps_command     # $logged $ps_desc\n";
+				if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+echo "$ps_command $logged $ps_desc\n";
+				}
+				elseif ($ps_enabled) {
+echo "$ps_command     # $logged $ps_desc\n";
+				}
+				else {
+echo "#$ps_command     $logged $ps_desc\n";
+				}
 			}
 		?></textarea>
 		<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
@@ -2284,7 +2300,15 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 							$ps_logged = $row2['ps_logged'];
 							if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
 							if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-echo "$enabled$ps_command     # $logged $ps_desc\n";
+							if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+echo "$ps_command $logged $ps_desc\n";
+							}
+							elseif ($ps_enabled) {
+echo "$ps_command     # $logged $ps_desc\n";
+							}
+							else {
+echo "#$ps_command     $logged $ps_desc\n";
+							}
 						}
 					?></textarea>
 					<span class="editoroptions" onClick="toggleWrap2()">Toggle text wrap</span>
@@ -3713,14 +3737,14 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 	function ParseTree($tree, $root = null) {
 		MarkTime("ParseTree()");
 		$return = array();
-		# Traverse the tree and search for direct children of the root
+		// Traverse the tree and search for direct children of the root
 		foreach($tree as $child => $par) {
-			# A direct child is found
+			// A direct child is found
 			foreach ($par as $parent) {
 				if($parent == $root) {
-					# Remove item from tree (we don't need to traverse this again)
+					// Remove item from tree (we don't need to traverse this again)
 					unset($tree[$child]);
-					# Append the child into result array and parse its children
+					// Append the child into result array and parse its children
 					$return[] = array(
 						'pipeline_id' => $child,
 						'child_id' => parseTree($tree, $child)
@@ -3741,7 +3765,7 @@ echo "$enabled$ps_command     # $logged $ps_desc\n";
 			$level++;
 			foreach($tree as $node) {
 				PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level);
-				#PrintPipelineRow(GetPipelineInfo($node['pipeline_id']), $level);
+				//PrintPipelineRow(GetPipelineInfo($node['pipeline_id']), $level);
 				$level = printTree($node['child_id'], $level);
 			}
 			$level--;
