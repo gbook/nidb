@@ -139,22 +139,23 @@
 			 
 				<li><a href="admin.php">Admin</a>
 					<ul>
+						<li><a href="adminusers.php">Users</a></li>
 						<li><a href="adminprojects.php">Projects</a></li>
 						<li><a href="adminassessmentforms.php">Assessment Forms</a></li>
 						<li><a href="adminmodules.php">Modules</a></li>
 						<li><a href="adminmodalities.php">Modalities</a></li>
-						<li><a href="adminsites.php">Sites</a></li>
 						<li><a href="reports.php">Reports</a></li>
 						<li><a href="adminqc.php">QC</a></li>
 						<li><a href="importlog.php">Import Logs</a></li>
-						<? if ($GLOBALS['issiteadmin']) { ?>
-						<li><a href="admininstances.php">Instances</a></li>
-						<? } ?>
-						<li><a href="adminaudits.php">Audits</a></li>
-						<li><a href="cleanup.php">Clean-up</a></li>
-						<li><a href="system.php">Configuration</a></li>
 						<li><a href="stats.php">Usage stats</a></li>
 						<li><a href="longqc.php">Longitudinal QC</a></li>
+						<? if ($GLOBALS['issiteadmin']) { ?>
+						<li><a href="cleanup.php">Clean-up</a></li>
+						<li><a href="adminsites.php">Sites</a></li>
+						<li><a href="admininstances.php">Instances</a></li>
+						<li><a href="adminaudits.php">Audits</a></li>
+						<li><a href="system.php">NiDB Settings...</a></li>
+						<? } ?>
 					</ul>
 				</li>
 				<li><a href="users.php">My Account</a>
@@ -227,7 +228,7 @@
 	$numimportpending = $row['numimportpending'];
 	
 	# get number of directories in dicomincoming directory
-	$dirs = glob($GLOBALS['cfg']['uploadedpath'].'/*', GLOB_ONLYDIR);
+	$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
 	$numimportdirs = count($dirs);
 	
 	/* get system load & number of cores */
@@ -239,7 +240,14 @@
 ?>
 <table width="100%" cellspacing="0" cellpadding="0">
 	<tr>
-		<td width="100%" style="font-size: 8pt; padding: 2px"><a href="status.php">System status</a>: &nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations</td>
+		<td width="100%" style="font-size: 8pt; padding: 2px">
+			<? if ($GLOBALS['issiteadmin']) { ?>
+			<a href="status.php">System status</a>:
+			<? } else { ?>
+			System status:
+			<? } ?>
+			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
+		</td>
 	</tr>
 </table>
 

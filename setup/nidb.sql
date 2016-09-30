@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 25, 2016 at 05:29 PM
+-- Generation Time: Sep 30, 2016 at 03:33 PM
 -- Server version: 10.0.26-MariaDB
 -- PHP Version: 5.5.38
 
@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `ado2`
+-- Database: `nidb`
 --
 
 DELIMITER $$
@@ -444,15 +444,22 @@ CREATE TABLE `changelog` (
   `changelog_id` int(11) NOT NULL,
   `performing_userid` int(11) NOT NULL,
   `affected_userid` int(11) NOT NULL,
-  `affected_instanceid` int(11) NOT NULL,
-  `affected_siteid` int(11) NOT NULL,
-  `affected_projectid` int(11) NOT NULL,
-  `affected_subjectid` int(11) NOT NULL,
-  `affected_enrollmentid` int(11) NOT NULL,
-  `affected_studyid` int(11) NOT NULL,
-  `affected_seriesid` int(11) NOT NULL,
+  `affected_instanceid1` int(11) NOT NULL,
+  `affected_instanceid2` int(11) NOT NULL,
+  `affected_siteid1` int(11) NOT NULL,
+  `affected_siteid2` int(11) NOT NULL,
+  `affected_projectid1` int(11) NOT NULL,
+  `affected_projectid2` int(11) NOT NULL,
+  `affected_subjectid1` int(11) NOT NULL,
+  `affected_subjectid2` int(11) NOT NULL,
+  `affected_enrollmentid1` int(11) NOT NULL,
+  `affected_enrollmentid2` int(11) NOT NULL,
+  `affected_studyid1` int(11) NOT NULL,
+  `affected_studyid2` int(11) NOT NULL,
+  `affected_seriesid1` int(11) NOT NULL,
+  `affected_seriesid2` int(11) NOT NULL,
   `change_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `change_event` enum('changepassword','changeprojectpermissions','changeprojectname','changeuserinfo') NOT NULL,
+  `change_event` varchar(255) NOT NULL,
   `change_desc` text NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -836,6 +843,20 @@ CREATE TABLE `enrollment_checklist` (
   `notes` text NOT NULL,
   `date_completed` datetime NOT NULL,
   `completedby` varchar(255) NOT NULL COMMENT 'username, not ID, in case the user_id is deleted'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `enrollment_missingdata`
+--
+
+CREATE TABLE `enrollment_missingdata` (
+  `missingdata_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `projectchecklist_id` int(11) NOT NULL,
+  `missing_reason` varchar(255) NOT NULL,
+  `missingreason_date` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -2253,6 +2274,7 @@ CREATE TABLE `system_messages` (
 
 CREATE TABLE `tags` (
   `tag_id` int(11) NOT NULL,
+  `tagtype` enum('','dx') NOT NULL,
   `series_id` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `subject_id` int(11) DEFAULT NULL,
@@ -2702,6 +2724,13 @@ ALTER TABLE `enrollment`
 --
 ALTER TABLE `enrollment_checklist`
   ADD PRIMARY KEY (`enrollmentchecklist_id`);
+
+--
+-- Indexes for table `enrollment_missingdata`
+--
+ALTER TABLE `enrollment_missingdata`
+  ADD PRIMARY KEY (`missingdata_id`),
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`projectchecklist_id`);
 
 --
 -- Indexes for table `et_series`
@@ -3207,6 +3236,7 @@ ALTER TABLE `system_messages`
 --
 ALTER TABLE `tags`
   ADD PRIMARY KEY (`tag_id`),
+  ADD UNIQUE KEY `series_id` (`series_id`,`study_id`,`subject_id`,`enrollment_id`,`analysis_id`,`pipeline_id`,`modality`,`tag`),
   ADD KEY `tag` (`tag`);
 
 --
@@ -3436,6 +3466,11 @@ ALTER TABLE `enrollment`
 --
 ALTER TABLE `enrollment_checklist`
   MODIFY `enrollmentchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `enrollment_missingdata`
+--
+ALTER TABLE `enrollment_missingdata`
+  MODIFY `missingdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `et_series`
 --

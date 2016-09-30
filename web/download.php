@@ -64,7 +64,7 @@
 		}
 		
 		/* create the zip file in the tmp directory .... */
-		$zipfilepath = $GLOBALS['cfg']['downloadpath'] . "/$zipfilename";
+		$zipfilepath = $GLOBALS['cfg']['downloaddir'] . "/$zipfilename";
 		/* create zip object */
 		$systemstring = "zip -j $zipfilepath $datapath/*";
 		$junk = exec($systemstring);

@@ -344,8 +344,8 @@
 				$numbehsuccess = 0;
 				$numbehtotal = 0;
 				//echo "I'm still here\n";
-				$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
-				$behsavepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID/beh";
+				$savepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID";
+				$behsavepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID/beh";
 		
 				/* go through all the files and save them */
 				mkdir($savepath, 0777, true);

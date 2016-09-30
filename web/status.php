@@ -91,7 +91,7 @@
 		$numimportpending = $row['numimportpending'];
 		
 		# get number of directories in dicomincoming directory
-		$dirs = glob($GLOBALS['cfg']['uploadedpath'].'/*', GLOB_ONLYDIR);
+		$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
 		$numimportdirs = count($dirs);
 		
 		?>
@@ -110,8 +110,21 @@
 				<td><pre><?=trim(`free -g`)?></pre></td>
 			</tr>
 			<tr>
+				<td class="label">Number CPU cores</td>
+				<td><pre><?=trim(`nproc`)?></pre></td>
+			</tr>
+			<tr>
 				<td class="label">Disk usage</td>
 				<td><pre><?=trim(`df -Th`)?></pre></td>
+			</tr>
+			<tr>
+				<td class="label">Versions</td>
+				<td>
+					<b>OS</b> <tt><?=php_uname()?></tt><br>
+					<b>PHP</b> <tt><?=phpversion()?></tt><br>
+					<b>MySQL</b> <tt><?=trim(`mysql -V`)?></tt><br>
+					<b>ImageMagick</b> <tt><?=trim(`convert --version`)?></tt><br>
+				</td>
 			</tr>
 			<tr>
 				<td class="label">Database</td>
@@ -212,7 +225,7 @@ echo $value . "\n";
 				</td>
 			</tr>
 			<tr>
-				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import module</a><br><span class="tiny"><?=$GLOBALS['cfg']['uploadedpath']?></span></td>
+				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import module</a><br><span class="tiny"><?=$GLOBALS['cfg']['uploadeddir']?></span></td>
 				<td>
 					<?=$numimportpending?> requests pending<br>
 					<?=$numimportdirs?> queued directories<br>

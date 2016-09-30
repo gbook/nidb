@@ -862,8 +862,8 @@ question_num, question_text, datatype, values, comment</div>
 		$uploadID = mysqli_insert_id($GLOBALS['linki']);
 		
 		//echo "I'm still here\n";
-		$savepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID";
-		$behsavepath = $GLOBALS['cfg']['uploadedpath'] . "/$uploadID/beh";
+		$savepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID";
+		$behsavepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID/beh";
 		
 		/* create the directory in which the files are stored until the import module takes them */
 		mkdir($savepath, 0, true);

@@ -50,8 +50,7 @@
 		</td>
 		<td width="33%" align="center" style="font-size:8pt; color: white">
 			Generated: <? echo date("D M j, Y g:i a T"); ?><br>
-			Load time: <?=$pagetotaltime?> sec &nbsp; &nbsp; System load <?=$percentLoad?>%
-			&nbsp; &nbsp; <a href="status.php" style="color:white; text-decoration:underline">Status</a>
+			Page load time: <?=$pagetotaltime?> sec &nbsp; &nbsp; System load <?=$percentLoad?>%
 		</td>
 		<td align="right" style="font-size:8pt; color: white">
 			<span style="color: white; font-size:8pt; padding-right: 5px; padding-left: 5px">Problem, bug, or comment? <a href="https://github.com/gbook/nidb/issues" style="color:white; text-decoration:underline">Report it</a></span>

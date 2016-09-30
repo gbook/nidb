@@ -129,7 +129,7 @@
 		
 		/* create the download link on the filesystem */
 		$newlink = sha1(time());
-		$systemstring = "ln -s " . $GLOBALS['cfg']['webdir'] . "/$filename " . $GLOBALS['cfg']['webdir'] . "/$newlink.zip";
+		$systemstring = "ln -s " . $GLOBALS['cfg']['webdownloaddir'] . "/$filename " . $GLOBALS['cfg']['webdownloaddir'] . "/$newlink.zip";
 		`$systemstring`;
 
 		?>
