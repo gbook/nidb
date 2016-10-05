@@ -162,6 +162,9 @@ sub ProcessPipelines() {
 		my $testing = $row{'pipeline_testing'};
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
+		
+		$pipelinequeue =~ s/\s+//g;
+		
 		print "Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]\n";
 		WriteLog("Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]");
 
@@ -424,6 +427,8 @@ sub ProcessPipelines() {
 						my $datalog;
 						my $datareport;
 						if (defined($uid)) {
+						
+							my $submiterror = 0;
 							WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
 							print "StudyDateTime: $studydatetime\n";
 							my $analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
@@ -584,7 +589,15 @@ sub ProcessPipelines() {
 								WriteLog(join('|',@parts));
 								AppendLog($setuplogF, WriteLog("[$systemstring]: " . $sgeresult));
 								
-								$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
+								if ($sgeresult =~ /error/) {
+									$sqlstring = "update analysis set analysis_qsubid = '0', analysis_status = 'error', analysis_statusmessage = 'Error submitting to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
+									$submiterror = 1;
+								}
+								else {
+									$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
+								}
+								
+								#$sqlstring = "update analysis set analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_qsubid = '$jobid' where analysis_id = $analysisRowID";
 								AppendLog($setuplogF, WriteLog($sqlstring));
 								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
@@ -613,24 +626,30 @@ sub ProcessPipelines() {
 							}
 							AppendLog($setuplogF, WriteLog("Submitted $numsubmitted jobs so far"));
 							print "Submitted $numsubmitted jobs so far\n";
-						}
-						
-						# mark the study in the analysis table
-						if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0))) {
-							#$datalog = EscapeMySQLString($datalog);
-							if (($rerunresults eq "1") || ($runsupplement)) {
-								$sqlstring = "update analysis set analysis_status = 'pending' where analysis_id = $analysisRowID";
+							
+							# mark the study in the analysis table
+							if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0))) {
+								#$datalog = EscapeMySQLString($datalog);
+								if (($rerunresults eq "1") || ($runsupplement)) {
+									$sqlstring = "update analysis set analysis_status = 'pending' where analysis_id = $analysisRowID";
+								}
+								else {
+									$sqlstring = "update analysis set analysis_status = 'pending', analysis_numseries = $numseries, analysis_enddate = now() where analysis_id = $analysisRowID";
+								}
+								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+								if ($submiterror) {
+									InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysissubmiterror', "Analysis submitted to cluster, but was rejected with errors");
+								}
+								else {
+									InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysispending', "Analysis has been submitted to the cluster [$pipelinequeue] and is waiting to run");
+								}
 							}
 							else {
-								$sqlstring = "update analysis set analysis_status = 'pending', analysis_numseries = $numseries, analysis_enddate = now() where analysis_id = $analysisRowID";
+								# save some database space, since most entries will be blank
+								$sqlstring = "update analysis set analysis_status = 'NoMatchingStudies', analysis_startdate = null where analysis_id = $analysisRowID";
+								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							}
-							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-							InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysispending', "Analysis has been submitted to the cluster [$pipelinequeue] and is waiting to run");
-						}
-						else {
-							# save some database space, since most entries will be blank
-							$sqlstring = "update analysis set analysis_status = 'NoMatchingStudies', analysis_startdate = null where analysis_id = $analysisRowID";
-							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+							
 						}
 					}
 					else {
@@ -967,7 +986,7 @@ sub CreateClusterJobFile() {
 	print "Working Analysis path (temp dir): $workinganalysispath\n";
 	
 	# different submission parameters for slurm
-	if ($clustertype = "slurm") {
+	if ($clustertype eq "slurm") {
 		$jobfile .= "#!/bin/sh\n";
 		if ($runsupplement) {
 			$jobfile .= "#\$ -J $pipelinename-supplement\n";
