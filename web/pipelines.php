@@ -2207,11 +2207,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		$username = $GLOBALS['username'];
 		
-		/* get list of userids */
-		$sqlstring = "select distinct(pipeline_admin) 'userid' from pipelines";
+		/* get list of userids and usernames */
+		$userids[$GLOBALS['userid']] = $GLOBALS['username'];
+		$sqlstring = "select b.username, a.pipeline_admin 'userid' from pipelines a left join users b on a.pipeline_admin = b.user_id group by a.pipeline_admin order by b.username";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$userids[] = $row['userid'];
+			$userids[$row['userid']] = $row['username'];
 		}
 		
 		global $imgdata;
@@ -2238,10 +2239,13 @@ echo "#$ps_command     $logged $ps_desc\n";
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
 	<br>
 	<?	
-		foreach ($userids as $userid) {
+		foreach ($userids as $userid => $username) {
 			$pipelinetree = GetPipelineTree($viewall, $userid);
+			if (trim($username) == "") { $username = "(unknown)"; }
 			?>
-			<table class="smallgraydisplaytable" width="100%">
+			<br><br>
+			Pipelines owned by <b><?=$username?></b>
+			<table class="smallgraydisplaytable" width="100%" style="margin-top: 5px">
 				<thead>
 					<tr style="vertical-align: top;text-align:left">
 						<th style="font-size:12pt">Pipeline Group</th>
@@ -2283,43 +2287,40 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$whereclause = "where b.pipeline_ishidden <> 1 and b.pipeline_admin = $userid";
 		}
 		/* get list of pipelines */
-		//$arr2[] = array('id'=>0, 'parentid'=>null, 'name'=>'TheParent');
-		$sqlstring = "select a.parent_id,b.pipeline_id,b.pipeline_name from pipeline_dependencies a right join pipelines b on a.pipeline_id = b.pipeline_id $whereclause order by b.pipeline_id";
+		$sqlstring = "select a.parent_id,b.pipeline_id,b.pipeline_name from pipeline_dependencies a right join pipelines b on a.pipeline_id = b.pipeline_id $whereclause order by b.pipeline_group, b.pipeline_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		PrintSQLTable($result);
+		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			//print_r($row); echo "<br>\n";
 			$childID = $row['pipeline_id'];
 			$parentID = $row['parent_id'];
 			$pipelineName = $row['pipeline_name'];
 			if ($parentID == '') { $parentID = 0; }
-			//if ($parentID == '') { $parentID = null; }
 			$arr[$childID][] = $parentID;
 			
-			//$arr2[] = array('id'=>$childID, 'parentid'=>$parentID, 'name'=>$pipelineName);
-			
+			/* if the parent ID doesn't exist in the list of IDs, add it, with a parent of 0 */
 			if (!isset($arr[$parentID])) {
 				if ($parentID != 0) {
 					$arr[$parentID][] = 0;
 				}
 			}
-			
-			/* if the parent ID doesn't exist in the list of IDs, add it, with a parent of 0 */
-			//if ($parentID != 0) {
-			//	foreach ($arr2 as $a) {
-			//		if ($parentID == $a['parentid']) {
-			//			$arr2[] = array('id'=>$parentID, 'parentid'=>0, 'name'=>$pipelineName);
-			//			break;
-			//		}
-			//	}
-			//}
 		}
-		
-		//PrintVariable($arr2,'arr2');
-		PrintVariable($arr,'arr');
+		foreach ($arr as $i => $node) {
+			$arr[$i] = array_unique($arr[$i]);
+		}
+		//PrintVariable($arr,'arr');
 		$tree = ParseTree($arr);
 		//$tree = buildTree($arr2, 'parentid', 'id');
-		PrintVariable($tree,'tree');
+		//PrintVariable($tree,'tree');
+		$tree2 = array_unique($tree);
+		//foreach ($tree as $node) {
+		//	foreach ($tree2 as $key2 => $node2) {
+		//		if (empty(array_diff_assoc($node,$node2))) {
+		//			unset($tree2[$key2]);
+		//		}
+		//	}
+		//}
+		//PrintVariable($tree2,'tree2');
 		
 		return $tree;
 	}
@@ -2337,7 +2338,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			foreach ($par as $parent) {
 				if($parent == $root) {
 					// Remove item from tree (we don't need to traverse this again)
-					//unset($tree[$child]);
+					unset($tree[$child]);
 					// Append the child into result array and parse its children
 					$return[] = array(
 						'pipeline_id' => $child,
@@ -2349,34 +2350,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 		return empty($return) ? 0 : $return;    
 	}
 	
-	function buildTree($flat, $pidKey, $idKey = null)
-	{
-		echo "Entering buildTree(".print_r($flat).", $pidKey, $idKey)<br>";
-		$grouped = array();
-		foreach ($flat as $sub){
-			$grouped[$sub[$pidKey]][] = $sub;
-			echo "grouped - ".print_r($sub)."<br>";
-		}
-
-		$fnBuilder = function($siblings) use (&$fnBuilder, $grouped, $idKey) {
-			echo "Entering fnBuilder(".print_r($grouped).")<br>";
-			foreach ($siblings as $k => $sibling) {
-				$id = $sibling[$idKey];
-				if(isset($grouped[$id])) {
-					$sibling['children'] = $fnBuilder($grouped[$id]);
-				}
-				$siblings[$k] = $sibling;
-			}
-
-			echo "Leaving fnBuilder. Returning ".print_r($siblings)."<br>";
-			return $siblings;
-		};
-
-		$tree = $fnBuilder($grouped[0]);
-
-		echo "Leaving buildTree. Returning ".print_r($tree)."<br>";
-		return $tree;
-	}
 	
 	/* -------------------------------------------- */
 	/* ------- PrintTree -------------------------- */
