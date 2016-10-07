@@ -383,6 +383,20 @@
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- DisablePipeline -------------------- */
+	/* -------------------------------------------- */
+	function DisablePipeline($id) {
+		if ($id == "") {
+			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
+			return;
+		}
+		
+		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineLists --------------- */
@@ -495,6 +509,18 @@
 			});
 		});
 		</script>
+		<script>
+			function GetAnalysisNotes(id, analysisid){
+				var analysisnotes = prompt("Enter notes for this analysis","");
+				if (analysisnotes != null){
+				  document.studieslist.analysisnotes.value = analysisnotes;
+				  document.studieslist.action.value = 'setanalysisnotes';
+				  document.studieslist.id.value = id;
+				  document.studieslist.analysisid.value = analysisid;
+				  document.studieslist.submit();
+			   }
+			}
+		</script>
 		<table width="100%" class="tablepage">
 			<form method="post" action="analysis.php" id="numperpageform">
 			<input type="hidden" name="action" value="viewanalyses">
@@ -606,7 +632,6 @@
 						if ($analysis_status == "") { $analysis_status = "unknown"; }
 						
 						$sqlstringA = "select pipeline_submithost from pipelines where pipeline_id = $id";
-						//PrintSQL($sqlstringA);
 						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$pipeline_submithost = $rowA['pipeline_submithost'];
@@ -641,21 +666,7 @@
 							$sizecolor = $colors[$sizeindex];
 						}
 						else { $sizecolor = "#fff"; }
-						//echo "$analysis_size, $sizeindex, $sizecolor, $maxsize<br>";
 				?>
-				<script>
-					function GetAnalysisNotes<?=$analysis_id?>(){
-						var analysisnotes = prompt("Enter notes for this analysis","<?=$notestitle?>");
-						if (analysisnotes != null){
-						  //$("#analysisnotes").attr("value", analysisnotes);
-						  document.studieslist.analysisnotes.value = analysisnotes;
-						  document.studieslist.action.value = 'setanalysisnotes';
-						  document.studieslist.id.value = '<?=$id?>';
-						  document.studieslist.analysisid.value = '<?=$analysis_id?>';
-						  document.studieslist.submit();
-					   }
-					}
-				</script>
 				<tr bgcolor="<?=$rowcolor?>">
 					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
 						<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
@@ -668,16 +679,12 @@
 					<td>
 						<?
 							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
-								//$systemstring = "SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; cd /sge/sge-root/bin/lx24-amd64; ./qstat -j $analysis_qsubid";
 								$systemstring = "ssh $pipeline_submithost qstat -j $analysis_qsubid";
-								//echo "$systemstring";
-								//$out = shell_exec($systemstring);
 							
 								if (trim($out) == "hi") {
 									?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This means the analysis is being setup and the data is being copied or the cluster job failed. Check log files for error"><?
 								}
 								?>
-								<!--<a class="fancybox" title="SGE status" href="analysis.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>-->
 								<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>
 								<?
 							}
@@ -704,7 +711,7 @@
 					<td></td>
 					<? } ?>
 					<td>
-						<span onClick="GetAnalysisNotes<?=$analysis_id?>();" style="cursor:hand; font-size:14pt; color: <?=$notescolor?>" title="<?=$notestitle?>">&#9998;</span>
+						<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" style="cursor:hand; font-size:14pt; color: <?=$notescolor?>" title="<?=$notestitle?>">&#9998;</span>
 					</td>
 					<td style="font-size:9pt; white-space:nowrap">
 						<?=$analysis_statusmessage?><br>
@@ -738,9 +745,7 @@
 				function GetDestination(){
 					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
 					if (destination != null){
-					  //document.studieslist.destination.value = desination;
 					  document.studieslist.action='analysis.php';
-					  //document.studieslist.action.value='copyanalyses';
 					  $("#studieslistaction").attr("value", "copyanalyses");
 					  $("#studieslistdestination").attr("value", destination);
 					  document.studieslist.submit();
@@ -846,18 +851,7 @@
 		if ($pagenum > $numpages) { $pagenum = $numpages; }
 		?>
 		<script type="text/javascript">
-		//$(window).load(function(){
-		//	$("a.fancybox").fancybox({
-		//		openEffect: 'none',
-		//		closeEffect: 'none',
-		//		iframe: {
-		//			preload: false
-		//		}
-		//	});
-		//});
 		$(function() {
-			//$('.fancybox').fancybox({type: "iframe", iframe: {preload: false}});
-			
 			$("#studiesall").click(function() {
 				var checked_status = this.checked;
 				$(".allstudies").find("input[type='checkbox']").each(function() {
@@ -872,7 +866,7 @@
 			});
 		});
 		</script>
-		<table width="100%" class="tablepage">
+		<table class="tablepage" width="100%">
 			<tr>
 				<td class="label"><?=$numrows?> items</td>
 				<td class="pagenum">Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span></td>
@@ -890,27 +884,22 @@
 		<input type="hidden" name="analysisnotes" value="">
 		<input type="hidden" name="analysisid" value="">
 		<input type="hidden" name="id" value="<?=$id?>">
-		<table id="analysistable" class="smallgraydisplaytable" width="100%">
-		<!--<table id="analysistable" class="tablesorter" width="100%">-->
+		
+		<table id="analysistable" class="smallgraydisplaytable dropshadow">
 			<thead>
 				<tr>
 					<th><input type="checkbox" id="studiesall"> Study</th>
-					<th>Pipeline<br>version</th>
 					<? if ($pipeline_level == 1) { ?>
 					<th>Study date</th>
-					<th># series</th>
 					<? } ?>
 					<th>Status</th>
 					<th>Data log</th>
-					<th>Notes</th>
-					<th>Message</th>
 					<th style="color:darkred">Delete <input type="checkbox" id="analysesall"></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
-					//$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> '' order by cluster_time asc limit $limitstart, $limitcount";
+					$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$analysis_id = $row['analysis_id'];
@@ -919,77 +908,30 @@
 						$analysis_numseries = $row['analysis_numseries'];
 						$analysis_statusmessage = $row['analysis_statusmessage'];
 						$analysis_statusdatetime = $row['analysis_statusdatetime'];
-						$analysis_swversion = $row['analysis_swversion'];
-						$analysis_iscomplete = $row['analysis_iscomplete'];
-						$analysis_time = $row['analysis_time'];
-						$analysis_size = $row['analysis_disksize'];
 						$analysis_datalog = $row['analysis_datalog'];
 						$notes = $row['analysis_notes'];
 						$analysis_hostname = $row['analysis_hostname'];
-						$cluster_time = $row['cluster_time'];
 						$analysis_enddate = date('Y-m-d H:i',strtotime($row['analysis_enddate']));
 						$analysis_clusterenddate = date('Y-m-d H:i',strtotime($row['analysis_clusterenddate']));
 						$study_id = $row['study_id'];
 						$study_num = $row['study_num'];
 						$study_datetime = date('M j, Y H:i',strtotime($row['study_datetime']));
 						$uid = $row['uid'];
-						$pipeline_version = $row['pipeline_version'];
 						$pipeline_dependency = $row['pipeline_dependency'];
 						
 						$sqlstringA = "select pipeline_name from pipelines where pipeline_id = $pipeline_dependency";
 						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$pipeline_dep_name = $rowA['pipeline_name'];
-						
-						if ($notes == "") {
-							$notestitle = "Click to create notes";
-							$notescolor = "#DDD";
-						}
-						else {
-							$notestitle = $notes;
-							$notescolor = "C00";
-						}
 				?>
-				<script>
-					function GetAnalysisNotes<?=$analysis_id?>(){
-						var analysisnotes = prompt("Enter notes for this analysis","<?=$notestitle?>");
-						if (analysisnotes != null){
-						  //$("#analysisnotes").attr("value", analysisnotes);
-						  document.studieslist.analysisnotes.value = analysisnotes;
-						  document.studieslist.action.value = 'setanalysisnotes';
-						  document.studieslist.analysisid.value = '<?=$analysis_id?>';
-						  document.studieslist.submit();
-					   }
-					}
-				</script>
 				<tr>
-					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
-						<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
-					<td><?=$pipeline_version?></td>
+					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>"><a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
 					<? if ($pipeline_level == 1) { ?>
 					<td class="tiny"><?=$study_datetime?></td>
-					<td><?=$analysis_numseries?></td>
 					<? } ?>
+					<td><?=$analysis_status;?></td>
 					<td>
-						<?
-							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
-								$systemstring = "SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; cd /sge/sge-root/bin/lx24-amd64; ./qstat -j $analysis_qsubid";
-								$out = shell_exec($systemstring);
-							
-								if (trim($out) == "") {
-									?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This means the analysis is being setup and the data is being copied or the cluster job failed. Check log files for error"><?
-								}
-								?>
-								<a class="fancybox" data-fancybox-type="iframe" title="SGE status" href="analysis.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>
-								<!--<a class="fancybox" data-fancybox-type="iframe" href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>-->
-								<?
-							}
-							else {
-								echo $analysis_status;
-							}
-						?>
-					</td>
-					<td>
+						<? if (trim($analysis_datalog) != "") { ?>
 						<a href="#" id="viewlog<?=$analysis_id?>">view log</a>
 						<div id="datalog<?=$analysis_id?>" title="Data log" style="display:none;">
 						<pre style="font-size:9pt; border: 1px solid gray; padding: 5px"><?=$analysis_datalog?></pre>
@@ -1002,52 +944,15 @@
 								});
 							});
 						</script>
-					</td>
-					<td>
-						<span onClick="GetAnalysisNotes<?=$analysis_id?>();" style="cursor:hand; font-size:14pt; color: <?=$notescolor?>" title="<?=$notestitle?>">&#9998;</span>
-					</td>
-					<!--</form>-->
-					<td style="font-size:9pt; white-space:nowrap">
-						<?=$analysis_statusmessage?><br>
-						<?
-							if (strpos($analysis_statusmessage,"processing step") !== false) {
-								$parts = explode(" ",$analysis_statusmessage);
-								$stepnum = $parts[2];
-								$steptotal = $parts[4];
-						?>
-						<img src="horizontalchart.php?b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
 						<? } ?>
-						<span class="tiny"><?=$analysis_statusdatetime?></span>
 					</td>
 					<td class="allanalyses" ><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
 				</tr>
 				<? 
 					}
 				?>
-				<script>
-				function GetDestination(){
-					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
-					if (destination != null){
-					  //document.studieslist.destination.value = desination;
-					  document.studieslist.action='analysis.php';
-					  //document.studieslist.action.value='copyanalyses';
-					  $("#studieslistaction").attr("value", "copyanalyses");
-					  $("#studieslistdestination").attr("value", destination);
-					  document.studieslist.submit();
-				   }
-				}
-				function GetDestination2(){
-					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>");
-					if (destination != null){
-					  document.studieslist.action='analysis.php';
-					  $("#studieslistaction").attr("value", "createlinks");
-					  $("#studieslistdestination").attr("value", destination);
-					  document.studieslist.submit();
-				   }
-				}
-				</script>
 				<tr style="color: #444; font-size:12pt; font-weight:bold">
-					<td colspan="8" valign="top" style="background-color: #fff">
+					<td colspan="3" valign="top" style="background-color: #fff">
 						<table>
 						<tr>
 							<td valign="top" style="color: #444; font-size:12pt; font-weight:bold; border-top:none">
@@ -1072,15 +977,9 @@
 						</tr>
 						</table>
 					</td>
-					<td colspan="7" align="right" style="background-color: #fff; font-size: 12pt">
+					<td colspan="2" align="right" style="background-color: #fff; font-size: 12pt">
 					With selected:&nbsp;<br><br>
-					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled until the deletion is finished</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
-					<br><br><br>
-					<input type="button" name="copyanalyses" value="Copy analyses to..." style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses';GetDestination()">
-					<br>
-					<input type="button" name="createlinks" value="Create Links..." style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies">
-					<br>
-					<input type="button" name="rerunresults" value="Re-run Results Script" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">&nbsp;
+					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected (failed) analyses?')" title="<b style='color:pink'>Pipeline will be disabled until the deletion is finished</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
 					</td>
 				</tr>
 			</tbody>

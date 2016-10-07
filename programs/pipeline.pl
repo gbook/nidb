@@ -57,8 +57,6 @@ our $lockfileprefix = "pipeline";	# lock files will be numbered lock.1, lock.2 .
 our $lockfile = "";					# lockfile name created for this instance of the program
 our $log;							# logfile handle created for this instance of the program
 our $numinstances = 10;				# number of times this program can be run concurrently
-# debugging
-our $debug = 0;
 
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------
@@ -90,7 +88,7 @@ exit(0);
 # have an entry in the analysis table
 # --------------------------------------------------------
 sub ProcessPipelines() {
-	# no idea why, but perl is buffering output to the screen, and these 3 statements turn off buffering
+	# Perl buffers output to STDOUT (screen), and these 3 statements turn off buffering
 	my $old_fh = select(STDOUT);
 	$| = 1;
 	select($old_fh);
