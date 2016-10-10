@@ -1569,7 +1569,9 @@ sub InsertParRec {
 	}
 	else {
 		# get the existing subject ID
-		$sqlstring = "select subject_id from subjects where uid = '$PatientID'";
+		#$sqlstring = "select subject_id from subjects where uid = '$PatientID'";
+		$sqlstring = "SELECT a.subject_id FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
+		WriteLog("The PatientID [$PatientID] exists, getting the SubjectRowID and SubjectRealUID [$sqlstring]");
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
@@ -1578,9 +1580,9 @@ sub InsertParRec {
 	}
 	
 	# check if the subject is part of a family, if not create a family for it
+	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
 	if ($result->numrows > 0) {
 		#WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;

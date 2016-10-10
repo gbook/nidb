@@ -89,31 +89,6 @@
 					$timestamp2 = filemtime($file);
 					$perm2 = substr(sprintf('%o', fileperms($file)), -4);
 					$size2 = filesize($file);
-
-					$filetype = "";
-					if (stristr(strtolower($file),'.nii') !== FALSE) { $filetype = 'nifti'; }
-					if (stristr(strtolower($file),'.nii.gz') !== FALSE) { $filetype = 'nifti'; }
-					if (stristr(strtolower($file),'.inflated') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.smoothwm') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.sphere') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.pial') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.fsm') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.orig') !== FALSE) { $filetype = 'mesh'; }
-					if (stristr(strtolower($file),'.png') !== FALSE) { $filetype = 'image'; }
-					if (stristr(strtolower($file),'.ppm') !== FALSE) { $filetype = 'image'; }
-					if (stristr(strtolower($file),'.jpg') !== FALSE) { $filetype = 'image'; }
-					if (stristr(strtolower($file),'.jpeg') !== FALSE) { $filetype = 'image'; }
-					if (stristr(strtolower($file),'.gif') !== FALSE) { $filetype = 'image'; }
-					if (stristr(strtolower($file),'.txt') !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),'.log') !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),'.sh') !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),'.job') !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),".o") !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),".e") !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),".par") !== FALSE) { $filetype = 'text'; }
-					if (stristr(strtolower($file),".mat") !== FALSE) { $filetype = 'text'; }
-					if ($istext) { $filetype = "text"; }
-					//echo "[$file $filetype]";
 				}
 				$filecolor = "black";
 				if ($islink2) { $filecolor = "red"; } else { $filecolor = ''; }
