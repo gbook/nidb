@@ -780,7 +780,7 @@ sub RearchiveStudy() {
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
-			my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
+			my $outpath = $cfg{'uploadeddir'} . "/$uploadID";
 			mkpath($outpath, { verbose => 1, mode => 0777 });
 			
 			# move all DICOM, par/rec, nifti files to the /dicomincoming directory
@@ -855,7 +855,7 @@ sub RearchiveSubject() {
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
-			my $outpath = $cfg{'uploadedpath'} . "/$uploadID";
+			my $outpath = $cfg{'uploadeddir'} . "/$uploadID";
 			mkpath($outpath, { verbose => 1, mode => 0777 });
 			
 			# move all DICOM, par/rec, nifti files to the /dicomincoming directory

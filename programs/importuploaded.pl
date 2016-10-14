@@ -139,7 +139,7 @@ sub DoImportUploaded {
 			
 			if (($datatype eq "dicom") || ($datatype eq "parrec")) {
 				# ----- get list of files in directory -----
-				$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
+				$uploaddir = $cfg{'uploadeddir'} . "/$importrequest_id";
 				
 				my @files;
 				if (!opendir (DIR, $uploaddir)) {
@@ -216,7 +216,7 @@ sub DoImportUploaded {
 			elsif ($datatype eq 'eeg') {
 				WriteLog("Encountered eeg import");
 				# ----- get list of files in directory -----
-				$uploaddir = $cfg{'uploadedpath'} . "/$importrequest_id";
+				$uploaddir = $cfg{'uploadeddir'} . "/$importrequest_id";
 				
 				WriteLog("Should see me...");
 				# unzip anything in the directory before parsing it
