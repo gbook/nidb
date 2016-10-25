@@ -120,7 +120,11 @@
 			break;
 		case 'delete':
 			Delete($id);
-			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
+			DisplaySubject($id);
+			break;
+		case 'undelete':
+			UnDelete($id);
+			DisplaySubject($id);
 			break;
 		case 'obliterate':
 			Obliterate($ids);
@@ -909,6 +913,20 @@
 		<?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- UnDelete --------------------------- */
+	/* -------------------------------------------- */
+	function UnDelete($id) {
+		/* get all existing info about this subject */
+		$sqlstring = "update subjects set isactive = 1 where subject_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		?>
+		<div align="center" class="message">Subject undeleted</div>
+		<?
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- Obliterate ------------------------- */
@@ -1465,9 +1483,17 @@
 									<div style="padding:5px; font-size:11pt">
 									<a href="subjects.php?action=editform&id=<?=$id?>">Edit Demographics</a>
 									<br><br><br>
-									<? if ($GLOBALS['isadmin']) { ?>
-									<a href="subjects.php?action=deleteconfirm&id=<?=$id?>"><span style="color: red; text-decoration:underline">Delete</span></a>
-									<? } ?>
+									<?
+										if ($GLOBALS['isadmin']) {
+											if ($isactive) {
+											?>
+												<a href="subjects.php?action=deleteconfirm&id=<?=$id?>"><span style="color: red; text-decoration:underline">Delete</span></a>
+											<? } else { ?>
+												<a href="subjects.php?action=undelete&id=<?=$id?>"><span style="color: red; text-decoration:underline">Undelete</span></a>
+											<?
+											}
+										}
+									?>
 									</div>
 								</details>
 								<? } ?>
