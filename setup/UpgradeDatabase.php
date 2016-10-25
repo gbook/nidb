@@ -24,8 +24,8 @@
 	/* ----- edit these variables ----- */
 	
 		$mysqlHostname = "localhost";
-		$mysqlUsername = "root";
-		$mysqlPassword = "brainmap";
+		$mysqlUsername = "username";
+		$mysqlPassword = "password";
 		$mysqlDatabase = "nidb";
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
