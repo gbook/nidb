@@ -737,9 +737,11 @@
 				</details>
 				<?
 				}
+				if (trim($title != "")) {
 				?>
 				<div align="center" class="headertable1"><?=$title?></div>
 				</td>
+				<?}?>
 			</tr>
 		</table>
 

@@ -663,6 +663,12 @@ sub ProcessDataRequests {
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							Anonymize($tmpdir,2,'','');
 						}
+						elsif (($modality eq "mr") && ($data_type eq "parrec")) {
+							$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						}
 						else {
 							$systemstring = "cp -r $indir/* $tmpdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -776,7 +782,7 @@ sub ProcessDataRequests {
 					my $status = $rowC{'pd_status'};
 					
 					my $filename = "NiDB-$groupid.zip";
-					my $zipfile = "$cfg{'webdir'}/$filename";
+					my $zipfile = "$cfg{'webdownloaddir'}/$filename";
 					my $outdir = $tmpwebdir;
 					
 					my $pwd = getcwd;
@@ -804,7 +810,7 @@ sub ProcessDataRequests {
 				}
 				# if its a web download, do the zipping at the end
 				if ($req_destinationtype eq "web") {
-					my $zipfile = "$cfg{'webdir'}/NIDB-$groupid.zip";
+					my $zipfile = "$cfg{'webdownloaddir'}/NIDB-$groupid.zip";
 					my $outdir;
 					WriteLog("Final zip file will be [$zipfile]");
 					WriteLog("tmpwebdir: [$tmpwebdir]");
@@ -1395,7 +1401,7 @@ sub WriteNDARHeader() {
 	
 	if (lc($modality) eq 'mr') {
 		print F "image,3\n";
-		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description, experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week\n";
+		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week,slice_timing,bvek_bval_files\n";
 	}
 	if (lc($modality) eq 'eeg') {
 	
@@ -1435,7 +1441,7 @@ sub WriteNDARSeries() {
 		my $imgrows = $row{'img_rows'};
 		my $imgcols = $row{'img_cols'};
 		my $imgslices = $row{'img_slices'};
-		my $datatype = $row{'data_type'};
+		my $datatype = uc($row{'data_type'});
 		my $studydatetime = $row{'study_datetime'};
 		my $birthdate = $row{'birthdate'};
 		my $gender = $row{'gender'};
@@ -1502,7 +1508,7 @@ sub WriteNDARSeries() {
 		open(F,">> $file");
 		
 		if ($modality eq "MRI") {
-			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0\n";
+			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes\n";
 		}
 		if ($modality eq "EEG") {
 			#print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,\"$seriesnotes\",,,,,,,,,,,,$imagefile,,,\n";

@@ -843,7 +843,7 @@
 		
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		NavigationBar("$formtitle", $urllist);
+		NavigationBar("", $urllist);
 	?>
 	
 		<script type="text/javascript">
@@ -912,34 +912,7 @@
 			}
 		</script>
 	
-		<fieldset style="border: 3px solid #999; border-radius:5px">
-			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px">Status</legend>
-			<table class="entrytable" style="border:0px">
-				<tr>
-					<td class="label" valign="top">Enabled</td>
-					<td valign="middle">
-						<?
-							if ($isenabled) {
-								?><a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a><?
-							}
-							else {
-								?><a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a><?
-							}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label" valign="top">Status<br><br></td>
-					<td valign="top" style="font-size: 10pt">
-						<b>Status</b> <?=$pipeline_status ?> <? if ($pipeline_status == "running") { ?>(<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: darkred" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)<? } ?><br>
-						<b>Status message</b> <?=$pipeline_statusmessage ?><br>
-						<b>Last start</b> <?=$pipeline_laststart ?><br>
-						<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
-						<b>Last check</b> <?=$pipeline_lastcheck ?><br>
-					</td>
-				</tr>
-			</table>
-		</fieldset>
+		<? DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck); ?>
 		<br>
 		<fieldset style="border: 3px solid #999; border-radius:5px">
 			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> version <?=$version?> </legend>
@@ -1993,6 +1966,57 @@ echo "#$ps_command     $logged $ps_desc\n";
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelineStatus -------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
+		?>
+		<div align="center">
+			<table width="70%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td style="color: #fff; background-color: #444; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
+				</tr>
+				<tr>
+					<td align="center">
+					<table cellspacing="0" cellpadding="5" width="100%">
+						<tr>
+							<?
+								if ($isenabled) {
+									?>
+									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled</td>
+									<?
+								}
+								else {
+									?>
+									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled</td>
+									<?
+								}
+							?>
+							<?
+							if ($pipeline_status == "running") {
+								?>
+								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen">Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
+								</td>
+							<? } else { ?>
+								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><?=$pipeline_status ?></td>
+							<? } ?>
+							<td align="center"><?=$pipeline_statusmessage ?></td>
+							<td style="font-size:8pt">
+								<b>Last start</b> <?=$pipeline_laststart ?><br>
+								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
+								<b>Last check</b> <?=$pipeline_lastcheck ?><br>
+							</td>
+						</tr>
+					</table>
+					</td>
+				</tr>
+			</table>
+			<br><br>
+		</div>
+		<?
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayPipeline -------------------- */

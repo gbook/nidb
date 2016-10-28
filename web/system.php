@@ -73,6 +73,7 @@
     $c['queueuser'] = GetVariable("queueuser");
     $c['clustersubmithost'] = GetVariable("clustersubmithost");
     $c['qsubpath'] = GetVariable("qsubpath");
+    $c['clusteruser'] = GetVariable("clusteruser");
     $c['version'] = GetVariable("version");
     $c['sitename'] = GetVariable("sitename");
     $c['sitenamedev'] = GetVariable("sitenamedev");
@@ -195,6 +196,7 @@
 [queueuser] = $queueuser
 [clustersubmithost] = $clustersubmithost
 [qsubpath] = $qsubpath
+[clusteruser] = $clusteruser
 [version] = $version
 [sitename] = $sitename
 [sitenamedev] = $sitenamedev
@@ -267,7 +269,7 @@
 		
 		?>
 		
-		<center>Reading from config file <code style="background-color: #ddd;">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></center>
+		<center>Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></center>
 		<br><br>
 		<form name="configform" method="post" action="system.php">
 		<input type="hidden" name="action" value="updateconfig">
@@ -426,6 +428,12 @@
 				<td>Path to the qsub program. Use a full path to the executable, or just qsub if its already in the PATH environment variable</td>
 			</tr>
 			<tr>
+				<td class="variable">clusteruser</td>
+				<td><input type="text" name="clusteruser" value="<?=$GLOBALS['cfg']['clusteruser']?>" size="45"></td>
+				<td></td>
+				<td>username under which jobs will be submitted to the cluster for the pipeline system</td>
+			</tr>
+			<tr>
 				<td class="variable">version</td>
 				<td><input type="text" name="version" value="<?=$GLOBALS['cfg']['version']?>" size="45"></td>
 				<td></td>
@@ -525,13 +533,13 @@
 				<td class="variable">analysisdir</td>
 				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir])</td>
 			</tr>
 			<tr>
 				<td class="variable">groupanalysisdir</td>
 				<td><input type="text" name="groupanalysisdir" value="<?=$GLOBALS['cfg']['groupanalysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline directory for group analyses</td>
+				<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
 			</tr>
 			<tr>
 				<td class="variable">archivedir</td>
@@ -621,7 +629,7 @@
 				<td class="variable">webdownloaddir</td>
 				<td><input type="text" name="webdownloaddir" value="<?=$GLOBALS['cfg']['webdownloaddir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory within </td>
+				<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default /var/www/html directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 			</tr>
 			<tr>
 				<td class="variable">downloaddir</td>

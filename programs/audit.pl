@@ -92,9 +92,6 @@ sub Audit() {
 	$| = 1;
 	select($old_fh);
 
-	my $numchecked = 0;
-	my $jobsWereSubmitted = 0;
-
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 

@@ -444,17 +444,25 @@
 	/* -------------------------------------------- */
 	function DisplayAnalysisList($id, $numperpage, $pagenum) {
 	
-		$sqlstring = "select pipeline_name, pipeline_level, pipeline_version from pipelines where pipeline_id = $id";
+		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipeline_version = $row['pipeline_version'];
+		$pipeline_status = $row['pipeline_status'];
+		$pipeline_statusmessage = $row['pipeline_statusmessage'];
+		$pipeline_laststart = $row['pipeline_laststart'];
+		$pipeline_lastfinish = $row['pipeline_lastfinish'];
+		$pipeline_lastcheck = $row['pipeline_lastcheck'];
+		$isenabled = $row['pipeline_enabled'];
 	
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
-		NavigationBar("Analyses for $pipeline_name", $urllist);
+		NavigationBar("Analyses", $urllist);
+
+		DisplayPipelineStatus($pipeline_name, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }
@@ -825,17 +833,25 @@
 	/* -------------------------------------------- */
 	function DisplayFailedAnalysisList($id, $numperpage, $pagenum) {
 	
-		$sqlstring = "select pipeline_name, pipeline_level from pipelines where pipeline_id = $id";
+		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
 		$pipeline_level = $row['pipeline_level'];
+		$pipeline_status = $row['pipeline_status'];
+		$pipeline_statusmessage = $row['pipeline_statusmessage'];
+		$pipeline_laststart = $row['pipeline_laststart'];
+		$pipeline_lastfinish = $row['pipeline_lastfinish'];
+		$pipeline_lastcheck = $row['pipeline_lastcheck'];
+		$isenabled = $row['pipeline_enabled'];
 	
 		//$urllist['Analysis'] = "analysis.php";
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		NavigationBar("Ignored studies for $pipeline_name", $urllist);
+		
+		DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 1000; }
@@ -1360,6 +1376,59 @@
 		}
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelineStatus -------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
+		?>
+		<div align="center">
+			<table width="70%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td style="color: #fff; background-color: #444; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
+				</tr>
+				<tr>
+					<td align="center">
+					<table cellspacing="0" cellpadding="5" width="100%">
+						<tr>
+							<?
+								if ($isenabled) {
+									?>
+									<td style="padding: 5px 30px; background-color: #229320; color: #fff; font-size:12pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled</td>
+									<?
+								}
+								else {
+									?>
+									<td style="padding: 5px 30px; background-color: #8e3023; color: #fff; font-size:12pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled</td>
+									<?
+								}
+							?>
+							<?
+							if ($pipeline_status == "running") {
+								?>
+								<td style="padding: 5px 30px; background-color: #229320; color: #fff; font-size:12pt; border: 1px solid darkgreen">Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
+								</td>
+							<? } else { ?>
+								<td style="padding: 5px 30px; background-color: #8e3023; color: #fff; font-size:12pt; border: 1px solid darkred"><?=$pipeline_status ?></td>
+							<? } ?>
+							<td>
+								<b>Status message</b><br><?=$pipeline_statusmessage ?>
+							</td>
+							<td style="font-size:8pt">
+								<b>Last start</b> <?=$pipeline_laststart ?><br>
+								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
+								<b>Last check</b> <?=$pipeline_lastcheck ?><br>
+							</td>
+						</tr>
+					</table>
+					</td>
+				</tr>
+			</table>
+			<br><br>
+		</div>
+		<?
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayJob ------------------------- */
