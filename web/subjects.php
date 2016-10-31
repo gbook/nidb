@@ -918,6 +918,8 @@
 	/* ------- UnDelete --------------------------- */
 	/* -------------------------------------------- */
 	function UnDelete($id) {
+		if (!ValidID($id,'Subject ID')) { return; }
+		
 		/* get all existing info about this subject */
 		$sqlstring = "update subjects set isactive = 1 where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -947,6 +949,8 @@
 	/* ------- DeleteConfirm ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteConfirm($id) {
+		if (!ValidID($id,'Subject ID')) { return; }
+		
 		/* get all existing info about this subject */
 		$sqlstring = "select * from subjects where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1167,6 +1171,8 @@
 	/* ------- Confirm ---------------------------- */
 	/* -------------------------------------------- */
 	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid) {
+		if (!ValidID($analysisid,'Subject ID')) { return; }
+		
 		$encdob = $dob;
 		if (($encrypt) && ($type != 'update')) {
 			$fullname = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $lastname) . '^' . preg_replace('/[^A-Za-z0-9]/', '', $firstname));
@@ -1318,6 +1324,7 @@
 	/* ------- DisplaySubject --------------------- */
 	/* -------------------------------------------- */
 	function DisplaySubject($id) {
+		if (!ValidID($id,'Subject ID')) { return; }
 
 		/* get privacy information */
 		$username = $_SESSION['username'];
@@ -2127,6 +2134,7 @@
 	/* ------- DisplaySubjectForm ----------------- */
 	/* -------------------------------------------- */
 	function DisplaySubjectForm($type, $id) {
+		if (!ValidID($id,'Subject ID')) { return; }
 
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
