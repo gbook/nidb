@@ -751,6 +751,20 @@
 	
 
 	/* -------------------------------------------- */
+	/* ------- ValidID ---------------------------- */
+	/* -------------------------------------------- */
+	function ValidID($var, $varname) {
+		if (isInteger($var) && ($var > 0)) {
+			return 1;
+		}
+		else {
+			?><div class="error"><b>Error</b> - <?=$varname?> was not valid ID</div><?
+			return 0;
+		}
+	}
+	
+
+	/* -------------------------------------------- */
 	/* ------- HumanReadableFilesize -------------- */
 	/* -------------------------------------------- */
 	function HumanReadableFilesize($size) {

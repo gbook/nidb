@@ -183,6 +183,8 @@
 	/* -------------------------------------------- */
 	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
@@ -304,11 +306,7 @@
 	/* -------------------------------------------- */
 	function CopyPipeline($id, $newname) {
 		
-		//$sqlstring = "select * from pipelines where pipeline_id = $id";
-		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//echo "BEFORE COPY (original pipeline)<br>";
-		//PrintVariable($row);
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		?>
 		<span class="tiny">
@@ -446,9 +444,8 @@
 	/* -------------------------------------------- */
 	function UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
 		
-		if ($id == "") {
-			?>Error: pipeline ID blank<br><br><?
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		
 		?>
 		<span class="tiny">
 		<ol>
@@ -644,10 +641,8 @@
 	/* ------- ChangeOwner ------------------------ */
 	/* -------------------------------------------- */
 	function ChangeOwner($id, $newuserid) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($newuserid,'New userID')) { return; }
 		
 		/* update owner id */
 		$sqlstring = "update pipelines set pipeline_admin = $newuserid where pipeline_id = $id";
@@ -661,10 +656,7 @@
 	/* ------- DeletePipeline --------------------- */
 	/* -------------------------------------------- */
 	function DeletePipeline($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		/* disable this pipeline */
 		DisablePipeline($id);
@@ -686,10 +678,7 @@
 	/* ------- ResetAnalyses ---------------------- */
 	/* -------------------------------------------- */
 	function ResetAnalyses($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID is blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_startdate is null)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -705,10 +694,7 @@
 	/* ------- ResetPipeline ---------------------- */
 	/* -------------------------------------------- */
 	function ResetPipeline($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_status = 'stopped' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -719,10 +705,7 @@
 	/* ------- EnablePipeline --------------------- */
 	/* -------------------------------------------- */
 	function EnablePipeline($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -733,10 +716,7 @@
 	/* ------- DisablePipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisablePipeline($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -747,6 +727,8 @@
 	/* ------- EnablePipelineTesting -------------- */
 	/* -------------------------------------------- */
 	function EnablePipelineTesting($id) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+
 		$sqlstring = "update pipelines set pipeline_testing = 1 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
@@ -756,6 +738,8 @@
 	/* ------- DisablePipelineTesting ------------- */
 	/* -------------------------------------------- */
 	function DisablePipelineTesting($id) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		
 		$sqlstring = "update pipelines set pipeline_testing = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
@@ -765,10 +749,7 @@
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id) {
-		if (($id == "") && ($type == "edit")) {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$level = 0;
 		/* populate the fields if this is an edit */
@@ -1971,6 +1952,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* ------- DisplayPipelineStatus -------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+
 		?>
 		<div align="center">
 			<table width="70%" border="0" cellspacing="0" cellpadding="0">
@@ -1984,24 +1967,24 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<?
 								if ($isenabled) {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled</td>
+									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled<br><span style="font-size: 8pt">Uncheck the box to stop the pipeline from running</span></td>
 									<?
 								}
 								else {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled</td>
+									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled<br><span style="font-size: 8pt">Check the box to allow the pipeline to run</span></td>
 									<?
 								}
 							?>
 							<?
 							if ($pipeline_status == "running") {
 								?>
-								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen">Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
+								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"><b>Status:</b> Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
 								</td>
 							<? } else { ?>
-								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><?=$pipeline_status ?></td>
+								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><b>Status:</b><?=$pipeline_status ?></td>
 							<? } ?>
-							<td align="center"><?=$pipeline_statusmessage ?></td>
+							<td align="center"><b>Last status message:</b><br><?=$pipeline_statusmessage ?></td>
 							<td style="font-size:8pt">
 								<b>Last start</b> <?=$pipeline_laststart ?><br>
 								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
@@ -2022,10 +2005,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* ------- DisplayPipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisplayPipeline($id, $version) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		/* check the parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

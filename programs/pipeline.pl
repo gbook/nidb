@@ -137,7 +137,6 @@ sub ProcessPipelines() {
 	# loop through all the pipelines. Allow the program to return to this point
 	# and continue running the other pipelines if something happens to a particular pipeline
 	PIPELINE: for my $i (0 .. $#pipelinerows) {
-		#print Dumper($pipelinerows[$i]);
 		my %row = %{$pipelinerows[$i]};
 		
 		my $pid = $row{'pipeline_id'};
@@ -161,6 +160,7 @@ sub ProcessPipelines() {
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
 		
+		# remove any whitespace from the queue... SGE hates whitespace
 		$pipelinequeue =~ s/\s+//g;
 		
 		print "Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]\n";
@@ -348,20 +348,7 @@ sub ProcessPipelines() {
 					
 					# connect to the DB (in case it became disconnected)
 					$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
-					
-					# check if this module should be running now or not
-					#WriteLog("Checking if this module should be running");
-					#$sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
-					#my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-					#if ($result->numrows < 1) {
-					#	WriteLog("Module disabled. Stopping execution. Exiting module");
-					#	print "Module disabled. Stopping execution\n";
-					#	SetPipelineStopped($pid);
-					#	SetPipelineProcessStatus('complete',0,0);
-					#	SetModuleStopped();
-					#	return 1;
-					#}
-					
+
 					# check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled
 					WriteLog("Checking if we've reached the max number of concurrent analyses");
 					while (my $filled = IsQueueFilled($pid)) {
@@ -375,20 +362,7 @@ sub ProcessPipelines() {
 						}
 						if ($filled == 2) { return 1; }
 					}
-					
-					# check if the analysis has an entry in the analysis table
-					#WriteLog("Checking if this analysis already exists");
-					#$setuplog .= "Checking if this analysis already exists\n";
-					#my $sqlstring = "select * from analysis where pipeline_id = $pid and study_id = $sid";
-					#WriteLog($sqlstring);
-					#$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-					#my %row = $result->fetchhash;
-					#my $r = 0;
-					#my $analysisRowID = trim($row{'analysis_id'});
-					#my $rerunresults = trim($row{'analysis_rerunresults'});
-					#my $runsupplement = trim($row{'analysis_runsupplement'});
-					#WriteLog("analysisRowID [$analysisRowID]  rerunresults [$rerunresults]");
-					
+
 					# get the analysis info, if an analysis already exists for this study
 					my ($analysisRowID, $rerunresults, $runsupplement, $msg) = GetAnalysisInfo($pid,$sid);
 					$setuplog .= $msg;
@@ -400,8 +374,6 @@ sub ProcessPipelines() {
 					# c) there is an existing analysis and it needs a supplement run
 					# ********************
 					if (($runsupplement eq "1") || ($rerunresults eq "1") || ($analysisRowID eq "")) {
-						#SetPipelineStatusMessage($pid, "Checking analysis $r of " . $result->numrows);
-						#$r++;
 						# if the analysis doesn't yet exist, insert a temporary row, to be updated later, in the analysis table as a placeholder so that no other pipeline processes try to run it
 						if ($analysisRowID eq "") {
 							$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values ($pid,$pipelineversion,$pipelinedep,$sid,'processing',now())";
@@ -444,11 +416,11 @@ sub ProcessPipelines() {
 							my $deppath = "";
 							if (($pipelinedep != 0) && ($pipelinedep ne "")) {
 								if ($deplevel eq "subject") {
-									$setuplog .= WriteLog("Dependency is a subject level (will match dep for same subject, any study)"); $setuplog .= "\n";
+									$setuplog .= WriteLog("Dependency is a subject level (will match dep for same subject, any study)") . "\n";
 									$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
 								}
 								else {
-									$setuplog .= WriteLog("Dependency is a study level (will match dep for same subject, same study)"); $setuplog .= "\n";
+									$setuplog .= WriteLog("Dependency is a study level (will match dep for same subject, same study)") . "\n";
 									$deppath = "$pipelinedirectory/$uid/$studynum";
 									
 									# check the dependency and see if there's anything amiss about it
@@ -464,7 +436,7 @@ sub ProcessPipelines() {
 							else {
 								$pipelinedep = 0;
 							}
-							$setuplog .= WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]"); $setuplog .= "\n";
+							$setuplog .= WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]") . "\n";
 
 							# get the data if we are not running a supplement
 							if (!$runsupplement) {
@@ -473,8 +445,7 @@ sub ProcessPipelines() {
 
 							# again check if there are any series to actually run the pipeline on
 							if (($numseries > 0) || ($rerunresults eq "1") || ($runsupplement) || (($pipelinedep != 0) && ($numseries < 1)) ) {
-								WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- ");
-								$setuplog .= " ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- \n";
+								$setuplog .= WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- ") . "\n";
 
 								my $dependencyname;
 								if ((!$rerunresults) && (!$runsupplement)) {
@@ -486,20 +457,17 @@ sub ProcessPipelines() {
 										if ($result->numrows > 0) {
 											my %row = $result->fetchhash;
 											$dependencyname = $row{'pipeline_name'};
-											WriteLog("Found " . $result->numrows . " pipeline dependency [$dependencyname]");
-											$setuplog .= "Found " . $result->numrows . " pipeline dependency [$dependencyname]\n";
+											$setuplog .= WriteLog("Found " . $result->numrows . " pipeline dependency [$dependencyname]") . "\n";
 										}
 										else {
-											WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
-											$setuplog .= "Pipeline dependency ($pipelinedep) does not exist!\n";
+											$setuplog .= WriteLog("Pipeline dependency ($pipelinedep) does not exist!") . "\n";
 											SetPipelineStatusMessage($pid, "Pipeline dependency ($pipelinedep) does not exist!");
 											SetPipelineStopped($pid);
 											next PIPELINE;
 										}
 									}
 									else {
-										WriteLog("No pipeline dependencies [$pipelinedep]");
-										$setuplog .= "No pipeline dependencies [$pipelinedep]\n";
+										$setuplog .= WriteLog("No pipeline dependencies [$pipelinedep]") . "\n";
 									}
 								
 									MakePath("$analysispath/pipeline");
@@ -622,7 +590,7 @@ sub ProcessPipelines() {
 							print "Submitted $numsubmitted jobs so far\n";
 							
 							# mark the study in the analysis table
-							if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0))) {
+							if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0)) || ($runsupplement) || ($rerunresults eq "1")) {
 								if (($rerunresults eq "1") || ($runsupplement)) {
 									$sqlstring = "update analysis set analysis_status = 'pending' where analysis_id = $analysisRowID";
 								}
@@ -701,7 +669,6 @@ sub ProcessPipelines() {
 					else {
 						WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
 						SetPipelineStopped($pid);
-						#SetModuleStopped();
 						next PIPELINE;
 					}
 				}
@@ -871,7 +838,6 @@ sub ProcessPipelines() {
 			WriteLog("Pipeline level invalid");
 		}
 		
-		print "Done with pipeline [$pid] - [$pipelinename]\n";
 		WriteLog("Done with pipeline [$pid] - [$pipelinename]");
 		WriteLog("Done");
 		SetPipelineStatusMessage($pid, 'Normal stop.');
@@ -1107,16 +1073,16 @@ sub CreateClusterJobFile() {
 		# clean up and log everything
 		$jobfile .= "chmod -Rf 777 $analysispath\n";
 		if ($runsupplement) {
-			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid completesupplement 'Updating analysis files'\n";
+			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid processing 'Updating analysis files'\n";
 			$jobfile .= "perl /opt/pipeline/UpdateAnalysisFiles.pl -a $analysisid -d $analysispath\n";
-			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid completesupplement 'Checking for completed files'\n";
+			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid processing 'Checking for completed files'\n";
 			$jobfile .= "perl /opt/pipeline/CheckCompleteResults.pl -a $analysisid -d $analysispath\n";
 			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid completesupplement 'Supplement processing complete'\n";
 		}
 		else {
-			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'Updating analysis files'\n";
+			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid processing 'Updating analysis files'\n";
 			$jobfile .= "perl /opt/pipeline/UpdateAnalysisFiles.pl -a $analysisid -d $analysispath\n";
-			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'Checking for completed files'\n";
+			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid processing 'Checking for completed files'\n";
 			$jobfile .= "perl /opt/pipeline/CheckCompleteResults.pl -a $analysisid -d $analysispath\n";
 			$jobfile .= "perl /opt/pipeline/$checkinscript $analysisid complete 'Cluster processing complete'\n";
 		}

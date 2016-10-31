@@ -121,10 +121,8 @@
 	/* ------- SetAnalysisNotes ------------------- */
 	/* -------------------------------------------- */
 	function SetAnalysisNotes($id, $notes) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		$sqlstring = "update analysis set analysis_notes = '$notes' where analysis_id = $id";
@@ -139,10 +137,8 @@
 	/* ------- DeleteAnalyses --------------------- */
 	/* -------------------------------------------- */
 	function DeleteAnalyses($id, $analysisids) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		/* disable this pipeline */
 		DisablePipeline($id);
@@ -187,10 +183,8 @@
 	/* ------- CopyAnalyses ----------------------- */
 	/* -------------------------------------------- */
 	function CopyAnalyses($id, $analysisids, $destination) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
@@ -218,10 +212,8 @@
 	/* ------- CreateLinks ------------------------ */
 	/* -------------------------------------------- */
 	function CreateLinks($id, $analysisids, $destination) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
@@ -250,10 +242,8 @@
 	/* -------------------------------------------- */
 	function RerunResults($id, $analysisids) {
 	
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -285,10 +275,8 @@
 	/* -------------------------------------------- */
 	function RunSupplement($id, $analysisids) {
 	
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID(s) blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -320,10 +308,8 @@
 	/* -------------------------------------------- */
 	function MarkAnalysis($id, $analysisids, $status) {
 		
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -360,10 +346,8 @@
 	/* -------------------------------------------- */
 	function RecheckSuccess($id, $analysisids) {
 		
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - analysis ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		foreach ($analysisids as $analysisid) {
 		
@@ -388,10 +372,8 @@
 	/* ------- DisablePipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisablePipeline($id) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -402,10 +384,8 @@
 	/* ------- DisplayPipelineLists --------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineLists($id, $listtype) {
-		if ($id == "") {
-			?><div class="error"><b>Error</b> - pipeline ID blank</div><?
-			return;
-		}
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		# get pipeline name
 		$sqlstring = "select pipeline_name from pipelines where pipeline_id = $id";
@@ -443,6 +423,9 @@
 	/* ------- DisplayAnalysisList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayAnalysisList($id, $numperpage, $pagenum) {
+
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -832,6 +815,9 @@
 	/* ------- DisplayFailedAnalysisList ---------- */
 	/* -------------------------------------------- */
 	function DisplayFailedAnalysisList($id, $numperpage, $pagenum) {
+
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1010,6 +996,10 @@
 	/* -------------------------------------------- */
 	function DisplayLogs($id, $analysisid) {
 
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1099,6 +1089,10 @@
 	/* ------- DisplayFiles ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayFiles($id, $analysisid, $fileviewtype) {
+
+		/* check input parameters */
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
 	
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -1381,6 +1375,9 @@
 	/* ------- DisplayPipelineStatus -------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
+		
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		
 		?>
 		<div align="center">
 			<table width="70%" border="0" cellspacing="0" cellpadding="0">
@@ -1394,26 +1391,24 @@
 							<?
 								if ($isenabled) {
 									?>
-									<td style="padding: 5px 30px; background-color: #229320; color: #fff; font-size:12pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled</td>
+									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled<br><span style="font-size: 8pt">Uncheck the box to stop the pipeline from running</span></td>
 									<?
 								}
 								else {
 									?>
-									<td style="padding: 5px 30px; background-color: #8e3023; color: #fff; font-size:12pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled</td>
+									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled<br><span style="font-size: 8pt">Check the box to allow the pipeline to run</span></td>
 									<?
 								}
 							?>
 							<?
 							if ($pipeline_status == "running") {
 								?>
-								<td style="padding: 5px 30px; background-color: #229320; color: #fff; font-size:12pt; border: 1px solid darkgreen">Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
+								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"><b>Status:</b> Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
 								</td>
 							<? } else { ?>
-								<td style="padding: 5px 30px; background-color: #8e3023; color: #fff; font-size:12pt; border: 1px solid darkred"><?=$pipeline_status ?></td>
+								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><b>Status:</b><?=$pipeline_status ?></td>
 							<? } ?>
-							<td>
-								<b>Status message</b><br><?=$pipeline_statusmessage ?>
-							</td>
+							<td align="center"><b>Last status message:</b><br><?=$pipeline_statusmessage ?></td>
 							<td style="font-size:8pt">
 								<b>Last start</b> <?=$pipeline_laststart ?><br>
 								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
