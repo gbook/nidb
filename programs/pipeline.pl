@@ -443,9 +443,20 @@ sub ProcessPipelines() {
 								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
 							}
 
-							# again check if there are any series to actually run the pipeline on
-							if (($numseries > 0) || ($rerunresults eq "1") || ($runsupplement) || (($pipelinedep != 0) && ($numseries < 1)) ) {
-								$setuplog .= WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun). Beginning analysis ----- ") . "\n";
+							# again check if there are any series to actually run the pipeline on...
+							# ... but its ok to run if any of the following are true
+							#     a) rerunresults is true
+							#     b) runsupplement is true
+							#     c) this pipeline is dependent on another pipeline
+							my $okToRun = 0;
+							if ($numseries > 0) { $okToRun = 1; }
+							if (($rerunresults) || ($rerunresults eq "1")) { $okToRun = 1; }
+							if (($runsupplement) || ($runsupplement eq "1")) { $okToRun = 1; }
+							if ($pipelinedep > 0) { $okToRun = 1; }
+							
+							# one of the above criteria has been satisfied, so its ok to run
+							if ($okToRun) {
+								$setuplog .= WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun, or is a supplement, or is dependent on another pipeline). Beginning analysis ----- ") . "\n";
 
 								my $dependencyname;
 								if ((!$rerunresults) && (!$runsupplement)) {
@@ -463,7 +474,7 @@ sub ProcessPipelines() {
 											$setuplog .= WriteLog("Pipeline dependency ($pipelinedep) does not exist!") . "\n";
 											SetPipelineStatusMessage($pid, "Pipeline dependency ($pipelinedep) does not exist!");
 											SetPipelineStopped($pid);
-											next PIPELINE;
+											next PIPELINE; # using a GOTO... so sad, but it had to be done
 										}
 									}
 									else {
@@ -508,7 +519,7 @@ sub ProcessPipelines() {
 									# now safe to write out the setuplog 
 									AppendLog($setuplogF, $setuplog);
 									
-									# and safe to write out the datalog
+									# die here if we can't write the log... because if its not writeable, then something is wrong and we could submit a few hundred jobs that will fail
 									open DATALOG, "> $analysispath/pipeline/data.log" or die("[Line: " . __LINE__ . "] Could not create $analysispath/pipeline/data.log");
 									print DATALOG $datalog;
 									close DATALOG;

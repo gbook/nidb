@@ -91,19 +91,23 @@
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'runsupplement':
-			RunSupplement($id, $analysisids);
+			RunSupplement($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'markbad':
-			MarkAnalysis($id, $analysisids, 'bad');
+			MarkAnalysis($analysisids, 'bad');
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'markgood':
-			MarkAnalysis($id, $analysisids, 'good');
+			MarkAnalysis($analysisids, 'good');
+			DisplayAnalysisList($id, $numperpage, $pagenum);
+			break;
+		case 'markcomplete':
+			MarkComplete($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'rechecksuccess':
-			RecheckSuccess($id, $analysisids);
+			RecheckSuccess($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
@@ -183,26 +187,17 @@
 	/* ------- CopyAnalyses ----------------------- */
 	/* -------------------------------------------- */
 	function CopyAnalyses($id, $analysisids, $destination) {
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
 		foreach ($analysisids as $analysisid) {
 		
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('copy', 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			
-			$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			?><span class="codelisting"><?=$datapath?> queued for copy to <?=$destination?></span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for copy to <?=$destination?></span><br><?
 			
 		}
 	}
@@ -211,27 +206,18 @@
 	/* -------------------------------------------- */
 	/* ------- CreateLinks ------------------------ */
 	/* -------------------------------------------- */
-	function CreateLinks($id, $analysisids, $destination) {
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
+	function CreateLinks($analysisids, $destination) {
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
 		foreach ($analysisids as $analysisid) {
 		
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('createlinks', 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			
-			$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			?><span class="codelisting"><?=$datapath?> queued for link creation in <?=$destination?></span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for link creation in <?=$destination?></span><br><?
 			
 		}
 	}
@@ -240,32 +226,16 @@
 	/* -------------------------------------------- */
 	/* ------- RerunResults ----------------------- */
 	/* -------------------------------------------- */
-	function RerunResults($id, $analysisids) {
+	function RerunResults($analysisids) {
 	
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
-		
 		foreach ($analysisids as $analysisid) {
+			
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
 			$sqlstring = "update analysis set analysis_statusmessage = 'Results queued for rerun', analysis_rerunresults = 1 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			$pipelinelevel = $row['pipeline_level'];
-
-			if ($pipelinelevel == 1) {
-				$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			}
-			elseif ($pipelinelevel == 2) {
-				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
-			}
-			?><span class="codelisting"><?=$datapath?> results queued to be rerun</span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> results queued to be rerun</span><br><?
 		}
 	}
 
@@ -273,32 +243,16 @@
 	/* -------------------------------------------- */
 	/* ------- RunSupplement ---------------------- */
 	/* -------------------------------------------- */
-	function RunSupplement($id, $analysisids) {
+	function RunSupplement($analysisids) {
 	
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
-		
 		foreach ($analysisids as $analysisid) {
+
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
 			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for supplement run', analysis_runsupplement = 1 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			$pipelinelevel = $row['pipeline_level'];
-
-			if ($pipelinelevel == 1) {
-				$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			}
-			elseif ($pipelinelevel == 2) {
-				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
-			}
-			?><span class="codelisting"><?=$datapath?> analysis queued for supplement run</span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> analysis queued for supplement run</span><br><?
 		}
 	}
 	
@@ -306,12 +260,11 @@
 	/* -------------------------------------------- */
 	/* ------- MarkAnalysis ----------------------- */
 	/* -------------------------------------------- */
-	function MarkAnalysis($id, $analysisids, $status) {
-		
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
+	function MarkAnalysis($analysisids, $status) {
 		
 		foreach ($analysisids as $analysisid) {
+
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
 			if ($status == 'bad') {
 				$sqlstring = "update analysis set analysis_isbad = 1 where analysis_id = $analysisid";
@@ -321,49 +274,41 @@
 			}
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			$pipelinelevel = $row['pipeline_level'];
-
-			if ($pipelinelevel == 1) {
-				$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			}
-			elseif ($pipelinelevel == 2) {
-				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
-			}
-			?><span class="codelisting"><?=$datapath?> marked as bad</span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as bad</span><br><?
 		}
 	}
 
 	
 	/* -------------------------------------------- */
+	/* ------- MarkComplete ----------------------- */
+	/* -------------------------------------------- */
+	function MarkComplete($analysisids) {
+		
+		foreach ($analysisids as $analysisid) {
+
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
+			$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete' where analysis_id = $analysisid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
+		}
+	}
+	
+	
+	/* -------------------------------------------- */
 	/* ------- RecheckSuccess --------------------- */
 	/* -------------------------------------------- */
-	function RecheckSuccess($id, $analysisids) {
-		
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
+	function RecheckSuccess($analysisids) {
 		
 		foreach ($analysisids as $analysisid) {
 		
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rechecksuccess', 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$pipelinename = $row['pipeline_name'];
-			
-			$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
-			?><span class="codelisting"><?=$datapath?> to be rechecked for successful file(s)</span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
 		}
 	}
 
@@ -800,7 +745,9 @@
 					<br><br>
 					<input type="button" name="markasbad" value="Mark as bad" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
 					<br>
-					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">&nbsp;
+					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
+					<br>
+					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system">&nbsp;
 					</td>
 				</tr>
 				</tfoot>

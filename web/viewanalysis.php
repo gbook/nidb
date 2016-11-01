@@ -53,7 +53,7 @@
 	/* ------- DisplayLogs ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayLogs($id, $analysisid) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($analysisid,'Pipeline ID')) { return; }
 
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -137,7 +137,7 @@
 	/* ------- DisplayFiles ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayFiles($id, $analysisid, $fileviewtype) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($analysisid,'Pipeline ID')) { return; }
 	
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -414,7 +414,6 @@
 	/* -------------------------------------------- */
 	function DisplayResults($analysisid, $studyid) {
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
-		if (!ValidID($studyid,'Study ID')) { return; }
 		
 		?>
 		Results for this analysis<br><br>
@@ -424,6 +423,7 @@
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
 			}
 			else {
+				if (!ValidID($studyid,'Study ID')) { return; }
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysisid order by d.result_name";
 			}
 			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);

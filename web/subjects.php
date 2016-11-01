@@ -1171,7 +1171,6 @@
 	/* ------- Confirm ---------------------------- */
 	/* -------------------------------------------- */
 	function Confirm($type, $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid) {
-		if (!ValidID($analysisid,'Subject ID')) { return; }
 		
 		$encdob = $dob;
 		if (($encrypt) && ($type != 'update')) {
@@ -2134,10 +2133,12 @@
 	/* ------- DisplaySubjectForm ----------------- */
 	/* -------------------------------------------- */
 	function DisplaySubjectForm($type, $id) {
-		if (!ValidID($id,'Subject ID')) { return; }
 
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
+			/* check for valid subject ID */
+			if (!ValidID($id,'Subject ID')) { return; }
+			
 			$sqlstring = "select * from subjects where subject_id = $id";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);

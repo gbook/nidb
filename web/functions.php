@@ -1200,6 +1200,34 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- GetAnalysisPath -------------------- */
+	/* -------------------------------------------- */
+	function GetAnalysisPath($analysisid) {
+		
+		/* check for valid analysis ID */
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		
+		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+		//echo "[$sqlstring]";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		$pipelinename = $row['pipeline_name'];
+		$pipelinelevel = $row['pipeline_level'];
+
+		if ($pipelinelevel == 1) {
+			$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+		}
+		elseif ($pipelinelevel == 2) {
+			$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
+		}
+		
+		return $datapath;
+	}
+
+	
+	/* -------------------------------------------- */
 	/* ------- MoveStudyToSubject ----------------- */
 	/* -------------------------------------------- */
 	function MoveStudyToSubject($studyid, $newuid) {
