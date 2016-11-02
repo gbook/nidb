@@ -137,6 +137,7 @@
 					<? } ?>
 				</li>
 			 
+				<? if ($GLOBALS['isadmin']) { ?>
 				<li><a href="admin.php">Admin</a>
 					<ul>
 						<li><a href="adminusers.php">Users</a></li>
@@ -158,6 +159,7 @@
 						<? } ?>
 					</ul>
 				</li>
+				<? } ?>
 				<li><a href="users.php">My Account</a>
 					<ul>
 						<li><a href="users.php">My Account</a></li>

@@ -193,7 +193,7 @@ sub ProcessPipelines() {
 		}
 		
 		# update the pipeline start time
-		SetPipelineStatusMessage($pid, 'Running');
+		SetPipelineStatusMessage($pid, 'Submitting jobs');
 		SetPipelineRunning($pid);
 
 		WriteLog("Running pipeline $pid");
@@ -851,7 +851,7 @@ sub ProcessPipelines() {
 		
 		WriteLog("Done with pipeline [$pid] - [$pipelinename]");
 		WriteLog("Done");
-		SetPipelineStatusMessage($pid, 'Normal stop.');
+		SetPipelineStatusMessage($pid, 'Finished submitting jobs');
 		SetPipelineStopped($pid);
 		
 		if ($jobsWereSubmitted) {

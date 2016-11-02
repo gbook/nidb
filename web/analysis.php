@@ -944,7 +944,6 @@
 	function DisplayLogs($id, $analysisid) {
 
 		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 		
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
@@ -1038,7 +1037,6 @@
 	function DisplayFiles($id, $analysisid, $fileviewtype) {
 
 		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 	
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";

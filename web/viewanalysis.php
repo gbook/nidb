@@ -39,10 +39,10 @@
 <?	
 	/* determine action */
 	switch ($action) {
-		case 'viewlogs': DisplayLogs($pipelineid, $analysisid); break;
-		case 'viewfiles': DisplayFiles($pipelineid, $analysisid, $fileviewtype); break;
+		case 'viewlogs': DisplayLogs($analysisid); break;
+		case 'viewfiles': DisplayFiles($analysisid, $fileviewtype); break;
 		case 'viewresults': DisplayResults($analysisid, $studyid); break;
-		case 'viewhistory': DisplayHistory($analysisid, $studyid, $pipelineid, $pipelineversion); break;
+		case 'viewhistory': DisplayHistory($analysisid); break;
 		default:
 	}
 ?></div><?
@@ -52,8 +52,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayLogs ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayLogs($id, $analysisid) {
-		if (!ValidID($analysisid,'Pipeline ID')) { return; }
+	function DisplayLogs($analysisid) {
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
 
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -136,8 +136,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFiles ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayFiles($id, $analysisid, $fileviewtype) {
-		if (!ValidID($analysisid,'Pipeline ID')) { return; }
+	function DisplayFiles($analysisid, $fileviewtype) {
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
 	
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -488,10 +488,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayHistory --------------------- */
 	/* -------------------------------------------- */
-	function DisplayHistory($analysisid, $studyid, $pipelineid, $pipelineversion) {
+	function DisplayHistory($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
-		if (!ValidID($studyid,'Study ID')) { return; }
-		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
 		
 		?>
 		<table class="smalldisplaytable">
