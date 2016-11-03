@@ -81,6 +81,9 @@
     $c['ispublic'] = GetVariable("ispublic");
     $c['sitetype'] = GetVariable("sitetype");
     $c['allowphi'] = GetVariable("allowphi");
+    $c['enableremoteconn'] = GetVariable("enableremoteconn");
+    $c['enablecalendar'] = GetVariable("enablecalendar");
+    $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
 
     $c['enablecas'] = GetVariable("enablecas");
     $c['casserver'] = GetVariable("casserver");
@@ -204,6 +207,9 @@
 [ispublic] = $ispublic
 [sitetype] = $sitetype
 [allowphi] = $allowphi
+[enableremoteconn] = $enableremoteconn
+[enablecalendar] = $enablecalendar
+[uploadsizelimit] = $uploadsizelimit
 
 # ----- CAS authentication -----
 [enablecas] = $enablecas
@@ -289,7 +295,7 @@
 				<td class="variable">debug</td>
 				<td><input type="text" name="debug" value="<?=$GLOBALS['cfg']['debug']?>" size="45"></td>
 				<td></td>
-				<td>Enable debugging for the PHP pages. 1 for yes, 0 for no. Will display all SQL statements</td>
+				<td>Enable debugging for the PHP pages. Will display all SQL statements. 1 for yes, 0 for no.</td>
 			</tr>
 			
 			<tr>
@@ -474,6 +480,24 @@
 				<td><input type="text" name="allowphi" value="<?=$GLOBALS['cfg']['allowphi']?>" size="45"></td>
 				<td></td>
 				<td>1 to allow PHI (name, DOB) on server. 0 to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
+			</tr>
+			<tr>
+				<td class="variable">enableremoteconn</td>
+				<td><input type="text" name="enableremoteconn" value="<?=$GLOBALS['cfg']['enableremoteconn']?>" size="45"></td>
+				<td></td>
+				<td>1 to allow this server to connect with other NiDB servers remotely, 0 to disable this option</td>
+			</tr>
+			<tr>
+				<td class="variable">enablecalendar</td>
+				<td><input type="text" name="enablecalendar" value="<?=$GLOBALS['cfg']['enablecalendar']?>" size="45"></td>
+				<td></td>
+				<td>1 to enable the calendar, 0 to disable</td>
+			</tr>
+			<tr>
+				<td class="variable">uploadsizelimit</td>
+				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>" size="45"></td>
+				<td></td>
+				<td>Upload size limit in megabytes (MB). Current PHP upload filesize limit [upload_max_filesize] is <?=get_cfg_var('upload_max_filesize')?> and max POST size [post_max_size] is <?=get_cfg_var('post_max_size')?></td>
 			</tr>
 
 			<tr>

@@ -952,8 +952,12 @@
 							<td valign="top"><input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Cluster type <img src="images/help.gif" title="<b>Cluster type</b><br><br>Currently either SGE or slurm"></td>
-							<td valign="top"><input type="text" name="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>"></td>
+							<datalist id="clustertypelist">
+								<option value="sge">
+								<option value="slurm">
+							</datalist>
+							<td class="label" valign="top">Cluster type <img src="images/help.gif" title="<b>Cluster type</b><br><br>SGE (default) or slurm"></td>
+							<td valign="top"><input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>"></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Submit host <img src="images/help.gif" title="<b>Submit host</b><br><br>The hostname of the SGE head node to submit to. If blank, the default submit host is used (<?=$GLOBALS['cfg']['clustersubmithost']?>)"></td>
@@ -1219,7 +1223,7 @@
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
 							</tr>
 							<tr>
-								<td>Pending<br><span class="tiny">yet to be submitted</span></td>
+								<td>Pending<br><span class="tiny">analyses yet to be submitted</span></td>
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
 							</tr>
 							</tr>

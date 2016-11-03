@@ -91,7 +91,7 @@ class qqUploadedFileForm {
 
 class qqFileUploader {
     private $allowedExtensions = array();
-    private $sizeLimit = 1000000000;
+    private $sizeLimit;
     private $file;
 
     function __construct(array $allowedExtensions = array(), $sizeLimit = 2000000000){
@@ -99,7 +99,7 @@ class qqFileUploader {
         //echo "check A";
             
         $this->allowedExtensions = $allowedExtensions;        
-        $this->sizeLimit = $sizeLimit;
+        $this->sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
         //echo "check B";
         
         $this->checkServerSettings();       
@@ -235,7 +235,7 @@ else {
 // list of valid extensions, ex. array("jpeg", "xml", "bmp")
 $allowedExtensions = array();
 // max file size in bytes
-$sizeLimit = 1000 * 1024 * 1024;
+$sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
 
 //echo "check 0 $sizeLimit\n";
 

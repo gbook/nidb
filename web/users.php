@@ -260,9 +260,14 @@
 		if ($row['sendmail_dailysummary'] == "1") { $dailycheck = "checked"; }
 		if ($row['user_enablebeta'] == "1") { $enablebeta = "checked"; }
 
-		//PrintVariable($row,'row');
+		$sqlstring = "select count(*) 'count' from user_project where user_id = $userid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$projectcount = $row['count'];
+		
 		?>
 		<div align="center">
+		<span class="tiny">I have permissions to <?=$projectcount?> projects!<br><br></span>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				/* check the matching passwords */

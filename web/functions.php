@@ -95,16 +95,6 @@
 		$isguest = 0;
 	}
 	
-	//if (!UserHasAnyProjectAccess($userid)) {
-	//	?>
-	<!--	<div>
-		Congratulations for being able to sign in to NiDB!<br>
-		However, you have no permissions to access any projects. Please contact the system administrator to get access to projects
-		</div>
-		--><? 
-		//exit(0);
-	//}
-	
 	/* each user can only be associated with 1 instance, so display that instance name at the top of the page */
 	$sqlstring = "select instance_name from instance where instance_id in (select instance_id from users where username = '$username')";
 	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -244,23 +234,6 @@
 	}
 
 
-	/* -------------------------------------------- */
-	/* ------- UserHasProjectAccess --------------- */
-	/* -------------------------------------------- */
-	function UserHasAnyProjectAccess($userid) {
-		if (!ValidID($userid)) { return 0; }
-		
-		$sqlstring = "select * from user_project where user_id = $userid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			return 1;
-		}
-		else {
-			return 0;
-		}
-	}
-	
-	
 	/* -------------------------------------------- */
 	/* ------- SendGmail -------------------------- */
 	/* -------------------------------------------- */
