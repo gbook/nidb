@@ -1207,19 +1207,19 @@
 								<th colspan="2">Analysis Statistics</th>
 							</tr>
 							<tr>
-								<td>Processing Complete<br><span style="font-weight: normal">Total CPU time</span></td>
+								<td>Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
 							</tr>
 							<tr>
-								<td>Successfuly Completed<br><span style="font-weight: normal">Total CPU time</span></td>
+								<td>Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
 							</tr>
 							<tr>
-								<td>Processing</td>
+								<td>Currently processing</td>
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
 							</tr>
 							<tr>
-								<td>Pending</td>
+								<td>Pending<br><span class="tiny">yet to be submitted</span></td>
 								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
 							</tr>
 							</tr>
