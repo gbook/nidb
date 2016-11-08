@@ -11,15 +11,15 @@ This is a unified repository for the NiDB project. It is composed of four main s
 * setup - setup script and SQL schema files
 * documentation - Word documents for usage and administration
 
-To install on CentOS 7, type the following on the command line as root, and follow the instructions:<br>
+To install on CentOS 7, type the following on the command line (as root), and follow the instructions:<br>
 `> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-centos7.sh .`<br>
 `> chmod 777 setup-centos7.sh`<br>
-`> ./setup-centos7.sh`
+`> sudo ./setup-centos7.sh`
 
-To install on Ubuntu 16, type the following on the command line as root, and follow the instructions:<br>
+To install on Ubuntu 16, type the following on the command line (as root), and follow the instructions:<br>
 `> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-ubuntu16.sh .`<br>
 `> chmod 777 setup-ubuntu16.sh`<br>
-`> ./setup-ubuntu16.sh`
+`> sudo ./setup-ubuntu16.sh`
 
 After setup, go to http://localhost/ and login with admin/password. Change the default password immediately after logging in!
 
