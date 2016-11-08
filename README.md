@@ -12,12 +12,12 @@ This is a unified repository for the NiDB project. It is composed of four main s
 * documentation - Word documents for usage and administration
 
 To install on CentOS 7, type the following on the command line as root, and follow the instructions:<br>
-`> wget https://github.com/gbook/nidb/trunk/setup/setup-centos7.sh .`<br>
+`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-centos7.sh .`<br>
 `> chmod 777 setup-centos7.sh`<br>
 `> ./setup-centos7.sh`
 
 To install on Ubuntu 16, type the following on the command line as root, and follow the instructions:<br>
-`> wget https://github.com/gbook/nidb/trunk/setup/setup-ubuntu16.sh .`<br>
+`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-ubuntu16.sh .`<br>
 `> chmod 777 setup-ubuntu16.sh`<br>
 `> ./setup-ubuntu16.sh`
 
