@@ -225,6 +225,14 @@ sub ProcessDataRequests {
 				if ($data_type eq '') {
 					$data_type = $modality;
 				}
+
+				# check if this module should be running now or not
+				if (!ModuleCheckIfActive($scriptname, $db)) {
+					WriteLog("Not supposed to be running right now");
+					# update the stop time
+					ModuleDBCheckOut($scriptname, $db);
+					return 0;
+				}
 				
 				# get the list of all IDs to send along with the series
 				my $sqlstringX = "select altuid from subject_altuid where subject_id = '$subjectid'";
@@ -1143,13 +1151,14 @@ sub Anonymize() {
 		if ($File::Find::name =~ /\.txt/) { unlink($File::Find::name); }
 	}, "$dir";
 	
-	# thread them 20 at a time
+	# thread them N at a time
 	my $i = 0;
 	my $totalcpu = 0;
+	my $numthreads = 40;
 	while ($i<=($#systemstrings)) {
 		my @threads;
 		# create all the threads
-		for (my $j=0;$j<20;$j++) {
+		for (my $j=0;$j<$numthreads;$j++) {
 			if ($j>($#systemstrings)) {
 				last;
 			}
@@ -1157,7 +1166,7 @@ sub Anonymize() {
 			push(@threads,$t);
 			$i++;
 		}
-		WriteLog("Launched 20 threads, waiting for them to finish");
+		WriteLog("Launched $numthreads threads, waiting for them to finish");
 		# wait for them all to return
 		foreach my $t (@threads) {
 			my $cpu = $t->join;

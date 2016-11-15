@@ -655,7 +655,7 @@ sub DeleteSubject() {
 		
 		if ($uid ne "") {
 			# move all archive data to the deleted directory
-			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
+			my $newpath = $cfg{'deleteddir'} . "/" . GenerateRandomString(10) . "-$uid";
 			mkpath($newpath, { verbose => 1, mode => 0777 });
 			my $systemstring = "mv -v " . $cfg{'archivedir'} . "/$uid $newpath/";
 			WriteLog("Running [$systemstring]");
@@ -720,7 +720,7 @@ sub DeleteStudy() {
 		
 		if (($uid ne "") && ($studynum ne "")) {
 			# move all archive data to the deleted directory
-			my $newpath = $cfg{'deletedpath'} . "/" . GenerateRandomString(10) . "-$uid";
+			my $newpath = $cfg{'deleteddir'} . "/" . GenerateRandomString(10) . "-$uid";
 			mkpath($newpath, { verbose => 1, mode => 0777 });
 			my $systemstring = "mv -v " . $cfg{'archivedir'} . "/$uid/$studynum $newpath/";
 			WriteLog("Running [$systemstring]");
@@ -789,7 +789,7 @@ sub RearchiveStudy() {
 			find(sub{MoveDICOMs($outpath);}, $studypath);
 			
 			# move the study directory to the deleted directory
-			my $newpath = $cfg{'deletedpath'} . "/$uid-$studynum-" . GenerateRandomString(10);
+			my $newpath = $cfg{'deleteddir'} . "/$uid-$studynum-" . GenerateRandomString(10);
 			mkpath($newpath, { verbose => 1, mode => 0777 });
 			my $systemstring = "mv -v $studypath $newpath";
 			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");
@@ -864,7 +864,7 @@ sub RearchiveSubject() {
 			find(sub{MoveDICOMs($outpath);}, $subjectpath);
 			
 			# move the study directory to the deleted directory
-			my $newpath = $cfg{'deletedpath'} . "/$uid-" . GenerateRandomString(10);
+			my $newpath = $cfg{'deleteddir'} . "/$uid-" . GenerateRandomString(10);
 			mkpath($newpath, { verbose => 1, mode => 0777 });
 			my $systemstring = "mv -v $subjectpath $newpath";
 			WriteLog("Running $systemstring: [" . `$systemstring 2>&1` . "]");

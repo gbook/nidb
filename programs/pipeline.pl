@@ -156,6 +156,7 @@ sub ProcessPipelines() {
 		my $pipelinelevel = $row{'pipeline_level'};
 		my $deplevel = $row{'pipeline_dependencylevel'};
 		my $depdir = $row{'pipeline_dependencydir'};
+		my $deplinktype = $row{'pipeline_deplinktype'};
 		my $testing = $row{'pipeline_testing'};
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
@@ -494,11 +495,29 @@ sub ProcessPipelines() {
 										my $systemstring;
 										if ($depdir eq "subdir") {
 											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
-											$systemstring = "cp -rl $deppath/$dependencyname $analysispath/";
+											#$systemstring = "cp -rl $deppath/$dependencyname $analysispath/";
+
+											if ($deplinktype eq "hardlink") {
+												$systemstring = "cp -aul $deppath/$dependencyname $analysispath/";
+											}
+											elsif ($deplinktype eq "softlink") {
+												$systemstring = "cp -aus $deppath/$dependencyname $analysispath/";
+											}
+											elsif ($deplinktype eq "regularcopy") {
+												$systemstring = "cp -au $deppath/$dependencyname $analysispath/";
+											}
 										}
 										else { # root dir
 											$setuplog .= WriteLog("Dependency will be copied to the root dir") . "\n";
-											$systemstring = "cp -rl $deppath/$dependencyname/* $analysispath/";
+											if ($deplinktype eq "hardlink") {
+												$systemstring = "cp -aul $deppath/$dependencyname/* $analysispath/";
+											}
+											elsif ($deplinktype eq "softlink") {
+												$systemstring = "cp -aus $deppath/$dependencyname/* $analysispath/";
+											}
+											elsif ($deplinktype eq "regularcopy") {
+												$systemstring = "cp -au $deppath/$dependencyname/* $analysispath/";
+											}
 										}
 										# copy any dependencies
 										$setuplog .= WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . `$systemstring 2>&1`) . "\n";
@@ -778,10 +797,26 @@ sub ProcessPipelines() {
 								# create hard link in the analysis directory
 								my $systemstring;
 								if ($dependencylevel == 1) {
-									$systemstring = "cp -aul $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									if ($deplinktype eq "hardlink") {
+										$systemstring = "cp -aul $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
+									elsif ($deplinktype eq "softlink") {
+										$systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
+									elsif ($deplinktype eq "regularcopy") {
+										$systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
 								}
 								else {
-									$systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									if ($deplinktype eq "hardlink") {
+										$systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
+									elsif ($deplinktype eq "softlink") {
+										$systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
+									elsif ($deplinktype eq "regularcopy") {
+										$systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									}
 								}
 								
 								my $cpresults = `$systemstring 2>&1`;

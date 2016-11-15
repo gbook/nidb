@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 30, 2016 at 03:33 PM
+-- Generation Time: Nov 15, 2016 at 09:05 PM
 -- Server version: 10.0.26-MariaDB
 -- PHP Version: 5.5.38
 
@@ -1089,7 +1089,7 @@ CREATE TABLE `import_requestdirs` (
 CREATE TABLE `import_requests` (
   `importrequest_id` int(11) NOT NULL,
   `import_transactionid` int(11) NOT NULL,
-  `import_datatype` enum('dicom','measures','nondicom','parrec','nifti','eeg') NOT NULL,
+  `import_datatype` varchar(255) NOT NULL,
   `import_modality` varchar(50) NOT NULL,
   `import_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `import_status` varchar(50) NOT NULL,
@@ -1613,6 +1613,7 @@ CREATE TABLE `pipelines` (
   `pipeline_queue` varchar(50) NOT NULL,
   `pipeline_submithost` varchar(255) NOT NULL,
   `pipeline_clustertype` enum('','sge','slurm') NOT NULL,
+  `pipeline_datacopymethod` varchar(50) NOT NULL,
   `pipeline_notes` text NOT NULL,
   `pipeline_removedata` tinyint(1) NOT NULL,
   `pipeline_resultsscript` text NOT NULL,

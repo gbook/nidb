@@ -79,15 +79,15 @@
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'copyanalyses':
-			CopyAnalyses($id, $analysisids, $destination);
+			CopyAnalyses($analysisids, $destination);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'createlinks':
-			CreateLinks($id, $analysisids, $destination);
+			CreateLinks($analysisids, $destination);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'rerunresults':
-			RerunResults($id, $analysisids);
+			RerunResults($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum);
 			break;
 		case 'runsupplement':
@@ -186,7 +186,7 @@
 	/* -------------------------------------------- */
 	/* ------- CopyAnalyses ----------------------- */
 	/* -------------------------------------------- */
-	function CopyAnalyses($id, $analysisids, $destination) {
+	function CopyAnalyses($analysisids, $destination) {
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		

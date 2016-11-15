@@ -688,7 +688,35 @@
 			</tr>
 		</table>
 		</form>
-
+		
+		<br><br>
+		<table class="twocoltable">
+			<thead>
+				<tr>
+					<th>PHP variable</th>
+					<th>Current value</th>
+				</tr>
+			</thead>
+			<tr>
+				<td>max_input_vars</td>
+				<td><?=get_cfg_var('max_input_vars')?></td>
+			</tr>
+			<tr>
+				<td>post_max_size</td>
+				<td><?=get_cfg_var('post_max_size')?></td>
+			</tr>
+			<tr>
+				<td>upload_max_filesize</td>
+				<td><?=get_cfg_var('upload_max_filesize')?></td>
+			</tr>
+			<tr>
+				<td>max_file_uploads</td>
+				<td><?=get_cfg_var('max_file_uploads')?></td>
+			</tr>
+		</table>
+		
+		<br><br>
+		
 		Crontab for <?=system("whoami"); ?><br>
 		<pre><?=system("crontab -l"); ?></pre>
 		<?

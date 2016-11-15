@@ -60,6 +60,7 @@
 	$pipelineclustertype = GetVariable("pipelineclustertype");
 	$pipelinesubmithost = GetVariable("pipelinesubmithost");
 	$pipelinequeue = GetVariable("pipelinequeue");
+	$pipelinedatacopymethod = GetVariable("pipelinedatacopymethod");
 	$pipelineremovedata = GetVariable("pipelineremovedata");
 	$pipelineresultsscript = GetVariable("pipelineresultsscript");
 	$pipelinedirectory = GetVariable("pipelinedirectory");
@@ -114,11 +115,11 @@
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
@@ -181,7 +182,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		
@@ -192,6 +193,7 @@
 		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
 		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
+		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
 		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
@@ -222,7 +224,7 @@
 		}
 
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		//PrintSQL($sqlstring);
 		//return;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -254,7 +256,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
@@ -262,6 +264,7 @@
 		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
 		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
+		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
 		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
@@ -290,7 +293,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_queue, pipeline_clustertype, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinequeue', '$pipelineclustertype', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
@@ -768,6 +771,7 @@
 			$submithost = $row['pipeline_submithost'];
 			$queue = $row['pipeline_queue'];
 			$clustertype = $row['pipeline_clustertype'];
+			$datacopymethod = $row['pipeline_datacopymethod'];
 			$remove = $row['pipeline_removedata'];
 			$version = $row['pipeline_version'];
 			$directory = $row['pipeline_directory'];
@@ -942,9 +946,20 @@
 							</datalist>
 						</tr>
 						<tr>
+							<td colspan="2">
+							</td>
+						</tr>
+						<tr>
 							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this analysis) will be created inside this directory and will contain the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdir']?>]</span>"></td>
 							<td valign="top">
 								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Data transfer method <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this analysis) will be created inside this directory and will contain the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdir']?>]</span>"></td>
+							<td valign="top">
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>NFS <span class="tiny">default</span><br>
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>scp <span class="tiny">requires passwordless ssh</span><br>
 							</td>
 						</tr>
 						<tr class="level1">
@@ -960,7 +975,7 @@
 							<td valign="top"><input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Submit host <img src="images/help.gif" title="<b>Submit host</b><br><br>The hostname of the SGE head node to submit to. If blank, the default submit host is used (<?=$GLOBALS['cfg']['clustersubmithost']?>)"></td>
+							<td class="label" valign="top">Submit hostname <img src="images/help.gif" title="<b>Submit host</b><br><br>The hostname of the cluster node to submit to. This host will also be used for scp copy. If blank, the default submit host is used (<?=$GLOBALS['cfg']['clustersubmithost']?>)"></td>
 							<td valign="top"><input type="text" name="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>"></td>
 						</tr>
 						<tr>

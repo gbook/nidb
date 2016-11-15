@@ -108,6 +108,7 @@ sub DoParse {
 	# check if this module should be running now or not
 	if (!ModuleCheckIfActive($scriptname, $db)) {
 		WriteLog("Not supposed to be running right now");
+		print "*** Module not enabled. Enable this module on the NiDB website to allow it to run ***";
 		return 0;
 	}
 	
@@ -250,17 +251,17 @@ sub ParseDirectory {
 						$i++;
 					}
 					elsif (lc($file) =~ /\.rec$/) { WriteLog("Filetype is a .rec"); }
-					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/) || (lc($importModality eq 'eeg')) || (lc($importDatatype eq 'eeg')) ) {
-						WriteLog("Filetype is .cnt .3dd or .dat");
-						my $ret = InsertEEG($file, $importRowID);
+					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/) || (lc($file) =~ /\.edf$/) || (lc($importModality eq 'eeg')) || (lc($importDatatype eq 'eeg')) || (lc($importModality eq 'et')) || (lc($importDatatype eq 'et')) ) {
+						WriteLog("Filetype is one of [.cnt .3dd .dat .edf]");
+						my $ret = InsertEEG($file, $importRowID, uc($importDatatype));
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
-							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'EEG', '$importRowID', now(), '[$ret], moving to the problem directory')";
+							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '" . uc($importDatatype) . "', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 							# change the import status to reflect the error
-							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting EEG: $ret', import_enddate = now() where importrequest_id = '$importRowID'";
+							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting " . uc($importDatatype) . ": $ret', import_enddate = now() where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
 							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
@@ -618,7 +619,8 @@ sub InsertDICOM {
 	my $header = trim(`$systemstring`);
 	WriteLog("$header");
 	my @parts = split(',', $header);
-	my $val = $parts[4];
+	my $val = "";
+	$val = $parts[4];
 	$val =~ s/Data '//g;
 	$val =~ s/'//g;
 	$val = trim($val);
@@ -808,6 +810,10 @@ sub InsertDICOM {
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		$IL_subjectcreated = 0;
+	}
+	
+	if ($subjectRealUID eq "") {
+		return "Error, UID is blank";
 	}
 	
 	# check if the subject is part of a family, if not create a family for it
@@ -1579,6 +1585,14 @@ sub InsertParRec {
 		$IL_subjectcreated = 0;
 	}
 	
+	if ($subjectRealUID eq "") {
+		WriteLog("ERROR: UID blank");
+		return "Error, UID blank";
+	}
+	else {
+		WriteLog("UID found [$subjectRealUID]");
+	}
+	
 	# check if the subject is part of a family, if not create a family for it
 	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
@@ -1774,11 +1788,14 @@ sub InsertParRec {
 # --------- InsertEEG --------------------------------------
 # ----------------------------------------------------------
 sub InsertEEG {
-	my ($file, $importRowID) = @_;
+	my ($file, $importRowID, $Modality) = @_;
 	
 	WriteLog("In InsertEEG($file, $importRowID)...");
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
+	
+	# initialize variables... to prevent warnings
+	$IL_modality_orig = $IL_patientname_orig = $IL_patientdob_orig = $IL_patientsex_orig = $IL_stationname_orig = $IL_institution_orig = $IL_studydatetime_orig = $IL_seriesdatetime_orig = $IL_seriesnumber_orig = $IL_studydesc_orig = $IL_patientage_orig = $IL_modality_new = $IL_patientname_new = $IL_patientdob_new = $IL_patientsex_new = $IL_stationname_new = $IL_institution_new = $IL_studydatetime_new = $IL_seriesdatetime_new = $IL_seriesnumber_new = $IL_studydesc_new = $IL_seriesdesc_orig = $IL_protocolname_orig = $IL_patientage_new = $IL_subject_uid = $IL_study_num = $IL_enrollmentid = $IL_project_number = $IL_seriescreated = $IL_studycreated = $IL_subjectcreated = $IL_familycreated = $IL_enrollmentcreated = $IL_overwrote_existing = '';
 	
 	my $familyRealUID;
 	my $familyRowID;
@@ -1812,7 +1829,7 @@ sub InsertEEG {
 	my $ProtocolName;
 	my $StudyDateTime;
 	my $SeriesDateTime;
-	my $Modality = "EEG";
+	#my $Modality = "EEG";
 	my $SeriesNumber;
 	my $FileNumber;
 	my $numfiles = 1;
@@ -1852,7 +1869,16 @@ sub InsertEEG {
 	$FileName =~ s/\..*+$//; # remove everything after the first dot
 	my @parts = split('_', $FileName);
 	$PatientID = trim($parts[0]);
-	$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " " . substr($parts[1],8,2) . ":" . substr($parts[1],10,2) . ":" . substr($parts[1],10,2);
+	if (length($parts[1]) == 6) {
+		$StudyDateTime = $SeriesDateTime = substr($parts[1],4,2) . "-" . substr($parts[1],0,2) . "-" . substr($parts[1],2,2) . " 00:00:00";
+	}
+	elsif (length($parts[1]) == 8) {
+		$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " 00:00:00";
+	}
+	elsif (length($parts[1]) == 14) {
+		$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " " . substr($parts[1],8,2) . ":" . substr($parts[1],10,2) . ":" . substr($parts[1],10,2);
+	}
+	
 	$SeriesDescription = $ProtocolName = trim($parts[2]);
 	$OperatorsName = trim($parts[3]);
 	$SeriesNumber = trim($parts[4]);
@@ -1904,10 +1930,7 @@ sub InsertEEG {
 		}
 	}
 	# check if the project and subject exist
-	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
-
-	# check if subject exists and get the rowID
-	#$sqlstring = "select b.subject_id, b.uid from subject_altuid a right join subjects b on a.subject_id = b.subject_id where a.altuid = '$PatientID' or a.altuid = sha1('$PatientID') or b.uid = '$PatientID' or b.uid = sha1('$PatientID')";
+	$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
 	WriteLog("SQL: [$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
@@ -1922,6 +1945,14 @@ sub InsertEEG {
 	else {
 		# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
 		return "Subject with ID [$PatientID] does not exist";
+	}
+	
+	if ($subjectRealUID eq "") {
+		WriteLog("ERROR: UID blank");
+		return "Error, UID blank";
+	}
+	else {
+		WriteLog("UID found [$subjectRealUID]");
 	}
 	
 	# get the generic projectRowID if the requested one is empty
@@ -2007,7 +2038,7 @@ sub InsertEEG {
 	WriteLog("$seriesRowID");
 	
 	# create data directory if it doesn't already exist
-	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/eeg";
+	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/" . lc($Modality);
 	WriteLog("$outdir");
 	#mkpath($outdir, {mode => 0777});
 	MakePath($outdir);
@@ -2017,9 +2048,8 @@ sub InsertEEG {
 	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$file -> $outdir/$file");
 	move($cfg{'incomingdir'} . "/$importID/$file","$outdir/$file");
 
-
 	# insert an import log record
-	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', 'EEG', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
+	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', '" . uc($Modality) . "', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
 	WriteLog("Inside InsertEEG() [$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 

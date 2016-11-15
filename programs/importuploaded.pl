@@ -81,7 +81,7 @@ else {
 	open $log, '> ', $logfilename;
 	my $x = DoImportUploaded();
 	close $log;
-	#if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
+	if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
 	print "Done. Deleting $lockfile\n";
 	unlink $lockfile;
 }
@@ -136,6 +136,8 @@ sub DoImportUploaded {
 			my $uploaddir;
 			
 			if ($datatype eq '') { $datatype = "dicom"; }
+			
+			WriteLog("Datatype for $importrequest_id is [$datatype]");
 			
 			if (($datatype eq "dicom") || ($datatype eq "parrec")) {
 				# ----- get list of files in directory -----
@@ -213,8 +215,8 @@ sub DoImportUploaded {
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 				}
 			}
-			elsif ($datatype eq 'eeg') {
-				WriteLog("Encountered eeg import");
+			elsif (($datatype eq 'eeg') || ($datatype eq 'et')) {
+				WriteLog("Encountered $datatype import");
 				# ----- get list of files in directory -----
 				$uploaddir = $cfg{'uploadeddir'} . "/$importrequest_id";
 				
@@ -278,6 +280,7 @@ sub DoImportUploaded {
 	}
 	else {
 		WriteLog("No rows in import_requests found");
+		$ret = 0;
 	}
 
 	# update the stop time
