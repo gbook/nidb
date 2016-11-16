@@ -540,7 +540,7 @@ sub SQLError {
 sub GetDirectorySize {
 	my ($dir) = @_;
 
-	my $size;
+	my $size = 0;
 	
 	# get the size of the unzipped data
 	my $systemstring = "du -sb $dir";

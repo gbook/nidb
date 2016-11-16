@@ -651,6 +651,12 @@ sub ProcessDataRequests {
 					$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir";
 					my $headerfile = "$fullexportdir/ndar.csv";
 
+					# find out if there are any files in the input directory
+					$systemstring = "find . -maxdepth 1 -type f | wc -l";
+					my $filecount = trim(`$systemstring 2>&1`);
+					WriteLog("Found [$filecount] files in [$indir]");
+					if ($filecount < 1) { WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data"); }
+					
 					# try to create the path
 					if (!-d $fullexportdir) {
 						WriteLog("Point 1");
@@ -1221,21 +1227,11 @@ sub ConvertDicom() {
 	my $systemstring;
 	chdir($indir);
 	switch ($req_filetype) {
-		case "nifti4d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext";
-		}
-		case "nifti3d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext";
-		}
-		case "analyze4d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext";
-		}
-		case "analyze3d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext";
-		}
-		else {
-			return(0,0,0,0,0,0);
-		}
+		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "analyze4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		case "analyze3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		else { return(0,0,0,0,0,0); }
 	}
 	
 	WriteLog("Systemstring: $systemstring");
@@ -1460,6 +1456,9 @@ sub WriteNDARSeries() {
 		my $seriesdesc = $row{'series_desc'};
 		my $boldreps = $row{'bold_reps'};
 	
+		# skip this if the GUID is blank... can't submit to NDAR/RDoC if its blank anyway
+		if (trim($guid) eq "") { WriteLog("GUID was blank, skipping writing this row"); return; }
+		
 		my $numdim;
 		if ($boldreps > 1) {
 			$numdim = 4;
@@ -1470,7 +1469,11 @@ sub WriteNDARSeries() {
 		if ($modality eq "mr") { $modality = "mri";}
 		$modality = uc($modality);
 		
-		if (($birthdate == "0001-01-01") || ($birthdate == "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
+		if ($imgrows < 1) { $imgrows = 1; }
+		if ($imgcols < 1) { $imgcols = 1; }
+		if ($imgslices < 1) { $imgslices = 1; }
+		
+		if (($birthdate eq "0001-01-01") || ($birthdate eq "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
 			$ageatscan = $studyageatscan*12;
 		}
 		
@@ -1490,6 +1493,14 @@ sub WriteNDARSeries() {
 		my $ProtocolName = $tags->{'ProtocolName'};
 		my $SequenceName = $tags->{'SequenceName'};
 
+		# clean up the tags
+		if (trim($Manufacturer) eq "") { $Manufacturer = "Unknown"; }
+		if (trim($PatientPosition) eq "") { $PatientPosition = "Unknown"; }
+		if (trim($SoftwareVersion) eq "") { $SoftwareVersion = "Unknown"; }
+		if (trim($PhotometricInterpretation) eq "") { $PhotometricInterpretation = "RGB"; }
+		if (trim($ManufacturersModelName) eq "") { $ManufacturersModelName = "Unknown"; }
+		if (trim($TransmitCoilName) eq "") { $TransmitCoilName = "Unknown"; }
+		
 		# figure out the scan type (T1,T2,DTI,fMRI)
 		my $scantype = "MR structural (T1)";
 		if (($boldreps > 1) || ($seriessequence =~ /epfid2d1/)) {

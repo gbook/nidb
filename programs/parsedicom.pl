@@ -163,6 +163,8 @@ sub DoParse {
 # ----------------------------------------------------------
 sub ParseDirectory {
 	my ($dir, $importRowID) = @_;
+
+	WriteLog("********** Working on directory [$dir] with importRowID [$importRowID] **********");
 	
 	my $useImportFields = 0;
 	my $importStatus = '';
@@ -369,11 +371,11 @@ sub ParseDirectory {
 			# delete the uploaded directory
 			WriteLog("Attempting to remove [$uploaddir]");
 			my $mode = (stat($uploaddir))[2];
-			WriteLog(sprintf "permissions are %04o\n", $mode &07777);
+			WriteLog(sprintf "permissions are %04o", $mode &07777);
 			if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*') && ($importRowID ne '')) {
 				#my $systemstring = "rm -rf $uploaddir";
 				my $systemstring = "cd $uploaddir; find . -type d -empty -exec rmdir {} \;";
-				WriteLog("We'll attempt to run this [$systemstring]");
+				WriteLog("We'll attempt to run this [$systemstring] to remove empty directories");
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 		}
@@ -478,7 +480,7 @@ sub ParseDICOMFile {
 sub InsertDICOM {
 	my ($importRowID, @files) = @_;
 
-	WriteLog("Inside InsertDICOM() with [" . scalar @files . "] files");
+	WriteLog("----- Inside InsertDICOM() with [" . scalar @files . "] files -----");
 	
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
@@ -1214,8 +1216,9 @@ sub InsertDICOM {
 	WriteLog("Done renaming files");
 	
 	# get the size of the dicom files and update the DB
-	my $dirsize;
+	my $dirsize = 0;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
+	WriteLog("Got size [$dirsize] and numfiles [$numfiles] for directory [$outdir]");
 	WriteLog("CWD: " . getcwd);
 	
 	# check if its an EPI sequence, but not a perfusion sequence
@@ -1243,7 +1246,7 @@ sub InsertDICOM {
 	
 	# update the database with the correct number of files/BOLD reps
 	if (lc($dbModality) eq "mr") {
-		$sqlstring = "update " . lc($dbModality) . "_series set series_size = $dirsize, numfiles = $numfiles, bold_reps = $boldreps where " . lc($dbModality) . "series_id = $seriesRowID";
+		$sqlstring = "update " . lc($dbModality) . "_series set series_size = '$dirsize', numfiles = '$numfiles', bold_reps = '$boldreps' where " . lc($dbModality) . "series_id = $seriesRowID";
 		WriteLog($sqlstring);
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
@@ -1299,7 +1302,7 @@ sub InsertDICOM {
 sub InsertParRec {
 	my ($file, $importRowID) = @_;
 	
-	WriteLog("In InsertParRec($file, $importRowID)");
+	WriteLog("----- In InsertParRec($file, $importRowID) -----");
 	#exit(0);
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
@@ -1790,7 +1793,7 @@ sub InsertParRec {
 sub InsertEEG {
 	my ($file, $importRowID, $Modality) = @_;
 	
-	WriteLog("In InsertEEG($file, $importRowID)...");
+	WriteLog("----- In InsertEEG($file, $importRowID) -----");
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
 	
@@ -2097,9 +2100,9 @@ sub CreateThumbnail {
 
 	# print the ImageMagick version
 	my $systemstring = "which convert";
-	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-	$systemstring = "convert --version";
-	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+	WriteLog("$systemstring (" . trim(`$systemstring 2>&1`) . ")");
+	#$systemstring = "convert --version";
+	#WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	
 	my $origDir = getcwd;
 	

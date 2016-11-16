@@ -495,28 +495,18 @@ sub ProcessPipelines() {
 										my $systemstring;
 										if ($depdir eq "subdir") {
 											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
-											#$systemstring = "cp -rl $deppath/$dependencyname $analysispath/";
-
-											if ($deplinktype eq "hardlink") {
-												$systemstring = "cp -aul $deppath/$dependencyname $analysispath/";
-											}
-											elsif ($deplinktype eq "softlink") {
-												$systemstring = "cp -aus $deppath/$dependencyname $analysispath/";
-											}
-											elsif ($deplinktype eq "regularcopy") {
-												$systemstring = "cp -au $deppath/$dependencyname $analysispath/";
+											switch ($deplinktype) {
+												case "hardlink" { $systemstring = "cp -aul $deppath/$dependencyname $analysispath/"; }
+												case "softlink" { $systemstring = "cp -aus $deppath/$dependencyname $analysispath/"; }
+												case "regularcopy" { $systemstring = "cp -au $deppath/$dependencyname $analysispath/"; }
 											}
 										}
 										else { # root dir
 											$setuplog .= WriteLog("Dependency will be copied to the root dir") . "\n";
-											if ($deplinktype eq "hardlink") {
-												$systemstring = "cp -aul $deppath/$dependencyname/* $analysispath/";
-											}
-											elsif ($deplinktype eq "softlink") {
-												$systemstring = "cp -aus $deppath/$dependencyname/* $analysispath/";
-											}
-											elsif ($deplinktype eq "regularcopy") {
-												$systemstring = "cp -au $deppath/$dependencyname/* $analysispath/";
+											switch ($deplinktype) {
+												case "hardlink" { $systemstring = "cp -aul $deppath/$dependencyname/* $analysispath/"; }
+												case "softlink" { $systemstring = "cp -aus $deppath/$dependencyname/* $analysispath/"; }
+												case "regularcopy" { $systemstring = "cp -au $deppath/$dependencyname/* $analysispath/"; }
 											}
 										}
 										# copy any dependencies
@@ -797,25 +787,17 @@ sub ProcessPipelines() {
 								# create hard link in the analysis directory
 								my $systemstring;
 								if ($dependencylevel == 1) {
-									if ($deplinktype eq "hardlink") {
-										$systemstring = "cp -aul $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
-									}
-									elsif ($deplinktype eq "softlink") {
-										$systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
-									}
-									elsif ($deplinktype eq "regularcopy") {
-										$systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									switch ($deplinktype) {
+										case "hardlink" { $systemstring = "cp -aul $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "softlink" { $systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "regularcopy" { $systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
 									}
 								}
 								else {
-									if ($deplinktype eq "hardlink") {
-										$systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
-									}
-									elsif ($deplinktype eq "softlink") {
-										$systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
-									}
-									elsif ($deplinktype eq "regularcopy") {
-										$systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum";
+									switch ($deplinktype) {
+										case "hardlink" { $systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "softlink" { $systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "regularcopy" { $systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
 									}
 								}
 								
@@ -1561,23 +1543,13 @@ sub GetData() {
 						$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
 						if ($imagetypes ne "''") { $sqlstring .= " and image_type in ($imagetypes)"; }
 						
-						if ($criteria eq 'first') {
-							$sqlstring .= " order by series_num asc limit 1";
-						}
-						elsif ($criteria eq 'last') {
-							$sqlstring .= " order by series_num desc limit 1";
-						}
-						elsif ($criteria eq 'largestsize') {
-							$sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1";
-						}
-						elsif ($criteria eq 'smallestsize') {
-							$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
-						}
-						elsif ($criteria eq 'usesizecriteria') {
-							$sqlstring .= " and numfiles $comparison '$num' order by series_num asc";
-						}
-						else {
-							$sqlstring .= " order by series_num asc";
+						switch ($criteria) {
+							case "first" { $sqlstring .= " order by series_num asc limit 1"; }
+							case "last" { $sqlstring .= " order by series_num desc limit 1"; }
+							case "largestsize" { $sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1"; }
+							case "smallestsize" { $sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1"; }
+							case "usesizecriteria" { $sqlstring .= " and numfiles $comparison '$num' order by series_num asc"; }
+							else { $sqlstring .= " order by series_num asc"; }
 						}
 						
 						$datalog .= "... at the end of the study level section, SQL [$sqlstring]\n";
@@ -1630,23 +1602,13 @@ sub GetData() {
 								#}
 								
 								# determine the ORDERing and LIMITs
-								if ($criteria eq 'first') {
-									$sqlstring .= " order by series_num asc limit 1";
-								}
-								elsif ($criteria eq 'last') {
-									$sqlstring .= " order by series_num desc limit 1";
-								}
-								elsif ($criteria eq 'largestsize') {
-									$sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1";
-								}
-								elsif ($criteria eq 'smallestsize') {
-									$sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1";
-								}
-								elsif ($criteria eq 'usesizecriteria') {
-									$sqlstring .= " and numfiles $comparison '$num' order by series_num asc";
-								}
-								else {
-									$sqlstring .= " order by series_num asc";
+								switch ($criteria) {
+									case "first" { $sqlstring .= " order by series_num asc limit 1"; }
+									case "last" { $sqlstring .= " order by series_num desc limit 1"; }
+									case "largestsize" { $sqlstring .= " order by series_size desc, numfiles desc, img_slices desc limit 1"; }
+									case "smallestsize" { $sqlstring .= " order by series_size asc, numfiles asc, img_slices asc limit 1"; }
+									case "usesizecriteria" { $sqlstring .= " and numfiles $comparison '$num' order by series_num asc"; }
+									else { $sqlstring .= " order by series_num asc"; }
 								}
 								
 								$datalog .= "... now searching for the data IN the nearest study\n";
@@ -2240,21 +2202,11 @@ sub ConvertDicom() {
 	my $systemstring;
 	chdir($indir);
 	switch ($req_filetype) {
-		case "nifti4d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext";
-		}
-		case "nifti3d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext";
-		}
-		case "analyze4d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext";
-		}
-		case "analyze3d" {
-			$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext";
-		}
-		else {
-			return(0,0,0,0,0,0);
-		}
+		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "analyze4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		case "analyze3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		else { return(0,0,0,0,0,0); }
 	}
 
 	#WriteLog(CompressText("$systemstring (" . `$systemstring 2>&1` . ")"));
