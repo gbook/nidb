@@ -464,6 +464,23 @@
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum";
 		return array($path, $uid, $studynum, $studyid, $subjectid);
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDataPathFromStudyID ------------- */
+	/* -------------------------------------------- */
+	function GetDataPathFromStudyID($id) {
+		$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		$subjectid = $row['subject_id'];
+		$studyid = $row['study_id'];
+		
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
+		return array($path, $uid, $studynum, $studyid, $subjectid);
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -1237,6 +1254,7 @@
 		$newuid = mysqli_real_escape_string($GLOBALS['linki'], $newuid);
 	
 		echo "<ol>";
+		echo "<li>Inside MoveStudyToSubject($studyid, $newuid)</li>";
 		
 		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
 		$sqlstring = "select a.uid, a.subject_id, b.enrollment_id, b.project_id, c.study_num, c.study_datetime from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
@@ -1254,7 +1272,7 @@
 		
 		if (($now - $studytime) < 86400) {
 			?>
-			<span class="staticmessage">This study was collected in the past 24 hours<br>The study may not be completely archived, so no changes can be made until 1 day after the study's start time</span>
+			<li><b style="color: red">This study was collected in the past 24 hours<br>The study may not be completely archived, so no changes can be made until 1 day after the study's start time</b>
 			<?
 			return;
 		}
@@ -1270,7 +1288,7 @@
 		$newsubjectid = $row['subject_id'];
 		
 		if ($newsubjectid == '') {
-			?><span class="staticmessage">The destination UID [<?=$newuid?>] was not found</span><?
+			?><li><b style="color: red">The destination UID [<?=$newuid?>] was not found</b><?
 			return;
 		}
 		
@@ -1311,17 +1329,26 @@
 		/* copy the data, don't move in case there is a problem */
 		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
 		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
-		$systemstring = "mv -v $oldpath $newpath 2>&1";
+		
+		$systemstring = "mkdir -pv $newpath 2>&1";
+		$copyresults = "[$systemstring] " . shell_exec($systemstring) . "\n";
+		
+		$systemstring = "mkdir -pv $oldpath 2>&1";
+		$copyresults .= "[$systemstring] " . shell_exec($systemstring) . "\n";
+		
 		if (!file_exists($oldpath)) {
-			?><span class="staticmessage">The original path [<?=$oldpath?>] does not exist</span><?
-			return;
+			?><li><b style="color: red">The original path [<?=$oldpath?>] does not exist</b><?
 		}
 		if (!file_exists($newpath)) {
-			?><span class="staticmessage">The new path [<?=$newpath?>] does not exist</span><?
-			return;
+			?><li><b style="color: red">The new path [<?=$newpath?>] does not exist</b><?
 		}
+		
+		//$systemstring = "mv -vuf $oldpath/* $newpath/ 2>&1";
 		echo "<li>Moving data within archive directory (may take a while): <tt>$systemstring</tt>";
-		$copyresults = shell_exec($systemstring);
+		$systemstring = "rsync -rtuv $oldpath/* $newpath 2>&1";
+		$copyresults .= "[$systemstring]" . shell_exec($systemstring) . "\n";
+		$systemstring = "rsync -rtuv $newpath/* $oldpath 2>&1";
+		$copyresults .= "[$systemstring]" . shell_exec($systemstring) . "\n";
 		echo "<pre><tt>$copyresults</tt></pre>";
 
 		$copyresults = mysqli_real_escape_string($GLOBALS['linki'], $copyresults);
@@ -1332,8 +1359,9 @@
 		echo "<li>Insert changelog [$sqlstring]<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
+		echo "<li><b style='color: red'>Study [$olduid$oldstudynum] moved to subject [$newuid]</b>";
+		
 		echo "</ol>";
-		?><div align="center"><span class="message">Study [<?=$olduid?><?=$oldstudynum?>] moved to subject [<?=$newuid?>]</span></div><br><br><?
 	}
 	
 	

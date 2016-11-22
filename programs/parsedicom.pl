@@ -986,8 +986,10 @@ sub InsertDICOM {
 	}
 	else {
 		$zsize = $numfiles;
-		my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'});
-		my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
+		my $NumberOfTemporalPositions = 0;
+		my $ImagesInAcquisition = 0;
+		$NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'});
+		$ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
 	}
 	# if any of the DICOM fields were populated, use those instead
 	if (($ImagesInAcquisition ne "") && ($ImagesInAcquisition > 0)) { $zsize = $ImagesInAcquisition; }
@@ -1895,7 +1897,7 @@ sub InsertEEG {
 	if ($SeriesDescription eq "") { $SeriesDescription = "Unknown"; }
 	if ($ProtocolName eq "") { $ProtocolName = "Unknown"; }
 	if ($OperatorsName eq "") { $OperatorsName = "Unknown"; }
-	if (($SeriesNumber eq "") || (!looks_like_number($SeriesNumber))) { $SeriesNumber = 0; }
+	if (($SeriesNumber eq "") || (!looks_like_number($SeriesNumber))) { $SeriesNumber = 1; }
 	if ($FileNumber eq "") { $FileNumber = 0; }
 	
 	WriteLog("After fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]");
@@ -1941,12 +1943,12 @@ sub InsertEEG {
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($row{'uid'});
 		if (trim($subjectRowID) eq '') {
-			# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
+			# subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload, so note this failure in the import_logs table
 			return "Subject with ID [$PatientID] or alternate IDs [$SQLIDs] does not exist";
 		}
 	}
 	else {
-		# subject doesn't already exist. Not creating new subjects as part of EEG upload, so note this failure in the import_logs table
+		# subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload, so note this failure in the import_logs table
 		return "Subject with ID [$PatientID] does not exist";
 	}
 	
@@ -2017,24 +2019,24 @@ sub InsertEEG {
 	}
 	
 	# ----- insert or update the series -----
-	$sqlstring = "select eegseries_id from eeg_series where study_id = $studyRowID and series_num = $SeriesNumber";
+	$sqlstring = "select " . lc($Modality) . "series_id from " . lc($Modality) . "_series where study_id = $studyRowID and series_num = $SeriesNumber";
 	WriteLog("[$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
-		$seriesRowID = $row{'eegseries_id'};
-		$sqlstring = "update eeg_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete' where eegseries_id = $seriesRowID";
+		$seriesRowID = $row{lc($Modality) . "series_id"};
+		$sqlstring = "update " . lc($Modality) . "_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_notes = '$importSeriesNotes' where " . lc($Modality) . "series_id = $seriesRowID";
 		WriteLog("[$sqlstring]");
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
-		$sqlstring = "insert into eeg_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_notes, series_status, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', '$importSeriesNotes', 'complete', 'parsedicom.pl')";
+		$sqlstring = "insert into " . lc($Modality) . "_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_notes, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', '$importSeriesNotes', 'parsedicom.pl')";
 		WriteLog("[$sqlstring]");
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
-		$IL_seriescreated = 0;
+		$IL_seriescreated = 1;
 	}
 		
 	# copy the file to the archive, update db info
@@ -2063,7 +2065,7 @@ sub InsertEEG {
 	# get the size of the files and update the DB
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
-	$sqlstring = "update eeg_series set series_size = $dirsize where eegseries_id = $seriesRowID";
+	$sqlstring = "update " . lc($Modality) . "_series set series_size = $dirsize where " . lc($Modality) . "series_id = $seriesRowID";
 	WriteLog("[$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
@@ -2089,6 +2091,8 @@ sub InsertEEG {
 	$systemstring = "cp -Rv $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
 	WriteLog("$systemstring (" . `$systemstring` . ")");
 	WriteLog("Finished copying to the backup directory");
+	
+	return "";
 }
 
 
@@ -2123,7 +2127,7 @@ sub CreateThumbnail {
 
 	if ($type eq "epi") {
 		if ($numdcmfiles < 256) {
-			my $systemstring;
+			my $systemstring = "";
 			if ($xdim == 384) {
 				$systemstring = "convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
@@ -2136,7 +2140,9 @@ sub CreateThumbnail {
 			if ($xdim == 658) {
 				$systemstring = "convert -crop 94x94+376+94\\! -fill white -pointsize 10 -annotate +75+92 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
 			}
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			if ($systemstring ne "") {
+				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			}
 		}
 		else {
 			WriteLog("EPI sequence contains $numdcmfiles volumes. Not going to create the animated gif");

@@ -446,7 +446,7 @@
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
 		$altuids = explode(',',$altuid);
 
-		PrintVariable($enrollgroup);
+		//PrintVariable($enrollgroup);
 		
 		$sqlstring = "start transaction";
 		echo "<li><b>Starting transaction</b> [$sqlstring]";
@@ -468,7 +468,7 @@
 			echo "<ol>";
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyid = $row['study_id'];
-				echo "<li>Running MoveStudyToSubject($studyid, $newuid)<br>";
+				echo "<li>Running MoveStudyToSubject($studyid, $newuid)";
 				MoveStudyToSubject($studyid, $newuid);
 			}
 			echo "</ol>";
@@ -477,6 +477,27 @@
 			$sqlstring = "update subjects set isactive = 0 where subject_id = $oldid";
 			echo "<li>Deleting old subject [$oldid] [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		echo "</ol>";
+		
+		/* make sure the data directories for all studies exist that are supposed to exist */
+		$sqlstring = "select b.study_id, b.study_num from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where a.subject_id = $selectedid and b.study_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		echo "<li>Making sure all study directories exist";
+		echo "<ol>";
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$studydir = $GLOBALS['cfg']['archivedir'] . "/$newuid/$studynum";
+			if (!file_exists($studydir)) {
+				$systemstring = "mkdir -pv $studydir";
+				$output = shell_exec($systemstring);
+				echo "<li>Creating study directory [$studydir] [$output]";
+				if ($output != "") { echo "<b style='color: red'>I had to create this directory [$studydir] which should have already existed... so something was wrong. You will need to manually find and copy data into this directory</b>"; }
+			}
+			else {
+				echo "<li>Study directory [$studydir] already exists. No need to create it";
+			}
 		}
 		echo "</ol>";
 		

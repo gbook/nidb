@@ -655,7 +655,11 @@ sub ProcessDataRequests {
 					$systemstring = "find . -maxdepth 1 -type f | wc -l";
 					my $filecount = trim(`$systemstring 2>&1`);
 					WriteLog("Found [$filecount] files in [$indir]");
-					if ($filecount < 1) { WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data"); }
+					if ($filecount < 1) {
+						$newstatus = "problem";
+						$results = "[$indir] was empty. No files available to export";
+						WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data");
+					}
 					
 					# try to create the path
 					if (!-d $fullexportdir) {

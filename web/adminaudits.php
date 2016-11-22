@@ -40,16 +40,17 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$orderby = GetVariable("orderby");
+	$problemtype = GetVariable("problemtype");
 	
 	/* determine action */
 	switch ($action) {
 		case 'displaylog':
-			DisplayMenu();
-			DisplayAudit($orderby);
+			DisplayMenu($problemtype);
+			DisplayAudit($orderby, $problemtype);
 			break;
 		default:
-			DisplayMenu();
-			DisplayAudit($orderby);
+			DisplayMenu($problemtype);
+			DisplayAudit($orderby, $problemtype);
 	}
 	
 	
@@ -58,10 +59,23 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayMenu() {
+	function DisplayMenu($p) {
 		$urllist['Administration'] = "adminaudits.php";
 		$urllist['Audits'] = "adminaudits.php";
 		NavigationBar("Admin", $urllist);
+		
+		?><b>Filter by problem type:</b> <a href="adminaudits.php?problemtype=">All</a><?
+		$sqlstring = "select distinct(problem) from audit_results where problem <> '' order by problem";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$problemtype = $row['problem'];
+			if ($p == $problemtype) {
+				?> | <a href="adminaudits.php?problemtype=<?=$problemtype?>" style="border: 1px solid orange; border-radius: 3px; padding: 3px"><?=$problemtype?></a><?
+			}
+			else {
+				?> | <a href="adminaudits.php?problemtype=<?=$problemtype?>"><?=$problemtype?></a><?
+			}
+		}
 		
 		?>
 		<br><br>
@@ -72,13 +86,16 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAudit ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayAudit($orderby) {
-		if ($orderby == "") {
-			$sqlstring = "select * from audit_results order by subject_uid";
+	function DisplayAudit($orderby, $problemtype) {
+		if ($problemtype != "") {
+			if ($orderby == "") { $sqlstring = "select * from audit_results where problem = '$problemtype' order by subject_uid"; }
+			else { $sqlstring = "select * from audit_results where problem = '$problemtype' order by $orderby"; }
 		}
 		else {
-			$sqlstring = "select * from audit_results order by $orderby";
+			if ($orderby == "") { $sqlstring = "select * from audit_results order by subject_uid"; }
+			else { $sqlstring = "select * from audit_results order by $orderby"; }
 		}
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		PrintSQLTable($result,"adminaudits.php?action=displaylog",$orderby,8);

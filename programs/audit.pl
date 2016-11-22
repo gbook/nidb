@@ -58,6 +58,7 @@ our $log;							# logfile handle created for this instance of the program
 our $numinstances = 1;				# number of times this program can be run concurrently
 # debugging
 our $debug = 0;
+our $audittype = "quick";			# 'quick' or 'full'
 
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------
@@ -100,6 +101,7 @@ sub Audit() {
 	
 	# check if this module should be running now or not
 	if (!ModuleCheckIfActive($scriptname, $db)) {
+		print "Module is currently not enabled\n";
 		WriteLog("Not supposed to be running right now");
 		SetModuleStopped();
 		return 0;
@@ -108,12 +110,12 @@ sub Audit() {
 	# ********** 1) check if entries in the database exist in the filesystem **********
 	# get new audit number
 	my $sqlstring = "select max(audit_num) 'newauditnum' from audit_results";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $auditnum = $row{'newauditnum'} + 1;
 	
 	$sqlstring = "select * from subjects order by uid";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my $numSubjects = $result->numrows;
 	my $ii = 1;
 	while (my %row = $result->fetchhash) {
@@ -126,7 +128,7 @@ sub Audit() {
 
 		my @altuids;
 		my $sqlstring1 = "select altuid from subject_altuid where subject_id = '$SubjectID' order by altuid";
-		my $result1 = $db->query($sqlstring1) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring1);
+		my $result1 = SQLQuery($sqlstring1, __FILE__, __LINE__);
 		while (my %row1 = $result1->fetchhash) {
 			push @altuids, $row1{'altuid'};
 		}
@@ -139,25 +141,25 @@ sub Audit() {
 		if (-d $subjectdir) {
 			# get list of studies for this subject
 			my $sqlstringA = "select * from enrollment where subject_id = $SubjectID";
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			while (my %rowA = $resultA->fetchhash) {
 				my $EnrollmentID = $rowA{'enrollment_id'};
 				my $ProjectID = $rowA{'project_id'};
 				
 				# check if the project ID is valid
 				my $sqlstringB = "select count(*) 'count' from projects where project_id = '$ProjectID'";
-				my $resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+				my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 				my %rowB = $resultB->fetchhash;
 				if ($rowB{'count'} < 1) {
 					print "ProjectID [$ProjectID] does not exist\n";
 					my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, subject_uid, audit_date) values ('$auditnum', 'dbtofile','invalidprojectid', '$SubjectID', '$EnrollmentID', '$ProjectID','$uid', now())";
-					my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 				}
 				
 				# get list of studies for this enrollment
 				$sqlstringB = "select * from studies where enrollment_id = $EnrollmentID order by study_num+1 asc";
 				#print "[$sqlstringB]\n";
-				$resultB = $db->query($sqlstringB) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringB);
+				$resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 				while (my %rowB = $resultB->fetchhash) {
 					my $StudyID = $rowB{'study_id'} . '';
 					my $StudyAltID = $rowB{'study_alternateid'} . '';
@@ -168,7 +170,7 @@ sub Audit() {
 					if (trim($modality) eq '') {
 						print "Blank modality\n";
 						my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, study_num, subject_uid, audit_date) values ('$auditnum', 'dbtofile','invalidprojectid', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$StudyNum','$uid', now())";
-						my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+						my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					}
 					
 					# check if the study actually exists on disk
@@ -176,7 +178,7 @@ sub Audit() {
 					if (-d $studydir) {
 						# get list of series
 						my $sqlstringC = "select * from " . lc($modality) . "_series where study_id = $StudyID";
-						my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+						my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 						while (my %rowC = $resultC->fetchhash) {
 							my $SeriesID = $rowC{lc($modality) . 'series_id'} . '';
 							my $SeriesDateTime = $rowC{'series_datetime'} . '';
@@ -201,13 +203,24 @@ sub Audit() {
 									if ($DataType eq "dicom") {
 										my @files = <$seriesdatadir/*.dcm>;
 										my $filecount = @files;
-										if ($filecount != $NumFiles) {
+										if ($filecount < 1) {
+											print "$uid-$StudyNum-$SeriesNum-$DataType missing all files\n";
+											my $sqlstringD = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, modality, series_id, subject_uid, study_num, series_num, data_type, file_numfiles, db_numfiles, audit_date) values ('$auditnum', 'dbtofile','emptyseries', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$modality', '$SeriesID','$uid', '$StudyNum', '$SeriesNum', '$DataType', '$filecount', '$NumFiles', now())";
+											my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
+										}
+										elsif ($filecount != $NumFiles) {
 											print "$uid-$StudyNum-$SeriesNum-$DataType file number mismatch\n";
 											my $sqlstringD = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, modality, series_id, subject_uid, study_num, series_num, data_type, file_numfiles, db_numfiles, audit_date) values ('$auditnum', 'dbtofile','filecountmismatch', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$modality', '$SeriesID','$uid', '$StudyNum', '$SeriesNum', '$DataType', '$filecount', '$NumFiles', now())";
-											my $resultD = $db->query($sqlstringD) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringD);
+											my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 										}
 										
 										# check all of the DICOM files in the directory and see if they match the database
+										if ($audittype eq "quick") {
+											# only look at one file per series
+											my $f = $files[0];
+											@files = ();
+											push(@files, $f);
+										}
 										my %mm;
 										foreach my $f (@files) {
 
@@ -297,30 +310,30 @@ sub Audit() {
 										foreach my $mismatch (keys %mm) {
 											
 											my $count = $mm{$mismatch}{'count'};
-											my $FileString = $mm{$mismatch}{'filestring'};
-											my $DBString = $mm{$mismatch}{'dbstring'};
+											my $FileString = EscapeMySQLString($mm{$mismatch}{'filestring'});
+											my $DBString = EscapeMySQLString($mm{$mismatch}{'dbstring'});
 											my $sqlstringD = "insert into audit_results (audit_num, compare_direction, problem, mismatch, mismatchcount, subject_id, enrollment_id, project_id, study_id, modality, series_id, subject_uid, study_num, series_num, data_type, file_string, db_string, audit_date) values ('$auditnum', 'dbtofile','dicommismatch', '$mismatch', '$count', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$modality', '$SeriesID','$uid', '$StudyNum', '$SeriesNum', '$DataType', '$FileString', '$DBString', now())";
-											my $resultD = $db->query($sqlstringD) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringD);
+											my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 										}
 									}
 								}
 								else {
 									print "$uid-$StudyNum-$SeriesNum-$DataType does not exist\n";
 									my $sqlstringD = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, modality, series_id, subject_uid, study_num, series_num, data_type, audit_date) values ('$auditnum', 'dbtofile','seriesdatatypemissing', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$modality', '$SeriesID','$uid', '$StudyNum', '$SeriesNum', '$DataType', now())";
-									my $resultD = $db->query($sqlstringD) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringD);
+									my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 								}
 							}
 							else {
 								print "$uid-$StudyNum-$SeriesNum does not exist\n";
 								my $sqlstringD = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, modality, series_id, subject_uid, study_num, series_num, audit_date) values ('$auditnum', 'dbtofile','seriesmissing', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$modality', '$SeriesID','$uid', '$StudyNum', '$SeriesNum', now())";
-								my $resultD = $db->query($sqlstringD) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringD);
+								my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 							}
 						}
 					}
 					else {
 						print "$uid-$StudyNum does not exist\n";
 						my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, enrollment_id, project_id, study_id, study_num, subject_uid, audit_date) values ('$auditnum', 'dbtofile','studymissing', '$SubjectID', '$EnrollmentID', '$ProjectID', '$StudyID', '$StudyNum','$uid', now())";
-						my $resultC = $db->query($sqlstringC) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringC);
+						my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					}
 				}
 			}
@@ -328,7 +341,7 @@ sub Audit() {
 		else {
 			print "$uid does not exist\n";
 			my $sqlstringA = "insert into audit_results (audit_num, compare_direction, problem, subject_uid, audit_date) values ('$auditnum', 'dbtofile','subjectmissing','$uid', now())";
-			my $resultA = $db->query($sqlstringA) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 		}
 		$ii++;
 	}
@@ -346,9 +359,14 @@ sub FlipName {
 	
 	my @parts = split(/\^/,$n);
 	
-	my $ret = $parts[1] . '^' . $parts[0];
-	print " [$n -> $ret] ";
-	return $ret;
+	if (scalar @parts > 1) {
+		my $ret = $parts[1] . '^' . $parts[0];
+		print " [$n -> $ret] ";
+		return $ret;
+	}
+	else {
+		return $n;
+	}
 }
 
 
