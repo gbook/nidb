@@ -1784,7 +1784,7 @@
 								<table class="subdownload" width="100%">
 									<tr>
 										<td class="label" style="width: 200px; text-align: left; vertical-align: top;">
-											<?=$project_name?> (<?=$costcenter?>)<br><br>
+											<a href="projects.php?id=<?=$projectid?>"><?=$project_name?> (<?=$costcenter?>)</a><br><br>
 											<div style="font-size:10pt; font-weight: normal;">
 											Enrolled: <a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a><br>
 											<? if ($phiaccess) { ?>
@@ -1885,6 +1885,9 @@
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
+												<form action="studies.php" method="post">
+												<input type="hidden" name="subjectid" value="<?=$id?>">
+												<input type="hidden" name="action" value="mergestudies">
 												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
 													<thead>
 														<th>#</th>
@@ -1897,6 +1900,7 @@
 														<th>Study ID</th>
 														<th>Visit</th>
 														<th>Rad Read</th>
+														<? if ($GLOBALS['isadmin']) { ?><th><span class="tiny">Merge</span></th><? } ?>
 													</thead>
 													<tbody>
 													<?
@@ -1932,11 +1936,18 @@
 															<td><tt><?=$uid?><?=$study_num?></tt></td>
 															<td><?=$study_type?></td>
 															<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
+															<? if ($GLOBALS['isadmin']) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>
 														</tr>
 														<?
 													}
 													?>
+													<? if ($GLOBALS['isadmin']) { ?>
+													<tr>
+														<td colspan="11" align="right"><input type="submit" value="Merge" style="font-size:9pt"></td>
+													</tr>
+													<? } ?>
 												</table>
+												</form>
 												<?
 												}
 												else {

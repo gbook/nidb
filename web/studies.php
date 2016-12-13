@@ -36,6 +36,8 @@
 	require "includes.php";
 	require "menu.php";
 	require "nanodicom.php";
+
+	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -80,6 +82,7 @@
 	$search_type = GetVariable("search_type");
 	$search_swversion = GetVariable("search_swversion");
 	$imgperline = GetVariable("imgperline");
+	$studyids = GetVariable("studyids");
 
 	/* determine action */
 	switch($action) {
@@ -89,6 +92,9 @@
 		case 'update':
 			UpdateStudy($id, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
 			DisplayStudy($id, 0, 0, '', '', '', '','','','', false);
+			break;
+		case 'mergestudies':
+			MergeStudies($subjectid, $studyids);
 			break;
 		case 'movestudytosubject':
 			MoveStudyToSubject($studyid, $newuid);
@@ -218,6 +224,98 @@
 		?><div align="center"><span class="message">Series Added</span></div><br><br><?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- AddGenericSeries ------------------- */
+	/* -------------------------------------------- */
+	function MergeStudies($subjectid, $studyids) {
+		$subjectid = mysqli_real_escape_string($GLOBALS['linki'], $subjectid);
+		$studyids = mysqli_real_escape_array($studyids);
+
+		$sqlstring = "select uid from subjects where subject_id = $subjectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		
+		$urllist[$uid] = "subjects.php?id=$subjectid";
+		NavigationBar("$uid", $urllist);
+		
+		if (!is_numeric($subjectid)) {
+			echo "Invalid subject ID [$subjectid]";
+		}
+		
+		$lowestStudyNum = 0;
+		$newstudyid = 0;
+		$basemodality = "";
+		foreach ($studyids as $studyid) {
+			if (is_numeric($studyid)) {
+				list($path, $uid, $studynum, $studyid, $subjectid, $modality) = GetDataPathFromStudyID($studyid);
+				
+				/* get the lowest study number */
+				if ($lowestStudyNum == 0) {
+					$lowestStudyNum = $studynum;
+					$newstudyid = $studyid;
+				}
+				else {
+					if ($studynum < $lowestStudyNum) {
+						$lowestStudyNum = $studynum;
+						$newstudyid = $studyid;
+					}
+				}
+				
+				/* check if the modalities are the same */
+				if ($basemodality == "") {
+					$basemodality = $modality;
+				}
+				if ($basemodality != $modality) {
+					echo "Study modalities do not all match. You can't merge studies with different modalities<br>";
+					return;
+				}
+				
+			}
+		}
+		
+		$basemodality = strtolower($basemodality);
+		
+		/* get largest series number from the new study */
+		$sqlstring = "select max(series_num) 'maxseries' from $basemodality"."_series where study_id = $newstudyid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$maxseries = $row['maxseries'];
+		
+		echo "<b>Moving all studies to study ID [$newstudyid] Num [$lowestStudyNum]. Moving data into [" . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum]</b><br>";
+		
+		echo "<ol>";
+		/* step 2 - Move all database series to the new study */
+		$newseries = $maxseries + 1;
+		foreach ($studyids as $studyid) {
+			if ((is_numeric($studyid)) && ($studyid != $newstudyid)) {
+				list($studypath, $uid, $studynum, $studyid, $subjectid, $modality) = GetDataPathFromStudyID($studyid);
+				$modality = strtolower($modality);
+
+				$sqlstring = "select * from $modality"."_series where study_id = $studyid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$seriesid = $row[$modality."series_id"];
+				
+					list($seriespath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $seriespath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
+					echo "<li>Moving data [<tt style='color:darkred'>$systemstring</tt>]";
+					echo shell_exec($systemstring);
+
+					$sqlstring = "update $modality"."_series set study_id = $newstudyid, series_num = $newseries where $modality"."series_id = $seriesid";
+					echo "<li>Changing database entry for <b>series</b> [$sqlstring]";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$newseries++;
+				}
+				$sqlstring = "delete from studies where study_id = $studyid";
+				echo "<li>Deleting database entry for <b>study</b> [$sqlstring]";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+		echo "</ol>";
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- HideMRSeries ----------------------- */

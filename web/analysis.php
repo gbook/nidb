@@ -513,7 +513,7 @@
 					<th data-sort="string-ins">Hostname</th>
 					<th>Setup time<br><span class="tiny">completed date</span></th>
 					<th>Cluster time<br><span class="tiny">completed date</span></th>
-					<th>Operations<br><input type="checkbox" id="analysesall"></th>
+					<th>Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
 			</thead>
 			<tbody>

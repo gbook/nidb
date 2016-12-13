@@ -477,9 +477,10 @@
 		$studynum = $row['study_num'];
 		$subjectid = $row['subject_id'];
 		$studyid = $row['study_id'];
+		$modality = $row['study_modality'];
 		
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $studyid, $subjectid);
+		return array($path, $uid, $studynum, $studyid, $subjectid, $modality);
 	}
 	
 	
