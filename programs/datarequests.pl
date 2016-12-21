@@ -695,7 +695,7 @@ sub ProcessDataRequests {
 						if (-d $indir) {
 							# zip the data to the out directory
 							my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
-							$systemstring = "zip -jrq $zipfile $tmpdir";
+							$systemstring = "zip -jrq1 $zipfile $tmpdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							WriteLog("Done zipping image files...");
 							
@@ -703,7 +703,7 @@ sub ProcessDataRequests {
 							my $behdesc;
 							if ($numfilesbeh > 0) {
 								$behzipfile = "$uid-$study_num-$series_num-beh.zip";
-								$systemstring = "zip -jrq $fullexportdir/$behzipfile $behindir";
+								$systemstring = "zip -jrq1 $fullexportdir/$behzipfile $behindir";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 								WriteLog("Done zipping beh files...");
 								$behdesc = "Behavioral/design data file";
@@ -996,7 +996,7 @@ sub SendToRemoteFTP() {
 	}
 	
 	my $zipfile = "$tmpdir/$newseriesnum.zip";
-	$systemstring = "zip -j $zipfile $tmpdir/*";
+	$systemstring = "zip -1j $zipfile $tmpdir/*";
 	WriteLog(`$systemstring 2>&1`);
 
 	chdir($tmpdir);
@@ -1541,6 +1541,11 @@ sub WriteNDARSeries() {
 			if (($seriesprotocol eq '1SPGender') || ($seriesprotocol eq '2SPGender') || ($seriesprotocol eq '3SPGender')) { $expid = 114; }
 			if (($seriesprotocol eq '1HNumber') || ($seriesprotocol eq '2HNumber') || ($seriesprotocol eq '3HNumber')) { $expid = 113; }
 			if (($seriesprotocol eq '1HPain') || ($seriesprotocol eq '2HPain') || ($seriesprotocol eq '3HPain')) { $expid = 113; }
+			
+			if ((lc($seriesprotocol) eq 'gating') || (lc($seriesprotocol) eq 'gating2') || (lc($seriesprotocol) eq 'gating3')) { $expid = 530; }
+			if ((lc($seriesprotocol) eq 'resteyesopen') || (lc($seriesprotocol) eq 'rest') || (lc($seriesprotocol) eq 'rest - eyes open')) { $expid = 528; }
+			if ((lc($seriesprotocol) eq 'resteyesclosed') || (lc($seriesprotocol) eq 'rest - eyes closed')) { $expid = 556; }
+			if ((lc($seriesprotocol) eq 'oddball') || (lc($seriesprotocol) eq 'oddball - beh data')) { $expid = 529; }
 			
 			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,,,$expid,\"$seriesnotes\",,,,,$imagefile,,,,,,,,,\n";
 		}

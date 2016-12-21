@@ -150,6 +150,7 @@ sub ProcessPipelines() {
 		my $tmpdir = $row{'pipeline_tmpdir'};
 		my $clustertype = $row{'pipeline_clustertype'};
 		my $pipelinequeue = $row{'pipeline_queue'};
+		my $pipelinedatacopymethod = $row{'pipeline_datacopymethod'};
 		my $pipelinesubmithost;
 		if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
 		else { $pipelinesubmithost = $row{'pipeline_submithost'}; }
@@ -1281,6 +1282,7 @@ sub GetUIDStudyNumListByGroup() {
 # ----------------------------------------------------------
 sub GetData() {
 	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, $pipelinedep, @datadef) = @_;
+	WriteLog("Inside GetData($analysispath)");
 	
 	# connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1288,13 +1290,27 @@ sub GetData() {
 	my $numdownloaded = 0;
 	my $datalog = "";
 	my $datareport = "";
-	WriteLog("Inside GetData($analysispath)");
-
+	
+	# get pipeline information, for data copying preferences
+	my $sqlstring = "select * from pipelines where pipeline_id = $pid";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	my %row = $result->fetchhash;
+	my $modality = $row{'study_modality'};
+	my $clustertype = $row{'pipeline_clustertype'};
+	my $pipelinequeue = $row{'pipeline_queue'};
+	my $pipelinedatacopymethod = $row{'pipeline_datacopymethod'};
+	my $pipelinesubmithost;
+	if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
+	else { $pipelinesubmithost = $row{'pipeline_submithost'}; }
+	my $clusteruser;
+	if ($row{'pipeline_clusteruser'} eq "") { $clusteruser = $cfg{'clusteruser'}; }
+	else { $clusteruser = $row{'pipeline_clusteruser'}; }
+	
 	InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', 'Checking for data');
 	
 	# get list of series for this study
-	my $sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
-	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	$sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		WriteLog("Found " . $result->numrows . " studies matching studyid [$studyid]");
 		$datalog .= "===== Found " . $result->numrows . " studies matching studyid [$studyid] =====\n";
@@ -1744,8 +1760,15 @@ sub GetData() {
 							
 							# output the correct file type
 							if (($dataformat eq "dicom") || (($datatype ne "dicom") && ($datatype ne "parrec"))) {
-								$systemstring = "cp -v $indir/* $newanalysispath";
-								$datalog .= "    Running [$systemstring]\n";
+								if ($pipelinedatacopymethod eq "nfs") {
+									$systemstring = "cp -v $indir/* $newanalysispath";
+								}
+								else {
+									$systemstring = "scp $indir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+								}
+
+								WriteLog("Copying data using command (DICOM) [$systemstring] output [" . `$systemstring 2>&1` . "]");
+								$datalog .= "    Copying data using command [$systemstring]\n";
 								`$systemstring 2>&1`;
 							}
 							else {
@@ -1756,9 +1779,14 @@ sub GetData() {
 								$datalog .= "    Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)\n";
 								ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype);
 								
-								$systemstring = "cp -v $tmpdir/* $newanalysispath";
-								$datalog .= "    Running [$systemstring]\n";
-								`$systemstring 2>&1`;
+								if ($pipelinedatacopymethod eq "nfs") {
+									$systemstring = "cp -v $tmpdir/* $newanalysispath";
+								}
+								else {
+									$systemstring = "scp $tmpdir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+								}
+								$datalog .= "    Copying data using command [$systemstring]\n";
+								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [" . `$systemstring 2>&1` . "]");
 								
 								WriteLog("Removing temp directory [$tmpdir]");
 								$datalog .= "    Removing temp directory [$tmpdir]\n";
