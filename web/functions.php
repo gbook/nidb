@@ -1347,9 +1347,9 @@
 		//$systemstring = "mv -vuf $oldpath/* $newpath/ 2>&1";
 		echo "<li>Moving data within archive directory (may take a while): <tt>$systemstring</tt>";
 		$systemstring = "rsync -rtuv $oldpath/* $newpath 2>&1";
-		$copyresults .= "[$systemstring]" . shell_exec($systemstring) . "\n";
+		$copyresults .= "[Running $systemstring] " . shell_exec($systemstring) . "\n";
 		$systemstring = "rsync -rtuv $newpath/* $oldpath 2>&1";
-		$copyresults .= "[$systemstring]" . shell_exec($systemstring) . "\n";
+		$copyresults .= "[Running $systemstring] " . shell_exec($systemstring) . "\n";
 		echo "<pre><tt>$copyresults</tt></pre>";
 
 		$copyresults = mysqli_real_escape_string($GLOBALS['linki'], $copyresults);

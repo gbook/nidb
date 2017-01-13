@@ -1760,11 +1760,11 @@ sub GetData() {
 							
 							# output the correct file type
 							if (($dataformat eq "dicom") || (($datatype ne "dicom") && ($datatype ne "parrec"))) {
-								if ($pipelinedatacopymethod eq "nfs") {
-									$systemstring = "cp -v $indir/* $newanalysispath";
+								if ($pipelinedatacopymethod eq "scp") {
+									$systemstring = "scp $indir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
 								}
 								else {
-									$systemstring = "scp $indir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+									$systemstring = "cp -v $indir/* $newanalysispath";
 								}
 
 								WriteLog("Copying data using command (DICOM) [$systemstring] output [" . `$systemstring 2>&1` . "]");
@@ -1779,11 +1779,11 @@ sub GetData() {
 								$datalog .= "    Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)\n";
 								ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype);
 								
-								if ($pipelinedatacopymethod eq "nfs") {
-									$systemstring = "cp -v $tmpdir/* $newanalysispath";
+								if ($pipelinedatacopymethod eq "scp") {
+									$systemstring = "scp $tmpdir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
 								}
 								else {
-									$systemstring = "scp $tmpdir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+									$systemstring = "cp -v $tmpdir/* $newanalysispath";
 								}
 								$datalog .= "    Copying data using command [$systemstring]\n";
 								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [" . `$systemstring 2>&1` . "]");

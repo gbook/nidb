@@ -1477,9 +1477,12 @@ sub WriteNDARSeries() {
 		if ($imgcols < 1) { $imgcols = 1; }
 		if ($imgslices < 1) { $imgslices = 1; }
 		
-		if (($birthdate eq "0001-01-01") || ($birthdate eq "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
+		if (($studyageatscan > 0) && ($studyageatscan < 120)) {
 			$ageatscan = $studyageatscan*12;
 		}
+		#if (($birthdate eq "0001-01-01") || ($birthdate eq "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
+		#	$ageatscan = $studyageatscan*12;
+		#}
 		
 		# get some DICOM specific tags from the first file in the series
 		chdir($indir);
@@ -1532,10 +1535,9 @@ sub WriteNDARSeries() {
 		open(F,">> $file");
 		
 		if ($modality eq "MRI") {
-			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Seconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes\n";
+			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,$seriestr,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes,Yes\n";
 		}
-		if ($modality eq "EEG") {
-			#print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,\"$seriesnotes\",,,,,,,,,,,,$imagefile,,,\n";
+		else {
 			my $expid = 115;
 			if (($seriesprotocol eq '1SPMain') || ($seriesprotocol eq '2SPMain') || ($seriesprotocol eq '3SPMain')) { $expid = 114; }
 			if (($seriesprotocol eq '1SPGender') || ($seriesprotocol eq '2SPGender') || ($seriesprotocol eq '3SPGender')) { $expid = 114; }
