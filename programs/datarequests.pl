@@ -1062,7 +1062,6 @@ sub Anonymize() {
 			if ($anon == 1) {
 				# remove ReferringPhysicianName
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
-				WriteLog("Anonymizing (level 1) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
@@ -1146,7 +1145,11 @@ sub Anonymize() {
 				$s .= " --replace 40,a123='Anonymous'"; # PersonName
 				$s .= " -o $File::Find::name;";
 				#WriteLog("Anonymizing (level 2 - FULL) $File::Find::name");
-				push(@systemstrings,$s);
+				
+				my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; cd $cfg{'scriptdir'}/DicomAnonymizer; ./DicomAnonymizer.sh 1 1 1 1 1 1 $File::Find::name";
+				WriteLog("Anonymizing (full) $File::Find::name");
+				
+				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
 			if ($anon == 3) {
@@ -1197,7 +1200,7 @@ sub ThreadedSystemCall {
 	
 	my $starttime = time;
 	`$systemstring 2>&1`;
-	#WriteLog("ThreadedSystemCall output: " . `$systemstring 2>&1`);
+	WriteLog("ThreadedSystemCall [$systemstring] output: " . `$systemstring 2>&1`);
 	my $endtime = time;
 	
 	return $endtime - $starttime;
@@ -1413,11 +1416,13 @@ sub WriteNDARHeader() {
 		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week,slice_timing,bvek_bval_files\n";
 	}
 	if (lc($modality) eq 'eeg') {
-	
 		print F "eeg_sub_files,1\n";
 		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,capused,ofc,experiment_id,experiment_notes,experiment_terminated,experiment_validity,data_behavioralperformance_acc,data_behavioralperformance_rt,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type,data_includedtrials,data_validity\n";
 	}
-	
+	if (lc($modality) eq 'et') {
+		print F "et_subject_experiment,1\n";
+		print F "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n"
+	}
 	close(F);
 }
 
@@ -1537,8 +1542,9 @@ sub WriteNDARSeries() {
 		if ($modality eq "MRI") {
 			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,$seriestr,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes,Yes\n";
 		}
-		else {
-			my $expid = 115;
+		elsif ($modality eq "EEG") {
+			my $expid = 0;
+			if (($seriesprotocol eq 'domino') || ($seriesprotocol eq 'domino') || ($seriesprotocol eq 'domino 10')) { $expid = 115; }
 			if (($seriesprotocol eq '1SPMain') || ($seriesprotocol eq '2SPMain') || ($seriesprotocol eq '3SPMain')) { $expid = 114; }
 			if (($seriesprotocol eq '1SPGender') || ($seriesprotocol eq '2SPGender') || ($seriesprotocol eq '3SPGender')) { $expid = 114; }
 			if (($seriesprotocol eq '1HNumber') || ($seriesprotocol eq '2HNumber') || ($seriesprotocol eq '3HNumber')) { $expid = 113; }
@@ -1550,6 +1556,10 @@ sub WriteNDARSeries() {
 			if ((lc($seriesprotocol) eq 'oddball') || (lc($seriesprotocol) eq 'oddball - beh data')) { $expid = 529; }
 			
 			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,,,$expid,\"$seriesnotes\",,,,,$imagefile,,,,,,,,,\n";
+		}
+		elsif ($modality eq "ET") {
+			my $expid = 0;
+			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,Unknown,$expid,$seriesprotocol,,\"$seriesnotes\",,,,$imagefile,Eyetracking,,,,,,\n";
 		}
 		close(F);
 	}
