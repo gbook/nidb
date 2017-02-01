@@ -174,7 +174,7 @@
 	/* ------- DisplayProjectForm ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectForm($type, $id) {
-	
+
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$sqlstring = "select * from projects where project_id = $id";
@@ -195,6 +195,9 @@
 			$submitbuttonlabel = "Update";
 		}
 		else {
+                        echo "<br>admin is $admin and pi is $pi </br>";
+                        echo "<br>userid is $userid </br>";
+
 			$formaction = "add";
 			$formtitle = "Add new project";
 			$submitbuttonlabel = "Add";

@@ -36,6 +36,7 @@
 	require "functions.php";
 	require "includes.php";
 	require "nidbapi.php";
+
 	
 	//PrintVariable($_POST,'POST');
 	

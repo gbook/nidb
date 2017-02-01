@@ -114,13 +114,27 @@
 			if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) != "")) {
 				if (trim($itemid[$i] == "")) {
 					$sqlstring = "insert into project_checklist (project_id, item_name, item_order, modality, protocol_name, count, frequency, frequency_unit) values ($projectid, '$itemname[$i]', '$itemorder[$i]', '$modality[$i]', '$protocol[$i]', '$itemcount[$i]', '$frequency[$i]', '$frequencyunit[$i]')";
+				//echo "<br> in insert: item_order = '$itemorder[$i]',  projectchecklist_id = '$itemid[$i]' itemname: $itemname[$i]</br> ";
 				}
 				else {
 					$sqlstring = "update project_checklist set item_name = '$itemname[$i]', item_order = '$itemorder[$i]', modality = '$modality[$i]', protocol_name = '$protocol[$i]', count = '$itemcount[$i]', frequency = '$frequency[$i]', frequency_unit = '$frequencyunit[$i]' where projectchecklist_id = $itemid[$i]";
+				 //echo "<br> in update: item_order = '$itemorder[$i]',  projectchecklist_id = '$itemid[$i]'  itemname: $itemname[$i] </br>";
 				}
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
+			else if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) == "")) {
+
+				//echo "<br> in delete: item_order = '$itemorder[$i]',  projectchecklist_id = '$itemid[$i]'  itemname: $itemname[$i]</br>";
+				
+
+				//delete
+				$sqlstring = "delete from project_checklist where item_order = '$itemorder[$i]'  AND projectchecklist_id = '$itemid[$i]'";
+
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			}
+
 			$i++;
 		}
 		$sqlstring = "commit";

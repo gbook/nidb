@@ -1121,7 +1121,13 @@
 												<?
 													if (count($children) > 0) {
 														foreach ($children as $child => $info) {
-															?><td align="center" style="padding: 2px 10px">&darr;<br><a href="pipelines.php?action=editpipeline&id=<?=$childid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a></td><?
+															?>
+															<tr>
+																<td align="left" style="padding: 2px 10px">
+																&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$childid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+																</td>
+															</tr>
+															<?
 														}
 													}
 													else {
