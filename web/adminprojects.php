@@ -53,14 +53,13 @@
 	$datausers = GetVariable("datausers");
 	$phiusers = GetVariable("phiusers");
 	
-	
 	/* determine action */
 	switch ($action) {
 		case 'editform':
 			DisplayProjectForm("edit", $id);
 			break;
 		case 'addform':
-			DisplayProjectForm("add", "");
+			DisplayProjectForm("add", "$username");
 			break;
 		case 'update':
 			UpdateProject($id, $projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
@@ -93,7 +92,7 @@
 		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], $costcenter);
 		$startdate = mysqli_real_escape_string($GLOBALS['linki'], $startdate);
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
-		
+	
 		/* update the project */
 		$sqlstring = "update projects set project_name = '$projectname', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -152,7 +151,8 @@
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
 		
 		$projectuid = NIDB\CreateUID('P',4);
-		
+	
+		// echo "project_admin: $admin, PI $pi";	
 		/* insert the new project */
 		$sqlstring = "insert into projects (project_uid, project_name, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -193,14 +193,28 @@
 			$formaction = "update";
 			$formtitle = "Updating $name";
 			$submitbuttonlabel = "Update";
+
+			//echo "admin is $admin and $ pi is $pi";
+
 		}
 		else {
-                        echo "<br>admin is $admin and pi is $pi </br>";
-                        echo "<br>userid is $userid </br>";
+                        //echo "<br>admin is $id and pi is $pi </br>";
+                        //echo "<br>userid is $userid </br>";
 
 			$formaction = "add";
 			$formtitle = "Add new project";
 			$submitbuttonlabel = "Add";
+
+			// find userid, added Feb 1, 2017, OOO
+                        $username = $id; // username and id are different things but i used it just not to change the old code too much
+			$sqlstring = "select * from users where username = '$username'";
+                	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                	if (mysqli_num_rows($result) > 0) {
+                        	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                        	$userid = $row['user_id'];
+			}
+			//$admin = $userid;
+			//echo "username: $username and userid is $userid ";
 		}
 		
 		$urllist['Administration'] = "admin.php";
@@ -221,8 +235,10 @@
 			</tr>
 			<tr>
 				<td class="label">Name</td>
-				<td><input type="text" name="projectname" value="<?=$name?>" size="60" maxlength="60"></td>
+				<td><input type="text" name="projectname" required value="<?=$name?>" size="60" maxlength="60"></td>
 			</tr>
+			
+	
 			<tr>
 				<td class="label">Instance</td>
 				<td>
@@ -244,13 +260,17 @@
 					</select>
 				</td>
 			</tr>
-			<? if ($type == "edit") { ?>
+
+			
+			<!-- That was for only edit option, now for create, too, Feb 2 2017, OOO -->
+			<? if (($type == "edit")||($type == "add")) { ?> 
 			<tr>
 				<td class="label">Administrator</td>
 				<td>
-					<select name="admin">
+					<select name="admin" required>
+						<option value="">Select Administrator...</option>
 						<?
-							$sqlstring = "select * from users order by user_fullname, username";
+							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
@@ -260,6 +280,7 @@
 								?>
 								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?> (<?=$username?>)</option>
 								<?
+							
 							}
 						?>
 					</select>
@@ -268,9 +289,10 @@
 			<tr>
 				<td class="label">Principle Investigator</td>
 				<td>
-					<select name="pi">
+					<select name="pi" required>
+						<option value="">Select Principal Investigator...</option>
 						<?
-							$sqlstring = "select * from users order by user_fullname, username";
+							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$userid = $row['user_id'];
@@ -288,7 +310,7 @@
 			<? } ?>
 			<tr>
 				<td class="label">Project Number<br><span class="tiny">Cost Center</span></td>
-				<td><input type="text" name="costcenter" value="<?=$costcenter?>"></td>
+				<td><input type="text" name="costcenter" required value="<?=$costcenter?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Start Date</td>
