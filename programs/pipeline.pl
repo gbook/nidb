@@ -1898,7 +1898,7 @@ sub GetStudyToDoList() {
 		# there is a dependency
 		# need to check if ANY of the subject's studies have the dependency...
 		# step 1) get list of SUBJECTs who have completed the dependency 
-		$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id in ($depend) and analysis_status = 'complete' and analysis_isbad <> 1))";
+		$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id in ($depend) and analysis_status = 'complete' and analysis_isbad <> 1) and a.isactive = 1)";
 		WriteLog("StudyIDList SQL [$sqlstring]");
 		#WriteLog("Checkin B.1");
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1943,30 +1943,38 @@ sub GetStudyToDoList() {
 	}
 	
 	my @list = ();
-	#WriteLog("Checkin G");
+	WriteLog("Checkin G");
 	#my $result = $dbh->prepare($sqlstring);
-	#WriteLog("Checkin H");
+	WriteLog("Checkin H");
 	#$result->execute();
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	#WriteLog("Checkin I");
+	WriteLog("Checkin I");
 	WriteLog("Pushing all the studyids onto an array");
 	if ($result->rows > 0) {
-		#WriteLog("Checkin J");
+		WriteLog("Checkin J");
 		while (my $row = $result->fetchrow_hashref()) {
-			#WriteLog("Checkin K");
+			WriteLog("Checkin K");
 			my $studyid = $row->{study_id};
 			
-			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid";
+			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid and c.isactive = 1";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-			#WriteLog("Checkin L");
-			#WriteLog($sqlstringA);
+			WriteLog("Checkin L");
+			WriteLog($sqlstringA);
 			my %rowA = $resultA->fetchhash;
 			my $uid = $rowA{'uid'};
 			my $studynum = $rowA{'study_num'};
-			#WriteLog("Checkin M");
+			WriteLog("Checkin M");
 			
-			WriteLog("Found study [" . $studyid . "] [$uid$studynum]");
-			push @list,$studyid;
+			if (!defined($studynum)) { WriteLog("Studynum is blank!"); }
+			if (!defined($uid)) { WriteLog("UID is blank!"); }
+			
+			if ((!defined($studynum)) || (!defined($uid))) {
+				WriteLog("Studynum or UID are blank");
+			}
+			else {
+				WriteLog("Found study [" . $studyid . "] [$uid$studynum]");
+				push @list,$studyid;
+			}
 		}
 	}
 	
