@@ -52,9 +52,9 @@
 			DisplayMenu();
 			DisplayEmptyEnrollments();
 			break;
-		case 'viewemptystudies':
+		case 'vieworphanstudies':
 			DisplayMenu();
-			DisplayEmptyStudies();
+			DisplayOrphanStudies();
 			break;
 		case 'viewemptyseries':
 			DisplayMenu();
@@ -91,9 +91,9 @@
 		NavigationBar("Admin", $urllist);
 		
 		?>
-		View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a><br>
-		View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a><br>
-		<!--View empty <a href="cleanup.php?action=viewemptystudies">studies</a><br>-->
+		View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a> <span class="tiny">Subjects without any enrollments</span><br>
+		View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a> <span class="tiny">Enrollments without any studies</span><br>
+		View empty <a href="cleanup.php?action=vieworphanstudies">studies</a> <span class="tiny">Studies with invalid or missing enrollments</span><br>
 		<!--View empty <a href="cleanup.php?action=viewemptyseries">series</a><br>-->
 		<br><br>
 		<?
@@ -171,6 +171,76 @@
 	function DisplayEmptyEnrollments() {
 
 		$sqlstring = "select a.*, b.uid, b.subject_id, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from measures) and a.enrollment_id not in (select enrollment_id from prescriptions) and b.isactive = 1 order by a.lastupdate";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result)
+		?>
+		
+		<form action="cleanup.php" method="post" name="theform">
+		<input type="hidden" name="action" value="deleteenrollments">
+		Found <?=$numrows?> empty enrollments
+		<table class="smallgraydisplaytable">
+			<thead>
+				<tr>
+					<th>Enrollment ID</th>
+					<th>Project</th>
+					<th>Subject</th>
+					<th>Enroll subgroup</th>
+					<th>Enroll start date</th>
+					<th>Enroll end date</th>
+					<th>Last update</th>
+					<th><input type="checkbox" id="checkall"></th>
+				</tr>
+			</thead>
+			<tbody>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$("#checkall").click(function() {
+					var checked_status = this.checked;
+					$(".allcheck").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+				});
+			});
+			</script>
+		<?
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollment_id = $row['enrollment_id'];
+			$project_name = $row['project_name'];
+			$uid = $row['uid'];
+			$subject_id = $row['subject_id'];
+			$enroll_subgroup = $row['enroll_subgroup'];
+			$enroll_startdate = $row['enroll_startdate'];
+			$enroll_enddate = $row['enroll_enddate'];
+			$lastupdate = $row['lastupdate'];
+			?>
+			<tr>
+				<td><?=$enrollment_id?></td>
+				<td><?=$project_name?></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$enroll_subgroup?></td>
+				<td><?=$enroll_startdate?></td>
+				<td><?=$enroll_enddate?></td>
+				<td><?=$lastupdate?></td>
+				<td class="allcheck"><input type='checkbox' name="enrollmentids[]" value="<?=$enrollment_id?>"></td>
+			</tr>
+			<?
+		}
+		?>
+			<tr>
+				<td colspan="8" align="right"><input type="submit" value="Delete Enrollments"></td>
+			</tr>
+			</tbody>
+		</table>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayOrphanStudies --------------- */
+	/* -------------------------------------------- */
+	function DisplayOrphanStudies() {
+
+		$sqlstring = "select * from studies where enrollment_id not in (select enrollment_id from enrollment) order by lastupdate";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result)
 		?>

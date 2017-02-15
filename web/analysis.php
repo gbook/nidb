@@ -142,9 +142,12 @@
 	/* -------------------------------------------- */
 	function DeleteAnalyses($id, $analysisids) {
 
+
 		if (!ValidID($id,'Pipeline ID')) { return; }
 	
-		/* disable this pipeline */
+		echo "id: $id; ";
+
+		/*disable this pipeline */
 		DisablePipeline($id);
 		
 		foreach ($analysisids as $analysisid) {

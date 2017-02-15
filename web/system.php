@@ -393,7 +393,7 @@
 			</tr>
 			<tr>
 				<td class="variable">adminemail</td>
-				<td><input type="email" name="adminemail" value="<?=$GLOBALS['cfg']['adminemail']?>" size="45"></td>
+				<td><input type="text" name="adminemail" value="<?=$GLOBALS['cfg']['adminemail']?>" size="45"></td>
 				<td></td>
 				<td>Administrator's email. Displayed for error messages and other system activities</td>
 			</tr>

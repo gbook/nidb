@@ -29,10 +29,6 @@
 	require "functions.php";
 	require "nidbapi.php";
 	
-	//print_r($_POST);
-	//exit(0);
-	//print_r($_FILES);
-	
 	/* ----- setup variables ----- */
 	$u = GetVariable("u");
 	$p = GetVariable("p");
@@ -60,6 +56,13 @@
 	$matchidonly = GetVariable("matchidonly");
 	$altuids = GetVariable("altuids");
 	$seriesnotes = GetVariable("seriesnotes");
+	$debug = GetVariable("debug");
+
+	if ($debug) {
+		print_r($_POST);
+		echo "FILES: \n";
+		print_r($_FILES);
+	}
 	
 	switch($action) {
 		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
@@ -356,18 +359,18 @@
 					$filesize = 0;
 					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-						//echo "RECEIVED $savepath/$name\n";
+						if ($GLOBALS['debug'] == 1) echo "RECEIVED $savepath/$name\n";
 						$numfilessuccess++;
 						chmod("$savepath/$name", 0777);
 						//echo date('c') . "\n";
 						$filemd5 = strtoupper(md5_file("$savepath/$name"));
 						$md5list[] = $filemd5;
 						$filesize = filesize("$savepath/$name");
-						//echo date('c') . " [MD5: $filemd5]\n";
+						if ($GLOBALS['debug'] == 1) echo date('c') . " [MD5: $filemd5]\n";
 						$success = 1;
 					}
 					else {
-						//echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
+						if ($GLOBALS['debug'] == 1) echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
 						$success = 0;
 					}
 					

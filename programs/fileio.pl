@@ -503,17 +503,18 @@ sub DeleteAnalysis() {
 	}
 	else {
 		# check to see if anything isn't valid or is blank
-		if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); return; }
-		if (!defined($uid)) { WriteLog("Something was wrong, uid was not initialized"); return; }
-		if (!defined($studynum)) { WriteLog("Something was wrong, studynum was not initialized"); return; }
-		if (!defined($pipelinename)) { WriteLog("Something was wrong, pipelinename was not initialized"); return; }
-		if (trim($cfg{'analysisdir'}) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); return; }
-		if (trim($cfg{'analysisdir'}) eq '/') { WriteLog("Something was wrong, cfg->analysisdir is '/'"); return; }
-		if (trim($cfg{'analysisdir'}) eq '/home') { WriteLog("Something was wrong, cfg->analysisdir is '/home'"); return; }
-		if (trim($cfg{'analysisdir'}) eq '/root') { WriteLog("Something was wrong, cfg->analysisdir is '/root'"); return; }
-		if (trim($uid) eq '') { WriteLog("Something was wrong, uid was blank"); return; }
-		if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); return; }
-		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); return; }
+		my $OkDeleteDir = 1;
+		if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); $OkDeleteDir = 0; }
+		if (!defined($uid)) { WriteLog("Something was wrong, uid was not initialized"); $OkDeleteDir = 0; }
+		if (!defined($studynum)) { WriteLog("Something was wrong, studynum was not initialized"); $OkDeleteDir = 0; }
+		if (!defined($pipelinename)) { WriteLog("Something was wrong, pipelinename was not initialized"); $OkDeleteDir = 0; }
+		if (trim($cfg{'analysisdir'}) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); $OkDeleteDir = 0; }
+		if (trim($cfg{'analysisdir'}) eq '/') { WriteLog("Something was wrong, cfg->analysisdir is '/'"); $OkDeleteDir = 0; }
+		if (trim($cfg{'analysisdir'}) eq '/home') { WriteLog("Something was wrong, cfg->analysisdir is '/home'"); $OkDeleteDir = 0; }
+		if (trim($cfg{'analysisdir'}) eq '/root') { WriteLog("Something was wrong, cfg->analysisdir is '/root'"); $OkDeleteDir = 0; }
+		if (trim($uid) eq '') { WriteLog("Something was wrong, uid was blank"); $OkDeleteDir = 0; }
+		if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); $OkDeleteDir = 0; }
+		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); $OkDeleteDir = 0; }
 
 		# attempt to kill the SGE job, if its running
 		my $systemstring = "/sge/sge-root/bin/lx24-amd64/./qdelete $sgeid";
@@ -521,7 +522,14 @@ sub DeleteAnalysis() {
 		
 		my $datapath = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
 		
-		if (($datapath ne "") && ($datapath ne ".") && ($datapath ne "..") && ($datapath ne "/")) {
+		if ($datapath eq "") { $OkDeleteDir = 0; }
+		if ($datapath eq ".") { $OkDeleteDir = 0; }
+		if ($datapath eq "..") { $OkDeleteDir = 0; }
+		if ($datapath eq "/") { $OkDeleteDir = 0; }
+		if ($datapath eq "/root") { $OkDeleteDir = 0; }
+		if ($datapath eq "/home") { $OkDeleteDir = 0; }
+
+		if ($OkDeleteDir == 1) {
 			WriteLog("Datapath: $datapath");
 			rmtree($datapath,1,1);
 		
@@ -573,9 +581,24 @@ sub DeleteAnalysis() {
 			return 1;
 		}
 		else {
-			WriteLog("Something was wrong, datapath was [$datapath]");
-			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Something was wrong, datapath was [$datapath]");
-			return "Something was wrong, datapath was [$datapath]";
+			WriteLog("Something was wrong, datapath was [$datapath], but deleting database analysis anyway");
+			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Something was wrong, datapath was weird [$datapath], but deleting database analysis anyway");
+
+			# clear the entry from the database
+			my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
+			WriteLog($sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+					
+			my $sqlstringB = "delete from analysis_results where analysis_id = $analysisid";
+			WriteLog($sqlstringB);
+			my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+
+			my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
+			WriteLog($sqlstringC);
+			my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
+			
+			return "Something was wrong, datapath was [$datapath], but deleted database analysis anyway";
 		}
 	}
 	return 0;

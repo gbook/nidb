@@ -67,7 +67,8 @@
 	$notifications = GetVariable("notification");
 	$projectids = GetVariables("projectid");
 
-	/* ----- determine which action to take ----- */
+//echo "id: $username";
+
 	switch ($action) {
 		case 'saveoptions':
 			SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids);

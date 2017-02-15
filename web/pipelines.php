@@ -185,7 +185,7 @@
 	/* -------------------------------------------- */
 	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
@@ -312,7 +312,7 @@
 	/* -------------------------------------------- */
 	function CopyPipeline($id, $newname) {
 		
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - B')) { return; }
 	
 		?>
 		<span class="tiny">
@@ -450,7 +450,7 @@
 	/* -------------------------------------------- */
 	function UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
 		
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - C')) { return; }
 		
 		?>
 		<span class="tiny">
@@ -647,7 +647,7 @@
 	/* ------- ChangeOwner ------------------------ */
 	/* -------------------------------------------- */
 	function ChangeOwner($id, $newuserid) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - D')) { return; }
 		if (!ValidID($newuserid,'New userID')) { return; }
 		
 		/* update owner id */
@@ -662,7 +662,7 @@
 	/* ------- DeletePipeline --------------------- */
 	/* -------------------------------------------- */
 	function DeletePipeline($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - E')) { return; }
 		
 		/* disable this pipeline */
 		DisablePipeline($id);
@@ -684,7 +684,7 @@
 	/* ------- ResetAnalyses ---------------------- */
 	/* -------------------------------------------- */
 	function ResetAnalyses($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - F')) { return; }
 		
 		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_startdate is null)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -700,7 +700,7 @@
 	/* ------- ResetPipeline ---------------------- */
 	/* -------------------------------------------- */
 	function ResetPipeline($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - G')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_status = 'stopped' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -711,7 +711,7 @@
 	/* ------- EnablePipeline --------------------- */
 	/* -------------------------------------------- */
 	function EnablePipeline($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - H')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -722,7 +722,7 @@
 	/* ------- DisablePipeline -------------------- */
 	/* -------------------------------------------- */
 	function DisablePipeline($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - I')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -733,7 +733,7 @@
 	/* ------- EnablePipelineTesting -------------- */
 	/* -------------------------------------------- */
 	function EnablePipelineTesting($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - J')) { return; }
 
 		$sqlstring = "update pipelines set pipeline_testing = 1 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -744,7 +744,7 @@
 	/* ------- DisablePipelineTesting ------------- */
 	/* -------------------------------------------- */
 	function DisablePipelineTesting($id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - K')) { return; }
 		
 		$sqlstring = "update pipelines set pipeline_testing = 0 where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -755,7 +755,9 @@
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if ($type != "add") { 
+			if (!ValidID($id,'Pipeline ID - L')) { return; }
+		}
 	
 		$level = 0;
 		/* populate the fields if this is an edit */
@@ -901,7 +903,11 @@
 			}
 		</script>
 	
-		<? DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck); ?>
+		<?
+			if ($type != "add") {
+				DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+			}
+		?>
 		<br>
 		<fieldset style="border: 3px solid #999; border-radius:5px">
 			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> version <?=$version?> </legend>
@@ -915,7 +921,7 @@
 						<tr>
 							<td class="label" valign="top">Title</td>
 							<td valign="top">
-								<input type="text" name="pipelinetitle" value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?>>
+								<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?>>
 							</td>
 						</tr>
 						<tr>
@@ -1988,7 +1994,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* ------- DisplayPipelineStatus -------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - M')) { return; }
 
 		?>
 		<div align="center">
@@ -2042,7 +2048,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function DisplayPipeline($id, $version) {
 		/* check the parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($id,'Pipeline ID - N')) { return; }
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

@@ -2144,10 +2144,10 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
 		
-		//PrintSQLTable($result);
 		/* get some stats about the project */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
+			$siteids[] = $row['study_nidbsite'];
 			$uids[$uid]['sex'] = $row['gender']; /* create hash of UID and sex */
 			$studydates[] = $row['study_datetime']; /* get list of study dates */
 			$genders[$row['gender']]['count']++; /* get the count of each gender */
@@ -2160,10 +2160,18 @@
 				$genders[$row['gender']]['ages'][] = $row['age'];
 			}
 		}
-		//PrintVariable($genders);
 		
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
+		
+		/* get instance ID */
+		$sqlstring = "select instance_id from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$instanceid = $row['instance_id'];
+
+		/* get list of site IDs */
+		$siteids = array_unique($siteids);
 		
 		DisplayMenu("info", $id);
 		?>
@@ -2203,6 +2211,17 @@
 			<tr>
 				<td class="left">Study date range</td>
 				<td class="right"><?=$lowdate?> to <?=$highdate?></td>
+			</tr>
+			<tr>
+				<td colspan="2">&nbsp;</td>
+			</tr>
+			<tr>
+				<td class="left">Remote connection params</td>
+				<td class="right">
+					Project ID: <?=$id?><br>
+					Instance ID: <?=$instanceid?><br>
+					Site IDs: <?=implode2(",",$siteids)?><br>
+				</td>
 			</tr>
 		</table>
 		</div>
