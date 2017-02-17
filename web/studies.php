@@ -2313,18 +2313,34 @@
 				<tr>
 					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>"></td>
 					<td>
-						<select name="protocol">
-						<?
+						<!-- <select name="protocol">
+						?
 							$sqlstring = "select * from modality_protocol where modality = '$modality'";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$protocol = $row['protocol'];
 								?>
-								<option value="<?=$protocol?>"><?=$protocol?></option>
-								<?
+								<option value=" ?=$protocol?>">?=$protocol?></option>
+								?
 							}
 						?>
-						</select>
+						</select> -->
+
+                                                <input type="text" name="protocol" list="protocols">
+                                                <datalist id="protocols">
+                                                <?
+                                                        $sqlstring = "select * from modality_protocol where modality = '$modality'";
+                                                        $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                                                        while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+                                                                $protocol = $row['protocol'];
+                                                                ?>
+                                                                        <option value=" <?=$protocol?>"><?=$protocol?></option>
+                                                                <?
+                                                        }
+                                                ?>
+                                                </datalist>
+
+
 					</td>
 					<td><input type="text" name="series_datetime" value="<?=date('Y-m-d h:i:s a')?>"></td>
 					<td><input type="text" name="notes"></td>
@@ -2336,6 +2352,7 @@
 				</form>
 			</tbody>
 		</table>
+
 		<?
 	}
 	
