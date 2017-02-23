@@ -1095,6 +1095,7 @@ sub Anonymize() {
 				$s .= " --replace 8,1010='Anonymous'"; # StationName
 				$s .= " --replace 8,1030='Anonymous'"; # StudyDescription
 				$s .= " --replace 8,103E='Anonymous'"; # SeriesDescription
+				$s .= " --replace 8,1048='Anonymous'"; # PhysiciansOfRecord
 				$s .= " --replace 8,1050='Anonymous'"; # PerformingPhysicianName
 				$s .= " --replace 8,1060='Anonymous'"; # NameOfPhysicianReadingStudy
 				$s .= " --replace 8,1070='Anonymous'"; # OperatorsName

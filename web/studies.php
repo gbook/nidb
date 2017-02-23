@@ -729,7 +729,7 @@
 			$study_createdby = $row['study_createdby'];
 			$study_createdate = $row['study_createdate'];
 			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
+			$subjectid = trim($row['subject_id']);
 			$costcenter = $row['project_costcenter'];
 			$projectid = $row['project_id'];
 			$project_name = $row['project_name'];
@@ -752,6 +752,12 @@
 			Study [<?=$id?>] does not exist
 			<?
 			return;
+		}
+		
+		if (($subjectid == 0) || ($subjectid == "")) {
+			?>
+			<span class="staticmessage">Subject ID is not found... unable to display this study because the subject could not be found</span>
+			<?
 		}
 		
 		if ($study_modality == "") { $study_modality = "Missing modality"; $class="missing"; }

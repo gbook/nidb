@@ -344,45 +344,69 @@
 	/* -------------------------------------------- */
 	/* ------- PrintSQLTable ---------------------- */
 	/* -------------------------------------------- */
-	function PrintSQLTable($result,$url,$orderby,$size) {
+	function PrintSQLTable($result,$url,$orderby,$size,$csv=false) {
 		$fields_num = mysqli_num_fields($result);
 		$numrows = mysqli_num_rows($result);
 
-		?>
-		Displaying [<?=$numrows?>] rows<br><br>
-		<table cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-size:<?=$size?>pt; white-space:nowrap;">
-			<tr>
-		<?
-		// printing table headers
-		for($i=0; $i<$fields_num; $i++)
-		{
-			$field = mysqli_fetch_field($result);
-			$fieldname = $field->name;
-			?>
-			<td style="border: 1px solid black; background-color: #DDDDDD; padding-left:5px; padding-right:5px; font-weight:bold"><a href="<?=$url?>&orderby=<?=$fieldname?>"><?=$fieldname?></td>
-			<?
-		}
-		echo "</tr>\n";
-		if (mysqli_num_rows($result) > 0) {
-			// printing table rows
+		if ($csv) {
+			// printing table headers
+			for($i=0; $i<$fields_num; $i++)
+			{
+				$field = mysqli_fetch_field($result);
+				$fieldnames[] = $field->name;
+			}
+			$str = implode(",",$fieldnames) . "\n";
+
 			while($row = mysqli_fetch_row($result))
 			{
-				echo "<tr>";
-
-				// $row is array... foreach( .. ) puts every element
-				// of $row to $cell variable
 				foreach($row as $cell)
-					echo "<td style='border: 1px solid #DDDDDD;'>$cell</td>";
+					$cells[] = $cell;
 
-				echo "</tr>\n";
+				$str .= implode(",",$cells) . "\n";
+				unset($cells);
 			}
-			echo "</table>";
 			
 			/* reset the pointer so not to confuse any subsequent data access */
 			mysqli_data_seek($result, 0);
+			return $str;
 		}
 		else {
-			echo "</table>";
+			?>
+			Displaying [<?=$numrows?>] rows<br><br>
+			<table cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-size:<?=$size?>pt; white-space:nowrap;">
+				<tr>
+			<?
+			// printing table headers
+			for($i=0; $i<$fields_num; $i++)
+			{
+				$field = mysqli_fetch_field($result);
+				$fieldname = $field->name;
+				?>
+				<td style="border: 1px solid black; background-color: #DDDDDD; padding-left:5px; padding-right:5px; font-weight:bold"><a href="<?=$url?>&orderby=<?=$fieldname?>"><?=$fieldname?></td>
+				<?
+			}
+			echo "</tr>\n";
+			if (mysqli_num_rows($result) > 0) {
+				// printing table rows
+				while($row = mysqli_fetch_row($result))
+				{
+					echo "<tr>";
+
+					// $row is array... foreach( .. ) puts every element
+					// of $row to $cell variable
+					foreach($row as $cell)
+						echo "<td style='border: 1px solid #DDDDDD;'>$cell</td>";
+
+					echo "</tr>\n";
+				}
+				echo "</table>";
+				
+				/* reset the pointer so not to confuse any subsequent data access */
+				mysqli_data_seek($result, 0);
+			}
+			else {
+				echo "</table>";
+			}
 		}
 	}
 	
