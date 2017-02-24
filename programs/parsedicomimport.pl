@@ -6,7 +6,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB parsedicomimport.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------

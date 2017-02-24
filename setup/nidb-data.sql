@@ -36,6 +36,7 @@ INSERT INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numr
 (11, 'usage', 'stopped', 0, now(), now(), 0),
 (12, 'audit', 'stopped', 0, now(), now(), 0),
 (13, 'notifications', 'stopped', 0, now(), now(), 0);
+(14, 'modulemanager', 'stopped', 0, now(), now(), 1);
 
 INSERT INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
 (1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');

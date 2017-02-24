@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB importuploaded.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -110,6 +110,7 @@ sub DoImportUploaded {
 	
 	# update the start time
 	SetModuleRunning();
+	ModuleRunningCheckIn($scriptname, $db);
 
 	# get list of pending uploads
 	my $sqlstring = "select * from import_requests where import_status = 'pending'";
@@ -117,6 +118,9 @@ sub DoImportUploaded {
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
+			# do a check in
+			ModuleRunningCheckIn($scriptname, $db);
+		
 			my $importrequest_id = $row{'importrequest_id'};
 			my $siteid = $row{'import_siteid'};
 			my $projectid = $row{'import_projectid'};

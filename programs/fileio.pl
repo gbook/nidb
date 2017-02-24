@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB fileio.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -115,6 +115,8 @@ sub DoIO {
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
 
+	ModuleRunningCheckIn($scriptname, $db);
+
 	# get list of things to delete
 	my $sqlstring = "select * from fileio_requests where request_status != 'complete' and request_status != 'deleting' and request_status != 'error'";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
@@ -128,6 +130,8 @@ sub DoIO {
 			my $modality = $row{'modality'};
 			my $dicomtags = $row{'anonymize_fields'};
 			
+			ModuleRunningCheckIn($scriptname, $db);
+	
 			WriteLog("Performing the following fileio operation [$fileio_operation] on the datatype [$data_type]");
 			my $found = 0;
 			switch ($fileio_operation) {

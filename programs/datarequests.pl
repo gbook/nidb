@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB datarequests.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -110,6 +110,8 @@ sub ProcessDataRequests {
 	# update the start time
 	$sqlstring = "update modules set module_laststart = now(), module_status = 'running' where module_name = '$scriptname'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+	ModuleRunningCheckIn($scriptname, $db);
 	
 	my $systemstring;
 	my $exportdir = CreateLogDate();
@@ -130,6 +132,9 @@ sub ProcessDataRequests {
 	if ($result->numrows > 0) {
 		my $tmpwebdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
 		while (my %row = $result->fetchhash) {
+			# just check in every so often
+			ModuleRunningCheckIn($scriptname, $db);
+		
 			$groupid = $row{'req_groupid'};
 			my $modality = $row{'req_modality'};
 			my $req_username = $row{'req_username'};
@@ -173,7 +178,9 @@ sub ProcessDataRequests {
 				}
 			}
 			while (my %rowA = $resultA->fetchhash) {
-				#WriteLog('C');
+				# just check in every so often
+				ModuleRunningCheckIn($scriptname, $db);
+			
 				my $request_id = $rowA{'request_id'};
 				my $series_id = $rowA{$modality . 'series_id'};
 				$req_destinationtype = $rowA{'req_destinationtype'};

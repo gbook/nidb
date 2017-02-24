@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB mriqa.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -106,6 +106,7 @@ sub DoQA {
 	
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
 
 	# look through DB for all series that don't have an associated mr_qa row
 	my $sqlstring = "SELECT a.mrseries_id FROM mr_series a LEFT JOIN mr_qa b ON a.mrseries_id = b.mrseries_id WHERE b.mrqa_id IS NULL and a.lastupdate < date_sub(now(), interval 3 minute) order by a.mrseries_id desc";
@@ -152,6 +153,9 @@ sub QA() {
 	if ($result->numrows > 0) {
 		my $numProcessed = 0;
 		while (my %row = $result->fetchhash) {
+			# do a checkin
+			ModuleRunningCheckIn($scriptname, $db);
+			
 			my $series_num = $row{'series_num'};
 			my $study_num = $row{'study_num'};
 			my $is_derived = $row{'is_derived'};

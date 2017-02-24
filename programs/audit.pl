@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB usage.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -119,13 +119,12 @@ sub Audit() {
 	my $numSubjects = $result->numrows;
 	my $ii = 1;
 	while (my %row = $result->fetchhash) {
-	
+		
 		my $uid = $row{'uid'};
 		my $SubjectID = $row{'subject_id'};
 		my $SubjectName = $row{'name'};
 		my $SubjectBirthdate = $row{'birthdate'};
 		my $SubjectSex = $row{'gender'};
-
 		my @altuids;
 		my $sqlstring1 = "select altuid from subject_altuid where subject_id = '$SubjectID' order by altuid";
 		my $result1 = SQLQuery($sqlstring1, __FILE__, __LINE__);
@@ -137,15 +136,18 @@ sub Audit() {
 		
 		# check if the UID directory exists in the filesystem
 		my $subjectdir = $cfg{'archivedir'} . '/' . $uid;
-		
+	
+	
 		if (-d $subjectdir) {
+
 			# get list of studies for this subject
 			my $sqlstringA = "select * from enrollment where subject_id = $SubjectID";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			while (my %rowA = $resultA->fetchhash) {
+
 				my $EnrollmentID = $rowA{'enrollment_id'};
 				my $ProjectID = $rowA{'project_id'};
-				
+
 				# check if the project ID is valid
 				my $sqlstringB = "select count(*) 'count' from projects where project_id = '$ProjectID'";
 				my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
@@ -158,9 +160,13 @@ sub Audit() {
 				
 				# get list of studies for this enrollment
 				$sqlstringB = "select * from studies where enrollment_id = $EnrollmentID order by study_num+1 asc";
+
+				#print("subjs: $subjectdir $EnrollmentID $sqlstringB\n");
+
 				#print "[$sqlstringB]\n";
 				$resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 				while (my %rowB = $resultB->fetchhash) {
+
 					my $StudyID = $rowB{'study_id'} . '';
 					my $StudyAltID = $rowB{'study_alternateid'} . '';
 					my $StudyNum = $rowB{'study_num'} . '';
@@ -202,6 +208,26 @@ sub Audit() {
 									# get number of files
 									if ($DataType eq "dicom") {
 										my @files = <$seriesdatadir/*.dcm>;
+
+										############################################################
+										## added at 2/23/2017
+										## to make the script faster
+										## only looking at the first, last and the middle files in the directory
+										#############################################################
+										#my $sizeofDir = @files;
+										print "new series for file: \n";
+										foreach (@files) {
+ 											print "file: $_\n";
+										}										
+										#my @new_files = ($all_files[0], $all_files[int((scalar(@all_files)-1)/2)], $all_files[scalar(@all_files)-1]);
+										#my @files = @new_files;
+										#print "files 2: @files\n";
+										#my $s = scalar(@all_files);
+										#print "size of files: $s\n";
+										##############################################################
+										## end of addition of 2/23/17
+										##############################################################
+
 										my $filecount = @files;
 										if ($filecount < 1) {
 											print "$uid-$StudyNum-$SeriesNum-$DataType missing all files\n";

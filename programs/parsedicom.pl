@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB parsedicomnew.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -114,6 +114,7 @@ sub DoParse {
 	
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
 
 	WriteLog("Connected to database");
 	
@@ -165,6 +166,7 @@ sub ParseDirectory {
 	my ($dir, $importRowID) = @_;
 
 	WriteLog("********** Working on directory [$dir] with importRowID [$importRowID] **********");
+	ModuleRunningCheckIn($scriptname, $db);
 	
 	my $useImportFields = 0;
 	my $importStatus = '';
@@ -214,6 +216,7 @@ sub ParseDirectory {
 		#WriteLog("Processing [$runningCount] [$file]");
 		if ($runningCount%1000 == 0) {
 			WriteLog("Processed $runningCount files...");
+			ModuleRunningCheckIn($scriptname, $db);
 		}
 		if ($runningCount >= 10000) {
 			WriteLog("Reached [$runningCount] files, going to archive them now");
@@ -348,6 +351,7 @@ sub ParseDirectory {
 										$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									}
 								}
+								ModuleRunningCheckIn($scriptname, $db);
 								# check if this module should be running now or not
 								if (!ModuleCheckIfActive($scriptname, $db)) {
 									WriteLog("Not supposed to be running right now");

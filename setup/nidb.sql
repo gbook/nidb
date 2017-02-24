@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 15, 2016 at 09:05 PM
--- Server version: 10.0.26-MariaDB
+-- Generation Time: Feb 23, 2017 at 07:53 PM
+-- Server version: 10.0.28-MariaDB
 -- PHP Version: 5.5.38
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -916,7 +916,7 @@ CREATE TABLE `family_members` (
 
 CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) NOT NULL,
   `data_destination` varchar(255) NOT NULL,
@@ -1339,6 +1339,19 @@ CREATE TABLE `module_prefs` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `module_procs`
+--
+
+CREATE TABLE `module_procs` (
+  `moduleproc_id` int(11) NOT NULL,
+  `module_name` varchar(255) NOT NULL,
+  `process_id` int(11) NOT NULL,
+  `last_checkin` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mostrecent`
 --
 
@@ -1613,6 +1626,7 @@ CREATE TABLE `pipelines` (
   `pipeline_queue` varchar(50) NOT NULL,
   `pipeline_submithost` varchar(255) NOT NULL,
   `pipeline_clustertype` enum('','sge','slurm') NOT NULL,
+  `pipeline_clusteruser` varchar(255) NOT NULL,
   `pipeline_datacopymethod` varchar(50) NOT NULL,
   `pipeline_notes` text NOT NULL,
   `pipeline_removedata` tinyint(1) NOT NULL,
@@ -2905,6 +2919,13 @@ ALTER TABLE `module_prefs`
   ADD PRIMARY KEY (`mp_id`);
 
 --
+-- Indexes for table `module_procs`
+--
+ALTER TABLE `module_procs`
+  ADD PRIMARY KEY (`moduleproc_id`),
+  ADD UNIQUE KEY `module_name` (`module_name`,`process_id`);
+
+--
 -- Indexes for table `mostrecent`
 --
 ALTER TABLE `mostrecent`
@@ -3592,6 +3613,11 @@ ALTER TABLE `modules`
 --
 ALTER TABLE `module_prefs`
   MODIFY `mp_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `module_procs`
+--
+ALTER TABLE `module_procs`
+  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mostrecent`
 --

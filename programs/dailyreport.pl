@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB dailyreport.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -109,6 +109,8 @@ sub DoReport {
 	# update the start time
 	$sqlstring = "update modules set module_laststart = now(), module_status = 'running' where module_name = '$scriptname'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	
+	ModuleRunningCheckIn($scriptname, $db);
 	
 	# get series updated in the last 24 hours
 	$sqlstring = "select * from `enrollment` join `projects` on `enrollment`.project_id = `projects`.project_id join `subjects` on `subjects`.subject_id = `enrollment`.subject_id join studies on studies.enrollment_id = enrollment.enrollment_id join `mr_series` on `mr_series`.study_id = `studies`.study_id left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id where `subjects`.isactive = 1 and `studies`.study_modality = 'mr' and `mr_series`.series_datetime > date_add( now( ) , interval -1 day )  and `mr_series`.series_datetime < now() order by `studies`.study_datetime, `mr_series`.series_num";	

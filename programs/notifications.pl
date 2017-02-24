@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB notifications.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -118,6 +118,7 @@ sub DoNotifications {
 	
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
 
 	# get list of notification rows per subject/project and run them
 	my %notifications;
@@ -137,6 +138,9 @@ sub DoNotifications {
 	# loop through all the users and build a single email
 	foreach my $userid (keys %notifications) {
 		if (($userid eq '') || ($userid <= 0)) { next; }
+		
+		# do a checkin
+		ModuleRunningCheckIn($scriptname, $db);
 		
 		# get user information
 		my $sqlstring = "select * from users where user_id = $userid";
@@ -220,7 +224,7 @@ sub BuildSummaryEmailFooter {
 	my $date = CreateCurrentDate();
 	
 	my $str = qq^<br><br>
-	<div align="center" style="font-size:8pt">To unsubscribe, login to $site. Go to username->My Account and deselect the notifications you longer wish to receive</div>
+	<div align="center" style="font-size:8pt">To unsubscribe, login to $site. Go to username->My Account and deselect the notifications you no longer wish to receive</div>
 	</body>
 	</html>
 	^;

@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB pipeline.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -1943,33 +1943,33 @@ sub GetStudyToDoList() {
 	}
 	
 	my @list = ();
-	WriteLog("Checkin G");
+	#WriteLog("Checkin G");
 	#my $result = $dbh->prepare($sqlstring);
-	WriteLog("Checkin H");
+	#WriteLog("Checkin H");
 	#$result->execute();
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	WriteLog("Checkin I");
+	#WriteLog("Checkin I");
 	WriteLog("Pushing all the studyids onto an array");
 	if ($result->rows > 0) {
-		WriteLog("Checkin J");
+		#WriteLog("Checkin J");
 		while (my $row = $result->fetchrow_hashref()) {
-			WriteLog("Checkin K");
+			#WriteLog("Checkin K");
 			my $studyid = $row->{study_id};
 			
 			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid and c.isactive = 1";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-			WriteLog("Checkin L");
-			WriteLog($sqlstringA);
+			#WriteLog("Checkin L");
+			#WriteLog($sqlstringA);
 			my %rowA = $resultA->fetchhash;
 			my $uid = $rowA{'uid'};
 			my $studynum = $rowA{'study_num'};
-			WriteLog("Checkin M");
-			
-			if (!defined($studynum)) { WriteLog("Studynum is blank!"); }
-			if (!defined($uid)) { WriteLog("UID is blank!"); }
-			
-			if ((!defined($studynum)) || (!defined($uid))) {
-				WriteLog("Studynum or UID are blank");
+			#WriteLog("Checkin M");
+
+			if (!defined($studynum)) {
+				WriteLog("Studynum is blank");
+			}
+			elsif (!defined($uid)) {
+				WriteLog("UID is blank");
 			}
 			else {
 				WriteLog("Found study [" . $studyid . "] [$uid$studynum]");

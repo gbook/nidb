@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
 # NIDB nidbroutines.pl
-# Copyright (C) 2004 - 2016
+# Copyright (C) 2004 - 2017
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -160,6 +160,25 @@ sub ModuleDBCheckOut {
 	my ($scriptname, $db) = @_;
 	
 	my $sqlstring = "update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = '$scriptname'";
+	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+}
+
+
+# ----------------------------------------------------------
+# --------- ModuleRunningCheckIn ---------------------------
+# ----------------------------------------------------------
+# this is a deadman's switch. if the module doesn't check in
+# after a certain period of time, the module is assumed to
+# be dead and is reset so it can start again
+sub ModuleRunningCheckIn {
+	my ($scriptname, $db) = @_;
+	
+	# insert a row if it doesn't exist
+	my $sqlstring = "insert ignore into module_procs (module_name, process_id) values ('$scriptname', $$)";
+	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	
+	# update the running time
+	my $sqlstring = "update module_procs set last_checkin = now() where module_name = '$scriptname' and process_id = $$";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 }
 
