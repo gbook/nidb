@@ -309,7 +309,7 @@ sub ProcessPipelines() {
 			
 			# submit the sucker to the cluster
 			$systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$analysispath/sge.job\"";
-			my $sgeresult = `$systemstring 2>&1`;
+			my $sgeresult = trim(`$systemstring 2>&1`);
 			print "SGE submit result [$sgeresult]\n";
 			WriteLog("SGE submit result [$sgeresult]");
 			my @parts = split(' ', $sgeresult);
@@ -565,7 +565,7 @@ sub ProcessPipelines() {
 								
 								# submit the sucker to the cluster
 								my $systemstring = "ssh $pipelinesubmithost $cfg{'qsubpath'} -u $cfg{'clusteruser'} -q $pipelinequeue \"$realanalysispath/$sgeshortfilename\"";
-								my $sgeresult = `$systemstring 2>&1`;
+								my $sgeresult = trim(`$systemstring 2>&1`);
 								print "SGE submit result [$sgeresult]\n";
 								WriteLog("SGE submit result [$sgeresult]");
 								my @parts = split(' ', $sgeresult);
@@ -835,7 +835,7 @@ sub ProcessPipelines() {
 			my $systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$realpipelinedirectory/$pipelinename/pipeline/sge.job\"";
 			print "SGE submit string [$systemstring]\n";
 			WriteLog("SGE submit string [$systemstring]");
-			my $sgeresult = `$systemstring 2>&1`;
+			my $sgeresult = trim(`$systemstring 2>&1`);
 			print "SGE submit result [$sgeresult]\n";
 			WriteLog("SGE submit result [$sgeresult]");
 			my @parts = split(' ', $sgeresult);

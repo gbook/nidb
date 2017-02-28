@@ -221,7 +221,7 @@ sub Audit() {
 										}										
 										#my @new_files = ($all_files[0], $all_files[int((scalar(@all_files)-1)/2)], $all_files[scalar(@all_files)-1]);
 										#my @files = @new_files;
-										#print "files 2: @files\n";
+										print "files most inner 2: @files\n";
 										#my $s = scalar(@all_files);
 										#print "size of files: $s\n";
 										##############################################################

@@ -161,6 +161,9 @@ sub ModuleDBCheckOut {
 	
 	my $sqlstring = "update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = '$scriptname'";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+
+	$sqlstring = "delete from module_procs where module_name = '$scriptname' and process_id = '$$'";
+	$result = SQLQuery($sqlstringA, __FILE__, __LINE__);
 }
 
 
@@ -736,7 +739,7 @@ sub MakePath {
 	
 	WriteLog("Creating path [$p]");
 	#print "Creating path [$p]\n";
-	my $systemstring = "mkdir -pv $p";
+	my $systemstring = "mkdir -pv '$p'";
 	WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
 	return 1;
 	

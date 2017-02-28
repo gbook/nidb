@@ -291,7 +291,7 @@
 
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete' where analysis_id = $analysisid";
+			$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete', analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
@@ -504,7 +504,7 @@
 					<th>Study date</th>
 					<th data-sort="int"># series</th>
 					<? } ?>
-					<th data-sort="string-ins">Status</th>
+					<th data-sort="string-ins">Status <span class="tiny">flags</span></th>
 					<th data-sort="string-ins">Successful</th>
 					<th>Logs</th>
 					<th>History</th>
@@ -550,6 +550,8 @@
 						$analysis_time = $row['analysis_time'];
 						$analysis_size = $row['analysis_disksize'];
 						$analysis_isbad = $row['analysis_isbad'];
+						$analysis_rerunresults = $row['analysis_rerunresults'];
+						$analysis_runsupplement = $row['analysis_runsupplement'];
 						$notes = $row['analysis_notes'];
 						$analysis_hostname = $row['analysis_hostname'];
 						$cluster_time = $row['cluster_time'];
@@ -632,9 +634,20 @@
 									echo "Preparing data";
 								}
 								else {
-									echo $analysis_status;
+									switch ($analysis_status) {
+										case 'pending':
+											$tip = "Data has finished copying for this analysis, and job has been submitted. Waiting for the job to check in with NiDB";
+											break;
+										case 'complete':
+											$tip = "Analysis is complete";
+											break;
+									}
+									?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
 								}
 							}
+							
+							if ($analysis_runsupplement) { ?> <span class="tiny">supplement</span><? }
+							if ($analysis_rerunresults) { ?> <span class="tiny">rerun results</span><? }
 						?>
 					</td>
 					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
@@ -750,7 +763,7 @@
 					<br>
 					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
 					<br>
-					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system">&nbsp;
+					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">&nbsp;
 					</td>
 				</tr>
 				</tfoot>
