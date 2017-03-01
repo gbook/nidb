@@ -115,6 +115,7 @@ sub DoQC {
 	
 	# update the start time
 	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
 
 	# get list of active modules
 	my $sqlstring = "select * from qc_modules where qcm_isenabled = 1";
@@ -135,6 +136,8 @@ sub DoQC {
 				while (my %row = $result->fetchhash) {
 					$ret = 1;
 					my $series_id = $row{$modality . 'series_id'};
+
+					ModuleRunningCheckIn($scriptname, $db);
 					
 					# check if this series has an mr_qa row
 					my $sqlstringA = "select mrseries_id from mr_qa where mrseries_id = $series_id";

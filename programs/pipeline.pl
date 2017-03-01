@@ -125,6 +125,10 @@ sub ProcessPipelines() {
 		return 0;
 	}
 
+	# update the start time
+	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
+	
 	# create a list of pipelines to be run
 	my $i = 0;
 	my @pipelinerows;
@@ -248,6 +252,8 @@ sub ProcessPipelines() {
 				SetPipelineStopped($pid);
 				SetPipelineProcessStatus('complete',0,0);
 				SetModuleStopped();
+				# update the stop time
+				ModuleDBCheckOut($scriptname, $db);
 				return 1;
 			}
 
@@ -362,7 +368,11 @@ sub ProcessPipelines() {
 							print "Queue full, waiting 1 minute...";
 							sleep(60); # sleep for 1 minute
 						}
-						if ($filled == 2) { return 1; }
+						if ($filled == 2) {
+							# update the stop time
+							ModuleDBCheckOut($scriptname, $db);
+							return 1;
+						}
 					}
 
 					# get the analysis info, if an analysis already exists for this study
@@ -875,6 +885,8 @@ sub ProcessPipelines() {
 		if ($jobsWereSubmitted) {
 			SetPipelineProcessStatus('complete',0,0);
 			SetModuleStopped();
+			# update the stop time
+			ModuleDBCheckOut($scriptname, $db);
 			return 1;
 		}
 	}
@@ -883,6 +895,10 @@ sub ProcessPipelines() {
 	
 	# end the module and return the code
 	SetModuleStopped();
+	
+	# update the stop time
+	ModuleDBCheckOut($scriptname, $db);
+	
 	if ($jobsWereSubmitted) { return 1; }
 	else { return 0; }
 }

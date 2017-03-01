@@ -107,10 +107,8 @@ sub ProcessDataRequests {
 	if ($result->numrows < 1) {
 		return 0;
 	}
-	# update the start time
-	$sqlstring = "update modules set module_laststart = now(), module_status = 'running' where module_name = '$scriptname'";
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
+	ModuledbCheckIn($scriptname, $db);
 	ModuleRunningCheckIn($scriptname, $db);
 	
 	my $systemstring;
@@ -886,9 +884,8 @@ sub ProcessDataRequests {
 	}
 	
 	# update the stop time
-	$sqlstring = "update modules set module_laststop = now(), module_status = 'stopped' where module_name = '$scriptname'";
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	WriteLog('M');
+	ModuleDBCheckOut($scriptname, $db);
+	WriteLog("normal stop");
 	
 	return $ret;
 }

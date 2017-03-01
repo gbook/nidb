@@ -104,7 +104,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new group */
-		$sqlstring = "insert into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
+		$sqlstring = "insert ignore into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$groupname?> added</span></div><br><br><?

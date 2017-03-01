@@ -184,6 +184,9 @@
 		$urllist['Modules'] = "adminmodules.php";
 		NavigationBar("Admin", $urllist);
 		
+		/* create the color lookup table */
+		$colors = GenerateColorGradient();
+		
 	?>
 
 	<table class="graydisplaytable">
@@ -257,6 +260,28 @@
 				</td>
 			</tr>
 			<? 
+					/* get the list of threads/processes that are running */
+					$sqlstringA = "select *, abs(time_to_sec(timediff(last_checkin, now()))) 'timediff', timediff(now(), last_checkin) 'timediff2' from module_procs where module_name = '$module_name' order by last_checkin";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						$lastcheckin = $rowA['last_checkin'];
+						$timediff = $rowA['timediff'];
+						$timediff2 = $rowA['timediff2'];
+						$pid = $rowA['process_id'];
+						
+						/* get color index for the size */
+						$maxtime = 2*60*60; /* 2 hours */
+						$timeindex = round(($timediff/$maxtime)*100.0);
+						if ($timeindex > 100) { $timeindex = 100; }
+						$timecolor = $colors[$timeindex];
+						
+						?>
+						<tr style="font-size: 9pt">
+							<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=$module_name?>:<?=$pid?></td>
+							<td colspan="3" style="background-color: <?=$timecolor?>">Checked in <?=$lastcheckin?> &nbsp; (<?=$timediff2?> ago)</td>
+						</tr>
+						<?
+					}
 				}
 			?>
 		</tbody>

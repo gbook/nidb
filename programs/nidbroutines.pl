@@ -163,7 +163,7 @@ sub ModuleDBCheckOut {
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 
 	$sqlstring = "delete from module_procs where module_name = '$scriptname' and process_id = '$$'";
-	$result = SQLQuery($sqlstringA, __FILE__, __LINE__);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
 
