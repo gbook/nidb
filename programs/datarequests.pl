@@ -108,7 +108,7 @@ sub ProcessDataRequests {
 		return 0;
 	}
 
-	ModuledbCheckIn($scriptname, $db);
+	ModuleDBCheckIn($scriptname, $db);
 	ModuleRunningCheckIn($scriptname, $db);
 	
 	my $systemstring;

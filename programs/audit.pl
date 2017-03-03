@@ -58,7 +58,7 @@ our $log;							# logfile handle created for this instance of the program
 our $numinstances = 1;				# number of times this program can be run concurrently
 # debugging
 our $debug = 0;
-our $audittype = "quick";			# 'quick' or 'full'
+our $audittype = "full";			# 'quick' or 'full'
 
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------

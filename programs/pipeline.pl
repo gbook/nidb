@@ -366,6 +366,7 @@ sub ProcessPipelines() {
 							SetPipelineStatusMessage($pid, 'Process quota reached. Waiting 1 minute to resubmit');
 							WriteLog("Concurrent analysis quota reached, waiting 1 minute");
 							print "Queue full, waiting 1 minute...";
+							ModuleRunningCheckIn($scriptname, $db);
 							sleep(60); # sleep for 1 minute
 						}
 						if ($filled == 2) {

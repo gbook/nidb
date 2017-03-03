@@ -110,6 +110,7 @@ sub DoImportUploaded {
 	
 	# update the start time
 	SetModuleRunning();
+	ModuleDBCheckIn($scriptname, $db);
 	ModuleRunningCheckIn($scriptname, $db);
 
 	# get list of pending uploads
@@ -289,6 +290,7 @@ sub DoImportUploaded {
 
 	# update the stop time
 	SetModuleStopped();
+	ModuleDBCheckOut($scriptname, $db);
 	
 	return $ret;
 }
