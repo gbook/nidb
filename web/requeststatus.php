@@ -41,6 +41,7 @@
 	$page = GetVariable("page");
 	$groupid = GetVariable("groupid");
 	$requestid = GetVariable("requestid");
+	$viewall = GetVariable("viewall");
 	
 	switch ($action) {
 		case 'viewdetails':
@@ -48,12 +49,17 @@
 			break;
 		case 'cancelgroup':
 			CancelGroup($groupid);
+			ShowList($viewall);
+			break;
+		case 'retryerrors':
+			RetryErrors($groupid);
+			ShowList($viewall);
 			break;
 		case 'showgroup':
 			ShowGroup($groupid, $page);
 			break;
 		default:
-			ShowList();
+			ShowList($viewall);
 	}
 
 	
@@ -63,9 +69,31 @@
 	function CancelGroup($groupid) {
 		$sqlstring = "update data_requests set req_status = 'cancelled' where req_groupid = $groupid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="message">Group download <?=$groupid?> cancelled</span><?
+		?><span class="staticmessage">Group download <?=$groupid?> cancelled</span><?
 	}
 
+	
+	/* --------------------------------------------------- */
+	/* ------- RetryErrors ------------------------------- */
+	/* --------------------------------------------------- */
+	function RetryErrors($groupid) {
+		$sqlstring = "select req_destinationtype from data_requests where req_groupid = $groupid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$desttype = $row['req_destinationtype'];
+		
+		/* the only download type that can resend single series is the remote NiDB. All others
+		   may have consecutive series to handle and must be completely rerun */
+		if ($desttype == "remotenidb") {
+			$sqlstring = "update data_requests set req_status = '' where req_groupid = $groupid and req_status in ('problem', 'cancelled')";
+		}
+		else {
+			$sqlstring = "update data_requests set req_status = '' where req_groupid = $groupid";
+		}
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		?><span class="staticmessage">Group download <?=$groupid?> re-queued</span><?
+	}
+	
 
 	/* --------------------------------------------------- */
 	/* ------- ViewDetails ------------------------------- */
@@ -98,7 +126,7 @@
 	/* --------------------------------------------------- */
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
-	function ShowList() {
+	function ShowList($viewall) {
 		$urllist['Search'] = "search.php";
 		NavigationBar("Data export status", $urllist);
 		
@@ -110,6 +138,7 @@
 				<li>Some older version of Linux cannot unzip files > 4GB. Upgrade unzip to v6.0 or try <code>jar xf thefile.zip</code>
 			</ul>
 		</div>
+		<a href="requeststatus.php?viewall=1">View All Dates</a> (most recent 100 requests)
 		<table width="100%" cellspacing="0" cellpadding="2">
 			<tr>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Group</td>
@@ -119,6 +148,7 @@
 				<? } ?>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Total time</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Total size <span style="font-size:8pt; font-weight:normal; color: gray">(bytes)</span></td>
+				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Last update</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Status</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Download</td>
 				<!--<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Destination Path</td>-->
@@ -152,10 +182,20 @@
 		
 		/* get the groups that occur in the last 7 days */
 		if ($GLOBALS['issiteadmin']) {
-			$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
+			if ($viewall) {
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 order by req_groupid desc limit 100";
+			}
+			else {
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE lastupdate > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
+			}
 		}
 		else {
-			$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
+			if ($viewall) {
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc limit 100";
+			}
+			else {
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE lastupdate > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
+			}
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -169,12 +209,13 @@
 			
 			$total = 0;
 			unset($totals);
-			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(req_status) 'count', req_date, req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
+			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(req_status) 'count', req_date, max(lastupdate) 'lastupdate', req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
 			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$requestdate = date("M j, Y G:i",strtotime($row2['req_date']));
 				$requestingip = $row2['req_ip'];
 				$username = $row2['req_username'];
+				$lastupdate = $row2['lastupdate'];
 				$destinationtype = $row2['req_destinationtype'];
 				$destinationpath = $row2['req_nfsdir'];
 				$cpu = $row2['cpu'];
@@ -204,6 +245,7 @@
 				<? } ?>
 				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$minsec?>&nbsp;</td>
 				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=number_format($totalbytes)?>&nbsp;</td>
+				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$lastupdate?>&nbsp;</td>
 				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray; font-size:10pt">
 					<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['problem']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>">
 					<?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
@@ -215,12 +257,14 @@
 						}
 						if ($totals['problem'] > 0) {
 							?>
-							<br><span style="color: red; font-size:8pt"><?=$totals['problem']?> errors</span>
+							<br><span style="color: red; font-size:8pt"><?=$totals['problem']?> errors</span> 
+							<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
 							<?
 						}
 						if ($totals['cancelled'] > 0) {
 							?>
 							<br><span style="color: red; font-size:8pt"><?=$totals['cancelled']?> cancelled</span>
+							<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
 							<?
 						}
 						if (($totals['pending'] > 0) || ($totals['processing'] > 0) || ($totals[''] > 0)) {
@@ -323,6 +367,7 @@
 				<td style="font-weight:bold; border-bottom: solid 2pt black">Study Num</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">Format</td>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">Status</td>
+				<td style="font-weight:bold; border-bottom: solid 2pt black">Complete date</td>
 			</tr>
 		<?
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -338,6 +383,7 @@
 				$project_name = $row['project_name'];
 				$project_costcenter = $row['project_costcenter'];
 				$status = $row['req_status'];
+				$completedate = $row['req_completedate'];
 				$format = $row['req_filetype'];
 				$cpu = $row['req_cputime'];
 				$destinationtype = $row['req_destinationtype'];
@@ -346,6 +392,8 @@
 				if ($status == "processing") { $color = "#0000FF"; }
 				if ($status == "pending") { $color = "#0000FF"; }
 				if ($status == "problem") { $color = "#FF0000"; }
+				if ($status == "error") { $color = "#FF0000"; }
+				if ($status == "cancelled") { $color = "#FF0000"; }
 				
 				?>
 				<tr style="font-size:10pt">
@@ -358,6 +406,7 @@
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
 						<a href="requeststatus.php?action=viewdetails&requestid=<? echo $requestid; ?>"><span style="color:<? echo $color; ?>"><u><? echo $status; ?></u></span></a>&nbsp;
 					</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $completedate; ?>&nbsp;</td>
 				</tr>
 				<?
 			}

@@ -59,7 +59,7 @@ our $scriptname = "datarequests";
 our $lockfileprefix = "datarequests"; # lock files will be numbered lock.1, lock.2 ...
 our $lockfile = "";					 # lockfile name created for this instance of the program
 our $log;							 # logfile handle created for this instance of the program
-our $numinstances = 2;				 # number of times this program can be run concurrently
+our $numinstances = 4;				 # number of times this program can be run concurrently
 
 # debugging
 our $debug = 0;
@@ -146,21 +146,34 @@ sub ProcessDataRequests {
 			my $transactionid;
 
 			# check to see if ANY of the series in this group have already started processing, if so, skip it
-			my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending' and req_status <> 'cancelled')";
-			WriteLog("$sqlstringA");
-			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-			if ($resultA->numrows > 0) {
-				my %rowA = $resultA->fetchhash;
-				my $reqdate = $rowA{'req_date'};
-				
-				WriteLog("This group [$groupid] already has " . $resultA->numrows . " series which do not have a pending or blank status. That means at least one of the series is probably already processing (as of $reqdate) or is cancelled");
-				next;
+			# unless its a remotenidb group, then its ok to have multiple datarequest modules sending the same group
+			if ($req_destinationtype ne "remotenidb") {
+				my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending' and req_status <> 'cancelled')";
+				WriteLog("$sqlstringA");
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+				if ($resultA->numrows > 0) {
+					my %rowA = $resultA->fetchhash;
+					my $reqdate = $rowA{'req_date'};
+					
+					WriteLog("This group [$groupid] already has " . $resultA->numrows . " series which do not have a pending or blank status. That means at least one of the series is probably already processing (as of $reqdate) or is cancelled");
+					next;
+				}
+			}
+			# also check if there is already another process in here processing, if there is, we can skip it
+			else {
+				my $sqlstringA = "select req_status from data_requests where req_groupid = $groupid and req_status = 'processing'";
+				WriteLog("$sqlstringA");
+				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+				if ($resultA->numrows > 1) {
+					WriteLog("Another instance of this module is already working on it (or this series is stuck)");
+					next;
+				}
 			}
 			
 			# needed to know the modality before we can get the actual series information
-			$sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.subject_id, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
+			my $sqlstringA = "select sha1(e.name) 'sha1name', sha1(birthdate) 'sha1dob', a.*, b.*, d.project_name, d.project_costcenter, e.uid, e.subject_id, e.uuid2, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by b.study_id, a.series_num";
 			WriteLog("$sqlstringA");
-			$resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			my $currentstudyid;
 			my $laststudyid = 0;
 			my $newseriesnum = 0;
@@ -226,6 +239,17 @@ sub ProcessDataRequests {
 				my $numfilesbeh = $rowA{'numfiles_beh'};
 				$currentstudyid = $study_id;
 
+				# check again to see if this series has been cancelled, and if so, don't process it
+				my $sqlstringC = "select req_status from data_requests where request_id = '$request_id'";
+				WriteLog("$sqlstringC");
+				my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+				my %rowC = $resultC->fetchhash;
+				my $currentReqStatus = $rowC{'req_status'};
+				
+				if ($currentReqStatus eq "cancelled") {
+					next;
+				}
+				
 				# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
 				if ($data_type eq '') {
 					$data_type = $modality;
@@ -255,7 +279,7 @@ sub ProcessDataRequests {
 				my %rowB = $resultB->fetchhash;
 				my $status = $rowB{'req_status'};
 				if (($status eq "processing") || ($status eq "complete")) {
-					WriteLog("Woah Nelly! Should be skipping this row, the status is now [$status], but theres only one instance of this program running, so how is the status being changed? Unless there is another server running the same programs against THIS database!");
+					WriteLog("Another instance of this module is already processing this series");
 					next;
 				}
 				else {
@@ -375,7 +399,7 @@ sub ProcessDataRequests {
 				else {
 					WriteLog("indir [$indir] does not exist");
 					$newstatus = 'problem';
-					$results .= "[$indir] does not exist";
+					$results .= "[$indir] does not exist\n";
 				}
 				
 				# check if the behindir directory exists or is empty
@@ -570,7 +594,7 @@ sub ProcessDataRequests {
 					}
 					
 					# send the zip and send file
-					my $systemstring2 = "cd $tmpzipdir; tar -czvf $tmpzip .";
+					my $systemstring2 = "cd $tmpzipdir; tar -czf $tmpzip --warning=no-timestamp .";
 					WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
 					# get MD5 before sending
 					my $zipmd5 = file_md5_hex($tmpzip);
@@ -588,12 +612,14 @@ sub ProcessDataRequests {
 						}
 						else {
 							$newstatus = 'problem';
+							$results .= "Upload fail: MD5 non-match\n";
 							WriteLog("Upload fail: MD5 non-match");
 						}
 					}
 					else {
 						$newstatus = 'problem';
-						WriteLog("Upload fail: got message [" . $parts[0] . "]");
+						$results .= "Upload fail: got message [" . $results . "]\n";
+						WriteLog("Upload fail: got message [" . $results . "]");
 					}
 					
 				}
@@ -609,7 +635,7 @@ sub ProcessDataRequests {
 						WriteLog("Point 1");
 						if (!MakePath($fullexportdir)) {
 							$newstatus = "problem";
-							$results = "$fullexportdir not created. Check permissions on destination directory.";
+							$results .= "$fullexportdir not created. Check permissions on destination directory.\n";
 						}
 					}
 					# see if the directory has been created
@@ -642,7 +668,7 @@ sub ProcessDataRequests {
 							WriteLog("Checkpoint iii");
 						}
 						else {
-							$results .= "Unable to export $indir. Directory does not exist";
+							$results .= "Unable to export $indir. Directory does not exist\n";
 						}
 					}
 					$newstatus = 'complete';
@@ -662,7 +688,7 @@ sub ProcessDataRequests {
 					WriteLog("Found [$filecount] files in [$indir]");
 					if ($filecount < 1) {
 						$newstatus = "problem";
-						$results = "[$indir] was empty. No files available to export";
+						$results = "[$indir] was empty. No files available to export\n";
 						WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data");
 					}
 					
@@ -671,7 +697,7 @@ sub ProcessDataRequests {
 						WriteLog("Point 1");
 						if (!MakePath($fullexportdir)) {
 							$newstatus = "problem";
-							$results = "$fullexportdir not created. Check permissions on destination directory.";
+							$results = "$fullexportdir not created. Check permissions on destination directory.\n";
 						}
 					}
 					# see if the directory has been created
@@ -725,7 +751,7 @@ sub ProcessDataRequests {
 							WriteNDARSeries($headerfile, "$uid-$study_num-$series_num.zip", $behzipfile, $behdesc, $series_id, $modality, "$indir/$data_type");
 						}
 						else {
-							$results .= "Unable to export $indir. Directory does not exist";
+							$results .= "Unable to export $indir. Directory does not exist\n";
 						}
 						
 						if ($modality eq "mr") {
@@ -761,7 +787,7 @@ sub ProcessDataRequests {
 			# zip up the directory if its an export
 			if ($req_destinationtype eq "export") {
 				# zip up the directory (.tar.gz)
-				$systemstring = "cd $cfg{'ftpdir'}; tar -czf NIDB-$exportdir.tar.gz --remove-files NIDB-$exportdir";
+				$systemstring = "cd $cfg{'ftpdir'}; tar -czf NIDB-$exportdir.tar.gz --remove-files --warning=no-timestamp NIDB-$exportdir";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 			
@@ -1059,7 +1085,7 @@ sub Anonymize() {
 			if ($anon == 4) {
 				# encrypt patient name, leave everything else
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='$randstr1' -o $File::Find::name";
-				WriteLog("Anonymizing (level 4) $File::Find::name");
+				#WriteLog("Anonymizing (level 4) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
@@ -1152,14 +1178,14 @@ sub Anonymize() {
 				#WriteLog("Anonymizing (level 2 - FULL) $File::Find::name");
 				
 				my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; cd $cfg{'scriptdir'}/DicomAnonymizer; ./DicomAnonymizer.sh 1 1 1 1 1 1 $File::Find::name";
-				WriteLog("Anonymizing (full) $File::Find::name");
+				#WriteLog("Anonymizing (full) $File::Find::name");
 				
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
 			if ($anon == 3) {
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
-				WriteLog("Anonymizing (level 3) $File::Find::name");
+				#WriteLog("Anonymizing (level 3) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
@@ -1180,8 +1206,10 @@ sub Anonymize() {
 			if ($j>($#systemstrings)) {
 				last;
 			}
-			my $t = threads->new(\&ThreadedSystemCall,$systemstrings[$i]);
-			push(@threads,$t);
+			if (trim($systemstrings[$i]) ne "") {
+				my $t = threads->new(\&ThreadedSystemCall,$systemstrings[$i]);
+				push(@threads,$t);
+			}
 			$i++;
 		}
 		WriteLog("Launched $numthreads threads, waiting for them to finish");
@@ -1205,7 +1233,7 @@ sub ThreadedSystemCall {
 	
 	my $starttime = time;
 	`$systemstring 2>&1`;
-	WriteLog("ThreadedSystemCall [$systemstring] output: " . `$systemstring 2>&1`);
+	#WriteLog("ThreadedSystemCall [$systemstring] output: " . `$systemstring 2>&1`);
 	my $endtime = time;
 	
 	return $endtime - $starttime;
