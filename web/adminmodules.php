@@ -117,10 +117,18 @@
 			?>
 			<details>
 			<summary><?=$filename?> <span class="tiny"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</span></summary>
-			<? if ($filesize < 50000000) {?>
+			<? if ($filesize < 1000000) {?>
 			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px"><?=htmlspecialchars(file_get_contents($filename))?></pre>
 			<? } else { ?>
-			File too large to display
+				File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
+<?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
+				
+				
+				... ... ...
+				
+				
+<?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
+			</pre>
 			<? } ?>
 			</details>
 			<?

@@ -295,6 +295,10 @@
 		$altuids = mysqli_real_escape_string($GLOBALS['linki'], $altuids);
 		$numfiles = mysqli_real_escape_string($GLOBALS['linki'], $numfiles);
 		
+		$altuidlist = explode(',',$altuids);
+		$altuidlist = array_unique($altuidlist);
+		$altuids = implode(',',$altuidlist);
+		
 		/* get the instanceRowID */
 		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
 		//echo "[[$sqlstring]]\n";

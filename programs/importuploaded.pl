@@ -190,13 +190,13 @@ sub DoImportUploaded {
 						my $systemstring = "";
 						WriteLog("$filepath -> [$ext]");
 						switch ($ext) {
-							case /\.tar\.gz$/ { $systemstring = "tar -xvzf '$filepath' -C $tmppath"; }
+							case /\.tar\.gz$/ { $systemstring = "tar -xzf '$filepath' --warning=no-timestamp -C $tmppath"; }
 							case /\.gz$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
 							case /\.z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
 							case /\.Z$/ { $systemstring = "gunzip -c '$filepath' -C $tmppath"; }
 							case /\.zip$/ { $systemstring = "unzip '$filepath' -d $tmppath"; }
-							case /\.tar\.bz2$/ { $systemstring = "tar -xvjf '$filepath' -C $tmppath"; }
-							case /\.tar$/ { $systemstring = "tar -xvf '$filepath' -C $tmppath"; }
+							case /\.tar\.bz2$/ { $systemstring = "tar -xjf '$filepath' --warning=no-timestamp -C $tmppath"; }
+							case /\.tar$/ { $systemstring = "tar -xf '$filepath' -C $tmppath"; }
 						}
 						if ($systemstring ne '') {
 							mkpath($tmppath);
@@ -229,7 +229,7 @@ sub DoImportUploaded {
 				# unzip anything in the directory before parsing it
 				my $systemstring = "cd $uploaddir; unzip *.zip; rm *.zip";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				$systemstring = "cd $uploaddir; tar -xzvf *.tar.gz; rm *.tar.gz";
+				$systemstring = "cd $uploaddir; tar -xzf *.tar.gz --warning=no-timestamp; rm *.tar.gz";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 				$systemstring = "cd $uploaddir; gunzip *.gz; rm *.gz";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");

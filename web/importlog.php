@@ -563,10 +563,10 @@
 				<td><?=$import_datatype?></td>
 				<td><?=$import_modality?></td>
 				<td style="font-size:8pt"><?=$import_startdate?></td>
-				<td style="font-size:8pt">
-					<span title="api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
-					<span title="importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
-					<span title="parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
+				<td style="font-size:8pt"><pre>[<?=trim($import_status)?>]</pre> 
+					<span title="uploading &rarr; pending<br>api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
+					<span title="receiving &rarr; received<br>importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
+					<span title="archiving &rarr; archived<br>parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
 					<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
 				</td>
 				<td><?=$import_message?></td>

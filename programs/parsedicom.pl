@@ -119,8 +119,8 @@ sub DoParse {
 	WriteLog("Connected to database");
 	
 	# before starting things off, delete any rows older than 30 days from the importlogs table
-	my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
-	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
+	#my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# ----- parse all files in the main directory -----
 	if (ParseDirectory($cfg{'incomingdir'}, '')) {
@@ -146,7 +146,8 @@ sub DoParse {
 			# check if this module should be running now or not
 			if (!ModuleCheckIfActive($scriptname, $db)) {
 				WriteLog("Not supposed to be running right now");
-				return 0;
+				ModuleDBCheckOut($scriptname, $db);
+				return 1;
 			}
 		}
 	}
@@ -309,7 +310,7 @@ sub ParseDirectory {
 		# check if this module should be running now or not
 		if (!ModuleCheckIfActive($scriptname, $db)) {
 			WriteLog("Not supposed to be running right now");
-			return 0;
+			return 1;
 		}
 	}
 
@@ -359,7 +360,7 @@ sub ParseDirectory {
 									$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
 									WriteLog($sqlstring);
 									$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-									return 0;
+									return 1;
 								}
 							}
 						}
@@ -626,10 +627,12 @@ sub InsertDICOM {
 	WriteLog("$header");
 	my @parts = split(',', $header);
 	my $val = "";
-	$val = $parts[4];
-	$val =~ s/Data '//g;
-	$val =~ s/'//g;
-	$val = trim($val);
+	if (defined($parts[4])) {
+		$val = $parts[4];
+		$val =~ s/Data '//g;
+		$val =~ s/'//g;
+		$val = trim($val);
+	}
 	WriteLog("PhaseEncodingDirectionPositive = [$val]");
 	$PhaseEncodingDirectionPositive = EscapeMySQLString(trim($val));
 	$PhaseEncodeAngle = EscapeMySQLString(trim($PhaseEncodeAngle));
@@ -733,7 +736,7 @@ sub InsertDICOM {
 	push @idsearchlist, @altuidlist;
 	my $SQLIDs = "'$PatientID'";
 	foreach my $tmpID (@idsearchlist) {
-		if (trim($tmpID) ne '') {
+		if ((trim($tmpID) ne '') && (trim($tmpID) ne 'none') && (trim(lc($tmpID)) ne 'na') && (trim($tmpID) ne '0')) {
 			$SQLIDs .= ",'$tmpID'";
 		}
 	}
@@ -1144,6 +1147,14 @@ sub InsertDICOM {
 		my $filecnt = 0;
 		# rename the existing files to make them unique
 		foreach my $file (sort @existingdcmfiles) {
+		
+			# check if its alrady in the intended filename format
+			my @parts = split('_', $file);
+			if (@parts == 8) {
+				#WriteLog("$file had 8 parts to the filename, skipping renaming");
+				next;
+			}
+			
 			my $tags2 = $exifTool->ImageInfo("$outdir/$file");
 			my $SliceNumber = trim($tags2->{'AcquisitionNumber'});
 			my $InstanceNumber = trim($tags2->{'InstanceNumber'});
@@ -1156,11 +1167,7 @@ sub InsertDICOM {
 			$ContentTime =~ s/://g;
 			$ContentTime =~ s/\.//g;
 			$SOPInstance = crc32($SOPInstance);
-			
-			# sort by slice #, or instance #
-			#WriteLog("$file: SliceNumber: $SliceNumber, InstanceNumber: $InstanceNumber, SliceLocation: $SliceLocation, Acquisition Time: $AcquisitionTime");
-			
-			#my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime.dcm";
+
 			my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime" . "_$SOPInstance.dcm";
 			#WriteLog("Renaming [$file] to [$newname]");
 			
@@ -1172,6 +1179,9 @@ sub InsertDICOM {
 	
 	WriteLog("Beginning renumbering of new files");
 	# renumber the NEWLY added files to make them unique
+	# create a SQL string for batch insert
+	my $sqlstringA = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ";
+	my @sqlinserts;
 	foreach my $file (sort @files) {
 		my $tags3 = $exifTool->ImageInfo($file);
 		my $SliceNumber = trim($tags3->{'AcquisitionNumber'});
@@ -1216,10 +1226,12 @@ sub InsertDICOM {
 		`$systemstring 2>&1`;
 		
 		# insert an import log record
-		my $sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
 	}
-	WriteLog("Done renaming files");
+	WriteLog("Done renaming files A");
+	$sqlstringA .= join(',', @sqlinserts);
+	my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+	WriteLog("Done renaming files B");
 	
 	# get the size of the dicom files and update the DB
 	my $dirsize = 0;
@@ -1277,6 +1289,7 @@ sub InsertDICOM {
 	}
 	
 	# change the permissions to 777 so the webpage can read/write the directories
+	WriteLog("About to change permissions on $cfg{'archivedir'}/$subjectRealUID");
 	$systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	# change back to original directory before leaving
@@ -1553,7 +1566,7 @@ sub InsertParRec {
 		WriteLog("Subject count < 1");
 
 		# search for an existing subject by name, dob, gender
-		$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = '$PatientSex' and birthdate = '$PatientBirthDate'";
+		$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = '$PatientSex' and birthdate = '$PatientBirthDate' and isactive = 1";
 		WriteLog("[$sqlstring]");
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
@@ -2058,13 +2071,13 @@ sub InsertEEG {
 	move($cfg{'incomingdir'} . "/$importID/$file","$outdir/$file");
 
 	# insert an import log record
-	$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', '" . uc($Modality) . "', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
+	#$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', '" . uc($Modality) . "', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
 	WriteLog("Inside InsertEEG() [$sqlstring]");
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log
-	$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
+	#$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# get the size of the files and update the DB
 	my $dirsize;
@@ -2107,8 +2120,8 @@ sub CreateThumbnail {
 	my ($dir, $type, $xdim, $ydim) = @_;
 
 	# print the ImageMagick version
-	my $systemstring = "which convert";
-	WriteLog("$systemstring (" . trim(`$systemstring 2>&1`) . ")");
+	#my $systemstring = "which convert";
+	#WriteLog("$systemstring (" . trim(`$systemstring 2>&1`) . ")");
 	#$systemstring = "convert --version";
 	#WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	
@@ -2124,43 +2137,46 @@ sub CreateThumbnail {
 	my $outfile = "$dir/thumb.png";
 
 	if ($numdcmfiles < 1) {
+		WriteLog("Could not find any DICOM files to create a thumbnail");
 		return;
 	}
-	$systemstring = "convert -normalize $dir/dicom/$dcmfile $outfile";
+	my $systemstring = "convert -normalize $dir/dicom/$dcmfile $outfile";
 	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 
-	if ($type eq "epi") {
-		if ($numdcmfiles < 256) {
-			my $systemstring = "";
-			if ($xdim == 384) {
-				$systemstring = "convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
-			}
-			if ($xdim == 518) {
-				$systemstring = "convert -crop 74x74+296+74\\! -fill white -pointsize 10 -annotate +55+72 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
-			}
-			if ($xdim == 672) {
-				$systemstring = "convert -crop 84x84+336+84\\! -fill white -pointsize 10 -annotate +65+82 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
-			}
-			if ($xdim == 658) {
-				$systemstring = "convert -crop 94x94+376+94\\! -fill white -pointsize 10 -annotate +75+92 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
-			}
-			if ($systemstring ne "") {
-				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-			}
-		}
-		else {
-			WriteLog("EPI sequence contains $numdcmfiles volumes. Not going to create the animated gif");
-		}
-	}
-	if ($type eq "structural") {
-		if ($numdcmfiles < 256) {
-			my $systemstring = "convert -resize 50% -fill white -pointsize 10 -annotate +2+12 '%p' +map -delay 20 -loop 0 *.dcm $dir/thumb.gif";
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-		}
-		else {
-			WriteLog("Structural sequence contains $numdcmfiles slices. Not going to create the animated gif");
-		}
-	}
+	# only create animated gif if there are few files... otherwise this is a bottleneck
+	# ***** on second thought, don't create the animated gif... it's a bottleneck when doing YUGE datasets *****
+	#if ($type eq "epi") {
+	#	if ($numdcmfiles < 16) {
+	#		my $systemstring = "";
+	#		if ($xdim == 384) {
+	#			$systemstring = "convert -crop 64x64+256+64\\! -fill white -pointsize 10 -annotate +45+62 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+	#		}
+	#		if ($xdim == 518) {
+	#			$systemstring = "convert -crop 74x74+296+74\\! -fill white -pointsize 10 -annotate +55+72 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+	#		}
+	#		if ($xdim == 672) {
+	#			$systemstring = "convert -crop 84x84+336+84\\! -fill white -pointsize 10 -annotate +65+82 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+	#		}
+	#		if ($xdim == 658) {
+	#			$systemstring = "convert -crop 94x94+376+94\\! -fill white -pointsize 10 -annotate +75+92 '%p' +map -delay 10 -loop 0 +repage *.dcm $dir/thumb.gif";
+	#		}
+	#		if ($systemstring ne "") {
+	#			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+	#		}
+	#	}
+	#	else {
+	#		WriteLog("EPI sequence contains $numdcmfiles volumes. Not going to create the animated gif");
+	#	}
+	#}
+	#if ($type eq "structural") {
+	#	if ($numdcmfiles < 16) {
+	#		my $systemstring = "convert -resize 50% -fill white -pointsize 10 -annotate +2+12 '%p' +map -delay 20 -loop 0 *.dcm $dir/thumb.gif";
+	#		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+	#	}
+	#	else {
+	#		WriteLog("Structural sequence contains $numdcmfiles slices. Not going to create the animated gif");
+	#	}
+	#}
 	
 	# change back to original directory before leaving
 	chdir($origDir);

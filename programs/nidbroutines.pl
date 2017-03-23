@@ -568,7 +568,12 @@ sub GetDirectorySize {
 	my $systemstring = "du -sb $dir";
 	my $output = `$systemstring`;
 	my @parts = split(/\s/,$output);
-	$size = $parts[0];
+	if (defined($parts[0])) {
+		$size = $parts[0];
+	}
+	else {
+		$size = 0;
+	}
 
 	my @files = <$dir/*.*>;
 	my $count = @files;

@@ -531,97 +531,116 @@ sub ProcessDataRequests {
 				# ----- send to remote NiDB site -----
 				# for now, only DICOM data and beh can be sent to remote sites
 				if ($req_destinationtype eq "remotenidb") {
-					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
-					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
-					my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-					my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
-					my $tmpzipdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(12);
-					MakePath($tmpdir);
-					MakePath($tmpzipdir);
-					MakePath("$tmpzipdir/beh");
-					$systemstring = "cp $indir/* $tmpdir/";
-					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-					Anonymize($tmpdir,4,uc($sha1name),uc($sha1dob));
+				
+					my $numfails = 0;
+					my $error = 0;
 					
-					# get the list of DICOM files
-					my @dcmfiles;
-					opendir(DIR,$tmpdir) || Error("Cannot open directory [$tmpdir]\n");
-					my @files = readdir(DIR);
-					closedir(DIR);
-					foreach my $f (@files) {
-						my $fulldir = "$tmpdir/$f";
-						#WriteLog("Checking on [$fulldir]");
-						if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
-							push(@dcmfiles,$f);
-						}
-					}
-					my $numdcms = $#dcmfiles + 1;
-					WriteLog("Found [$numdcms] dcmfiles");
-					
-					my @behfiles;
-					# get the list of beh files
-					if (-e $behindir) {
-						opendir(DIR,$behindir) || Error("Cannot open directory [$behindir]\n");
-						my @bfiles = readdir(DIR);
+					while ($error && $numfails < 5) {
+						my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
+						my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
+						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+						my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
+						my $tmpzipdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(12);
+						MakePath($tmpdir);
+						MakePath($tmpzipdir);
+						MakePath("$tmpzipdir/beh");
+						$systemstring = "cp $indir/* $tmpdir/";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						Anonymize($tmpdir,4,uc($sha1name),uc($sha1dob));
+						
+						# get the list of DICOM files
+						my @dcmfiles;
+						opendir(DIR,$tmpdir) || Error("Cannot open directory [$tmpdir]\n");
+						my @files = readdir(DIR);
 						closedir(DIR);
-						foreach my $f (@bfiles) {
-							my $fulldir = "$behindir/$f";
+						foreach my $f (@files) {
+							my $fulldir = "$tmpdir/$f";
 							#WriteLog("Checking on [$fulldir]");
 							if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
-								push(@behfiles,$f);
+								push(@dcmfiles,$f);
 							}
 						}
-					}
-					
-					# build the cURL string to send the actual data
-					$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$modality' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
-					my $c = 0;
-					foreach my $f (@dcmfiles) {
-						$c++;
-						#WriteLog("Appending file [$c] -> $f");
-						#$systemstring .= "-F 'files[]=\@$tmpdir/$f' ";
-						my $systemstring2 = "cp $tmpdir/$f $tmpzipdir/";
+						my $numdcms = $#dcmfiles + 1;
+						WriteLog("Found [$numdcms] dcmfiles");
+						
+						my @behfiles;
+						# get the list of beh files
+						if (-e $behindir) {
+							opendir(DIR,$behindir) || Error("Cannot open directory [$behindir]\n");
+							my @bfiles = readdir(DIR);
+							closedir(DIR);
+							foreach my $f (@bfiles) {
+								my $fulldir = "$behindir/$f";
+								#WriteLog("Checking on [$fulldir]");
+								if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
+									push(@behfiles,$f);
+								}
+							}
+						}
+						
+						# build the cURL string to send the actual data
+						$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$modality' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
+						my $c = 0;
+						foreach my $f (@dcmfiles) {
+							$c++;
+							my $systemstring2 = "cp '$tmpdir/$f' $tmpzipdir/";
+							my $res = `$systemstring2 2>&1`;
+							if ($res ne "") {
+								WriteLog("$systemstring2 ($res)");
+							}
+							
+						}
+						
+						$c = 0;
+						foreach my $f (@behfiles) {
+							$c++;
+							my $systemstring2 = "cp '$behindir/$f' $tmpzipdir/beh/";
+							my $res = `$systemstring2 2>&1`;
+							if ($res ne "") {
+								WriteLog("$systemstring2 ($res)");
+							}
+						}
+						
+						# send the zip and send file
+						my $systemstring2 = "cd $tmpzipdir;GZIP=-1 tar -czf $tmpzip --warning=no-timestamp .; chmod 777 $tmpzip";
 						WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
-					}
-					
-					$c = 0;
-					foreach my $f (@behfiles) {
-						$c++;
-						#WriteLog("Appending file [$c] -> $f");
-						#$systemstring .= "-F 'behs[]=\@$behindir/$f' ";
-						my $systemstring2 = "cp $behindir/$f $tmpzipdir/beh/";
-						WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
-					}
-					
-					# send the zip and send file
-					my $systemstring2 = "cd $tmpzipdir; tar -czf $tmpzip --warning=no-timestamp .";
-					WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
-					# get MD5 before sending
-					my $zipmd5 = file_md5_hex($tmpzip);
-					$systemstring .= "-F 'files[]=\@$tmpzip' ";
-					$systemstring .= "$remotenidbserver/api.php";
-					$results = `$systemstring 2>&1`;
-					WriteLog("$systemstring ($results)");
-					
-					my @parts = split(',',$results);
-					if (trim($parts[0]) eq 'SUCCESS') {
-						# a file was successfully received by api.php, now check the return md5
-						if (trim(uc($parts[1])) eq uc($zipmd5)) {
-							$newstatus = 'complete';
-							WriteLog("Upload success: MD5 match");
+						# get size before sending
+						my $zipsize = -s $tmpzip;
+						my $starttime = time();
+						# get MD5 before sending
+						my $zipmd5 = file_md5_hex($tmpzip);
+						$systemstring .= "-F 'files[]=\@$tmpzip' ";
+						$systemstring .= "$remotenidbserver/api.php";
+						$results = `$systemstring 2>&1`;
+						WriteLog("$systemstring ($results)");
+						my $elapsedtime = time() - $starttime;
+						my $MBps = $zipsize/$elapsedtime/1000/1000;
+						WriteLog("$zipsize transferred at $MBps MB/s ");
+						
+						my @parts = split(',',$results);
+						if (trim($parts[0]) eq 'SUCCESS') {
+							# a file was successfully received by api.php, now check the return md5
+							if (trim(uc($parts[1])) eq uc($zipmd5)) {
+								$newstatus = 'complete';
+								WriteLog("Upload success: MD5 match");
+								$error = 0;
+							}
+							else {
+								$newstatus = 'problem';
+								$results .= "Upload fail: MD5 non-match\n";
+								WriteLog("Upload fail: MD5 non-match");
+								$error = 1;
+								$numfails++;
+							}
 						}
 						else {
 							$newstatus = 'problem';
-							$results .= "Upload fail: MD5 non-match\n";
-							WriteLog("Upload fail: MD5 non-match");
+							$results .= "Upload fail: got message [" . $results . "]\n";
+							WriteLog("Upload fail: got message [" . $results . "]");
+							$error = 1;
+							$numfails++;
 						}
 					}
-					else {
-						$newstatus = 'problem';
-						$results .= "Upload fail: got message [" . $results . "]\n";
-						WriteLog("Upload fail: got message [" . $results . "]");
-					}
-					
 				}
 				
 				# ----- export data -----
