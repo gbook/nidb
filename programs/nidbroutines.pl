@@ -791,7 +791,7 @@ sub InsertAnalysisEvent {
 	$event = EscapeMySQLString($event);
 	$message = EscapeMySQLString($message);
 	
-	my $sqlstring = "insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values ($analysisID, $pipelineID, $pipelineVersion, $studyID, '$event', '$hostname', '$message')";
+	my $sqlstring = "insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values ('$analysisID', '$pipelineID', '$pipelineVersion', '$studyID', '$event', '$hostname', '$message')";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 

@@ -123,6 +123,9 @@
 			ApplyTags($id, $studyids, $tags);
 			DisplayProject($id);
 			break;
+		case 'displaycompleteprojecttable':
+			DisplayCompleteProjectTable($id);
+			break;
 		case 'viewinstancesummary':
 			DisplayInstanceSummary($id);
 			break;
@@ -1274,6 +1277,59 @@
 			</tr>
 		</table>
 		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayCompleteProjectTable -------- */
+	/* -------------------------------------------- */
+	function DisplayCompleteProjectTable($id) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+	
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		$admin = $row['project_admin'];
+		$pi = $row['project_pi'];
+		$costcenter = $row['project_costcenter'];
+		$sharing = $row['project_sharing'];
+		$startdate = $row['project_startdate'];
+		$enddate = $row['project_enddate'];
+	
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		NavigationBar("$name", $urllist,0,'','','','');
+
+		?><textarea style="width: 100%; height: 500px"><?
+		/* get all series associated with this project (MR only for now) */
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id left join mr_series d on c.study_id = d.study_id where b.project_id = $id order by c.study_datetime, d.series_num";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = $row['subject_id'];
+			$uid = $row['uid'];
+			$guid = $row['guid'];
+			$gender = $row['gender'];
+			$birthdate = $row['birthdate'];
+			$enrollsubgroup = $row['enroll_subgroup'];
+			$enrollmentid = $row['enrollment_id'];
+			$studydatetime = $row['study_datetime'];
+			$studyaltid = $row['study_alternateid'];
+			$seriesdatetime = $row['series_datetime'];
+			$seriesdesc = $row['series_desc'];
+			$seriesprotocol = $row['series_protocol'];
+			$seriessequencename = $row['series_sequencename'];
+			$seriesnum = $row['series_num'];
+			$seriesnumfiles = $row['numfiles'];
+			$seriesnumbeh = $row['numfiles_beh'];
+
+			$altuids = implode(',', GetAlternateUIDs($subjectid, $enrollmentid));
+			
+			if ($studydatetime == "") { $studydatetime = "No Studies"; }
+			
+			echo "$studydatetime\t$seriesnum\t$seriesdatetime\t$seriesdesc\t$seriesprotocol\t$seriessequencename\t$seriesnumfiles\t$seriesnumbeh\t$uid\t$altuids\n";
+		}
+		?></textarea><?
 	}
 
 
@@ -2492,7 +2548,10 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheaderactive">
+							<a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a><br>
+							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Complete Project</a>
+						</td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
@@ -2528,7 +2587,9 @@
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheaderactive">
+							<a href="projects.php?id=<?=$id?>">Studies</a>
+						</td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>

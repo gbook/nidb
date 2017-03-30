@@ -131,7 +131,8 @@ sub DoImportUploaded {
 			my $fileisseries = $row{'import_fileisseries'};
 			my $importstatus = $row{'import_status'};
 			
-			if ($importstatus eq 'complete') {
+			# if somehow the status was changed elsewhere, don't attempt to process these statuses
+			if ($importstatus ne 'pending') {
 				next;
 			}
 	
@@ -151,6 +152,8 @@ sub DoImportUploaded {
 				my @files;
 				if (!opendir (DIR, $uploaddir)) {
 					WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
+					my $sqlstringB = "update import_requests set import_status = 'error', import_message = 'No files found' where importrequest_id = $importrequest_id";
+					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 					next;
 				}
 				while (my $file = readdir(DIR)) {
@@ -239,6 +242,8 @@ sub DoImportUploaded {
 				my @files;
 				if (!opendir (DIR, $uploaddir)) {
 					WriteLog("Could not open directory [$uploaddir] because [" . $! . "]");
+					my $sqlstringB = "update import_requests set import_status = 'error', import_message = 'No files found' where importrequest_id = $importrequest_id";
+					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 					next;
 				}
 				while (my $file = readdir(DIR)) {

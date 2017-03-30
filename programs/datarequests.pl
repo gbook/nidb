@@ -140,7 +140,7 @@ sub ProcessDataRequests {
 			my $remotenidbserver = $row{'req_nidbserver'};
 			my $remotenidbusername = $row{'req_nidbusername'};
 			my $remotenidbpassword = $row{'req_nidbpassword'};
-			my $newstatus = "";
+			my $newstatus = "unknown";
 			my $results = "";
 			#WriteLog('B');
 			my $transactionid;
@@ -204,7 +204,7 @@ sub ProcessDataRequests {
 				my $req_seriesid = $rowA{'req_seriesid'};
 				my $req_preserveseries = $rowA{'req_preserveseries'};
 				my $req_gzip = $rowA{'req_gzip'};
-				my $req_pipelinedownloadid = $rowA{'req_pipelinedownloadid'};
+				#my $req_pipelinedownloadid = $rowA{'req_pipelinedownloadid'};
 				my $req_anonymize = $rowA{'req_anonymize'};
 				my $req_timepoint = $rowA{'req_timepoint'};
 				my $req_behonly = $rowA{'req_behonly'};
@@ -279,7 +279,7 @@ sub ProcessDataRequests {
 				my %rowB = $resultB->fetchhash;
 				my $status = $rowB{'req_status'};
 				if (($status eq "processing") || ($status eq "complete")) {
-					WriteLog("Another instance of this module is already processing this series");
+					WriteLog("Another instance of this module is already processing this series. Status is [$status]");
 					next;
 				}
 				else {
@@ -533,9 +533,9 @@ sub ProcessDataRequests {
 				if ($req_destinationtype eq "remotenidb") {
 				
 					my $numfails = 0;
-					my $error = 0;
+					my $error = 1;
 					
-					while ($error && $numfails < 5) {
+					while (($error == 1) && ($numfails < 5)) {
 						my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 						my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
@@ -613,9 +613,9 @@ sub ProcessDataRequests {
 						$systemstring .= "$remotenidbserver/api.php";
 						$results = `$systemstring 2>&1`;
 						WriteLog("$systemstring ($results)");
-						my $elapsedtime = time() - $starttime;
+						my $elapsedtime = time() - $starttime + 0.0000001;
 						my $MBps = $zipsize/$elapsedtime/1000/1000;
-						WriteLog("$zipsize transferred at $MBps MB/s ");
+						WriteLog("$zipsize bytes transferred at " . sprintf("%.2f",$MBps) . " MB/s ");
 						
 						my @parts = split(',',$results);
 						if (trim($parts[0]) eq 'SUCCESS') {
@@ -789,15 +789,18 @@ sub ProcessDataRequests {
 				my $endtime = time;
 				my $totaltime = $endtime - $starttime;
 				$results = EscapeMySQLString($results);
-				$sqlstring = "update data_requests set req_cputime = $totaltime, req_completedate = now(), req_status = '$newstatus', req_results = '$results' where request_id = $request_id";
-				WriteLog("SQL: $sqlstring");
-				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				# if newstatus is unchanged, nothing was done, so don't update anything
+				if ($newstatus ne "unknown") {
+					my $sqlstring = "update data_requests set req_cputime = $totaltime, req_completedate = now(), req_status = '$newstatus', req_results = '$results' where request_id = $request_id";
+					WriteLog("SQL: $sqlstring");
+					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				}
 				
 				# if this was a pipeline download, insert it into the pipeline_data table
-				if ($req_pipelinedownloadid > 0) {
-					$sqlstring = "insert into pipeline_data (pipelinedownload_id, pdata_groupnum, pdata_seriesid, pdata_modality, pdata_downloaddate, pdata_datadir) values ($req_pipelinedownloadid, $groupid, $req_seriesid, '$modality', now(), '$req_nfsdir/$newdir/$newseriesnum')";
-					$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-				}
+				#if ($req_pipelinedownloadid > 0) {
+				#	$sqlstring = "insert into pipeline_data (pipelinedownload_id, pdata_groupnum, pdata_seriesid, pdata_modality, pdata_downloaddate, pdata_datadir) values ($req_pipelinedownloadid, $groupid, $req_seriesid, '$modality', now(), '$req_nfsdir/$newdir/$newseriesnum')";
+				#	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				#}
 				#WriteLog('K');
 				
 				$laststudyid = $currentstudyid;

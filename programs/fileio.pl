@@ -431,26 +431,27 @@ sub DeletePipeline() {
 
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
 	
-	WriteLog("In DeletePipeline()");
+	WriteLog("In DeletePipeline($id)");
 	
 	# get list of analyses associated with this pipeline
 	my $sqlstring = "select * from analysis where pipeline_id = $id";
-	my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	#my $result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			my $analysisid = $row{'analysis_id'};
+			WriteLog("Within DeletePipeline($id), calling DeleteAnalysis($analysisid)");
 			DeleteAnalysis($analysisid);
 		}
 	}
 	else {
-		WriteLog("No analyses to delete");
-		#return "No analyses to delete";
-		# there were no series to process
+		WriteLog("No analyses to delete for this pipeline");
 	}
 	
 	# delete the actual pipeline entry
 	$sqlstring = "delete from pipelines where pipeline_id = $id";
-	$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	#$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	return 1;
 }
 
@@ -521,8 +522,13 @@ sub DeleteAnalysis() {
 		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); $OkDeleteDir = 0; }
 
 		# attempt to kill the SGE job, if its running
-		my $systemstring = "/sge/sge-root/bin/lx24-amd64/./qdelete $sgeid";
-		WriteLog("Attempting to kill the SGE job [$sgeid]" . `$systemstring 2>&1`);
+		if ($sgeid > 0) {
+			my $systemstring = "/sge/sge-root/bin/lx24-amd64/./qdelete $sgeid";
+			WriteLog("Attempting to kill the SGE job [$sgeid]" . `$systemstring 2>&1`);
+		}
+		else {
+			WriteLog("SGE job id [$sgeid] is not valid. Not attempting to kill the job");
+		}
 		
 		my $datapath = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
 		
@@ -540,17 +546,21 @@ sub DeleteAnalysis() {
 			# check if the directory still exists
 			if (-e $datapath) {
 				if ($datapath ne "") {
-					$systemstring = "sudo rm -rfv $datapath";
+					my $systemstring = "sudo rm -rfv $datapath";
 					WriteLog("Deleting directory [$datapath] using sudo" . `$systemstring 2>&1`);
 					
 					# check again if it still exists
 					if (-e $datapath) {
+						WriteLog("Datapath [$datapath] DOES exist. Checkpoint A");
+						
 						my $sqlstringA = "update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = $analysisid";
 						WriteLog($sqlstringA);
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [$datapath]");
 					}
 					else {
+						WriteLog("Datapath [$datapath] does not exist, deleting DB entries anyway. Checkpoint B");
+						
 						# clear the entry from the database
 						my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
 						WriteLog($sqlstringA);
@@ -568,6 +578,8 @@ sub DeleteAnalysis() {
 				}
 			}
 			else {
+				WriteLog("Datapath [$datapath] does not exist, deleting DB entries anyway. Checkpoint C");
+				
 				# clear the entry from the database
 				my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
 				WriteLog($sqlstringA);
@@ -585,7 +597,7 @@ sub DeleteAnalysis() {
 			return 1;
 		}
 		else {
-			WriteLog("Something was wrong, datapath was [$datapath], but deleting database analysis anyway");
+			WriteLog("Something was wrong, datapath was [$datapath], but deleting database analysis anyway. Checkpoint D");
 			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Something was wrong, datapath was weird [$datapath], but deleting database analysis anyway");
 
 			# clear the entry from the database

@@ -105,7 +105,7 @@
 	/* -------------------------------------------- */
 	function DisplayEmptySubjects() {
 
-		$sqlstring = "select * from subjects where subject_id not in (select subject_id from enrollment) and isactive = 1";
+		$sqlstring = "select * from subjects where subject_id not in (select subject_id from enrollment) order by lastupdate asc";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result)
 		?>
@@ -121,6 +121,7 @@
 					<th>Birthdate</th>
 					<th>Gender</th>
 					<th>Last update</th>
+					<th>Deleted?</th>
 					<th><input type="checkbox" id="checkall"></th>
 				</tr>
 			</thead>
@@ -143,6 +144,9 @@
 			$birthdate = $row['birthdate'];
 			$gender = $row['gender'];
 			$lastupdate = $row['lastupdate'];
+			$isactive = $row['isactive'];
+			
+			if (!$isactive) { $isactive = "&#x2714;"; } else { $isactive = ""; }
 			?>
 			<tr>
 				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
@@ -150,6 +154,7 @@
 				<td><?=$birthdate?></td>
 				<td><?=$gender?></td>
 				<td><?=$lastupdate?></td>
+				<td><?=$isactive?></td>
 				<td class="allcheck"><input type='checkbox' name="subjectids[]" value="<?=$subject_id?>"></td>
 			</tr>
 			<?
