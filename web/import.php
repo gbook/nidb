@@ -256,7 +256,8 @@
 		#$idlist = implode2(",", $newparts);
 		
 		?>
-		A <span style="color: red"> red Alternate UID</span> means the foreign ID is contained in the alternate <b>Study</b> ID, not alternate <b>Subject</b> ID
+		A <span style="color: red"> red ID</span> means the foreign ID is contained in the alternate <b>Study</b> ID, not alternate <b>Subject</b> ID<br>
+		A <span style="color: green"> green ID</span> means the foreign ID was found as a local UID<br>
 		<br><br>
 		<table class="graydisplaytable">
 			<thead>
@@ -320,14 +321,40 @@
 						}
 					}
 					else {
-						$numNotFound++;
-						if (!$displayonlymatches) {
+						/* check if the ID is actually a local UID */
+						$sqlstringA = "select * from subjects where uid = '$altid'";
+						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						if (mysqli_num_rows($resultA) > 0) {
+							$numFound++;
+						
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$subjectid = $rowA['subject_id'];
+							$uid = $rowA['uid'];
+							$isactive = $rowA['isactive'];
+							if (!$isactive) {
+								$deleted = " (deleted)";
+							}
+							else {
+								$deleted = "";
+							}
 							?>
 							<tr>
-								<td><?=$altid?></td>
-								<td colspan="2">Not found</td>
+								<td><?=$altid?> <?=$deleted?></td>
+								<td style="color:green"><?=$altid?></td>
+								<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 							</tr>
 							<?
+						}
+						else {
+							$numNotFound++;
+							if (!$displayonlymatches) {
+								?>
+								<tr>
+									<td><?=$altid?></td>
+									<td colspan="2">Not found</td>
+								</tr>
+								<?
+							}
 						}
 					}
 				}

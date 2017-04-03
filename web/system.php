@@ -169,6 +169,9 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 # ------------------------------------------------------------------------------
 
+# ----- System availability -----
+[offline] = 0
+
 # ----- Debug -----
 [debug] = $debug
 

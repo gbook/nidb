@@ -35,6 +35,32 @@
  	$cfg = LoadConfig();
 	date_default_timezone_set("America/New_York");
 
+	/* check if this server is supposed to be up or not */
+	if ($cfg['offline'] == 1) {
+		?>
+		<table style="width: 100%; height: 100%;">
+			<tr>
+				<td style="height: 40%"></td>
+				<td></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td style="width: 30%"></td>
+				<td style="text-align: center; vertical: align: middle; border: 4px solid orange; padding: 25px; font-family: arial, helvetica, sans serif; font-size: 14pt">
+					<img align="right" src="images/squirrel.png" height="30%">NiDB is temporarily offline due to maintenance<br><br>Please contact the administrator with any questions.
+				</td>
+				<td style="width: 30%"></td>
+			</tr>
+			<tr>
+				<td style="height: 40%"></td>
+				<td></td>
+				<td></td>
+			</tr>
+		</table>
+		<?
+		exit(0);
+	}
+	
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
 	else { $isdevserver = false; }
 
