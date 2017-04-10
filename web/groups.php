@@ -6,17 +6,14 @@
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
  // GPLv3 License:
-
  // This program is free software: you can redistribute it and/or modify
  // it under the terms of the GNU General Public License as published by
  // the Free Software Foundation, either version 3 of the License, or
  // (at your option) any later version.
-
  // This program is distributed in the hope that it will be useful,
  // but WITHOUT ANY WARRANTY; without even the implied warranty of
  // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  // GNU General Public License for more details.
-
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
@@ -35,11 +32,9 @@
 	require "functions.php";
 	require "includes.php";
 	require "menu.php";
-
 	//echo "<pre>";
 	//print_r($_POST);
 	//echo "</pre>";
-
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
@@ -59,6 +54,7 @@
 	$measures = GetVariable("measures");
 	$columns = GetVariable("columns");
 	$groupmeasures = GetVariable("groupmeasures");
+
 	
 	/* determine action */
 	switch ($action) {
@@ -83,20 +79,22 @@
 			RemoveGroupItem($itemid);
 			ViewGroup($id, $measures, $columns, $groupmeasures);
 			break;
-		case 'viewgroup': ViewGroup($id, $measures, $columns, $groupmeasures); break;
-		default: DisplayGroupList(); break;
+		case 'viewgroup': 
+			ViewGroup($id, $measures, $columns, $groupmeasures); 
+			break;
+
+		default: 
+			DisplayGroupList(); 
+			break;
 	}
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
-
-
 	/* -------------------------------------------- */
 	/* ------- AddGroup --------------------------- */
 	/* -------------------------------------------- */
 	function AddGroup($groupname, $grouptype, $owner) {
 		/* perform data checks */
-
 		/* get userid */
 		$sqlstring = "select * from users where username = '$owner'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -109,13 +107,11 @@
 		
 		?><div align="center"><span class="message"><?=$groupname?> added</span></div><br><br><?
 	}
-
 	
 	/* -------------------------------------------- */
 	/* ------- AddSubjectsToGroup ----------------- */
 	/* -------------------------------------------- */
 	function AddSubjectsToGroup($groupid, $uids, $seriesids, $modality) {
-
 		/* if the request came from the subjects.php page */
 		if (!empty($uids)) {
 			foreach ($uids as $uid) {
@@ -164,8 +160,10 @@
 			}
 		}
 	}
-
 	
+	/* -------------------------------------------- */
+	/* ------- AddStudiesToGroup ------------------ */
+	/* -------------------------------------------- */
 	/* -------------------------------------------- */
 	/* ------- AddStudiesToGroup ------------------ */
 	/* -------------------------------------------- */
@@ -219,10 +217,8 @@
 				}
 			}
 		}
-
 	}
 	
-
 	/* -------------------------------------------- */
 	/* ------- AddSeriesToGroup ------------------- */
 	/* -------------------------------------------- */
@@ -250,7 +246,7 @@
 	/* ------- RemoveGroupItem -------------------- */
 	/* -------------------------------------------- */
 	function RemoveGroupItem($itemid) {
-		PrintVariable($itemid,'ItemID');
+		//PrintVariable($itemid,'ItemID');
 		
 		foreach ($itemid as $item) {
 			$sqlstring = "delete from group_data where subjectgroup_id = $item";
@@ -261,7 +257,6 @@
 		return;
 	}
 	
-
 	/* -------------------------------------------- */
 	/* ------- DeleteGroup ------------------------ */
 	/* -------------------------------------------- */
@@ -269,7 +264,6 @@
 		$sqlstring = "delete from groups where group_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
-
 	
 	/* -------------------------------------------- */
 	/* ------- ViewGroup -------------------------- */
@@ -285,7 +279,6 @@
 		
 		$urllist['Groups'] = "groups.php";
 		NavigationBar("$groupname - <span style='font-weight:normal'>$grouptype<span>", $urllist,0,'','','','');
-
 		?>
 		<script>
 			$(document).ready(function()
@@ -456,7 +449,6 @@
 				$studyinstitution = $row['study_institution'];
 				$studynotes = $row['study_notes'];
 				$subgroup = $row['enroll_subgroup'];
-
 				$studylist[] = $studyid;
 				
 				$subjectid = $row['subject_id'];
@@ -470,7 +462,6 @@
 				$handedness = $row['handedness'];
 				$education = $row['education'];
 				$uid = $row['uid'];
-
 				$subjectids[] = $subjectid;
 				/* do some demographics calculations */
 				$n++;
@@ -499,7 +490,6 @@
 			if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
 			if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 			if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
-
 			//PrintVariable($studylist);
 			
 			if ($measures == "all") {
@@ -512,7 +502,6 @@
 					while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
 						$subjectid = $rowD['subject_id'];
 						$measurename = $rowD['measure_name'];
-
 						if (in_array($measurename,$mnames)) {
 							if ($rowD['measure_type'] == 's') {
 								$value = strtolower(trim($rowD['measure_valuestring']));
@@ -596,6 +585,13 @@
 				</tr>
 				<tr>
 					<td valign="top" style="padding-right:20px">
+                    	<?
+                            DisplayGroupStudiesSummary($id);
+                        ?>
+                    </td>
+                </tr>
+				<tr>
+					<td valign="top" style="padding-right:20px">
 						<details>
 						<summary>SQL</summary>
 						<?=PrintSQL($sqlstring)?>
@@ -654,7 +650,6 @@
 							</thead>
 							<tbody>
 						<?
-
 						/* reset the result pointer to 0 to iterate through the results again */
 						$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -688,11 +683,9 @@
 							$handedness = $row['handedness'];
 							$education = $row['education'];
 							$uid = $row['uid'];
-
 							if ($age <= 0) {
 								$age = $studyageatscan;
 							}
-
 							/* get list of alternate subject UIDs */
 							$altuids = GetAlternateUIDs($subjectid);
 							
@@ -823,7 +816,6 @@
 					$studysite = $row['study_site'];
 					$studyinstitution = $row['study_institution'];
 					$studynotes = $row['study_notes'];
-
 					$subgroup = $row['enroll_subgroup'];
 					
 					$subjectid = $row['subject_id'];
@@ -926,7 +918,6 @@
 								$handedness = $row['handedness'];
 								$education = $row['education'];
 								$uid = $row['uid'];
-
 								/* get list of alternate subject UIDs */
 								$altuids = GetAlternateUIDs($subjectid);
 								
@@ -965,7 +956,6 @@
 			<?
 		}
 	}
-
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayMRProtocolSummary ----------- */
@@ -1038,8 +1028,6 @@
 		</table>
 		<?
 	}
-
-
 	/* -------------------------------------------- */
 	/* ------- DisplayDemographicsTable ----------- */
 	/* -------------------------------------------- */
@@ -1168,7 +1156,6 @@
 		<?
 	}
 	
-
 	/* -------------------------------------------- */
 	/* ------- DisplayGroupList ------------------- */
 	/* -------------------------------------------- */
@@ -1239,7 +1226,119 @@
 	</table>
 	<?
 	}
-?>
 
+	/* CHANGE MARCH 2017
+        /* UPDATE GROUP STUDIES VIA TEXT INPUT
+        /* -------------------------------------------- */
+        /* ------- DisplayGroupStudiesSummary ----------- */
+        /* -------------------------------------------- */
+function DisplayGroupStudiesSummary($id) {
 
+	?>
+		<p bgcolor="silver">
+	<?
+	echo "<br><bgcolor='silver'><i>This is the complete list of the studies in this group. If you delete or add any study, the group will be changed accordingly.</i>";
+
+	$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
+
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$all_items = "";
+	$all_itemsA = array();
+	$all_items_SGID = array();
+
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$studynum = $row['study_num'];
+		$uid = $row['uid'];
+		$sgid = $row['subjectgroup_id'];
+		$item = $uid . $studynum;
+		array_push($all_itemsA, $item);
+		array_push($all_items_SGID, $sgid);
+		$all_items .=  $item . "\n";
+	}
+
+	?>
+	<form action="groups.php"  method="post">
+
+		<?
+		$newlist = preg_replace('/\r\n|[\r\n]/', ',', $_POST['text_area']);
+		//echo("newlist:");
+		$newlistA = explode(',',$newlist);
+		//print_r($newlistA);
+
+		foreach($all_itemsA as $item){
+			if (!in_array($item, $newlistA)){
+				$item = substr($item, 0, 8);
+
+				$sqlstring = "select a.subjectgroup_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id and d.uid = '$item'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+				$sgid = "";
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$sgid = $row['subjectgroup_id'];
+				}
+				if ($sgid != ""){
+					$studyids = Array();
+					array_push($studyids, $sgid);
+					RemoveGroupItem($studyids);
+					//echo("Removed: $item $id\n");
+				}
+			}
+		}
+
+		foreach($newlistA as $item){
+			if (!in_array($item, $all_itemsA)){
+				$subject = substr($item, 0, 8);
+				$study_num = substr($item, 8, strlen($item));
+
+				$sqlstring = "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$subject' AND b.study_num='$study_num'";
+				//echo ("select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$item' AND b.study_num='$study_num'");
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+				$studyid = 0;
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$studyid = intval($row['study_id']);
+				}
+
+				if ($studyid != 0){
+					//echo ("sqlstring is $sqlstring");
+					//echo ("studyid is $item");
+					$studyids = Array();
+					array_push($studyids,$studyid);
+					AddStudiesToGroup($id, "", $studyids, "");
+					//AddedStudiesToGroup($groupid, $seriesids, $studyids, $modality)
+					//echo("Added: $item\r\n");
+				}
+			}
+		}
+	
+		$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
+
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$all_items = "";
+		$all_itemsA = array();
+		$all_items_SGID = array();
+
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studynum = $row['study_num'];
+			$uid = $row['uid'];
+			$sgid = $row['subjectgroup_id'];
+			$item = $uid . $studynum;
+			array_push($all_itemsA, $item);
+			array_push($all_items_SGID, $sgid);
+			$all_items .=  $item . "\n";
+		}
+
+		?>
+		<br>
+		<textarea name='text_area'  style='width:15em; margin-left:1em' rows='10'><?php print("$all_items"); ?></textarea>
+		<br>
+		<input type="submit" name="Update" style='width:15em; margin-left:1em' value=Update />
+
+		<input type="hidden" name=action value=viewgroup />
+		<input type="hidden" name=id value="<?php echo("$id"); ?>"/>
+
+	</form>
+	<?
+	}
+	?>
 <? include("footer.php") ?>
