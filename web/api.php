@@ -363,15 +363,21 @@
 					$filesize = 0;
 					error_reporting(E_ALL);
 					if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-						if ($GLOBALS['debug'] == 1) echo "RECEIVED $savepath/$name\n";
-						$numfilessuccess++;
-						chmod("$savepath/$name", 0777);
-						//echo date('c') . "\n";
-						$filemd5 = strtoupper(md5_file("$savepath/$name"));
-						$md5list[] = $filemd5;
 						$filesize = filesize("$savepath/$name");
-						if ($GLOBALS['debug'] == 1) echo date('c') . " [MD5: $filemd5]\n";
-						$success = 1;
+						if ($filesize > 0) {
+							if ($GLOBALS['debug'] == 1) echo "RECEIVED $savepath/$name\n";
+							$numfilessuccess++;
+							chmod("$savepath/$name", 0777);
+							//echo date('c') . "\n";
+							$filemd5 = strtoupper(md5_file("$savepath/$name"));
+							$md5list[] = $filemd5;
+							if ($GLOBALS['debug'] == 1) echo date('c') . " [MD5: $filemd5]\n";
+							$success = 1;
+						}
+						else {
+							if ($GLOBALS['debug'] == 1) echo "ERROR filesize is 0 [$savepath/$name]\n";
+							$success = 0;
+						}
 					}
 					else {
 						if ($GLOBALS['debug'] == 1) echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";

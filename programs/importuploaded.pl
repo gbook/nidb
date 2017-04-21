@@ -146,8 +146,11 @@ sub DoImportUploaded {
 			WriteLog("Datatype for $importrequest_id is [$datatype]");
 			
 			if (($datatype eq "dicom") || ($datatype eq "parrec")) {
+			
 				# ----- get list of files in directory -----
 				$uploaddir = $cfg{'uploadeddir'} . "/$importrequest_id";
+				
+				WriteLog("Working on [$uploaddir]");
 				
 				my @files;
 				if (!opendir (DIR, $uploaddir)) {
@@ -174,9 +177,13 @@ sub DoImportUploaded {
 				# go through the files
 				foreach my $file(@files) {
 					my $filepath = "$uploaddir/$file";
+					my $fsize = -s "$uploaddir/$file";
+					
+					WriteLog("Working on filepath [$filepath] size [$fsize]");
+					
 					if (IsDICOMFile($filepath)) {
 						# anonymize, replace project and site, rename, and dump to incoming
-						#WriteLog("$filepath is a DICOM file");
+						WriteLog("$filepath is a DICOM file");
 						PrepareDICOM($importrequest_id,$filepath,$anonymize);
 					}
 					elsif ($filepath =~ m/\.par/) {
@@ -201,7 +208,10 @@ sub DoImportUploaded {
 							case /\.tar\.bz2$/ { $systemstring = "tar -xjf '$filepath' --warning=no-timestamp -C $tmppath"; }
 							case /\.tar$/ { $systemstring = "tar -xf '$filepath' -C $tmppath"; }
 						}
-						if ($systemstring ne '') {
+						if ($systemstring eq '') {
+							WriteLog("Systemstring was blank! Extension was [$ext]");
+						}
+						else {
 							mkpath($tmppath);
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						
@@ -211,6 +221,10 @@ sub DoImportUploaded {
 							# delete the tmp directory
 							if (($tmppath ne '') && ($tmppath ne '.') && ($tmppath ne '..')) {
 								rmtree($tmppath);
+								WriteLog("Ran rmtree($tmppath)");
+							}
+							else {
+								WriteLog("tmppath was [$tmppath], could not delete");
 							}
 						}
 					}
@@ -253,15 +267,17 @@ sub DoImportUploaded {
 					}
 				}
 				closedir(DIR);
-				my $numfiles = $#files + 1;
-				WriteLog("Found $numfiles files in $uploaddir");
+				my $numfiles = @files;
+				WriteLog("Found [$numfiles] files in [$uploaddir]");
 				if ($numfiles < 1) {
+					WriteLog("No files found in [$uploaddir]");
 					my $sqlstringB = "update import_requests set import_status = 'error', import_message = 'No files found' where importrequest_id = $importrequest_id";
 					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 					next;
 				}
 				
 				# go through the files
+				WriteLog("About to iterate through the files");
 				foreach my $file(@files) {
 					my $filepath = "$uploaddir/$file";
 					WriteLog("Attempting mkpath(". $cfg{'incomingdir'} . "/$importrequest_id)");
@@ -269,6 +285,7 @@ sub DoImportUploaded {
 					my $systemstring = "touch $filepath; mv -v $filepath $cfg{'incomingdir'}/$importrequest_id/";
 					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 				}
+				WriteLog("Finished iterating through the files");
 			}
 			else {
 				WriteLog("Datatype not recognized [$datatype]");
@@ -280,7 +297,7 @@ sub DoImportUploaded {
 			# delete the uploaded directory
 			WriteLog("Attempting to remove [$uploaddir]...");
 			my $mode = (stat($uploaddir))[2];
-			WriteLog(sprintf "permissions are %04o\n", $mode &07777);
+			WriteLog(sprintf "permissions are %04o", $mode &07777);
 			if (($uploaddir ne '.') && ($uploaddir ne '..') && ($uploaddir ne '') && ($uploaddir ne '/') && ($uploaddir ne '*')) {
 				my $systemstring = "rm -rf $uploaddir";
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -344,20 +361,20 @@ sub PrepareDICOM {
 	
 	# replace fields using anonymize
 	my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $file $anonstring -o $file";
-	#WriteLog("Anonymizing $file");
-	#WriteLog("Anonymizing: (" . `$systemstring 2>&1` . ")");
-	`$systemstring 2>&1`;
+	WriteLog("Anonymizing $file");
+	WriteLog("Anonymizing: (" . `$systemstring 2>&1` . ")");
+	#`$systemstring 2>&1`;
 	
 	# if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	# some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad
 	my $filename = basename($file);
 	#WriteLog("filename [$filename]");
 	$newfile = GenerateRandomString(15) . $filename;
-	#WriteLog("newfile [$newfile]");
+	WriteLog("newfile [$newfile]");
 	mkpath("$cfg{'incomingdir'}/$id",0777);
 	$systemstring = "touch $file; mv $file $cfg{'incomingdir'}/$id/$newfile";
-	#WriteLog("Moving the file (" . `$systemstring` . ")");
-	`$systemstring 2>&1`;
+	WriteLog("Moving the file (" . `$systemstring` . ")");
+	#`$systemstring 2>&1`;
 }
 
 

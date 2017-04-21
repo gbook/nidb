@@ -1200,7 +1200,7 @@
 															?>
 															<tr>
 																<td align="left" style="padding: 2px 10px">
-																&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$childid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+																&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
 																</td>
 															</tr>
 															<?

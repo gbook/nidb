@@ -213,6 +213,11 @@ sub ParseDirectory {
 	
 	my $runningCount = 0;
 	foreach my $file (@files) {
+		my $fsize = -s "$dir/$file";
+		if ($fsize < 1) {
+			WriteLog("Filesize of [$dir/$file] is [$fsize] bytes");
+			next;
+		}
 		$runningCount++;
 		#WriteLog("Processing [$runningCount] [$file]");
 		if ($runningCount%1000 == 0) {
@@ -295,7 +300,7 @@ sub ParseDirectory {
 							}
 						}
 						else {
-							WriteLog("File [$file] is most likely not a dicom file");
+							WriteLog("File [$dir/$file] - size [$fsize] is most likely not a dicom file");
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Not a DICOM file, moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							#move("$dir/$file","$cfg{'problemdir'}/$file");
@@ -531,8 +536,9 @@ sub InsertDICOM {
 	}
 	
 	WriteLog("Parsing $files[0]");
+	my $fsize = -s $files[0];
 	if (-e $files[0]) {
-		WriteLog($files[0] . " exists");
+		WriteLog($files[0] . " exists, size [$fsize] bytes");
 	}
 	else {
 		WriteLog($files[0] . " does not exist!");

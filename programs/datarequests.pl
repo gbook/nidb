@@ -555,13 +555,17 @@ sub ProcessDataRequests {
 						closedir(DIR);
 						foreach my $f (@files) {
 							my $fulldir = "$tmpdir/$f";
-							#WriteLog("Checking on [$fulldir]");
+							WriteLog("Checking on [$fulldir]");
 							if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
 								push(@dcmfiles,$f);
 							}
 						}
 						my $numdcms = $#dcmfiles + 1;
 						WriteLog("Found [$numdcms] dcmfiles");
+						
+						if ($numdcms < 1) {
+							WriteLog("************* ERROR - Didn't find any DICOM files!!!! *************");
+						}
 						
 						my @behfiles;
 						# get the list of beh files
@@ -602,7 +606,7 @@ sub ProcessDataRequests {
 						}
 						
 						# send the zip and send file
-						my $systemstring2 = "cd $tmpzipdir;GZIP=-1 tar -czf $tmpzip --warning=no-timestamp .; chmod 777 $tmpzip";
+						my $systemstring2 = "cd $tmpzipdir;GZIP=-1; tar -czf $tmpzip --warning=no-timestamp .; chmod 777 $tmpzip";
 						WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
 						# get size before sending
 						my $zipsize = -s $tmpzip;

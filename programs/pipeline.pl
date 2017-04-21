@@ -1057,10 +1057,15 @@ sub CreateClusterJobFile() {
 			my $supplement;
 			if ($issupplement) { $supplement = "supplement-"; } else { $supplement = ""; }
 
-			# check if this is a supplement command, and if it should be run
-			if ( (($runsupplement eq '1') && ($issupplement eq '0')) || (($runsupplement eq '0') && ($issupplement eq '1')) ) {
-				next;
-			}
+			# check if we are operating on regular commands or supplement commands
+			if (($runsupplement eq '1') && ($issupplement eq '0')) { next; }
+			if (($runsupplement == 1) && ($issupplement == 0)) { next; }
+			if (($runsupplement == 1) && ($issupplement == '')) { next; }
+			
+			if (($runsupplement eq '0') && ($issupplement eq '1')) { next; }
+			if (($runsupplement == 0) && ($issupplement == 1)) { next; }
+			if (($runsupplement == '') && ($issupplement == 1)) { next; }
+
 			
 			if (($command =~ m/\{NOLOG\}/) || ($description =~ m/\{NOLOG\}/)) { $logged = 0; }
 			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { $checkedin = 0; }

@@ -2550,7 +2550,8 @@
 					<tr>
 						<td class="menuheaderactive">
 							<a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a><br>
-							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Complete Project</a>
+							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View Complete Project</a><br>
+							<a href="projects.php?action=compareexternalprojectform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Compare External Project</a>
 						</td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
