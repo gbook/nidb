@@ -55,7 +55,7 @@
 	function DisplayLogs($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 
-		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
+		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		//echo $sqlstring;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -67,6 +67,9 @@
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
 
+		if (($pipelineid == "") || ($pipelineid == 0)) { echo "Invalid pipeline ID<Br>"; return; }
+		if (($pipelineversion == "") || ($pipelineversion == 0)) { echo "Invalid pipeline version<Br>"; return; }
+		
 		/* get list of steps for the appropriate version */
 		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

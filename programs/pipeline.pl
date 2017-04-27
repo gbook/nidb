@@ -331,7 +331,6 @@ sub ProcessPipelines() {
 		}
 		# ================================= LEVEL 1 =================================
 		elsif ($pipelinelevel == 1) {
-			my $setuplog = "";
 		
 			# fix the directory if its not the default or blank
 			if ($pipelinedirectory eq "") { $pipelinedirectory = $cfg{'analysisdir'}; }
@@ -349,6 +348,8 @@ sub ProcessPipelines() {
 				my $numsubmitted = 0;
 				foreach my $sid(@studyids) {
 
+					my $setuplog = "";
+					
 					SetPipelineProcessStatus('running',$pid,$sid);
 
 					$numchecked = $numchecked + 1;
@@ -399,6 +400,7 @@ sub ProcessPipelines() {
 						
 						# get information about the study
 						$sqlstring = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
+						$setuplog .= "Getting study information [$sqlstring]";
 						my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						my %row = $result->fetchhash;
 						my $uid = $row{'uid'};
@@ -505,6 +507,10 @@ sub ProcessPipelines() {
 										}
 										
 										my $systemstring;
+
+										WriteLog("This is a level [$pipelinelevel] pipeline. deplinktype [$deplinktype] depdir [$depdir]");
+										$setuplog .= "This is a level [$pipelinelevel] pipeline. deplinktype [$deplinktype] depdir [$depdir]";
+										
 										if ($depdir eq "subdir") {
 											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
 											switch ($deplinktype) {
@@ -796,6 +802,8 @@ sub ProcessPipelines() {
 								WriteLog("$analysispath");
 								
 								MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname");
+
+								WriteLog("This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype]");
 								# create hard link in the analysis directory
 								my $systemstring;
 								if ($dependencylevel == 1) {
@@ -812,6 +820,7 @@ sub ProcessPipelines() {
 										case "regularcopy" { $systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
 									}
 								}
+								WriteLog("Running copy command [$systemstring]");
 								
 								my $cpresults = `$systemstring 2>&1`;
 								if (($cpresults =~ /cannot stat/) || ($cpresults =~ /No such file or/) || ($cpresults =~ /error/)) {

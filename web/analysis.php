@@ -1352,12 +1352,18 @@
 							<?
 								if ($isenabled) {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"> <a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> Enabled<br><span style="font-size: 8pt">Uncheck the box to stop the pipeline from running</span></td>
+									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen">
+										<b>Enabled</b><br>
+										<a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> <span style="font-size: 8pt">Uncheck the box to stop the pipeline from running</span>
+									</td>
 									<?
 								}
 								else {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"> <a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> Disabled<br><span style="font-size: 8pt">Check the box to allow the pipeline to run</span></td>
+									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred">
+										<b>Disabled</b><br>
+										<a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> <span style="font-size: 8pt">Check the box to allow the pipeline to run</span>
+									</td>
 									<?
 								}
 							?>
