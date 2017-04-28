@@ -338,6 +338,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectname = $row['project_name'];
+		$usecustomid = $row['project_usecustomid'];
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$projectname] = "projects.php?id=$projectid";
@@ -462,13 +463,20 @@
 			if ($altuid != "") { $totals[2]++; }
 			if ($enrolldate != "") { $totals[3]++; }
 			if ($enrollsubgroup != "") { $totals[4]++; }
+
+			if (($usecustomid == 1) && ($altuid == "")) {
+				$customidstyle = "border: 1px solid red; background-color: orange";
+			}
+			else {
+				$customidstyle = "";
+			}
 			
 			?>
 			<tr>
 				<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
 				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
 				<td><?=$guid?></td>
-				<td><?=$altuid?></td>
+				<td style="<?=$customidstyle?>"><?=$altuid?></td>
 				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
 				<td><?=$enrollsubgroup?></td>
 			<?

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 23, 2017 at 07:53 PM
+-- Generation Time: Apr 28, 2017 at 01:31 PM
 -- Server version: 10.0.28-MariaDB
--- PHP Version: 5.5.38
+-- PHP Version: 7.0.17
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -297,6 +297,23 @@ CREATE TABLE `audio_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `audit_enrollment`
+--
+
+CREATE TABLE `audit_enrollment` (
+  `auditenrollment_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `audit_datetime` datetime NOT NULL,
+  `audit_message` text NOT NULL,
+  `audit_number` int(11) NOT NULL,
+  `audit_fixed` tinyint(1) NOT NULL,
+  `audit_fixeddate` datetime NOT NULL,
+  `audit_fixedby` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `audit_results`
 --
 
@@ -323,6 +340,58 @@ CREATE TABLE `audit_results` (
   `db_string` varchar(255) NOT NULL,
   `audit_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_series`
+--
+
+CREATE TABLE `audit_series` (
+  `auditseries_id` int(11) NOT NULL,
+  `series_id` int(11) NOT NULL,
+  `modality` varchar(50) NOT NULL,
+  `audit_datetime` datetime NOT NULL,
+  `audit_message` text NOT NULL,
+  `audit_number` int(11) NOT NULL,
+  `audit_fixed` tinyint(1) NOT NULL,
+  `audit_fixeddate` datetime NOT NULL,
+  `audit_fixedby` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_study`
+--
+
+CREATE TABLE `audit_study` (
+  `auditstudy_id` int(11) NOT NULL,
+  `study_id` int(11) NOT NULL,
+  `audit_datetime` datetime NOT NULL,
+  `audit_message` text NOT NULL,
+  `audit_number` int(11) NOT NULL,
+  `audit_fixed` tinyint(1) NOT NULL,
+  `audit_fixeddate` datetime NOT NULL,
+  `audit_fixedby` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_subject`
+--
+
+CREATE TABLE `audit_subject` (
+  `auditsubject_id` int(11) NOT NULL,
+  `subject_id` int(11) NOT NULL,
+  `audit_datetime` datetime NOT NULL,
+  `audit_message` text NOT NULL,
+  `audit_number` int(11) NOT NULL,
+  `audit_fixed` tinyint(1) NOT NULL,
+  `audit_fixeddate` datetime NOT NULL,
+  `audit_fixedby` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -1623,7 +1692,7 @@ CREATE TABLE `pipelines` (
   `pipeline_lastcheck` datetime NOT NULL,
   `pipeline_completefiles` text NOT NULL COMMENT 'comma separated list of files to check to assume the analysis is complete',
   `pipeline_numproc` int(11) NOT NULL COMMENT 'number of concurrent jobs allowed to run',
-  `pipeline_queue` varchar(50) NOT NULL,
+  `pipeline_queue` varchar(255) NOT NULL,
   `pipeline_submithost` varchar(255) NOT NULL,
   `pipeline_clustertype` enum('','sge','slurm') NOT NULL,
   `pipeline_clusteruser` varchar(255) NOT NULL,
@@ -1854,6 +1923,7 @@ CREATE TABLE `projects` (
   `project_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL DEFAULT '0',
   `project_uid` varchar(20) NOT NULL,
+  `project_usecustomid` tinyint(1) NOT NULL COMMENT '1 - uses custom IDs, 2 - uses NiDB UIDs',
   `project_name` varchar(60) DEFAULT NULL,
   `project_admin` int(11) DEFAULT NULL,
   `project_pi` int(11) DEFAULT NULL,
@@ -2599,10 +2669,38 @@ ALTER TABLE `audio_series`
   ADD PRIMARY KEY (`audioseries_id`);
 
 --
+-- Indexes for table `audit_enrollment`
+--
+ALTER TABLE `audit_enrollment`
+  ADD PRIMARY KEY (`auditenrollment_id`),
+  ADD KEY `subject_id` (`enrollment_id`);
+
+--
 -- Indexes for table `audit_results`
 --
 ALTER TABLE `audit_results`
   ADD PRIMARY KEY (`auditresult_id`);
+
+--
+-- Indexes for table `audit_series`
+--
+ALTER TABLE `audit_series`
+  ADD PRIMARY KEY (`auditseries_id`),
+  ADD KEY `subject_id` (`series_id`);
+
+--
+-- Indexes for table `audit_study`
+--
+ALTER TABLE `audit_study`
+  ADD PRIMARY KEY (`auditstudy_id`),
+  ADD KEY `subject_id` (`study_id`);
+
+--
+-- Indexes for table `audit_subject`
+--
+ALTER TABLE `audit_subject`
+  ADD PRIMARY KEY (`auditsubject_id`),
+  ADD KEY `subject_id` (`subject_id`);
 
 --
 -- Indexes for table `binary_series`
@@ -3389,10 +3487,30 @@ ALTER TABLE `assessment_series`
 ALTER TABLE `audio_series`
   MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `audit_enrollment`
+--
+ALTER TABLE `audit_enrollment`
+  MODIFY `auditenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `audit_results`
 --
 ALTER TABLE `audit_results`
   MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `audit_series`
+--
+ALTER TABLE `audit_series`
+  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `audit_study`
+--
+ALTER TABLE `audit_study`
+  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `audit_subject`
+--
+ALTER TABLE `audit_subject`
+  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `binary_series`
 --

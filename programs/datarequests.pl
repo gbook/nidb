@@ -204,7 +204,6 @@ sub ProcessDataRequests {
 				my $req_seriesid = $rowA{'req_seriesid'};
 				my $req_preserveseries = $rowA{'req_preserveseries'};
 				my $req_gzip = $rowA{'req_gzip'};
-				#my $req_pipelinedownloadid = $rowA{'req_pipelinedownloadid'};
 				my $req_anonymize = $rowA{'req_anonymize'};
 				my $req_timepoint = $rowA{'req_timepoint'};
 				my $req_behonly = $rowA{'req_behonly'};
@@ -232,6 +231,7 @@ sub ProcessDataRequests {
 				my $data_type = $rowA{'data_type'};
 				my $uid = $rowA{'uid'};
 				my $subjectid = $rowA{'subject_id'};
+				my $enrollmentid = $rowA{'enrollment_id'};
 				my $uuid = $rowA{'uuid2'};
 				my $sha1name = $rowA{'sha1name'};
 				my $sha1dob = $rowA{'sha1dob'};
@@ -291,8 +291,6 @@ sub ProcessDataRequests {
 				}
 				my $starttime = time;
 
-				#WriteLog('D');
-			
 				WriteLog("Destination type: $req_destinationtype");
 
 				my $subjectdir;
@@ -323,7 +321,7 @@ sub ProcessDataRequests {
 					case "longitudinal" { $newdir = "$uid/time$req_timepoint"; }
 					case "altuid" {
 						# get the primary (or first) alternate UID
-						$sqlstringB = "select altuid from subject_altuid where subject_id = '$subjectid' order by isprimary desc limit 1";
+						$sqlstringB = "select altuid from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by isprimary desc limit 1";
 						my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 						my %rowB = $resultB->fetchhash;
 						my $altuid = trim($rowB{'altuid'});
@@ -389,6 +387,8 @@ sub ProcessDataRequests {
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
 				my $qcindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/qa";
 
+				# ************* Check if source data directories exist *****************
+				
 				# check if the indir directory exists or is empty
 				if (-e $indir) {
 					WriteLog("indir [$indir] exists");
@@ -424,7 +424,7 @@ sub ProcessDataRequests {
 					WriteLog("qcindir [$qcindir] does not exist");
 				}
 				
-				# ----- copy locally (NFS, local FTP, Web, or Public download) -----
+				# --------------- OPTION 1 - Copy locally (NFS, local FTP, Web, or Public download) ---------------
 				if (($req_destinationtype eq "nfs") || ($req_destinationtype eq "localftp") || ($req_destinationtype eq "web") || ($req_destinationtype eq "publicdownload")) {
 					#WriteLog("About to create $fullexportdir");
 					# try to create the path
@@ -528,7 +528,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
-				# ----- send to remote NiDB site -----
+				# --------------- OPTION 2 - Send to remote NiDB site ---------------
 				# for now, only DICOM data and beh can be sent to remote sites
 				if ($req_destinationtype eq "remotenidb") {
 				
@@ -617,7 +617,7 @@ sub ProcessDataRequests {
 						$systemstring .= "$remotenidbserver/api.php";
 						$results = `$systemstring 2>&1`;
 						WriteLog("$systemstring ($results)");
-						my $elapsedtime = time() - $starttime + 0.0000001;
+						my $elapsedtime = time() - $starttime + 0.0000001; # to avoid a divide by zero!
 						my $MBps = $zipsize/$elapsedtime/1000/1000;
 						WriteLog("$zipsize bytes transferred at " . sprintf("%.2f",$MBps) . " MB/s ");
 						
@@ -647,7 +647,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
-				# ----- export data -----
+				# --------------- OPTION 3 - Export data ---------------
 				if ($req_destinationtype eq "export") {
 					# build destination path
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
@@ -697,7 +697,7 @@ sub ProcessDataRequests {
 					$newstatus = 'complete';
 				}
 				
-				# ----- export data -----
+				# --------------- OPTION 4 - NDAR/RDoC ---------------
 				if ($req_destinationtype eq "ndar") {
 					# build destination path
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
@@ -784,7 +784,7 @@ sub ProcessDataRequests {
 					$newstatus = 'complete';
 				}
 				
-				# ----- copy to remote ftp site -----
+				# --------------- OPTION 5 - Copy to remote ftp site ---------------
 				if ($req_destinationtype eq "remoteftp") {
 					SendToRemoteFTP($req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $remoteftpserver, $remoteftpusername, $remoteftppassword, $remoteftppath,$newdir);
 				}
@@ -799,13 +799,6 @@ sub ProcessDataRequests {
 					WriteLog("SQL: $sqlstring");
 					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				}
-				
-				# if this was a pipeline download, insert it into the pipeline_data table
-				#if ($req_pipelinedownloadid > 0) {
-				#	$sqlstring = "insert into pipeline_data (pipelinedownload_id, pdata_groupnum, pdata_seriesid, pdata_modality, pdata_downloaddate, pdata_datadir) values ($req_pipelinedownloadid, $groupid, $req_seriesid, '$modality', now(), '$req_nfsdir/$newdir/$newseriesnum')";
-				#	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-				#}
-				#WriteLog('K');
 				
 				$laststudyid = $currentstudyid;
 			}

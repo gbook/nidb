@@ -1344,6 +1344,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
+		$usecustomid = $row['project_usecustomid'];
 		
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displayproject&id=$id";
@@ -1455,8 +1456,9 @@
 			$maritalstatus = $row['marital_status'];
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
+			$enrollmentid = $row['enrollment_id'];
 			
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' and enrollment_id = '$enrollmentid' order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			//PrintSQLTable($resultA);
 			$altids = "";
@@ -1476,7 +1478,7 @@
 			}
 			//echo "$altids<br>";
 			$altuidlist = implode2(", ",$altids);
-			$primaryaltuid = $altids[0];
+			$primaryaltuid = str_replace('*','',$altids[0]);
 			
 			if ($active) {
 				$deleted = "";
@@ -1484,11 +1486,18 @@
 			else {
 				$deleted = " (DEL)";
 			}
+			
+			if (($usecustomid == 1) && ($altuidlist == "")) {
+				$customidstyle = "border: 1px solid red; background-color: orange";
+			}
+			else {
+				$customidstyle = "";
+			}
 			?>
 			<tr id="R<?=$i?>">
 				<td class="tiny"><?=$subjectid?></td>
 				<td style="font-weight: bold; font-size:12pt;"><?=$uid?> <?=$deleted?></td>
-				<td><?=$primaryaltuid?></td>
+				<td style="<?=$customidstyle?>"><?=$primaryaltuid?></td>
 				<td class="editable"><?=$altuidlist?></td>
 				<td class="editable"><?=$guid?></td>
 				<td class="editable"><?=$birthdate?></td>
@@ -2551,7 +2560,8 @@
 						<td class="menuheaderactive">
 							<a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a><br>
 							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View Complete Project</a><br>
-							<a href="projects.php?action=compareexternalprojectform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Compare External Project</a>
+							<a href="projects.php?action=compareexternalprojectform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Compare External Project</a><br>
+							<a href="adminprojects.php?action=editform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit Project Details</a>
 						</td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>

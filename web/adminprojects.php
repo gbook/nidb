@@ -52,6 +52,7 @@
 	$enddate = GetVariable("enddate");
 	$datausers = GetVariable("datausers");
 	$phiusers = GetVariable("phiusers");
+	$usecustomid = GetVariable("usecustomid");
 	
 	/* determine action */
 	switch ($action) {
@@ -62,11 +63,11 @@
 			DisplayProjectForm("add", "$username");
 			break;
 		case 'update':
-			UpdateProject($id, $projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+			UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
 			DisplayProjectList();
 			break;
 		case 'add':
-			AddProject($projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+			AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
 			DisplayProjectList();
 			break;
 		case 'delete':
@@ -83,9 +84,10 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateProject ---------------------- */
 	/* -------------------------------------------- */
-	function UpdateProject($id, $projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
+	function UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
+		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], $usecustomid);
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
@@ -94,7 +96,7 @@
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
 	
 		/* update the project */
-		$sqlstring = "update projects set project_name = '$projectname', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
+		$sqlstring = "update projects set project_name = '$projectname', project_usecustomid = '$usecustomid', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		/* delete all previous rows from the db for this project */
@@ -140,9 +142,10 @@
 	/* -------------------------------------------- */
 	/* ------- AddProject ------------------------- */
 	/* -------------------------------------------- */
-	function AddProject($projectname, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
+	function AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
+		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], $usecustomid);
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
@@ -154,7 +157,7 @@
 	
 		// echo "project_admin: $admin, PI $pi";	
 		/* insert the new project */
-		$sqlstring = "insert into projects (project_uid, project_name, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
+		$sqlstring = "insert into projects (project_uid, project_name, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message"><?=$projectname?> added</span></div><br><br><?
@@ -189,6 +192,7 @@
 			$sharing = $row['project_sharing'];
 			$startdate = $row['project_startdate'];
 			$enddate = $row['project_enddate'];
+			$usecustomid = $row['project_usecustomid'];
 		
 			$formaction = "update";
 			$formtitle = "Updating $name";
@@ -237,8 +241,10 @@
 				<td class="label">Name</td>
 				<td><input type="text" name="projectname" required value="<?=$name?>" size="60" maxlength="60"></td>
 			</tr>
-			
-	
+			<tr>
+				<td class="label">Use Custom IDs?</td>
+				<td><input type="checkbox" name="usecustomid" value="1" <? if ($usecustomid) { echo "checked"; } ?>></td>
+			</tr>
 			<tr>
 				<td class="label">Instance</td>
 				<td>
