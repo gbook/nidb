@@ -397,6 +397,7 @@
 				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
 			}
 			//echo "[$numuploading] [$numpending] [$numreceiving] [$numreceived] [$numarchiving] [$numarchived] [$numblank]<br>";
+			if ($numblocks > 0) {
 			?>
 			<tr>
 				<td><?=$transaction_username?></td>
@@ -412,6 +413,7 @@
 				</td>
 			</tr>
 			<?
+			}
 		}
 		?>
 		</table>

@@ -216,11 +216,13 @@
 	$numiopending = $row['numiopending'];
 	
 	# get number of directories in dicomincoming directory
-	$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
+	//$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
+	$dirs = 0;
 	$numdicomdirs = count($dirs);
 	
 	# get number of files in dicomincoming directory
-	$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
+	//$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
+	$files = 0;
 	$numdicomfiles = count($files) - $numdicomdirs;
 	
 	# get number of import requests
@@ -231,7 +233,9 @@
 	
 	# get number of directories in dicomincoming directory
 	$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
+	$dirs = 0;
 	$numimportdirs = count($dirs);
+	
 	
 	/* get system load & number of cores */
 	$load = sys_getloadavg();

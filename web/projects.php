@@ -82,12 +82,15 @@
 
 	/* determine action */
 	switch ($action) {
-		case 'displayproject':
-			DisplayProject($id);
+		case 'displaystudies':
+			DisplayStudiesTable($id);
+			break;
+		case 'auditstudies':
+			AuditStudies($id);
 			break;
 		case 'changeproject':
 			ChangeProject($newprojectid, $studyids);
-			DisplayProject($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'viewuniqueseries':
 			DisplayUniqueSeries($id);
@@ -117,11 +120,11 @@
 			break;
 		case 'updatestudytable':
 			UpdateStudyTable($id,$studytable);
-			DisplayProject($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'applytags':
 			ApplyTags($id, $studyids, $tags);
-			DisplayProject($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'displaycompleteprojecttable':
 			DisplayCompleteProjectTable($id);
@@ -165,14 +168,14 @@
 			break;
 		case 'resetqa':
 			ResetProjectQA($id);
-			DisplayProject($id);
+			DisplayStudiesTable($id);
 			break;
 		default:
 			if ($id == '') {
 				DisplayProjectList();
 			}
 			else {
-				DisplayProject($id);
+				DisplayStudiesTable($id);
 			}
 			break;
 	}
@@ -922,12 +925,12 @@
 			$i++;
 		}
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
-	/* ------- DisplayProject --------------------- */
+	/* ------- AuditStudies ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayProject($id) {
+	function AuditStudies($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 	
 		$sqlstring = "select * from projects where project_id = $id";
@@ -942,7 +945,156 @@
 		$enddate = $row['project_enddate'];
 	
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		NavigationBar("$name", $urllist,0,'','','','');
+
+		DisplayMenu('studies', $id);
+		
+		/* get list of all studies associated with this project */
+		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numstudies = mysqli_num_rows($result);
+		?>
+		<table class="graydisplaytable dropshadow">
+			<thead>
+				<th>Study</th>
+				<th>Date</th>
+				<th># series</th>
+				<th>Modality</th>
+				<th>Ok?</th>
+			</thead>
+		<?
+		/* for each study get a list of series and check if they exist on disk */
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			$modality = strtolower($row['study_modality']);
+			$study_datetime = $row['study_datetime'];
+			$study_site = $row['study_site'];
+			$studynum = $row['study_num'];
+			$study_desc = $row['study_desc'];
+			$study_visit = $row['study_type'];
+			$study_site = $row['study_site'];
+			$study_altid = $row['study_alternateid'];
+			$study_ageatscan = $row['study_ageatscan'];
+			$age = $row['age'];
+			$sex = $row['gender'];
+			$uid = $row['uid'];
+			$subjectid = $row['subject_id'];
+			$project_name = $row['project_name'];
+			$project_costcenter = $row['project_costcenter'];
+			$isactive = $row['isactive'];
+			
+			$sqlstringA = "select * from " . $modality . "_series where study_id = $studyid";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$numseries = mysqli_num_rows($resultA);
+			/* check all the series on disk */
+			$problem = 0;
+			$problems = array();
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$seriesid = $rowA[$modality . "series_id"];
+				$seriesnum = $rowA['series_num'];
+				$seriesdesc = $rowA['series_desc'];
+				$datatype = $rowA['data_type'];
+				$numfiles = $rowA['numfiles'];
+
+				if ($datatype == "") { $datatype = $modality; }
+				
+				if (($numfiles == 0) || ($numfiles == "")) {
+					$numfiles = $rowA['series_numfiles'];
+				}
+				
+				$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
+				//echo "$archivepath ";
+				
+				//if (($numfiles == 0) || ($numfiles == "")) {
+				//	/* the database says there are no files, so don't check the filesystem */
+				//}
+				//else {
+					if (!file_exists($archivepath)) {
+						/* only report a problem if the database says there should be files on the disk */
+						//if ($numfiles > 0) {
+							$problem = 1;
+							$problems[] = "Directory [$archivepath] does not exist";
+						//}
+					}
+					else {
+						/* check if there are actually files in there */
+						$filecount = 0;
+						$files = glob("$archivepath/*");
+						if ($files){
+							$filecount = count($files);
+						}
+						
+						if ($filecount == 0) {
+							$problem = 1;
+							$problems[] = "Directory [$archivepath] is empty";
+						}
+						elseif ($filecount != $numfiles) {
+							$problem = 1;
+							$problems[] = "Number of files in DB [$numfiles] different than on filesystem [$filecount] for [$archivepath]";
+						}
+					}
+				//}
+			}
+
+			if (!$problem) {
+				?>
+				<tr>
+					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+					<td><?=$study_datetime?></td>
+					<td><?=$numseries?></td>
+					<td><?=$modality?></td>
+					<td><span style="color: green">&#10004;</span></td>
+				</tr>
+				<?
+			}
+			else {
+				?>
+				<tr style="font-weight: bold">
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$study_datetime?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$numseries?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$modality?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><span style="color: red">&#10006;</span></td>
+				</tr>
+				<tr>
+					<td colspan="5" style="padding-left: 20px; border-bottom: 1px solid red; background-color: #ffd1d1">
+						<?
+						foreach ($problems as $prob) {
+							?><?=$prob?><br><?
+						}
+						?>
+
+					</td>
+				</tr>
+				<?
+			}
+		}
+		?>
+		</table>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayStudiesTable ---------------- */
+	/* -------------------------------------------- */
+	function DisplayStudiesTable($id) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+	
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		$admin = $row['project_admin'];
+		$pi = $row['project_pi'];
+		$costcenter = $row['project_costcenter'];
+		$sharing = $row['project_sharing'];
+		$startdate = $row['project_startdate'];
+		$enddate = $row['project_enddate'];
+	
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
 		?>
@@ -1298,7 +1450,7 @@
 		$enddate = $row['project_enddate'];
 	
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 
 		?><textarea style="width: 100%; height: 500px"><?
@@ -1347,7 +1499,7 @@
 		$usecustomid = $row['project_usecustomid'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
@@ -1552,7 +1704,7 @@
 		$name = $row['project_name'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
@@ -1681,7 +1833,7 @@
 		$name = $row['project_name'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 
@@ -1944,7 +2096,7 @@
 		$name = $row['project_name'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
@@ -2023,7 +2175,7 @@
 		$name = $row['project_name'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Edit Group Protocols'] = "projects.php?action=viewuniqueseries&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
@@ -2105,7 +2257,7 @@
 		$name = $row['project_name'];
 		
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
@@ -2201,7 +2353,7 @@
 		$enddate = $row['project_enddate'];
 	
 		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displayproject&id=$id";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 		
 		/* get studies associated with this project */
@@ -2495,7 +2647,7 @@
 						if ($view_data) {
 							?>
 							<tr valign="top">
-								<td><a href="projects.php?action=displayproject&id=<?=$id?>"><?=$name?></td>
+								<td><a href="projects.php?action=displaystudies&id=<?=$id?>"><?=$name?></td>
 								<td><?=$projectuid?></td>
 								<td><?=$costcenter?></td>
 								<td><?=$adminfullname?></td>
@@ -2599,7 +2751,8 @@
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheaderactive">
-							<a href="projects.php?id=<?=$id?>">Studies</a>
+							<a href="projects.php?id=<?=$id?>">Studies</a><br>
+							<a href="projects.php?action=auditstudies&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Audit studies</a>
 						</td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>

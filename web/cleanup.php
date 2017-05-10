@@ -44,6 +44,10 @@
 	
 	/* determine action */
 	switch ($action) {
+		case 'viewduplicatestudies':
+			DisplayMenu();
+			DisplayDuplicateStudies();
+			break;
 		case 'viewemptysubjects':
 			DisplayMenu();
 			DisplayEmptySubjects();
@@ -94,12 +98,90 @@
 		View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a> <span class="tiny">Subjects without any enrollments</span><br>
 		View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a> <span class="tiny">Enrollments without any studies</span><br>
 		View empty <a href="cleanup.php?action=vieworphanstudies">studies</a> <span class="tiny">Studies with invalid or missing enrollments</span><br>
-		<!--View empty <a href="cleanup.php?action=viewemptyseries">series</a><br>-->
+		View duplicate <a href="cleanup.php?action=viewduplicatestudies">studies</a> <span class="tiny">Studies within the same subject with duplicated study numbers</span>
 		<br><br>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayDuplicateStudies ------------ */
+	/* -------------------------------------------- */
+	function DisplayDuplicateStudies() {
+
+		$sqlstring = "SELECT enrollment_id, study_num, count(*) as qty FROM studies GROUP BY enrollment_id, study_num HAVING qty > 1";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result)
+		?>
 		
-	
+		Found <?=$numrows?> duplicate study numbers
+		<table class="smallgraydisplaytable">
+			<thead>
+				<tr>
+					<th>UID</th>
+					<th>Study</th>
+					<th>Date</th>
+					<th>Modality</th>
+					<th>Path</th>
+					<th>Series in DB</th>
+					<th>Series on disk</th>
+				</tr>
+			</thead>
+		<?
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentid = $row['enrollment_id'];
+			$studynum = $row['study_num'];
+			
+			$sqlstringA = "select a.subject_id, a.uid, a.isactive, c.study_id, c.study_datetime, c.study_modality from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.enrollment_id = $enrollmentid and c.study_num = $studynum";
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				
+				$subjectid = $rowA['subject_id'];
+				$isactive = $rowA['isactive'];
+				$uid = $rowA['uid'];
+				$studyid = $rowA['study_id'];
+				$studydate = $rowA['study_datetime'];
+				$modality = $rowA['study_modality'];
+
+				$sqlstringB = "select count(*) 'count' from " . strtolower($modality) . "_series where study_id = $studyid";
+				$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+				$numdbseries = $rowB['count'];
+				
+				$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
+				
+				$numdiskseries = 0;
+				$files = glob("$archivepath/*");
+				if ($files){
+					$numdiskseries = count($files);
+				}
+				
+				if (!$isactive) { $deleted = "(deleted)"; }
+				else { $deleted = ""; }
+				?>
+				<tr>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a> <span class="tiny">(<?=$studyid?>)</span></td>
+					<td><?=$studydate?></td>
+					<td><tt><?=$archivepath?></tt></td>
+					<td><?=$modality?></td>
+					<td><?=$numdbseries?></td>
+					<td><?=$numdiskseries?></td>
+				</tr>
+				<?
+			}
+			?>
+			<tr>
+				<td colspan="7">&nbsp;</td>
+			</tr>
+			<?
+		}
+		?>
+		</table>
+		<?
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayEmptySubjects --------------- */
 	/* -------------------------------------------- */

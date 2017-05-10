@@ -94,11 +94,12 @@ sub Audit() {
 	select($old_fh);
 
 	# connect to the database
-	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
+	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'},
+		$cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
 
 	# update the start time
 	SetModuleRunning();
-	
+
 	# check if this module should be running now or not
 	if (!ModuleCheckIfActive($scriptname, $db)) {
 		print "Module is currently not enabled\n";
@@ -106,20 +107,20 @@ sub Audit() {
 		SetModuleStopped();
 		return 0;
 	}
-	
+
 	# ********** 1) check if entries in the database exist in the filesystem **********
 	# get new audit number
 	my $sqlstring = "select max(audit_num) 'newauditnum' from audit_results";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $auditnum = $row{'newauditnum'} + 1;
-	
+
 	$sqlstring = "select * from subjects order by uid";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my $numSubjects = $result->numrows;
 	my $ii = 1;
 	while (my %row = $result->fetchhash) {
-		
+
 		my $uid = $row{'uid'};
 		my $SubjectID = $row{'subject_id'};
 		my $SubjectName = $row{'name'};
@@ -132,22 +133,204 @@ sub Audit() {
 			push @altuids, $row1{'altuid'};
 		}
 
+		#################################################################################################
 		# CHANGE
-		# 04/27/2017
+		# April - May 2017
+		# Find the subjects without a uid or a name
 		if ($uid eq '') {
-			print "UID does not exists for subject $SubjectID";
-			my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtofile','empty uid', '$SubjectID', now())";
+			print "$SubjectID does not have a UID\n";
+			my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb','empty uid', '$SubjectID', now())";
 			my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+            $sqlstringC = "insert into audit_subjects (subject_id, audit_datetime, audit_message, audit_number) values ('$SubjectID', now(), 'empty uid' '$auditnum')";
+            $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 		}
 
+		#print "$SubjectID: $SubjectName\n";
+		if ($SubjectName eq '') {
+			print "$SubjectID does not have a name\n";
+			my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb','empty name', '$SubjectID', now())";
+			my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+            $sqlstringC = "insert into audit_subjects (subject_id, audit_datetime, audit_message, audit_number) values ('$SubjectID', now(), 'empty name' '$auditnum')";
+            $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+		}
+
+		#print "\nChecking $uid [$ii of $numSubjects]\n";
+
+		# check if the UID directory exists in the filesystem
+		my $subjectdir = $cfg{'archivedir'}.'/'.$uid;
+
+		#print "DIRECTORY\n";
+		#print "$subjectdir \n";
 
 
+
+		$ii++;
 	}
-	
+
+	# Change end
+	#################################################################################################
+
+	#################################################################################################
+	# CHANGE
+	# April - May 2017
+	# Find the studies without series or with a blank or an invalid modality
+	$sqlstring = "select * from studies";
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	while (my %row = $result->fetchhash) {
+
+        my $study_id = $row{'study_id'};
+        my $study_modality = $row{'study_modality'};
+        my $study_datetime = $row{'study_datetime'};
+
+        my $series = '';
+        switch ($study_modality)
+        {
+            case 'ASSESSMENT'{
+                $series = 'assessment_series';
+            }
+            case 'AUDIO'{
+                $series = 'audio_series';
+            }
+            case 'CONSENT'{
+                $series = 'consent_series';
+            }
+            case 'CR'{
+                $series = 'cr_series';
+            }
+            case 'CT'{
+                $series = 'ct_series';
+            }
+            case 'EEG'{
+                $series = 'eeg_series';
+            }
+            case 'ET'{
+                $series = 'et_series';
+            }
+            case 'GSR'{
+                $series = 'gsr_series';
+            }
+            case 'MR'{
+                $series = 'mr_series';
+            }
+            case 'NM'{
+                $series = 'nm_series';
+            }
+            case 'OT'{
+                $series = 'ot_series';
+            }
+            case 'PPI'{
+                $series = 'ppi_series';
+            }
+            case 'SNP'{
+                $series = 'snp_series';
+            }
+            case 'SR'{
+                $series = 'sr_series';
+            }
+            case 'TASK'{
+                $series = 'task_series';
+            }
+            case 'US'{
+                $series = 'us_series';
+            }
+            case 'VIDEO'{
+                $series = 'video_series';
+            }
+            case 'XA'{
+                $series = 'xa_series';
+            }
+        }
+
+        if ($study_modality eq '') {
+            print "$study_id does not have a modality\n";
+            my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb','study does not have a modality', '$study_id', now())";
+            my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+        }
+        else {
+            my $sqlstring1 = "select * from $series where study_id = $study_id";
+            my $result1 = SQLQuery($sqlstring1, __FILE__, __LINE__);
+            if (!(my %rowA = $result1->fetchhash)) {
+                print "$study_id does not have a series\n";
+                my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb','study does not have series', '$study_id', now())";
+                my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+                $sqlstringC = "insert into audit_studies (study_id, audit_datetime, audit_message, audit_number) values ('$study_id', now(), 'study does not have series', '$auditnum')";
+                $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+            }
+        }
+
+        # Find the studies without invalid date
+        use Time::Piece();
+        my $now = Time::Piece->new -> ymd();
+        my $yearN = substr($now, 0, 4);
+        my $monthN = substr($now, 5, 2);
+        my $dayN = substr($now, 8, 2);
+
+        my $yearDB = substr($study_datetime, 0, 4);
+        my $monthDB = substr($study_datetime, 5, 2);
+        my $dayDB = substr($study_datetime, 8, 2);
+
+        if ($study_datetime eq ''){
+            print "$study_id does not have a date\n";
+            my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb','study does not have a date', '$study_id', now())";
+            my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+            $sqlstringC = "insert into audit_studies (study_id, audit_datetime, audit_message, audit_number) values ('$study_id', now(), 'study does not have a date', '$auditnum')";
+            $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+        }elsif ($yearDB < 2000){
+            insertErrorIntoDB('study_id does have an invalid date\n', 'study does have an invalid date', $auditnum, $study_id);
+        }
+        elsif ($yearN < $yearDB){
+            insertErrorIntoDB('study_id does have an invalid date\n', 'study does have an invalid date', $auditnum, $study_id);
+        }
+        elsif (($yearN == $yearDB) && ($monthN < $monthDB)){
+            insertErrorIntoDB('study_id does have an invalid date\n', 'study does have an invalid date', $auditnum, $study_id);
+        }
+        elsif (($yearN == $yearDB) && ($monthN == $monthDB) && ($dayN < $dayDB)){
+            insertErrorIntoDB('study_id does have an invalid date\n', 'study does have an invalid date', $auditnum, $study_id);
+        }
+    }
+
+	# Change end
+	#################################################################################################
+	#
 	SetModuleStopped();
 	return 1;
 }
 
+sub insertErrorIntoDB{
+    use strict;
+    my $i=0;
+    my $errorMsg='';
+    my $errorMsgDB='';
+    my $auditnum=0;
+    my $study_id=0;
+    foreach my $item (@_){
+        if ($i==0){
+            $errorMsg = $item;
+        }
+        elsif ($i==1){
+            $errorMsgDB = $item;
+        }
+        elsif ($i==2){
+            $auditnum = $item;
+        }
+        elsif ($i==3){
+            $study_id = $item;
+        }
+        $i++;
+    }
+    print("\n");
+    my $sqlstringC = "insert into audit_results (audit_num, compare_direction, problem, subject_id, audit_date) values ('$auditnum', 'dbtodb', '$errorMsgDB', '$study_id', now())";
+    print "$sqlstringC";
+    my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+    $sqlstringC = "insert into audit_studies (study_id, audit_datetime, audit_message, audit_number) values ('$study_id', now(), '$errorMsgDB', '$auditnum')";
+    $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+}
 
 # ----------------------------------------------------------
 # --------- FlipName ---------------------------------------
@@ -159,7 +342,7 @@ sub FlipName {
 	
 	if (scalar @parts > 1) {
 		my $ret = $parts[1] . '^' . $parts[0];
-		print " [$n -> $ret] ";
+		#print " [$n -> $ret] ";
 		return $ret;
 	}
 	else {

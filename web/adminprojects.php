@@ -273,7 +273,7 @@
 			<tr>
 				<td class="label">Administrator</td>
 				<td>
-					<select name="admin" required>
+					<select name="admin">
 						<option value="">Select Administrator...</option>
 						<?
 							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";
@@ -295,7 +295,7 @@
 			<tr>
 				<td class="label">Principle Investigator</td>
 				<td>
-					<select name="pi" required>
+					<select name="pi">
 						<option value="">Select Principal Investigator...</option>
 						<?
 							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";

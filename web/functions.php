@@ -1362,9 +1362,11 @@
 		}
 		
 		/* get the next study number for the new subject */
-		$sqlstring = "SELECT b.project_id FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
+		$sqlstring = "SELECT max(a.study_num) 'maxstudynum' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$newstudynum = mysqli_num_rows($result) + 1;
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$newstudynum = $row['maxstudynum'] + 1;
+		//$newstudynum = mysqli_num_rows($result) + 1;
 		echo "<li>Got new study number: $newstudynum [$sqlstring]<br>";
 		
 		/* change the enrollment_id associated with the studyid */

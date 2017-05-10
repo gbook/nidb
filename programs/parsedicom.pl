@@ -224,7 +224,7 @@ sub ParseDirectory {
 			WriteLog("Processed $runningCount files...");
 			ModuleRunningCheckIn($scriptname, $db);
 		}
-		if ($runningCount >= 10000) {
+		if ($runningCount >= 5000) {
 			WriteLog("Reached [$runningCount] files, going to archive them now");
 			last;
 		}
