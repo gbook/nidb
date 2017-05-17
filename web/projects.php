@@ -62,6 +62,8 @@
 	$studytable = GetVariable("studytable");
 	$subjecttable = GetVariable("subjecttable");
 	$tags = GetVariable("tags");
+	$serieslist1 = GetVariable("serieslist1");
+	$serieslist2 = GetVariable("serieslist2");
 	
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
@@ -128,6 +130,9 @@
 			break;
 		case 'displaycompleteprojecttable':
 			DisplayCompleteProjectTable($id);
+			break;
+		case 'compareserieslists':
+			DisplayCompareSeriesLists($id, $serieslist1, $serieslist2);
 			break;
 		case 'viewinstancesummary':
 			DisplayInstanceSummary($id);
@@ -1453,7 +1458,12 @@
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		NavigationBar("$name", $urllist,0,'','','','');
 
-		?><textarea style="width: 100%; height: 500px"><?
+		?>
+		<form method="post" action="projects.php">
+		<input type="hidden" name="action" value="compareserieslists">
+		<input type="hidden" name="id" value="<?=$id?>">
+		Series list from this server<br>
+		<textarea style="width: 100%; height: 300px" name="serieslist1" readonly><?
 		/* get all series associated with this project (MR only for now) */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id left join mr_series d on c.study_id = d.study_id where b.project_id = $id order by c.study_datetime, d.series_num";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1479,9 +1489,125 @@
 			
 			if ($studydatetime == "") { $studydatetime = "No Studies"; }
 			
-			echo "$studydatetime\t$seriesnum\t$seriesdatetime\t$seriesdesc\t$seriesprotocol\t$seriessequencename\t$seriesnumfiles\t$seriesnumbeh\t$uid\t$altuids\n";
+			echo "$studydatetime\t$seriesnum\t$seriesdatetime\t$seriesdesc\t$seriesprotocol\t$seriesnumfiles\t$seriesnumbeh\t$uid\t$altuids\n";
 		}
-		?></textarea><?
+		?>
+		</textarea>
+		<br><br>
+		PASTE a series list from another NiDB server here<br>
+		<textarea style="width: 100%; height: 300px" name="serieslist2"></textarea>
+		<input type="submit" value="Compare">
+		</form>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayCompareSeriesLists ---------- */
+	/* -------------------------------------------- */
+	function DisplayCompareSeriesLists($id, $locallist, $foreignlist) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+	
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		$admin = $row['project_admin'];
+		$pi = $row['project_pi'];
+		$costcenter = $row['project_costcenter'];
+		$sharing = $row['project_sharing'];
+		$startdate = $row['project_startdate'];
+		$enddate = $row['project_enddate'];
+	
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		NavigationBar("$name", $urllist,0,'','','','');
+
+		//PrintVariable($locallist);
+		$localseries = explode("\n",$locallist);
+		$foreignseries = explode("\n",$foreignlist);
+		
+		$i = 0;
+		foreach ($localseries as $row) {
+			if (trim($row) != "") {
+				$p = explode("\t", $row);
+				if ($p[0] != "No Studies") {
+					$ids = $p[7] . " " . $p[8];
+					$series = implode(",",array($p[0],$p[1],$p[2],$p[3],$p[4],$p[5],$p[6]));
+					$local[$i]['ids'] = trim($ids);
+					$local[$i]['series'] = trim($series);
+					$i++;
+				}
+			}
+		}
+		//PrintVariable($local);
+		
+		$i = 0;
+		foreach ($foreignseries as $row) {
+			if (trim($row) != "") {
+				$p = explode("\t", $row);
+				if ($p[0] != "No Studies") {
+					$ids = $p[7] . " " . $p[8];
+					$series = implode(",",array($p[0],$p[1],$p[2],$p[3],$p[4],$p[5],$p[6]));
+					$remote[$i]['ids'] = trim($ids);
+					$remote[$i]['series'] = trim($series);
+					$i++;
+				}
+			}
+		}
+		//PrintVariable($remote);
+		
+		?>
+		The following LOCAL series were not found in the REMOTE database
+		<table class="smallgraydisplaytable">
+			<thead>
+				<tr>
+					<th>UID</th>
+					<th>Study Date</th>
+					<th>Series Num</th>
+					<th>Series Date</th>
+					<th>SeriesDesc</th>
+					<th>Protocol</th>
+					<th>Num files</th>
+					<th>Num beh</th>
+				</tr>
+		<?
+		/* find all local rows that are NOT in the remote rows */
+		foreach ($local as $i => $series1) {
+			$localseries = $series1['series'];
+			
+			$found = 0;
+			foreach ($remote as $j => $series2) {
+				$remoteseries = $series2['series'];
+				if ($localseries == $remoteseries) {
+					$found = 1;
+					break;
+				}
+			}
+			if (!$found) {
+				$localids = $series1['ids'];
+				$localuids = explode(" ", $localids);
+				$localuid = $localuids[0];
+				
+				$sp = explode(",", $localseries);
+				?>
+				<tr>
+					<td><?=$localuid?></td>
+					<td><?=$sp[0]?></td>
+					<td><?=$sp[1]?></td>
+					<td><?=$sp[2]?></td>
+					<td><?=$sp[3]?></td>
+					<td><?=$sp[4]?></td>
+					<td><?=$sp[5]?></td>
+					<td><?=$sp[6]?></td>
+				</tr>
+				<?
+			}
+		}
+		?>
+			</tr>
+		</table>
+		<?
 	}
 
 
@@ -2711,8 +2837,7 @@
 					<tr>
 						<td class="menuheaderactive">
 							<a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a><br>
-							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View Complete Project</a><br>
-							<a href="projects.php?action=compareexternalprojectform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Compare External Project</a><br>
+							<a href="projects.php?action=displaycompleteprojecttable&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View & Compare Project</a><br>
 							<a href="adminprojects.php?action=editform&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit Project Details</a>
 						</td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>

@@ -3704,7 +3704,7 @@
 			$seriesids = GetIDListFromGroup($s_seriesgroupid);
 			$sqlwhere .= " and `$modalitytable`.$modality" . "series_id in (" . $seriesids . ")";
 		}
-		if ($s_seriesdesc != "") {
+		if (($s_seriesdesc != "") && ($s_pipelineid == "")) {
 			$sqlwhere .= " and (";
 			/* if it contains a comma, the search will be OR */
 			//if (strpos($s_seriesdesc,',') !== false) {

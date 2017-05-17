@@ -706,6 +706,9 @@ sub GetSQLComparison {
 		$num = $c;
 	}
 	
+	if (trim($comp) eq "") { $comp = 0; }
+	if (trim($num) eq "") { $num = 0; }
+	
 	return ($comp, $num);
 }
 
@@ -745,7 +748,7 @@ sub MakePath {
 	WriteLog("Creating path [$p]");
 	#print "Creating path [$p]\n";
 	my $systemstring = "mkdir -pv '$p'";
-	WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
+	WriteLog("[$systemstring]: " . trim(`$systemstring 2>&1`));
 	return 1;
 	
 	make_path($p, {mode => 0777, verbose => 1, error => \my $err});

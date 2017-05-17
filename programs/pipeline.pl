@@ -989,6 +989,10 @@ sub CreateClusterJobFile() {
 	
 	my $workinganalysispath = "$tmpdir/$pipelinename-$analysisid";
 	
+	if ($runsupplement eq '') {
+		$runsupplement = 0;
+	}
+		
 	WriteLog("Analysis path: $analysispath");
 	print "Analysis path: $analysispath\n";
 	WriteLog("Working Analysis path (temp directory): $workinganalysispath");
@@ -1067,15 +1071,18 @@ sub CreateClusterJobFile() {
 			if ($issupplement) { $supplement = "supplement-"; } else { $supplement = ""; }
 
 			# check if we are operating on regular commands or supplement commands
+			#WriteLog("PRE: runsupplement [$runsupplement] issupplement [$issupplement] - $command");
+			
 			if (($runsupplement eq '1') && ($issupplement eq '0')) { next; }
 			if (($runsupplement == 1) && ($issupplement == 0)) { next; }
-			if (($runsupplement == 1) && ($issupplement == '')) { next; }
+			if (($runsupplement == 1) && ($issupplement eq '')) { next; }
 			
 			if (($runsupplement eq '0') && ($issupplement eq '1')) { next; }
 			if (($runsupplement == 0) && ($issupplement == 1)) { next; }
-			if (($runsupplement == '') && ($issupplement == 1)) { next; }
+			if (($runsupplement eq '') && ($issupplement == 1)) { next; }
 
-			
+			#WriteLog("POST: runsupplement [$runsupplement] issupplement [$issupplement] - $command");
+
 			if (($command =~ m/\{NOLOG\}/) || ($description =~ m/\{NOLOG\}/)) { $logged = 0; }
 			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { $checkedin = 0; }
 			
@@ -1798,7 +1805,7 @@ sub GetData() {
 									$systemstring = "cp -v $indir/* $newanalysispath";
 								}
 
-								WriteLog("Copying data using command (DICOM) [$systemstring] output [" . `$systemstring 2>&1` . "]");
+								WriteLog("Copying data using command (DICOM) [$systemstring] output [" . trim(`$systemstring 2>&1`) . "]");
 								$datalog .= "    Copying data using command [$systemstring]\n";
 								`$systemstring 2>&1`;
 							}
@@ -1817,7 +1824,7 @@ sub GetData() {
 									$systemstring = "cp -v $tmpdir/* $newanalysispath";
 								}
 								$datalog .= "    Copying data using command [$systemstring]\n";
-								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [" . `$systemstring 2>&1` . "]");
+								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [" . trim(`$systemstring 2>&1`) . "]");
 								
 								WriteLog("Removing temp directory [$tmpdir]");
 								$datalog .= "    Removing temp directory [$tmpdir]\n";
@@ -2277,7 +2284,7 @@ sub ConvertDicom() {
 	}
 
 	#WriteLog(CompressText("$systemstring (" . `$systemstring 2>&1` . ")"));
-	WriteLog("Running [$systemstring] [" . `$systemstring 2>&1` . "]");
+	WriteLog("Running [$systemstring] [" . trim(`$systemstring 2>&1`) . "]");
 
 	# rename the files into something meaningful
 	my ($numimg, $numhdr, $numnii, $numgz) = BatchRenameFiles($outdir, $series_num, $study_num, $uid);
@@ -2286,7 +2293,7 @@ sub ConvertDicom() {
 	# gzip any remaining .nii files if they were supposed to be gzipped but weren't
 	if ($req_gzip) {
 		my $systemstring = "cd $outdir; gzip *.nii";
-		WriteLog("Running [$systemstring]: [" . `$systemstring 2>&1` . "]");
+		WriteLog("Running [$systemstring]: [" . trim(`$systemstring 2>&1`) . "]");
 	}
 
 	WriteLog("Getting size of $outdir");

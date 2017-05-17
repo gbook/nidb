@@ -85,6 +85,7 @@
 	}
 
 	/* disable the login checking, if its the signup page or if authentication is done in the page (such as api.php) */
+	//if (defined('nologin') && !$nologin) {
 	if (!$nologin) {
 		/* cookie info */
 		$username = $_SESSION['username'];
