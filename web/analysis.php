@@ -987,9 +987,16 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ps_command = $row['ps_command'];
 			$ps_description = $row['ps_description'];
+			$ps_supplement = $row['ps_supplement'];
 			$ps_order = $row['ps_order'] - 1;
-			$commands[$ps_order] = $ps_command;
-			$descriptions[$ps_order] = $ps_description;
+			if ($ps_supplement) {
+				$descriptions['supp'][$ps_order] = $ps_description;
+				$commands['supp'][$ps_order] = $ps_command;
+			}
+			else {
+				$descriptions['reg'][$ps_order] = $ps_description;
+				$commands['reg'][$ps_order] = $ps_command;
+			}
 		}
 		//echo "<pre>";
 		//print_r($descriptions);
@@ -1012,7 +1019,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing log files from <b><?=$path?></b>
+			Showing blog files from <b><?=$path?></b>
 			<br><br>
 			<?
 			$files = scandir($path);
@@ -1022,14 +1029,23 @@
 				$file = file_get_contents("$path/$log");
 				$size = filesize("$path/$log");
 				$filedate = date ("F d Y H:i:s.", filemtime("$path/$log"));
-				
-				if (preg_match('/step(\d*)\.log/', $log, $matches)) {
-					//echo "<pre>";
-					//print_r($matches);
-					//echo "</pre>";
+				echo "$path/$log<br>";
+				$desc = "";
+				if (preg_match('/^step(\d*)\.log/', $log, $matches)) {
+					echo "<pre>";
+					print_r($matches);
+					echo "</pre>";
 					$step = $matches[1];
-					$command = $commands[$step];
-					$desc = $descriptions[$step];
+					$command = $commands['reg'][$step];
+					$desc = $descriptions['reg'][$step];
+				}
+				elseif (preg_match('/^supplement-step(\d*)\.log/', $log, $matches)) {
+					echo "<pre>";
+					print_r($matches);
+					echo "</pre>";
+					$step = $matches[1];
+					$command = $commands['supp'][$step];
+					$desc = $descriptions['supp'][$step];
 				}
 				?>
 				<details>
