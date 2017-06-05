@@ -731,7 +731,7 @@ sub GetDataPathFromSeriesID {
 		$studyid = $row{'study_id'};
 		
 		$path = $cfg{'archivedir'} . "/$uid/$studynum/$seriesnum";
-		return ($path, $uid, $studynum, $studyid, $subjectid);
+		return ($path, $uid, $studynum, $seriesnum, $studyid, $subjectid);
 	}
 	else {
 		return ("","","",0,0);

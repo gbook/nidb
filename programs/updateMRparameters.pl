@@ -77,7 +77,7 @@ sub DoUpdate {
 		my $i = 0;
 		while (my %rowC = $resultC->fetchhash) {
 			my $seriesid = $rowC{'mrseries_id'};
-			my ($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'mr');
+			my ($path, $uid, $studynum, $seriesnum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'mr');
 			#print "$path/dicom\n";
 			my $percent = (($i+0.0)/$totalrows)*100.0;
 			print "Completed [$i of $totalrows] %" . sprintf("%.2f",$percent) . "\n";

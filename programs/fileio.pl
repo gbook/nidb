@@ -783,9 +783,24 @@ sub DeleteStudy() {
 # --------- DeleteSeries -----------------------------------
 # ----------------------------------------------------------
 sub DeleteSeries() {
-	my ($id) = @_;
+	my ($id, $modality) = @_;
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
 	WriteLog("In DeleteSeries()");
+	
+	$modality = lc($modality);
+	
+	my ($oldpath, $uid, $studynum, $seriesnum, $studyid, $subjectid) = GetDataPathFromSeriesID($id, $modality);
+	
+	my $newpath = $cfg{'deleteddir'} . "/" . GenerateRandomString(10) . "-$uid-$studynum-$seriesnum";
+	
+	my $systemstring = "mv -v $oldpath $newpath";
+	WriteLog("Running [$systemstring] [" . `$systemstring 2>&1` . "]");
+	
+	# delete the series
+	my $sqlstring = "delete from $modality"."_series where $modality"."series_id = $id";
+	WriteLog($sqlstring);
+	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	
 }
 
 

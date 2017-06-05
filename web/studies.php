@@ -38,6 +38,7 @@
 	require "nanodicom.php";
 
 	//PrintVariable($_POST);
+	//PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -113,9 +114,10 @@
 			Delete($id);
 			break;
 		case 'deleteseries':
-			if (strtoupper($modality) != "MR") {
-				DeleteSeries($id, $seriesid, $modality);
-			}
+			//if (strtoupper($modality) != "MR") {
+			DeleteSeries($id, $seriesid, $modality);
+			DisplayStudy($id, 0, 0, '', '', '', '','','','', false);
+			//}
 			break;
 		case 'editseries':
 			if (strtoupper($modality) != "MR") {
@@ -1149,6 +1151,7 @@
 					<? if ($GLOBALS['issiteadmin']) { ?>
 					<th>Hide</th>
 					<th>Reset QA</th>
+					<th>Delete series</th>
 					<? } ?>
 				</tr>
 			</thead>
@@ -1752,6 +1755,7 @@
 									}
 									?>
 									<td align="center"><a class="redlinkbutton" href="studies.php?action=resetqa&seriesid=<?=$mrseries_id?>&id=<?=$id?>" color="red">X</a></td>
+									<td align="center"><a class="redlinkbutton" href="studies.php?action=deleteseries&modality=mr&seriesid=<?=$mrseries_id?>&id=<?=$id?>" color="red">X</a></td>
 									<?
 								}
 								?>
@@ -2110,32 +2114,40 @@
 	function DeleteSeries($id, $series_id, $modality) {
 		$modality = strtolower($modality);
 		
-		/* get information to figure out the path */
-		$sqlstring = "select a.*, c.uid, d.project_costcenter, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$study_num = $row['study_num'];
-		$uid = $row['uid'];
-		
-		/* get series number */
-		$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $series_id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$series_num = $row['series_num'];
-
-		/* reconstruct the series path and delete */
-		$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num";
-		echo "[$seriespath]";
-		if (is_dir($seriespath)) {
-			$datetime = time();
-			rename($seriespath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num-$datetime");
+		if ($modality == "mr") {
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, requestdate) values ('delete','series','$series_id', '$modality', now())";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			?><div align="center"><span class="message">Series queued for deletion</span></div><br><br><?
 		}
-		
-		$sqlstring = "delete from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $series_id";
-		echo "[$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		?><div align="center"><span class="message">Series deleted</span></div><br><br><?
+		else {
+			/* get information to figure out the path */
+			$sqlstring = "select a.*, c.uid, d.project_costcenter, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$study_num = $row['study_num'];
+			$uid = $row['uid'];
+			
+			/* get series number */
+			$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $series_id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$series_num = $row['series_num'];
+
+			/* reconstruct the series path and delete */
+			$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num";
+			echo "[$seriespath]";
+			if (is_dir($seriespath)) {
+				$datetime = time();
+				rename($seriespath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num-$datetime");
+			}
+			
+			$sqlstring = "delete from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $series_id";
+			echo "[$sqlstring]";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			?><div align="center"><span class="message">Series deleted</span></div><br><br><?
+		}
 	}
 
 	
