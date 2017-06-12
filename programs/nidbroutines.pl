@@ -677,7 +677,7 @@ sub GetSQLComparison {
 	$c =~ s/\s*//g; # remove all whitespace
 	
 	# check if there is anything to format
-	if ($c eq "") { return (0,0); }
+	if ($c eq "") { return ('',0); }
 	
 	my $comp = 0;
 	my $num = 0;
@@ -706,8 +706,10 @@ sub GetSQLComparison {
 		$num = $c;
 	}
 	
-	if (trim($comp) eq "") { $comp = 0; }
+	#if (trim($comp) eq "") { $comp = 0; }
 	if (trim($num) eq "") { $num = 0; }
+
+	WriteLog("Inside GetSQLComparison($c) - [$comp] [$num]");
 	
 	return ($comp, $num);
 }

@@ -1376,9 +1376,9 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* move the alternate IDs from the old to new enrollment */
-		$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
-		echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
+		//echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* copy the data, don't move in case there is a problem */
 		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";

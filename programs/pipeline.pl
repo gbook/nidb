@@ -1476,7 +1476,7 @@ sub GetData() {
 			else {
 				$datalog .= "Checking the study [$studyid] for the protocol ($protocols)\n";
 				# get a list of series satisfying the search criteria, if it exists
-				if (($comparison == 0) && ($num == 0)) {
+				if (($comparison eq "") || ($num == 0)) {
 					$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
 					if ($imagetypes ne "''") {
 						$sqlstring .= " and image_type in ($imagetypes)";

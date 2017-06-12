@@ -363,13 +363,20 @@
 		$history .= "Temp [tmp_pipeline$id] table:" . PrintSQLTable($result,"","","",true) . "\n";
 		
 		/* get the new pipeline id */
-		$sqlstring = "select (max(pipeline_id)+1) 'newid', max(pipeline_version) 'version' from pipelines";
+		$sqlstring = "select (max(pipeline_id)+1) 'newid' from pipelines";
 		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newid = $row['newid'];
 		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
 		$history .= "3) Getting new pipeline ID [$newid] [$sqlstring]\n";
+
+		/* this new pipeline_id does not exist... we know that. But the ID may still be in the pipeline_steps table
+		   so delete everything from the pipeline_steps table with the new ID */
+		$sqlstring = "delete from pipeline_steps where pipeline_id = $newid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Deleting from pipeline_steps table [$sqlstring]\n";
+		$history .= "3.1) Deleting from pipeline_steps table [$sqlstring]\n";
 
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
 		//PrintSQL("$sqlstring");
