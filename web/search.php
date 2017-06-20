@@ -3085,7 +3085,7 @@
 							$('.export').slideUp();
 							$('.format').slideUp();
 							$('.dirstructure').slideUp();
-							//$('.datatoexport').slideUp();
+							$('.datatoexport').slideUp();
 						}
 						else {
 							$('.export').slideUp();
@@ -3103,6 +3103,8 @@
 							$('.remotenidb').show("highlight",{},1000);
 							$('.export').slideUp();
 							$('.dirstructure').slideUp();
+							$('.format').slideUp();
+							$('.datatoexport').slideUp();
 						}
 						else {
 							$('.remotenidb').slideUp();

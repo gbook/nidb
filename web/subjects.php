@@ -1508,15 +1508,15 @@
 								<details>
 									<summary class="tiny" style="color:darkred">Edit or delete</summary>
 									<div style="padding:5px; font-size:11pt">
-									<a href="subjects.php?action=editform&id=<?=$id?>">Edit Demographics</a>
+									<a href="subjects.php?action=editform&id=<?=$id?>" class="linkbutton">Edit Demographics</a>
 									<br><br><br>
 									<?
 										if ($GLOBALS['isadmin']) {
 											if ($isactive) {
 											?>
-												<a href="subjects.php?action=deleteconfirm&id=<?=$id?>"><span style="color: red; text-decoration:underline">Delete</span></a>
+												<a href="subjects.php?action=deleteconfirm&id=<?=$id?>" class="redlinkbutton">Delete</a>
 											<? } else { ?>
-												<a href="subjects.php?action=undelete&id=<?=$id?>"><span style="color: red; text-decoration:underline">Undelete</span></a>
+												<a href="subjects.php?action=undelete&id=<?=$id?>" class="redlinkbutton">Undelete</a>
 											<?
 											}
 										}

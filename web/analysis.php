@@ -1019,7 +1019,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing blog files from <b><?=$path?></b>
+			Showing log files from <b><?=$path?></b>
 			<br><br>
 			<?
 			$files = scandir($path);

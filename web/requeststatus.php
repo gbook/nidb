@@ -186,7 +186,7 @@
 				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 order by req_groupid desc limit 100";
 			}
 			else {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE lastupdate > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
 			}
 		}
 		else {
@@ -194,7 +194,7 @@
 				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc limit 100";
 			}
 			else {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE lastupdate > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
+				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
 			}
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

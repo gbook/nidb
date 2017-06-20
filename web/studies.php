@@ -939,7 +939,7 @@
 						<tr>
 							<td colspan="2" align="center">
 								<br>
-								<a href="studies.php?action=editform&id=<?=$id?>">Edit</a>
+								<a href="studies.php?action=editform&id=<?=$id?>" class="linkbutton">Edit</a>
 							</td>
 						</tr>
 					</table>
@@ -947,42 +947,16 @@
 					<? if ($GLOBALS['isadmin']) { ?>
 						<details>
 							<summary style="color:darkred" class="tiny">Admin Functions</summary>
-							<br><br>
+							<div style="border: solid 1px #aaa; border-radius: 5px; padding: 5px">
 						
-							<span align="center" style="background-color: darkred; color: white; padding: 1px 5px; border-radius:2px; font-weight: bold; font-size: 11pt">Delete this study:</span> <a href="studies.php?action=deleteconfirm&id=<?=$id?>"><span class="adminbutton" style="padding: 3px; margin; 3px;">X</span></a>
-						
-							<script>
-							$(function() {
-								$( "#newuid" ).autocomplete({
-									source: "subjectlist.php",
-									minLength: 2,
-									autoFocus: true
-								});
-							});
-							</script>
-							<style>
-							.ui-autocomplete {
-								max-height: 100px;
-								overflow-y: auto;
-								/* prevent horizontal scrollbar */
-								overflow-x: hidden;
-								/* add padding to account for vertical scrollbar */
-								padding-right: 20px;
-							}
-							/* IE 6 doesn't support max-height
-							 * we use height instead, but this forces the menu to always be this tall
-							 */
-							* html .ui-autocomplete {
-								height: 100px;
-							}
-							</style>									
+							<a href="studies.php?action=deleteconfirm&id=<?=$id?>" class="redlinkbutton">Delete</a>
 							<form action="studies.php" method="post">
 							<input type="hidden" name="studyid" value="<?=$study_id?>">
 							<input type="hidden" name="action" value="movestudytosubject">
 							<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 							<br>
-							<span align="center" style="background-color: darkred; color: white; padding: 1px 5px; border-radius:2px; font-weight: bold; font-size: 11pt">Move study to subject:</span> <input type="text" size="10" name="newuid" id="newuid"/>
-							<input type="submit" value="Move">
+							<span align="center">Move study to <b>subject</b></span> <input type="text" size="10" name="newuid" id="newuid" placeholder="New UID">
+							<input type="submit" value="Move" style="background-color: #FF552A; color: white; border: 1px solid #000;">
 							</form>
 							<form action="studies.php" method="post">
 							<input type="hidden" name="studyid" value="<?=$study_id?>">
@@ -990,7 +964,7 @@
 							<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 							<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 							<br>
-							<span align="center" style="background-color: darkred; color: white; padding: 1px 5px; border-radius:2px; font-weight: bold; font-size: 11pt">Move study to project:</span>
+							<span align="center">Move study to <b>project</b></span>
 							<select name="newprojectid">
 							<?
 								$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
@@ -1006,7 +980,7 @@
 								}
 							?>
 							</select>
-							<input type="submit" value="Move">
+							<input type="submit" value="Move" style="background-color: #FF552A; color: white; border: 1px solid #000;">
 							</form>
 							
 							<br>
@@ -1015,6 +989,7 @@
 							<a href="studies.php?id=<?=$id?>&audit=1">Perform file audit</a> - Compares all dicom files to the nidb database entries. Can be very slow<br><br>
 							<? } else { ?>
 							<a href="studies.php?id=<?=$id?>&audit=1&fix=1">Fix file errors</a> - Removes duplicates and errant files, resets file count in nidb database. Can be very slow<br><br>
+							</div>
 						</details>
 					<? } ?>
 					

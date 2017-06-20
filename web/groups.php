@@ -186,7 +186,7 @@ session_start();
                 }
                 else {
                     /* insert the seriesids */
-                    $sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
+                    $sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', '')";
 //echo "$sqlstring<br>";
                     $result = MySQLiQuery($sqlstring);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
