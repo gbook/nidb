@@ -90,20 +90,22 @@
 			$parts = explode("_", $tablename);
 			$modality = $parts[0];
 			
-			$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
-			$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
-			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-			$totalseries += $row2['count'];
-			$totalsize += $row2['size'];
-			$seriescounts[$modality] = number_format($row2['count']);
-			$seriessize[$modality] = HumanReadableFilesize($row2['size']);
+			if ($modality != 'audit') {
+				$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
+				$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+				$totalseries += $row2['count'];
+				$totalsize += $row2['size'];
+				$seriescounts[$modality] = number_format($row2['count']);
+				$seriessize[$modality] = HumanReadableFilesize($row2['size']);
 
-			$sqlstring2 = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id";
-			//PrintSQL($sqlstring);
-			$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
-			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-			$seriesreqsize[$modality] = HumanReadableFilesize($row2['totalbytes']);
-			$totalreqbytes += $row2['totalbytes'];
+				$sqlstring2 = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id";
+				//PrintSQL($sqlstring);
+				$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+				$seriesreqsize[$modality] = HumanReadableFilesize($row2['totalbytes']);
+				$totalreqbytes += $row2['totalbytes'];
+			}
 		}
 		//print_r($seriescounts);
 		

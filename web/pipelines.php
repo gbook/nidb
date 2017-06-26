@@ -39,7 +39,6 @@
 	require "menu.php";
 
 	//PrintVariable($_POST, "POST");
-	//exit();
 	//PrintVariable($_GET, "GET");
 	
 	/* ----- setup variables ----- */
@@ -68,6 +67,7 @@
 	$pipelineusetmpdir = GetVariable("pipelineusetmpdir");
 	$pipelinetmpdir = GetVariable("pipelinetmpdir");
 	$pipelinenotes = GetVariable("pipelinenotes");
+	$pipelineuseprofile = GetVariable("pipelineuseprofile");
 	$version = GetVariable("version");
 	$completefiles = GetVariable("completefiles");
 	$dependency = GetVariable("dependency");
@@ -116,11 +116,11 @@
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $pipelineuseprofile, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $pipelineuseprofile, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
@@ -183,7 +183,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $pipelineuseprofile, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
@@ -202,6 +202,7 @@
 		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
+		$pipelineuseprofile = mysqli_real_escape_string($GLOBALS['linki'], $pipelineuseprofile);
 		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
@@ -226,7 +227,7 @@
 		}
 
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_useprofile = '$pipelineuseprofile', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		//PrintSQL($sqlstring);
 		//return;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -258,7 +259,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $pipelineuseprofile, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
@@ -275,6 +276,7 @@
 		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
+		$pipelineuseprofile = mysqli_real_escape_string($GLOBALS['linki'], $pipelineuseprofile);
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
@@ -296,7 +298,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_useprofile, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', '$pipelineuseprofile', 0)";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
@@ -861,6 +863,7 @@
 			$usetmpdir = $row['pipeline_usetmpdir'];
 			$tmpdir = $row['pipeline_tmpdir'];
 			$pipelinenotes = $row['pipeline_notes'];
+			$pipelineuseprofile = $row['pipeline_useprofile'];
 			$pipelinegroup = $row['pipeline_group'];
 			$resultscript = $row['pipeline_resultsscript'];
 			$deplevel = $row['pipeline_dependencylevel'];
@@ -1081,6 +1084,11 @@
 							<td valign="top"><input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>> <input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="56"><br>
 							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 						</tr>
+						<!--<tr>
+							<td class="label" valign="top">Use CPU/memory profiling <img src="images/help.gif" title="<b>Use CPU/memory profiling</b><br><br>This option will run the <tt>time</tt> command before each line of your script unless it contains the {NOLOG} or {NOCHECKIN} option"></td>
+							<td valign="top"><input type="checkbox" name="pipelineuseprofile" <?=$disabled?> value="1" <? if ($pipelineuseprofile == "1") { echo "checked"; } ?>><br>
+							<span class="tiny">May incur a small performance hit</span></td>
+						</tr>-->
 						<tr>
 							<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful"></td>
 							<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
@@ -1927,8 +1935,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 					<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{subjectuids}');" title="Space separated list of UIDs. For group analyses">{subjectuids}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{studydatetimes}');" title="Space separated list of datetimes, ordered by datetime. For group analyses">{studydatetimes}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{analysisgroupid}');" title="Group analysis ID">{analysisgroupid}</td></tr>
@@ -1937,6 +1943,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 					<tr><td class="pipelinevariable" onclick="insertText('{groups}');" title="Space separated list of groups">{groups}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects_groupname}');" title="Number of subjects (sessions) in the group specified">{numsubjects_groupname}</td></tr>
 					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums_groupname}');" title="Space separated list of uidstudynums for the group specified">{uidstudynums_groupname}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
+					<tr><td class="pipelinevariable" onclick="insertText('{PROFILE}');" title="Enable profiling (measure RAM, CPU, disk IO usage) for this step using the <tt>time<tt> command. Will not work with certain linux commands such as <tt>export, for, while</tt>, etc">{PROFILE}</td></tr>
 				</table>
 				<br><br>
 				<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>

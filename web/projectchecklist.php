@@ -505,13 +505,12 @@
 							$msg = "<span style='color: #ccc; font-size:14pt'>&nbsp;</span>";
 						}
 						else {
-							$sqlstring = "select study_id from $modality" . "_series where study_id in (" . implode(',',$studyids) . ") and (series_desc in (" . implode(',',$protocols) . ") or series_protocol in (" . implode(',',$protocols) . "))";
-							//PrintSQL($sqlstring);
+							$sqlstring = "select study_id from $modality" . "_series where study_id in (" . implode(',',$studyids) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . "))";
+							//PrintVariable($sqlstring);
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							if (mysqli_num_rows($result) > 0) {
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$studyid = $row['study_id'];
-								$msg = "1";
 								$msg = "<a href='studies.php?id=$studyid'>&#10004;</a>";
 								$totals[$ii]++;
 								$rowtotal++;
@@ -522,10 +521,10 @@
 						}
 					}
 					else {
+						/* invalid modality */
 						$sqlstring = "select * from enrollment_checklist where enrollment_id = $enrollmentid and projectchecklist_id = $itemid";
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						if (mysqli_num_rows($result) > 0) {
-							//$msg = "1";
 							$msg = "&#10004;";
 							$totals[$ii]++;
 							$rowtotal++;

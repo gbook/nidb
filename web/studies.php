@@ -2136,7 +2136,7 @@
 		$series_id = $row[strtolower($modality) . "series_id"];
 		$series_num = $row['series_num'];
 		$series_datetime = $row['series_datetime'];
-		$protocolA = $row['series_protocol'];
+		$protocolA = trim($row['series_protocol']);
 		$notes = $row['series_notes'];
 		?>
 		<div align="center">
@@ -2155,10 +2155,28 @@
 				<td>
 					<select name="protocol">
 					<?
-						$sqlstring = "select * from modality_protocol where modality = '$modality'";
+						unset($protocols);
+						
+						$sqlstring = "select protocol from modality_protocol where modality = '$modality'";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$protocolB = $row['protocol'];
+							if (trim($row['protocol']) != "") {
+								$protocols[] = trim($row['protocol']);
+							}
+						}
+						$sqlstring = "select distinct(series_protocol) from " . strtolower($modality) . "_series";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							if (trim($row['series_protocol']) != "") {
+								$protocols[] = trim($row['series_protocol']);
+							}
+						}
+						//PrintVariable($protocols);
+						$protocols = array_unique($protocols, SORT_STRING);
+						sort($protocols);
+						//PrintVariable($protocols);
+						
+						foreach ($protocols as $protocolB) {
 							?>
 							<option value="<?=$protocolB?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><?=$protocolB?></option>
 							<?

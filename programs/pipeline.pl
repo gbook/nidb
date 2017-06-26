@@ -163,6 +163,7 @@ sub ProcessPipelines() {
 		my $depdir = $row{'pipeline_dependencydir'};
 		my $deplinktype = $row{'pipeline_deplinktype'};
 		my $testing = $row{'pipeline_testing'};
+		my $pipelineuseprofile = $row{'pipeline_useprofile'};
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
 		
@@ -295,7 +296,7 @@ sub ProcessPipelines() {
 			my $analysisRowID = $result->insertid;
 			
 			# create the SGE job file
-			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
 		
 			$systemstring = "chmod -Rf 777 $analysispath";
 			WriteLog("[$systemstring]");
@@ -556,7 +557,7 @@ sub ProcessPipelines() {
 								$realanalysispath =~ s/\/mount//g;
 								
 								# create the SGE job file
-								my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $runsupplement, @pipelinesteps);
+								my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $runsupplement, @pipelinesteps);
 							
 								`chmod -Rf 777 $analysispath`;
 								# create the SGE job file
@@ -839,7 +840,7 @@ sub ProcessPipelines() {
 			my $studydatetime = $row{'studydatetime'};
 				
 			# create the SGE job file
-			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
 		
 			`chmod -Rf 777 $groupanalysispath`;
 			WriteLog($sgebatchfile);
@@ -971,7 +972,7 @@ sub IsQueueFilled() {
 # --------- CreateClusterJobFile -------------------------------
 # ----------------------------------------------------------
 sub CreateClusterJobFile() {
-	my ($clustertype, $analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $runsupplement, @pipelinesteps) = @_;
+	my ($clustertype, $analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $runsupplement, @pipelinesteps) = @_;
 
 	# (re)connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1066,6 +1067,7 @@ sub CreateClusterJobFile() {
 			my $logged = $pipelinesteps[$i]{'logged'};
 			my $enabled = $pipelinesteps[$i]{'enabled'};
 			my $checkedin = 1;
+			my $profile = 0;
 			
 			my $supplement;
 			if ($issupplement) { $supplement = "supplement-"; } else { $supplement = ""; }
@@ -1085,6 +1087,7 @@ sub CreateClusterJobFile() {
 
 			if (($command =~ m/\{NOLOG\}/) || ($description =~ m/\{NOLOG\}/)) { $logged = 0; }
 			if (($command =~ m/\{NOCHECKIN\}/) || ($description =~ m/\{NOCHECKIN\}/)) { $checkedin = 0; }
+			if (($command =~ m/\{PROFILE\}/) || ($description =~ m/\{PROFILE\}/)) { $profile = 1; }
 			
 			# format the command (replace pipeline variables, etc)
 			if ($usetmpdir) {
@@ -1101,6 +1104,11 @@ sub CreateClusterJobFile() {
 				$jobfile .= "\nperl /opt/pipeline/$checkinscript $analysisid processing 'processing $supplement"."step " . ($i + 1) . " of " . ($#pipelinesteps + 1) . "' '$cleandesc'";
 				
 				$jobfile .= "\n# $description\necho Running $command\n";
+			}
+			
+			# prepend with 'time' if the neither NOLOG nor NOCHECKIN are specified
+			if ($profile && $logged && $checkedin) {
+				$command = "/usr/bin/time -v $command";
 			}
 			
 			# write to a log file if logging is requested

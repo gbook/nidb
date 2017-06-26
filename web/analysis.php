@@ -1032,17 +1032,17 @@
 				echo "$path/$log<br>";
 				$desc = "";
 				if (preg_match('/^step(\d*)\.log/', $log, $matches)) {
-					echo "<pre>";
-					print_r($matches);
-					echo "</pre>";
+					//echo "<pre>";
+					//print_r($matches);
+					//echo "</pre>";
 					$step = $matches[1];
 					$command = $commands['reg'][$step];
 					$desc = $descriptions['reg'][$step];
 				}
 				elseif (preg_match('/^supplement-step(\d*)\.log/', $log, $matches)) {
-					echo "<pre>";
-					print_r($matches);
-					echo "</pre>";
+					//echo "<pre>";
+					//print_r($matches);
+					//echo "</pre>";
 					$step = $matches[1];
 					$command = $commands['supp'][$step];
 					$desc = $descriptions['supp'][$step];
