@@ -384,7 +384,7 @@
 		<div align="center" class="message">
 		<b>Are you absolutely sure you want to delete this study?</b><img src="images/chili24.png">
 		<br><br>
-		<span class="uid"><?=FormatUID($uid)?><?=$study_num?></span> collected on <?=$study_datetime?>
+		<span class="uid"><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?>
 		<br><br>
 		<table width="100%">
 			<tr>

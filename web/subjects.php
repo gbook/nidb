@@ -225,7 +225,7 @@
 			$i++;
 		}
 		
-		?><div align="center"><span class="staticmessage"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br><?
+		?><div align="center"><span class="staticmessage"><span class="uid"><?=$uid?></span> updated</span></div><br><br><?
 	}
 
 
@@ -297,7 +297,7 @@
 		}
 
 		
-		?><div align="center"><span style="background-color: darkred; color: white"><?=$subjectname?> added <span class="uid"><?=FormatUID($uid)?></span></span></div><br><br><?
+		?><div align="center"><span style="background-color: darkred; color: white"><?=$subjectname?> added <span class="uid"><?=$uid?></span></span></div><br><br><?
 		
 		return $SubjectRowID;
 	}
@@ -382,7 +382,7 @@
 		
 		?>
 		<div align="center">
-		Study <?=$study_num?> has been created for subject <?=FormatUID($uid)?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
+		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
 		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
 		</div>
 		<?
@@ -542,7 +542,7 @@
 		?></ol>
 		</ol>
 		
-		</span><div align="center"><span class="message"><span class="uid"><?=FormatUID($uid)?></span> updated</span></div><br><br>
+		</span><div align="center"><span class="message"><span class="uid"><?=$uid?></span> updated</span></div><br><br>
 		<b>Merge complete. Go <a href="<?=$returnpage?>"><u>back</u></a> to original page</b><br>
 		<?
 	}
@@ -1002,7 +1002,7 @@
 		<div align="center" class="message">
 		<b>Are you absolutely sure you want to delete this subject?</b><img src="images/chili24.png">
 		<br><br>
-		<span class="uid"><?=FormatUID($uid)?></span>
+		<span class="uid"><?=$uid?></span>
 		</div>
 		<br><br>
 		
@@ -1209,7 +1209,7 @@
 		}
 
 		if ($type == "update") { ?>
-		<span class="uid"><?=FormatUID($uid)?></span><br><br>
+		<span class="uid"><?=$uid?></span><br><br>
 		<? } ?>
 		
 		
@@ -2236,7 +2236,7 @@
 				$dataaccess = 0;
 			}			
 			$formaction = "confirmupdate";
-			$formtitle = "Updating &nbsp;<span class='uid'>" . FormatUID($uid) . "</span>";
+			$formtitle = "Updating &nbsp;<span class='uid'>" . $uid . "</span>";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -2684,7 +2684,7 @@
 							
 								<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
 								<!--<input type="hidden" name="uidids[]" value="<?=$id?>">-->
-								<td><a href="subjects.php?action=display&id=<?=$id?>"><?=FormatUID($uid)?></a></td>
+								<td><a href="subjects.php?action=display&id=<?=$id?>"><?=$uid?></a></td>
 								<td><?=implode2(', ',$altuids)?></td>
 								<td><?=$name?></td>
 								<td><?=$gender?></td>

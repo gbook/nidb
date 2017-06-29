@@ -251,7 +251,7 @@ sub ProcessDataRequests {
 				}
 				
 				# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
-				if ($data_type eq '') {
+				if (!defined($data_type) || $data_type eq '') {
 					$data_type = $modality;
 				}
 
@@ -647,7 +647,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
-				# --------------- OPTION 3 - Export data ---------------
+				# --------------- OPTION 3 - Export data in NiDB format ---------------
 				if ($req_destinationtype eq "export") {
 					# build destination path
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
@@ -1486,10 +1486,13 @@ sub WriteNDARSeries() {
 	my ($file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir) = @_;
 
 	# get the information on the subject and series
-	my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where " . lc($modality) . "series_id = $seriesid";
+	my $sqlstring = "select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from " . lc($modality) . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where " . lc($modality) . "series_id = $seriesid";
+	WriteLog($sqlstring);
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
+		my $subjectid = $row{'subject_id'};
+		my $enrollmentid = $row{'enrollment_id'};
 		my $guid = $row{'guid'};
 		my $seriesdatetime = $row{'series_datetime'};
 		my $seriestr = $row{'series_tr'};
@@ -1516,6 +1519,9 @@ sub WriteNDARSeries() {
 		my $studyageatscan = $row{'study_ageatscan'};
 		my $seriesdesc = $row{'series_desc'};
 		my $boldreps = $row{'bold_reps'};
+		my $usecustomid = $row{'project_usecustomid'};
+		my $srcsubjectid = $uid;
+		my $projectid = $row{'project_id'};
 	
 		# skip this if the GUID is blank... can't submit to NDAR/RDoC if its blank anyway
 		if (trim($guid) eq "") { WriteLog("GUID was blank, skipping writing this row"); return; }
@@ -1537,9 +1543,10 @@ sub WriteNDARSeries() {
 		if (($studyageatscan > 0) && ($studyageatscan < 120)) {
 			$ageatscan = $studyageatscan*12;
 		}
-		#if (($birthdate eq "0001-01-01") || ($birthdate eq "0000-00-00") || ($birthdate == 0) || ($ageatscan == 0) || (lc($ageatscan) eq 'null') || ($ageatscan eq '')) {
-		#	$ageatscan = $studyageatscan*12;
-		#}
+		
+		if ($usecustomid) {
+			$srcsubjectid = GetPrimaryAlternateUID($subjectid, $enrollmentid);
+		}
 		
 		# get some DICOM specific tags from the first file in the series
 		chdir($indir);
@@ -1592,7 +1599,7 @@ sub WriteNDARSeries() {
 		open(F,">> $file");
 		
 		if ($modality eq "MRI") {
-			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,$seriestr,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes,Yes\n";
+			print F "$guid,$srcsubjectid,$studydatetime,$ageatscan,$gender,$imagetype,$imagefile,,$seriesdesc,$datatype,$modality,$Manufacturer,$ManufacturersModelName,$SoftwareVersion,$seriesfieldstrength,$seriestr,$serieste,$seriesflip,$AcquisitionMatrix,$FOV,$PatientPosition,$PhotometricInterpretation,,$TransmitCoilName,No,,,$numdim,$imgcols,$imgrows,$imgslices,$boldreps,timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,,$seriesspacingx,$seriesspacingy,$seriesspacingz,$seriestr,,$seriesspacingz,Axial,,,,,,,,,,,,,$scantype,Live,$behfile,$behdesc,$ProtocolName,,$seriessequence,1,,,0,Yes,Yes\n";
 		}
 		elsif ($modality eq "EEG") {
 			my $expid = 0;
@@ -1606,6 +1613,28 @@ sub WriteNDARSeries() {
 			if ((lc($seriesprotocol) eq 'resteyesopen') || (lc($seriesprotocol) eq 'rest') || (lc($seriesprotocol) eq 'rest - eyes open')) { $expid = 528; }
 			if ((lc($seriesprotocol) eq 'resteyesclosed') || (lc($seriesprotocol) eq 'rest - eyes closed')) { $expid = 556; }
 			if ((lc($seriesprotocol) eq 'oddball') || (lc($seriesprotocol) eq 'oddball - beh data')) { $expid = 529; }
+			
+			# PARDIP
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'auditory steady state') ) { $expid = 538; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'rmr') ) { $expid = 575; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'rest - eyes open') ) { $expid = 531; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'pro-saccade') ) { $expid = 566; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'anti-saccade') ) { $expid = 569; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'iaps') ) { $expid = 537; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'visual steady state') ) { $expid = 539; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'oddball') ) { $expid = 532; }
+			if ( (($projectid == 173) || ($projectid == 174) || ($projectid == 176)) && (lc($seriesprotocol) eq 'gating') ) { $expid = 536; }
+
+			# BSNIP2
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'rest - eyes open') ) { $expid = 549; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'rmr') ) { $expid = 587; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'anti-saccade') ) { $expid = 559; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'pro-saccade') ) { $expid = 558; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'iaps') ) { $expid = 582; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'visual steady state') ) { $expid = 584; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'auditory steady state') ) { $expid = 583; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'oddball') ) { $expid = 550; }
+			if ( (($projectid == 185) || ($projectid == 187) || ($projectid == 191) || ($projectid == 192) || ($projectid == 194)) && (lc($seriesprotocol) eq 'gating') ) { $expid = 581; }
 			
 			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,$seriesprotocol,,,$expid,\"$seriesnotes\",,,,,$imagefile,,,,,,,,,\n";
 		}

@@ -742,6 +742,31 @@ sub GetDataPathFromSeriesID {
 
 
 # ----------------------------------------------------------
+# ------- GetPrimaryAlternateUID ---------------------------
+# ----------------------------------------------------------
+sub GetPrimaryAlternateUID {
+	my ($subjectid, $enrollmentid);
+	
+	if (($subjectid eq "") || ($enrollmentid eq "")) {
+		return "";
+	}
+
+	my $sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by isprimary limit 1";
+	WriteLog($sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	my %row = $result->fetchhash;
+	my $altuid = trim($row{'altuid'});
+	my $isprimary = $row{'isprimary'};
+	if ($isprimary) {
+		WriteLog("Found primary alternate ID [$altuid]");
+		return $altuid;
+	}
+	WriteLog("Found no primary alternate ID");
+	return "";
+}
+
+
+# ----------------------------------------------------------
 # --------- MakePath ---------------------------------------
 # ----------------------------------------------------------
 sub MakePath {

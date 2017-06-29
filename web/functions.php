@@ -455,23 +455,13 @@
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
 			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
-			die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.gif'></div>");
+			die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
 		}
 		else {
 			return $result;
 		}
 	}
 	
-	
-	/* -------------------------------------------- */
-	/* ------- FormatUID -------------------------- */
-	/* -------------------------------------------- */
-	function FormatUID($uid) {
-		//$str = substr($uid,0,1) . "&sdot;" . substr($uid,1,3) . "&sdot;" . substr($uid,4,3);
-		//return $str;
-		return $uid;
-	}
-
 	
 	/* -------------------------------------------- */
 	/* ------- GetInstanceID ---------------------- */

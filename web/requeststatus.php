@@ -397,7 +397,7 @@
 				
 				?>
 				<tr style="font-size:10pt">
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=FormatUID($uid)?>&nbsp;</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$uid?>&nbsp;</td>
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$study_datetime?>&nbsp;</td>
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $destinationtype; ?>&nbsp;</td>
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo "$remoteftpserver$destinationpath"; ?>&nbsp;</td>
