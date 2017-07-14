@@ -3554,12 +3554,12 @@
 														<td style="color:#333"><tt>8 9 10 &rarr; 1 2 3</tt></td>
 													</tr>
 													<tr>
-														<td><input type="radio" name="preserveseries" value="2">Use alternate protocol name</td>
-														<td style="color:#333"><tt>1 2 3 &rarr; Localizer Resting TaskA</tt></td>
+														<td><input type="radio" name="preserveseries" value="2">Use protocol name</td>
+														<td style="color:#333"><tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;Localizer &nbsp;Resting &nbsp;Task_A</tt><br><span class="tiny">Characters other than numbers and letters are replaced with underscores</span></td>
 													</tr>
 													<tr>
 														<td><input type="radio" name="preserveseries" value="3">ABIDE format</td>
-														<td style="color:#333"><tt>1 2 3 &rarr; anat_1 anat_2 anat_3</tt></td>
+														<td style="color:#333"><tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;anat_1 &nbsp;anat_2 &nbsp;anat_3</tt></td>
 													</tr>
 												</table>
 												

@@ -343,7 +343,10 @@ sub ProcessDataRequests {
 					WriteLog($sqlstringC);
 					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 					my %rowC = $resultC->fetchhash;
-					$newseriesnum = trim($rowC{'series_desc'});
+					my $seriesdesc = $rowC{'series_desc'};
+					# remove any non alphanumeric characters
+					$seriesdesc =~ s/[^a-zA-Z0-9_-]/_/g;
+					$newseriesnum = $series_num . "_$seriesdesc";
 					WriteLog("NewSeriesNum: [$newseriesnum]");
 					$newseriesnum =~ s/ /\_/gi;
 					$finalseriesnum = $newseriesnum;
@@ -1544,8 +1547,13 @@ sub WriteNDARSeries() {
 			$ageatscan = $studyageatscan*12;
 		}
 		
-		if ($usecustomid) {
-			$srcsubjectid = GetPrimaryAlternateUID($subjectid, $enrollmentid);
+		#if ($usecustomid) {
+		my $altuid = GetPrimaryAlternateUID($subjectid, $enrollmentid);
+		if ($altuid == "") {
+			$srcsubjectid = $uid;
+		}
+		else {
+			$srcsubjectid = $altuid;
 		}
 		
 		# get some DICOM specific tags from the first file in the series
@@ -1643,5 +1651,8 @@ sub WriteNDARSeries() {
 			print F "$guid,$uid,$studydatetime,$ageatscan,$gender,Unknown,$expid,$seriesprotocol,,\"$seriesnotes\",,,,$imagefile,Eyetracking,,,,,,\n";
 		}
 		close(F);
+	}
+	else {
+		WriteLog("No rows found for this series... [$file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir] ");
 	}
 }

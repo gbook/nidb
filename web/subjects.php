@@ -1926,14 +1926,19 @@
 															$age = $calcage;
 														}
 														
-														$sqlstring3 = "select count(*) 'seriescount' from " . strtolower($study_modality) . "_series where study_id = $study_id";
-														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-														$seriescount = $row3['seriescount'];
+														if ($study_modality != "") {
+															$sqlstring3 = "select count(*) 'seriescount' from " . strtolower($study_modality) . "_series where study_id = $study_id";
+															$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+															$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+															$seriescount = $row3['seriescount'];
+														}
 														?>
 														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'" onMouseOut="this.style.backgroundColor=''">
 															<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
-															<td><?=$study_modality?></td>
+															<td><?
+															 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
+															 else { echo $study_modality; }
+															?></td>
 															<td><?=$study_datetime?></td>
 															<td><?=$seriescount?></td>
 															<td><?=number_format($age,1)?></td>

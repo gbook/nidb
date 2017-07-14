@@ -2327,9 +2327,13 @@
 					if ($seriesdesc != "") {
 						$seriesdescs[$modality][$seriesdesc]++;
 					}
+					
+					$altdesc[$seriesdesc][$modality] = $seriesaltdesc;
 				}
 			}
 		}
+		
+		//PrintVariable($altdesc);
 		
 		DisplayMenu('mrqc', $id);
 		
@@ -2338,6 +2342,8 @@
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="changealternatenames">
 		<input type="hidden" name="id" value="<?=$id?>">
+		Click <b>Update</b> below to apply these changes to all studies associated with this project
+		<br><br>
 		<table class="graydisplaytable">
 			<thead>
 				<th>Modality</th>
@@ -2350,12 +2356,15 @@
 		foreach ($seriesdescs as $modality => $serieslist) {
 			natksort($serieslist);
 			foreach ($serieslist as $series => $count) {
+
+				$currentaltdesc = "";
+				$currentaltdesc = $altdesc[$series][$modality];
 				?>
 				<tr>
 					<td><?=strtoupper($modality)?></td>
 					<td><tt><?=$series?></tt></td>
 					<td><?=$count?></td>
-					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]"></td>
+					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$currentaltdesc?>"></td>
 				</tr>
 				<?
 				$i++;
@@ -2363,7 +2372,7 @@
 		}
 		?>
 			<tr>
-				<td colspan="3" align="right"><input type="submit"></td>
+				<td colspan="3" align="right"><input type="submit" value="Update"></td>
 			</tr>
 		</table>
 
