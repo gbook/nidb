@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 28, 2017 at 01:31 PM
+-- Generation Time: Jul 14, 2017 at 02:43 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `nidb`
+-- Database: `ado2`
 --
 
 DELIMITER $$
@@ -870,6 +870,7 @@ CREATE TABLE `eeg_series` (
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) NOT NULL,
+  `series_altdesc` varchar(255) NOT NULL,
   `series_datetime` datetime NOT NULL,
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
@@ -939,6 +940,7 @@ CREATE TABLE `et_series` (
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) NOT NULL,
+  `series_altdesc` varchar(255) NOT NULL,
   `series_datetime` datetime NOT NULL,
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
@@ -1023,7 +1025,8 @@ CREATE TABLE `group_data` (
   `subjectgroup_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `data_id` int(11) NOT NULL,
-  `modality` varchar(10) NOT NULL
+  `modality` varchar(10) NOT NULL,
+  `date_added` date NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1698,6 +1701,7 @@ CREATE TABLE `pipelines` (
   `pipeline_clusteruser` varchar(255) NOT NULL,
   `pipeline_datacopymethod` varchar(50) NOT NULL,
   `pipeline_notes` text NOT NULL,
+  `pipeline_useprofile` tinyint(1) NOT NULL,
   `pipeline_removedata` tinyint(1) NOT NULL,
   `pipeline_resultsscript` text NOT NULL,
   `pipeline_enabled` tinyint(1) NOT NULL DEFAULT '0',
@@ -2822,7 +2826,8 @@ ALTER TABLE `eeg_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`),
   ADD KEY `series_desc` (`series_desc`),
   ADD KEY `series_protocol` (`series_protocol`),
-  ADD KEY `ishidden` (`ishidden`);
+  ADD KEY `ishidden` (`ishidden`),
+  ADD KEY `series_altdesc` (`series_altdesc`);
 
 --
 -- Indexes for table `enrollment`
@@ -2851,7 +2856,8 @@ ALTER TABLE `enrollment_missingdata`
 ALTER TABLE `et_series`
   ADD PRIMARY KEY (`etseries_id`),
   ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
+  ADD KEY `ishidden` (`ishidden`),
+  ADD KEY `series_altdesc` (`series_altdesc`);
 
 --
 -- Indexes for table `families`
