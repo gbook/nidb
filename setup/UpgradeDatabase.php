@@ -41,7 +41,7 @@
 	$backupDatabaseName = "$mysqlDatabase"."_$currentDatetime";
 	
 	/* connect to DB */
-	$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+	$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 	mysqli_select_db($linki, $mysqlDatabase) or die ("Could not select database [$mysqlDatabase]");
 
 	/* ---------------------------------------------------------- */
@@ -58,7 +58,7 @@
 		echo "Output: [" . `$systemstring` . "]\n";
 		
 		/* create the copy of the database */
-		$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+		$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 		mysqli_select_db($linki, $mysqlDatabase) or die ("Could not select database [$mysqlDatabase]");
 		$sqlstring = "create database $backupDatabaseName";
 		echo "SQL [$sqlstring]\n";
@@ -76,7 +76,7 @@
 		/* if the row counts and schema are all the same, drop the original database */
 		if (count($diff) == 0) {
 			if ($doDropDatabase) {
-				$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+				$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 				mysqli_select_db($linki, $mysqlDatabase) or die ("Could not select database [$mysqlDatabase] on line [" . __LINE__ . "]");
 				$sqlstring = "drop database $mysqlDatabase";
 				echo "SQL [$sqlstring]\n";
@@ -96,7 +96,7 @@
 	
 		if ($doCreateNewSchema) {
 			/* create the new database */
-			$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+			$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 			$sqlstring = "create database $mysqlDatabase";
 			echo "SQL [$sqlstring]\n";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -118,7 +118,7 @@
 	
 		if ($doUpgradeDatabase) {
 			/* make sure we're still connected to the database */
-			$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+			$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 			mysqli_select_db($linki, $backupDatabaseName) or die ("Could not select database [$db] on line [" . __LINE__ . "]");
 			
 			/* get list of tables from the old database */
@@ -133,7 +133,7 @@
 			foreach ($tables as $tablename => $val) {
 				if ($tablename != "") {
 					/* make sure we're still connected to the database */
-					$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysql_error());
+					$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error());
 					mysqli_select_db($linki, $backupDatabaseName) or die ("Could not select database [$db] on line [" . __LINE__ . "]");
 					
 					$columns = '';
@@ -217,7 +217,7 @@
 	function MySQLiQuery($sqlstring,$file,$line,$error="") {
 		$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 		if ($result == false) {
-			$msg = "Query failed on [$datetime]:</b> $file (line $line)\nError: " . mysql_error() . "\nSQL: $sqlstring\n\n";
+			$msg = "Query failed on [$datetime]:</b> $file (line $line)\nError: " . mysqli_error() . "\nSQL: $sqlstring\n\n";
 			die($msg);
 		}
 		else {
