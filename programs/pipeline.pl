@@ -1442,7 +1442,7 @@ sub GetData() {
 					if (($assoctype eq 'nearesttime') || ($assoctype eq 'nearestintime')) {
 						# find the data from the same subject and modality that has the nearest (in time) matching scan
 						WriteLog("Searching for subject-level data nearest in time...");
-						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 						if ($imagetypes ne "''") {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
@@ -1452,7 +1452,7 @@ sub GetData() {
 					elsif ($assoctype eq 'all') {
 						WriteLog("Searching for all subject-level data...");
 						$datalog .= "    Searching for all subject-level data\n";
-						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 						if ($imagetypes ne "''") {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
@@ -1461,7 +1461,7 @@ sub GetData() {
 						# find the data from the same subject and modality that has the same study_type
 						WriteLog("Searching for subject-level data with same study type...");
 						$datalog .= "    Searching for subject-level data with same study type\n";
-						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 						if ($imagetypes ne "''") {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
@@ -1485,13 +1485,13 @@ sub GetData() {
 				$datalog .= "Checking the study [$studyid] for the protocol ($protocols)\n";
 				# get a list of series satisfying the search criteria, if it exists
 				if (($comparison eq "") || ($num == 0)) {
-					$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
+					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (trim($seriesdescfield) in ($protocols))";
 					if ($imagetypes ne "''") {
 						$sqlstring .= " and image_type in ($imagetypes)";
 					}
 				}
 				else {
-					$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
+					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (trim($seriesdescfield) in ($protocols))";
 					if ($imagetypes ne "''") {
 						$sqlstring .= " and image_type in ($imagetypes)";
 					}
@@ -1602,7 +1602,7 @@ sub GetData() {
 						
 						$datalog .= "This data step is study-level [$protocols] criteria: [$criteria] imagetype: [$imagetype]\n";
 						
-						$sqlstring = "select * from $modality"."_series where study_id = $studyid and ($seriesdescfield in ($protocols))";
+						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (trim($seriesdescfield) in ($protocols))";
 						if ($imagetypes ne "''") { $sqlstring .= " and image_type in ($imagetypes)"; }
 						
 						switch ($criteria) {
@@ -1633,7 +1633,7 @@ sub GetData() {
 								WriteLog("Searching for subject-level data nearest in time...");
 								$datalog .= "    Searching for subject-level data nearest in time\nSearching for nearest study first...";
 								# get the otherstudyid
-								$sqlstringA = "SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+								$sqlstringA = "SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstringA .= "and `$modality" . "_series`.image_type in ($imagetypes)";
 								}
@@ -1655,7 +1655,7 @@ sub GetData() {
 								$datalog .= "Still within the subject-level data search [$protocols] criteria: [$criteria] imagetype [$imagetypes]\n";
 
 								# base SQL string
-								$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and $seriesdescfield in ($protocols)";
+								$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and trim($seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and image_type in ($imagetypes)";
 								}
@@ -1679,7 +1679,7 @@ sub GetData() {
 							elsif ($assoctype eq 'all') {
 								WriteLog("Searching for all subject-level data...");
 								$datalog .= "    Searching for all subject-level data\n";
-								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 								}
@@ -1691,7 +1691,7 @@ sub GetData() {
 								# find the data from the same subject and modality that has the same study_type
 								WriteLog("Searching for subject-level data with same study type...");
 								$datalog .= "    Searching for subject-level data with same study type\n";
-								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND `$modality" . "_series`.$seriesdescfield in ($protocols)";
+								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 								}

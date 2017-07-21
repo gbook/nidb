@@ -386,6 +386,15 @@
 		DisplayMenu('checklist', $projectid);
 		
 		?>
+		<style>
+			.rotate {
+			  -webkit-transform: rotate(270deg);
+			  -moz-transform: rotate(270deg);
+			  -ms-transform: rotate(270deg);
+			  -o-transform: rotate(270deg);
+			  transform: rotate(270deg);
+			}		
+		</style>
 		<br>
 		<div align="center">
 		<form action="subjects.php" method="post">
