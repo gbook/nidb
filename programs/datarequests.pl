@@ -714,7 +714,7 @@ sub ProcessDataRequests {
 					WriteLog("Found [$filecount] files in [$indir]");
 					if ($filecount < 1) {
 						$newstatus = "problem";
-						$results = "[$indir] was empty. No files available to export\n";
+						$results = "[$indir] was EMPTY. No files available to export\n";
 						WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data");
 					}
 					
@@ -752,17 +752,22 @@ sub ProcessDataRequests {
 						if (-d $indir) {
 							# zip the data to the out directory
 							my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
-							$systemstring = "zip -jrq1 $zipfile $tmpdir";
+							$systemstring = "zip -vjrq1 $zipfile $tmpdir";
 							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							WriteLog("Done zipping image files...");
-							
+							$systemstring = "unzip -Z $zipfile";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+
 							my $behzipfile;
 							my $behdesc;
 							if ($numfilesbeh > 0) {
 								$behzipfile = "$uid-$study_num-$series_num-beh.zip";
-								$systemstring = "zip -jrq1 $fullexportdir/$behzipfile $behindir";
+								$systemstring = "zip -vjrq1 $fullexportdir/$behzipfile $behindir";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 								WriteLog("Done zipping beh files...");
+								$systemstring = "unzip -Z $zipfile";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								
 								$behdesc = "Behavioral/design data file";
 							}
 							else {
@@ -1107,13 +1112,14 @@ sub Anonymize() {
 			if ($anon == 4) {
 				# encrypt patient name, leave everything else
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 10,10='$randstr1' -o $File::Find::name";
-				#WriteLog("Anonymizing (level 4) $File::Find::name");
+				WriteLog("Anonymizing (level 4) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
 			if ($anon == 1) {
 				# remove ReferringPhysicianName
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
+				WriteLog("Anonymizing (level 1) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
@@ -1197,17 +1203,17 @@ sub Anonymize() {
 				$s .= " --replace 40,4037='Anonymous'"; # HumanPerformerName
 				$s .= " --replace 40,a123='Anonymous'"; # PersonName
 				$s .= " -o $File::Find::name;";
-				#WriteLog("Anonymizing (level 2 - FULL) $File::Find::name");
+				WriteLog("Anonymizing (level 2 - FULL) $File::Find::name");
 				
 				my $systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; cd $cfg{'scriptdir'}/DicomAnonymizer; ./DicomAnonymizer.sh 1 1 1 1 1 1 $File::Find::name";
-				#WriteLog("Anonymizing (full) $File::Find::name");
+				WriteLog("Anonymizing (full) $File::Find::name");
 				
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
 			if ($anon == 3) {
 				$systemstring = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name --replace 8,90='Anonymous' --replace 8,1050='Anonymous' --replace 8,1070='Anonymous' --replace 10,10='Anonymous-$randstr1' --replace 10,30='Anonymous-$randstr2' -o $File::Find::name";
-				#WriteLog("Anonymizing (level 3) $File::Find::name");
+				WriteLog("Anonymizing (level 3) $File::Find::name");
 				push(@systemstrings,$systemstring);
 				push(@md5s, file_md5_hex($File::Find::name));
 			}
@@ -1234,13 +1240,13 @@ sub Anonymize() {
 			}
 			$i++;
 		}
-		WriteLog("Launched $numthreads threads, waiting for them to finish");
+		WriteLog("Launched $i threads, waiting for them to finish");
 		# wait for them all to return
 		foreach my $t (@threads) {
 			my $cpu = $t->join;
 			$totalcpu += $cpu;
 		}
-		WriteLog("Anonymize threads finished");
+		WriteLog("Anonymize threads finished. Cumulative CPU usage [$totalcpu]");
 	}
 	
 	return @md5s;
@@ -1255,7 +1261,7 @@ sub ThreadedSystemCall {
 	
 	my $starttime = time;
 	`$systemstring 2>&1`;
-	#WriteLog("ThreadedSystemCall [$systemstring] output: " . `$systemstring 2>&1`);
+	WriteLog("ThreadedSystemCall [$systemstring] output: " . `$systemstring 2>&1`);
 	my $endtime = time;
 	
 	return $endtime - $starttime;

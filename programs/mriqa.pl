@@ -112,9 +112,18 @@ sub DoQA {
 	my $sqlstring = "SELECT a.mrseries_id FROM mr_series a LEFT JOIN mr_qa b ON a.mrseries_id = b.mrseries_id WHERE b.mrqa_id IS NULL and a.lastupdate < date_sub(now(), interval 3 minute) order by a.mrseries_id desc";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
+		my $numProcessed = 0;
+		my $numToDo = $result->numrows;
 		while (my %row = $result->fetchhash) {
+			WriteLog("=== Working on QA $numProcessed of $numToDo ===");
 			my $mrseries_id = $row{'mrseries_id'};
 			QA($mrseries_id);
+			# only process 5 before exiting the script. Since the script always starts with the newest when it first runs,
+			# this will allow newly collect studies a chance to be QC'd if there is a backlog of old studies
+			$numProcessed++;
+			if ($numProcessed > 5) {
+				last;
+			}
 		}
 		WriteLog("Finished quality control");
 		$ret = 1;
@@ -151,7 +160,6 @@ sub QA() {
 	print "$sqlstring\n";
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	if ($result->numrows > 0) {
-		my $numProcessed = 0;
 		while (my %row = $result->fetchhash) {
 			# do a checkin
 			ModuleRunningCheckIn($scriptname, $db);
@@ -200,10 +208,12 @@ sub QA() {
 			else {
 				# create a 4D file to pass to the SNR program and run the SNR program on it
 				if ($datatype eq 'dicom') {
-					$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+				#	$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
+					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.dcm";
 				}
 				else {
-					$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
+					#$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
+					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.par";
 				}
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				
@@ -374,9 +384,9 @@ sub QA() {
 			}
 			
 			# delete the 4D file and temp directory
-			$systemstring = "rm $tmpdir/*";
-			WriteLog("$systemstring (" . `$systemstring` . ")");
-			rmdir($tmpdir);
+			#$systemstring = "rm $tmpdir/*";
+			#WriteLog("$systemstring (" . `$systemstring` . ")");
+			#rmdir($tmpdir);
 
 			# calculate the total time running
 			my $endtime = GetTotalCPUTime();
@@ -392,13 +402,6 @@ sub QA() {
 			WriteLog("[$sqlstringC]");
 			$resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
 			WriteLog("======================== Finished [$indir] ========================");
-			
-			# only process 5 before exiting the script. Since the script always starts with the newest when it first runs,
-			# this will allow newly collect studies a chance to be QC'd if there is a backlog of old studies
-			$numProcessed = $numProcessed + 1;
-			if ($numProcessed > 5) {
-				last;
-			}
 		}
 	}
 

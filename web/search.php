@@ -885,7 +885,7 @@
 													$qcresultname = $row2['qcresult_name'];
 													$qcresultunits = $row2['qcresult_units'];
 													?>
-													<option value="<?=$qcresultnameid?>" <? if ($searchvars['s_qvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
+													<option value="<?=$qcresultnameid?>" <? if ($searchvars['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
 													<?
 												}
 												
@@ -1052,6 +1052,7 @@
 			}
 			elseif (($s_resultorder == 'qcchart') || ($s_resultorder == 'qctable')) {
 				/* display longitudinal pipeline data */
+				//PrintSQL($sqlstring);
 				SearchQC($result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid);
 			}
 			else {
@@ -2826,70 +2827,138 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = strtoupper(trim($row['uid']));
 			$studydate = trim($row['studydate']);
+			$studyid = trim($row['study_id']);
+			$studynum = trim($row['study_num']);
 			$seriesdesc = trim($row['series_desc']);
-			$qc[$seriesdesc][$studydate]['io_snr'] = trim($row['io_snr']);
-			$qc[$seriesdesc][$studydate]['pv_snr'] = trim($row['pv_snr']);
-			$qc[$seriesdesc][$studydate]['move_minx'] = trim($row['move_minx']);
-			$qc[$seriesdesc][$studydate]['move_miny'] = trim($row['move_miny']);
-			$qc[$seriesdesc][$studydate]['move_minz'] = trim($row['move_minz']);
-			$qc[$seriesdesc][$studydate]['move_maxx'] = trim($row['move_maxx']);
-			$qc[$seriesdesc][$studydate]['move_maxy'] = trim($row['move_maxy']);
-			$qc[$seriesdesc][$studydate]['move_maxz'] = trim($row['move_maxz']);
+			$qc[$seriesdesc][$studydate]['data']['IO SNR'] = trim($row['io_snr']);
+			$qc[$seriesdesc][$studydate]['data']['PV SNR'] = trim($row['pv_snr']);
+			$qc[$seriesdesc][$studydate]['data']['Total displacement X'] = $row['move_maxx'] - $row['move_minx'];
+			$qc[$seriesdesc][$studydate]['data']['Total displacement Y'] = $row['move_maxy'] - $row['move_miny'];
+			$qc[$seriesdesc][$studydate]['data']['Total displacement Z'] = $row['move_maxz'] - $row['move_minz'];
+			$qc[$seriesdesc][$studydate]['data']['Motion rsq'] = trim($row['motion_rsq']);
+			$qc[$seriesdesc][$studydate]['studyid'] = $studyid;
+			$qc[$seriesdesc][$studydate]['studynum'] = "$uid$studynum";
 
-			$qc[$seriesdesc][$studydate]['totaldispx'] = $row['move_maxx'] - $row['move_minx'];
-			$qc[$seriesdesc][$studydate]['totaldispy'] = $row['move_maxy'] - $row['move_miny'];
-			$qc[$seriesdesc][$studydate]['totaldispz'] = $row['move_maxz'] - $row['move_minz'];
-			
-			$qc[$seriesdesc][$studydate]['motion_rsq'] = trim($row['motion_rsq']);
+			$mrseriesids[] = $row['mrseries_id'];
 		}
 		
-		ksort($qc);
+		array_unique($mrseriesids);
 		
-		//echo "<pre>";
-		//print_r($qc);
-		//echo "</pre>";
+		$mrserieslist = implode2(',', $mrseriesids);
 		
-		$i=0;
+		/* now we have a list of MR series ids, so lets get all modular QC for these seriesids */
+		$sqlstring = "SELECT a.*, b.*,c.*,d.*, e.series_desc, DATE(series_datetime) 'studydate' FROM `qc_moduleseries` a LEFT JOIN `qc_results` b ON b.qcmoduleseries_id = a.qcmoduleseries_id LEFT JOIN `qc_modules` c ON c.qcmodule_id = a.qcmodule_id left join `qc_resultnames` d on d.qcresultname_id = b.qcresultname_id left join mr_series e on e.mrseries_id = a.series_id left join studies f on e.study_id = f.study_id WHERE a.series_id IN ($mrserieslist) and d.qcresult_type = 'number'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modulename = $row['qcm_name'];
+			$variable = $row['qcresult_name'];
+			$value = $row['qcresults_valuenumber'];
+			$units = $row['qcresult_units'];
+			$seriesdesc = $row['series_desc'];
+			$seriesid = $row['series_id'];
+			$studydate = $row['studydate'];
+			
+			$qc[$seriesdesc][$studydate]['data'][$variable] = trim($value);
+			
+			if ($qc[$seriesdesc][$studydate]['studyid'] == "") {
+				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'MR');
+				$qc[$seriesdesc][$studydate]['studyid'] = $studyid;
+				$qc[$seriesdesc][$studydate]['studynum'] = "$uid$studynum";
+			}
+		}
+		
+		//ksort($qc);
+		
+		//PrintVariable($qc);
+		
+		/* loop through the series */
 		foreach ($qc as $series => $value) {
-			ksort($value);
-			foreach ($value as $date => $vals) {
-				if ($vals['io_snr'] > 0) { $iosnrs[$date]['value'] = $vals['io_snr']; }
-				if ($vals['pv_snr'] > 0) { $pvsnrs[$date]['value'] = $vals['pv_snr']; }
-				if ($vals['totaldispx'] != 0) { $dispx[$date]['value'] = $vals['totaldispx']; }
-				if ($vals['totaldispy'] != 0) { $dispy[$date]['value'] = $vals['totaldispy']; }
-				if ($vals['totaldispz'] != 0) { $dispz[$date]['value'] = $vals['totaldispz']; }
-			}
-			if ((count($dispx) > 2) || (count($iosnrs) > 2) || (count($pvsnrs) > 2)) {
-				?>
-				<table width="100%" style="border: 1px solid #888">
-					<tr>
-						<td colspan="2"><b>Charts for <?=$series?></b></td>
-					</tr>
-					<tr>
-						<td width="50%" valign="top">
-						<?
-						if (count($dispx) > 2) {
-							DisplayChart($dispx, $dispy, $dispz,"Total displacement","X","Y","Z",200,"totaldisp$i",0);
+			$j=1;
+			?>
+			<br>
+			<table width="100%" style="border: 1px solid #888; border-spacing: 0px;">
+				<tr>
+					<td style="background-color: lightblue; padding: 5px;" colspan="4">Charts for <b><?=$series?></b></td>
+				</tr>
+				<tr>
+					<?
+					//ksort($value);
+					//PrintVariable($value);
+					/* loop through the list of dates for this series */
+					foreach ($value as $date => $vals) {
+						/* loop through the list of variables for this date */
+						foreach ($vals['data'] as $var => $val) {
+							if ($val > 0) {
+								$charts[$var][$date]['data']['value'] = $val;
+								$charts[$var][$date]['studyid'] = $vals['studyid'];
+								$charts[$var][$date]['studynum'] = $vals['studynum'];
+							}
 						}
-						?>
-						</td>
-						<td width="50%" valign="top">
-						<?
-						if (count($iosnrs) > 2) {
-							DisplayChart($iosnrs,"","","IO SNR","SNR","","",200,"iosnr$i",0);
+					}
+					
+					//PrintVariable($charts);
+					foreach ($charts as $chartname => $chart) {
+						if (count($chart) > 2) {
+							$i = 0;
+							ksort($chart);
+							foreach ($chart as $date => $val) {
+								$xs[$i] = $date;
+								$ys[$i] = $val['data']['value'];
+								$studyids[$i] = $val['studyid'];
+								$studynums[$i] = $val['studynum'];
+								$i++;
+							}
+							$x = implode(',', $xs);
+							$y = implode(',', $ys);
+							
+							?>
+							<td valign="top">
+							<img src='xygraph.php?h=200&w=420&t=<?=$chartname?>&x=<?=$x?>&y=<?=$y?>&xtype=dat&ytype=lin'>
+							<details>
+							<summary>Data</summary>
+							<table class="tinytable">
+								<tr>
+									<th>Study</th>
+									<th>Date</th>
+									<th>Value</th>
+								</tr>
+								<?
+								foreach ($xs as $i => $blah) {
+									?>
+									<tr>
+										<td><a href="studies.php?id=<?=$studyids[$i]?>"><?=$studynums[$i]?></a></td>
+										<td><?=$xs[$i]?></td>
+										<td><?=$ys[$i]?></td>
+									</tr>
+									<?
+								}
+								?>
+							</table>
+							</details>
+							</td>
+							<?
+							
+							$x = "";
+							$y = "";
+							unset($xs);
+							unset($ys);
+							unset($studyids);
+							unset($studynums);
+							
+							if ($j > 3) {
+								$j = 0;
+								?>
+								</tr>
+								<tr>
+								<?
+							}
+							$j++;
 						}
-						if (count($pvsnrs) > 2) {
-							DisplayChart($pvsnrs,"","","PV SNR","SNR","","",200,"pvsnr$i",0);
-						}
-						?>
-						</td>
-					</tr>
-				</table>
-				<br>
-				<?
-			}
-			$dispx = $dispy = $dispz = $iosnr = $pvsnr = "";
-			$i++;
+					}
+					?>
+				</tr>
+			</table>
+			<?
 		}
 	}
 
@@ -3938,7 +4007,13 @@
 			}
 		}
 		elseif (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
-			$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_num, unix_timestamp(DATE(series_datetime)) 'studydate', $modalitytable.series_desc, $modality" . "_qa.*";
+			/* return all custom QC variables */
+			//if ($s_qcvariableid != "") {
+			//	$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_num, unix_timestamp(DATE(series_datetime)) 'studydate', $modalitytable.series_desc, qc_resultnames.qcresult_name, qc_resultnames.qcresult_units, qc_results.qcresults_valuenumber";
+			//}
+			//else {
+				$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_id, studies.study_num, DATE(series_datetime) 'studydate', $modalitytable.series_desc, $modality" . "_qa.*";
+			//}
 		}
 		elseif ($s_resultorder == 'subject') {
 			$sqlstring = "select subjects.*, projects.*, enrollment.*";
@@ -3988,6 +4063,13 @@
 		if (($modality == "mr") && ($s_pipelineid == "")) {
 			$sqlstring .= " left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id";
 		}
+		//if (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
+		//	if ($s_qcvariableid != "") {
+		//		if ($s_qcvariableid == "all") {
+		//			$sqlstring .= " LEFT JOIN `qc_moduleseries` ON `qc_moduleseries`.series_id = `mr_series`.mrseries_id LEFT JOIN `qc_modules` ON `qc_modules`.qcmodule_id = `qc_moduleseries`.qcmodule_id LEFT JOIN `qc_results` ON `qc_results`.qcmoduleseries_id = `qc_moduleseries`.qcmoduleseries_id LEFT JOIN `qc_resultnames` ON `qc_results`.qcresultname_id = `qc_resultnames`.qcresult_name";
+		//		}
+		//	}
+		//}
 		
 		/* ... then add the WHERE clause (created earlier) and the ORDER BY and GROUP BY clauses if necessary */
 		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = '$modality' $sqlwhere ";

@@ -82,6 +82,8 @@
 	$existingstudy = GetVariable("existingstudy");
 	$existingseries = GetVariable("existingseries");
 
+        $rdoc_label = GetVariable("rdoc_label");
+
 	/* determine action */
 	switch ($action) {
 		case 'displaystudies':
@@ -175,6 +177,10 @@
 			ResetProjectQA($id);
 			DisplayStudiesTable($id);
 			break;
+                case 'show_rdoc_list':
+                        DisplayRDoCList($rdoc_label);
+                        break;
+
 		default:
 			if ($id == '') {
 				DisplayProjectList();
@@ -2757,11 +2763,12 @@
 					<th data-sort="string-ins">Admin</th>
 					<th data-sort="string-ins">PI</th>
 					<th data-sort="int">Studies</th>
+                                        <th data-sort="string-ins">RDoC Submission</th>
 				</tr>
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
+					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.label 'label' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id LEFT JOIN rdoc_uploads d ON  d.project_id = a.project_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['project_id'];
@@ -2772,6 +2779,7 @@
 						$pifullname = $row['pifullname'];
 						$projectuid = $row['project_uid'];
 						$costcenter = $row['project_costcenter'];
+						$rdoc_label = $row['label'];
 
 						$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -2787,7 +2795,7 @@
 								<td><?=$costcenter?></td>
 								<td><?=$adminfullname?></td>
 								<td><?=$pifullname?></td>
-								<td align="right">
+								<td align=left">
 									<table cellpadding="0" cellspacing="0" border="0">
 								<?
 								$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
@@ -2806,13 +2814,16 @@
 									if ($modality == "") { $modality = "(blank)"; }
 									?>
 									<tr>
-									<td align="right" style="font-size:10pt; border: none; color: darkblue; padding: 0px 3px"><b><?=$modality?></b></td>
+									<td align="left" style="font-size:10pt; border: none; color: darkblue; padding: 0px 3px"><b><?=$modality?></b></td>
 									<td style="font-size:10pt; border: none; padding: 0px 3px"><?=$count?> <!--<span class="tiny"><?=number_format(($projectModalitySize/1024/1024/1024),1)?> GB</span>--></td>
+
 									</tr>
 									<?
 								}
 							?>
 									</table>
+                                                                 <td><a href="projects.php?action=show_rdoc_list&rdoc_label=<?=$rdoc_label?>"><?=$rdoc_label?></td> 
+
 								</td>
 							</tr>
 							<?
@@ -2937,6 +2948,38 @@
 				<?
 				break;
 		}
+	}
+
+	/* -------------------------------------------- */
+        /* ------- Display RDoC List ---------------- */
+        /* -------------------------------------------- */
+        function DisplayRDoCList($rdoc_label) {
+
+		$subject = "Subject";
+		$series = "Series";
+	?>	
+
+	<table style="width:70%">
+	  <tr>
+	    <th>Subject</th>
+	    <th>Series</th> 
+	  </tr>
+	<?
+		$sqlstring = "SELECT label FROM `rdoc_uploads` WHERE label = '$rdoc_label'";
+	        $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+                	$series = $row2['label'];
+                        $subject = $row2['label'];
+	?>
+			  <tr>	
+			    <td><?=$subject?></td>
+			    <td><?=$series?></td> 
+			  </tr>
+	<?
+	}
+	?>
+	</table>
+	<?
 	}
 	
 ?>
