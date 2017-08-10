@@ -63,6 +63,10 @@ our $debug = 0;
 # ------------- end variable declaration --------------------------------------
 # -----------------------------------------------------------------------------
 
+# no idea why, but perl is buffering output to the screen, and these 3 statements turn off buffering
+my $old_fh = select(STDOUT);
+$| = 1;
+select($old_fh);
 
 # check if this program can run or not
 if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {
@@ -110,7 +114,7 @@ sub DoQA {
 
 	# look through DB for all series that don't have an associated mr_qa row
 	my $sqlstring = "SELECT a.mrseries_id FROM mr_series a LEFT JOIN mr_qa b ON a.mrseries_id = b.mrseries_id WHERE b.mrqa_id IS NULL and a.lastupdate < date_sub(now(), interval 3 minute) order by a.mrseries_id desc";
-	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my $numProcessed = 0;
 		my $numToDo = $result->numrows;
@@ -157,8 +161,8 @@ sub QA() {
 	left join subjects d on c.subject_id = d.subject_id
 	left join projects e on c.project_id = e.project_id
 	where a.mrseries_id = $seriesid";
-	print "$sqlstring\n";
-	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
+	WriteLog("About to run [$sqlstring]");
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
 			# do a checkin
@@ -177,7 +181,7 @@ sub QA() {
 			
 			# check if this mr_qa row exists
 			my $sqlstringA = "select * from mr_qa where mrseries_id = $seriesid";
-			my $resultA = $db->query($sqlstringA) || SQLError($db->errmsg(),$sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			if ($resultA->numrows > 0) {
 				# if a row does exist, go onto the next row
 				WriteLog("Someone else is working on [$indir]");
@@ -186,12 +190,17 @@ sub QA() {
 			else {
 				# insert a blank row for this mr_qa and get the row ID
 				my $sqlstringB = "insert into mr_qa (mrseries_id) values ($seriesid)";
-				WriteLog("[$sqlstring]");
-				my $resultB = $db->query($sqlstringB) || SQLError($db->errmsg(),$sqlstringB);
+				WriteLog("[$sqlstringB]");
+				WriteLog("Checkpoint A");
+				my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+				WriteLog("Checkpoint B");
 				$mrqaid = $resultB->insertid;
+				WriteLog("Checkpoint C");
 			}
+			WriteLog("Checkpoint D");
 			
 			my $starttime = GetTotalCPUTime();
+			WriteLog("Checkpoint E");
 			
 			my $systemstring;
 			chdir($indir);
@@ -201,21 +210,29 @@ sub QA() {
 			mkpath($tmpdir, {mode => 0777});
 			mkpath("$cfg{'archivedir'}/$uid/$study_num/$series_num/qa", {mode => 0777});
 
+			WriteLog("Checkpoint F");
+
 			if ($is_derived) {
+				WriteLog("Checkpoint G");
 				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/nifti/* $tmpdir";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			else {
+				WriteLog("Checkpoint H");
 				# create a 4D file to pass to the SNR program and run the SNR program on it
 				if ($datatype eq 'dicom') {
 				#	$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
 					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.dcm";
+					WriteLog("Checkpoint I");
 				}
 				else {
 					#$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
 					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.par";
+					WriteLog("Checkpoint J");
 				}
+				WriteLog("Checkpoint K [$systemstring]");
 				WriteLog("$systemstring (" . `$systemstring` . ")");
+				WriteLog("Checkpoint L");
 				
 				chdir($tmpdir);
 				WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
@@ -384,9 +401,9 @@ sub QA() {
 			}
 			
 			# delete the 4D file and temp directory
-			#$systemstring = "rm $tmpdir/*";
-			#WriteLog("$systemstring (" . `$systemstring` . ")");
-			#rmdir($tmpdir);
+			$systemstring = "rm $tmpdir/*";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			rmdir($tmpdir);
 
 			# calculate the total time running
 			my $endtime = GetTotalCPUTime();
@@ -395,14 +412,17 @@ sub QA() {
 			# insert this row into the DB
 			my $sqlstringC = "update mr_qa set mrseries_id = $seriesid, io_snr = '$iosnr', pv_snr = '$pvsnr', move_minx = '$mintx', move_miny = '$minty', move_minz = '$mintz', move_maxx = '$maxtx', move_maxy = '$maxty', move_maxz = '$maxtz', acc_minx = '$minax', acc_miny = '$minay', acc_minz = '$minaz', acc_maxx = '$maxax', acc_maxy = '$maxay', acc_maxz = '$maxaz', rot_minp = '$minrx', rot_minr = '$minry', rot_miny = '$minrz', rot_maxp = '$maxrx', rot_maxr = '$maxry', rot_maxy = '$maxrz', motion_rsq = '$motion_rsq', cputime = $cputime where mrqa_id = $mrqaid";
 			WriteLog("[$sqlstringC]");
-			my $resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
+			my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 			
 			# also update the mr_series table with the image dimensions
 			$sqlstringC = "update mr_series set dimN = '$dimN', dimX = '$dimX', dimY = '$dimY', dimZ = '$dimZ', dimT = '$dimT', bold_reps = '$dimT' where mrseries_id = $seriesid";
 			WriteLog("[$sqlstringC]");
-			$resultC = $db->query($sqlstringC) || SQLError($db->errmsg(),$sqlstringC);
+			$resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 			WriteLog("======================== Finished [$indir] ========================");
 		}
+	}
+	else {
+		WriteLog("Could not find any information for MR series [$seriesid]");
 	}
 
 }

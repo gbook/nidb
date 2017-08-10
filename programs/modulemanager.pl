@@ -112,8 +112,8 @@ sub DoModuleManagement {
 
 	WriteLog("Connected to database");
 	
-	# get list of modules with a last checkin older than 2 hours
-	my $sqlstring = "select * from module_procs where last_checkin < date_sub(now(), interval 2 hour)";
+	# get list of modules with a last checkin older than 1 hours
+	my $sqlstring = "select * from module_procs where last_checkin < date_sub(now(), interval 1 hour)";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {

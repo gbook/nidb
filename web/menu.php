@@ -236,12 +236,36 @@
 	$dirs = 0;
 	$numimportdirs = count($dirs);
 	
-	
 	/* get system load & number of cores */
 	$load = sys_getloadavg();
 	$cmd = "cat /proc/cpuinfo | grep processor | wc -l";
 	$cpuCoreNo = intval(trim(shell_exec($cmd)));
 	$percentLoad = number_format(($load[0]/$cpuCoreNo)*100.0,2);
+	
+	$sqlstring = "select * from modules order by module_name";
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$name = $row['module_name'];
+		$moduleinfo[$name]['status'] = $row['module_status'];
+		$moduleinfo[$name]['numrunning'] = $row['module_numrunning'];
+		$moduleinfo[$name]['isactive'] = $row['module_isactive'];
+		
+		/* calculate the status color */
+		if (!$moduleinfo[$name]['isactive']) {
+			$moduleinfo[$name]['color'] = "#f00";
+			$moduleinfo[$name]['status'] = 'Disabled';
+		}
+		else {
+			if ($moduleinfo[$name]['status'] == "running") {
+				$moduleinfo[$name]['color'] = "#bcffc5";
+				$moduleinfo[$name]['status'] = 'Running';
+			}
+			if ($moduleinfo[$name]['status'] == "stopped") {
+				$moduleinfo[$name]['color'] = "#adc7ff";
+				$moduleinfo[$name]['status'] = 'Enabled';
+			}
+		}
+	}
 	
 ?>
 <table width="100%" cellspacing="0" cellpadding="0">
@@ -252,7 +276,13 @@
 			<? } else { ?>
 			System status:
 			<? } ?>
-			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
+			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
+			<span style="background-color: <?=$moduleinfo['parsedicom']['color']?>" title="Status: <?=$moduleinfo['parsedicom']['status']?>">&nbsp;parsedicom&nbsp;</span> 
+			<span style="background-color: <?=$moduleinfo['fileio']['color']?>" title="Status: <?=$moduleinfo['fileio']['status']?>">&nbsp;fileio&nbsp;</span> 
+			<span style="background-color: <?=$moduleinfo['pipeline']['color']?>" title="Status: <?=$moduleinfo['pipeline']['status']?>">&nbsp;pipeline&nbsp;</span>
+			<span style="background-color: <?=$moduleinfo['datarequests']['color']?>" title="Status: <?=$moduleinfo['datarequests']['status']?>">&nbsp;datarequests&nbsp;</span>
+			<span style="background-color: <?=$moduleinfo['mriqa']['color']?>" title="Status: <?=$moduleinfo['mriqa']['status']?>">&nbsp;mriqa&nbsp;</span>
 		</td>
 	</tr>
 </table>
