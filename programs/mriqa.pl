@@ -222,12 +222,12 @@ sub QA() {
 				# create a 4D file to pass to the SNR program and run the SNR program on it
 				if ($datatype eq 'dicom') {
 				#	$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.dcm";
-					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.dcm";
+					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' $indir";
 					WriteLog("Checkpoint I");
 				}
 				else {
 					#$systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y -g y -p n -i n -d n -f n -o '$tmpdir' *.par";
-					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' *.par";
+					$systemstring = "pwd; $cfg{'scriptdir'}/./dcm2niix -g y -o '$tmpdir' $indir";
 					WriteLog("Checkpoint J");
 				}
 				WriteLog("Checkpoint K [$systemstring]");

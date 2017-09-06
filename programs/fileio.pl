@@ -546,8 +546,8 @@ sub DeleteAnalysis() {
 			# check if the directory still exists
 			if (-e $datapath) {
 				if ($datapath ne "") {
-					my $systemstring = "sudo rm -rfv $datapath";
-					WriteLog("Deleting directory [$datapath] using sudo" . `$systemstring 2>&1`);
+					my $systemstring = "sudo rm -rf $datapath";
+					WriteLog("Deleting directory [$datapath] using sudo [" . `$systemstring 2>&1` . "]");
 					
 					# check again if it still exists
 					if (-e $datapath) {

@@ -311,6 +311,7 @@ sub ProcessPipelines() {
 			open SGEFILE, "> $sgefilename" || die ("Could not open [$sgefilename] because [$!]");
 			print SGEFILE $sgebatchfile;
 			close SGEFILE;
+			chmod(0777,$sgefilename);
 			chmod(0777,$sgebatchfile);
 			chmod(0777,$analysispath);
 			

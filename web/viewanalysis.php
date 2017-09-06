@@ -87,7 +87,7 @@
 				$commands['reg'][$ps_order] = $ps_command;
 			}
 		}
-		PrintVariable($descriptions);
+		//PrintVariable($descriptions);
 		
 		/* build the correct path */
 		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {

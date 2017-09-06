@@ -895,7 +895,8 @@
 			$submitbuttonlabel = "Add Pipeline Info";
 			$remove = "0";
 			$level = 1;
-			$directory = "/home/" . $GLOBALS['username'];
+			//$directory = "/home/" . $GLOBALS['username'];
+			$directory = "";
 			$readonly = false;
 		}
 		
