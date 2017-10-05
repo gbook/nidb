@@ -154,7 +154,7 @@ sub DoParse {
 	
 	# update the stop time
 	ModuleDBCheckOut($scriptname, $db);
-	WriteLog("normal stop");
+	WriteLog("normal stop [ret code: $ret]");
 	
 	return $ret;
 }
@@ -1441,9 +1441,9 @@ sub InsertParRec {
 		if ($line =~ m/Series Type/) {
 			my @parts = split(/:/, $line);
 			$Modality = trim($parts[1]);
-			$Modality =~ s/Image//g;
-			$Modality =~ s/SERIES//g;
-			$Modality = trim($Modality);
+			$Modality =~ s/Image//gi;
+			$Modality =~ s/SERIES//gi;
+			$Modality = trim(uc($Modality));
 			#WriteLog("$Modality");
 		}
 		if ($line =~ m/Acquisition nr/) {

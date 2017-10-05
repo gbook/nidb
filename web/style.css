@@ -51,37 +51,37 @@ body {
 }
 
 /* all form elements */
-input { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+input { border: 1px solid #ddd; border-radius:6px; padding: 4px; }
 input:focus { border: 1px solid #777; background-color: #ffffe0; }
 input:hover { border: 1px solid #777; }
-textarea { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+textarea { border: 1px solid #ddd; border-radius:6px; padding: 4px; }
 textarea:focus { border: 1px solid #777; background-color: #ffffe0; }
 textarea:hover { border: 1px solid #777; }
-select { border: 1px solid #ddd; border-radius:3px; padding: 2px; }
+select { border: 1px solid #ddd; border-radius:6px; padding: 4px; }
 select:focus { border: 1px solid #777; background-color: #ffffe0; }
 select:hover { border: 1px solid #777; }
 
 input[type=submit] {
-	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	padding:4px 7px; background:#ccc; border:1px solid #ccc;
 	cursor:pointer;
-	-webkit-border-radius: 3px;
-	border-radius: 3px;
+	-webkit-border-radius: 6px;
+	border-radius: 6px;
 }
 input[type=submit]:hover { border: 1px solid #666; }
 
 input[type=button] {
-	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	padding:4px 7px; background:#ccc; border:1px solid #ccc;
 	cursor:pointer;
-	-webkit-border-radius: 3px;
-	border-radius: 3px;
+	-webkit-border-radius: 6px;
+	border-radius: 6px;
 }
 input[type=button]:hover { border: 1px solid #666; }
 
 input[type=reset] {
-	padding:3px 7px; background:#ccc; border:1px solid #ccc;
+	padding:4px 7px; background:#ccc; border:1px solid #ccc;
 	cursor:pointer;
-	-webkit-border-radius: 3px;
-	border-radius: 3px;
+	-webkit-border-radius: 6px;
+	border-radius: 6px;
 }
 input[type=reset]:hover { border: 1px solid #666; }
 
@@ -277,7 +277,6 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .tinytable th { font-weight: bold; color: #333; font-size: 8pt; padding: 1px; background-color: #ddd; }
 .tinytable td { border-bottom: 1px solid #DDD; font-size: 8pt; padding: 1px 2px; }
 .tinytable tbody tr:hover { background-color: #eee; }
-.tinytable tbody td:hover { background-color: #eee; border: 1px solid black; border-collapse: collapse; }
 .tinytable a { text-decoration: none; color: #224ea5; }
 .tinytable a:hover { text-decoration: underline; color: #224ea5; }
 
@@ -546,6 +545,7 @@ td.menuheader:hover { border: 1px solid black; text-align: center; vertical-alig
 td.menuheaderactive { border: 2px solid orange; text-align: center; padding: 5px; border-radius: 5px; font-size: 14pt; font-weight: bold; background-color: lightyellow; }
 
 input.required { border: 1px solid #888; background-color: #FBFFC4}
+input.required:hover { border: 1px solid #000; background-color: #FBFFC4}
 
 .table-header-rotated {
   border-collapse: collapse;

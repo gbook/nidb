@@ -761,9 +761,20 @@
 			<span class="staticmessage">Subject ID is not found... unable to display this study because the subject could not be found</span>
 			<?
 		}
-		
-		if ($study_modality == "") { $study_modality = "Missing modality"; $class="missing"; }
-		else { $class = "value"; }
+
+		if ($study_modality == "") {
+			$study_modality = "Missing modality"; $class="missing";
+		}
+		else {
+			$sqlstringA = "show tables like '" . strtolower($study_modality) . "_series'";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			if (mysqli_num_rows($resultA) > 0) {
+				$class = "value";
+			}
+			else {
+				$study_modality = "Invalid modality [$study_modality]"; $class="missing";
+			}
+		}
 
 		$study_datetime = date("F j, Y g:ia",strtotime($study_datetime));
 		$study_radreaddate = date("F j, Y g:ia",strtotime($study_radreaddate));
@@ -2240,58 +2251,71 @@
 			</thead>
 			<tbody>
 				<?
-					$max_seriesnum = 0;
-					$sqlstring = "select * from `" . strtolower($modality) . "_series` where study_id = $id order by series_num";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$series_id = $row[strtolower($modality) . "series_id"];
-						$series_num = $row['series_num'];
-						if ($series_num > $max_seriesnum) { $max_seriesnum = $series_num; }
-						//$series_datetime = date('M j, Y g:ia',strtotime($row['series_datetime']));
-						$series_datetime = $row['series_datetime'];
-						$protocol = $row['series_protocol'];
-						$notes = $row['series_notes'];
-						$numfiles = $row['series_numfiles'];
-						$series_size = $row['series_size'];
-						$lastupdate = $row['lastupdate'];
+					$sqlstringA = "show tables like '" . strtolower($modality) . "_series'";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					if (mysqli_num_rows($resultA) > 0) {
+						$max_seriesnum = 0;
+						$sqlstring = "select * from `" . strtolower($modality) . "_series` where study_id = $id order by series_num";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$series_id = $row[strtolower($modality) . "series_id"];
+							$series_num = $row['series_num'];
+							if ($series_num > $max_seriesnum) { $max_seriesnum = $series_num; }
+							//$series_datetime = date('M j, Y g:ia',strtotime($row['series_datetime']));
+							$series_datetime = $row['series_datetime'];
+							$protocol = $row['series_protocol'];
+							$notes = $row['series_notes'];
+							$numfiles = $row['series_numfiles'];
+							$series_size = $row['series_size'];
+							$lastupdate = $row['lastupdate'];
 
-						if ($numfiles < 1) { $numfiles = "-"; }
-						if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
-						?>
-						<script type="text/javascript">
-							$(document).ready(function(){
-								$(".edit_inline<? echo $series_id; ?>").editInPlace({
-									url: "series_inlineupdate.php",
-									params: "action=editinplace&modality=<?=$modality?>&id=<? echo $series_id; ?>",
-									default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
-									bg_over: "white",
-									bg_out: "lightyellow",
+							if ($numfiles < 1) { $numfiles = "-"; }
+							if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
+							?>
+							<script type="text/javascript">
+								$(document).ready(function(){
+									$(".edit_inline<? echo $series_id; ?>").editInPlace({
+										url: "series_inlineupdate.php",
+										params: "action=editinplace&modality=<?=$modality?>&id=<? echo $series_id; ?>",
+										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
+										bg_over: "white",
+										bg_out: "lightyellow",
+									});
 								});
-							});
-						</script>
+							</script>
+							<tr>
+								<td><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>"><?=$series_num?></a></td>
+								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $protocol; ?></span></td>
+								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_datetime; ?></span></td>
+								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $notes; ?></span></td>
+								<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><?=$numfiles?></a></td>
+								<td><?=$series_size?></td>
+								<td>
+								<!--<form action="studies.php" method="post" enctype="multipart/form-data">
+								<input type="hidden" name="action" value="upload">
+								<input type="hidden" name="modality" value="<?=$modality?>">
+								<input type="hidden" name="studyid" value="<?=$id?>">
+								<input type="hidden" name="seriesid" value="<?=$series_id?>">
+								<input type="file" name="files[]" multiple><input type="submit" value="Upload">-->
+								<span id="uploader<?=$series_id?>"></span>
+								</form>
+								</td>
+								<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><img src="images/download16.png" title="Download <?=$modality?> data"></a></td>
+								<td align="right">
+									<a href="javascript:decision('Are you sure you want to delete this series?', 'studies.php?action=deleteseries&modality=<?=$modality?>&id=<?=$id?>&seriesid=<?=$series_id?>')" style="color: red">X</a>
+								</td>
+							</tr>
+						<?
+						}
+					}
+					else {
+						?>
 						<tr>
-							<td><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>"><?=$series_num?></a></td>
-							<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $protocol; ?></span></td>
-							<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_datetime; ?></span></td>
-							<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $notes; ?></span></td>
-							<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><?=$numfiles?></a></td>
-							<td><?=$series_size?></td>
-							<td>
-							<!--<form action="studies.php" method="post" enctype="multipart/form-data">
-							<input type="hidden" name="action" value="upload">
-							<input type="hidden" name="modality" value="<?=$modality?>">
-							<input type="hidden" name="studyid" value="<?=$id?>">
-							<input type="hidden" name="seriesid" value="<?=$series_id?>">
-							<input type="file" name="files[]" multiple><input type="submit" value="Upload">-->
-							<span id="uploader<?=$series_id?>"></span>
-							</form>
-							</td>
-							<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><img src="images/download16.png" title="Download <?=$modality?> data"></a></td>
-							<td align="right">
-								<a href="javascript:decision('Are you sure you want to delete this series?', 'studies.php?action=deleteseries&modality=<?=$modality?>&id=<?=$id?>&seriesid=<?=$series_id?>')" style="color: red">X</a>
+							<td colspan="9">
+								<span style="color: red">Invalid modality [<?=$modality?>]</span>
 							</td>
 						</tr>
-					<?
+						<?
 					}
 					?>
 					<!-- uploader script for this series -->

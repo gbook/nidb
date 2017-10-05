@@ -209,7 +209,7 @@
 		.fieldlabel {
 			color: darkblue;
 			text-align: right;
-			vertical-align: top;
+			vertical-align: middle;
 		}
 		.importantfield {
 			border: 1pt solid darkblue;

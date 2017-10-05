@@ -1906,6 +1906,8 @@
 													<tbody>
 													<?
 													while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+														//PrintVariable($row2);
+														
 														$study_id = $row2['study_id'];
 														$study_num = $row2['study_num'];
 														$study_modality = $row2['study_modality'];
@@ -1927,10 +1929,17 @@
 														}
 														
 														if ($study_modality != "") {
-															$sqlstring3 = "select count(*) 'seriescount' from " . strtolower($study_modality) . "_series where study_id = $study_id";
-															$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-															$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-															$seriescount = $row3['seriescount'];
+															$sqlstring4 = "show tables like '" . strtolower($study_modality) . "_series'";
+															$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
+															if (mysqli_num_rows($result4) > 0) {
+																$sqlstring3 = "select count(*) 'seriescount' from " . strtolower($study_modality) . "_series where study_id = $study_id";
+																$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+																$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+																$seriescount = $row3['seriescount'];
+															}
+															else {
+																$seriescount = "<span style='color:red'>Invalid modality [$study_modality]</span>";
+															}
 														}
 														?>
 														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'" onMouseOut="this.style.backgroundColor=''">

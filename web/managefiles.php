@@ -104,7 +104,7 @@
 	/* ------- RenameFile ------------------------- */
 	/* -------------------------------------------- */
 	function RenameFile($seriesid, $modality, $datatype, $filename, $newfilename) {
-		$newfilename = preg_replace('/[^A-Za-z0-9_\-]/', '_', $newfilename);
+		$newfilename = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $newfilename);
 		
 		$datadir = GetDataDir($seriesid, $modality, $datatype);
 		$oldfilepath = "$datadir/$filename";
