@@ -631,7 +631,7 @@
 							}
 							else {
 								if ($analysis_qsubid == 0) {
-									echo "Preparing data";
+									echo "Copying data";
 								}
 								else {
 									switch ($analysis_status) {
@@ -745,7 +745,7 @@
 						</tr>
 						</table>
 					</td>
-					<td colspan="8" align="right" style="background-color: #fff; font-size: 12pt">
+					<td colspan="10" align="right" style="background-color: #fff; font-size: 12pt">
 					With selected:&nbsp;<br><br>
 					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
 					<br><br><br>
@@ -1049,7 +1049,7 @@
 				}
 				?>
 				<details>
-					<summary><?="$path/<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
+					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE">
 <?=$file?>
 					</pre>

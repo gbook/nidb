@@ -455,8 +455,8 @@ sub ProcessPipelines() {
 							}
 							$setuplog .= WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]") . "\n";
 
-							# get the data if we are not running a supplement
-							if (!$runsupplement) {
+							# get the data if we are not running a supplement, and not rerunning the results
+							if ((!$runsupplement) && (!$rerunresults)) {
 								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
 							}
 
@@ -1113,7 +1113,7 @@ sub CreateClusterJobFile() {
 			}
 			
 			# write to a log file if logging is requested
-			if ($logged) { $command .= " > $analysispath/pipeline/$supplement"."step$i.log 2>&1"; }
+			if ($logged) { $command .= " >> $analysispath/pipeline/$supplement"."step$i.log 2>&1"; }
 			
 			if (trim($workingdir) ne "") { $jobfile .= "cd $workingdir;\n"; }
 			if (!$enabled) { $jobfile .= "# "; }
@@ -1359,14 +1359,16 @@ sub GetData() {
 	$sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("Found " . $result->numrows . " studies matching studyid [$studyid]");
-		$datalog .= "===== Found " . $result->numrows . " studies matching studyid [$studyid] =====\n";
 		my %row = $result->fetchhash;
 		my $modality = $row{'study_modality'};
 		my $studynum = $row{'study_num'};
+		WriteLog("Found " . $result->numrows . " studies matching studyid [$studyid]");
+		$datalog .= "===== Working on [$uid$studynum] Found " . $result->numrows . " studies matching studyid [$studyid] =====\n\n";
 		
 		WriteLog("Study modality is [$modality]");
-		$datalog .= "----- Begin checking data steps -----\n";
+		$datalog .= "-----------------------------------------------\n";
+		$datalog .= "---------- Checking data steps ----------\n";
+		$datalog .= "-----------------------------------------------\n";
 		
 		# ------------------------------------------------------------------------
 		# check all of the steps to see if this data spec is valid
@@ -1387,19 +1389,28 @@ sub GetData() {
 			my $seriesdescfield = 'series_desc';
 			if ($modality ne 'mr') { $seriesdescfield = 'series_protocol'; }
 			
-			$datalog .= "Checking data spec step [$i]: protocol [$protocol], modality [$modality], imagetype [$imagetype], enabled [$enabled], type [$type], level [$level], assoctype [$assoctype], optional [$optional], numboldreps [$numboldreps]\n";
+			$datalog .= "Step [$i], checking:
+        protocol [$protocol]
+        modality [$modality]
+        imagetype [$imagetype]
+        enabled [$enabled]
+        type [$type]
+        level [$level]
+        assoctype [$assoctype]
+        optional [$optional]
+        numboldreps [$numboldreps]\n";
 			
 			# check if the step is enabled
-			if (!$enabled) { $datalog .= "Data specification step [$i] is NOT enabled\n"; next; }
+			if (!$enabled) { $datalog .= "    Data specification step [$i] is NOT enabled. Skipping this download step\n"; next; }
 			
 			# check if the step is optional
-			if ($optional) { $datalog .= "Data step [$i] is optional. Ignoring the check\n"; next; }
+			if ($optional) { $datalog .= "    Data step [$i] is OPTIONAL. Ignoring the checks\n"; next; }
 				
 			# make sure the requested modality table exists
 			$sqlstring = "show tables like '$modality"."_series'";
 			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows < 1) {
-				$datalog .= "Modality [$modality] not found\n";
+				$datalog .= "    ERROR: modality [$modality] not found\n";
 				$stepIsInvalid = 1;
 				last;
 			}
@@ -1452,38 +1463,38 @@ sub GetData() {
 					}
 					elsif ($assoctype eq 'all') {
 						WriteLog("Searching for all subject-level data...");
-						$datalog .= "    Searching for all subject-level data\n";
 						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 						if ($imagetypes ne "''") {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
+						$datalog .= "    Searching for all subject-level data [$sqlstring]\n";
 					}
 					else {
 						# find the data from the same subject and modality that has the same study_type
 						WriteLog("Searching for subject-level data with same study type...");
-						$datalog .= "    Searching for subject-level data with same study type\n";
 						$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 						if ($imagetypes ne "''") {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
 						$sqlstring .= " and `studies`.study_type = '$studytype'";
+						$datalog .= "    Searching for subject-level data with same study type [$sqlstring]\n";
 					}
 				}
 				WriteLog($sqlstring);
 				my $newseriesnum = 1;
 				my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($resultC->numrows > 0) {
-					$datalog .= "Found " . $resultC->numrows . " matching subject-level series\n";
+					$datalog .= "    Found " . $resultC->numrows . " matching subject-level series\n";
 				}
 				else {
-					$datalog .= "Found 0 rows matching the subject-level required protocol(s)\n";
+					$datalog .= "    Found 0 rows matching the subject-level required protocol(s)\n";
 					$stepIsInvalid = 1;
 					last;
 				}
 			}
 			# otherwise, check the study for the protocol(s)
 			else {
-				$datalog .= "Checking the study [$studyid] for the protocol ($protocols)\n";
+				$datalog .= "    Checking the study [$studyid] for the protocol ($protocols)\n";
 				# get a list of series satisfying the search criteria, if it exists
 				if (($comparison eq "") || ($num == 0)) {
 					$sqlstring = "select * from $modality"."_series where study_id = $studyid and (trim($seriesdescfield) in ($protocols))";
@@ -1499,7 +1510,7 @@ sub GetData() {
 					$sqlstring .= " and numfiles $comparison $num";
 				}
 				WriteLog($sqlstring);
-				$datalog .= "Checking if study contains data [$sqlstring]\n";
+				$datalog .= "    Checking if study contains data [$sqlstring]\n";
 				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 					$datalog .= "    This study contained step [$i]\n";
@@ -1511,7 +1522,7 @@ sub GetData() {
 				}
 			}
 		}
-		$datalog .= "----- Done checking data steps -----\n";
+		$datalog .= "---------- Done checking data steps ----------\n";
 		
 		# if there is a dependency, don't worry about the previous checks
 		if ($pipelinedep != 0) {
@@ -1533,7 +1544,9 @@ sub GetData() {
 
 		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Started copying data to [$analysispath]");
 		
-		$datalog .= "----- Required data for this study exists, beginning data copy -----\n";
+		$datalog .= "\n\n------------------------------------------------------------------------------\n";
+		$datalog .= "---------- Required data for this study exists, beginning data copy ----------\n";
+		$datalog .= "------------------------------------------------------------------------------\n";
 		# go through list of data search criteria
 		foreach my $i(0..$#datadef) {
 			my $id = $datadef[$i]{'id'};
@@ -1575,12 +1588,17 @@ sub GetData() {
 			else {
 				$imagetypes = "'$imagetype'";
 			}
+
+			WriteLog("Working on step [$i] id [$id]");
+
+			#$sqlstring = "update analysis set analysis_statusmessage = 'pending' where analysis_id = $analysisRowID";
 			
 			# expand the comparison into SQL
 			my ($comparison, $num) = GetSQLComparison($numboldreps);
 			WriteLog("BOLD reps comparison [$comparison] [$num]");
-			WriteLog("Working on step [$i]: $id");
-			$datalog .= "BOLD reps comparison [$comparison] [$num]\n";
+
+			$datalog .= "Copying data for step [$i] id [$id]\n";
+			$datalog .= "    bold reps comparison [$comparison] [$num]\n";
 
 			# check to see if we should even run this step
 			if ($enabled) {
@@ -1599,9 +1617,9 @@ sub GetData() {
 					# get a list of series satisfying the search criteria, if it exists
 					if ($level eq 'study') {
 						WriteLog("BOLD reps comparison [$comparison] [$num] inside StudyLevel");
-						$datalog .= "BOLD reps comparison [$comparison] [$num] inside StudyLevel\n";
+						$datalog .= "    BOLD reps check: comparison [$comparison] num [$num] inside StudyLevel\n";
 						
-						$datalog .= "This data step is study-level [$protocols] criteria: [$criteria] imagetype: [$imagetype]\n";
+						$datalog .= "    This data step is study-level\n        protocols [$protocols]\n        criteria [$criteria]\n        imagetype [$imagetype]\n";
 						
 						$sqlstring = "select * from $modality"."_series where study_id = $studyid and (trim($seriesdescfield) in ($protocols))";
 						if ($imagetypes ne "''") { $sqlstring .= " and image_type in ($imagetypes)"; }
@@ -1615,10 +1633,10 @@ sub GetData() {
 							else { $sqlstring .= " order by series_num asc"; }
 						}
 						
-						$datalog .= "... at the end of the study level section, SQL [$sqlstring]\n";
+						$datalog .= "    ... at the end of the study level section, SQL [$sqlstring]\n";
 					}
 					else {
-						$datalog .= "This data step is subject-level [$protocols], association type [$assoctype], imagetype: [$imagetypes]\n";
+						$datalog .= "    This data step is subject-level\n        protocols[$protocols]\n        association type [$assoctype]\n        imagetype [$imagetypes]\n";
 						# get the subject ID and study type, based on the current study ID
 						my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -1653,7 +1671,7 @@ sub GetData() {
 									next;
 								}
 								
-								$datalog .= "Still within the subject-level data search [$protocols] criteria: [$criteria] imagetype [$imagetypes]\n";
+								$datalog .= "    Still within the subject-level data search\n        protocols [$protocols]\n        criteria [$criteria]\n        imagetype [$imagetypes]\n";
 
 								# base SQL string
 								$sqlstring = "select * from $modality"."_series where study_id = $otherstudyid and trim($seriesdescfield) in ($protocols)";
@@ -1674,12 +1692,11 @@ sub GetData() {
 									else { $sqlstring .= " order by series_num asc"; }
 								}
 								
-								$datalog .= "... now searching for the data IN the nearest study\n";
+								$datalog .= "    ... now searching for the data IN the nearest study\n";
 								
 							}
 							elsif ($assoctype eq 'all') {
 								WriteLog("Searching for all subject-level data...");
-								$datalog .= "    Searching for all subject-level data\n";
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
@@ -1687,11 +1704,11 @@ sub GetData() {
 								if (($comparison != 0) && ($num != 0)) {
 									$sqlstring .= " and numfiles $comparison $num";
 								}
+								$datalog .= "    Searching for all subject-level data [$sqlstring]\n";
 							}
 							else {
 								# find the data from the same subject and modality that has the same study_type
 								WriteLog("Searching for subject-level data with same study type...");
-								$datalog .= "    Searching for subject-level data with same study type\n";
 								$sqlstring = "SELECT *, `$modality" . "_series`.$modality" . "series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality" . "_series` on `$modality" . "_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality" . "_series`.$seriesdescfield) in ($protocols)";
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
@@ -1700,17 +1717,18 @@ sub GetData() {
 									$sqlstring .= " and numfiles $comparison $num";
 								}
 								$sqlstring .= " and `studies`.study_type = '$studytype'";
+								$datalog .= "    Searching for subject-level data with same study type [$sqlstring]\n";
 							}
 						}
 					}
 					WriteLog($sqlstring);
-					$datalog .= "SQL [$sqlstring]\n";
+					$datalog .= "    Resulting SQL string [$sqlstring]\n";
 					my $newseriesnum = 1;
 					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {
 					
 						WriteLog("Found " . $resultC->numrows . " matching subject-level series");
-						$datalog .= "$type data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
+						$datalog .= "    type [$type] data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
 						# in theory, data for this analysis exists for this study, so lets now create the analysis directory
 						MakePath($analysispath);
 						while (my %rowC = $resultC->fetchhash) {
@@ -1749,7 +1767,7 @@ sub GetData() {
 								}
 							}
 							WriteLog("Processing $seriesdesc [$seriessize bytes] [$numfiles files]");
-							$datalog .= "Processing [$seriesdesc] series [$seriesnum] datetime [$seriesdatetime]...\n";
+							$datalog .= "    Working on seriesdesc [$seriesdesc] seriesnum [$seriesnum] seriesdatetime [$seriesdatetime]...\n";
 							my $behoutdir = "";
 							my $indir = "$cfg{'archivedir'}/$uid/$localstudynum/$seriesnum/$datatype";
 							my $behindir = "$cfg{'archivedir'}/$uid/$localstudynum/$seriesnum/beh";
@@ -1783,11 +1801,11 @@ sub GetData() {
 								if ($behformat eq "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
 							}
 							
-							$datalog .= "behformat [$behformat] behoutdir [$behoutdir]\n";
+							$datalog .= "    behformat [$behformat] behoutdir [$behoutdir]\n";
 							if ($usephasedir) {
 								my $phasedir = "unknownPE";
 								
-								$datalog .= "PhasePlane [$phaseplane] PhasePositive [$phasepositive]\n";
+								$datalog .= "    PhasePlane [$phaseplane] PhasePositive [$phasepositive]\n";
 								if (($phaseplane eq "COL") && ($phasepositive eq "1")) { $phasedir = "AP"; }
 								if (($phaseplane eq "COL") && ($phasepositive eq "0")) { $phasedir = "PA"; }
 								if (($phaseplane eq "COL") && ($phasepositive eq "")) { $phasedir = "COL"; }
@@ -1802,7 +1820,7 @@ sub GetData() {
 							MakePath($newanalysispath);
 							#mkpath($newanalysispath, {mode => 0777});
 							my $systemstring = "chmod -Rf 777 $newanalysispath";
-							$datalog .= "    Running [$systemstring]\n";
+							$datalog .= "    Changing permissions [$systemstring]\n";
 							`$systemstring 2>&1`;
 							
 							# output the correct file type
@@ -1814,14 +1832,13 @@ sub GetData() {
 									$systemstring = "cp -v $indir/* $newanalysispath";
 								}
 
-								WriteLog("Copying data using command (DICOM) [$systemstring] output [" . trim(`$systemstring 2>&1`) . "]");
-								$datalog .= "    Copying data using command [$systemstring]\n";
-								`$systemstring 2>&1`;
+								my $output = trim(`$systemstring 2>&1`);
+								WriteLog("Copying data using command (DICOM) [$systemstring] output [$output]");
+								$datalog .= "    Copying dats [$systemstring] output [$output]\n";
 							}
 							else {
 								my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
 								MakePath($tmpdir);
-								#mkpath($tmpdir, {mode => 0777});
 								$datalog .= "    Created temp directory [$tmpdir]\n";
 								$datalog .= "    Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)\n";
 								ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype);
@@ -1832,8 +1849,10 @@ sub GetData() {
 								else {
 									$systemstring = "cp -v $tmpdir/* $newanalysispath";
 								}
-								$datalog .= "    Copying data using command [$systemstring]\n";
-								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [" . trim(`$systemstring 2>&1`) . "]");
+								
+								my $output = trim(`$systemstring 2>&1`);
+								$datalog .= "    Copying data [$systemstring] output [$output]\n";
+								WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [$output]");
 								
 								WriteLog("Removing temp directory [$tmpdir]");
 								$datalog .= "    Removing temp directory [$tmpdir]\n";
@@ -1843,44 +1862,46 @@ sub GetData() {
 							
 							# copy the beh data
 							if ($behformat ne "behnone") {
-								$datalog .= "  Copying behavioral data...\n";
-								$datalog .= "    Creating directory [$behoutdir]\n";
+								$datalog .= "    Copying behavioral data\n";
+								$datalog .= "        - Creating directory [$behoutdir]\n";
 								MakePath($behoutdir);
 								#mkpath($behoutdir, {mode => 0777});
 								$systemstring = "cp -Rv $behindir/* $behoutdir";
-								$datalog .= "    Running [$systemstring]\n";
-								`$systemstring 2>&1`;
+								my $output = trim(`$systemstring 2>&1`);
+								$datalog .= "        - Copying beh data [$systemstring] output [$output]\n";
+								#`$systemstring 2>&1`;
 								
 								$systemstring = "chmod -Rf 777 $behoutdir";
-								$datalog .= "    Running [$systemstring]\n";
-								`$systemstring 2>&1`;
-								$datalog .= "  Done copying behavioral data...\n";
+								$output = trim(`$systemstring 2>&1`);
+								$datalog .= "        - Changing permissions [$systemstring] output [$output]\n";
+								#`$systemstring 2>&1`;
+								$datalog .= "        Done copying behavioral data...\n";
 							}
 
-							$datalog .= "  Giving full read/write permissions to all users...\n";
 							# give full read/write permissions to everyone
 							$systemstring = "chmod -Rf 777 $newanalysispath";
-							$datalog .= "    Running [$systemstring]\n";
-							`$systemstring 2>&1`;
+							my $output = trim(`$systemstring 2>&1`);
+							$datalog .= "    Changing permissions [$systemstring] output [$output]\n";
+							#`$systemstring 2>&1`;
 							
 							WriteLog("Done writing data to $newanalysispath");
 							
-							$datalog .= "Done writing data to $newanalysispath\n";
+							$datalog .= "    Done writing data to $newanalysispath\n";
 						}
 					}
 					else {
 						WriteLog("Found no matching subject-level [$protocol] series. SQL: [$sqlstring]");
-						$datalog .= "Found no matching subject-level data [$protocol]. SQL: [$sqlstring]\n";
+						$datalog .= "    Found no matching subject-level data [$protocol]. SQL: [$sqlstring]\n";
 					}
 				}
 				else {
 					WriteLog("No matching modality [$modality] tables found");
-					$datalog .= "No matching modality [$modality] tables found\n";
+					$datalog .= "    No matching modality [$modality] tables found\n";
 				}
 			}
 			else {
 				WriteLog("Data step [$i] not enabled");
-				$datalog .= "This data item [$protocol] is not enabled\n";
+				$datalog .= "    This data item [$protocol] is not enabled\n";
 			}
 		}
 		$datalog .= "Leaving GetData(). Copied [$numdownloaded] series\n";
@@ -1890,7 +1911,7 @@ sub GetData() {
 	}
 	else {
 		$datareport .= "Study [$studyid] does not exist";
-		$datalog .= "No data to download";
+		$datalog .= "Study [$studyid] does not exist - No data to download\n";
 		WriteLog("Leaving GetData() unsuccessfully => ret(0, $datalog). This study had no series at all");
 		return (0,$datalog, $datareport);
 	}

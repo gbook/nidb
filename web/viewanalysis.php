@@ -135,7 +135,7 @@
 				}
 				?>
 				<details>
-					<summary><?="$path/<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
+					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE">
 <?=$file?>
 					</pre>

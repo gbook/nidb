@@ -279,6 +279,10 @@
 		
 		$basemodality = strtolower($basemodality);
 		
+		if ($basemodality == "") {
+			echo "Modality is blank. Can't merge studies with blank modalities<br>";
+			return;
+		}
 		/* get largest series number from the new study */
 		$sqlstring = "select max(series_num) 'maxseries' from $basemodality"."_series where study_id = $newstudyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
