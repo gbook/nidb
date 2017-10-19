@@ -1905,7 +1905,7 @@ sub GetData() {
 			}
 		}
 		$datalog .= "Leaving GetData(). Copied [$numdownloaded] series\n";
-		WriteLog("Leaving GetData() successfully => ret($numdownloaded, $datalog)");
+		WriteLog("Leaving GetData() successfully => ret($numdownloaded, datalog)");
 		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Finished copying data [$numdownloaded] series downloaded");
 		return ($numdownloaded, $datalog, $datareport);
 	}
@@ -2011,33 +2011,23 @@ sub GetStudyToDoList() {
 	}
 	
 	my @list = ();
-	#WriteLog("Checkin G");
-	#my $result = $dbh->prepare($sqlstring);
-	#WriteLog("Checkin H");
-	#$result->execute();
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	#WriteLog("Checkin I");
 	WriteLog("Pushing all the studyids onto an array");
 	if ($result->rows > 0) {
-		#WriteLog("Checkin J");
 		while (my $row = $result->fetchrow_hashref()) {
-			#WriteLog("Checkin K");
 			my $studyid = $row->{study_id};
 			
 			my $sqlstringA = "select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = $studyid and c.isactive = 1";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-			#WriteLog("Checkin L");
-			#WriteLog($sqlstringA);
 			my %rowA = $resultA->fetchhash;
 			my $uid = $rowA{'uid'};
 			my $studynum = $rowA{'study_num'};
-			#WriteLog("Checkin M");
 
 			if (!defined($studynum)) {
-				WriteLog("Studynum is blank");
+				#WriteLog("Studynum is blank");
 			}
 			elsif (!defined($uid)) {
-				WriteLog("UID is blank");
+				#WriteLog("UID is blank");
 			}
 			else {
 				WriteLog("Found study [" . $studyid . "] [$uid$studynum]");

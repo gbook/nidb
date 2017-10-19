@@ -66,55 +66,60 @@
 	$fileviewtype = GetVariable("fileviewtype");
 	$listtype = GetVariable("listtype");
 	
+	$searchuid = GetVariable("searchuid");
+	$searchstatus = GetVariable("searchstatus");
+	$sortby = GetVariable("sortby");
+	$sortorder = GetVariable("sortorder");
+	
 	$returnpage = GetVariable("returnpage");
 	
 	/* determine action */
 	switch ($action) {
 		case 'viewjob': DisplayJob($id); break;
 		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
-		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum); break;
+		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
 		case 'deleteanalyses':
 			DeleteAnalyses($id, $analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'copyanalyses':
 			CopyAnalyses($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'createlinks':
 			CreateLinks($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'rerunresults':
 			RerunResults($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'runsupplement':
 			RunSupplement($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'markbad':
 			MarkAnalysis($analysisids, 'bad');
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'markgood':
 			MarkAnalysis($analysisids, 'good');
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'markcomplete':
 			MarkComplete($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'rechecksuccess':
 			RecheckSuccess($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
 		case 'setanalysisnotes':
 			SetAnalysisNotes($analysisid, $analysisnotes);
-			DisplayAnalysisList($id, $numperpage, $pagenum);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
 			break;
 	}
 	
@@ -370,10 +375,12 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAnalysisList ---------------- */
 	/* -------------------------------------------- */
-	function DisplayAnalysisList($id, $numperpage, $pagenum) {
+	function DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder) {
 
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
+		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], $searchuid);
+		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -401,13 +408,38 @@
 		$limitstart = ($pagenum-1)*$numperpage;
 		$limitcount = $numperpage;
 
+		if (($sortorder == "asc") || ($sortorder == "")) { $newsortorder = "desc"; }
+		elseif ($sortorder == "desc") { $newsortorder = "asc"; }
+
+		if ($sortorder == "asc") { $sortarrow = "&uarr;"; } else { $sortarrow = "&darr;"; }
+		
+		//if ($sortby == "") { $sortby = "studydate"; }
+		
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
 		
 		/* run the sql query here to get the row count */
-		$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+		if (($searchuid == "") && ($searchstatus == "")) {
+			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+		}
+		else {
+			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
+			if ($searchuid != "") {
+				$sqlstring .= " and d.uid like '%$searchuid%'";
+			}
+			if ($searchstatus != "") {
+				if ($searchstatus == "allothers") {
+					$sqlstring .= " and analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+				}
+				else {
+					$sqlstring .= " and analysis_status = '$searchstatus'";
+				}
+			}
+		}
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$numrows = mysqli_num_rows($result);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numrows = $row['count'];
+		//$numrows = mysqli_num_rows($result);
 		$numpages = ceil($numrows/$numperpage);
 		if ($pagenum > $numpages) { $pagenum = $numpages; }
 		?>
@@ -448,24 +480,13 @@
 			});
 		});
 		</script>
-		<script>
-			function GetAnalysisNotes(id, analysisid){
-				var analysisnotes = prompt("Enter notes for this analysis","");
-				if (analysisnotes != null){
-				  document.studieslist.analysisnotes.value = analysisnotes;
-				  document.studieslist.action.value = 'setanalysisnotes';
-				  document.studieslist.id.value = id;
-				  document.studieslist.analysisid.value = analysisid;
-				  document.studieslist.submit();
-			   }
-			}
-		</script>
+
 		<table width="100%" class="tablepage">
 			<form method="post" action="analysis.php" id="numperpageform">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
-				<td class="label"><?=$numrows?> analyses</td>
+				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "")) { echo "found"; } ?></td>
 				<td class="pagenum">
 					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
 					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()">
@@ -487,41 +508,178 @@
 			</tr>
 			</form>
 		</table>
-		<form method="post" name="studieslist" action="analysis.php">
-		<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
-		<input type="hidden" name="destination" value="" id="studieslistdestination">
-		<input type="hidden" name="analysisnotes" value="">
-		<input type="hidden" name="analysisid" value="">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>		
-		<table id="analysistable" class="sortable smallgraydisplaytable" width="100%">
+
+		<script>
+			function GetAnalysisNotes(id, analysisid){
+				var analysisnotes = prompt("Enter notes for this analysis","");
+				if (analysisnotes != null){
+				  document.studieslist.analysisnotes.value = analysisnotes;
+				  document.studieslist.action.value = 'setanalysisnotes';
+				  document.studieslist.id.value = id;
+				  document.studieslist.analysisid.value = analysisid;
+				  document.studieslist.submit();
+			   }
+			}
+		</script>
+		<table id="analysistable" class="smallgraydisplaytable" width="100%">
+			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php">
+			<input type="hidden" name="action" value="viewanalyses">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<thead>
 				<tr>
-					<th data-sort="string-ins"><input type="checkbox" id="studiesall">Study</th>
-					<th data-sort="string-ins">Visit</th>
-					<th data-sort="int">Pipeline<br>version</th>
+					<th align="left" <? if ($sortby == "studynum") { echo "style='background-color: #fff'"; } ?>>
+						<input type="checkbox" id="studiesall">
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studynum&sortorder=<?=$newsortorder?>">Study</a> <? if ($sortby == "studynum") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if ($sortby == "visit") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=visit&sortorder=<?=$newsortorder?>">Visit</a> <? if ($sortby == "visit") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if ($sortby == "pipelineversion") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=pipelineversion&sortorder=<?=$newsortorder?>">Pipeline<br>version</a>  <? if ($sortby == "pipelineversion") { echo $sortarrow; } ?>
+					</th>
 					<? if ($pipeline_level == 1) { ?>
-					<th>Study date</th>
-					<th data-sort="int"># series</th>
+					<th align="left" <? if ($sortby == "studydate") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studydate&sortorder=<?=$newsortorder?>">Study date</a> <? if ($sortby == "studydate") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if ($sortby == "numseries") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=numseries&sortorder=<?=$newsortorder?>"># series</a> <? if ($sortby == "numseries") { echo $sortarrow; } ?>
+					</th>
 					<? } ?>
-					<th data-sort="string-ins">Status <span class="tiny">flags</span></th>
-					<th data-sort="string-ins">Successful</th>
-					<th>Logs</th>
-					<th>History</th>
-					<th>Files</th>
-					<th>Results</th>
-					<th>Notes</th>
-					<th data-sort="string-ins">Message</th>
-					<th data-sort="string-ins">Size<br><span class="tiny">bytes</span></th>
-					<th data-sort="string-ins">Hostname</th>
-					<th>Setup time<br><span class="tiny">completed date</span></th>
-					<th>Cluster time<br><span class="tiny">completed date</span></th>
-					<th>Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
+					<th align="left" <? if ($sortby == "status") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=status&sortorder=<?=$newsortorder?>">Status</a> <? if ($sortby == "status") { echo $sortarrow; } ?><br><span class="tiny">flags</span>
+					</th>
+					<th align="left" <? if ($sortby == "successful") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=successful&sortorder=<?=$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
+					</th>
+					<th align="left">Logs</th>
+					<th align="left">History</th>
+					<th align="left">Files</th>
+					<th align="left">Results</th>
+					<th align="left">Notes</th>
+					<th align="left" <? if ($sortby == "message") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if ($sortby == "size") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=size&sortorder=<?=$newsortorder?>">Size</a> <? if ($sortby == "size") { echo $sortarrow; } ?><br><span class="tiny">bytes</span>
+					</th>
+					<th align="left" <? if ($sortby == "hostname") { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=hostname&sortorder=<?=$newsortorder?>">Hostname</a> <? if ($sortby == "hostname") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if (($sortby == "setuptime") || ($sorty == "setupcompletedate")) { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setuptime&sortorder=<?=$newsortorder?>">Setup time</a> <? if ($sortby == "setuptime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setupcompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "setupcompletedate") { echo $sortarrow; } ?>
+					</th>
+					<th align="left" <? if (($sortby == "clustertime") || ($sortby == "clustercompletedate")) { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustertime&sortorder=<?=$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustercompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
+					</th>
+					<th align="left">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
+				</tr>
+				<tr>
+					<th align="left"><input type="text" name="searchuid" placeholder="UID" value="<?=$searchuid?>" size="10"></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th align="left">
+						<select name="searchstatus">
+							<option value="" <? if ($searchstatus == "") { echo "selected"; } ?>>(Select status)
+							<option value="complete" <? if ($searchstatus == "complete") { echo "selected"; } ?>>Complete
+							<option value="pending" <? if ($searchstatus == "pending") { echo "selected"; } ?>>Pending
+							<option value="processing" <? if ($searchstatus == "processing") { echo "selected"; } ?>>Processing
+							<option value="error" <? if ($searchstatus == "error") { echo "selected"; } ?>>Error
+							<option value="submitted" <? if ($searchstatus == "submitted") { echo "selected"; } ?>>Submitted
+							<option value="allothers" <? if ($searchstatus == "allothers") { echo "selected"; } ?>>All other status (ignored, etc)
+						</select>
+					</th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th><input type="submit" name="btnSubmitFilter" value="Filter"></th>
 				</tr>
 			</thead>
+			</form>
+			<form method="post" name="studieslist" id="studieslist" action="analysis.php">
+			<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
+			<input type="hidden" name="destination" value="" id="studieslistdestination">
+			<input type="hidden" name="analysisnotes" value="">
+			<input type="hidden" name="analysisid" id="analysisid" value="">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<tbody>
 				<?
-					$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
+					if (($searchuid == "") && ($searchstatus == "")) {
+						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+					}
+					else {
+						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
+						if ($searchuid != "") {
+							$sqlstring .= " and d.uid like '%$searchuid%'";
+						}
+						if ($searchstatus != "") {
+							if ($searchstatus == "allothers") {
+								$sqlstring .= " and analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+							}
+							else {
+								$sqlstring .= " and analysis_status = '$searchstatus'";
+							}
+						}
+					}
+					/* figure out the sorting */
+					switch ($sortby) {
+						case 'studynum':
+							$sqlstring .= " order by uid $sortorder, study_num $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'visit':
+							$sqlstring .= " order by study_type $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'pipelineversion':
+							$sqlstring .= " order by pipeline_version $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'studydate':
+							$sqlstring .= " order by study_datetime $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'numseries':
+							$sqlstring .= " order by analysis_numseries $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'status':
+							$sqlstring .= " order by analysis_status $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'successful':
+							$sqlstring .= " order by analysis_iscomplete $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'message':
+							$sqlstring .= " order by analysis_statusmessage $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'size':
+							$sqlstring .= " order by analysis_disksize $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'hostname':
+							$sqlstring .= " order by analysis_hostname $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'setuptime':
+							$sqlstring .= " order by analysis_time $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'setupcompletedate':
+							$sqlstring .= " order by analysis_enddate $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'clustertime':
+							$sqlstring .= " order by cluster_time $sortorder limit $limitstart, $limitcount";
+							break;
+						case 'clustercompletedate':
+							$sqlstring .= " order by analysis_clusterenddate $sortorder limit $limitstart, $limitcount";
+							break;
+						default:
+							$sqlstring .= " order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
+					}
+					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$numcomplete += $row['analysis_iscomplete'];
@@ -630,8 +788,8 @@
 								<?
 							}
 							else {
-								if ($analysis_qsubid == 0) {
-									echo "Copying data";
+								if (($analysis_qsubid == 0) && ($analysis_status != 'complete')) {
+									echo "[$analysis_status] Copying data?";
 								}
 								else {
 									switch ($analysis_status) {
