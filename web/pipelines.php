@@ -990,7 +990,7 @@
 			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> version <?=$version?> </legend>
 		<table>
 			<tr>
-				<td style="padding-right:40px">
+				<td style="padding-right:40px" valign="top">
 					<table class="entrytable" style="border:0px">
 						<form method="post" action="pipelines.php">
 						<input type="hidden" name="action" value="<?=$formaction?>">
@@ -1269,7 +1269,63 @@
 					</table>
 				</td>
 				<? if ($formaction == "update") { ?>
+					<script>
+						function GetNewPipelineName(){
+							var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
+							if (newname != null){
+							  $("#newname").attr("value", newname);
+							  document.copypipeline.submit();
+						   }
+						}
+					</script>
+					<form action="pipelines.php" method="post" name="copypipeline">
+					<input type="hidden" name="action" value="copy">
+					<input type="hidden" name="id" value="<?=$id?>">
+					<input type="hidden" name="newname" id="newname" value="<?=$id?>">
+					</form>
 				<td valign="top">
+					<b style="color: #555; font-size:11pt;">Analyses</b><br>
+					<p style="margin-left: 25px">
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><img src="images/preview.gif"> <b>View analyses</b></a><br>
+						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis"><img src="images/preview.gif"> View ignored studies</a><br>
+						<!--<a href="analysis.php?action=viewlists&id=<?=$id?>"><img src="images/preview.gif"> View analysis lists</a>-->
+						<a href="pipelines.php?action=viewpipeline&id=<?=$id?>"><img src="images/printer16.png" border="0"> View previous versions</a><br>
+					</p>
+					
+					<details>
+						<summary><b style="color: #555; font-size:11pt;">Pipeline Operations</b></summary>
+						<p style="margin-left: 25px">
+							<a href="pipelines.php?action=resetanalyses&id=<?=$id?>" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><img src="images/reset16.png"> Reprocess ignored studies</a>
+							<br>
+							<img src="images/copy16.gif"> <a href="#" onClick="GetNewPipelineName();">Copy to new pipeline...</a>
+							<? if (!$readonly) { ?>
+							<form style="margin-left: 25px">
+							<input type="hidden" name="action" value="changeowner">
+							<input type="hidden" name="id" value="<?=$id?>">
+							Change pipeline owner to: <select name="newuserid">
+								<?
+									$sqlstring="select * from users where user_enabled = 1 order by username";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$userid = $row['user_id'];
+										$username = $row['username'];
+										$userfullname = $row['user_fullname'];
+										if ($userfullname != "") {
+											$userfullname = "[$userfullname]";
+										}
+										?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+									}
+								?>
+							</select>
+							<input type="submit" value="Change">
+							</form>
+						<p style="margin-left: 25px">
+							<a href="pipelines.php?action=detach$id=<?=$id?>" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><img src="images/disconnect16.png"> Detach entire pipeline</a><br>
+							<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
+							<? } ?>
+						</p>
+					</details>
+					<br><br>
 					<?
 						/* gather statistics about the analyses */
 						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
@@ -1321,125 +1377,72 @@
 						}
 						
 						?>
-						<table class="twocoltable">
-							<tr>
-								<th colspan="2">Analysis Statistics</th>
-							</tr>
-							<tr>
-								<td>Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
-								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
-							</tr>
-							<tr>
-								<td>Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
-								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
-							</tr>
-							<tr>
-								<td>Currently processing</td>
-								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
-							</tr>
-							<tr>
-								<td>Pending<br><span class="tiny">analyses yet to be submitted</span></td>
-								<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
-							</tr>
-							</tr>
-								<td>Setup Time</td>
-								<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
-								<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
-							</tr>
-							<tr>
-								<td>Cluster Time</td>
-								<td><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
-								<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
-							</tr>
-							<tr>
-								<td colspan="2">
-									<!-- display performance by hostname -->
-									<details>
-										<summary style="color: #3B5998"> Computing Performance </summary>
-										<table class="smallgraydisplaytable">
+					<table class="twocoltable">
+						<tr>
+							<th colspan="2">Analysis Statistics</th>
+						</tr>
+						<tr>
+							<td>Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
+							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
+						</tr>
+						<tr>
+							<td>Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
+							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
+						</tr>
+						<tr>
+							<td>Currently processing</td>
+							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
+						</tr>
+						<tr>
+							<td>Pending<br><span class="tiny">analyses yet to be submitted</span></td>
+							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
+						</tr>
+						</tr>
+							<td>Setup Time</td>
+							<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
+							<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
+						</tr>
+						<tr>
+							<td>Cluster Time</td>
+							<td><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
+							<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<!-- display performance by hostname -->
+								<details>
+									<summary style="color: #3B5998"> Computing Performance </summary>
+									<table class="smallgraydisplaytable">
+										<tr>
+											<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+										</tr>
+										<tr>
+											<td><b>Hostname</b></td>
+											<td><b>Avg CPU</b></td>
+											<td><b>Count</b></td>
+										</tr>
+									<?
+										$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+											$count = $row['count'];
+											$hostname = $row['analysis_hostname'];
+											?>
 											<tr>
-												<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+												<td><?=$hostname?></td>
+												<td><?=$cpuhrs?> hrs</td>
+												<td><?=$count?></td>
 											</tr>
-											<tr>
-												<td><b>Hostname</b></td>
-												<td><b>Avg CPU</b></td>
-												<td><b>Count</b></td>
-											</tr>
-										<?
-											$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-												$count = $row['count'];
-												$hostname = $row['analysis_hostname'];
-												?>
-												<tr>
-													<td><?=$hostname?></td>
-													<td><?=$cpuhrs?> hrs</td>
-													<td><?=$count?></td>
-												</tr>
-												<?
-											}
-										?>
-										</table>
-									</details>
-								</td>
-							</tr>
-						</table>
-						<br>
+											<?
+										}
+									?>
+									</table>
+								</details>
+							</td>
+						</tr>
+					</table>
 					<br>
-					<script>
-						function GetNewPipelineName(){
-							var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
-							if (newname != null){
-							  $("#newname").attr("value", newname);
-							  document.copypipeline.submit();
-						   }
-						}
-					</script>
-					<details>
-						<summary style="color: #3B5998"> Pipeline Operations </summary>
-						<br>
-						<a href="pipelines.php?action=viewpipeline&id=<?=$id?>"><img src="images/printer16.png" border="0"> Print view</a> <span class="tiny">(and previous pipeline versions)</span><br><br>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><img src="images/preview.gif"> View analyses</a><br><br>
-						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis"><img src="images/preview.gif"> View ignored studies</a><br><br>
-						<a href="analysis.php?action=viewlists&id=<?=$id?>"><img src="images/preview.gif"> View analysis lists</a>
-						
-						<br><br><br><br>
-						
-						<form action="pipelines.php" method="post" name="copypipeline">
-						<input type="hidden" name="action" value="copy">
-						<input type="hidden" name="id" value="<?=$id?>">
-						<input type="hidden" name="newname" id="newname" value="<?=$id?>">
-						<img src="images/copy16.gif"> <input type="button" value="Copy to new pipeline..." onClick="GetNewPipelineName();"><br><br>
-						</form>
-						<? if (!$readonly) { ?>
-						Change pipeline owner to:
-						<form>
-						<input type="hidden" name="action" value="changeowner">
-						<input type="hidden" name="id" value="<?=$id?>">
-						<select name="newuserid">
-							<?
-								$sqlstring="select * from users where user_enabled = 1 order by username";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$userid = $row['user_id'];
-									$username = $row['username'];
-									$userfullname = $row['user_fullname'];
-									if ($userfullname != "") {
-										$userfullname = "[$userfullname]";
-									}
-									?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
-								}
-							?>
-						</select>
-						<input type="submit" value="Change">
-						</form>
-						<a href="pipelines.php?action=detach$id=<?=$id?>" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><img src="images/disconnect16.png"> Detach entire pipeline</a><br><br>
-						<a href="pipelines.php?action=resetanalyses&id=<?=$id?>" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><img src="images/reset16.png"> Reprocess ignored studies</a><br><br>
-						<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
-						<? } ?>
-					</details>
 					<br>
 					<span style="color:#555; font-size:11pt; font-weight: bold">Where is my data?</span><br><br>
 					<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
@@ -2172,7 +2175,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<div align="center">
 
 		<br><br>
-		<table class="codelisting">
+		<table class="codetable">
 			<tr>
 				<td class="title" colspan="3"><?=$title?> version <?=$version?></td>
 			</tr>

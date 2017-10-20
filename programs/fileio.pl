@@ -573,6 +573,11 @@ sub DeleteAnalysis() {
 						my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
 						WriteLog($sqlstringC);
 						my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+						my $sqlstringD = "delete from analysis_history where analysis_id = $analysisid";
+						WriteLog($sqlstringD);
+						my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
+						
 						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 					}
 				}
@@ -592,6 +597,11 @@ sub DeleteAnalysis() {
 				my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
 				WriteLog($sqlstringC);
 				my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+				my $sqlstringD = "delete from analysis_history where analysis_id = $analysisid";
+				WriteLog($sqlstringD);
+				my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
+						
 				InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 			}			
 			return 1;
@@ -612,6 +622,11 @@ sub DeleteAnalysis() {
 			my $sqlstringC = "delete from analysis where analysis_id = $analysisid";
 			WriteLog($sqlstringC);
 			my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+
+			my $sqlstringD = "delete from analysis_history where analysis_id = $analysisid";
+			WriteLog($sqlstringD);
+			my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
+						
 			InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 			
 			return "Something was wrong, datapath was [$datapath], but deleted database analysis anyway";

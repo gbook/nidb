@@ -405,17 +405,15 @@ table.formentrytable tr:hover { background-color: #eee; border: 1px solid #666 }
 table.formentrytable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
 
 /* pipeline listing table */
-table.codelisting { background-color: #EFEFEF; border: 1px solid #BBBBBB; padding: 8px; border-spacing: 0px; }
-table.codelisting td.title { font-size: 15pt; font-weight: bold; text-align: left; }
-table.codelisting td.desc { font-size: 12pt; color: #666666; text-align: left; vertical-align: top; }
-table.codelisting td.order { font-size: 8pt; color: #555555; padding-right: 10px; padding-left: 10px; vertical-align: top; }
-table.codelisting td.code { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; }
-table.codelisting td.comment { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; color: green }
-table.codelisting td.colhead { font-size: 12pt; text-align: left; vertical-align: top; font-weight:bold; }
-table.codelisting td.sectionhead { font-size: 14pt; text-align: left; vertical-align: top; font-weight:bold; color:darkblue; }
-table.codelisting td.datadef { font-size: 10pt; text-align: left; vertical-align: top; }
-table.codelisting tbody tr:hover { background-color: lightyellow; }
-table.codelisting .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
+table.codetable { background-color: #EFEFEF; border: 1px solid #BBBBBB; padding: 8px; border-spacing: 0px; width: 100% }
+table.codetable td.title { font-size: 15pt; font-weight: bold; text-align: left; }
+table.codetable td.desc { font-size: 12pt; color: #666666; text-align: left; vertical-align: top; }
+table.codetable td.code { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; }
+table.codetable td.comment { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; color: green }
+table.codetable td.colhead { font-size: 12pt; text-align: left; vertical-align: top; font-weight:bold; }
+table.codetable td.sectionhead { font-size: 14pt; text-align: left; vertical-align: top; font-weight:bold; color:darkblue; }
+table.codetable td.datadef { font-size: 10pt; text-align: left; vertical-align: top; }
+table.codetable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
 
 .completeform {text-align: center; font-size: 14pt; background-color: #CCFF99; border: 1px solid darkolivegreen; border-radius: 4px; color: darkolivegreen; font-weight: bold; padding: 5px;}
 .incompleteform {text-align: center; font-size: 14pt; background-color: #F5E6E6; border: 1px solid darkred; border-radius: 4px; color: darkred; font-weight: bold; padding: 5px;}
