@@ -271,7 +271,7 @@ session_start();
     function ViewGroup($id, $measures, $columns, $groupmeasures) {
 
         /* get the general group information */
-        $sqlstring = "select * from groups where group_id = $id";
+        $sqlstring = "select * from groups where group_id = '$id'";
         $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
         $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
         $groupname = $row['group_name'];
