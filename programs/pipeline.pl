@@ -41,6 +41,7 @@ use Sort::Naturally;
 use Net::SMTP::TLS;
 use Data::Dumper;
 use Text::ParseWords;
+use POSIX qw(ceil floor);
 
 require 'nidbroutines.pl';
 
@@ -158,6 +159,7 @@ sub ProcessPipelines() {
 		my $pipelinesubmithost;
 		if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
 		else { $pipelinesubmithost = $row{'pipeline_submithost'}; }
+		my $pipelinemaxwalltime = $row{'pipeline_maxwalltime'};
 		my $pipelinelevel = $row{'pipeline_level'};
 		my $deplevel = $row{'pipeline_dependencylevel'};
 		my $depdir = $row{'pipeline_dependencydir'};
@@ -296,7 +298,7 @@ sub ProcessPipelines() {
 			my $analysisRowID = $result->insertid;
 			
 			# create the SGE job file
-			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, 'UID', 'STUDYNUM', 'STUDYDATETIME',$analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $pipelinemaxwalltime, 0, @pipelinesteps);
 		
 			$systemstring = "chmod -Rf 777 $analysispath";
 			WriteLog("[$systemstring]");
@@ -363,6 +365,14 @@ sub ProcessPipelines() {
 					# check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled
 					WriteLog("Checking if we've reached the max number of concurrent analyses");
 					while (my $filled = IsQueueFilled($pid)) {
+						# check if this pipeline is enabled
+						if (!IsPipelineEnabled($pid)) {
+							SetPipelineStatusMessage($pid, 'Pipeline disabled while running. Normal stop.');
+							SetPipelineStopped($pid);
+							next PIPELINE;
+						}
+						
+						# otherwise check
 						if ($filled == 0) { last; }
 						if ($filled == 1) {
 							# update the pipeline status message
@@ -558,7 +568,7 @@ sub ProcessPipelines() {
 								$realanalysispath =~ s/\/mount//g;
 								
 								# create the SGE job file
-								my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $runsupplement, @pipelinesteps);
+								my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, $realanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $pipelinemaxwalltime, $runsupplement, @pipelinesteps);
 							
 								`chmod -Rf 777 $analysispath`;
 								# create the SGE job file
@@ -841,7 +851,7 @@ sub ProcessPipelines() {
 			my $studydatetime = $row{'studydatetime'};
 				
 			# create the SGE job file
-			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, 0, @pipelinesteps);
+			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pid, $pipelineremovedata, $pipelineresultscript, $pipelinemaxwalltime, 0, @pipelinesteps);
 		
 			`chmod -Rf 777 $groupanalysispath`;
 			WriteLog($sgebatchfile);
@@ -973,7 +983,7 @@ sub IsQueueFilled() {
 # --------- CreateClusterJobFile -------------------------------
 # ----------------------------------------------------------
 sub CreateClusterJobFile() {
-	my ($clustertype, $analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $runsupplement, @pipelinesteps) = @_;
+	my ($clustertype, $analysisid, $isgroup, $uid, $studynum, $analysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, $pipelineid, $removedata, $resultscript, $maxwalltime, $runsupplement, @pipelinesteps) = @_;
 
 	# (re)connect to the database
 	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -1025,7 +1035,13 @@ sub CreateClusterJobFile() {
 		$jobfile .= "#\$ -j y\n";
 		$jobfile .= "#\$ -o $analysispath/pipeline\n";
 		$jobfile .= "#\$ -V\n";
-		$jobfile .= "#\$ -u " . $cfg{'queueuser'} . "\n\n";
+		$jobfile .= "#\$ -u " . $cfg{'queueuser'} . "\n";
+		if ($maxwalltime > 0) {
+			my $hours = floor($maxwalltime/60);
+			my $min = $maxwalltime%60;
+			
+			$jobfile .= "#\$ -l h_rt=" . sprintf("%.2d:%.2d:00",$hours,$min) . "\n";
+		}
 	}
 	
 	$jobfile .= "echo Hostname: `hostname`\n";
