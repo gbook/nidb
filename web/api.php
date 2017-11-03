@@ -347,9 +347,13 @@
 				$uploadID = mysqli_insert_id($GLOBALS['linki']);
 				
 				$numfilessuccess = 0;
+				$numfilesfail = 0;
 				$numfilestotal = 0;
 				$numbehsuccess = 0;
+				$numbehfail = 0;
 				$numbehtotal = 0;
+				$report = "DateTime\tFilenameIn\tFilenameOutPath\tMD5\tFileSize\tStatusMessage\n";
+				
 				//echo "I'm still here\n";
 				$savepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID";
 				$behsavepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID/beh";
@@ -373,21 +377,29 @@
 							$md5list[] = $filemd5;
 							if ($GLOBALS['debug'] == 1) echo date('c') . " [MD5: $filemd5]\n";
 							$success = 1;
+							
+							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tFile successfully received\n";
 						}
 						else {
 							if ($GLOBALS['debug'] == 1) echo "ERROR filesize is 0 [$savepath/$name]\n";
+							$numfilesfail++;
 							$success = 0;
+							
+							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tFilesize is 0 bytes\n";
 						}
 					}
 					else {
 						if ($GLOBALS['debug'] == 1) echo "ERROR moving [" . $_FILES['files']['tmp_name'][$i] . "] to [$savepath/$name]\n";
+						$numfilesfail++;
 						$success = 0;
+						
+						$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
 					}
 					
 					/* record this received file in the import_received table */
-					$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
+					//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
 					//echo "$sqlstring\n";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
 				/* go through all the beh files and save them */
@@ -399,21 +411,26 @@
 						if (move_uploaded_file($_FILES['behs']['tmp_name'][$i], "$behsavepath/$name")) {
 							$numbehsuccess++;
 							chmod("$behsavepath/$name", 0777);
-							$filemd5 = strtoupper(md5_file("$savepath/$name"));
+							$filemd5 = strtoupper(md5_file("$behsavepath/$name"));
 							$md5list[] = $filemd5;
-							$filesize = filesize("$savepath/$name");
+							$filesize = filesize("$behsavepath/$name");
 							$success = 1;
+							
+							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tFile successfully received\n";
 						}
 						else {
+							$numbehfail++;
 							$success = 0;
+
+							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
 						}
 						/* record this received file in the import_received table */
-						$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
+						//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					}
 				}
-				
-				$sqlstring = "update import_requests set import_status = 'pending' where importrequest_id = $uploadID";
+				$report = mysqli_real_escape_string($GLOBALS['linki'], $report);
+				$sqlstring = "update import_requests set import_status = 'pending', numfilestotal = '$numfilestotal', numfilessuccess = '$numfilessuccess', numfilesfail = '$numfilesfail', numbehtotal = '$numbehtotal', numbehsuccess = '$numbehsuccess', numbehfail = '$numbehfail', uploadreport = '$report' where importrequest_id = $uploadID";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			else {

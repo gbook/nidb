@@ -1327,6 +1327,8 @@ sub InsertDICOM {
 sub InsertParRec {
 	my ($file, $importRowID) = @_;
 	
+	my $report = "";
+	
 	WriteLog("----- In InsertParRec($file, $importRowID) -----");
 	#exit(0);
 	# import log variables
@@ -1604,12 +1606,12 @@ sub InsertParRec {
 	else {
 		# get the existing subject ID
 		#$sqlstring = "select subject_id from subjects where uid = '$PatientID'";
-		$sqlstring = "SELECT a.subject_id FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
+		$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
 		WriteLog("The PatientID [$PatientID] exists, getting the SubjectRowID and SubjectRealUID [$sqlstring]");
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
-		$subjectRealUID = uc($PatientID);
+		$subjectRealUID = uc($row{'uid'});
 		$IL_subjectcreated = 0;
 	}
 	

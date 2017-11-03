@@ -39,8 +39,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	//$orderby = GetVariable("orderby");
-	//$groupby = GetVariable("groupby");
+	$useronly = GetVariable("useronly");
 	$transactionid = GetVariable("transactionid");
 	
 	/* determine action */
@@ -55,7 +54,7 @@
 			break;
 		case 'viewtransactions':
 			DisplayMenu();
-			DisplayTransactions();
+			DisplayTransactions($useronly);
 			break;
 		case 'viewsingletransaction':
 			DisplayMenu();
@@ -67,7 +66,7 @@
 			break;
 		default:
 			DisplayMenu();
-			//DisplayAllImportLog($orderby,$groupby);
+			DisplayTransactions($useronly);
 	}
 	
 	
@@ -82,9 +81,7 @@
 		NavigationBar("Admin", $urllist);
 		
 		?>
-		View import <a href="importlog.php?action=viewtransactions">transactions</a><br>
-		<!--View <a href="importlog.php?action=viewreceived">received</a><br>
-		View <a href="importlog.php?action=viewimported">imported</a><br>-->
+		<a href="importlog.php?action=viewtransactions&useronly=1">My Uploads</a> | <a href="importlog.php?action=viewtransactions&useronly=0">All Uploads</a><br>
 		<br><br>
 		<?
 	}
@@ -308,8 +305,13 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTransactions ---------------- */
 	/* -------------------------------------------- */
-	function DisplayTransactions() {
+	function DisplayTransactions($useronly) {
+
+		if ($useronly != 1)
+			$useronly = 0;
 		
+		$numdeleted1 = 0;
+		$numdeleted2 = 0;
 		/* delete any transactions older than 21 days */
 		$sqlstring = "delete from import_transactions where transaction_startdate < date_sub(now(), interval 21 day)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -320,24 +322,20 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numdeleted2 = mysqli_affected_rows();
 		
+		if (($numdeleted1 > 0) || ($numdeleted2 > 0)) {
 		?>
-		<span class="tiny">Cleanup import logs older than 21 days - Removed <?=$numdeleted1?> entries from import_transactions and <?=$numdeleted2?> entries from import_requests</span>
-		<br>
-		<table class="smallgraydisplaytable">
-			<thead>
-				<tr>
-					<th>User</th>
-					<th>ID</th>
-					<th>Start date</th>
-					<th>End date</th>
-					<th>Status</th>
-					<th># upload blocks</th>
-					<th>View upload</th>
-					<th>% blocks archived</th>
-				</tr>
-			</thead>
+		<span class="tiny">Cleanup import logs older than 21 days - Removed [<?=$numdeleted1?>] entries from import_transactions and [<?=$numdeleted2?>] entries from import_requests</span>
 		<?
-		$sqlstring = "select * from import_transactions order by transaction_startdate desc";
+		}
+		?>
+		<br>
+		<?
+		if ($useronly) {
+			$sqlstring = "select * from import_transactions where transaction_username = '" . $GLOBALS['username'] . "' order by transaction_startdate desc";
+		}
+		else {
+			$sqlstring = "select * from import_transactions order by transaction_startdate desc";
+		}
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$transactionid = $row['importtrans_id'];
@@ -347,47 +345,14 @@
 			$transaction_source = $row['transaction_source'];
 			$transaction_username = $row['transaction_username'];
 			
-			$sqlstringA = "select count(*) 'numblocks' from import_requests where import_transactionid = $transactionid";
+			$numblocks = 0;
+			$sqlstringA = "select import_status, count(*) 'count' from import_requests where import_transactionid = '$transactionid' group by import_status";
 			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numblocks = $rowA['numblocks'];
-			
-			/* get the number in each state */
-			$sqlstringA = "select count(*) 'numuploading' from import_requests where import_transactionid = $transactionid and import_status = 'uploading'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numuploading = $rowA['numuploading'];
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$counts[$rowA['import_status']] = $rowA['count'];
+				$numblocks += $rowA['count'];
+			}
 
-			$sqlstringA = "select count(*) 'numpending' from import_requests where import_transactionid = $transactionid and import_status = 'pending'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numpending = $rowA['numpending'];
-
-			$sqlstringA = "select count(*) 'numreceiving' from import_requests where import_transactionid = $transactionid and import_status = 'receiving'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numreceiving = $rowA['numreceiving'];
-
-			$sqlstringA = "select count(*) 'numreceived' from import_requests where import_transactionid = $transactionid and import_status = 'received'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numreceived = $rowA['numreceived'];
-
-			$sqlstringA = "select count(*) 'numarchiving' from import_requests where import_transactionid = $transactionid and import_status = 'archiving'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numarchiving = $rowA['numarchiving'];
-
-			$sqlstringA = "select count(*) 'numarchived' from import_requests where import_transactionid = $transactionid and import_status = 'archived'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numarchived = $rowA['numarchived'];
-			
-			$sqlstringA = "select count(*) 'numblank' from import_requests where import_transactionid = $transactionid and import_status = ''";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numblank = $rowA['numblank'];
-			
 			if ($transaction_status == 'uploading') {
 				$status = "Receiving";
 				$status_message = "An upload transaction has started. Data is currently being received by NiDB";
@@ -396,28 +361,61 @@
 				$status = "Upload complete";
 				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
 			}
-			//echo "[$numuploading] [$numpending] [$numreceiving] [$numreceived] [$numarchiving] [$numarchived] [$numblank]<br>";
+
+			$numuploading = $counts['uploading'];
+			$numpending = $counts['pending'];
+			$numreceiving = $counts['receiving'];
+			$numreceived = $counts['received'];
+			$numarchiving = $counts['archiving'];
+			$numarchived = $counts['archived'];
+			$numblank = $counts[''];
+			$numerror = $counts['error'];
+
+			if ($numerror > 0) {
+				$statusicon = "<span style='color: red; font-weight: bold'>&#9940;</span>";
+			}
+			elseif (($numarchived == $numblocks) && ($transaction_enddate != '')) {
+				$statusicon = "<span style='color: green; font-weight: bold'>&#10004;</span>";
+			}
+			else {
+				$statusicon = "<span style='color: gray; font-weight: bold'>&#10004;</span>";
+			}
+			
 			if ($numblocks > 0) {
-			?>
-			<tr>
-				<td><?=$transaction_username?></td>
-				<td><?=$transactionid?></td>
-				<td><?=$transaction_startdate?></td>
-				<td><?=$transaction_enddate?></td>
-				<td><a href="" title="<?=$status_message?>"><?=$status?></a></td>
-				<td align="right"><?=$numblocks?></td>
-				<td><a href="importlog.php?action=viewuploadblocks&transactionid=<?=$transactionid?>">summary</a> / 
-				<a href="importlog.php?action=viewsingletransaction&transactionid=<?=$transactionid?>">detail</a></td>
-				<td align="left">
-					<img src="horizontalchart.php?b=yes&w=100&h=12&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>%
-				</td>
-			</tr>
-			<?
+				?>
+				<style>
+					.darkheader { background-color: #666; color: #fff; vertical-align: top; }
+				</style>
+				<div align="center">
+				<table width="80%" cellspacing="0" cellpadding="4" style="border: solid 2px #333">
+					<tr>
+						<td align="center"><?=$statusicon?></td>
+						<td class="darkheader"><span style="font-size: 8pt">User</span><br><?=$transaction_username?></td>
+						<td class="darkheader"><span style="font-size: 8pt">Transaction ID</span><br><?=$transactionid?></td>
+						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><?=date('M j, Y g:ia',strtotime($transaction_startdate))?></td>
+						<td align="left">
+							<img src="horizontalchart.php?b=yes&w=150&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
+						</td>
+					</tr>
+					<tr>
+						<td colspan="5">
+							<details>
+							<summary>Upload block details</summary>
+							<?DisplayUploadBlocks($transactionid)?>
+							</details>
+							<br>
+							<details>
+							<summary>Subject/study details</summary>
+							<?DisplaySingleTransaction($transactionid)?>
+							</details>
+						</td>
+					</tr>
+				</table>
+				</div>
+				<br>
+				<?
 			}
 		}
-		?>
-		</table>
-		<?
 	}
 
 	
@@ -434,15 +432,17 @@
 				<tr>
 					<th>ID</th>
 					<th>Data type</th>
-					<th>Modality</th>
+					<th>Num files<br><span class="tiny">total/success/fail</span></th>
+					<!--<th>Modality</th>-->
 					<th>Start Date</th>
 					<th>Status</th>
 					<th>Message</th>
 					<th>End Date</th>
-					<th>Equipment</th>
+					<!--<th>Equipment</th>-->
 					<th>Site</th>
 					<th>Project</th>
 					<th>Instance</th>
+					<th>View report</th>
 				</tr>
 			</thead>
 		<?
@@ -451,7 +451,7 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$importrequestid = $row['importrequest_id'];
 			$import_datatype = $row['import_datatype'];
-			$import_modality = $row['import_modality'];
+			//$import_modality = $row['import_modality'];
 			$import_datetime = $row['import_datetime'];
 			$import_status = $row['import_status'];
 			$import_message = $row['import_message'];
@@ -461,12 +461,16 @@
 			$import_siteid = $row['import_siteid'];
 			$import_projectid = $row['import_projectid'];
 			$import_instanceid = $row['import_instanceid'];
-			//$import_uuid = $row['import_uuid'];
 			$import_anonymize = $row['import_anonymize'];
 			$import_permanent = $row['import_permanent'];
 			$import_matchidonly = $row['import_matchidonly'];
 			$import_filename = $row['import_filename'];
 			$import_fileisseries = $row['import_fileisseries'];
+			$numfilestotal = $row['numfilestotal'];
+			$numfilessuccess = $row['numfilessuccess'];
+			$numfilesfail = $row['numfilesfail'];
+			$uploadreport = $row['uploadreport'];
+			$archivereport = $row['archivereport'];
 			$projectname = $row['project_name'];
 			$sitename = $row['site_name'];
 			$instancename = $row['instance_name'];
@@ -563,9 +567,10 @@
 			<tr>
 				<td><?=$importrequestid?></td>
 				<td><?=$import_datatype?></td>
-				<td><?=$import_modality?></td>
+				<td><?=$numfilestotal?>/<?=$numfilessuccess?>/<?=$numfilesfail?></td>
+				<!--<td><?=$import_modality?></td>-->
 				<td style="font-size:8pt"><?=$import_startdate?></td>
-				<td style="font-size:8pt"><pre>[<?=trim($import_status)?>]</pre> 
+				<td style="font-size:8pt">
 					<span title="uploading &rarr; pending<br>api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
 					<span title="receiving &rarr; received<br>importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
 					<span title="archiving &rarr; archived<br>parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
@@ -573,17 +578,16 @@
 				</td>
 				<td><?=$import_message?></td>
 				<td style="font-size:8pt"><?=$import_enddate?></td>
-				<td><?=$import_equipment?></td>
+				<!--<td><?=$import_equipment?></td>-->
 				<td style="font-size:8pt"><?=$sitename?></td>
 				<td style="font-size:8pt"><?=$projectname?></td>
 				<td style="font-size:8pt"><?=$instancename?></td>
-				<!--<td><?=$import_uuid?></td>-->
-				<!--<td><?=$import_anonymize?></td>-->
-				<!--<td><?=$import_permanent?></td>-->
-				<!--<td><?=$import_matchidonly?></td>
-				<td><?=$import_message?></td>
-				<td><?=$import_filename?></td>
-				<td><?=$import_fileisseries?></td>-->
+				<td style="font-size:8pt">
+					<details>
+					<summary>Upload report</summary>
+					<pre><?=$uploadreport?></pre>
+					</details>
+				</td>
 			</tr>
 			<?
 		}
