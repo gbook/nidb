@@ -344,6 +344,16 @@
 			$transaction_status = $row['transaction_status'];
 			$transaction_source = $row['transaction_source'];
 			$transaction_username = $row['transaction_username'];
+
+			$numuploading = 0;
+			$numpending = 0;
+			$numreceiving = 0;
+			$numreceived = 0;
+			$numarchiving = 0;
+			$numarchived = 0;
+			$numblank = 0;
+			$numerror = 0;
+			unset($counts);
 			
 			$numblocks = 0;
 			$sqlstringA = "select import_status, count(*) 'count' from import_requests where import_transactionid = '$transactionid' group by import_status";
@@ -352,6 +362,12 @@
 				$counts[$rowA['import_status']] = $rowA['count'];
 				$numblocks += $rowA['count'];
 			}
+
+			$sqlstringA = "select sum(numfilesfail) 'numfail', sum(numfilestotal) 'numtotal' from import_requests where import_transactionid = '$transactionid'";
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+			$numfilesfail = $rowA['numfail'];
+			$numfilestotal = $rowA['numtotal'];
 
 			if ($transaction_status == 'uploading') {
 				$status = "Receiving";
@@ -362,43 +378,48 @@
 				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
 			}
 
-			$numuploading = $counts['uploading'];
-			$numpending = $counts['pending'];
-			$numreceiving = $counts['receiving'];
-			$numreceived = $counts['received'];
-			$numarchiving = $counts['archiving'];
-			$numarchived = $counts['archived'];
-			$numblank = $counts[''];
-			$numerror = $counts['error'];
+			$numuploading = $counts['uploading'] + 0;
+			$numpending = $counts['pending'] + 0;
+			$numreceiving = $counts['receiving'] + 0;
+			$numreceived = $counts['received'] + 0;
+			$numarchiving = $counts['archiving'] + 0;
+			$numarchived = $counts['archived'] + 0;
+			$numblank = $counts[''] + 0;
+			$numerror = $counts['error'] + 0;
 
-			if ($numerror > 0) {
-				$statusicon = "<span style='color: red; font-weight: bold'>&#9940;</span>";
+			if (($numerror > 0) || ($numfilesfail > 0)) {
+				$statusicon = "&#9940;";
+				$statuscolor = "#ba4927";
 			}
 			elseif (($numarchived == $numblocks) && ($transaction_enddate != '')) {
-				$statusicon = "<span style='color: green; font-weight: bold'>&#10004;</span>";
+				$statusicon = "&#10004;";
+				$statuscolor = "#4b8c41";
 			}
 			else {
-				$statusicon = "<span style='color: gray; font-weight: bold'>&#10004;</span>";
+				$statusicon = "&#10004;";
+				$statuscolor = "#888";
 			}
 			
 			if ($numblocks > 0) {
 				?>
 				<style>
-					.darkheader { background-color: #666; color: #fff; vertical-align: top; }
+					/*.darkheader { background-color: #666; color: #fff; vertical-align: top; }*/
+					.darkheader { background-color: #ddd; color: #333; vertical-align: top; }
 				</style>
 				<div align="center">
-				<table width="80%" cellspacing="0" cellpadding="4" style="border: solid 2px #333">
+				<table width="90%" cellspacing="0" cellpadding="4" style="border: solid 2px #333">
 					<tr>
-						<td align="center"><?=$statusicon?></td>
-						<td class="darkheader"><span style="font-size: 8pt">User</span><br><?=$transaction_username?></td>
-						<td class="darkheader"><span style="font-size: 8pt">Transaction ID</span><br><?=$transactionid?></td>
-						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><?=date('M j, Y g:ia',strtotime($transaction_startdate))?></td>
-						<td align="left">
-							<img src="horizontalchart.php?b=yes&w=150&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
+						<td align="center" style="background-color: <?=$statuscolor?>; color: #fff" width="5%"><?=$statusicon?></td>
+						<td class="darkheader"><span style="font-size: 8pt" width="20%">User</span><br><b><?=$transaction_username?></b></td>
+						<td class="darkheader"><span style="font-size: 8pt" width="20%">Transaction ID</span><br><?=$transactionid?></td>
+						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><b><?=date('M j, Y g:ia',strtotime($transaction_startdate))?></b></td>
+						<td class="darkheader" align="left" width="30%">
+							<span style="font-size: 8pt">Archived blocks</span><br>
+							<img src="horizontalchart.php?b=yes&w=200&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
 						</td>
 					</tr>
 					<tr>
-						<td colspan="5">
+						<td colspan="5" valign="top">
 							<details>
 							<summary>Upload block details</summary>
 							<?DisplayUploadBlocks($transactionid)?>
@@ -430,19 +451,18 @@
 		<table class="smallgraydisplaytable">
 			<thead>
 				<tr>
+					<th> </th>
 					<th>ID</th>
 					<th>Data type</th>
-					<th>Num files<br><span class="tiny">total/success/fail</span></th>
-					<!--<th>Modality</th>-->
+					<th>Received Files<br><span class="tiny">total/success/fail</span></th>
 					<th>Start Date</th>
 					<th>Status</th>
 					<th>Message</th>
 					<th>End Date</th>
-					<!--<th>Equipment</th>-->
 					<th>Site</th>
 					<th>Project</th>
 					<th>Instance</th>
-					<th>View report</th>
+					<th colspan="2">View reports</th>
 				</tr>
 			</thead>
 		<?
@@ -554,6 +574,23 @@
 					break;
 			}
 			
+			if (($numfilestotal != $numfilessuccess) || ($import_status == 'error')) {
+				$statusicon = "&#9940;";
+				$statuscolor = "#ba4927";
+			}
+			elseif ($import_status == 'archived') {
+				$statusicon = "&#10004;";
+				$statuscolor = "#4b8c41";
+			}
+			//elseif () {
+			//	$statusicon = "&#10004;";
+			//	$statuscolor = "#888";
+			//}
+			else {
+				$statusicon = "";
+				$statuscolor = "";
+			}
+			
 			if ($import_startdate == "0000-00-00 00:00:00") { $import_startdate = "-"; }
 			else { $import_startdate = date("M j, Y g:ia",strtotime($import_startdate)); }
 			if ($import_enddate == "0000-00-00 00:00:00") { $import_enddate = "-"; }
@@ -565,27 +602,32 @@
 			if ($import_fileisseries) { $import_fileisseries = "&#x2713;"; } else { $import_fileisseries = ""; }
 			?>
 			<tr>
-				<td><?=$importrequestid?></td>
-				<td><?=$import_datatype?></td>
-				<td><?=$numfilestotal?>/<?=$numfilessuccess?>/<?=$numfilesfail?></td>
-				<!--<td><?=$import_modality?></td>-->
-				<td style="font-size:8pt"><?=$import_startdate?></td>
-				<td style="font-size:8pt">
+				<td align="center" style="background-color: <?=$statuscolor?>; color: #fff"><?=$statusicon?></td>
+				<td valign="top"><?=$importrequestid?></td>
+				<td valign="top"><?=$import_datatype?></td>
+				<td valign="top"><?=$numfilestotal?>/<?=$numfilessuccess?>/<? if ($numfilesfail > 0) { echo "<span style='color: red; font-weight: bold'>$numfilesfail</span>"; } else { echo $numfilesfail; }?></td>
+				<td valign="top" style="font-size:8pt"><?=$import_startdate?></td>
+				<td valign="top" style="font-size:8pt">
 					<span title="uploading &rarr; pending<br>api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
 					<span title="receiving &rarr; received<br>importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
 					<span title="archiving &rarr; archived<br>parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
 					<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
 				</td>
-				<td><?=$import_message?></td>
-				<td style="font-size:8pt"><?=$import_enddate?></td>
-				<!--<td><?=$import_equipment?></td>-->
-				<td style="font-size:8pt"><?=$sitename?></td>
-				<td style="font-size:8pt"><?=$projectname?></td>
-				<td style="font-size:8pt"><?=$instancename?></td>
-				<td style="font-size:8pt">
+				<td valign="top"><?=$import_message?></td>
+				<td valign="top" style="font-size:8pt"><?=$import_enddate?></td>
+				<td valign="top" style="font-size:8pt"><?=$sitename?></td>
+				<td valign="top" style="font-size:8pt"><?=$projectname?></td>
+				<td valign="top" style="font-size:8pt"><?=$instancename?></td>
+				<td valign="top" style="font-size:8pt">
 					<details>
 					<summary>Upload report</summary>
 					<pre><?=$uploadreport?></pre>
+					</details>
+				</td>
+				<td valign="top" style="font-size:8pt">
+					<details>
+					<summary>Archive report</summary>
+					<pre><?=$archivereport?></pre>
 					</details>
 				</td>
 			</tr>

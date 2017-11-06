@@ -169,6 +169,7 @@ sub ParseDirectory {
 	WriteLog("********** Working on directory [$dir] with importRowID [$importRowID] **********");
 	ModuleRunningCheckIn($scriptname, $db);
 	
+	my $archivereport = "";
 	my $useImportFields = 0;
 	my $importStatus = '';
 	my $importModality = '';
@@ -243,7 +244,8 @@ sub ParseDirectory {
 					chdir($dir);
 					if (lc($file) =~ /\.par$/) {
 						WriteLog("Filetype is .par");
-						my $ret = InsertParRec($file, $importRowID);
+						my ($ret,$report) = InsertParRec($file, $importRowID);
+						$archivereport .= $report;
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
@@ -251,8 +253,9 @@ sub ParseDirectory {
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
+							$archivereport = EscapeMySQLString(trim($archivereport));
 							# change the import status to reflect the error
-							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting PAR/REC: $ret', import_enddate = now() where importrequest_id = '$importRowID'";
+							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting PAR/REC: $ret', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
 							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
@@ -264,7 +267,8 @@ sub ParseDirectory {
 					elsif (lc($file) =~ /\.rec$/) { WriteLog("Filetype is a .rec"); }
 					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/) || (lc($file) =~ /\.edf$/) || (lc($importModality eq 'eeg')) || (lc($importDatatype eq 'eeg')) || (lc($importModality eq 'et')) || (lc($importDatatype eq 'et')) ) {
 						WriteLog("Filetype is one of [.cnt .3dd .dat .edf]");
-						my $ret = InsertEEG($file, $importRowID, uc($importDatatype));
+						my ($ret,$report) = InsertEEG($file, $importRowID, uc($importDatatype));
+						$archivereport .= $report;
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
@@ -272,7 +276,7 @@ sub ParseDirectory {
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
 							# change the import status to reflect the error
-							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting " . uc($importDatatype) . ": $ret', import_enddate = now() where importrequest_id = '$importRowID'";
+							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting " . uc($importDatatype) . ": $ret', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
 							$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 						}
@@ -304,6 +308,13 @@ sub ParseDirectory {
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Not a DICOM file, moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							#move("$dir/$file","$cfg{'problemdir'}/$file");
+							if (trim($importRowID) != "") {
+								$dir = EscapeMySQLString(trim($dir));
+								$file = EscapeMySQLString(trim($file));
+								$sqlstring = "update import_requests set import_status = 'error', import_message = '[$dir/$file] is not a valid DICOM file', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
+								WriteLog($sqlstring);
+								$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+							}
 						}
 					}
 				}
@@ -341,7 +352,7 @@ sub ParseDirectory {
 										# we know these files are part of a complete series
 										# unique to the institution, equipment, modality, patient, DOB, sex, studydatetime, series...
 										# so send them forth
-										my $ret = InsertDICOM($importRowID, @files);
+										my ($ret,$report) = InsertDICOM($importRowID, @files);
 										if ($ret ne "") {
 											WriteLog("InsertDICOM($importRowID, ...) failed: [$ret]");
 										}
@@ -389,7 +400,8 @@ sub ParseDirectory {
 				WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 			}
 		}
-		$sqlstring = "update import_requests set import_status = 'archived', import_message = 'DICOM successfuly archived', import_enddate = now() where importrequest_id = '$importRowID'";
+		$archivereport = EscapeMySQLString(trim($archivereport));
+		$sqlstring = "update import_requests set import_status = 'archived', import_message = 'DICOM successfuly archived', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 		WriteLog($sqlstring);
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
@@ -413,18 +425,10 @@ sub ParseDirectory {
 sub ParseDICOMFile {
 	my ($file) = @_;
 	
-	#print "Parsing $file\n";
 	if ($file !~ /\.dcm$/) {
-		#WriteLog("Renaming to $file.dcm");
 		rename $file, "$file.dcm";
 		$file = "$file.dcm";
 	}
-	
-	# check if its really a dicom file...
-	#my $type = Image::ExifTool::GetFileType($file);
-	#if ($type ne "DICM") {
-	#	return (0,0);
-	#}
 	
 	# get DICOM tags
 	my $exifTool = new Image::ExifTool;
@@ -490,7 +494,9 @@ sub ParseDICOMFile {
 sub InsertDICOM {
 	my ($importRowID, @files) = @_;
 
-	WriteLog("----- Inside InsertDICOM() with [" . scalar @files . "] files -----");
+	my $report = "";
+	
+	$report .= WriteLog("----- Inside InsertDICOM() with [" . scalar @files . "] files -----") . "\n";
 	
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
@@ -521,7 +527,7 @@ sub InsertDICOM {
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my %row = $result->fetchhash;
 		$importID = $row{'importrequest_id'};
 		$importInstanceID = $row{'import_instanceid'};
@@ -535,19 +541,19 @@ sub InsertDICOM {
 		$importAltUIDs = $row{'import_altuids'};
 	}
 	
-	WriteLog("Parsing $files[0]");
+	$report .= WriteLog("Parsing $files[0]") . "\n";
 	my $fsize = -s $files[0];
 	if (-e $files[0]) {
-		WriteLog($files[0] . " exists, size [$fsize] bytes");
+		$report .= WriteLog($files[0] . " exists, size [$fsize] bytes") . "\n";
 	}
 	else {
-		WriteLog($files[0] . " does not exist!");
+		$report .= WriteLog($files[0] . " does not exist!") . "\n";
 	}
 	
 	# get DICOM tags from first file of this series
 	my $type = Image::ExifTool::GetFileType($files[0]);
 	if ($type ne "DICM") {
-		WriteLog("This is not a DICM file");
+		$report .= WriteLog("This is not a DICM file") . "\n";
 	}
 	my $exifTool = new Image::ExifTool;
 	my $info = $exifTool->ImageInfo($files[0]);
@@ -611,7 +617,7 @@ sub InsertDICOM {
 		if ($line =~ /\]\.dInPlaneRot/i) {
 			if (length($line) > 150) {
 				my $idx = index($line, '.dInPlaneRot');
-				WriteLog("Found dInPlaneRot line [$line]");
+				$report .= WriteLog("Found dInPlaneRot line [$line]") . "\n";
 				$line = substr($line,$idx,23);
 			}
 			my @values = split /\s*=\s*/, $line;
@@ -623,14 +629,14 @@ sub InsertDICOM {
 			last;
 		}
 	}
-	WriteLog("PhaseEncodeAngle = [$PhaseEncodeAngle]");
+	$report .= WriteLog("PhaseEncodeAngle = [$PhaseEncodeAngle]") . "\n";
 	
 	# get the other part of the CSA header, the PhaseEncodingDirectionPositive value
 	chdir($cfg{'scriptdir'});
 	my $systemstring = "./gdcmdump -C $dicomfile | grep PhaseEncodingDirectionPositive";
-	WriteLog("Running [$systemstring]");
+	$report .= WriteLog("Running [$systemstring]") . "\n";
 	my $header = trim(`$systemstring`);
-	WriteLog("$header");
+	$report .= WriteLog("$header") . "\n";
 	my @parts = split(',', $header);
 	my $val = "";
 	if (defined($parts[4])) {
@@ -639,7 +645,7 @@ sub InsertDICOM {
 		$val =~ s/'//g;
 		$val = trim($val);
 	}
-	WriteLog("PhaseEncodingDirectionPositive = [$val]");
+	$report .= WriteLog("PhaseEncodingDirectionPositive = [$val]") . "\n";
 	$PhaseEncodingDirectionPositive = EscapeMySQLString(trim($val));
 	$PhaseEncodeAngle = EscapeMySQLString(trim($PhaseEncodeAngle));
 	
@@ -712,11 +718,11 @@ sub InsertDICOM {
 	$PatientSex =~ s/[[:^print:]]+//g;
 	
 	if (($PatientBirthDate eq "") || ($PatientBirthDate eq "XXXXXXXX") || ($PatientBirthDate =~ /[a-z]/i) || ($PatientBirthDate =~ /anonymous/i)) {
-		WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0001-01-01]");
+		$report .= WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0001-01-01]") . "\n";
 		$PatientBirthDate = "0001-01-01";
 	}
 
-	WriteLog("Birthdate: [$PatientBirthDate]");
+	$report .= WriteLog("Birthdate: [$PatientBirthDate]") . "\n";
 	
 	# extract the costcenter
 	if ( $StudyDescription =~ /clinical/i ) {
@@ -730,7 +736,7 @@ sub InsertDICOM {
 		$costcenter = $StudyDescription;
 	}
 	
-	WriteLog("$PatientID - $StudyDescription");
+	$report .= WriteLog("$PatientID - $StudyDescription") . "\n";
 	
 	# create the possible ID search lists and arrays
 	my @altuidlist = '';
@@ -748,8 +754,8 @@ sub InsertDICOM {
 	}
 	# check if the project and subject exist
 	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
-	WriteLog("[$sqlstring]");
-	WriteLog("Checking if the subject exists by UID [$PatientID] or AltUID [$PatientID]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
+	$report .= WriteLog("Checking if the subject exists by UID [$PatientID] or AltUID [$PatientID]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $projectcount = $row{'projectcount'};
@@ -762,14 +768,13 @@ sub InsertDICOM {
 		# search for an existing subject by name, dob, gender
 		if (!$importMatchIDOnly) {
 			$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = left('$PatientSex',1) and birthdate = '$PatientBirthDate' and isactive = 1";
-			#WriteLog("[$sqlstring]");
-			WriteLog("Subject not found by UID. Checking if the subject exists using PatientName [$PatientName] PatientSex [$PatientSex] PatientBirthDate [$PatientBirthDate]");
+			$report .= WriteLog("Subject not found by UID. Checking if the subject exists using PatientName [$PatientName] PatientSex [$PatientSex] PatientBirthDate [$PatientBirthDate]") . "\n";
 			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows > 0) {
 				my %row = $result->fetchhash;
 				$subjectRealUID = uc($row{'uid'});
 				$subjectRowID = $row{'subject_id'};
-				WriteLog("This subject exists. UID [$subjectRealUID]");
+				$report .= WriteLog("This subject exists. UID [$subjectRealUID]") . "\n";
 				$IL_subjectcreated = 0;
 				$subjectFoundByName = 1;			
 			}
@@ -779,30 +784,27 @@ sub InsertDICOM {
 			my $count = 0;
 			$subjectRealUID = "";
 			
-			WriteLog("Searching for an unused UID");
+			$report .= WriteLog("Searching for an unused UID") . "\n";
 			# create a new subjectRealUID
 			do {
 				$subjectRealUID = CreateUID('S');
 				$sqlstring = "SELECT * FROM `subjects` WHERE uid = '$subjectRealUID'";
-				#WriteLog("[$sqlstring]");
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				$count = $result->numrows;
 			} while ($count > 0);
 			
-			WriteLog("This subject does not exist. New UID: $subjectRealUID");
+			$report .= WriteLog("This subject does not exist. New UID: $subjectRealUID") . "\n";
 			my $uuid = 'uuid()';
 			if ($importUUID eq '') { $uuid = "'$importUUID'"; }
 			$sqlstring = "insert into subjects (name, birthdate, gender, weight, height, uid, uuid, uuid2) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$PatientSize', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))), ucase($uuid) )";
-			#WriteLog("[$sqlstring]");
-			WriteLog("Adding new subject [$subjectRealUID]");
+			$report .= WriteLog("Adding new subject [$subjectRealUID]") . "\n";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
 			
 			# insert the PatientID as an alternate UID
 			if (trim($PatientID) ne '') {
 				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ('$subjectRowID', '$PatientID')";
-				#WriteLog("[$sqlstring]");
-				WriteLog("Adding alternate UID [$PatientID]");
+				$report .= WriteLog("Adding alternate UID [$PatientID]") . "\n";
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$IL_subjectcreated = 1;
@@ -815,31 +817,29 @@ sub InsertDICOM {
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
 		$subjectRealUID = uc($row{'uid'});
-		WriteLog("Found [$subjectRealUID,$subjectRowID] using [SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')]");
+		$report .= WriteLog("Found [$subjectRealUID,$subjectRowID] using [SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')]") . "\n";
 		
 		# insert the PatientID as an alternate UID
 		if (trim($PatientID) ne '') {
 			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ('$subjectRowID', '$PatientID')";
-			#WriteLog("[$sqlstring]");
-			WriteLog("Adding alternate UID [$PatientID]");
+			$report .= WriteLog("Adding alternate UID [$PatientID]") . "\n";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		}
 		$IL_subjectcreated = 0;
 	}
 	
 	if ($subjectRealUID eq "") {
-		return "Error, UID is blank";
+		return ("Error, UID is blank", $report);
 	}
 	
 	# check if the subject is part of a family, if not create a family for it
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
+	$report .= WriteLog("Checking to see if this subject [$subjectRowID] is part of a family") . "\n";
 	if ($result->numrows > 0) {
-		#WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
 		$familyRowID = $row{'family_id'};
-		WriteLog("This subject is part of a family [$familyRowID]");
+		$report .= WriteLog("This subject is part of a family [$familyRowID]") . "\n";
 		$IL_familycreated = 0;
 	}
 	else {
@@ -847,11 +847,10 @@ sub InsertDICOM {
 		$familyRealUID = "";
 		
 		# create family UID
-		WriteLog("Subject is not part of family, finding a unique family UID");
+		$report .= WriteLog("Subject is not part of family, finding a unique family UID") . "\n";
 		do {
 			$familyRealUID = CreateUID('F');
 			$sqlstring = "SELECT * FROM `families` WHERE family_uid = '$familyRealUID'";
-			#WriteLog("[$sqlstring]");
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$count = $result->numrows;
 		} while ($count > 0);
@@ -859,14 +858,12 @@ sub InsertDICOM {
 		
 		# create familyRowID if it doesn't exist
 		$sqlstring = "insert into families (family_uid, family_createdate, family_name) values ('$familyRealUID', now(), 'Proband-$subjectRealUID')";
-		#WriteLog("[$sqlstring]");
-		WriteLog("Create a family [$familyRealUID] for this subject");
+		$report .= WriteLog("Create a family [$familyRealUID] for this subject") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$familyRowID = $result2->insertid;
 		
 		$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())";
-		#WriteLog("[$sqlstring]");
-		WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]");
+		$report .= WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]") . "\n";
 		my $result3 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_familycreated = 1;
 	}
@@ -878,7 +875,6 @@ sub InsertDICOM {
 	
 	# get the projectRowID
 	$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
-	#WriteLog("[$sqlstring]");
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
 	if (($importProjectID eq '') || ($importProjectID eq '0') || ($importProjectID == 0)) {
@@ -886,7 +882,7 @@ sub InsertDICOM {
 	}
 	else {
 		# need to create the project if it doesn't exist
-		WriteLog("Project [$costcenter] does not exist, assigning project id [$importProjectID]");
+		$report .= WriteLog("Project [$costcenter] does not exist, assigning project id [$importProjectID]") . "\n";
 		$projectRowID = $importProjectID;
 	}
 	
@@ -894,19 +890,17 @@ sub InsertDICOM {
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		#WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
 		$enrollmentRowID = $row{'enrollment_id'};
-		WriteLog("Subject is enrolled in this project [$projectRowID]: enrollment [$enrollmentRowID]");
+		$report .= WriteLog("Subject is enrolled in this project [$projectRowID]: enrollment [$enrollmentRowID]") . "\n";
 		$IL_enrollmentcreated = 0;
 	}
 	else {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
-		#WriteLog("[$sqlstring]");
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
-		WriteLog("Subject was not enrolled in this project. New enrollment [$enrollmentRowID]");
+		$report .= WriteLog("Subject was not enrolled in this project. New enrollment [$enrollmentRowID]") . "\n";
 		$IL_enrollmentcreated = 1;
 	}
 
@@ -915,7 +909,7 @@ sub InsertDICOM {
 		foreach my $altuid (@altuidlist) {
 			if ($altuid ne "") {
 				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, enrollment_id) values ('$subjectRowID', '$altuid', '$enrollmentRowID')";
-				WriteLog("[$sqlstring]");
+				$report .= WriteLog("[$sqlstring]") . "\n";
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
@@ -927,8 +921,8 @@ sub InsertDICOM {
 	# HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance
 	my $studyFound = 0;
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_num = '$AccessionNumber' or ((study_datetime between date_sub('$StudyDateTime', interval 30 second) and date_add('$StudyDateTime', interval 30 second)) and study_modality = '$Modality' and study_site = '$StationName'))";
-	WriteLog("[$sqlstring]");
-	WriteLog("Checking if this study exists: enrollmentID [$enrollmentRowID] study(accession)Number [$AccessionNumber] StudyDateTime [$StudyDateTime] Modality [$Modality] StationName [$StationName]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
+	$report .= WriteLog("Checking if this study exists: enrollmentID [$enrollmentRowID] study(accession)Number [$AccessionNumber] StudyDateTime [$StudyDateTime] Modality [$Modality] StationName [$StationName]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		while (my %row = $result->fetchhash) {
@@ -937,20 +931,20 @@ sub InsertDICOM {
 			my $foundInstanceRowID = -1;
 			# check which instance this study is enrolled in
 			my $sqlstringB = "select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = $study_id))";
-			WriteLog("[$sqlstringB]");
+			$report .= WriteLog("[$sqlstringB]") . "\n";
 			my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
-			WriteLog("SQL returned [" . $resultB->numrows . "] rows");
+			$report .= WriteLog("SQL returned [" . $resultB->numrows . "] rows") . "\n";
 			my %rowB = $resultB->fetchhash;
 			$foundInstanceRowID = $rowB{'instance_id'};
-			WriteLog("Found instance ID [$foundInstanceRowID] comparing to import instance ID [$importInstanceID]");
+			$report .= WriteLog("Found instance ID [$foundInstanceRowID] comparing to import instance ID [$importInstanceID]") . "\n";
 			
 			# if the study already exists within the instance specified in the project, then update the existing study, otherwise create a new one
 			if (($foundInstanceRowID == $importInstanceID) || ($importInstanceID eq '') || ($importInstanceID == 0)) {
 				$studyFound = 1;
 				$studyRowID = $study_id;
 				my $sqlstringA = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_ageatscan = $patientage, study_height = '$PatientSize', study_weight = '$PatientWeight', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_nidbsite = '$importSiteID', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
-				WriteLog("[$sqlstringA]");
-				WriteLog("StudyID [$study_id] exists, updating");
+				$report .= WriteLog("[$sqlstringA]") . "\n";
+				$report .= WriteLog("StudyID [$study_id] exists, updating") . "\n";
 				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 				$IL_studycreated = 0;
 				last;
@@ -960,7 +954,7 @@ sub InsertDICOM {
 	if (!$studyFound) {
 		# create studyRowID if it doesn't exist
 		$sqlstring = "SELECT max(a.study_num) 'study_num' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id WHERE b.subject_id = $subjectRowID";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$study_num = $row{'study_num'} + 1;
@@ -968,8 +962,8 @@ sub InsertDICOM {
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname')";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
-		WriteLog("[$sqlstring]");
-		WriteLog("Study did not exist, creating");
+		$report .= WriteLog("[$sqlstring]") . "\n";
+		$report .= WriteLog("Study did not exist, creating") . "\n";
 		
 		$IL_studycreated = 1;
 	}
@@ -1013,7 +1007,6 @@ sub InsertDICOM {
 	if (uc($Modality) eq "MR") {
 		$dbModality = "mr";
 		$sqlstring = "select mrseries_id from mr_series where study_id = $studyRowID and series_num = $SeriesNumber";
-		#WriteLog("[$sqlstring]");
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
@@ -1028,14 +1021,14 @@ sub InsertDICOM {
 			}
 			$sqlstring .= " where mrseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-			WriteLog("This MR series [$SeriesNumber] exists, updating");
+			$report .= WriteLog("This MR series [$SeriesNumber] exists, updating") . "\n";
 			$IL_seriescreated = 0;
 			
 			# if the series is being updated, the QA information might be incorrect or be based on the wrong number of files, so delete the mr_qa row
 			$sqlstring = "delete from mr_qa where mrseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			
-			WriteLog("Deleted from mr_qa... about to delete from qc_results");
+			$report .= WriteLog("Deleted from mr_qa... about to delete from qc_results") . "\n";
 			
 			# ... and delete the qc module rows
 			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
@@ -1049,7 +1042,7 @@ sub InsertDICOM {
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			}
 			
-			WriteLog("Deleted from qc_results... about to delete from qc_moduleseries");
+			$report .= WriteLog("Deleted from qc_results... about to delete from qc_moduleseries") . "\n";
 			$sqlstring = "delete from qc_moduleseries where series_id = $seriesRowID and modality = 'mr'";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		}
@@ -1060,14 +1053,13 @@ sub InsertDICOM {
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
-			WriteLog("MR series [$SeriesNumber] did not exist, creating");
+			$report .= WriteLog("MR series [$SeriesNumber] did not exist, creating") . "\n";
 			$IL_seriescreated = 1;
 		}
 	}
 	elsif (uc($Modality) eq "CT") {
 		$dbModality = "ct";
 		$sqlstring = "select ctseries_id from ct_series where study_id = $studyRowID and series_num = $SeriesNumber";
-		#WriteLog("[$sqlstring]");
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
@@ -1075,7 +1067,7 @@ sub InsertDICOM {
 			
 			$sqlstring = "update ct_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_spacingx = '$pixelX', series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_imgrows = '$Rows', series_imgcols = '$Columns', series_imgslices = '$zsize', series_numfiles = '$numfiles', series_contrastbolusagent = '$ContrastBolusAgent', series_bodypartexamined = '$BodyPartExamined', series_scanoptions = '$ScanOptions', series_kvp = '$KVP', series_datacollectiondiameter = '$DataCollectionDiameter', series_contrastbolusroute = '$ContrastBolusRoute', series_rotationdirection = '$RotationDirection', series_exposuretime = '$ExposureTime', series_xraytubecurrent = '$XRayTubeCurrent', series_filtertype = '$FilterType', series_generatorpower = '$GeneratorPower', series_convolutionkernel = '$ConvolutionKernel', series_status = 'complete' where ctseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-			WriteLog("This CT series [$SeriesNumber] exists, updating");
+			$report .= WriteLog("This CT series [$SeriesNumber] exists, updating") . "\n";
 			$IL_seriescreated = 0;
 		}
 		else {
@@ -1086,7 +1078,7 @@ sub InsertDICOM {
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
-			WriteLog("CT series [$SeriesNumber] did not exist, creating");
+			$report .= WriteLog("CT series [$SeriesNumber] did not exist, creating") . "\n";
 			$IL_seriescreated = 1;
 		}
 	}
@@ -1094,7 +1086,7 @@ sub InsertDICOM {
 		# this is the catch all for modalities which don't have a table in the database
 		$dbModality = "ot";
 		$sqlstring = "select otseries_id from ot_series where study_id = $studyRowID and series_num = $SeriesNumber";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
@@ -1102,7 +1094,7 @@ sub InsertDICOM {
 			
 			$sqlstring = "update ot_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_sequencename = '$SequenceName', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', numfiles = '$numfiles', series_status = 'complete' where otseries_id = $seriesRowID";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-			WriteLog("This OT series [$SeriesNumber] exists, updating");
+			$report .= WriteLog("This OT series [$SeriesNumber] exists, updating") . "\n";
 			$IL_seriescreated = 0;
 		}
 		else {
@@ -1112,25 +1104,24 @@ sub InsertDICOM {
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
-			WriteLog("OT series [$SeriesNumber] did not exist, creating");
+			$report .= WriteLog("OT series [$SeriesNumber] did not exist, creating") . "\n";
 			$IL_seriescreated = 1;
 		}
 	}
 	
 	# copy the file to the archive, update db info
-	WriteLog("SeriesRowID: [$seriesRowID]");
+	$report .= WriteLog("SeriesRowID: [$seriesRowID]") . "\n";
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/dicom";
-	WriteLog("OutDir: $outdir");
-	#mkpath($outdir, {mode => 0777});
+	$report .= WriteLog("OutDir: $outdir") . "\n";
 	MakePath($outdir);
 	
 	# rename the files and move them to the archive
 	# SubjectUID_EnrollmentRowID_SeriesNum_FileNum
 	# S1234ABC_SP1_5_0001.dcm
 	
-	WriteLog("CWD: " . getcwd);
+	$report .= WriteLog("CWD: " . getcwd) . "\n";
 	# check if there are .dcm files already in the archive
 	my $cwd = getcwd;
 	chdir($outdir);
@@ -1139,25 +1130,22 @@ sub InsertDICOM {
 	@existingdcmfiles = sort @existingdcmfiles;
 	my $numexistingdcmfiles = @existingdcmfiles;
 	# rename EXISTING files in the output directory
-	WriteLog("Checking for existing files in the outputdir [$outdir]");
+	$report .= WriteLog("Checking for existing files in the outputdir [$outdir]") . "\n";
 	if ($numexistingdcmfiles > 0) {
 	
 		# check all files to see if its the same study datetime, patient name, dob, gender, series #
 		# if anything is different, move the file to a UID/Study/Series/dicom/existing directory
 		
 		# if they're all the same, consolidate the files into one list of new and old, remove duplicates
-		WriteLog("There are $numexistingdcmfiles existing files in $outdir. Beginning renaming...");
-		
-		#WriteLog("CWD: " . getcwd);
+		$report .= WriteLog("There are $numexistingdcmfiles existing files in $outdir. Beginning renaming...") . "\n";
 		
 		my $filecnt = 0;
 		# rename the existing files to make them unique
 		foreach my $file (sort @existingdcmfiles) {
 		
-			# check if its alrady in the intended filename format
+			# check if its already in the intended filename format
 			my @parts = split('_', $file);
 			if (@parts == 8) {
-				#WriteLog("$file had 8 parts to the filename, skipping renaming");
 				next;
 			}
 			
@@ -1175,15 +1163,14 @@ sub InsertDICOM {
 			$SOPInstance = crc32($SOPInstance);
 
 			my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime" . "_$SOPInstance.dcm";
-			#WriteLog("Renaming [$file] to [$newname]");
 			
 			move("$outdir/$file","$outdir/$newname");
 			$filecnt++;
 		}
-		WriteLog("Done renaming [$filecnt] files");
+		$report .= WriteLog("Done renaming [$filecnt] files") . "\n";
 	}
 	
-	WriteLog("Beginning renumbering of new files");
+	$report .= WriteLog("Beginning renumbering of new files") . "\n";
 	# renumber the NEWLY added files to make them unique
 	# create a SQL string for batch insert
 	my $sqlstringA = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ";
@@ -1202,48 +1189,35 @@ sub InsertDICOM {
 		$ContentTime =~ s/\.//g;
 		$SOPInstance = crc32($SOPInstance);
 		
-		#WriteLog("CWD: " . getcwd);
 		# sort by slice #, or instance #
-		#WriteLog("$file: SliceNumber: $SliceNumber, InstanceNumber: $InstanceNumber, SliceLocation: $SliceLocation, Acquisition Time: $AcquisitionTime");
 		
 		my $newname = $subjectRealUID . "_$study_num" . "_$SeriesNumber" . "_" . sprintf('%05d',$SliceNumber) . "_" . sprintf('%05d',$InstanceNumber) . "_$AcquisitionTime" . "_$ContentTime" . "_$SOPInstance.dcm";
-		#WriteLog("  [$newname]");
 
 		# check if a file with the same name already exists
 		if (-e "$outdir/$newname") {
-		#	WriteLog("File [$outdir/$newname] is a duplicate. I normally would delete the file, but not today");
-			# if so, rename it randomly and dump it to a duplicates directory
-			#unless (-d "$outdir/duplicates") {
-			#	mkdir "$outdir/duplicates";
-			#}
-			#unlink($file);
-			#move($file, "$outdir/duplicates/" . GenerateRandomString(20) . "$newname");
 			$IL_overwrote_existing = 1;
 		}
 		else {
-		#	WriteLog("Moved $file -> $outdir/$newname");
-		#	move($file,"$outdir/$newname");
 			$IL_overwrote_existing = 0;
 		}
 		
 		# move the file, and overwrite if necessary
 		my $systemstring = "mv -f $file $outdir/$newname";
-		#WriteLog("[$systemstring] (" . `$systemstring` . ")");
 		`$systemstring 2>&1`;
 		
 		# insert an import log record
 		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
 	}
-	WriteLog("Done renaming files A");
+	$report .= WriteLog("Done renaming files A") . "\n";
 	$sqlstringA .= join(',', @sqlinserts);
 	my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-	WriteLog("Done renaming files B");
+	$report .= WriteLog("Done renaming files B") . "\n";
 	
 	# get the size of the dicom files and update the DB
 	my $dirsize = 0;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
-	WriteLog("Got size [$dirsize] and numfiles [$numfiles] for directory [$outdir]");
-	WriteLog("CWD: " . getcwd);
+	$report .= WriteLog("Got size [$dirsize] and numfiles [$numfiles] for directory [$outdir]") . "\n";
+	$report .= WriteLog("CWD: " . getcwd) . "\n";
 	
 	# check if its an EPI sequence, but not a perfusion sequence
 	if (($SequenceName =~ m/^epfid2d1_/) || ($SequenceName =~ m/^epfid2d1_64/) || ($SequenceName =~ m/^epfid2d1_128/)) {
@@ -1266,12 +1240,12 @@ sub InsertDICOM {
 		$zsize = $numfiles;
 	}
 	
-	WriteLog("zsize [$zsize]");
+	$report .= WriteLog("zsize [$zsize]") . "\n";
 	
 	# update the database with the correct number of files/BOLD reps
 	if (lc($dbModality) eq "mr") {
 		$sqlstring = "update " . lc($dbModality) . "_series set series_size = '$dirsize', numfiles = '$numfiles', bold_reps = '$boldreps' where " . lc($dbModality) . "series_id = $seriesRowID";
-		WriteLog($sqlstring);
+		$report .= WriteLog($sqlstring) . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	}
 
@@ -1279,15 +1253,15 @@ sub InsertDICOM {
 	CreateThumbnail("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber", $mrtype, $Columns, $Rows);
 
 	# if a beh directory exists for this series from an import, move it to the final series directory
-	WriteLog("Checking for [$cfg{'incomingdir'}/$importID/beh]");
+	$report .= WriteLog("Checking for [$cfg{'incomingdir'}/$importID/beh]") . "\n";
 	if (-d "$cfg{'incomingdir'}/$importID/beh") {
-		WriteLog("Attempting to mkpath($cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh)");
+		$report .= WriteLog("Attempting to mkpath($cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh)") . "\n";
 		MakePath("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh");
 		my $systemstring = "mv -v $cfg{'incomingdir'}/$importID/beh/* $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh/";
-		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+		$report .= WriteLog("$systemstring (" . `$systemstring 2>&1` . ")") . "\n";
 		
 		# update the database to reflect the 
-		WriteLog("GetDirectorySize($cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh)");
+		$report .= WriteLog("GetDirectorySize($cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh)") . "\n";
 		
 		my ($behdirsize, $behnumfiles) = GetDirectorySize("$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/beh");
 		$sqlstring = "update " . lc($dbModality) . "_series set beh_size = '$behdirsize', numfiles_beh = '$behnumfiles' where " . lc($dbModality) . "series_id = $seriesRowID";
@@ -1295,29 +1269,29 @@ sub InsertDICOM {
 	}
 	
 	# change the permissions to 777 so the webpage can read/write the directories
-	WriteLog("About to change permissions on $cfg{'archivedir'}/$subjectRealUID");
+	$report .= WriteLog("About to change permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
 	$systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
-	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+	$report .= WriteLog("$systemstring (" . `$systemstring 2>&1` . ")") . "\n";
 	# change back to original directory before leaving
-	WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID");
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	if (-d $backdir) {
-		WriteLog("Directory [$backdir] already exists");
+		$report .= WriteLog("Directory [$backdir] already exists") . "\n";
 	}
 	else {
-		WriteLog("Directory [$backdir] does not exist. About to create it...");
+		$report .= WriteLog("Directory [$backdir] does not exist. About to create it...") . "\n";
 		#mkpath($backdir, { verbose => 1, mode => 0777} );
 		MakePath($backdir);
-		WriteLog("Finished creating [$backdir]");
+		$report .= WriteLog("Finished creating [$backdir]") . "\n";
 	}
-	WriteLog("About to copy to the backup directory");
+	$report .= WriteLog("About to copy to the backup directory") . "\n";
 	$systemstring = "cp -R $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
-	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-	WriteLog("Finished copying to the backup directory");
+	$report .= WriteLog("$systemstring (" . `$systemstring 2>&1` . ")") . "\n";
+	$report .= WriteLog("Finished copying to the backup directory") . "\n";
 	
-	return "";
+	return ("", $report);
 }
 
 
@@ -1329,8 +1303,8 @@ sub InsertParRec {
 	
 	my $report = "";
 	
-	WriteLog("----- In InsertParRec($file, $importRowID) -----");
-	#exit(0);
+	$report .= WriteLog("----- In InsertParRec($file, $importRowID) -----") . "\n";
+
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
 	
@@ -1388,7 +1362,7 @@ sub InsertParRec {
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my %row = $result->fetchhash;
 		$importID = $row{'importrequest_id'};
 		$importInstanceID = $row{'import_instanceid'};
@@ -1406,7 +1380,7 @@ sub InsertParRec {
 	my @lines = <FH>;
 	close FH or die "Inside ParseParRec(): Cannot close [$file]: $!";
 
-	WriteLog("-----$file-----");
+	$report .= WriteLog("-----$file-----") . "\n";
 	
 	foreach my $line (@lines) {
 		$line = trim($line);
@@ -1416,17 +1390,14 @@ sub InsertParRec {
 			my @parts = split(/:/, $line);
 			$PatientName = trim($parts[1]);
 			$PatientID = $PatientName;
-			#WriteLog("$PatientName");
 		}
 		if ($line =~ m/Examination name/) {
 			my @parts = split(/:/, $line);
 			$StudyDescription = trim($parts[1]);
-			#WriteLog("$StudyDescription");
 		}
 		if ($line =~ m/Protocol name/) {
 			my @parts = split(/:/, $line);
 			$ProtocolName = trim($parts[1]);
-			#WriteLog("$ProtocolName");
 			$SeriesDescription = $ProtocolName;
 		}
 		if ($line =~ m/Examination date\/time/) {
@@ -1438,7 +1409,6 @@ sub InsertParRec {
 			$date =~ s/\./\-/g;
 			$StudyDateTime = "$date $time";
 			$SeriesDateTime = "$date $time";
-			#WriteLog("$date $time");
 		}
 		if ($line =~ m/Series Type/) {
 			my @parts = split(/:/, $line);
@@ -1446,27 +1416,22 @@ sub InsertParRec {
 			$Modality =~ s/Image//gi;
 			$Modality =~ s/SERIES//gi;
 			$Modality = trim(uc($Modality));
-			#WriteLog("$Modality");
 		}
 		if ($line =~ m/Acquisition nr/) {
 			my @parts = split(/:/, $line);
 			$SeriesNumber = trim($parts[1]);
-			#WriteLog("$SeriesNumber");
 		}
 		if ($line =~ m/Max. number of slices\/locations/) {
 			my @parts = split(/:/, $line);
 			$zsize = trim($parts[1]);
-			#WriteLog("$zsize");
 		}
 		if ($line =~ m/Max. number of dynamics/) {
 			my @parts = split(/:/, $line);
 			$boldreps = trim($parts[1]);
-			#WriteLog("$boldreps");
 		}
 		if ($line =~ m/Technique/) {
 			my @parts = split(/:/, $line);
 			$SequenceName = trim($parts[1]);
-			#WriteLog("$SequenceName");
 		}
 		if ($line =~ m/Scan resolution/) {
 			my @parts = split(/:/, $line);
@@ -1474,12 +1439,10 @@ sub InsertParRec {
 			my @parts2 = split(/\s+/, $resolution);
 			$Columns = $parts2[0];
 			$Rows = $parts2[1];
-			#WriteLog("$Columns,$Rows");
 		}
 		if ($line =~ m/Repetition time/) {
 			my @parts = split(/:/, $line);
 			$RepetitionTime = trim($parts[1]);
-			#WriteLog("$RepetitionTime");
 		}
 		# get the first line of the image list... should contain flip angle
 		if (($line !~ m/^\./) && ($line !~ m/^#/) && (trim($line) ne "")) {
@@ -1499,14 +1462,13 @@ sub InsertParRec {
 			$EchoTime = trim($parts[30]);
 			# 36 - flip
 			$FlipAngle = trim($parts[35]);
-			#WriteLog("$pixelX, $pixelY, $SliceThickness, $xspacing, $yspacing, $EchoTime, $FlipAngle");
 			last;
 		}
 	}
 	
 	# check if anything is funny
-	if (trim($SeriesNumber) eq "") { return "SeriesNumber blank"; }
-	if (trim($PatientName) eq "") { return "PatientName blank"; }
+	if (trim($SeriesNumber) eq "") { return ("SeriesNumber blank",$report); }
+	if (trim($PatientName) eq "") { return ("PatientName blank",$report); }
 
 	# set the import log variables
 	$IL_modality_orig = $Modality;
@@ -1545,7 +1507,7 @@ sub InsertParRec {
 		$costcenter = $StudyDescription;
 	}
 	
-	WriteLog("$PatientID - $StudyDescription");
+	$report .= WriteLog("$PatientID - $StudyDescription") . "\n";
 	
 	# create the possible ID search lists and arrays
 	my @altuidlist = '';
@@ -1563,7 +1525,7 @@ sub InsertParRec {
 	}
 	# check if the project and subject exist
 	$sqlstring = "select (SELECT count(*) FROM `projects` WHERE project_costcenter = '$costcenter') 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')) 'subjectcount'";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
 	my $projectcount = $row{'projectcount'};
@@ -1571,11 +1533,11 @@ sub InsertParRec {
 	
 	# if subject doesn't exist, create the subject
 	if ($subjectcount < 1) {
-		WriteLog("Subject count < 1");
+		$report .= WriteLog("Subject count < 1") . "\n";
 
 		# search for an existing subject by name, dob, gender
 		$sqlstring = "select subject_id, uid from subjects where name like '%$PatientName%' and gender = '$PatientSex' and birthdate = '$PatientBirthDate' and isactive = 1";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		if ($result->numrows > 0) {
 			my %row = $result->fetchhash;
@@ -1596,7 +1558,7 @@ sub InsertParRec {
 				$count = $result->numrows;
 			} while ($count > 0);
 			
-			WriteLog("New subject ID: $subjectRealUID");
+			$report .= WriteLog("New subject ID: $subjectRealUID") . "\n";
 			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))) )";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
@@ -1607,7 +1569,7 @@ sub InsertParRec {
 		# get the existing subject ID
 		#$sqlstring = "select subject_id from subjects where uid = '$PatientID'";
 		$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
-		WriteLog("The PatientID [$PatientID] exists, getting the SubjectRowID and SubjectRealUID [$sqlstring]");
+		$report .= WriteLog("The PatientID [$PatientID] exists, getting the SubjectRowID and SubjectRealUID [$sqlstring]") . "\n";
 		my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		my %row = $result->fetchhash;
 		$subjectRowID = $row{'subject_id'};
@@ -1616,22 +1578,21 @@ sub InsertParRec {
 	}
 	
 	if ($subjectRealUID eq "") {
-		WriteLog("ERROR: UID blank");
-		return "Error, UID blank";
+		$report .= WriteLog("ERROR: UID blank") . "\n";
+		return ("Error, UID blank",$report);
 	}
 	else {
-		WriteLog("UID found [$subjectRealUID]");
+		$report .= WriteLog("UID found [$subjectRealUID]") . "\n";
 	}
 	
 	# check if the subject is part of a family, if not create a family for it
-	WriteLog("Checking to see if this subject [$subjectRowID] is part of a family");
+	$report .= WriteLog("Checking to see if this subject [$subjectRowID] is part of a family") . "\n";
 	$sqlstring = "select family_id from family_members where subject_id = $subjectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		#WriteLog("[$sqlstring]");
 		my %row = $result->fetchhash;
 		$familyRowID = $row{'family_id'};
-		WriteLog("This subject is part of a family [$familyRowID]");
+		$report .= WriteLog("This subject is part of a family [$familyRowID]") . "\n";
 		$IL_familycreated = 0;
 	}
 	else {
@@ -1639,26 +1600,22 @@ sub InsertParRec {
 		$familyRealUID = "";
 		
 		# create family UID
-		WriteLog("Subject is not part of family, finding a unique family UID");
+		$report .= WriteLog("Subject is not part of family, finding a unique family UID") . "\n";
 		do {
 			$familyRealUID = CreateUID('F');
 			$sqlstring = "SELECT * FROM `families` WHERE family_uid = '$familyRealUID'";
-			#WriteLog("[$sqlstring]");
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$count = $result->numrows;
 		} while ($count > 0);
-		#$familyRealUID = CreateUID('F');
 		
 		# create familyRowID if it doesn't exist
 		$sqlstring = "insert into families (family_uid, family_createdate, family_name) values ('$familyRealUID', now(), 'Proband-$subjectRealUID')";
-		#WriteLog("[$sqlstring]");
-		WriteLog("Create a family [$familyRealUID] for this subject");
+		$report .= WriteLog("Create a family [$familyRealUID] for this subject") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$familyRowID = $result2->insertid;
 		
 		$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())";
-		#WriteLog("[$sqlstring]");
-		WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]");
+		$report .= WriteLog("Adding this subject [$subjectRealUID] to the family [$familyRealUID]") . "\n";
 		my $result3 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_familycreated = 1;
 	}
@@ -1671,7 +1628,7 @@ sub InsertParRec {
 	if (($importProjectID eq '') || ($importProjectID == 0)) {
 		# get the projectRowID
 		$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$projectRowID = $row{'project_id'};
@@ -1684,7 +1641,7 @@ sub InsertParRec {
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my %row = $result->fetchhash;
 		$enrollmentRowID = $row{'enrollment_id'};
 		$IL_enrollmentcreated = 0;
@@ -1692,7 +1649,7 @@ sub InsertParRec {
 	else {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
 		$IL_enrollmentcreated = 1;
@@ -1702,7 +1659,7 @@ sub InsertParRec {
 	# basically check for a unique studydatetime, modality, and site (StationName), because we already know this subject/project/etc is unique
 	# also checks the accession number against the study_num to see if this study was pre-registered
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_num = '$AccessionNumber' or (study_datetime = '$StudyDateTime' and study_modality = '$Modality' and study_site = '$StationName'))";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
@@ -1710,7 +1667,7 @@ sub InsertParRec {
 		$study_num = $row{'study_num'};
 		
 		$sqlstring = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_studycreated = 0;
 	}
@@ -1723,7 +1680,7 @@ sub InsertParRec {
 		#$study_num = $result->numrows + 1;
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$IL_studycreated = 1;
@@ -1731,37 +1688,36 @@ sub InsertParRec {
 	
 	# ----- insert or update the series -----
 	$sqlstring = "select mrseries_id from mr_series where study_id = $studyRowID and series_num = $SeriesNumber";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$seriesRowID = $row{'mrseries_id'};
 		$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime',series_desc = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', bold_reps = '$boldreps', numfiles = '$numfiles', series_status = 'complete' where mrseries_id = $seriesRowID";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
 		$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_sequencename, series_num, series_tr, series_te, series_flip, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, bold_reps, numfiles, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', $boldreps, '$numfiles', 'parrec', 'complete', 'parsedicom.pl', now())";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
 		$IL_seriescreated = 0;
 	}
 		
 	# copy the file to the archive, update db info
-	WriteLog("$seriesRowID");
+	$report .= WriteLog("$seriesRowID") . "\n";
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/parrec";
-	WriteLog("$outdir");
-	#mkpath($outdir, {mode => 0777});
+	$report .= WriteLog("$outdir");
 	MakePath($outdir);
 	
 	# move the files into the outdir
-	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$parfile -> $outdir/$parfile");
-	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$recfile -> $outdir/$recfile");
+	$report .= WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$parfile -> $outdir/$parfile") . "\n";
+	$report .= WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$recfile -> $outdir/$recfile") . "\n";
 	move($cfg{'incomingdir'} . "/$importID/$parfile","$outdir/$parfile");
 	move($cfg{'incomingdir'} . "/$importID/$recfile","$outdir/$recfile");
 
@@ -1780,37 +1736,35 @@ sub InsertParRec {
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
 	$sqlstring = "update mr_series set series_size = $dirsize where mrseries_id = $seriesRowID";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
-	#my $origDir = getcwd;
-	#chdir("$cfg{'archivedir'}");
-	WriteLog("Current directory: " . getcwd);
+	$report .= WriteLog("Current directory: " . getcwd) . "\n";
 	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
-	WriteLog("$systemstring (" . `$systemstring` . ")");
+	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
 	#WriteLog("Changing back to $origDir");
 	#chdir($origDir);
-	WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID");
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	if (-d $backdir) {
-		WriteLog("Directory [$backdir] already exists");
+		$report .= WriteLog("Directory [$backdir] already exists") . "\n";
 	}
 	else {
-		WriteLog("Directory [$backdir] does not exist. About to create it...");
+		$report .= WriteLog("Directory [$backdir] does not exist. About to create it...") . "\n";
 		#mkpath($backdir, { verbose => 1, mode => 0777} );
 		MakePath($backdir);
-		WriteLog("Finished creating [$backdir]");
+		$report .= WriteLog("Finished creating [$backdir]") . "\n";
 	}
-	WriteLog("About to copy to the backup directory");
+	$report .= WriteLog("About to copy to the backup directory") . "\n";
 	$systemstring = "cp -Rv $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
-	WriteLog("$systemstring (" . `$systemstring` . ")");
-	my $b = WriteLog("Finished copying to the backup directory");
+	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
+	$report .= WriteLog("Finished copying to the backup directory") . "\n";
 	
-	return '';
+	return ("",$report);
 }
 
 
@@ -1820,7 +1774,9 @@ sub InsertParRec {
 sub InsertEEG {
 	my ($file, $importRowID, $Modality) = @_;
 	
-	WriteLog("----- In InsertEEG($file, $importRowID) -----");
+	my $report = "";
+	
+	$report .= WriteLog("----- In InsertEEG($file, $importRowID) -----") . "\n";
 	# import log variables
 	my ($IL_modality_orig, $IL_patientname_orig, $IL_patientdob_orig, $IL_patientsex_orig, $IL_stationname_orig, $IL_institution_orig, $IL_studydatetime_orig, $IL_seriesdatetime_orig, $IL_seriesnumber_orig, $IL_studydesc_orig, $IL_patientage_orig, $IL_modality_new, $IL_patientname_new, $IL_patientdob_new, $IL_patientsex_new, $IL_stationname_new, $IL_institution_new, $IL_studydatetime_new, $IL_seriesdatetime_new, $IL_seriesnumber_new, $IL_studydesc_new, $IL_seriesdesc_orig, $IL_protocolname_orig, $IL_patientage_new, $IL_subject_uid, $IL_study_num, $IL_enrollmentid, $IL_project_number, $IL_seriescreated, $IL_studycreated, $IL_subjectcreated, $IL_familycreated, $IL_enrollmentcreated, $IL_overwrote_existing);
 	
@@ -1877,7 +1833,7 @@ sub InsertEEG {
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my %row = $result->fetchhash;
 		$importID = $row{'importrequest_id'};
 		$importSiteID = $row{'import_siteid'};
@@ -1890,9 +1846,9 @@ sub InsertEEG {
 		$importAltUIDs = $row{'import_altuids'};
 	}
 	else {
-		WriteLog("ImportID [$importRowID] not found. Using default import parameters");
+		$report .= WriteLog("ImportID [$importRowID] not found. Using default import parameters") . "\n";
 	}
-	WriteLog($file);
+	$report .= WriteLog($file) . "\n";
 	# split the filename into the appropriate fields
 	# AltUID_Date_task_operator_series.*
 	my $FileName = $file;
@@ -1914,7 +1870,7 @@ sub InsertEEG {
 	$SeriesNumber = trim($parts[4]);
 	$FileNumber = trim($parts[5]);
 	
-	WriteLog("Before fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]");
+	$report .= WriteLog("Before fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]") . "\n";
 	
 	# check if anything is funny
 	if ($StudyDateTime eq "") { $StudyDateTime = "0000-00-00 00:00:00"; }
@@ -1925,7 +1881,7 @@ sub InsertEEG {
 	if (($SeriesNumber eq "") || (!looks_like_number($SeriesNumber))) { $SeriesNumber = 1; }
 	if ($FileNumber eq "") { $FileNumber = 0; }
 	
-	WriteLog("After fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]");
+	$report .= WriteLog("After fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]") . "\n";
 
 	# set the import log variables
 	$IL_modality_orig = $Modality;
@@ -1943,7 +1899,7 @@ sub InsertEEG {
 	$IL_patientage_orig = 0;
 	
 	# ----- check if this subject/study/series/etc exists -----
-	WriteLog("$PatientID - $StudyDescription");
+	$report .= WriteLog("$PatientID - $StudyDescription") . "\n";
 	
 	# create the possible ID search lists and arrays
 	my @altuidlist = '';
@@ -1961,7 +1917,7 @@ sub InsertEEG {
 	}
 	# check if the project and subject exist
 	$sqlstring = "SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in ($SQLIDs) or a.uid = SHA1('$PatientID') or b.altuid in ($SQLIDs) or b.altuid = SHA1('$PatientID')";
-	WriteLog("SQL: [$sqlstring]");
+	$report .= WriteLog("SQL: [$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		%row = $result->fetchhash;
@@ -1969,26 +1925,26 @@ sub InsertEEG {
 		$subjectRealUID = uc($row{'uid'});
 		if (trim($subjectRowID) eq '') {
 			# subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload, so note this failure in the import_logs table
-			return "Subject with ID [$PatientID] or alternate IDs [$SQLIDs] does not exist";
+			return ("Subject with ID [$PatientID] or alternate IDs [$SQLIDs] does not exist", $report);
 		}
 	}
 	else {
 		# subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload, so note this failure in the import_logs table
-		return "Subject with ID [$PatientID] does not exist";
+		return ("Subject with ID [$PatientID] does not exist", $report);
 	}
 	
 	if ($subjectRealUID eq "") {
-		WriteLog("ERROR: UID blank");
-		return "Error, UID blank";
+		$report .= WriteLog("ERROR: UID blank") . "\n";
+		return ("Error, UID blank", $report);
 	}
 	else {
-		WriteLog("UID found [$subjectRealUID]");
+		$report .= WriteLog("UID found [$subjectRealUID]") . "\n";
 	}
 	
 	# get the generic projectRowID if the requested one is empty
 	if ((!defined($projectRowID)) || ($projectRowID eq "")) {
 		$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
-		#WriteLog("[$sqlstring]");
+		#WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
 		$projectRowID = $row{'project_id'};
@@ -1998,7 +1954,7 @@ sub InsertEEG {
 	$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectRowID";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my %row = $result->fetchhash;
 		$enrollmentRowID = $row{'enrollment_id'};
 		$IL_enrollmentcreated = 0;
@@ -2006,7 +1962,7 @@ sub InsertEEG {
 	else {
 		# create enrollmentRowID if it doesn't exist
 		$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$enrollmentRowID = $result2->insertid;
 		$IL_enrollmentcreated = 1;
@@ -2016,7 +1972,7 @@ sub InsertEEG {
 	# basically check for a unique studydatetime, modality, and site (StationName), because we already know this subject/project/etc is unique
 	# also checks the accession number against the study_num to see if this study was pre-registered
 	$sqlstring = "select study_id, study_num from studies where enrollment_id = $enrollmentRowID and (study_datetime = '$StudyDateTime' and study_modality = '$Modality' and study_site = '$StationName')";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
@@ -2024,7 +1980,7 @@ sub InsertEEG {
 		$study_num = $row{'study_num'};
 		
 		$sqlstring = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_studycreated = 0;
 	}
@@ -2037,7 +1993,7 @@ sub InsertEEG {
 		#$study_num = $result->numrows + 1;
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$IL_studycreated = 1;
@@ -2045,42 +2001,41 @@ sub InsertEEG {
 	
 	# ----- insert or update the series -----
 	$sqlstring = "select " . lc($Modality) . "series_id from " . lc($Modality) . "_series where study_id = $studyRowID and series_num = $SeriesNumber";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	if ($result->numrows > 0) {
 		my %row = $result->fetchhash;
 		$seriesRowID = $row{lc($Modality) . "series_id"};
 		$sqlstring = "update " . lc($Modality) . "_series set series_datetime = '$SeriesDateTime', series_desc = '$ProtocolName', series_protocol = '$ProtocolName', series_numfiles = '$numfiles', series_notes = '$importSeriesNotes' where " . lc($Modality) . "series_id = $seriesRowID";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$IL_seriescreated = 0;
 	}
 	else {
 		# create seriesRowID if it doesn't exist
 		$sqlstring = "insert into " . lc($Modality) . "_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_notes, series_createdby) values ($studyRowID, '$SeriesDateTime', '$ProtocolName', '$ProtocolName', '$SeriesNumber', '$numfiles', '$importSeriesNotes', 'parsedicom.pl')";
-		WriteLog("[$sqlstring]");
+		$report .= WriteLog("[$sqlstring]") . "\n";
 		my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$seriesRowID = $result2->insertid;
 		$IL_seriescreated = 1;
 	}
 		
 	# copy the file to the archive, update db info
-	WriteLog("$seriesRowID");
+	$report .= WriteLog("$seriesRowID") . "\n";
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/" . lc($Modality);
-	WriteLog("$outdir");
+	$report .= WriteLog("$outdir") . "\n";
 	#mkpath($outdir, {mode => 0777});
 	MakePath($outdir);
 	
-	WriteLog();
 	# move the files into the outdir
-	WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$file -> $outdir/$file");
+	$report .= WriteLog("Moving " . $cfg{'incomingdir'} . "/$importID/$file -> $outdir/$file") . "\n";
 	move($cfg{'incomingdir'} . "/$importID/$file","$outdir/$file");
 
 	# insert an import log record
 	#$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', '" . uc($Modality) . "', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-	WriteLog("Inside InsertEEG() [$sqlstring]");
+	#$report .= WriteLog("Inside InsertEEG() [$sqlstring]") . "\n";
 	#$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log
@@ -2091,33 +2046,33 @@ sub InsertEEG {
 	my $dirsize;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
 	$sqlstring = "update " . lc($Modality) . "_series set series_size = $dirsize where " . lc($Modality) . "series_id = $seriesRowID";
-	WriteLog("[$sqlstring]");
+	$report .= WriteLog("[$sqlstring]") . "\n";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
-	WriteLog("Current directory: " . getcwd);
+	WriteLog("Current directory: " . getcwd) . "\n";
 	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
-	WriteLog("$systemstring (" . `$systemstring` . ")");
+	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
-	WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID");
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	if (-d $backdir) {
-		WriteLog("Directory [$backdir] already exists");
+		$report .= WriteLog("Directory [$backdir] already exists") . "\n";
 	}
 	else {
-		WriteLog("Directory [$backdir] does not exist. About to create it...");
+		$report .= WriteLog("Directory [$backdir] does not exist. About to create it...") . "\n";
 		#mkpath($backdir, { verbose => 1, mode => 0777} );
 		MakePath($backdir);
-		WriteLog("Finished creating [$backdir]");
+		$report .= WriteLog("Finished creating [$backdir]") . "\n";
 	}
-	WriteLog("About to copy to the backup directory");
+	$report .= WriteLog("About to copy to the backup directory") . "\n";
 	$systemstring = "cp -Rv $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/* $backdir";
-	WriteLog("$systemstring (" . `$systemstring` . ")");
-	WriteLog("Finished copying to the backup directory");
+	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
+	$report .= WriteLog("Finished copying to the backup directory") . "\n";
 	
-	return "";
+	return ("", $report);
 }
 
 
