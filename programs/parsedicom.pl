@@ -249,11 +249,11 @@ sub ParseDirectory {
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
+							$archivereport = EscapeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'PARREC', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
-							$archivereport = EscapeMySQLString(trim($archivereport));
 							# change the import status to reflect the error
 							$sqlstring = "update import_requests set import_status = 'error', import_message = 'Problem inserting PAR/REC: $ret', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 							WriteLog($sqlstring);
@@ -272,6 +272,7 @@ sub ParseDirectory {
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
+							$archivereport = EscapeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '" . uc($importDatatype) . "', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
@@ -311,6 +312,7 @@ sub ParseDirectory {
 							if (trim($importRowID) != "") {
 								$dir = EscapeMySQLString(trim($dir));
 								$file = EscapeMySQLString(trim($file));
+								$archivereport = EscapeMySQLString(trim($archivereport));
 								$sqlstring = "update import_requests set import_status = 'error', import_message = '[$dir/$file] is not a valid DICOM file', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 								WriteLog($sqlstring);
 								$result = SQLQuery($sqlstring, __FILE__, __LINE__);
