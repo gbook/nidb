@@ -1764,8 +1764,9 @@
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$newstudyid?></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_alternateid?></a></td>
-							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_type?></a></td>
+							<!--<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_type?></a></td>-->
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
+							<td class="<?=$rowstyle?>"><?=$study_site?></td>
 							<td class="<?=$rowstyle?>"><?=$study_datetime?></td>
 							<td class="<?=$rowstyle?>"><?=$series_datetime?></td>
 						<? } else { ?>
@@ -4167,6 +4168,7 @@
 			<td class="seriesheader">StudyID</td>
 			<td class="seriesheader">Alt StudyID</td>
 			<td class="seriesheader">Study #</td>
+			<td class="seriesheader">Site</td>
 			<td class="seriesheader">Study Date</td>
 			<td class="seriesheader">Series Time</td>
 			<td class="seriesheader">X</td>

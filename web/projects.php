@@ -68,17 +68,29 @@
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
 	$param_sequence = GetVariable("param_sequence");
-	$param_tr = GetVariable("param_tr");
-	$param_te = GetVariable("param_te");
-	$param_ti = GetVariable("param_ti");
-	$param_flip = GetVariable("param_flip");
-	$param_xdim = GetVariable("param_xdim");
-	$param_ydim = GetVariable("param_ydim");
-	$param_zdim = GetVariable("param_zdim");
-	$param_tdim = GetVariable("param_tdim");
-	$param_slicethickness = GetVariable("param_slicethickness");
-	$param_slicespacing = GetVariable("param_slicespacing");
-	$param_bandwidth = GetVariable("param_bandwidth");
+	$param_tr_min = GetVariable("param_tr_min");
+	$param_tr_max = GetVariable("param_tr_max");
+	$param_te_min = GetVariable("param_te_min");
+	$param_te_max = GetVariable("param_te_max");
+	$param_ti_min = GetVariable("param_ti_min");
+	$param_ti_max = GetVariable("param_ti_max");
+	$param_flip_min = GetVariable("param_flip_min");
+	$param_flip_max = GetVariable("param_flip_max");
+	$param_xdim_min = GetVariable("param_xdim_min");
+	$param_xdim_max = GetVariable("param_xdim_max");
+	$param_ydim_min = GetVariable("param_ydim_min");
+	$param_ydim_max = GetVariable("param_ydim_max");
+	$param_zdim_min = GetVariable("param_zdim_min");
+	$param_zdim_max = GetVariable("param_zdim_max");
+	$param_tdim_min = GetVariable("param_tdim_min");
+	$param_tdim_max = GetVariable("param_tdim_max");
+	$param_slicethickness_min = GetVariable("param_slicethickness_min");
+	$param_slicethickness_max = GetVariable("param_slicethickness_max");
+	$param_slicespacing_min = GetVariable("param_slicespacing_min");
+	$param_slicespacing_max = GetVariable("param_slicespacing_max");
+	$param_bandwidth_min = GetVariable("param_bandwidth_min");
+	$param_bandwidth_max = GetVariable("param_bandwidth_max");
+
 	$existingstudy = GetVariable("existingstudy");
 	$existingseries = GetVariable("existingseries");
 
@@ -163,7 +175,7 @@
 			EditMRScanParams($id);
 			break;
 		case 'updatemrparams':
-			UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth);
+			UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr_min, $param_tr_max, $param_te_min, $param_te_max, $param_ti_min, $param_ti_max, $param_flip_min, $param_flip_max, $param_xdim_min, $param_xdim_max, $param_ydim_min, $param_ydim_max, $param_zdim_min, $param_zdim_max, $param_tdim_min, $param_tdim_max, $param_slicethickness_min, $param_slicethickness_max, $param_slicespacing_min, $param_slicespacing_max, $param_bandwidth_min, $param_bandwidth_max);
 			EditMRScanParams($id);
 			break;
 		case 'loadmrparams':
@@ -882,7 +894,7 @@
 					}
 					
 					/* we have all the params, now do the inserts into the scan params table */
-					UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth);
+					UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_tr, $param_te, $param_te, $param_ti, $param_ti, $param_flip, $param_flip, $param_xdim, $param_xdim, $param_ydim, $param_ydim, $param_zdim, $param_zdim, $param_tdim, $param_tdim, $param_slicethickness, $param_slicethickness, $param_slicespacing, $param_slicespacing, $param_bandwidth, $param_bandwidth);
 				}
 				else {
 					?><span class="staticmessage">No MR series found for [<?=$study?>]</span><?
@@ -898,7 +910,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateMRParams --------------------- */
 	/* -------------------------------------------- */
-	function UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_te, $param_ti, $param_flip, $param_xdim, $param_ydim, $param_zdim, $param_tdim, $param_slicethickness, $param_slicespacing, $param_bandwidth) {
+	function UpdateMRParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr_min, $param_tr_max, $param_te_min, $param_te_max, $param_ti_min, $param_ti_max, $param_flip_min, $param_flip_max, $param_xdim_min, $param_xdim_max, $param_ydim_min, $param_ydim_max, $param_zdim_min, $param_zdim_max, $param_tdim_min, $param_tdim_max, $param_slicethickness_min, $param_slicethickness_max, $param_slicespacing_min, $param_slicespacing_max, $param_bandwidth_min, $param_bandwidth_max) {
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
@@ -906,24 +918,35 @@
 			
 			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
 			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
-			$tr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr[$i])),3,'.','');
-			$te = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te[$i])),3,'.','');
-			$ti = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti[$i])),3,'.','');
-			$flip = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip[$i])),3,'.','');
-			$xdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim[$i])),3,'.','');
-			$ydim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim[$i])),3,'.','');
-			$zdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim[$i])),3,'.','');
-			$tdim = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim[$i])),3,'.','');
-			$slicethickness = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness[$i])),3,'.','');
-			$slicespacing = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing[$i])),3,'.','');
-			$bandwidth = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth[$i])),3,'.','');
+			$tr_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr_min[$i])),3,'.','');
+			$tr_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr_max[$i])),3,'.','');
+			$te_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te_min[$i])),3,'.','');
+			$te_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te_max[$i])),3,'.','');
+			$ti_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti_min[$i])),3,'.','');
+			$ti_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti_max[$i])),3,'.','');
+			$flip_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip_min[$i])),3,'.','');
+			$flip_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip_max[$i])),3,'.','');
+			$xdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim_min[$i])),3,'.','');
+			$xdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim_max[$i])),3,'.','');
+			$ydim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim_min[$i])),3,'.','');
+			$ydim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim_max[$i])),3,'.','');
+			$zdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim_min[$i])),3,'.','');
+			$zdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim_max[$i])),3,'.','');
+			$tdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim_min[$i])),3,'.','');
+			$tdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim_max[$i])),3,'.','');
+			$slicethickness_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness_min[$i])),3,'.','');
+			$slicethickness_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness_max[$i])),3,'.','');
+			$slicespacing_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing_min[$i])),3,'.','');
+			$slicespacing_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing_max[$i])),3,'.','');
+			$bandwidth_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth_min[$i])),3,'.','');
+			$bandwidth_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth_max[$i])),3,'.','');
 			
 			if ($protocol != "") {
 				if ($paramid == "") {
-					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr, te, ti, flip, xdim, ydim, zdim, tdim, slicethickness, slicespacing, bandwidth) values ('$protocol', '$sequence', '$id', '$tr', '$te', '$ti', '$flip', '$xdim', '$ydim', '$zdim', '$tdim', '$slicethickness', '$slicespacing', '$bandwidth')";
+					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr_min, tr_max, te_min, te_max, ti_min, ti_max, flip_min, flip_max, xdim_min, xdim_max, ydim_min, ydim_max, zdim_min, zdim_max, tdim_min, tdim_max, slicethickness_min, slicethickness_max, slicespacing_min, slicespacing_max, bandwidth_min, bandwidth_max) values ('$protocol', '$sequence', '$id', '$tr_min', '$tr_max', '$te_min', '$te_max', '$ti_min', '$ti_max', '$flip_min', '$flip_max', '$xdim_min', '$xdim_max', '$ydim_min', '$ydim_max', '$zdim_min', '$zdim_max', '$tdim_min', '$tdim_max', '$slicethickness_min', '$slicethickness_max', '$slicespacing_min', '$slicespacing_max', '$bandwidth_min', '$bandwidth_max')";
 				}
 				else {
-					$sqlstring = "update ignore mr_scanparams set protocol_name = '$protocol', sequence_name = '$sequence', tr = '$tr', te = '$te', ti = '$ti', flip = '$flip', xdim = '$xdim', ydim = '$ydim', zdim = '$zdim', tdim = '$tdim', slicethickness = '$slicethickness', slicespacing = '$slicespacing', bandwidth = '$bandwidth' where mrscanparam_id = $paramid";
+					$sqlstring = "update ignore mr_scanparams set protocol_name = '$protocol', sequence_name = '$sequence', tr_min = '$tr_min', tr_max = '$tr_max', te_min = '$te_min', te_max = '$te_max', ti_min = '$ti_min', ti_max = '$ti_max', flip_min = '$flip_min', flip_max = '$flip_max', xdim_min = '$xdim_min', xdim_max = '$xdim_max', ydim_min = '$ydim_min', ydim_max = '$ydim_max', zdim_min = '$zdim_min', zdim_max = '$zdim_max', tdim_min = '$tdim_min', tdim_max = '$tdim_max', slicethickness_min = '$slicethickness_min', slicethickness_max = '$slicethickness_max', slicespacing_min = '$slicespacing_min', slicespacing_max = '$slicespacing_max', bandwidth_min = '$bandwidth_min', bandwidth_max = '$bandwidth_max' where mrscanparam_id = $paramid";
 				}
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1983,17 +2006,28 @@
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$parms['protocol'][$i] = $row['protocol_name'];
 				$parms['sequence'][$i] = $row['sequence_name'];
-				$parms['tr'][$i] = number_format($row['tr'],3,'.','');
-				$parms['te'][$i] = number_format($row['te'],3,'.','');
-				$parms['ti'][$i] = number_format($row['ti'],3,'.','');
-				$parms['flip'][$i] = number_format($row['flip'],3,'.','');
-				$parms['xdim'][$i] = number_format($row['xdim'],3,'.','');
-				$parms['ydim'][$i] = number_format($row['ydim'],3,'.','');
-				$parms['zdim'][$i] = number_format($row['zdim'],3,'.','');
-				$parms['tdim'][$i] = number_format($row['tdim'],3,'.','');
-				$parms['slicethickness'][$i] = number_format($row['slicethickness'],3,'.','');
-				$parms['slicespacing'][$i] = number_format($row['slicespacing'],3,'.','');
-				$parms['bandwidth'][$i] = number_format($row['bandwidth'],3,'.','');
+				$parms['tr_min'][$i] = number_format($row['tr_min'],3,'.','');
+				$parms['tr_max'][$i] = number_format($row['tr_max'],3,'.','');
+				$parms['te_min'][$i] = number_format($row['te_min'],3,'.','');
+				$parms['te_max'][$i] = number_format($row['te_max'],3,'.','');
+				$parms['ti_min'][$i] = number_format($row['ti_min'],3,'.','');
+				$parms['ti_max'][$i] = number_format($row['ti_max'],3,'.','');
+				$parms['flip_min'][$i] = number_format($row['flip_min'],3,'.','');
+				$parms['flip_max'][$i] = number_format($row['flip_max'],3,'.','');
+				$parms['xdim_min'][$i] = number_format($row['xdim_min'],3,'.','');
+				$parms['xdim_max'][$i] = number_format($row['xdim_max'],3,'.','');
+				$parms['ydim_min'][$i] = number_format($row['ydim_min'],3,'.','');
+				$parms['ydim_max'][$i] = number_format($row['ydim_max'],3,'.','');
+				$parms['zdim_min'][$i] = number_format($row['zdim_min'],3,'.','');
+				$parms['zdim_max'][$i] = number_format($row['zdim_max'],3,'.','');
+				$parms['tdim_min'][$i] = number_format($row['tdim_min'],3,'.','');
+				$parms['tdim_max'][$i] = number_format($row['tdim_max'],3,'.','');
+				$parms['slicethickness_min'][$i] = number_format($row['slicethickness_min'],3,'.','');
+				$parms['slicethickness_max'][$i] = number_format($row['slicethickness_max'],3,'.','');
+				$parms['slicespacing_min'][$i] = number_format($row['slicespacing_min'],3,'.','');
+				$parms['slicespacing_max'][$i] = number_format($row['slicespacing_max'],3,'.','');
+				$parms['bandwidth_min'][$i] = number_format($row['bandwidth_min'],3,'.','');
+				$parms['bandwidth_max'][$i] = number_format($row['bandwidth_max'],3,'.','');
 				$i++;
 			}
 			$numparms = $i;
@@ -2046,23 +2080,39 @@
 								$nummismatch[$i] = 0;
 								if (($protocol1 != $parms['protocol'][$i]) && ($protocol2 != $parms['protocol'][$i])) { $rowmatch = false; $nummismatch[$i]++; }
 								if ($sequence != $parms['sequence'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($tr != $parms['tr'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($te != $parms['te'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($ti != $parms['ti'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($flip != $parms['flip'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($dimx != $parms['xdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($dimy != $parms['ydim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($dimz != $parms['zdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($dimt != $parms['tdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($slicethickness != $parms['slicethickness'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($slicespacing != $parms['slicespacing'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($bandwidth != $parms['bandwidth'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+
+								$localdebug = 0;
+								if (!between($tr, $parms['tr_min'][$i], $parms['tr_max'][$i])) { if ($localdebug) { echo "TR didn't match (" . $parms['tr_min'][$i] . " - $tr - " . $parms['tr_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($te, $parms['te_min'][$i], $parms['te_max'][$i])) { if ($localdebug) { echo "TE didn't match (" . $parms['te_min'][$i] . " - $te - " . $parms['te_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($ti, $parms['ti_min'][$i], $parms['ti_max'][$i])) { if ($localdebug) { echo "TI didn't match (" . $parms['ti_min'][$i] . " - $ti - " . $parms['ti_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($flip, $parms['flip_min'][$i], $parms['flip_max'][$i])) { if ($localdebug) { echo "Flip didn't match (" . $parms['flip_min'][$i] . " - $flip - " . $parms['flip_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($dimx, $parms['dimx_min'][$i], $parms['dimx_max'][$i])) { if ($localdebug) { echo "dimx didn't match (" . $parms['dimx_min'][$i] . " - $dimx - " . $parms['dimx_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($dimy, $parms['dimy_min'][$i], $parms['dimy_max'][$i])) { if ($localdebug) { echo "dimy didn't match (" . $parms['dimy_min'][$i] . " - $dimy - " . $parms['dimy_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($dimz, $parms['dimz_min'][$i], $parms['dimz_max'][$i])) { if ($localdebug) { echo "dimz didn't match (" . $parms['dimz_min'][$i] . " - $dimz - " . $parms['dimz_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($dimt, $parms['dimt_min'][$i], $parms['dimt_max'][$i])) { if ($localdebug) { echo "dimt didn't match (" . $parms['dimt_min'][$i] . " - $dimt - " . $parms['dimt_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($slicethickness, $parms['slicethickness_min'][$i], $parms['slicethickness_max'][$i])) { if ($localdebug) { echo "slicethickness didn't match (" . $parms['slicethickness_min'][$i] . " - $slicethickness - " . $parms['slicethickness_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($slicespacing, $parms['slicespacing_min'][$i], $parms['slicespacing_max'][$i])) { if ($localdebug) { echo "slicespacing didn't match (" . $parms['slicespacing_min'][$i] . " - $slicespacing - " . $parms['slicespacing_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
+								if (!between($bandwidth, $parms['bandwidth_min'][$i], $parms['bandwidth_max'][$i])) { if ($localdebug) { echo "bandwidth didn't match (" . $parms['bandwidth_min'][$i] . " - $bandwidth - " . $parms['bandwidth_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
 								
+								//if ($tr != $parms['tr'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($te != $parms['te'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($ti != $parms['ti'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($flip != $parms['flip'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($dimx != $parms['xdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($dimy != $parms['ydim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($dimz != $parms['zdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($dimt != $parms['tdim'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($slicethickness != $parms['slicethickness'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($slicespacing != $parms['slicespacing'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+								//if ($bandwidth != $parms['bandwidth'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
+
 								if ($rowmatch) { $matched = true; break; }
+								
 							}
 							//PrintVariable($nummismatch);
 							
 							if ($matched) {
+								//echo "[[[[[[[MATCHED]]]]]]]";
 								?>
 								<tr style="font-size: 9pt">
 									<td style="width: 30px"></td>
@@ -2114,6 +2164,7 @@
 									</tr>
 								<?
 								/* loop through the possible matches */
+								/*
 								$limit = 0;
 								foreach ($idx as $i) {
 									$parm_protocol = $parms['protocol'][$i];
@@ -2150,7 +2201,7 @@
 									if (++$limit >= 2) {
 										break;
 									}
-								}
+								} */
 								?></table>
 								</td>
 								</tr>
@@ -2191,19 +2242,30 @@
 			$paramid = $row['mrscanparam_id'];
 			$protocol = $row['protocol_name'];
 			$sequence = $row['sequence_name'];
-			$tr = $row['tr'];
-			$te = $row['te'];
-			$ti = $row['ti'];
-			$flip = $row['flip'];
-			$xdim = $row['xdim'];
-			$ydim = $row['ydim'];
-			$zdim = $row['zdim'];
-			$tdim = $row['tdim'];
-			$slicethickness = $row['slicethickness'];
-			$slicespacing = $row['slicespacing'];
-			$bandwidth = $row['bandwidth'];
+			$tr_min = $row['tr_min'];
+			$tr_max = $row['tr_max'];
+			$te_min = $row['te_min'];
+			$te_max = $row['te_max'];
+			$ti_min = $row['ti_min'];
+			$ti_max = $row['ti_max'];
+			$flip_min = $row['flip_min'];
+			$flip_max = $row['flip_max'];
+			$xdim_min = $row['xdim_min'];
+			$xdim_max = $row['xdim_max'];
+			$ydim_min = $row['ydim_min'];
+			$ydim_max = $row['ydim_max'];
+			$zdim_min = $row['zdim_min'];
+			$zdim_max = $row['zdim_max'];
+			$tdim_min = $row['tdim_min'];
+			$tdim_max = $row['tdim_max'];
+			$slicethickness_min = $row['slicethickness_min'];
+			$slicethickness_max = $row['slicethickness_max'];
+			$slicespacing_min = $row['slicespacing_min'];
+			$slicespacing_max = $row['slicespacing_max'];
+			$bandwidth_min = $row['bandwidth_min'];
+			$bandwidth_max = $row['bandwidth_max'];
 
-			DisplayMRScanParamLine($paramid, $protocol, $sequence, $tr, $te, $ti, $flip, $xdim, $ydim, $zdim, $tdim, $slicethickness, $slicespacing, $bandwidth);
+			DisplayMRScanParamLine($paramid, $protocol, $sequence, $tr_min, $tr_max, $te_min, $te_max, $ti_min, $ti_max, $flip_min, $flip_max, $xdim_min, $xdim_max, $ydim_min, $ydim_max, $zdim_min, $zdim_max, $tdim_min, $tdim_max, $slicethickness_min, $slicethickness_max, $slicespacing_min, $slicespacing_max, $bandwidth_min, $bandwidth_max);
 		}
 		
 		for ($i=0;$i<5;$i++) {
@@ -2261,9 +2323,9 @@
 					<th>X dim</th>
 					<th>Y dim</th>
 					<th>Z dim</th>
-					<th>T dim</th>
+					<th>T dim<br><span class="tiny">#BOLD reps</span></th>
 					<th>Slice thickness</th>
-					<th>Spacing between slice centers</th>
+					<th>Spacing between<br>slice centers</th>
 					<th>Bandwidth</th>
 				</tr>
 			</thead>
@@ -2274,22 +2336,22 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRScanParamLine ------------- */
 	/* -------------------------------------------- */
-	function DisplayMRScanParamLine($rowid="", $protocol="", $sequence="", $tr="", $te="", $ti="", $flip="", $xdim="", $ydim="", $zdim="", $tdim="", $slicethickness="", $slicespacing="", $bandwidth="") {
+	function DisplayMRScanParamLine($rowid="", $protocol="", $sequence="", $tr_min="", $tr_max="", $te_min="", $te_max="", $ti_min="", $ti_max="", $flip_min="", $flip_max="", $xdim_min="", $xdim_max="", $ydim_min="", $ydim_max="", $zdim_min="", $zdim_max="", $tdim_min="", $tdim_max="", $slicethickness_min="", $slicethickness_max="", $slicespacing_min="", $slicespacing_max="", $bandwidth_min="", $bandwidth_max="") {
 		?><tr>
 			<input type="hidden" name="param_rowid[]" value="<?=$rowid?>">
 			<td><input type="text" name="param_protocol[]" value="<?=$protocol?>"></td>
 			<td><input type="text" name="param_sequence[]" value="<?=$sequence?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_tr[]" value="<?=$tr?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_te[]" value="<?=$te?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_ti[]" value="<?=$ti?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_flip[]" value="<?=$flip?>"></td>
-			<td><input type="number" style="width: 65px" name="param_xdim[]" value="<?=$xdim?>"></td>
-			<td><input type="number" style="width: 65px" name="param_ydim[]" value="<?=$ydim?>"></td>
-			<td><input type="number" style="width: 65px" name="param_zdim[]" value="<?=$zdim?>"></td>
-			<td><input type="number" style="width: 65px" name="param_tdim[]" value="<?=$tdim?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_slicethickness[]" value="<?=$slicethickness?>"></td>
-			<td><input type="text" size="5" maxlength="8" name="param_slicespacing[]" value="<?=$slicespacing?>"></td>
-			<td><input type="text" size="7" maxlength="8" name="param_bandwidth[]" value="<?=$bandwidth?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_tr_min[]" value="<?=$tr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_tr_max[]" value="<?=$tr_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_te_min[]" value="<?=$te_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_te_max[]" value="<?=$te_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_ti_min[]" value="<?=$ti_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_ti_max[]" value="<?=$ti_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_flip_min[]" value="<?=$flip_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_flip_max[]" value="<?=$flip_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_xdim_min[]" value="<?=$xdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_xdim_max[]" value="<?=$xdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_ydim_min[]" value="<?=$ydim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_ydim_max[]" value="<?=$ydim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_zdim_min[]" value="<?=$zdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_zdim_max[]" value="<?=$zdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_tdim_min[]" value="<?=$tdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_tdim_max[]" value="<?=$tdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_min[]" value="<?=$slicethickness_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_max[]" value="<?=$slicethickness_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_min[]" value="<?=$slicespacing_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_max[]" value="<?=$slicespacing_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_min[]" value="<?=$bandwidth_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_max[]" value="<?=$bandwidth_max?>"></td>
 		</tr><?
 	}
 	
