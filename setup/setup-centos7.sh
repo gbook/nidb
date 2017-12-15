@@ -163,6 +163,10 @@ chown -R $NIDBUSER:$NIDBUSER /var/lib/php/session
 echo "------ Restarting httpd ------"
 systemctl restart httpd.service
 
+# secure the mysql installation
+echo "----------- Securing MySQL/MariaDB installation -------------"
+mysql_secure_installation
+
 echo "------ Setting up MySQL database - default password is 'password' ------"
 mysqladmin -u root password '${MYSQLROOTPASS}'
 echo "Assigning permissions to mysql root account"
@@ -222,10 +226,6 @@ echo "Creating default database"
 cd ${NIDBROOT}/install/setup
 mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by '${MYSQLROOTPASS}'; flush privileges;"
 mysql -uroot -ppassword nidb < nidb.sql
-
-# secure the mysql installation
-echo "----------- Securing MySQL/MariaDB installation -------------"
-mysql_secure_installation
 
 # ---------- dcm4che ----------
 echo "----------------- Installing DICOM receiver -----------------"
