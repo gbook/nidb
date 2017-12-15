@@ -170,13 +170,13 @@ echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
 echo "CREATE USER '${MYSQLUSER}'@'%' identified by '${MYSQLPASS}'" >> ~/tempsql.txt
 echo "GRANT ALL PRIVILEGES on *.* to ${MYSQLUSER}@'%'" >> ~/tempsql.txt
 mysql -uroot -p${MYSQLROOTPASS} < ~/tempsql.txt
-rm ~/tempsql.txt
+#rm ~/tempsql.txt
 
 echo "------ Install phpMyAdmin ------"
 #wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
 wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-english.zip
 unzip phpMyAdmin-latest-english.zip
-mv phpMyAdmin-latest-english /var/www/html/phpMyAdmin
+mv phpMyAdmin-*-english /var/www/html/phpMyAdmin
 chmod 777 /var/www/html
 chown -R $NIDBUSER:$NIDBUSER /var/www/html
 sed '$ i $cfg[''McryptDisableWarning''] = TRUE;' /var/www/html/phpMyAdmin/config.sample.inc.php;
@@ -255,7 +255,7 @@ echo "@hourly /bin/find /tmp/* -mmin +120 -exec rm -rf {} \;  # delete old tmp f
 echo "@daily find ${NIDBROOT}/ftp/* -mtime +7 -exec rm -rf {} \; # delete old downloads" >> tempcron.txt
 echo "@daily find ${NIDBROOT}/tmp/* -mtime +7 -exec rm -rf {} \; # delete old tmp files" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
-rm ~/tempcron.txt
+#rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
