@@ -30,6 +30,9 @@ echo "   If you would like to change these variables, exit this"
 echo "   script, edit the variables and run this script again."
 echo
 echo "   You must be connected to the internet to install NiDB"
+echo "   This script will run mostly unattended, but you will be "
+echo "   asked to provide input occasionally, especially when"
+echo "   securing the MariaDB installation"
 echo 
 echo "******************************************************"
 echo 
@@ -165,7 +168,7 @@ mysqladmin -u root password '${MYSQLROOTPASS}'
 echo "Assigning permissions to mysql root account"
 echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
 echo "CREATE USER '${MYSQLUSER}'@'%' identified by '${MYSQLPASS}'" >> ~/tempsql.txt
-echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
+echo "GRANT ALL PRIVILEGES on *.* to ${MYSQLUSER}@'%'" >> ~/tempsql.txt
 mysql -uroot -p${MYSQLROOTPASS} < ~/tempsql.txt
 rm ~/tempsql.txt
 
@@ -217,8 +220,12 @@ sed -i 's!\$cfg = LoadConfig(.*)!\$cfg = LoadConfig("/nidb/programs/nidb.cfg");!
 # create default database from .sql file
 echo "Creating default database"
 cd ${NIDBROOT}/install/setup
-mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by 'password'; flush privileges;"
+mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by '${MYSQLROOTPASS}'; flush privileges;"
 mysql -uroot -ppassword nidb < nidb.sql
+
+# secure the mysql installation
+echo "----------- Securing MySQL/MariaDB installation -------------"
+mysql_secure_installation
 
 # ---------- dcm4che ----------
 echo "----------------- Installing DICOM receiver -----------------"
