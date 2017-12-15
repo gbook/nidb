@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 14, 2017 at 02:43 PM
+-- Generation Time: Dec 15, 2017 at 09:30 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -1181,7 +1181,15 @@ CREATE TABLE `import_requests` (
   `import_seriesnotes` text NOT NULL,
   `import_altuids` text NOT NULL,
   `import_userid` int(11) NOT NULL,
-  `import_fileisseries` tinyint(1) NOT NULL COMMENT 'if each file should be its own series'
+  `import_fileisseries` tinyint(1) NOT NULL COMMENT 'if each file should be its own series',
+  `numfilestotal` int(11) NOT NULL,
+  `numfilessuccess` int(11) NOT NULL,
+  `numfilesfail` int(11) NOT NULL,
+  `numbehtotal` int(11) NOT NULL,
+  `numbehsuccess` int(11) NOT NULL,
+  `numbehfail` int(11) NOT NULL,
+  `uploadreport` mediumtext NOT NULL,
+  `archivereport` mediumtext NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1473,6 +1481,27 @@ CREATE TABLE `mr_qa` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `mr_qcparams`
+--
+
+CREATE TABLE `mr_qcparams` (
+  `mrqcparam_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `min_x` int(11) NOT NULL,
+  `max_x` int(11) NOT NULL,
+  `min_y` int(11) NOT NULL,
+  `max_y` int(11) NOT NULL,
+  `min_z` int(11) NOT NULL,
+  `max_z` int(11) NOT NULL,
+  `min_iosnr` int(11) NOT NULL,
+  `max_iosnr` int(11) NOT NULL,
+  `min_pvsnr` int(11) NOT NULL,
+  `max_pvsnr` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mr_scanparams`
 --
 
@@ -1481,17 +1510,28 @@ CREATE TABLE `mr_scanparams` (
   `protocol_name` varchar(255) NOT NULL,
   `sequence_name` varchar(255) NOT NULL,
   `project_id` int(11) NOT NULL,
-  `tr` double NOT NULL,
-  `te` double NOT NULL,
-  `ti` double NOT NULL,
-  `flip` double NOT NULL,
-  `xdim` double NOT NULL COMMENT 'in voxels',
-  `ydim` double NOT NULL COMMENT 'in voxels',
-  `zdim` double NOT NULL COMMENT 'in voxels',
-  `tdim` double NOT NULL,
-  `slicethickness` double NOT NULL,
-  `slicespacing` double NOT NULL,
-  `bandwidth` double NOT NULL
+  `tr_min` double NOT NULL,
+  `tr_max` double NOT NULL,
+  `te_min` double NOT NULL,
+  `te_max` double NOT NULL,
+  `ti_min` double NOT NULL,
+  `ti_max` double NOT NULL,
+  `flip_min` double NOT NULL,
+  `flip_max` double NOT NULL,
+  `xdim_min` double NOT NULL COMMENT 'in voxels',
+  `xdim_max` double NOT NULL COMMENT 'in voxels',
+  `ydim_min` double NOT NULL COMMENT 'in voxels',
+  `ydim_max` double NOT NULL COMMENT 'in voxels',
+  `zdim_min` double NOT NULL COMMENT 'in voxels',
+  `zdim_max` double NOT NULL COMMENT 'in voxels',
+  `tdim_min` double NOT NULL COMMENT 'in bold reps',
+  `tdim_max` double NOT NULL COMMENT 'in bold reps',
+  `slicethickness_min` double NOT NULL,
+  `slicethickness_max` double NOT NULL,
+  `slicespacing_min` double NOT NULL,
+  `slicespacing_max` double NOT NULL,
+  `bandwidth_min` double NOT NULL,
+  `bandwidth_max` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -1699,6 +1739,7 @@ CREATE TABLE `pipelines` (
   `pipeline_submithost` varchar(255) NOT NULL,
   `pipeline_clustertype` enum('','sge','slurm') NOT NULL,
   `pipeline_clusteruser` varchar(255) NOT NULL,
+  `pipeline_maxwalltime` bigint(20) NOT NULL COMMENT 'maximum wall execution time in minutes',
   `pipeline_datacopymethod` varchar(50) NOT NULL,
   `pipeline_notes` text NOT NULL,
   `pipeline_useprofile` tinyint(1) NOT NULL,
@@ -2120,6 +2161,22 @@ CREATE TABLE `ratings` (
   `rating_notes` text NOT NULL,
   `rating_date` datetime NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `rdoc_uploads`
+--
+
+CREATE TABLE `rdoc_uploads` (
+  `rdocupload_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `modality` varchar(20) NOT NULL,
+  `series_id` int(11) NOT NULL,
+  `dateuploaded` datetime NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `iscomplete` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2548,6 +2605,21 @@ CREATE TABLE `video_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `weather`
+--
+
+CREATE TABLE `weather` (
+  `observation_id` int(11) NOT NULL,
+  `obsv_location` varchar(255) NOT NULL,
+  `obsv_datetime` datetime NOT NULL,
+  `obsv_type` enum('','clouds','presentweather','temp','humidity','dewpoint','humidity','windspeed','winddirection','windgust','pressure','pressuretendency','precip','dailysunrise','dailysunset') NOT NULL,
+  `obsv_value` double NOT NULL,
+  `presentweather` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `xa_series`
 --
 
@@ -2565,6 +2637,41 @@ CREATE TABLE `xa_series` (
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `_temp_mr_scanparams`
+--
+
+CREATE TABLE `_temp_mr_scanparams` (
+  `mrscanparam_id` int(11) NOT NULL,
+  `protocol_name` varchar(255) NOT NULL,
+  `sequence_name` varchar(255) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `tr_min` double NOT NULL,
+  `tr_max` double NOT NULL,
+  `te_min` double NOT NULL,
+  `te_max` double NOT NULL,
+  `ti_min` double NOT NULL,
+  `ti_max` double NOT NULL,
+  `flip_min` double NOT NULL,
+  `flip_max` double NOT NULL,
+  `xdim_min` double NOT NULL,
+  `xdim_max` double NOT NULL,
+  `ydim_min` double NOT NULL,
+  `ydim_max` double NOT NULL,
+  `zdim_min` double NOT NULL,
+  `zdim_max` double NOT NULL,
+  `tdim_min` double NOT NULL,
+  `tdim_max` double NOT NULL,
+  `slicethickness_min` double NOT NULL,
+  `slicethickness_max` double NOT NULL,
+  `slicespacing_min` double NOT NULL,
+  `slicespacing_max` double NOT NULL,
+  `bandwidth_min` double NOT NULL,
+  `bandwidth_max` double NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
 
 --
 -- Indexes for dumped tables
@@ -3046,12 +3153,17 @@ ALTER TABLE `mr_qa`
   ADD KEY `mriseries_id` (`mrseries_id`);
 
 --
+-- Indexes for table `mr_qcparams`
+--
+ALTER TABLE `mr_qcparams`
+  ADD PRIMARY KEY (`mrqcparam_id`);
+
+--
 -- Indexes for table `mr_scanparams`
 --
 ALTER TABLE `mr_scanparams`
   ADD PRIMARY KEY (`mrscanparam_id`),
-  ADD UNIQUE KEY `protocol_name` (`protocol_name`,`sequence_name`,`project_id`,`tr`,`te`,`ti`,`flip`,`xdim`,`ydim`,`zdim`,`tdim`,`slicethickness`,`slicespacing`,`bandwidth`),
-  ADD KEY `project_id` (`project_id`);
+  ADD UNIQUE KEY `protocol_name` (`protocol_name`,`sequence_name`,`tr_min`,`tr_max`,`te_min`,`te_max`,`ti_min`,`ti_max`,`flip_min`,`flip_max`,`xdim_min`,`xdim_max`,`ydim_min`,`ydim_max`,`zdim_min`,`zdim_max`,`tdim_min`,`tdim_max`,`slicethickness_min`,`slicethickness_max`,`slicespacing_min`,`slicespacing_max`,`bandwidth_min`,`bandwidth_max`);
 
 --
 -- Indexes for table `mr_series`
@@ -3268,6 +3380,12 @@ ALTER TABLE `ratings`
   ADD KEY `idx_ratings` (`rater_id`);
 
 --
+-- Indexes for table `rdoc_uploads`
+--
+ALTER TABLE `rdoc_uploads`
+  ADD PRIMARY KEY (`rdocupload_id`);
+
+--
 -- Indexes for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
@@ -3417,11 +3535,24 @@ ALTER TABLE `video_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `weather`
+--
+ALTER TABLE `weather`
+  ADD PRIMARY KEY (`observation_id`);
+
+--
 -- Indexes for table `xa_series`
 --
 ALTER TABLE `xa_series`
   ADD PRIMARY KEY (`xaseries_id`),
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
+
+--
+-- Indexes for table `_temp_mr_scanparams`
+--
+ALTER TABLE `_temp_mr_scanparams`
+  ADD PRIMARY KEY (`mrscanparam_id`),
+  ADD UNIQUE KEY `protocol_name` (`protocol_name`,`sequence_name`,`tr_min`,`tr_max`,`te_min`,`te_max`,`ti_min`,`ti_max`,`flip_min`,`flip_max`,`xdim_min`,`xdim_max`,`ydim_min`,`ydim_max`,`zdim_min`,`zdim_max`,`tdim_min`,`tdim_max`,`slicethickness_min`,`slicethickness_max`,`slicespacing_min`,`slicespacing_max`,`bandwidth_min`,`bandwidth_max`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -3753,6 +3884,11 @@ ALTER TABLE `mostrecent`
 ALTER TABLE `mr_qa`
   MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `mr_qcparams`
+--
+ALTER TABLE `mr_qcparams`
+  MODIFY `mrqcparam_id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `mr_scanparams`
 --
 ALTER TABLE `mr_scanparams`
@@ -3997,6 +4133,11 @@ ALTER TABLE `us_series`
 --
 ALTER TABLE `video_series`
   MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `weather`
+--
+ALTER TABLE `weather`
+  MODIFY `observation_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `xa_series`
 --

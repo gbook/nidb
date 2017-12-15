@@ -170,9 +170,8 @@ mysql_secure_installation
 echo "------ Setting up MySQL database - default password is 'password' ------"
 mysqladmin -u root password '${MYSQLROOTPASS}'
 echo "Assigning permissions to mysql root account"
-echo "GRANT ALL PRIVILEGES on *.* to root@'%'" >> ~/tempsql.txt
-echo "CREATE USER '${MYSQLUSER}'@'%' identified by '${MYSQLPASS}'" >> ~/tempsql.txt
-echo "GRANT ALL PRIVILEGES on *.* to ${MYSQLUSER}@'%'" >> ~/tempsql.txt
+echo "CREATE USER '${MYSQLUSER}'@'%' identified by '${MYSQLPASS}';" >> ~/tempsql.txt
+echo "GRANT ALL PRIVILEGES on *.* to '${MYSQLUSER}'@'%';" >> ~/tempsql.txt
 mysql -uroot -p${MYSQLROOTPASS} < ~/tempsql.txt
 #rm ~/tempsql.txt
 
