@@ -225,6 +225,7 @@ echo "Creating default database"
 cd ${NIDBROOT}/install/setup
 mysql -uroot -ppassword -e "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by '${MYSQLROOTPASS}'; flush privileges;"
 mysql -uroot -ppassword nidb < nidb.sql
+mysql -uroot -ppassword nidb < nidb-data.sql
 
 # ---------- dcm4che ----------
 echo "----------------- Installing DICOM receiver -----------------"

@@ -38,8 +38,8 @@ INSERT IGNORE INTO `modules` (`module_id`, `module_name`, `module_status`, `modu
 (13, 'notifications', 'stopped', 0, now(), now(), 0),
 (14, 'modulemanager', 'stopped', 0, now(), now(), 1);
 
-INSERT IGNORE INTO `nidb_sites` (`site_id`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
-(1, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
+INSERT IGNORE INTO `nidb_sites` (`site_id`, `site_uid`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
+(1, 0, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
 
 INSERT IGNORE INTO `notifications` (`notiftype_id`, `notiftype_name`, `notiftype_desc`, `notiftype_needproject`) VALUES
 (2, 'Data collection report', 'This will send a report of collected data where study dates fall within the report range.', 1),
