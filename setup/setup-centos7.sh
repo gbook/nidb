@@ -27,7 +27,9 @@ echo "       MYSQLPASS: ${MYSQLPASS}"
 echo "       MYSQLROOTPASS: ${MYSQLROOTPASS}"
 echo 
 echo "   If you would like to change these variables, exit this"
-echo "   script, edit the variables and run this script again"
+echo "   script, edit the variables and run this script again."
+echo
+echo "   You must be connected to the internet to install NiDB"
 echo 
 echo "******************************************************"
 echo 
@@ -35,7 +37,7 @@ echo
 echo 
 echo 
 
-read -p "Press [enter] to continue"
+read -p "Press [ctrl-C] to exit, or [enter] to continue"
 
 #---------------create an nidb account --------------
 echo "--------------- Creating nidb user account ----------------"
@@ -231,20 +233,30 @@ chkconfig --add dcmrcv
 echo "----------------- Setup scheduled cron jobs -----------------"
 echo "Setting up cron jobs for nidb"
 echo "* * * * * cd ${NIDBROOT}/programs; perl parsedicom.pl > /dev/null 2>&1" >> tempcron.txt
-echo "#* * * * * cd ${NIDBROOT}/programs; perl parseincoming.pl > /dev/null 2>&1" >> tempcron.txt
-echo "* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mriqa.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl modulemanager.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl pipeline.pl > /dev/null 2>&1" >> tempcron.txt
 echo "* * * * * cd ${NIDBROOT}/programs; perl datarequests.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl fileio.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl importuploaded.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * cd ${NIDBROOT}/programs; perl qc.pl > /dev/null 2>&1" >> tempcron.txt
+echo "* * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mriqa.pl > /dev/null 2>&1" >> tempcron.txt
+echo "@hourly find ${NIDBROOT}/programs/logs/*.log -mtime +4 -exec rm {} \;" >> tempcron.txt
 echo "#@daily cd ${NIDBROOT}/programs; perl dailyreport.pl > /dev/null 2>&1" >> tempcron.txt
 echo "#0,5,10,15,20,25,30,35,40,45,50,55 * * * * FSLDIR=/usr/local/fsl; PATH=\${FSLDIR}/bin:\${PATH}; . \${FSLDIR}/etc/fslconf/fsl.sh; export FSLDIR PATH; cd ${NIDBROOT}/programs; perl mristudyqa.pl > /dev/null 2>&1" >> tempcron.txt
 echo "@daily /usr/bin/mysqldump nidb -u root -ppassword | gzip > ${NIDBROOT}/backup/db-\`date +%Y-%m-%d\`.sql.gz" >> tempcron.txt
+echo "@hourly /bin/find /tmp/* -mmin +120 -exec rm -rf {} \;  # delete old tmp files" >> tempcron.txt
+echo "@daily find ${NIDBROOT}/ftp/* -mtime +7 -exec rm -rf {} \; # delete old downloads" >> tempcron.txt
+echo "@daily find ${NIDBROOT}/tmp/* -mtime +7 -exec rm -rf {} \; # delete old tmp files" >> tempcron.txt
 crontab -u $NIDBUSER tempcron.txt
 rm ~/tempcron.txt
 
 # ---------- list the remaining things to be done by the user ----------
 echo "----------------- Remaining items to be done by you -----------------"
-echo "1) Install FSL to the default path [/usr/local/fsl] ***"
+echo "1) Install FSL (https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) to the default path [/usr/local/fsl] ***"
 echo "2) Edit /etc/php.ini to reflect your timezone"
-echo "3) Your default mysql account is root, password is '${MYSQLROOTPASS}'. Change these as soon as possible"
+echo "3) Your default mysql account is root, password is '${MYSQLROOTPASS}'. Change the password as soon as possible"
 echo "4) Edit ${NIDBROOT}/programs/nidb.cfg.sample to reflect your paths, usernames, and passwords. Rename to nidb.cfg"
+echo "       nidb.cfg can be edited using the Admin->NiDB Settings... menu item, once you have logged in as admin";
 echo "5) Some modules are disabled by default in cron. Use crontab -e to enable them"
+echo "       Consider reviewing the mysql backup procedure and passwords in cron"
 echo "TIP: A reboot can be useful to make sure everything works"
