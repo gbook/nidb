@@ -46,9 +46,9 @@ echo "Enter the password for the NiDB account"
 passwd $NIDBUSER
 
 # enable repos for PHP7 and mariadb 10
-yum install -y -q https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-yum install -y -q http://rpms.remirepo.net/enterprise/remi-release-7.rpm
-yum install -y -q yum-utils
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum install -y yum-utils
 yum-config-manager --enable remi-php72   # Install PHP 7.2
 
 echo "# MariaDB 10.2 CentOS repository list - created 2017-12-15 15:51 UTC
@@ -61,20 +61,19 @@ gpgcheck=1" >> /etc/yum.repos.d/MariaDB.repo
 
 # ---------- yum based installs ----------
 echo "----------------- Installing YUM based packages -----------------"
-echo "Installing Perl yum packages"
-yum install -y -q vim
-yum install -y -q perl*
-yum install -y -q cpan
-yum install -y -q php php-mysql php-gd php-process php-pear php-mcrypt php-mbstring
-yum install -y -q httpd
-yum install -y -q MariaDB-server MariaDB-client
-yum install -y -q git
-yum install -y -q gcc gcc-c++
-yum install -y -q gedit*
-yum install -y -q iptraf*
-yum install -y -q java
-yum install -y -q ImageMagick
-yum install -y -q iptables-services
+yum install -y vim
+yum install -y perl*
+yum install -y cpan
+yum install -y php php-mysql php-gd php-process php-pear php-mcrypt php-mbstring
+yum install -y httpd
+yum install -y MariaDB-server MariaDB-client
+yum install -y git
+yum install -y gcc gcc-c++
+yum install -y gedit*
+yum install -y iptraf*
+yum install -y java
+yum install -y ImageMagick
+yum install -y iptables-services
 
 # --------- extra Perl/CPAN based installs ----------
 echo "----------------- Installing Perl modules from CPAN -----------------"
