@@ -264,7 +264,7 @@
 	/* -------------------------------------------- */
 	/* ------- SendGmail -------------------------- */
 	/* -------------------------------------------- */
-	function SendGmail($to,$subject,$body,$debug, $usebcc) {
+	function SendGmail($to,$subject,$body,$debug,$usebcc=0) {
 	
 		$from = $GLOBALS['cfg']['emailfrom'];
 
@@ -492,6 +492,13 @@
 	/* -------------------------------------------- */
 	function GetDataPathFromSeriesID($id, $modality) {
 		$modality = strtolower($modality);
+		
+		if (($id <= 0) || ($id == "")) {
+			return ("error - invalid ID","","","","");
+		}
+		if ($modality == "") {
+			return ("error - blank modality","","","","");
+		}
 		
 		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = '$id'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1408,6 +1415,104 @@
 		echo "</ol>";
 	}
 	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayProjectsMenu ---------------- */
+	/* -------------------------------------------- */
+	function DisplayProjectsMenu($menuitem, $id) {
+		switch ($menuitem) {
+			case "info":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "subjects":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheaderactive">
+							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
+							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a>
+						</td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "studies":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "checklist":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheaderactive">
+							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
+							<a href="projecthecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
+						</td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+			case "mrqc":
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheaderactive">
+							<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a><br>
+							<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit MR params</a><br>
+							<a href="mrqcchecklist.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
+							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a>
+							<? if ($GLOBALS['isadmin']) { ?>
+								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
+							<? } ?>
+						</td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
+		}
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- between ---------------------------- */
