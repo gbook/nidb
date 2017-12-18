@@ -53,7 +53,7 @@
 	/* ------- SwitchInstance --------------------- */
 	/* -------------------------------------------- */
 	function SwitchInstance($id) {
-		$sqlstring = "select instance_name from instance where instance_id = $id";
+		$sqlstring = "select instance_name from instance where instance_id = '$id'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instancename = $row['instance_name'];
@@ -165,7 +165,7 @@ if ($email == "") {
 					<td class="subheader"><span class="tiny">Date Accessed</span></td>
 				</tr>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = " . $_SESSION['instanceid'] . ") group by b.uid order by a.mostrecent_date desc";
+				$sqlstring = "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.uid order by a.mostrecent_date desc";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -199,7 +199,7 @@ if ($email == "") {
 					<td class="subheader"><span class="tiny">Date Accessed</span></td>
 				</tr>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = " . $_SESSION['instanceid'] . ") order by a.mostrecent_date desc";
+				$sqlstring = "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') order by a.mostrecent_date desc";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
