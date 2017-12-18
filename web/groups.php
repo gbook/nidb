@@ -174,13 +174,13 @@ session_start();
             foreach ($seriesids as $seriesid) {
                 /* get the study id for this seriesid/modality */
                 $sqlstring = "select study_id from $modality" . "_series where $modality" . "series_id = $seriesid";
-                $result = MySQLiQuery($sqlstring);
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
                 $studyid = $row['study_id'];
 
                 /* check if its already in the db */
                 $sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-                $result = MySQLiQuery($sqlstring);
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 if (mysqli_num_rows($result) > 0) {
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
                 }
@@ -188,7 +188,7 @@ session_start();
                     /* insert the seriesids */
                     $sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', '')";
 //echo "$sqlstring<br>";
-                    $result = MySQLiQuery($sqlstring);
+                    $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
                 }
             }
@@ -198,13 +198,13 @@ session_start();
             foreach ($studyids as $studyid) {
                 /* get the modality for this study */
                 $sqlstring = "select study_modality from studies where study_id = $studyid";
-                $result = MySQLiQuery($sqlstring);
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
                 $modality = $row['modality'];
 
                 /* check if its already in the db */
                 $sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-                $result = MySQLiQuery($sqlstring);
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 if (mysqli_num_rows($result) > 0) {
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> already in this group</span></div><?
                 }
@@ -212,7 +212,7 @@ session_start();
                     /* insert the studyids */
                     $sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 //echo "$sqlstring<br>";
-                    $result = MySQLiQuery($sqlstring);
+                    $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> added</span></div><?
                 }
             }

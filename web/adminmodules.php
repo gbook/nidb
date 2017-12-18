@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminmodules.php
- // Copyright (C) 2004 - 2016
+ // Copyright (C) 2004 - 2017
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -158,9 +158,14 @@
 	/* ------- ResetModule ----------------------- */
 	/* -------------------------------------------- */
 	function ResetModule($id) {
+		
+		if (($id <= 0) || ($id == "")) {
+			?><div class="message">ID was not valid [<?=$id?>]</div><?
+		}
+		
 		/* get module name */
-		$sqlstring = "select module_name from modules where module_id = $id";
-		$result = MySQLiQuery($sqlstring);
+		$sqlstring = "select module_name from modules where module_id = '$id'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$scriptname = $row['module_name'];
 		
@@ -177,9 +182,9 @@
 		}
 		
 		/* update DB to have 0 instances, status=stopped and lastfinish=now() */
-		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = $id";
+		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = '$id'";
 		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	

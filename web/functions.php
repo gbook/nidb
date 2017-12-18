@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB functions.php
- // Copyright (C) 2004 - 2016
+ // Copyright (C) 2004 - 2017
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -494,10 +494,10 @@
 		$modality = strtolower($modality);
 		
 		if (($id <= 0) || ($id == "")) {
-			return ("error - invalid ID","","","","");
+			return array("error - invalid ID","","","","");
 		}
 		if ($modality == "") {
-			return ("error - blank modality","","","","");
+			return array("error - blank modality","","","","");
 		}
 		
 		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = '$id'";

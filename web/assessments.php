@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB assessments.php
- // Copyright (C) 2004 - 2016
+ // Copyright (C) 2004 - 2017
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -91,7 +91,7 @@
 	/* -------------------------------------------- */
 	function SetAsComplete($experimentid) {
 		$sqlstring = "update assessments set iscomplete = 1 where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 	
@@ -105,7 +105,7 @@
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		
 		$sqlstring = "insert into assessments (enrollment_id, form_id, exp_admindate, experimentor, rater_username, label, notes) values ($enrollmentid, $formid, '$experimentdate', '$experimentor', '$username', '$label', '$notes')";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$experimentid = mysqli_insert_id($GLOBALS['linki']);
 		
 		/* insert all the strings */
@@ -114,7 +114,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the numbers */
@@ -123,7 +123,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the texts */
@@ -132,7 +132,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the dates */
@@ -142,7 +142,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		return $experimentid;
@@ -159,11 +159,11 @@
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 
 		$sqlstring = "update assessments set exp_admindate = '$experimentdate', experimentor = '$experimentor', label = '$label', notes = '$notes' where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		/* delete all old assessment_data entries */
 		$sqlstring = "delete from assessment_data where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* insert all the strings */
 		if (isset($val_strings['string'])) {
@@ -171,7 +171,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the numbers */
@@ -180,7 +180,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the texts */
@@ -189,7 +189,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_text, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 		/* insert all the dates */
@@ -198,7 +198,7 @@
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
 	}
@@ -209,13 +209,13 @@
 	function CreateForm($enrollmentid, $formid, $username) {
 	
 		$sqlstring = "select * from assessment_forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -266,7 +266,7 @@
 			<?
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from assessment_formfields where form_id = $formid order by formfield_order + 0";
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$formfield_id = $row['formfield_id'];
 					$formfield_desc = $row['formfield_desc'];
@@ -345,7 +345,7 @@
 	function ViewForm($experimentid, $viewtype) {
 	
 		$sqlstring = "select * from assessments where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$formid = $row['form_id'];
@@ -357,13 +357,13 @@
 		$notes = $row['notes'];
 
 		$sqlstring = "select * from assessment_forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -430,7 +430,7 @@
 				/* display all other rows, sorted by order */
 				$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM assessment_formfields a left outer join assessment_data b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
 				//echo $sqlstring;
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//print_r($row);
 					$formfield_id = $row['formfield_id'];
@@ -584,7 +584,7 @@
 	function PrintForm($experimentid) {
 	
 		$sqlstring = "select * from assessments where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$formid = $row['form_id'];
@@ -594,13 +594,13 @@
 		$lastupdate = date("M n, Y g:i a",strtotime($row['lastupdate']));
 
 		$sqlstring = "select * from assessment_forms where form_id = $formid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
 		$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
@@ -653,7 +653,7 @@
 				/* display all other rows, sorted by order */
 				$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM assessment_formfields a left outer join assessment_data b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
 				//echo $sqlstring;
-				$result = MySQLiQuery($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//print_r($row);
 					$formfield_id = $row['formfield_id'];
