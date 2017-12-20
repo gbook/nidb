@@ -231,7 +231,7 @@
 		}
 		
 		/* insert the new user */
-		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_email, user_lastlogin, user_logincount, user_enabled, user_isadmin) values ('$username', sha1('$password'), '$logintype', '$fullname', '$email', now(), 0, 1, '$isadmin')";
+		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, '$isadmin')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$id = mysqli_insert_id($GLOBALS['linki']);
 		

@@ -47,6 +47,10 @@
 		case 'viewdetails':
 			ViewDetails($requestid);
 			break;
+		case 'clearstatus':
+			ClearStatus($requestid);
+			ShowGroup($groupid, $page);
+			break;
 		case 'cancelgroup':
 			CancelGroup($groupid);
 			ShowList($viewall);
@@ -70,6 +74,21 @@
 		$sqlstring = "update data_requests set req_status = 'cancelled' where req_groupid = $groupid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="staticmessage">Group download <?=$groupid?> cancelled</span><?
+	}
+
+	
+	/* --------------------------------------------------- */
+	/* ------- CancelGroup ------------------------------- */
+	/* --------------------------------------------------- */
+	function ClearStatus($requestid) {
+		if ($requestid > 0) {
+			$sqlstring = "update data_requests set req_status = '' where request_id = $requestid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			?><span class="staticmessage">Status for request [<?=$requestid?>] cleared</span><?
+		}
+		else {
+			?>Invalid request ID<?
+		}
 	}
 
 	
@@ -405,6 +424,11 @@
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $format; ?>&nbsp;</td>
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
 						<a href="requeststatus.php?action=viewdetails&requestid=<? echo $requestid; ?>"><span style="color:<? echo $color; ?>"><u><? echo $status; ?></u></span></a>&nbsp;
+						<?
+							if (in_array($status,array('processing','pending','problem','error','cancelled')) && $GLOBALS['isadmin']) {
+								?><a href="requeststatus.php?action=clearstatus&groupid=<?=$groupid?>&requestid=<?=$requestid?>" style="color: red" title="Clear status">x</a><?
+							}
+						?>
 					</td>
 					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $completedate; ?>&nbsp;</td>
 				</tr>
