@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB pipeline.pl
-# Copyright (C) 2004 - 2017
+# Copyright (C) 2004 - 2018
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------

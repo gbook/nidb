@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB functions.php
- // Copyright (C) 2004 - 2017
+ // Copyright (C) 2004 - 2018
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -1430,7 +1430,7 @@
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="mrqcchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
 				</table>
 				</div>
@@ -1448,7 +1448,7 @@
 						</td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
 				</table>
 				</div>
@@ -1463,7 +1463,7 @@
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
 				</table>
 				</div>
@@ -1481,7 +1481,7 @@
 							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
 							<a href="projecthecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
 						</td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
 				</table>
 				</div>
@@ -1496,11 +1496,15 @@
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheaderactive">
-							<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a><br>
-							<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit MR params</a><br>
+						<td class="menuheaderactive" style="font-size:10pt; font-weight: normal">
+							<!--<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">View MR Scan Params checklist</a> (<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a>)<br>-->
+							<br>
+							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>View MR QC checklist</b></a><br>
+								<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
+								<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
+							<br>
 							<a href="mrqcchecklist.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
-							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a>
+							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
 							<? if ($GLOBALS['isadmin']) { ?>
 								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
 							<? } ?>
@@ -1518,10 +1522,14 @@
 	/* ------- between ---------------------------- */
 	/* -------------------------------------------- */
 	/* returns true if val is between min and max   */
+	/* returns unknown (-1) if val, min, or max     */
+	/* are blank                                    */
 	function between($val, $min, $max) {
-		if ($val == "") return 0;
-		if ($min == "") $min = 0;
-		if ($max == "") $max = 0;
+		//echo "between($min - $val - $max)<br>";
+		
+		if ($val == "") return -1;
+		if ($min == "") return -1;
+		if ($max == "") return -1;
 		
 		if (($val >= $min) && ($val <= $max))
 			return 1;

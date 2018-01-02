@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB publicdownloads.php
- // Copyright (C) 2004 - 2017
+ // Copyright (C) 2004 - 2018
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -138,7 +138,7 @@
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
 				<td><?=$createdby?></td>
 				<td style="font-size:8pt"><?=$password?></td>
-				<td><input type="text" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>"></td>
+				<td><input type="text" size="80" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>"></td>
 			</tr>
 			<? 
 				}
