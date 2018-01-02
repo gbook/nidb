@@ -173,10 +173,9 @@ echo "Assigning permissions to mysql root account"
 echo "CREATE USER '${MYSQLUSER}'@'%' identified by '${MYSQLPASS}';" >> ~/tempsql.txt
 echo "GRANT ALL PRIVILEGES on *.* to '${MYSQLUSER}'@'%';" >> ~/tempsql.txt
 mysql -uroot -p${MYSQLROOTPASS} < ~/tempsql.txt
-#rm ~/tempsql.txt
+rm ~/tempsql.txt
 
 echo "------ Install phpMyAdmin ------"
-#wget http://downloads.sourceforge.net/project/phpmyadmin/phpMyAdmin/4.4.7/phpMyAdmin-4.4.7-english.zip
 wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-english.zip
 unzip phpMyAdmin-latest-english.zip
 mv phpMyAdmin-*-english /var/www/html/phpMyAdmin

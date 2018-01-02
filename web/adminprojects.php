@@ -144,14 +144,17 @@
 	/* -------------------------------------------- */
 	function AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
-		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
-		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], $usecustomid);
-		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
-		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
-		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
-		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], $costcenter);
-		$startdate = mysqli_real_escape_string($GLOBALS['linki'], $startdate);
-		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
+		$projectname = mysqli_real_escape_string($GLOBALS['linki'], trim($projectname));
+		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], trim($usecustomid)) + 0;
+		$admin = mysqli_real_escape_string($GLOBALS['linki'], trim($admin));
+		$pi = mysqli_real_escape_string($GLOBALS['linki'], trim($pi));
+		$sharing = mysqli_real_escape_string($GLOBALS['linki'], trim($sharing));
+		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], trim($costcenter));
+		$startdate = mysqli_real_escape_string($GLOBALS['linki'], trim($startdate));
+		$enddate = mysqli_real_escape_string($GLOBALS['linki'], trim($enddate));
+		
+		if ($startdate == "") { $startdate = "0000-00-00"; }
+		if ($enddate == "") { $enddate = "0000-00-00"; }
 		
 		$projectuid = NIDB\CreateUID('P',4);
 	
