@@ -508,8 +508,12 @@
 		$seriesnum = $row['series_num'];
 		$subjectid = $row['subject_id'];
 		$studyid = $row['study_id'];
+		$datatype = $row['data_type'];
+		if ($datatype == "") {
+			$datatype = $modality;
+		}
 		
-		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum";
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
 		return array($path, $uid, $studynum, $studyid, $subjectid);
 	}
 
@@ -1429,7 +1433,7 @@
 						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
 				</table>
