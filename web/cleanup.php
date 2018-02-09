@@ -44,6 +44,10 @@
 	
 	/* determine action */
 	switch ($action) {
+		case 'viewallduplicatestudies':
+			DisplayMenu();
+			DisplayAllDuplicateStudies();
+			break;
 		case 'viewduplicatestudies':
 			DisplayMenu();
 			DisplayDuplicateStudies();
@@ -98,7 +102,8 @@
 		View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a> <span class="tiny">Subjects without any enrollments</span><br>
 		View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a> <span class="tiny">Enrollments without any studies</span><br>
 		View empty <a href="cleanup.php?action=vieworphanstudies">studies</a> <span class="tiny">Studies with invalid or missing enrollments</span><br>
-		View duplicate <a href="cleanup.php?action=viewduplicatestudies">studies</a> <span class="tiny">Studies within the same subject with duplicated study numbers</span>
+		View duplicate <a href="cleanup.php?action=viewduplicatestudies">studies</a> <span class="tiny">Studies within the same subject and enrollment with duplicated <b>study numbers</b></span><br>
+		View duplicate <a href="cleanup.php?action=viewallduplicatestudies">studies</a> <span class="tiny">Studies across the entire database</span>
 		<br><br>
 		<?
 	}
@@ -147,6 +152,88 @@
 				$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
 				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 				$numdbseries = $rowB['count'];
+				
+				$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
+				
+				$numdiskseries = 0;
+				$files = glob("$archivepath/*");
+				if ($files){
+					$numdiskseries = count($files);
+				}
+				
+				if (!$isactive) { $deleted = "(deleted)"; }
+				else { $deleted = ""; }
+				?>
+				<tr>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a> <span class="tiny">(<?=$studyid?>)</span></td>
+					<td><?=$studydate?></td>
+					<td><tt><?=$archivepath?></tt></td>
+					<td><?=$modality?></td>
+					<td><?=$numdbseries?></td>
+					<td><?=$numdiskseries?></td>
+				</tr>
+				<?
+			}
+			?>
+			<tr>
+				<td colspan="7">&nbsp;</td>
+			</tr>
+			<?
+		}
+		?>
+		</table>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayAllDuplicateStudies --------- */
+	/* -------------------------------------------- */
+	function DisplayAllDuplicateStudies() {
+
+		$sqlstring = "SELECT study_datetime, study_modality, count(*) as qty FROM studies where year(study_datetime) <> 0 and study_modality <> '' and study_modality <> 'mrseries' GROUP BY study_datetime, study_modality HAVING qty > 1 order by study_datetime";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$numrows = mysqli_num_rows($result)
+		?>
+		
+		Found <?=$numrows?> duplicate study datetimes
+		<table class="smallgraydisplaytable">
+			<thead>
+				<tr>
+					<th>UID</th>
+					<th>Study</th>
+					<th>Date</th>
+					<th>Modality</th>
+					<th>Path</th>
+					<th>Series in DB</th>
+					<th>Series on disk</th>
+				</tr>
+			</thead>
+		<?
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentid = $row['enrollment_id'];
+			$studydatetime = $row['study_datetime'];
+			$studymodality = $row['study_modality'];
+			
+			$sqlstringA = "select a.subject_id, a.uid, a.isactive, c.study_id, c.study_num, c.study_datetime, c.study_modality from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_datetime = '$studydatetime' and c.study_modality = '$studymodality'";
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				
+				$subjectid = $rowA['subject_id'];
+				$isactive = $rowA['isactive'];
+				$uid = $rowA['uid'];
+				$studyid = $rowA['study_id'];
+				$studynum = $rowA['study_num'];
+				$studydate = $rowA['study_datetime'];
+				$modality = $rowA['study_modality'];
+
+				if ($modality != "") {
+					$sqlstringB = "select count(*) 'count' from " . strtolower($modality) . "_series where study_id = $studyid";
+					$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$numdbseries = $rowB['count'];
+				}
 				
 				$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
 				

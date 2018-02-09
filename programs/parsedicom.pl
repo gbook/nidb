@@ -365,7 +365,7 @@ sub ParseDirectory {
 									else {
 										WriteLog("$institute->$patient->$dob->$sex->$date->$series: incomplete");
 										# cleanup so this import can continue another time
-										$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+										$sqlstring = "update import_requests set import_status = '', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 										WriteLog($sqlstring);
 										$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									}
@@ -375,7 +375,7 @@ sub ParseDirectory {
 								if (!ModuleCheckIfActive($scriptname, $db)) {
 									WriteLog("Not supposed to be running right now");
 									# cleanup so this import can continue another time
-									$sqlstring = "update import_requests set import_status = '', import_enddate = now() where importrequest_id = '$importRowID'";
+									$sqlstring = "update import_requests set import_status = '', import_enddate = now(), archivereport = '$archivereport' where importrequest_id = '$importRowID'";
 									WriteLog($sqlstring);
 									$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 									return 1;
@@ -961,7 +961,7 @@ sub InsertDICOM {
 		%row = $result->fetchhash;
 		$study_num = $row{'study_num'} + 1;
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname', now())";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$report .= WriteLog("[$sqlstring]") . "\n";
@@ -1564,6 +1564,12 @@ sub InsertParRec {
 			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))) )";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
+			
+			# add the alternate UID
+			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ('$subjectRowID', '$PatientID', 0, '$enrollmentRowID')";
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			$report .= WriteLog("[$sqlstring]") . "\n";
+			
 			$IL_subjectcreated = 1;
 		}
 	}
@@ -1681,12 +1687,16 @@ sub InsertParRec {
 		$study_num = $row{'study_num'} + 1;
 		#$study_num = $result->numrows + 1;
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl', now())";
 		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$IL_studycreated = 1;
 	}
+
+	WriteLog("Going forward using the following: SubjectRowID [$subjectRowID] ProjectRowID [$projectRowID] EnrollmentRowID [$enrollmentRowID] StudyRowID [$studyRowID]");
+	#$sqlstring = "select * from ";
+	#WriteLog("Values obtained from the above IDs. UID [] ");
 	
 	# ----- insert or update the series -----
 	$sqlstring = "select mrseries_id from mr_series where study_id = $studyRowID and series_num = $SeriesNumber";
@@ -1708,13 +1718,16 @@ sub InsertParRec {
 		$seriesRowID = $result2->insertid;
 		$IL_seriescreated = 0;
 	}
-		
+	
+	my ($path, $uid, $studynum, $seriesnum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesRowID, 'mr');
+	$report .= WriteLog("Values from GetDataPathFromSeriesID($seriesRowID, 'mr'): Path [$path] UID [$uid] StudyNum [$studynum] SeriesNum [$seriesnum] StudyID [$studyid] SubjectID [$subjectid]") . "\n";
+	
 	# copy the file to the archive, update db info
 	$report .= WriteLog("$seriesRowID") . "\n";
 	
 	# create data directory if it doesn't already exist
 	my $outdir = "$cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber/parrec";
-	$report .= WriteLog("$outdir");
+	$report .= WriteLog("Outdir [$outdir]");
 	MakePath($outdir);
 	
 	# move the files into the outdir
@@ -1994,7 +2007,7 @@ sub InsertEEG {
 		$study_num = $row{'study_num'} + 1;
 		#$study_num = $result->numrows + 1;
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$InstitutionName - $InstitutionAddress', 'complete', 'parseincoming.pl', now())";
 		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;

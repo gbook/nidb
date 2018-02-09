@@ -160,6 +160,7 @@ sub ProcessPipelines() {
 		if ($row{'pipeline_submithost'} eq "") { $pipelinesubmithost = $cfg{'clustersubmithost'}; }
 		else { $pipelinesubmithost = $row{'pipeline_submithost'}; }
 		my $pipelinemaxwalltime = $row{'pipeline_maxwalltime'};
+		my $pipelinesubmitdelay = $row{'pipeline_submitdelay'};
 		my $pipelinelevel = $row{'pipeline_level'};
 		my $deplevel = $row{'pipeline_dependencylevel'};
 		my $depdir = $row{'pipeline_dependencydir'};
@@ -169,6 +170,9 @@ sub ProcessPipelines() {
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
 		
+		if (($pipelinesubmitdelay eq "") || ($pipelinesubmitdelay == 0)) {
+			$pipelinesubmitdelay = 6;
+		}
 		# remove any whitespace from the queue... SGE hates whitespace
 		$pipelinequeue =~ s/\s+//g;
 		
@@ -773,7 +777,7 @@ sub ProcessPipelines() {
 						my $groupname = $row{'group_name'};
 						my $groupid = $row{'group_id'};
 						# get a list of subjects in the group that have the dependency
-						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
+						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval $pipelinesubmitdelay hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						WriteLog($sqlstringA);
 						my @studyids = ();
@@ -1031,7 +1035,7 @@ sub CreateClusterJobFile() {
 		else {
 			$jobfile .= "#\$ -N $pipelinename\n";
 		}
-		$jobfile .= "#\$ -S /bin/sh\n";
+		$jobfile .= "#\$ -S /bin/bash\n";
 		$jobfile .= "#\$ -j y\n";
 		$jobfile .= "#\$ -o $analysispath/pipeline\n";
 		$jobfile .= "#\$ -V\n";

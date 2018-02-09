@@ -53,6 +53,8 @@
     $searchvars['s_subjectname'] = GetVariable("s_subjectname");
     $searchvars['s_subjectdobstart'] = GetVariable("s_subjectdobstart");
     $searchvars['s_subjectdobend'] = GetVariable("s_subjectdobend");
+    $searchvars['s_ageatscanmin'] = GetVariable("s_ageatscanmin");
+    $searchvars['s_ageatscanmax'] = GetVariable("s_ageatscanmax");
     $searchvars['s_subjectgender'] = GetVariable("s_subjectgender");
     $searchvars['s_subjectgroupid'] = GetVariable("s_subjectgroupid");
     $searchvars['s_measuresearch'] = GetVariable("s_measuresearch");
@@ -331,6 +333,12 @@
 						<td class="fieldlabel">DOB</td>
 						<td>
 							<input type="date" name="s_subjectdobstart" value="<?=$searchvars['s_subjectdobstart'];?>" size="12"> to <input type="date" name="s_subjectdobend" value="<?=$searchvars['s_subjectdobend'];?>" size="12">
+						</td>
+					</tr>
+					<tr class="advanced">
+						<td class="fieldlabel">Age-at-scan</td>
+						<td>
+							<input type="text" name="s_ageatscanmin" value="<?=$searchvars['s_ageatscanmin'];?>" size="3" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$searchvars['s_ageatscanmax'];?>" size="3" maxlength="3">
 						</td>
 					</tr>
 					<tr class="advanced">
@@ -2056,6 +2064,7 @@
 				$tables["$uid$studynum"]['subjectid'] = $subject_id;
 				$tables["$uid$studynum"]['studyid'] = $study_id;
 				$tables["$uid$studynum"]['studynum'] = $studynum;
+				$tables["$uid$studynum"]['studydate'] = $study_datetime;
 				$tables["$uid$studynum"]['visittype'] = $visittype;
 				//$names[$name] = "blah";
 				if (($thevalue > $names[$name]['max']) || ($names[$name]['max'] == "")) { $names[$name]['max'] = $thevalue; }
@@ -2066,13 +2075,13 @@
 			}
 
 			if ($s_resultorder == "pipelinecsv") {
-				$csv = "uid,studynum,sex,age";
+				$csv = "uid,studynum,datetime,sex,age";
 				foreach ($names2 as $name2 => $blah) {
 					$csv .= ",$name2";
 				}
 				$csv .= "\n";
 				foreach ($tables as $uid => $valuepair) {
-					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
 					foreach ($names2 as $name2 => $blah) {
 						$csv .= ',' . $tables[$uid][$name2];
 					}
@@ -2099,6 +2108,7 @@
 			<table cellspacing="0">
 				<tr>
 					<td>UID</td>
+					<td>Study datetime</td>
 					<td>Sex</td>
 					<td>Age</td>
 					<td>Visit</td>
@@ -2117,9 +2127,8 @@
 					foreach ($tables as $uid => $valuepair) {
 						?>
 						<tr style="font-weight: <?=$bold?>" class="rowhover">
-							<td>
-							<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
-							</td>
+							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studydate']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['visittype']?></td>
@@ -3699,7 +3708,7 @@
 		$modality = $s_studymodality;
 		/* also make a variable for the series table */
 		$modalitytable = $s_studymodality . "_series";
-		
+
 		/* check if modality_series table actually exists */
 		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '$modalitytable'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -3736,6 +3745,8 @@
 		if ($s_subjectname != "") { $sqlwhere .= " and `subjects`.name like '%$s_subjectname%'"; }
 		if ($s_subjectdobstart != "") { $sqlwhere .= " and `subjects`.birthdate >= '$s_subjectdobstart'"; }
 		if ($s_subjectdobend != "") { $sqlwhere .= " and `subjects`.birthdate <= '$s_subjectdobend'"; }
+		if ($s_ageatscanmin != "") { $sqlwhere .= " and `studies`.study_ageatscan >= '$s_ageatscanmin'"; }
+		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
 		if ($s_projectid != "all") {
 			$sqlwhere .= " and `projects`.project_id = $s_projectid";

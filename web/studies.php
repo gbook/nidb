@@ -1650,7 +1650,18 @@
 									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
 									$dcmfile = $dicoms[0];
 									if (file_exists($dcmfile)) {
-										?><a href="series.php?action=scanparams&dcmfile=<?=$dcmfile?>"><?=$series_desc?></a><?
+										?><a href="series.php?action=scanparams&file=<?=$dcmfile?>"><?=$series_desc?></a><?
+									}
+									else {
+										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?
+									}
+								}
+								elseif ($data_type == "parrec") {
+									$pars = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/parrec/*.par");
+									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/parrec/";
+									$parfile = $pars[0];
+									if (file_exists($parfile)) {
+										?><a href="series.php?action=scanparams&file=<?=$parfile?>"><?=$series_desc?></a><?
 									}
 									else {
 										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?

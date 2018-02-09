@@ -60,6 +60,7 @@
 	$pipelineclusteruser = GetVariable("pipelineclusteruser");
 	$pipelinesubmithost = GetVariable("pipelinesubmithost");
 	$pipelinemaxwalltime = GetVariable("pipelinemaxwalltime");
+	$pipelinesubmitdelay = GetVariable("pipelinesubmitdelay");
 	$pipelinequeue = GetVariable("pipelinequeue");
 	$pipelinedatacopymethod = GetVariable("pipelinedatacopymethod");
 	$pipelineremovedata = GetVariable("pipelineremovedata");
@@ -116,11 +117,11 @@
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level);
 			DisplayPipelineForm("edit", $id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled);
 			break;
@@ -173,9 +174,10 @@
 		case 'viewpipelinelist':
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
 			break;
+		case 'viewusage': DisplayPipelineUsage();
+			break;
 		default: DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
 	}
-	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
@@ -183,7 +185,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
@@ -196,6 +198,7 @@
 		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
 		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
+		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
@@ -227,27 +230,22 @@
 		}
 
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
-		//PrintSQL($sqlstring);
-		//return;
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete any existing dependencies, and insert the current dependencies */
 		$sqlstring = "delete from pipeline_dependencies where pipeline_id = $id";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		if ($dependency != '') {
 			if (is_array($dependency)) {
 				foreach ($dependency as $dep) {
 					$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dep')";
-					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				}
 			}
 			else {
 				$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dependency')";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
 		}
@@ -259,7 +257,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
@@ -269,6 +267,7 @@
 		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
 		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
+		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
@@ -298,8 +297,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinemaxwalltime', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
-		//PrintSQL($sqlstring);
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinemaxwalltime', '$pipelinesubmitdelay', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -854,6 +852,7 @@
 			$numproc = $row['pipeline_numproc'];
 			$submithost = $row['pipeline_submithost'];
 			$maxwalltime = $row['pipeline_maxwalltime'];
+			$submitdelay = $row['pipeline_submitdelay'];
 			$queue = $row['pipeline_queue'];
 			$clustertype = $row['pipeline_clustertype'];
 			$clusteruser = $row['pipeline_clusteruser'];
@@ -1079,6 +1078,10 @@
 						<tr>
 							<td class="label" valign="top">Max wall time <img src="images/help.gif" title="<b>Max wall time</b><br><br>Maximum wall time each analysis is allowed to run before being terminated"></td>
 							<td valign="top"><input type="text" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>" size="5" maxlength="7"> <span class="tiny">time in minutes (24 hours = 1440 minutes)</span></td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Submit delay <img src="images/help.gif" title="<b>Submit delay</b><br><br>Number of hours after the study datetime that the job will be submitted. Default is 6 hours"></td>
+							<td valign="top"><input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7"> <span class="tiny">time in hours</span></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top" style="border-bottom: 2px solid #555">Queue name <img src="images/help.gif" title="<b>Queue name</b><br><br>The sun grid (SGE) queue to submit to"></td>
@@ -2338,6 +2341,76 @@ echo "#$ps_command     $logged $ps_desc\n";
 	<?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelineUsage ---------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelineUsage() {
+	
+		MarkTime("DisplayPipelineUsage()");
+	
+		$urllist['Pipelines'] = "pipelines.php";
+		$urllist['New Pipeline'] = "pipelines.php?action=addform";
+		NavigationBar("Pipelines", $urllist);
+		
+		$username = $GLOBALS['username'];
+		
+		global $imgdata;
+		/* create the graphs for each pipeline group */
+		$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines where pipeline_group <> ''";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$group = $row['pipeline_group'];
+			//$imgdata[$group] = CreatePipelineGraph($group);
+		}
+		list($myusage,$maxsize) = GetPipelineInfo();
+		
+		?>
+		<style>
+			a { color: #224ea5; }
+		</style>
+		<span style="font-size: 10pt">
+			<b>My usage</b><br>
+			<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
+			<b># running</b> <?=$myusage['totalrunning']?><br>
+			<b># complete</b> <?=$myusage['totalcomplete']?><br>
+		</span>
+		<br>
+		<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
+		<br>
+		<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
+		<br>
+		<?	
+			$pipelinetree = GetPipelineTree($viewall, 0);
+			//PrintVariable($pipelinetree);
+		?>
+		<br><br>
+		<b>All usage</b>
+		<table class="smallgraydisplaytable" style="margin-top: 5px; border-collapse: collapse">
+			<thead>
+				<tr style="vertical-align: top;text-align:left">
+					<!--<th style="font-size:12pt">Pipeline Group</th>-->
+					<th style="font-size:12pt">Name <span class="tiny">Mouseover for description</span></th>
+					<th style="font-size:12pt">Owner<br></th>
+					<!--<th style="font-size:12pt">Status</th>-->
+					<!--<th style="font-size:12pt" align="right" title="processing / complete">Analyses</th>-->
+					<th style="font-size:12pt" align="right">Disk size</th>
+					<!--<th style="font-size:12pt" align="right">Parent disk</th>-->
+					<th style="font-size:12pt" align="right">Net disk</th>
+					<!--<th style="font-size:12pt" align="left">Path</th>-->
+					<!--<th style="font-size:12pt">Queue</th>-->
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					PrintUsageTree($pipelinetree,0,0,$maxsize);
+				?>
+			</tbody>
+		</table>
+		<br><br><br><br><br>
+		<?
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineTree ---------------- */
@@ -2368,7 +2441,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$group = $row['pipeline_group'];
 			//$imgdata[$group] = CreatePipelineGraph($group);
 		}
-		$myusage = GetPipelineInfo();
+		list($myusage,$maxsize) = GetPipelineInfo();
 		
 	?>
 	<style>
@@ -2382,6 +2455,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 	</span>
 	<br>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
+	<br>
+	<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
 	<br>
 	<?	
 		foreach ($userids as $userid => $username) {
@@ -2423,18 +2498,24 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function GetPipelineTree($viewall, $userid) {
 		MarkTime("GetPipelineTree($viewall, $userid)");
-	
+		
 		/* get list of pipelines owned by this username */
 		if ($viewall) {
-			$whereclause = "where b.pipeline_admin = $userid";
+			if ($userid != 0) {
+				$whereclause = "where b.pipeline_admin = $userid";
+			}
 		}
 		else {
-			$whereclause = "where b.pipeline_ishidden <> 1 and b.pipeline_admin = $userid";
+			if ($userid == 0) {
+				$whereclause = "where b.pipeline_ishidden <> 1";
+			}
+			else {
+				$whereclause = "where b.pipeline_ishidden <> 1 and b.pipeline_admin = $userid";
+			}
 		}
 		/* get list of pipelines */
 		$sqlstring = "select a.parent_id,b.pipeline_id,b.pipeline_name from pipeline_dependencies a right join pipelines b on a.pipeline_id = b.pipeline_id $whereclause order by b.pipeline_group, b.pipeline_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			//print_r($row); echo "<br>\n";
 			$childID = $row['pipeline_id'];
@@ -2453,20 +2534,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		foreach ($arr as $i => $node) {
 			$arr[$i] = array_unique($arr[$i]);
 		}
-		//PrintVariable($arr,'arr');
 		$tree = ParseTree($arr);
-		//$tree = buildTree($arr2, 'parentid', 'id');
-		//PrintVariable($tree,'tree');
-		$tree2 = array_unique($tree);
-		//foreach ($tree as $node) {
-		//	foreach ($tree2 as $key2 => $node2) {
-		//		if (empty(array_diff_assoc($node,$node2))) {
-		//			unset($tree2[$key2]);
-		//		}
-		//	}
-		//}
-		//PrintVariable($tree2,'tree2');
-		
+
 		return $tree;
 	}
 
@@ -2504,10 +2573,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		if(!is_null($tree) && count($tree) > 0) {
 			$level++;
 			foreach($tree as $node) {
-				//PrintVariable($node);
 				PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level);
-				//PrintPipelineRow(GetPipelineInfo($node['pipeline_id']), $level);
-				$level = printTree($node['child_id'], $level);
+				$level = PrintTree($node['child_id'], $level);
 			}
 			$level--;
 		}
@@ -2515,24 +2582,36 @@ echo "#$ps_command     $logged $ps_desc\n";
 	}	
 
 	/* -------------------------------------------- */
+	/* ------- PrintUsageTree --------------------- */
+	/* -------------------------------------------- */
+	function PrintUsageTree($tree, $level, $parentusage, $maxsize) {
+		MarkTime("PrintUsageTree()");
+		if(!is_null($tree) && count($tree) > 0) {
+			$level++;
+			foreach($tree as $node) {
+				$usage = PrintUsageRow($GLOBALS['info'][$node['pipeline_id']], $level, $parentusage, $maxsize);
+				$level = PrintUsageTree($node['child_id'], $level, $usage, $maxsize);
+			}
+			$level--;
+		}
+		return $level;
+	}	
+	
+	/* -------------------------------------------- */
 	/* ------- PrintPipelineRow ------------------- */
 	/* -------------------------------------------- */
 	function PrintPipelineRow($info, $level) {
+		
+		//PrintVariable($info);
+		
 		MarkTime("PrintPipelineRow()");
 		if ($level > 1) {
 			$class = 'child';
 		}
 
 		if ($info['isenabled']) {
-			//$bgcolor = "#a4f2af";
 			$bgcolor = "#e3f7e6";
 		}
-		//else {
-		//	$bgcolor = "#e3f7e6";
-		//}
-		//echo "<pre>";
-		//print_r($info);
-		//echo "</pre>";
 		if ($info['ishidden']) {
 			$fontcolor = "gray";
 		}
@@ -2550,13 +2629,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<? } ?>
 			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
 			<td valign="top" align="right"><?=$info['level']?></td>
-			<!--<td valign="top" style="font-size: 8pt">
-				<?
-					if (count($info['groupnames']) > 0) {
-						echo implode(', ', $info['groupnames']);
-					}
-				?>
-			</td>-->
 			<td valign="top"><?=$info['creatorusername']?></td>
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>">
 				<?
@@ -2571,9 +2643,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<? if ($info['status'] == 'running') { ?><b>running</b> <a href="pipelines.php?action=reset&id=<?=$info['id']?>">reset</a><? } else { echo $info['status']; }  ?>
 				</span>
 			</td>
-			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="error / submitted / pending / processing / complete">
-				<?=$info['numerror']?> / <?=$info['numsubmitted']?> / <?=$info['numpending']?> / <?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="pipelines.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
-			</td>-->
 			<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
 				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
 			</td>
@@ -2593,6 +2662,71 @@ echo "#$ps_command     $logged $ps_desc\n";
 		</tr>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PrintUsageRow ---------------------- */
+	/* -------------------------------------------- */
+	function PrintUsageRow($info, $level, $parentusage, $maxsize) {
+		
+		MarkTime("PrintUsageRow($info, $level, $parentusage)");
+
+		if ($level > 1) { $class = 'child'; }
+
+		if ($info['isenabled']) { $bgcolor = "#e3f7e6"; }
+		
+		if ($info['ishidden']) { $fontcolor = "gray"; }
+		else { $fontcolor = "black"; }
+
+		$usage = $info['disksize'];
+		$parentusage;
+		$netusage = $usage - $parentusage;
+		if ($netusage < 0) $netusage = 0;
+		$usage_f = number_format(($usage/1024/1024/1024),1) . '&nbsp;GB';
+		$parentusage_f = number_format(($parentusage/1024/1024/1024),1) . '&nbsp;GB';
+		$netusage_f = number_format(($netusage/1024/1024/1024),1) . '&nbsp;GB';
+
+		$colors = GenerateColorGradient();
+
+		$usageindex = 0;
+		if ($usage > 0) {
+			$usageindex = round(($usage/($maxsize))*100.0);
+			if ($usageindex > 100) { $usageindex = 100; }
+			$usagecolor = $colors[$usageindex];
+		}
+		else { $usagecolor = ""; }
+
+		$parentindex = 0;
+		if ($parentusage > 0) {
+			$parentindex = round(($parentusage/($maxsize))*100.0);
+			if ($parentindex > 100) { $parentindex = 100; }
+			$parentcolor = $colors[$parentindex];
+		}
+		else { $parentcolor = ""; }
+
+		$netindex = 0;
+		if ($netusage > 0) {
+			$netindex = round(($netusage/($maxsize))*100.0);
+			if ($netindex > 100) { $netindex = 100; }
+			$netcolor = $colors[$netindex];
+		}
+		else { $netcolor = ""; }
+		
+		?>
+		<tr style="color: <?=$fontcolor?>">
+			<td valign="top" style="padding-left: <?=($level-1)*20?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top"><?=$info['creatorusername']?>
+			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
+				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
+			</td>-->
+			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$usagecolor?>"><?=$usage_f?></td>
+			<!--<td valign="top" align="right" style="font-size:8pt; background-color: <?=$parentcolor?>"><?=$parentusage_f?></td>-->
+			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$netcolor?>; border: 1px solid #666"><?=$netusage_f?></td>
+		</tr>
+		<?
+		
+		return $info['disksize'];
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -2600,15 +2734,23 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function GetPipelineInfo() {
 		MarkTime("GetPipelineInfo() first call");
-		
+
+		/* yes, this variable is supposed to be global...
+		   the reason being; there is a good chance the pipeline info will be needed many times,
+		   with the info being needed at different locations in the code. Rather than loading
+		   everything at once, this loads what is needed to display and keeps it for later
+		   kind of like caching ... */
 		global $info;
 		
+		$maxsize = 0;
 		$sqlstring = "select a.*,timediff(pipeline_lastfinish, pipeline_laststart) 'run_time', b.username 'creatorusername', b.user_fullname 'creatorfullname' from pipelines a left join users b on a.pipeline_admin = b.user_id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['pipeline_id'];
 
 			MarkTime("GetPipelineInfo($id)");
+			
+			if ($row['pipeline_name'] == "") { $row['pipeline_name'] = "(blank pipeline name)"; }
 			
 			$info[$id]['id'] = $row['pipeline_id'];
 			$info[$id]['title'] = $row['pipeline_name'];
@@ -2678,6 +2820,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 			//PrintSQL($sqlstringD);
 			//echo "$disksize<br>";
 
+			if ($info[$id]['disksize'] > $maxsize) {
+				$maxsize = $info[$id]['disksize'];
+			}
+			
 			MarkTime("GetPipelineInfo($id) pre counts");
 		
 			//$sqlstring3 = "select (select count(*) from analysis where analysis_status = '' and pipeline_id = $id) 'numblank', (select count(*) from analysis where analysis_status = 'error' and pipeline_id = $id) 'numerror', (select count(*) from analysis where analysis_status = 'submitted' and pipeline_id = $id) 'numsubmitted', (select count(*) from analysis where analysis_status = 'pending' and pipeline_id = $id) 'numpending', (select count(*) from analysis where analysis_status = 'processing' and pipeline_id = $id) 'numprocessing', (select count(*) from analysis where analysis_status = 'complete' and pipeline_id = $id) 'numcomplete'";
@@ -2711,7 +2857,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		}
 		
 		//PrintVariable($myusage);
-		return $myusage;
+		return array($myusage, $maxsize);
 	}
 
 
