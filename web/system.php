@@ -49,6 +49,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
     $c['debug'] = GetVariable("debug");
+    $c['hideerrors'] = GetVariable("hideerrors");
 	
     $c['mysqlhost'] = GetVariable("mysqlhost");
     $c['mysqluser'] = GetVariable("mysqluser");
@@ -174,6 +175,7 @@
 
 # ----- Debug -----
 [debug] = $debug
+[hideerrors] = $hideerrors
 
 # ----- Database -----
 [mysqlhost] = $mysqlhost
@@ -299,6 +301,12 @@
 				<td><input type="text" name="debug" value="<?=$GLOBALS['cfg']['debug']?>" size="45"></td>
 				<td></td>
 				<td>Enable debugging for the PHP pages. Will display all SQL statements. 1 for yes, 0 for no.</td>
+			</tr>
+			<tr>
+				<td class="variable">hideerrors</td>
+				<td><input type="text" name="hideerrors" value="<?=$GLOBALS['cfg']['hideerrors']?>" size="45"></td>
+				<td></td>
+				<td>Hide a SQL error if it occurs. Emails are always sent. 1 for yes, 0 for no. Always leave as 1 for production systems for security purposes!</td>
 			</tr>
 			
 			<tr>
