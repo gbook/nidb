@@ -136,7 +136,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance) values ($id, $instid, 0)";
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, $instid, 0, 0)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
@@ -240,7 +240,7 @@
 		
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance) values ($id, $instid, 0)";
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, $instid, 0, 0)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
