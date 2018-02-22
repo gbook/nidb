@@ -87,7 +87,7 @@
 	function UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
-		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], $usecustomid);
+		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
@@ -113,7 +113,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($userid, $id, 1, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($userid, $id, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -129,7 +129,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($userid, $id, 0, 1)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($userid, $id, 0, 1, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -145,7 +145,7 @@
 	function AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], trim($projectname));
-		$usecustomid = mysqli_real_escape_string($GLOBALS['linki'], trim($usecustomid)) + 0;
+		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], trim($usecustomid)));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], trim($admin));
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], trim($pi));
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], trim($sharing));

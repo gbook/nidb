@@ -183,7 +183,7 @@
 		
 		if ($sendemail) {
 			/* send an email to the owner of the instance */
-			$sqlstring = "select * from users where user_id = $userid";
+			$sqlstring = "select * from users where user_id = (select instance_ownerid from instance where instance_id = $instanceid)";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);

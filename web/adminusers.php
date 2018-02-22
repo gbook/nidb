@@ -136,7 +136,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id) values ($id, $instid)";
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance) values ($id, $instid, 0)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
@@ -154,7 +154,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($id, $projectid, 1, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -170,7 +170,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi) values ($id, $projectid, 0, 1)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 0, 1, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -186,7 +186,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi) values ($id, $projectid, 1, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -202,7 +202,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi) values ($id, $projectid, 0, 1)";
+					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi, write_data, write_phi) values ($id, $projectid, 0, 1, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -240,7 +240,7 @@
 		
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id) values ($id, $instid)";
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance) values ($id, $instid, 0)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
@@ -254,7 +254,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data) values ($id, $projectid, 1)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -270,7 +270,7 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_phi) values ($id, $projectid, 1)";
+					$sqlstring = "insert into user_project (user_id, project_id, view_phi, view_data, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
