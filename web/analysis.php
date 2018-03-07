@@ -68,6 +68,7 @@
 	
 	$searchuid = GetVariable("searchuid");
 	$searchstatus = GetVariable("searchstatus");
+	$searchsuccess = GetVariable("searchsuccess");
 	$sortby = GetVariable("sortby");
 	$sortorder = GetVariable("sortorder");
 	
@@ -77,49 +78,49 @@
 	switch ($action) {
 		case 'viewjob': DisplayJob($id); break;
 		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
-		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder); break;
+		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
 		case 'deleteanalyses':
 			DeleteAnalyses($id, $analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'copyanalyses':
 			CopyAnalyses($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'createlinks':
 			CreateLinks($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'rerunresults':
 			RerunResults($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'runsupplement':
 			RunSupplement($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'markbad':
 			MarkAnalysis($analysisids, 'bad');
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'markgood':
 			MarkAnalysis($analysisids, 'good');
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'markcomplete':
 			MarkComplete($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'rechecksuccess':
 			RecheckSuccess($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
 		case 'setanalysisnotes':
 			SetAnalysisNotes($analysisid, $analysisnotes);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
 	}
 	
@@ -375,12 +376,13 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAnalysisList ---------------- */
 	/* -------------------------------------------- */
-	function DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $sortby, $sortorder) {
+	function DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder) {
 
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], $searchuid);
 		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
+		$searchsuccess = mysqli_real_escape_string($GLOBALS['linki'], $searchsuccess);
 	
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -419,7 +421,7 @@
 		$colors = GenerateColorGradient();
 		
 		/* run the sql query here to get the row count */
-		if (($searchuid == "") && ($searchstatus == "")) {
+		if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
 			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 		}
 		else {
@@ -435,6 +437,12 @@
 					$sqlstring .= " and analysis_status = '$searchstatus'";
 				}
 			}
+		}
+		if ($searchsuccess == 1) {
+			$sqlstring .= " and a.analysis_iscomplete = 1";
+		}
+		if ($searchsuccess == 2) {
+			$sqlstring .= " and a.analysis_iscomplete = 0 and a.analysis_status = 'complete'";
 		}
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -486,7 +494,7 @@
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
-				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "")) { echo "found"; } ?></td>
+				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
 				<td class="pagenum">
 					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
 					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()">
@@ -592,7 +600,12 @@
 							<option value="allothers" <? if ($searchstatus == "allothers") { echo "selected"; } ?>>All other status (ignored, etc)
 						</select>
 					</th>
-					<th></th>
+					<th>
+						<select name="searchsuccess">
+							<option value="" <? if ($searchsuccess == "") { echo "selected"; } ?>>(Select success)
+							<option value="1" <? if ($searchsuccess == "1") { echo "selected"; } ?>>Successful
+							<option value="2" <? if ($searchsuccess == "2") { echo "selected"; } ?>>Not Successful
+						</select>
 					<th></th>
 					<th></th>
 					<th></th>
@@ -615,7 +628,7 @@
 			<input type="hidden" name="id" value="<?=$id?>">
 			<tbody>
 				<?
-					if (($searchuid == "") && ($searchstatus == "")) {
+					if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
 						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 					}
 					else {
@@ -625,11 +638,17 @@
 						}
 						if ($searchstatus != "") {
 							if ($searchstatus == "allothers") {
-								$sqlstring .= " and analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+								$sqlstring .= " and a.analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 							}
 							else {
-								$sqlstring .= " and analysis_status = '$searchstatus'";
+								$sqlstring .= " and a.analysis_status = '$searchstatus'";
 							}
+						}
+						if ($searchsuccess == 1) {
+							$sqlstring .= " and a.analysis_iscomplete = 1";
+						}
+						if ($searchsuccess == 2) {
+							$sqlstring .= " and a.analysis_iscomplete = 0 and a.analysis_status = 'complete'";
 						}
 					}
 					/* figure out the sorting */

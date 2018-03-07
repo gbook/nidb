@@ -1113,6 +1113,7 @@
 					$ageatscan = $study_ageatscan;
 				}
 				
+				$altids = array();
 				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1126,7 +1127,6 @@
 					}
 				}
 				$altuidlist = implode2(", ",$altids);
-				$altids = "";
 				
 				if ($lastuid != $uid) {
 					if ($bgcolor == "") {
