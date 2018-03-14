@@ -594,6 +594,26 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- GetModalityList -------------------- */
+	/* -------------------------------------------- */
+	function GetModalityList($withdesc = false) {
+		$sqlstring = "select * from modalities order by mod_desc";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modalities[] = $row['mod_code'];
+			$descriptions[] = $row['mod_code'];
+		}
+			
+		if ($withdesc) {
+			return array($modalities,$descriptions);
+		}
+		else {
+			return $modalities;
+		}
+	}
+
+	
+	/* -------------------------------------------- */
 	/* ------- DisplayProjectSelectBox ------------ */
 	/* -------------------------------------------- */
 	/* display project <select> box with only projects
@@ -1476,7 +1496,9 @@
 					<tr>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a><br>
+							<a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Study templates</a>
+						</td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
 						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>

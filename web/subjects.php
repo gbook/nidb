@@ -84,6 +84,7 @@
 	$ids = GetVariable("ids");
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
+	$templateid = GetVariable("templateid");
 
 	/* fix the 'active' search */
 	if (($searchactive == '') && ($action != '')) {
@@ -114,6 +115,9 @@
 			break;
 		case 'newstudy':
 			CreateNewStudy($modality, $enrollmentid, $id);
+			break;
+		case 'newstudyfromtemplate':
+			CreateNewStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($id);
@@ -388,6 +392,69 @@
 		<?
 	}	
 
+	
+	/* -------------------------------------------- */
+	/* ------- CreateNewStudyFromTemplate --------- */
+	/* -------------------------------------------- */
+	function CreateNewStudyFromTemplate($modality, $enrollmentid, $id, $templateid) {
+		
+		/* Get the protocol names and modality for this template */
+		$itemprotocols = array();
+		$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by a.item_order";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$itemprotocols[] = $row['item_protocol'];
+			$templatemodality = strtolower($row['template_modality']);
+		}
+		
+		$modality = $templatemodality;
+
+		/* insert a new row into the studies table. parsedicom or the user will populate the info later */
+		/* get the newest study # first */
+		$sqlstring = "SELECT max(a.study_num) 'max' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$oldstudynum = $row['max'];
+		$study_num = $oldstudynum + 1;
+
+		$sqlstring = "SELECT project_id FROM enrollment WHERE enrollment_id = $enrollmentid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$project_id = $row['project_id'];
+		
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, upper('$modality'), now(), '', '', '', 'pending')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$studyRowID = mysqli_insert_id($GLOBALS['linki']);
+		
+		/* create the series */
+		$i = 0;
+		foreach ($itemprotocols as $protocol) {
+			$i++;
+			$sqlstring = "insert into $templatemodality" . "_series (study_id, series_num, series_datetime, series_protocol) values ($studyRowID, $i, now(), '$protocol')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		
+		/* get information about the project to display */
+		$sqlstring = "select (select uid from subjects where subject_id = '$id') 'uid', (select project_name from projects where project_id = $project_id) 'projectname', (select project_costcenter from projects where project_id = $project_id) 'projectcostcenter' ";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$projectname = $row['projectname'];
+		$projectcostcenter = $row['projectcostcenter'];
+
+		/* navigation bar */
+		$urllist['Subjects'] = "subjects.php";
+		$urllist[$uid] = "subjects.php?action=display&id=$id";
+		NavigationBar("$uid", $urllist,'','','','');
+		
+		?>
+		<div align="center">
+		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
+		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
+		</div>
+		<?
+	}	
+	
 	
 	/* -------------------------------------------- */
 	/* ------- EnrollSubject ---------------------- */
@@ -1850,31 +1917,57 @@
 														<? if (!$enrolled) { ?>
 														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
 														<? } else { ?>
-														<!--<a href="subjects.php?action=newstudy&enrollmentid=<?=$enrollmentid?>&id=<?=$id?>" style="font-size:11pt">Create new study</a>-->
-														
-														<form action="subjects.php" method="post">
-														<td align="right">
-															<input type="hidden" name="id" value="<?=$id?>">
-															<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-															<input type="hidden" name="action" value="newstudy">
-															<span style="font-size:10pt">Create new study:</span>
-															<select name="modality">
-																<option value="" style="<?=$style?>">(Select modality)</option>															<?
-																$sqlstring = "select * from modalities order by mod_code";
-																$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-																while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-																	$mod_code = $row['mod_code'];
-																	$mod_desc = $row['mod_desc'];
+														<table>
+															<tr>
+																<form action="subjects.php" method="post">
+																<td align="right">
+																	<input type="hidden" name="id" value="<?=$id?>">
+																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																	<input type="hidden" name="action" value="newstudy">
+																	<span style="font-size:10pt">New <u>empty</u> study</span>
+																	<select name="modality">
+																		<option value="" style="<?=$style?>">(Select modality)</option>															<?
+																		$sqlstring = "select * from modalities order by mod_code";
+																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+																		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+																			$mod_code = $row['mod_code'];
+																			$mod_desc = $row['mod_desc'];
+																			?>
+																			<option value="<?=$mod_code?>" style="<?=$style?>">[<?=$mod_code?>] <?=$mod_desc?></option>
+																			<?
+																		}
 																	?>
-																	<option value="<?=$mod_code?>" style="<?=$style?>">[<?=$mod_code?>] <?=$mod_desc?></option>
-																	<?
-																}
-															?>
-															</select>
-															<input type="submit" value="Create">
-														</td>
-														</form>														
-														
+																	</select>
+																	<input type="submit" value="Create">
+																</td>
+																</form>														
+															</tr>
+															<tr>
+																<form action="subjects.php" method="post">
+																<td align="right">
+																	<input type="hidden" name="id" value="<?=$id?>">
+																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																	<input type="hidden" name="action" value="newstudyfromtemplate">
+																	<span style="font-size:10pt">New study from <u>template</u></span>
+																	<select name="templateid">
+																		<option value="" style="<?=$style?>">(Select template)</option>															<?
+																		$sqlstring = "select * from study_template where project_id = $projectid order by template_name asc";
+																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+																		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+																			$templateid = $row['studytemplate_id'];
+																			$templatename = $row['template_name'];
+																			$templatemodality = $row['template_modality'];
+																			?>
+																			<option value="<?=$templateid?>" style="<?=$style?>"><?=$templatename?> (<?=$templatemodality?>)</option>
+																			<?
+																		}
+																	?>
+																	</select>
+																	<input type="submit" value="Create">
+																</td>
+																</form>														
+															</tr>
+														</table>
 														<? } ?>
 													</td>
 												</tr>

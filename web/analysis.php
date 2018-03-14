@@ -797,9 +797,11 @@
 					<td>
 						<?
 							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
-								$systemstring = "ssh $pipeline_submithost qstat -j $analysis_qsubid";
-							
-								if (trim($out) == "hi") {
+								$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
+								//print_r($systemstring);
+								$out = shell_exec($systemstring);
+								//print_r($out);
+								if (trim($out) == "") {
 									?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This means the analysis is being setup and the data is being copied or the cluster job failed. Check log files for error"><?
 								}
 								?>

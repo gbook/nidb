@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 09, 2018 at 06:52 PM
+-- Generation Time: Mar 14, 2018 at 03:04 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -2323,6 +2323,32 @@ CREATE TABLE `studies` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `study_template`
+--
+
+CREATE TABLE `study_template` (
+  `studytemplate_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `template_name` varchar(255) NOT NULL,
+  `template_modality` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `study_templateitems`
+--
+
+CREATE TABLE `study_templateitems` (
+  `studytemplateitem_id` int(11) NOT NULL,
+  `studytemplate_id` int(11) NOT NULL,
+  `item_order` int(11) NOT NULL,
+  `item_protocol` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `subjects`
 --
 
@@ -3403,6 +3429,18 @@ ALTER TABLE `studies`
   ADD KEY `study_datetime` (`study_datetime`);
 
 --
+-- Indexes for table `study_template`
+--
+ALTER TABLE `study_template`
+  ADD PRIMARY KEY (`studytemplate_id`);
+
+--
+-- Indexes for table `study_templateitems`
+--
+ALTER TABLE `study_templateitems`
+  ADD PRIMARY KEY (`studytemplateitem_id`);
+
+--
 -- Indexes for table `subjects`
 --
 ALTER TABLE `subjects`
@@ -3685,7 +3723,7 @@ ALTER TABLE `data_requests`
 -- AUTO_INCREMENT for table `ecg_series`
 --
 ALTER TABLE `ecg_series`
-  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 --
 -- AUTO_INCREMENT for table `eeg_series`
 --
@@ -3830,12 +3868,12 @@ ALTER TABLE `module_prefs`
 -- AUTO_INCREMENT for table `module_procs`
 --
 ALTER TABLE `module_procs`
-  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
+  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=122;
 --
 -- AUTO_INCREMENT for table `mostrecent`
 --
 ALTER TABLE `mostrecent`
-  MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21577;
+  MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21584;
 --
 -- AUTO_INCREMENT for table `mr_qa`
 --
@@ -4025,7 +4063,17 @@ ALTER TABLE `sr_series`
 -- AUTO_INCREMENT for table `studies`
 --
 ALTER TABLE `studies`
-  MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32167;
+  MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32177;
+--
+-- AUTO_INCREMENT for table `study_template`
+--
+ALTER TABLE `study_template`
+  MODIFY `studytemplate_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+--
+-- AUTO_INCREMENT for table `study_templateitems`
+--
+ALTER TABLE `study_templateitems`
+  MODIFY `studytemplateitem_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 --
 -- AUTO_INCREMENT for table `subjects`
 --
@@ -4060,12 +4108,12 @@ ALTER TABLE `tags`
 -- AUTO_INCREMENT for table `task_series`
 --
 ALTER TABLE `task_series`
-  MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=156;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=157;
 --
 -- AUTO_INCREMENT for table `users_pending`
 --
@@ -4075,7 +4123,7 @@ ALTER TABLE `users_pending`
 -- AUTO_INCREMENT for table `user_instance`
 --
 ALTER TABLE `user_instance`
-  MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
+  MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=248;
 --
 -- AUTO_INCREMENT for table `user_project`
 --
