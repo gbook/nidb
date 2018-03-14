@@ -3558,67 +3558,67 @@ ALTER TABLE `xa_series`
 -- AUTO_INCREMENT for table `analysis`
 --
 ALTER TABLE `analysis`
-  MODIFY `analysis_id` bigint(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1667183;
+  MODIFY `analysis_id` bigint(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_data`
 --
 ALTER TABLE `analysis_data`
-  MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85394;
+  MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_group`
 --
 ALTER TABLE `analysis_group`
-  MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_history`
 --
 ALTER TABLE `analysis_history`
-  MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1143;
+  MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_resultnames`
 --
 ALTER TABLE `analysis_resultnames`
-  MODIFY `resultname_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13446;
+  MODIFY `resultname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_results`
 --
 ALTER TABLE `analysis_results`
-  MODIFY `analysisresults_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17944028;
+  MODIFY `analysisresults_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `analysis_resultunit`
 --
 ALTER TABLE `analysis_resultunit`
-  MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=745;
+  MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessments`
 --
 ALTER TABLE `assessments`
-  MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=271;
+  MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_data`
 --
 ALTER TABLE `assessment_data`
-  MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=916;
+  MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_formfields`
 --
 ALTER TABLE `assessment_formfields`
-  MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=572;
+  MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_forms`
 --
 ALTER TABLE `assessment_forms`
-  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `assessment_series`
 --
 ALTER TABLE `assessment_series`
-  MODIFY `assessmentseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `assessmentseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audio_series`
 --
 ALTER TABLE `audio_series`
-  MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audit_enrollment`
 --
@@ -3628,22 +3628,22 @@ ALTER TABLE `audit_enrollment`
 -- AUTO_INCREMENT for table `audit_results`
 --
 ALTER TABLE `audit_results`
-  MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=956477;
+  MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audit_series`
 --
 ALTER TABLE `audit_series`
-  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15058;
+  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audit_study`
 --
 ALTER TABLE `audit_study`
-  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55019;
+  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `audit_subject`
 --
 ALTER TABLE `audit_subject`
-  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2586;
+  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `binary_series`
 --
@@ -3653,7 +3653,7 @@ ALTER TABLE `binary_series`
 -- AUTO_INCREMENT for table `calendars`
 --
 ALTER TABLE `calendars`
-  MODIFY `calendar_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `calendar_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `calendar_allocations`
 --
@@ -3663,7 +3663,7 @@ ALTER TABLE `calendar_allocations`
 -- AUTO_INCREMENT for table `calendar_appointments`
 --
 ALTER TABLE `calendar_appointments`
-  MODIFY `appt_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18438;
+  MODIFY `appt_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `calendar_notifications`
 --
@@ -3683,22 +3683,22 @@ ALTER TABLE `calendar_projects`
 -- AUTO_INCREMENT for table `changelog`
 --
 ALTER TABLE `changelog`
-  MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `common`
 --
 ALTER TABLE `common`
-  MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `consent_series`
 --
 ALTER TABLE `consent_series`
-  MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=140;
+  MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `contacts`
 --
 ALTER TABLE `contacts`
-  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `cr_series`
 --
@@ -3713,77 +3713,77 @@ ALTER TABLE `cs_prefs`
 -- AUTO_INCREMENT for table `ct_series`
 --
 ALTER TABLE `ct_series`
-  MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `data_requests`
 --
 ALTER TABLE `data_requests`
-  MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=227434;
+  MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ecg_series`
 --
 ALTER TABLE `ecg_series`
-  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `eeg_series`
 --
 ALTER TABLE `eeg_series`
-  MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6524;
+  MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `enrollment`
 --
 ALTER TABLE `enrollment`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26304;
+  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `enrollment_checklist`
 --
 ALTER TABLE `enrollment_checklist`
-  MODIFY `enrollmentchecklist_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `enrollmentchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `enrollment_missingdata`
 --
 ALTER TABLE `enrollment_missingdata`
-  MODIFY `missingdata_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `missingdata_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `et_series`
 --
 ALTER TABLE `et_series`
-  MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4522;
+  MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `families`
 --
 ALTER TABLE `families`
-  MODIFY `family_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11533;
+  MODIFY `family_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `family_members`
 --
 ALTER TABLE `family_members`
-  MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11533;
+  MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `fileio_requests`
 --
 ALTER TABLE `fileio_requests`
-  MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63753;
+  MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `groups`
 --
 ALTER TABLE `groups`
-  MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=145;
+  MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `group_data`
 --
 ALTER TABLE `group_data`
-  MODIFY `subjectgroup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21950;
+  MODIFY `subjectgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `gsr_series`
 --
 ALTER TABLE `gsr_series`
-  MODIFY `gsrseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
+  MODIFY `gsrseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `importlogs`
 --
 ALTER TABLE `importlogs`
-  MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8670;
+  MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `import_received`
 --
@@ -3793,7 +3793,7 @@ ALTER TABLE `import_received`
 -- AUTO_INCREMENT for table `import_requests`
 --
 ALTER TABLE `import_requests`
-  MODIFY `importrequest_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2485;
+  MODIFY `importrequest_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `import_transactions`
 --
@@ -3803,7 +3803,7 @@ ALTER TABLE `import_transactions`
 -- AUTO_INCREMENT for table `instance`
 --
 ALTER TABLE `instance`
-  MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_billing`
 --
@@ -3813,7 +3813,7 @@ ALTER TABLE `instance_billing`
 -- AUTO_INCREMENT for table `instance_contact`
 --
 ALTER TABLE `instance_contact`
-  MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_invoice`
 --
@@ -3823,42 +3823,42 @@ ALTER TABLE `instance_invoice`
 -- AUTO_INCREMENT for table `instance_pricing`
 --
 ALTER TABLE `instance_pricing`
-  MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `instance_usage`
 --
 ALTER TABLE `instance_usage`
-  MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3929;
+  MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `manual_qa`
 --
 ALTER TABLE `manual_qa`
-  MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=200;
+  MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measureinstruments`
 --
 ALTER TABLE `measureinstruments`
-  MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measurenames`
 --
 ALTER TABLE `measurenames`
-  MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+  MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `measures`
 --
 ALTER TABLE `measures`
-  MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39930;
+  MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `modalities`
 --
 ALTER TABLE `modalities`
-  MODIFY `mod_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `mod_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-  MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `module_prefs`
 --
@@ -3868,42 +3868,42 @@ ALTER TABLE `module_prefs`
 -- AUTO_INCREMENT for table `module_procs`
 --
 ALTER TABLE `module_procs`
-  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=122;
+  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mostrecent`
 --
 ALTER TABLE `mostrecent`
-  MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21584;
+  MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_qa`
 --
 ALTER TABLE `mr_qa`
-  MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=218830;
+  MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_qcparams`
 --
 ALTER TABLE `mr_qcparams`
-  MODIFY `mrqcparam_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `mrqcparam_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_scanparams`
 --
 ALTER TABLE `mr_scanparams`
-  MODIFY `mrscanparam_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=80;
+  MODIFY `mrscanparam_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_series`
 --
 ALTER TABLE `mr_series`
-  MODIFY `mrseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=233416;
+  MODIFY `mrseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `mr_studyqa`
 --
 ALTER TABLE `mr_studyqa`
-  MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15569;
+  MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
-  MODIFY `site_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `site_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `nm_series`
 --
@@ -3913,37 +3913,37 @@ ALTER TABLE `nm_series`
 -- AUTO_INCREMENT for table `notification_user`
 --
 ALTER TABLE `notification_user`
-  MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
+  MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ot_series`
 --
 ALTER TABLE `ot_series`
-  MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4085;
+  MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipelines`
 --
 ALTER TABLE `pipelines`
-  MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=234;
+  MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_data_def`
 --
 ALTER TABLE `pipeline_data_def`
-  MODIFY `pipelinedatadef_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10572;
+  MODIFY `pipelinedatadef_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_dependencies`
 --
 ALTER TABLE `pipeline_dependencies`
-  MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=591;
+  MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_download`
 --
 ALTER TABLE `pipeline_download`
-  MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_groups`
 --
 ALTER TABLE `pipeline_groups`
-  MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pipeline_history`
 --
@@ -3958,42 +3958,42 @@ ALTER TABLE `pipeline_status`
 -- AUTO_INCREMENT for table `pipeline_steps`
 --
 ALTER TABLE `pipeline_steps`
-  MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103782;
+  MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ppi_series`
 --
 ALTER TABLE `ppi_series`
-  MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `prescriptionnames`
 --
 ALTER TABLE `prescriptionnames`
-  MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
+  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `project_checklist`
 --
 ALTER TABLE `project_checklist`
-  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=253;
+  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `project_protocol`
 --
 ALTER TABLE `project_protocol`
-  MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `protocolgroup_items`
 --
 ALTER TABLE `protocolgroup_items`
-  MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=203;
+  MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `protocol_group`
 --
 ALTER TABLE `protocol_group`
-  MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `pr_series`
 --
@@ -4003,57 +4003,57 @@ ALTER TABLE `pr_series`
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_modules`
 --
 ALTER TABLE `qc_modules`
-  MODIFY `qcmodule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `qcmodule_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_moduleseries`
 --
 ALTER TABLE `qc_moduleseries`
-  MODIFY `qcmoduleseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1263445;
+  MODIFY `qcmoduleseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_resultnames`
 --
 ALTER TABLE `qc_resultnames`
-  MODIFY `qcresultname_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=143;
+  MODIFY `qcresultname_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `qc_results`
 --
 ALTER TABLE `qc_results`
-  MODIFY `qcresults_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4039609;
+  MODIFY `qcresults_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `ratings`
 --
 ALTER TABLE `ratings`
-  MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=254;
+  MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
-  MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `remote_logins`
 --
 ALTER TABLE `remote_logins`
-  MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2541;
+  MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snps`
 --
 ALTER TABLE `snps`
-  MODIFY `snp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1140424;
+  MODIFY `snp_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snp_alleles`
 --
 ALTER TABLE `snp_alleles`
-  MODIFY `snpallele_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1140426;
+  MODIFY `snpallele_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `snp_series`
 --
 ALTER TABLE `snp_series`
-  MODIFY `snpseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=243;
+  MODIFY `snpseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `sr_series`
 --
@@ -4063,32 +4063,32 @@ ALTER TABLE `sr_series`
 -- AUTO_INCREMENT for table `studies`
 --
 ALTER TABLE `studies`
-  MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32177;
+  MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `study_template`
 --
 ALTER TABLE `study_template`
-  MODIFY `studytemplate_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `studytemplate_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `study_templateitems`
 --
 ALTER TABLE `study_templateitems`
-  MODIFY `studytemplateitem_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `studytemplateitem_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subjects`
 --
 ALTER TABLE `subjects`
-  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15939;
+  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subject_altuid`
 --
 ALTER TABLE `subject_altuid`
-  MODIFY `subjectaltuid_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22977;
+  MODIFY `subjectaltuid_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `subject_relation`
 --
 ALTER TABLE `subject_relation`
-  MODIFY `subjectrelation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `subjectrelation_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `surgery_series`
 --
@@ -4098,37 +4098,37 @@ ALTER TABLE `surgery_series`
 -- AUTO_INCREMENT for table `system_messages`
 --
 ALTER TABLE `system_messages`
-  MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `tags`
 --
 ALTER TABLE `tags`
-  MODIFY `tag_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9723;
+  MODIFY `tag_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `task_series`
 --
 ALTER TABLE `task_series`
-  MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
+  MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=157;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `users_pending`
 --
 ALTER TABLE `users_pending`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `user_instance`
 --
 ALTER TABLE `user_instance`
-  MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=248;
+  MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `user_project`
 --
 ALTER TABLE `user_project`
-  MODIFY `userproject_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24588;
+  MODIFY `userproject_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `us_series`
 --
@@ -4138,7 +4138,7 @@ ALTER TABLE `us_series`
 -- AUTO_INCREMENT for table `video_series`
 --
 ALTER TABLE `video_series`
-  MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
+  MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `weather`
 --
