@@ -1123,9 +1123,9 @@ sub InsertDICOM {
 	# SubjectUID_EnrollmentRowID_SeriesNum_FileNum
 	# S1234ABC_SP1_5_0001.dcm
 	
-	$report .= WriteLog("CWD: " . getcwd) . "\n";
+	$report .= WriteLog("CWD: " . cwd()) . "\n";
 	# check if there are .dcm files already in the archive
-	my $cwd = getcwd;
+	my $cwd = cwd();
 	chdir($outdir);
 	my @existingdcmfiles = <*.dcm>;
 	chdir($cwd);
@@ -1219,7 +1219,7 @@ sub InsertDICOM {
 	my $dirsize = 0;
 	($dirsize, $numfiles) = GetDirectorySize($outdir);
 	$report .= WriteLog("Got size [$dirsize] and numfiles [$numfiles] for directory [$outdir]") . "\n";
-	$report .= WriteLog("CWD: " . getcwd) . "\n";
+	$report .= WriteLog("CWD: " . cwd()) . "\n";
 	
 	# check if its an EPI sequence, but not a perfusion sequence
 	if (($SequenceName =~ m/^epfid2d1_/) || ($SequenceName =~ m/^epfid2d1_64/) || ($SequenceName =~ m/^epfid2d1_128/)) {
@@ -1755,7 +1755,7 @@ sub InsertParRec {
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
-	$report .= WriteLog("Current directory: " . getcwd) . "\n";
+	$report .= WriteLog("Current directory: " . cwd()) . "\n";
 	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
 	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
@@ -2065,7 +2065,7 @@ sub InsertEEG {
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# change the permissions to 777 so the webpage can read/write the directories
-	WriteLog("Current directory: " . getcwd) . "\n";
+	$report .= WriteLog("Current directory: " . cwd()) . "\n";
 	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
 	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
@@ -2103,7 +2103,7 @@ sub CreateThumbnail {
 	#$systemstring = "convert --version";
 	#WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	
-	my $origDir = getcwd;
+	my $origDir = cwd();
 	
 	# get list of dicom files
 	chdir("$dir/dicom");

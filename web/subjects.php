@@ -113,6 +113,9 @@
 		case 'display':
 			DisplaySubject($id);
 			break;
+		case 'print':
+			PrintEnrollment($id, $enrollmentid);
+			break;
 		case 'newstudy':
 			CreateNewStudy($modality, $enrollmentid, $id);
 			break;
@@ -359,9 +362,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$oldstudynum = $row['max'];
 		$study_num = $oldstudynum + 1;
-		//echo "$study_num<br>";
-		
-		//exit(0);
 
 		$sqlstring = "SELECT project_id FROM enrollment WHERE enrollment_id = $enrollmentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -647,12 +647,8 @@
 			$altuids = GetAlternateUIDs($row['subject_id'],0);
 			$subjects[$i]['altuid'] = implode2(', ',$altuids);
 			
-			//PrintVariable($altuids);
-			
 			$i++;
 		}
-		
-		//PrintVariable($subjects);
 		
 		/* display one column for each subject with a radio button to "merge all studies into this subject" */
 		?>
@@ -851,11 +847,9 @@
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$enrollmentid = $row['enrollment_id'];
-										//$enroll_startdate = $row['enroll_startdate'];
 										$enrollgroup = $row['enroll_subgroup'];
 										$project_name = $row['project_name'];
 										$costcenter = $row['project_costcenter'];
-										//$project_enddate = $row['project_enddate'];
 										
 										if ($row['irb_consent'] != "") { $irb = "Y"; }
 										else { $irb = "N"; }
@@ -876,7 +870,6 @@
 								</tr>
 									<?
 									$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
-									//$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									if (mysqli_num_rows($result2) > 0) {
 										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
@@ -1912,6 +1905,8 @@
 											<table width="100%">
 												<tr>
 													<td><b>Imaging studies</b>
+													<br><br>
+													<a href="subjects.php?action=print&id=<?=$id?>&enrollmentid=<?=$enrollmentid?>" style="font-size: 9pt">Print detailed data</a>
 													</td>
 													<td align="right">
 														<? if (!$enrolled) { ?>
@@ -2270,10 +2265,157 @@
 				</td>
 			</tr>
 		</table>
-		<br><br><bR><br><br>
+		<br><br><br><br><br>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PrintEnrollment -------------------- */
+	/* -------------------------------------------- */
+	function PrintEnrollment($id, $enrollmentid) {
+		if (!ValidID($id,'Subject ID')) { return; }
+		if (!ValidID($enrollmentid,'Enrollment ID')) { return; }
+
+		/* get privacy information */
+		$username = $_SESSION['username'];
+		$sqlstring = "select user_id from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
+		
+		$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_phi = 1";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$projectname = $row['project_name'];
+				$projectcostcenter = $row['project_costcenter'];
+				$phiprojectlist[] = "$projectname ($projectcostcenter)";
+			}
+			$phiaccess = 1;
+		}
+		else {
+			$phiaccess = 0;
+		}
+		
+		$sqlstring = "select a.uid, c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$projectname = $row['project_name'];
+				$uid = $row['uid'];
+				$projectcostcenter = $row['project_costcenter'];
+				$dataprojectlist[] = "$projectname ($projectcostcenter)";
+			}
+			$dataaccess = 1;
+		}
+		else {
+			$dataaccess = 0;
+		}
+		
+		/* check if they have enrollments for a valid project */
+		$sqlstring = "select a.* from enrollment a right join projects b on a.project_id = b.project_id where a.subject_id = $id";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$hasenrollments = 1;
+		}
+		else {
+			$hasenrollments = 0;
+		}
 	
+		$urllist['Subjects'] = "subjects.php";
+		NavigationBar("$uid", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
+		
+		$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = $enrollmentid order by a.study_num asc";
+		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result2) > 0) {
+		?>
+		<table border="1">
+			<thead>
+				<th>#</th>
+				<th>Modality</th>
+				<th>Date</th>
+				<th>Age<span class="tiny">&nbsp;y</span></th>
+				<th>Site</th>
+				<th>Visit</th>
+			</thead>
+			<tbody>
+			<?
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+				$study_id = $row2['study_id'];
+				$study_num = $row2['study_num'];
+				$study_modality = $row2['study_modality'];
+				$study_datetime = $row2['study_datetime'];
+				$study_ageatscan = $row2['study_ageatscan'];
+				$calcage = number_format($row2['ageatscan']/365.25,1);
+				$study_operator = $row2['study_operator'];
+				$study_performingphysician = $row2['study_performingphysician'];
+				$study_site = $row2['study_site'];
+				$study_type = $row2['study_type'];
+				$study_status = $row2['study_status'];
+				$study_doradread = $row2['study_doradread'];
+				
+				if (trim($study_ageatscan) != 0) {
+					$age = $study_ageatscan;
+				}
+				else {
+					$age = $calcage;
+				}
+				
+				?>
+				<tr>
+					<td><b><?=$study_num?></b></td>
+					<td><?
+					 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
+					 else { echo $study_modality; }
+					?></td>
+					<td><?=$study_datetime?></td>
+					<td><?=number_format($age,1)?></td>
+					<td><?=$study_site?></td>
+					<td><?=$study_type?></td>
+				</tr>
+				<tr>
+					<td colspan="6" style="padding-left: 15px">
+				<?
+					if ($study_modality != "") {
+						$sqlstring4 = "show tables like '" . strtolower($study_modality) . "_series'";
+						$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
+						if (mysqli_num_rows($result4) > 0) {
+							$sqlstring3 = "select * from " . strtolower($study_modality) . "_series where study_id = $study_id order by series_num asc";
+							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+							while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
+								if ($row3['series_desc'] == "") {
+									$protocol = $row3['series_protocol'];
+								}
+								else {
+									$protocol = $row3['series_desc'];
+								}
+								$seriesnum = $row3['series_num'];
+								echo "$seriesnum - $protocol<br>";
+							}
+						}
+						else {
+							echo "<span style='color:red'>Invalid modality [$study_modality]</span><br>";
+						}
+					}
+				?>
+					</td>
+				</tr>
+				<?
+			}
+			?>
+		</table>
+		<?
+		}
+		else {
+			?>
+			<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No imaging studies</div>
+			<?
+		}
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplaySubjectForm ----------------- */
