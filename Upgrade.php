@@ -60,7 +60,9 @@ if ($doUpdateFiles) {
 	
 	// Delete the temporary directory
         exec('rm -rf temp/');
-
+	
+	$CurrDir ="$NIDBROOT/install/setup/";
+	chdir($CurrDir);
 
 		}
 
