@@ -73,13 +73,13 @@
 	/* database connection */
 	if ($isdevserver) {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die ("Could not connect. Error [" . mysqli_error($linki) . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
 		
 		$sitename = $cfg['sitenamedev'];
 	}
 	else {
 		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error($linki) . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
 		
 		$sitename = $cfg['sitename'];
 	}

@@ -1271,11 +1271,11 @@ sub InsertDICOM {
 	}
 	
 	# change the permissions to 777 so the webpage can read/write the directories
-	$report .= WriteLog("About to change permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
-	$systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
+	$report .= WriteLog("About to change permissions on $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber") . "\n";
+	$systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	$report .= WriteLog("$systemstring (" . `$systemstring 2>&1` . ")") . "\n";
 	# change back to original directory before leaving
-	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";
@@ -1756,12 +1756,12 @@ sub InsertParRec {
 
 	# change the permissions to 777 so the webpage can read/write the directories
 	$report .= WriteLog("Current directory: " . cwd()) . "\n";
-	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
+	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
 	#WriteLog("Changing back to $origDir");
 	#chdir($origDir);
-	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";
@@ -2066,10 +2066,10 @@ sub InsertEEG {
 
 	# change the permissions to 777 so the webpage can read/write the directories
 	$report .= WriteLog("Current directory: " . cwd()) . "\n";
-	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID";
+	my $systemstring = "chmod -Rf 777 $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber";
 	$report .= WriteLog("$systemstring (" . `$systemstring` . ")") . "\n";
 	# change back to original directory before leaving
-	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID") . "\n";
+	$report .= WriteLog("Finished changing permissions on $cfg{'archivedir'}/$subjectRealUID/$study_num/$SeriesNumber") . "\n";
 	
 	# copy everything to the backup directory
 	my $backdir = "$cfg{'backupdir'}/$subjectRealUID/$study_num/$SeriesNumber";

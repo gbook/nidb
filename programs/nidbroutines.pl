@@ -72,7 +72,7 @@ sub LoadConfig {
 sub DatabaseConnect {
 	
 	if ($dev) {
-		$db = Mysql->connect($mysqldevhost, $mysqldevdatabase, $mysqldevuser, $mysqldevpassword) || Error("Can NOT connect to $mysqldevhost\n");
+		$db = Mysql->connect($cfg{'mysqldevhost'}, $cfg{'mysqldevdatabase'}, $cfg{'mysqldevuser'}, $cfg{'mysqldevpassword'}) || Error("Can NOT connect to $cfg{'mysqldevhost'}\n");
 	}
 	else {
 		$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || Error("Can NOT connect to $cfg{'mysqlhost'}\n");
@@ -104,22 +104,14 @@ sub CreateLockFile {
 	
 	my ($lockfile, $logfile);
 	
-	#for (my $i=0; $i<=$numinstances+1; $i++) {
-		$lockfile = "$lockdir/$lockfileprefix.$$";
-		$logfile = "$lockdir/$lockfileprefix.log.$$";
-		#if (-e "$lockdir/$lockfileprefix.$i") {
-		#	print "$lockfile exists\n";
-		#}
-		#else {
-			print "Creating $lockfile.\n";
-			open LOCKFILE, ("> $lockfile");
-			my $datetime = CreateCurrentDate();
-			print LOCKFILE $datetime;
-			close LOCKFILE;
-			#last;
-			chmod(0777,$lockfile);
-		#}
-	#}
+	$lockfile = "$lockdir/$lockfileprefix.$$";
+	$logfile = "$lockdir/$lockfileprefix.log.$$";
+	print "Creating $lockfile.\n";
+	open LOCKFILE, ("> $lockfile");
+	my $datetime = CreateCurrentDate();
+	print LOCKFILE $datetime;
+	close LOCKFILE;
+	chmod(0777,$lockfile);
 	
 	return ($lockfile, $logfile);
 }
@@ -360,7 +352,7 @@ sub SendTextEmail {
 	#Create a new object with 'new'. 
 	my $smtp;
 	if (not $smtp = Net::SMTP::TLS->new($cfg{'emailserver'}, Port=>$cfg{'emailport'}, User=>$cfg{'emailusername'}, Password=>$cfg{'emailpassword'})) {
-	#if (not $smtp = Net::SMTP::SSL->new('smtp.gmail.com', Port=>587, Debug=>1)) {
+		WriteLog("Could not connect to SMTP:TLS server");
 		die "Could not connect to SMTP:TLS server\n";
 	}
 
@@ -412,6 +404,7 @@ sub SendHTMLEmail {
 		return "Empty email body";
 	}
 	
+	print "Emaillib is [" . $cfg{'emaillib'} . "]";
 	WriteLog("Emaillib is [" . $cfg{'emaillib'} . "]");
 	if (($cfg{'emaillib'} eq '') || ($cfg{'emaillib'} eq 'Net-SMTP-TLS')) {
 		#Create a new object with 'new'. 
@@ -470,6 +463,8 @@ sub SendHTMLEmail {
 		$smtp->quit();
 	}
 	elsif ($cfg{'emaillib'} eq 'Email-Send-SMTP-Gmail') {
+		use Email::Send::SMTP::Gmail;
+		print "Using the Email::Send::SMTP::Gmail module";
 		WriteLog("Using the Email::Send::SMTP::Gmail module");
 		my ($mail,$error)=Email::Send::SMTP::Gmail->new( -smtp=>$cfg{'emailserver'}, -login=>$cfg{'emailusername'}, -pass=>$cfg{'emailpassword'}, -port=>$cfg{'emailport'});
 		WriteLog("Connection error, if any [$error]; ");
@@ -536,7 +531,7 @@ sub Error {
 	
 	WriteLog("FATAL ERROR: $error");
 
-	SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
+	#SendTextEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
 	SendHTMLEmail($cfg{'adminemail'}, "$scriptname Fatal Error: $error", "The following error occurred: $error");
 	
 	exit(0);
@@ -550,7 +545,7 @@ sub SQLError {
 	my ($sql, $error) = @_;
 	
 	WriteLog("SQL Error: '$error' in statement [$sql]");
-	SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
+	#SendTextEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
 	SendHTMLEmail("$cfg{'adminemail'}", "$scriptname Fatal SQL Error", "SQL Error: [$error'] in statement [$sql]");
 	exit(0);
 }
