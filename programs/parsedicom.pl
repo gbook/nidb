@@ -554,7 +554,7 @@ sub InsertDICOM {
 	
 	# get DICOM tags from first file of this series
 	my $type = Image::ExifTool::GetFileType($files[0]);
-	if ($type ne "DICM") {
+	if (($type ne "DICM") && ($type ne "DICOM") && ($type ne "DCM")) {
 		$report .= WriteLog("This is not a DICM file") . "\n";
 	}
 	my $exifTool = new Image::ExifTool;
@@ -577,36 +577,36 @@ sub InsertDICOM {
 	my $PerformingPhysiciansName = EscapeMySQLString(trim($info->{'PerformingPhysicianName'}));
 	my $ProtocolName = EscapeMySQLString(trim($info->{'ProtocolName'}));
 	my $SeriesDate = trim($info->{'SeriesDate'});
-	my $SeriesNumber = trim($info->{'SeriesNumber'});
+	my $SeriesNumber = trim($info->{'SeriesNumber'}) + 0;
 	my $SeriesTime = trim($info->{'SeriesTime'});
 	my $StudyDate = trim($info->{'StudyDate'});
 	my $StudyDescription = EscapeMySQLString(trim($info->{'StudyDescription'}));
 	my $SeriesDescription = EscapeMySQLString(trim($info->{'SeriesDescription'}));
 	my $StudyTime = trim($info->{'StudyTime'});
-	my $Rows = trim($info->{'Rows'});
-	my $Columns = trim($info->{'Columns'});
-	my $AccessionNumber = trim($info->{'AccessionNumber'});
-	my $SliceThickness = trim($info->{'SliceThickness'});
-	my $PixelSpacing = trim($info->{'PixelSpacing'});
-	my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'});
-	my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'});
+	my $Rows = trim($info->{'Rows'}) + 0;
+	my $Columns = trim($info->{'Columns'}) + 0;
+	my $AccessionNumber = trim($info->{'AccessionNumber'}) + 0;
+	my $SliceThickness = trim($info->{'SliceThickness'}) + 0.0;
+	my $PixelSpacing = trim($info->{'PixelSpacing'}) + 0.0;
+	my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'}) + 0;
+	my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'}) + 0;
 	my $SequenceName = EscapeMySQLString(trim($info->{'SequenceName'}));
 	my $ImageType = EscapeMySQLString(trim($info->{'ImageType'}));
 	my $ImageComments = EscapeMySQLString(trim($info->{'ImageComments'}));
 
 	# MR specific tags
-	my $MagneticFieldStrength = trim($info->{'MagneticFieldStrength'});
-	my $RepetitionTime = trim($info->{'RepetitionTime'});
-	my $FlipAngle = trim($info->{'FlipAngle'});
-	my $EchoTime = trim($info->{'EchoTime'});
+	my $MagneticFieldStrength = trim($info->{'MagneticFieldStrength'}) + 0.0;
+	my $RepetitionTime = trim($info->{'RepetitionTime'}) + 0.0;
+	my $FlipAngle = trim($info->{'FlipAngle'}) + 0.0;
+	my $EchoTime = trim($info->{'EchoTime'}) + 0.0;
 	my $AcquisitionMatrix = trim($info->{'AcquisitionMatrix'});
 	my $InPlanePhaseEncodingDirection = EscapeMySQLString(trim($info->{'InPlanePhaseEncodingDirection'}));
 	my $InversionTime = trim($info->{'InversionTime'});
-	my $PercentSampling = trim($info->{'PercentSampling'});
-	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'});
-	my $PixelBandwidth = trim($info->{'PixelBandwidth'});
-	my $SpacingBetweenSlices = trim($info->{'SpacingBetweenSlices'});
-	my $EchoTrainLength = trim($info->{'EchoTrainLength'});
+	my $PercentSampling = trim($info->{'PercentSampling'}) + 0.0;
+	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'}) + 0.0;
+	my $PixelBandwidth = trim($info->{'PixelBandwidth'}) + 0.0;
+	my $SpacingBetweenSlices = trim($info->{'SpacingBetweenSlices'}) + 0.0;
+	my $EchoTrainLength = trim($info->{'EchoTrainLength'}) + 0.0;
 	
 	# attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header
 	my $PhaseEncodeAngle = "";
