@@ -596,7 +596,7 @@
 			/* get day of year from PHP, then get the number of studies from the DB */
 			$thedate = mktime(0,0,0,$month, $day_num, $year) ;
 			
-			$theholidays = "";
+			$theholidays = array();
 
 			$hol_date = date('Y-m-d', $thedate);
 			if ($hol_date == date('Y-m-d')) {

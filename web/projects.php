@@ -1799,7 +1799,7 @@
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' and enrollment_id = '$enrollmentid' order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			//PrintSQLTable($resultA);
-			$altids = "";
+			$altids = array();
 			$primaryaltuid = "";
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$isprimary = $rowA['isprimary'];
@@ -1944,7 +1944,7 @@
 				}
 			}
 			$altuidlist = implode2(", ",$altids);
-			$altids = "";
+			$altids = array();
 			
 			switch ($ethnicity1) {
 				case "": $ethnicity1 = "-"; break;

@@ -274,7 +274,7 @@
 				<?
 				$found = 0;
 				$foundinenroll = 0;
-				$foundlocations = '';
+				$foundlocations = array();
 				$rowcount = 0;
 				$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = $protocolgroupid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);

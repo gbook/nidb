@@ -1427,7 +1427,7 @@
 				$altuidlist = implode2(",",$altuids);
 			}
 			else {
-				$altuidlist = "";
+				$altuidlist = array();
 			}
 			
 			/* calculate the BMI */

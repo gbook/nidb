@@ -158,7 +158,7 @@
 		}
 		
 		/* get studies associated with this enrollment */
-		$studyids = '';
+		$studyids = array();
 		$sqlstring = "select study_id from studies where enrollment_id = $enrollmentid";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

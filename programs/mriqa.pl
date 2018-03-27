@@ -395,9 +395,10 @@ sub QA() {
 				$systemstring = "python $cfg{'scriptdir'}/StructuralMRIQA.py $cfg{'archivedir'}/$uid/$study_num/$series_num";
 				WriteLog("Running structural motion calculation [$systemstring]");
 				$motion_rsq = trim(`$systemstring`);
+				if ($motion_rsq eq "") { $motion_rsq = 0.0; }
 			}
 			else {
-				$motion_rsq = 0;
+				$motion_rsq = 0.0;
 			}
 			
 			# delete the 4D file and temp directory

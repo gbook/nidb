@@ -375,6 +375,8 @@
 		$fields_num = mysqli_num_fields($result);
 		$numrows = mysqli_num_rows($result);
 
+		$fieldnames = array();
+		
 		if ($csv) {
 			// printing table headers
 			for($i=0; $i<$fields_num; $i++)
@@ -556,6 +558,7 @@
 			return "";
 		}
 	
+		$altuids = array();
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1216,7 +1219,7 @@
 	function GetTags($idtype, $tagtype, $id, $modality='') {
 		
 		$sqlstring = "";
-		$tags = "";
+		$tags = array();
 		
 		switch ($idtype) {
 			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
