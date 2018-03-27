@@ -1678,7 +1678,7 @@
 								<? if (file_exists($gifthumbpath)) { ?>
 								<a href="preview.php?image=<?=$gifthumbpath?>" class="preview"><img src="images/movie.png" border="0"></a>
 								<? } ?>
-								<? if ($bold_reps < 2) { ?>
+								<? if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 								&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><img src="images/colors.png" border="0"></a>
 								<? } ?>
 								</td>
@@ -1728,7 +1728,9 @@
 								<td nowrap style="font-size:8pt">
 									<?=$numfiles?>
 									<? if (($dcmcount != $numfiles) && ($audit)) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><?=$dcmcount?></span> <? } ?> (<?=HumanReadableFilesize($series_size)?>)
+									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
 									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
+									<? } ?>
 								</td>
 								<td nowrap bgcolor="<?=$behcolor?>" align="center">
 									<? if ($numfiles_beh != "-") { ?>

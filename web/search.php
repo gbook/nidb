@@ -3518,7 +3518,9 @@
 												<input type="radio" name="filetype" id="filetype" value="analyze4d">Analyze 4D<br>
 												<input type="radio" name="filetype" id="filetype" value="dicom">DICOM<br>
 												<div class="dicom" style="padding-left: 15px;">
+												<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
 												<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
+												<? } ?>
 												<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
 												<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
 												</div>
@@ -3536,7 +3538,9 @@
 										<summary><b>Anonymization Notes</b><br><span class="tiny">click to expand</span></summary>
 										<span class="sublabel">
 										<ul>
+										<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
 										<li>No DICOM anonymization - not recommended
+										<? } ?>
 										<li>DICOM anonymization <u>light</u> removes:
 											<ul>
 												<li style="white-space: nowrap">(0008,0090) ReferringPhysiciansName

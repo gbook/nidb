@@ -82,6 +82,7 @@
     $c['ispublic'] = GetVariable("ispublic");
     $c['sitetype'] = GetVariable("sitetype");
     $c['allowphi'] = GetVariable("allowphi");
+    $c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
     $c['enableremoteconn'] = GetVariable("enableremoteconn");
     $c['enablecalendar'] = GetVariable("enablecalendar");
     $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
@@ -212,6 +213,7 @@
 [ispublic] = $ispublic
 [sitetype] = $sitetype
 [allowphi] = $allowphi
+[allowrawdicomexport] = $allowrawdicomexport
 [enableremoteconn] = $enableremoteconn
 [enablecalendar] = $enablecalendar
 [uploadsizelimit] = $uploadsizelimit
@@ -493,10 +495,16 @@
 				<td>1 to allow PHI (name, DOB) on server. 0 to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
 			</tr>
 			<tr>
+				<td class="variable">allowrawdicomexport</td>
+				<td><input type="text" name="allowrawdicomexport" value="<?=$GLOBALS['cfg']['allowrawdicomexport']?>" size="45"></td>
+				<td></td>
+				<td>1 to allow DICOM files to be downloaded from this server without being anonymized first (Also removes the Download and 3D viewier icons on the study page</td>
+			</tr>
+			<tr>
 				<td class="variable">enableremoteconn</td>
 				<td><input type="text" name="enableremoteconn" value="<?=$GLOBALS['cfg']['enableremoteconn']?>" size="45"></td>
 				<td></td>
-				<td>1 to allow this server to connect with other NiDB servers remotely, 0 to disable this option</td>
+				<td>1 to allow this server to send data to remote NiDB servers, 0 to disable this option</td>
 			</tr>
 			<tr>
 				<td class="variable">enablecalendar</td>
