@@ -571,9 +571,9 @@ sub InsertDICOM {
 	my $PatientBirthDate = trim($info->{'PatientBirthDate'});
 	my $PatientName = EscapeMySQLString(trim($info->{'PatientName'}));
 	my $PatientSex = trim($info->{'PatientSex'});
-	my $PatientWeight = trim($info->{'PatientWeight'});
-	my $PatientSize = trim($info->{'PatientSize'});
-	my $PatientAge = trim($info->{'PatientAge'});
+	my $PatientWeight = trim($info->{'PatientWeight'}) + 0.0;
+	my $PatientSize = trim($info->{'PatientSize'}) + 0.0;
+	my $PatientAge = trim($info->{'PatientAge'}) + 0.0;
 	my $PerformingPhysiciansName = EscapeMySQLString(trim($info->{'PerformingPhysicianName'}));
 	my $ProtocolName = EscapeMySQLString(trim($info->{'ProtocolName'}));
 	my $SeriesDate = trim($info->{'SeriesDate'});
