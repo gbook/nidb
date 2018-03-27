@@ -470,8 +470,13 @@
 			<?
 		}
 		else {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$enrollmentid = $row['enrollment_id'];
+			
+			$sqlstring = "update enrollment set enroll_enddate = '0000-00-00 00:00:00' where enrollment_id = '$enrollmentid'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			?>
-			<span class="message">Subject already enrolled in this project</span>
+			<span class="message">Subject re-enrolled in the project</span>
 			<?
 		}
 	}
@@ -1810,7 +1815,7 @@
 								else { $irb = "N"; }
 							
 								//echo "$enroll_enddate <--> " . date("Y-m-d H:i:s") . "<br>";
-								if (($enroll_enddate > date("Y-m-d H:i:s")) || ($enroll_enddate == "0000-00-00 00:00:00")) {
+								if (($enroll_enddate > date("Y-m-d H:i:s")) || ($enroll_enddate == "0000-00-00 00:00:00") || ($enroll_enddate == "") || ($enroll_enddate == strtolower("null"))) {
 									$enrolled = true;
 								}
 								else {
@@ -2916,7 +2921,7 @@
 							/* get project enrollment list */
 							$sqlstringA = "SELECT d.*, e.* FROM subjects a LEFT JOIN enrollment b on a.subject_id = b.subject_id LEFT JOIN projects d on d.project_id = b.project_id LEFT JOIN instance e on d.instance_id = e.instance_id WHERE a.subject_id = '$id' GROUP BY d.project_id";
 							//PrintSQL($sqlstringA);
-							unset($enrolllist);
+							$enrolllist = array();
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							if (mysqli_num_rows($resultA) > 0) {
 								while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
