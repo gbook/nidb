@@ -517,7 +517,7 @@ sub InsertDICOM {
 
 	my $importID = '';
 	my $importInstanceID = '';
-	my $importSiteID = '';
+	my $importSiteID = 0;
 	my $importProjectID = '';
 	my $importPermanent = '';
 	my $importAnonymize = '';
@@ -571,42 +571,42 @@ sub InsertDICOM {
 	my $PatientBirthDate = trim($info->{'PatientBirthDate'});
 	my $PatientName = EscapeMySQLString(trim($info->{'PatientName'}));
 	my $PatientSex = trim($info->{'PatientSex'});
-	my $PatientWeight = trim($info->{'PatientWeight'}) + 0.0;
-	my $PatientSize = trim($info->{'PatientSize'}) + 0.0;
-	my $PatientAge = trim($info->{'PatientAge'}) + 0.0;
+	my $PatientWeight = trim($info->{'PatientWeight'}); if ($PatientWeight eq '') { $PatientWeight = 0.0; }
+	my $PatientSize = trim($info->{'PatientSize'}); if ($PatientSize eq '') { $PatientSize = 0.0; }
+	my $PatientAge = trim($info->{'PatientAge'});
 	my $PerformingPhysiciansName = EscapeMySQLString(trim($info->{'PerformingPhysicianName'}));
 	my $ProtocolName = EscapeMySQLString(trim($info->{'ProtocolName'}));
 	my $SeriesDate = trim($info->{'SeriesDate'});
-	my $SeriesNumber = trim($info->{'SeriesNumber'}) + 0;
+	my $SeriesNumber = trim($info->{'SeriesNumber'}); if ($SeriesNumber eq '') { $SeriesNumber = 0; }
 	my $SeriesTime = trim($info->{'SeriesTime'});
 	my $StudyDate = trim($info->{'StudyDate'});
 	my $StudyDescription = EscapeMySQLString(trim($info->{'StudyDescription'}));
 	my $SeriesDescription = EscapeMySQLString(trim($info->{'SeriesDescription'}));
 	my $StudyTime = trim($info->{'StudyTime'});
-	my $Rows = trim($info->{'Rows'}) + 0;
-	my $Columns = trim($info->{'Columns'}) + 0;
-	my $AccessionNumber = trim($info->{'AccessionNumber'}) + 0;
-	my $SliceThickness = trim($info->{'SliceThickness'}) + 0.0;
-	my $PixelSpacing = trim($info->{'PixelSpacing'}) + 0.0;
-	my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'}) + 0;
-	my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'}) + 0;
+	my $Rows = trim($info->{'Rows'}); if ($Rows eq '') { $Rows = 0; }
+	my $Columns = trim($info->{'Columns'}); if ($Columns eq '') { $Columns = 0; }
+	my $AccessionNumber = trim($info->{'AccessionNumber'}); if ($AccessionNumber eq '') { $AccessionNumber = 0; }
+	my $SliceThickness = trim($info->{'SliceThickness'}); if ($SliceThickness eq '') { $SliceThickness = 0.0; }
+	my $PixelSpacing = trim($info->{'PixelSpacing'}); if ($PixelSpacing eq '') { $PixelSpacing = 0.0; }
+	my $NumberOfTemporalPositions = trim($info->{'NumberOfTemporalPositions'}); if ($NumberOfTemporalPositions eq '') { $NumberOfTemporalPositions = 0; }
+	my $ImagesInAcquisition = trim($info->{'ImagesInAcquisition'}); if ($ImagesInAcquisition eq '') { $ImagesInAcquisition = 0; }
 	my $SequenceName = EscapeMySQLString(trim($info->{'SequenceName'}));
 	my $ImageType = EscapeMySQLString(trim($info->{'ImageType'}));
 	my $ImageComments = EscapeMySQLString(trim($info->{'ImageComments'}));
 
 	# MR specific tags
-	my $MagneticFieldStrength = trim($info->{'MagneticFieldStrength'}) + 0.0;
-	my $RepetitionTime = trim($info->{'RepetitionTime'}) + 0.0;
-	my $FlipAngle = trim($info->{'FlipAngle'}) + 0.0;
-	my $EchoTime = trim($info->{'EchoTime'}) + 0.0;
+	my $MagneticFieldStrength = trim($info->{'MagneticFieldStrength'}); if ($MagneticFieldStrength eq '') { $MagneticFieldStrength = 0.0; }
+	my $RepetitionTime = trim($info->{'RepetitionTime'}); if ($RepetitionTime eq '') { $RepetitionTime = 0; }
+	my $FlipAngle = trim($info->{'FlipAngle'}); if ($FlipAngle eq '') { $FlipAngle = 0.0; }
+	my $EchoTime = trim($info->{'EchoTime'}); if ($EchoTime eq '') { $EchoTime = 0.0; }
 	my $AcquisitionMatrix = trim($info->{'AcquisitionMatrix'});
 	my $InPlanePhaseEncodingDirection = EscapeMySQLString(trim($info->{'InPlanePhaseEncodingDirection'}));
 	my $InversionTime = trim($info->{'InversionTime'});
-	my $PercentSampling = trim($info->{'PercentSampling'}) + 0.0;
-	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'}) + 0.0;
-	my $PixelBandwidth = trim($info->{'PixelBandwidth'}) + 0.0;
-	my $SpacingBetweenSlices = trim($info->{'SpacingBetweenSlices'}) + 0.0;
-	my $EchoTrainLength = trim($info->{'EchoTrainLength'}) + 0.0;
+	my $PercentSampling = trim($info->{'PercentSampling'}); if ($PercentSampling eq '') { $PercentSampling = 0.0; }
+	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'}); if ($PercentPhaseFieldOfView eq '') { $PercentPhaseFieldOfView = 0.0; }
+	my $PixelBandwidth = trim($info->{'PixelBandwidth'}); if ($PixelBandwidth eq '') { $PixelBandwidth = 0; }
+	my $SpacingBetweenSlices = trim($info->{'SpacingBetweenSlices'}); if ($SpacingBetweenSlices eq '') { $SpacingBetweenSlices = 0.0; }
+	my $EchoTrainLength = trim($info->{'EchoTrainLength'}); if ($EchoTrainLength eq '') { $EchoTrainLength = 0; }
 	
 	# attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header
 	my $PhaseEncodeAngle = "";
@@ -627,7 +627,7 @@ sub InsertDICOM {
 			if ($value > 3.5) { $value = ""; }
 			if ($value < -3.5) { $value = ""; }
 			#print "[$line]: [$value]\n";
-			$PhaseEncodeAngle = substr($value,0,8);
+			$PhaseEncodeAngle = substr($value,0,8) + 0.0;
 			last;
 		}
 	}
@@ -798,7 +798,7 @@ sub InsertDICOM {
 			$report .= WriteLog("This subject does not exist. New UID: $subjectRealUID") . "\n";
 			my $uuid = 'uuid()';
 			if ($importUUID eq '') { $uuid = "'$importUUID'"; }
-			$sqlstring = "insert into subjects (name, birthdate, gender, weight, height, uid, uuid, uuid2) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$PatientSize', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))), ucase($uuid) )";
+			$sqlstring = "insert into subjects (name, birthdate, gender, weight, height, uid, uuid, uuid2) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$PatientSize', '$subjectRealUID', ucase(md5(concat('".RemoveNonAlphaNumericChars($PatientName)."', '".RemoveNonAlphaNumericChars($PatientBirthDate)."','".RemoveNonAlphaNumericChars($PatientSex)."'))), ucase($uuid) )";
 			$report .= WriteLog("Adding new subject [$subjectRealUID]") . "\n";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
@@ -1354,7 +1354,7 @@ sub InsertParRec {
 	my $importID = '';
 	my $importInstanceID = '';
 	my $importProjectID = '';
-	my $importSiteID = '';
+	my $importSiteID = 0;
 	my $importPermanent = '';
 	my $importAnonymize = '';
 	my $importUUID = '';
@@ -1561,7 +1561,7 @@ sub InsertParRec {
 			} while ($count > 0);
 			
 			$report .= WriteLog("New subject ID: $subjectRealUID") . "\n";
-			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))) )";
+			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat('".RemoveNonAlphaNumericChars($PatientName)."', '".RemoveNonAlphaNumericChars($PatientBirthDate)."','".RemoveNonAlphaNumericChars($PatientSex)."'))) )";
 			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$subjectRowID = $result->insertid;
 			
@@ -1836,7 +1836,7 @@ sub InsertEEG {
 	my $numfiles = 1;
 
 	my $importID = '';
-	my $importSiteID = '';
+	my $importSiteID = 0;
 	my $importProjectID = '';
 	my $importPermanent = '';
 	my $importAnonymize = '';

@@ -370,7 +370,7 @@ sub InsertParRec {
 			} while ($count > 0);
 			
 			WriteLog("New subject ID: $subjectRealUID");
-			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat(RemoveNonAlphaNumericChars('$PatientName'), RemoveNonAlphaNumericChars('$PatientBirthDate'),RemoveNonAlphaNumericChars('$PatientSex')))) )";
+			$sqlstring = "insert into subjects (name, birthdate, gender, weight, uid, uuid) values ('$PatientName', '$PatientBirthDate', '$PatientSex', '$PatientWeight', '$subjectRealUID', ucase(md5(concat('". RemoveNonAlphaNumericChars($PatientName)."', '".RemoveNonAlphaNumericChars($PatientBirthDate)."','".RemoveNonAlphaNumericChars($PatientSex)."'))) )";
 			$result = $db->query($sqlstring) || SQLError("[File: " . __FILE__ . " Line: " . __LINE__ . "]" . $db->errmsg(),$sqlstring);
 			$subjectRowID = $result->insertid;
 		}

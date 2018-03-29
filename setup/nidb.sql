@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 14, 2018 at 03:04 PM
+-- Generation Time: Mar 28, 2018 at 01:52 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -19,31 +19,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `nidb`
 --
-
-DELIMITER $$
---
--- Functions
---
-CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars` (`prm_strInput` VARCHAR(255)) RETURNS VARCHAR(255) CHARSET utf8 NO SQL
-    DETERMINISTIC
-BEGIN
-  DECLARE i INT DEFAULT 1;
-  DECLARE v_char VARCHAR(1);
-  DECLARE v_parseStr VARCHAR(255) DEFAULT ' ';
- 
-WHILE (i <= LENGTH(prm_strInput) )  DO 
- 
-  SET v_char = SUBSTR(prm_strInput,i,1);
-  IF v_char REGEXP  '^[A-Za-z0-9 ]+$' THEN  #alphanumeric
-    
-        SET v_parseStr = CONCAT(v_parseStr,v_char);  
-
-  END IF;
-  SET i = i + 1;
-END WHILE; 
-RETURN trim(v_parseStr);
-END$$
-
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -144,7 +119,7 @@ CREATE TABLE `analysis_history` (
 
 CREATE TABLE `analysis_resultnames` (
   `resultname_id` int(11) NOT NULL,
-  `result_name` varchar(255) NOT NULL
+  `result_name` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 PACK_KEYS=0;
 
 -- --------------------------------------------------------
@@ -174,7 +149,7 @@ CREATE TABLE `analysis_results` (
 
 CREATE TABLE `analysis_resultunit` (
   `resultunit_id` int(11) NOT NULL,
-  `result_unit` varchar(25) NOT NULL
+  `result_unit` varchar(25) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -187,13 +162,13 @@ CREATE TABLE `assessments` (
   `experiment_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `form_id` int(11) DEFAULT NULL,
-  `exp_groupid` int(11) NOT NULL,
+  `exp_groupid` int(11) DEFAULT NULL,
   `exp_admindate` datetime DEFAULT NULL COMMENT 'Date the experiment was administered',
   `experimentor` varchar(45) DEFAULT NULL COMMENT 'Just a name... anyone could adminisister the experiment, so they need not be registered in the system',
-  `rater_username` varchar(25) NOT NULL,
-  `label` varchar(255) NOT NULL,
-  `notes` text NOT NULL,
-  `iscomplete` tinyint(1) NOT NULL,
+  `rater_username` varchar(25) DEFAULT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `notes` text,
+  `iscomplete` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -205,8 +180,8 @@ CREATE TABLE `assessments` (
 
 CREATE TABLE `assessment_data` (
   `formdata_id` int(11) NOT NULL,
-  `formfield_id` int(11) NOT NULL,
-  `experiment_id` int(11) NOT NULL,
+  `formfield_id` int(11) DEFAULT NULL,
+  `experiment_id` int(11) DEFAULT NULL,
   `value_text` text,
   `value_number` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL,
@@ -228,10 +203,10 @@ CREATE TABLE `assessment_formfields` (
   `formfield_desc` text COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
   `formfield_values` text COMMENT 'a list of possible values',
   `formfield_datatype` enum('multichoice','singlechoice','string','text','number','date','header','binary','calculation') DEFAULT NULL COMMENT 'multichoice, singlechoice, string, text, number, date, header, binary',
-  `formfield_calculation` varchar(255) NOT NULL COMMENT '(q1+q4)/5',
-  `formfield_calculationconversion` text NOT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
-  `formfield_haslinebreak` tinyint(1) NOT NULL,
-  `formfield_scored` tinyint(1) NOT NULL,
+  `formfield_calculation` varchar(255) DEFAULT NULL COMMENT '(q1+q4)/5',
+  `formfield_calculationconversion` text COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
+  `formfield_haslinebreak` tinyint(1) DEFAULT NULL,
+  `formfield_scored` tinyint(1) DEFAULT NULL,
   `formfield_order` varchar(45) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -245,8 +220,8 @@ CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
   `form_title` varchar(100) DEFAULT NULL,
   `form_desc` text,
-  `form_creator` varchar(30) NOT NULL COMMENT 'creator username',
-  `form_createdate` datetime NOT NULL,
+  `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
+  `form_createdate` datetime DEFAULT NULL,
   `form_ispublished` tinyint(1) NOT NULL DEFAULT '0',
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -260,15 +235,15 @@ CREATE TABLE `assessment_forms` (
 CREATE TABLE `assessment_series` (
   `assessmentseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -280,17 +255,17 @@ CREATE TABLE `assessment_series` (
 
 CREATE TABLE `audio_series` (
   `audioseries_id` int(11) NOT NULL,
-  `study_id` int(11) NOT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_size` double NOT NULL,
-  `series_notes` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL,
-  `audio_desc` text NOT NULL,
-  `audio_cputime` double NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_size` double DEFAULT NULL,
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL,
+  `audio_desc` text,
+  `audio_cputime` double DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -302,13 +277,13 @@ CREATE TABLE `audio_series` (
 
 CREATE TABLE `audit_enrollment` (
   `auditenrollment_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `audit_datetime` datetime NOT NULL,
-  `audit_message` text NOT NULL,
-  `audit_number` int(11) NOT NULL,
-  `audit_fixed` tinyint(1) NOT NULL,
-  `audit_fixeddate` datetime NOT NULL,
-  `audit_fixedby` varchar(50) NOT NULL
+  `enrollment_id` int(11) DEFAULT NULL,
+  `audit_datetime` datetime DEFAULT NULL,
+  `audit_message` text,
+  `audit_number` int(11) DEFAULT NULL,
+  `audit_fixed` tinyint(1) DEFAULT NULL,
+  `audit_fixeddate` datetime DEFAULT NULL,
+  `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -319,25 +294,25 @@ CREATE TABLE `audit_enrollment` (
 
 CREATE TABLE `audit_results` (
   `auditresult_id` int(11) NOT NULL,
-  `audit_num` int(11) NOT NULL,
+  `audit_num` int(11) DEFAULT NULL,
   `compare_direction` enum('dbtofile','filetodb','consistency','orphan') NOT NULL,
   `problem` enum('filecountmismatch','namemismatch','seriesdescmismatch','nonconsecutiveseries','orphan_noparentstudy','orphan_noparentsubject','subjectmissing','studymissing','seriesmissing','invalidprojectid','blankmodality','seriesdatatypemissing','dicommismatch') NOT NULL,
-  `mismatch` varchar(255) NOT NULL,
-  `mismatchcount` int(11) NOT NULL,
-  `subject_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `study_id` int(11) NOT NULL,
-  `modality` varchar(50) NOT NULL,
-  `series_id` int(11) NOT NULL,
-  `subject_uid` varchar(20) NOT NULL,
-  `study_num` int(11) NOT NULL,
-  `series_num` int(11) NOT NULL,
-  `data_type` varchar(50) NOT NULL,
-  `file_numfiles` int(11) NOT NULL,
-  `db_numfiles` int(11) NOT NULL,
-  `file_string` varchar(255) NOT NULL,
-  `db_string` varchar(255) NOT NULL,
+  `mismatch` varchar(255) DEFAULT NULL,
+  `mismatchcount` int(11) DEFAULT NULL,
+  `subject_id` int(11) DEFAULT NULL,
+  `enrollment_id` int(11) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `modality` varchar(50) DEFAULT NULL,
+  `series_id` int(11) DEFAULT NULL,
+  `subject_uid` varchar(20) DEFAULT NULL,
+  `study_num` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `data_type` varchar(50) DEFAULT NULL,
+  `file_numfiles` int(11) DEFAULT NULL,
+  `db_numfiles` int(11) DEFAULT NULL,
+  `file_string` varchar(255) DEFAULT NULL,
+  `db_string` varchar(255) DEFAULT NULL,
   `audit_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -349,14 +324,14 @@ CREATE TABLE `audit_results` (
 
 CREATE TABLE `audit_series` (
   `auditseries_id` int(11) NOT NULL,
-  `series_id` int(11) NOT NULL,
-  `modality` varchar(50) NOT NULL,
-  `audit_datetime` datetime NOT NULL,
-  `audit_message` text NOT NULL,
-  `audit_number` int(11) NOT NULL,
-  `audit_fixed` tinyint(1) NOT NULL,
-  `audit_fixeddate` datetime NOT NULL,
-  `audit_fixedby` varchar(50) NOT NULL
+  `series_id` int(11) DEFAULT NULL,
+  `modality` varchar(50) DEFAULT NULL,
+  `audit_datetime` datetime DEFAULT NULL,
+  `audit_message` text,
+  `audit_number` int(11) DEFAULT NULL,
+  `audit_fixed` tinyint(1) DEFAULT NULL,
+  `audit_fixeddate` datetime DEFAULT NULL,
+  `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -367,13 +342,13 @@ CREATE TABLE `audit_series` (
 
 CREATE TABLE `audit_study` (
   `auditstudy_id` int(11) NOT NULL,
-  `study_id` int(11) NOT NULL,
-  `audit_datetime` datetime NOT NULL,
-  `audit_message` text NOT NULL,
-  `audit_number` int(11) NOT NULL,
-  `audit_fixed` tinyint(1) NOT NULL,
-  `audit_fixeddate` datetime NOT NULL,
-  `audit_fixedby` varchar(50) NOT NULL
+  `study_id` int(11) DEFAULT NULL,
+  `audit_datetime` datetime DEFAULT NULL,
+  `audit_message` text,
+  `audit_number` int(11) DEFAULT NULL,
+  `audit_fixed` tinyint(1) DEFAULT NULL,
+  `audit_fixeddate` datetime DEFAULT NULL,
+  `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -384,13 +359,13 @@ CREATE TABLE `audit_study` (
 
 CREATE TABLE `audit_subject` (
   `auditsubject_id` int(11) NOT NULL,
-  `subject_id` int(11) NOT NULL,
-  `audit_datetime` datetime NOT NULL,
-  `audit_message` text NOT NULL,
-  `audit_number` int(11) NOT NULL,
-  `audit_fixed` tinyint(1) NOT NULL,
-  `audit_fixeddate` datetime NOT NULL,
-  `audit_fixedby` varchar(50) NOT NULL
+  `subject_id` int(11) DEFAULT NULL,
+  `audit_datetime` datetime DEFAULT NULL,
+  `audit_message` text,
+  `audit_number` int(11) DEFAULT NULL,
+  `audit_fixed` tinyint(1) DEFAULT NULL,
+  `audit_fixeddate` datetime DEFAULT NULL,
+  `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -401,14 +376,14 @@ CREATE TABLE `audit_subject` (
 
 CREATE TABLE `binary_series` (
   `binaryseries_id` int(11) NOT NULL,
-  `study_id` int(11) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_size` double NOT NULL,
-  `series_numfiles` int(11) NOT NULL,
-  `series_description` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_size` double DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL,
+  `series_description` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -420,11 +395,11 @@ CREATE TABLE `binary_series` (
 
 CREATE TABLE `calendars` (
   `calendar_id` int(11) NOT NULL,
-  `calendar_name` varchar(50) NOT NULL,
-  `calendar_description` varchar(255) NOT NULL,
-  `calendar_location` varchar(255) NOT NULL COMMENT 'room #, etc',
-  `calendar_createdate` datetime NOT NULL,
-  `calendar_deletedate` datetime NOT NULL
+  `calendar_name` varchar(50) DEFAULT NULL,
+  `calendar_description` varchar(255) DEFAULT NULL,
+  `calendar_location` varchar(255) DEFAULT NULL COMMENT 'room #, etc',
+  `calendar_createdate` datetime DEFAULT NULL,
+  `calendar_deletedate` datetime DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -435,10 +410,10 @@ CREATE TABLE `calendars` (
 
 CREATE TABLE `calendar_allocations` (
   `alloc_id` int(11) NOT NULL,
-  `alloc_timeperiod` int(50) NOT NULL COMMENT 'yearly, monthly, weekly, daily',
-  `alloc_calendarid` int(11) NOT NULL,
-  `alloc_projectid` int(11) NOT NULL,
-  `alloc_amount` int(11) NOT NULL COMMENT 'number of allocations per time period'
+  `alloc_timeperiod` int(50) DEFAULT NULL COMMENT 'yearly, monthly, weekly, daily',
+  `alloc_calendarid` int(11) DEFAULT NULL,
+  `alloc_projectid` int(11) DEFAULT NULL,
+  `alloc_amount` int(11) DEFAULT NULL COMMENT 'number of allocations per time period'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -449,17 +424,17 @@ CREATE TABLE `calendar_allocations` (
 
 CREATE TABLE `calendar_appointments` (
   `appt_id` int(11) NOT NULL,
-  `appt_groupid` int(11) NOT NULL,
-  `appt_username` varchar(50) NOT NULL,
-  `appt_calendarid` int(11) NOT NULL,
-  `appt_projectid` int(11) NOT NULL,
-  `appt_title` varchar(250) NOT NULL,
-  `appt_details` text NOT NULL,
-  `appt_startdate` datetime NOT NULL,
-  `appt_enddate` datetime NOT NULL,
-  `appt_isalldayevent` tinyint(1) NOT NULL,
-  `appt_istimerequest` tinyint(1) NOT NULL COMMENT 'true if the user is requesting a time slot that day',
-  `appt_repeats` tinyint(1) NOT NULL,
+  `appt_groupid` int(11) DEFAULT NULL,
+  `appt_username` varchar(50) DEFAULT NULL,
+  `appt_calendarid` int(11) DEFAULT NULL,
+  `appt_projectid` int(11) DEFAULT NULL,
+  `appt_title` varchar(250) DEFAULT NULL,
+  `appt_details` text,
+  `appt_startdate` datetime DEFAULT NULL,
+  `appt_enddate` datetime DEFAULT NULL,
+  `appt_isalldayevent` tinyint(1) DEFAULT NULL,
+  `appt_istimerequest` tinyint(1) DEFAULT NULL COMMENT 'true if the user is requesting a time slot that day',
+  `appt_repeats` tinyint(1) DEFAULT NULL,
   `appt_deletedate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00',
   `appt_canceldate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -472,8 +447,8 @@ CREATE TABLE `calendar_appointments` (
 
 CREATE TABLE `calendar_notifications` (
   `not_id` int(11) NOT NULL,
-  `not_userid` int(11) NOT NULL,
-  `not_calendarid` int(11) NOT NULL
+  `not_userid` int(11) DEFAULT NULL,
+  `not_calendarid` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -484,8 +459,8 @@ CREATE TABLE `calendar_notifications` (
 
 CREATE TABLE `calendar_projectnotifications` (
   `not_id` int(11) NOT NULL,
-  `not_userid` int(11) NOT NULL,
-  `not_projectid` int(11) NOT NULL
+  `not_userid` int(11) DEFAULT NULL,
+  `not_projectid` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -496,11 +471,11 @@ CREATE TABLE `calendar_projectnotifications` (
 
 CREATE TABLE `calendar_projects` (
   `project_id` int(11) NOT NULL,
-  `project_name` varchar(50) NOT NULL,
-  `project_admin` varchar(50) NOT NULL,
-  `project_description` varchar(255) NOT NULL,
-  `project_startdate` datetime NOT NULL,
-  `project_enddate` datetime NOT NULL
+  `project_name` varchar(50) DEFAULT NULL,
+  `project_admin` varchar(50) DEFAULT NULL,
+  `project_description` varchar(255) DEFAULT NULL,
+  `project_startdate` datetime DEFAULT NULL,
+  `project_enddate` datetime DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -511,25 +486,25 @@ CREATE TABLE `calendar_projects` (
 
 CREATE TABLE `changelog` (
   `changelog_id` int(11) NOT NULL,
-  `performing_userid` int(11) NOT NULL,
-  `affected_userid` int(11) NOT NULL,
-  `affected_instanceid1` int(11) NOT NULL,
-  `affected_instanceid2` int(11) NOT NULL,
-  `affected_siteid1` int(11) NOT NULL,
-  `affected_siteid2` int(11) NOT NULL,
-  `affected_projectid1` int(11) NOT NULL,
-  `affected_projectid2` int(11) NOT NULL,
-  `affected_subjectid1` int(11) NOT NULL,
-  `affected_subjectid2` int(11) NOT NULL,
-  `affected_enrollmentid1` int(11) NOT NULL,
-  `affected_enrollmentid2` int(11) NOT NULL,
-  `affected_studyid1` int(11) NOT NULL,
-  `affected_studyid2` int(11) NOT NULL,
-  `affected_seriesid1` int(11) NOT NULL,
-  `affected_seriesid2` int(11) NOT NULL,
+  `performing_userid` int(11) DEFAULT NULL,
+  `affected_userid` int(11) DEFAULT NULL,
+  `affected_instanceid1` int(11) DEFAULT NULL,
+  `affected_instanceid2` int(11) DEFAULT NULL,
+  `affected_siteid1` int(11) DEFAULT NULL,
+  `affected_siteid2` int(11) DEFAULT NULL,
+  `affected_projectid1` int(11) DEFAULT NULL,
+  `affected_projectid2` int(11) DEFAULT NULL,
+  `affected_subjectid1` int(11) DEFAULT NULL,
+  `affected_subjectid2` int(11) DEFAULT NULL,
+  `affected_enrollmentid1` int(11) DEFAULT NULL,
+  `affected_enrollmentid2` int(11) DEFAULT NULL,
+  `affected_studyid1` int(11) DEFAULT NULL,
+  `affected_studyid2` int(11) DEFAULT NULL,
+  `affected_seriesid1` int(11) DEFAULT NULL,
+  `affected_seriesid2` int(11) DEFAULT NULL,
   `change_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `change_event` varchar(255) NOT NULL,
-  `change_desc` text NOT NULL
+  `change_event` varchar(255) DEFAULT NULL,
+  `change_desc` text
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -541,13 +516,13 @@ CREATE TABLE `changelog` (
 CREATE TABLE `common` (
   `common_id` int(11) NOT NULL,
   `common_type` enum('number','file','text') NOT NULL,
-  `common_group` varchar(100) NOT NULL,
-  `common_name` varchar(100) NOT NULL,
-  `common_desc` text NOT NULL,
-  `common_number` double NOT NULL,
-  `common_text` text NOT NULL,
-  `common_file` varchar(255) NOT NULL,
-  `common_size` int(11) NOT NULL
+  `common_group` varchar(100) DEFAULT NULL,
+  `common_name` varchar(100) DEFAULT NULL,
+  `common_desc` text,
+  `common_number` double DEFAULT NULL,
+  `common_text` text,
+  `common_file` varchar(255) DEFAULT NULL,
+  `common_size` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -559,16 +534,16 @@ CREATE TABLE `common` (
 CREATE TABLE `consent_series` (
   `consentseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `ishidden` tinyint(1) NOT NULL
+  `ishidden` tinyint(1) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -579,24 +554,24 @@ CREATE TABLE `consent_series` (
 
 CREATE TABLE `contacts` (
   `contact_id` int(11) NOT NULL,
-  `contact_fullname` varchar(255) NOT NULL,
-  `contact_title` varchar(255) NOT NULL,
-  `contact_address1` varchar(255) NOT NULL,
-  `contact_address2` varchar(255) NOT NULL,
-  `contact_address3` varchar(255) NOT NULL,
-  `contact_city` varchar(255) NOT NULL,
-  `contact_state` varchar(255) NOT NULL,
-  `contact_zip` varchar(255) NOT NULL,
-  `contact_country` varchar(255) NOT NULL,
-  `contact_phone1` varchar(255) NOT NULL,
-  `contact_phone2` varchar(255) NOT NULL,
-  `contact_phone3` varchar(255) NOT NULL,
-  `contact_email1` varchar(255) NOT NULL,
-  `contact_email2` varchar(255) NOT NULL,
-  `contact_email3` varchar(255) NOT NULL,
-  `contact_website` varchar(255) NOT NULL,
-  `contact_company` varchar(255) NOT NULL,
-  `contact_department` varchar(255) NOT NULL
+  `contact_fullname` varchar(255) DEFAULT NULL,
+  `contact_title` varchar(255) DEFAULT NULL,
+  `contact_address1` varchar(255) DEFAULT NULL,
+  `contact_address2` varchar(255) DEFAULT NULL,
+  `contact_address3` varchar(255) DEFAULT NULL,
+  `contact_city` varchar(255) DEFAULT NULL,
+  `contact_state` varchar(255) DEFAULT NULL,
+  `contact_zip` varchar(255) DEFAULT NULL,
+  `contact_country` varchar(255) DEFAULT NULL,
+  `contact_phone1` varchar(255) DEFAULT NULL,
+  `contact_phone2` varchar(255) DEFAULT NULL,
+  `contact_phone3` varchar(255) DEFAULT NULL,
+  `contact_email1` varchar(255) DEFAULT NULL,
+  `contact_email2` varchar(255) DEFAULT NULL,
+  `contact_email3` varchar(255) DEFAULT NULL,
+  `contact_website` varchar(255) DEFAULT NULL,
+  `contact_company` varchar(255) DEFAULT NULL,
+  `contact_department` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -608,15 +583,15 @@ CREATE TABLE `contacts` (
 CREATE TABLE `cr_series` (
   `crseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -628,120 +603,120 @@ CREATE TABLE `cr_series` (
 
 CREATE TABLE `cs_prefs` (
   `csprefs_id` int(11) NOT NULL,
-  `userid` int(11) NOT NULL,
-  `description` text NOT NULL,
-  `shortname` varchar(255) NOT NULL,
-  `extralines` text NOT NULL,
-  `startdate` datetime NOT NULL,
-  `enddate` datetime NOT NULL,
+  `userid` int(11) DEFAULT NULL,
+  `description` text,
+  `shortname` varchar(255) DEFAULT NULL,
+  `extralines` text,
+  `startdate` datetime DEFAULT NULL,
+  `enddate` datetime DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `do_dicomconvert` tinyint(1) NOT NULL,
-  `do_reorient` tinyint(1) NOT NULL,
-  `do_realign` tinyint(1) NOT NULL,
-  `do_msdcalc` tinyint(1) NOT NULL,
-  `do_coregister` tinyint(1) NOT NULL,
-  `do_slicetime` tinyint(1) NOT NULL,
-  `do_normalize` tinyint(1) NOT NULL,
-  `do_smooth` tinyint(1) NOT NULL,
-  `do_artrepair` tinyint(1) NOT NULL,
-  `do_filter` tinyint(1) NOT NULL,
-  `do_segment` tinyint(1) NOT NULL,
-  `do_behmatchup` tinyint(1) NOT NULL,
-  `do_stats` tinyint(1) NOT NULL,
-  `do_censor` tinyint(1) NOT NULL,
-  `do_autoslice` tinyint(1) NOT NULL,
-  `do_db` tinyint(1) NOT NULL,
-  `dicom_filepattern` varchar(255) NOT NULL,
-  `dicom_format` varchar(255) NOT NULL,
-  `dicom_writefileprefix` varchar(255) NOT NULL,
-  `dicom_outputdir` text NOT NULL,
-  `reorient_pattern` varchar(255) NOT NULL,
-  `reorient_vector` varchar(255) NOT NULL,
-  `reorient_write` tinyint(1) NOT NULL,
-  `realign_coregister` tinyint(1) NOT NULL,
-  `realign_reslice` tinyint(1) NOT NULL,
-  `realign_useinrialign` tinyint(1) NOT NULL,
-  `realign_pattern` varchar(255) NOT NULL,
-  `realign_inri_rho` varchar(255) NOT NULL,
-  `realign_inri_cutoff` double NOT NULL,
-  `realign_inri_quality` double NOT NULL,
-  `realign_fwhm` double NOT NULL,
-  `realign_tomean` tinyint(1) NOT NULL,
-  `realign_pathtoweight` varchar(255) NOT NULL,
-  `realign_writeresliceimg` tinyint(1) NOT NULL,
-  `realign_writemean` tinyint(1) NOT NULL,
-  `coreg_run` tinyint(1) NOT NULL,
-  `coreg_runreslice` tinyint(1) NOT NULL,
-  `coreg_ref` varchar(255) NOT NULL,
-  `coreg_source` varchar(255) NOT NULL,
-  `coreg_otherpattern` varchar(255) NOT NULL,
-  `coreg_writeref` varchar(255) NOT NULL,
-  `slicetime_pattern` varchar(255) NOT NULL,
-  `slicetime_sliceorder` varchar(255) NOT NULL,
-  `slicetime_refslice` varchar(255) NOT NULL,
-  `slicetime_ta` varchar(255) NOT NULL,
-  `norm_determineparams` tinyint(1) NOT NULL,
-  `norm_writeimages` tinyint(1) NOT NULL,
-  `norm_paramstemplate` varchar(255) NOT NULL,
-  `norm_paramspattern` varchar(255) NOT NULL,
-  `norm_paramssourceweight` varchar(255) NOT NULL,
-  `norm_paramsmatname` varchar(255) NOT NULL,
-  `norm_writepattern` varchar(255) NOT NULL,
-  `norm_writematname` varchar(255) NOT NULL,
-  `smooth_kernel` varchar(255) NOT NULL,
-  `smooth_pattern` varchar(255) NOT NULL,
-  `art_pattern` varchar(255) NOT NULL,
-  `filter_pattern` varchar(255) NOT NULL,
-  `filter_cuttofffreq` double NOT NULL,
-  `segment_pattern` varchar(255) NOT NULL,
-  `segment_outputgm` varchar(255) NOT NULL,
-  `segment_outputwm` varchar(255) NOT NULL,
-  `segment_outputcsf` varchar(255) NOT NULL,
-  `segment_outputbiascor` int(11) NOT NULL,
-  `segment_outputcleanup` int(11) NOT NULL,
-  `is_fulltext` tinyint(1) NOT NULL,
-  `fulltext` text NOT NULL,
-  `beh_queue` varchar(255) NOT NULL,
-  `beh_digits` varchar(50) NOT NULL,
-  `stats_makeasciis` tinyint(1) NOT NULL,
-  `stats_asciiscriptpath` text NOT NULL,
-  `stats_behdirname` varchar(255) NOT NULL,
-  `stats_relativepath` tinyint(1) NOT NULL,
-  `stats_dirname` varchar(255) NOT NULL,
-  `stats_pattern` varchar(255) NOT NULL,
-  `stats_behunits` varchar(255) NOT NULL,
-  `stats_volterra` tinyint(1) NOT NULL,
-  `stats_basisfunction` int(11) NOT NULL,
-  `stats_onsetfiles` text NOT NULL,
-  `stats_durationfiles` text NOT NULL,
-  `stats_regressorfiles` text NOT NULL,
-  `stats_regressornames` text NOT NULL,
-  `stats_paramnames` text NOT NULL,
-  `stats_paramorders` text NOT NULL,
-  `stats_paramfiles` text NOT NULL,
-  `stats_censorfiles` text NOT NULL,
-  `stats_fit_xbflength` int(11) NOT NULL,
-  `stats_fit_xbforder` int(11) NOT NULL,
-  `stats_timemodulation` text NOT NULL,
-  `stats_parametricmodulation` text NOT NULL,
-  `stats_globalfx` tinyint(1) NOT NULL,
-  `stats_highpasscutoff` int(11) NOT NULL,
-  `stats_serialcorr` tinyint(1) NOT NULL,
-  `stats_tcontrasts` text NOT NULL,
-  `stats_tcon_columnlabels` text NOT NULL,
-  `stats_tcontrastnames` text NOT NULL,
-  `autoslice_cons` varchar(255) NOT NULL,
-  `autoslice_p` double NOT NULL,
-  `autoslice_background` varchar(255) NOT NULL,
-  `autoslice_slices` varchar(255) NOT NULL,
-  `autoslice_emailcons` varchar(255) NOT NULL,
-  `db_overwritebeta` tinyint(1) NOT NULL,
-  `db_fileprefix` varchar(255) NOT NULL,
-  `db_betanums` text NOT NULL,
-  `db_threshold` double NOT NULL,
-  `db_smoothkernel` varchar(255) NOT NULL,
-  `db_imcalcs` text NOT NULL,
-  `db_imnames` text NOT NULL
+  `do_dicomconvert` tinyint(1) DEFAULT NULL,
+  `do_reorient` tinyint(1) DEFAULT NULL,
+  `do_realign` tinyint(1) DEFAULT NULL,
+  `do_msdcalc` tinyint(1) DEFAULT NULL,
+  `do_coregister` tinyint(1) DEFAULT NULL,
+  `do_slicetime` tinyint(1) DEFAULT NULL,
+  `do_normalize` tinyint(1) DEFAULT NULL,
+  `do_smooth` tinyint(1) DEFAULT NULL,
+  `do_artrepair` tinyint(1) DEFAULT NULL,
+  `do_filter` tinyint(1) DEFAULT NULL,
+  `do_segment` tinyint(1) DEFAULT NULL,
+  `do_behmatchup` tinyint(1) DEFAULT NULL,
+  `do_stats` tinyint(1) DEFAULT NULL,
+  `do_censor` tinyint(1) DEFAULT NULL,
+  `do_autoslice` tinyint(1) DEFAULT NULL,
+  `do_db` tinyint(1) DEFAULT NULL,
+  `dicom_filepattern` varchar(255) DEFAULT NULL,
+  `dicom_format` varchar(255) DEFAULT NULL,
+  `dicom_writefileprefix` varchar(255) DEFAULT NULL,
+  `dicom_outputdir` text,
+  `reorient_pattern` varchar(255) DEFAULT NULL,
+  `reorient_vector` varchar(255) DEFAULT NULL,
+  `reorient_write` tinyint(1) DEFAULT NULL,
+  `realign_coregister` tinyint(1) DEFAULT NULL,
+  `realign_reslice` tinyint(1) DEFAULT NULL,
+  `realign_useinrialign` tinyint(1) DEFAULT NULL,
+  `realign_pattern` varchar(255) DEFAULT NULL,
+  `realign_inri_rho` varchar(255) DEFAULT NULL,
+  `realign_inri_cutoff` double DEFAULT NULL,
+  `realign_inri_quality` double DEFAULT NULL,
+  `realign_fwhm` double DEFAULT NULL,
+  `realign_tomean` tinyint(1) DEFAULT NULL,
+  `realign_pathtoweight` varchar(255) DEFAULT NULL,
+  `realign_writeresliceimg` tinyint(1) DEFAULT NULL,
+  `realign_writemean` tinyint(1) DEFAULT NULL,
+  `coreg_run` tinyint(1) DEFAULT NULL,
+  `coreg_runreslice` tinyint(1) DEFAULT NULL,
+  `coreg_ref` varchar(255) DEFAULT NULL,
+  `coreg_source` varchar(255) DEFAULT NULL,
+  `coreg_otherpattern` varchar(255) DEFAULT NULL,
+  `coreg_writeref` varchar(255) DEFAULT NULL,
+  `slicetime_pattern` varchar(255) DEFAULT NULL,
+  `slicetime_sliceorder` varchar(255) DEFAULT NULL,
+  `slicetime_refslice` varchar(255) DEFAULT NULL,
+  `slicetime_ta` varchar(255) DEFAULT NULL,
+  `norm_determineparams` tinyint(1) DEFAULT NULL,
+  `norm_writeimages` tinyint(1) DEFAULT NULL,
+  `norm_paramstemplate` varchar(255) DEFAULT NULL,
+  `norm_paramspattern` varchar(255) DEFAULT NULL,
+  `norm_paramssourceweight` varchar(255) DEFAULT NULL,
+  `norm_paramsmatname` varchar(255) DEFAULT NULL,
+  `norm_writepattern` varchar(255) DEFAULT NULL,
+  `norm_writematname` varchar(255) DEFAULT NULL,
+  `smooth_kernel` varchar(255) DEFAULT NULL,
+  `smooth_pattern` varchar(255) DEFAULT NULL,
+  `art_pattern` varchar(255) DEFAULT NULL,
+  `filter_pattern` varchar(255) DEFAULT NULL,
+  `filter_cuttofffreq` double DEFAULT NULL,
+  `segment_pattern` varchar(255) DEFAULT NULL,
+  `segment_outputgm` varchar(255) DEFAULT NULL,
+  `segment_outputwm` varchar(255) DEFAULT NULL,
+  `segment_outputcsf` varchar(255) DEFAULT NULL,
+  `segment_outputbiascor` int(11) DEFAULT NULL,
+  `segment_outputcleanup` int(11) DEFAULT NULL,
+  `is_fulltext` tinyint(1) DEFAULT NULL,
+  `fulltext` text,
+  `beh_queue` varchar(255) DEFAULT NULL,
+  `beh_digits` varchar(50) DEFAULT NULL,
+  `stats_makeasciis` tinyint(1) DEFAULT NULL,
+  `stats_asciiscriptpath` text,
+  `stats_behdirname` varchar(255) DEFAULT NULL,
+  `stats_relativepath` tinyint(1) DEFAULT NULL,
+  `stats_dirname` varchar(255) DEFAULT NULL,
+  `stats_pattern` varchar(255) DEFAULT NULL,
+  `stats_behunits` varchar(255) DEFAULT NULL,
+  `stats_volterra` tinyint(1) DEFAULT NULL,
+  `stats_basisfunction` int(11) DEFAULT NULL,
+  `stats_onsetfiles` text,
+  `stats_durationfiles` text,
+  `stats_regressorfiles` text,
+  `stats_regressornames` text,
+  `stats_paramnames` text,
+  `stats_paramorders` text,
+  `stats_paramfiles` text,
+  `stats_censorfiles` text,
+  `stats_fit_xbflength` int(11) DEFAULT NULL,
+  `stats_fit_xbforder` int(11) DEFAULT NULL,
+  `stats_timemodulation` text,
+  `stats_parametricmodulation` text,
+  `stats_globalfx` tinyint(1) DEFAULT NULL,
+  `stats_highpasscutoff` int(11) DEFAULT NULL,
+  `stats_serialcorr` tinyint(1) DEFAULT NULL,
+  `stats_tcontrasts` text,
+  `stats_tcon_columnlabels` text,
+  `stats_tcontrastnames` text,
+  `autoslice_cons` varchar(255) DEFAULT NULL,
+  `autoslice_p` double DEFAULT NULL,
+  `autoslice_background` varchar(255) DEFAULT NULL,
+  `autoslice_slices` varchar(255) DEFAULT NULL,
+  `autoslice_emailcons` varchar(255) DEFAULT NULL,
+  `db_overwritebeta` tinyint(1) DEFAULT NULL,
+  `db_fileprefix` varchar(255) DEFAULT NULL,
+  `db_betanums` text,
+  `db_threshold` double DEFAULT NULL,
+  `db_smoothkernel` varchar(255) DEFAULT NULL,
+  `db_imcalcs` text,
+  `db_imnames` text
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -753,36 +728,36 @@ CREATE TABLE `cs_prefs` (
 CREATE TABLE `ct_series` (
   `ctseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_contrastbolusagent` varchar(255) NOT NULL,
-  `series_bodypartexamined` varchar(255) NOT NULL,
-  `series_scanoptions` varchar(255) NOT NULL,
-  `series_spacingz` double NOT NULL,
-  `series_spacingx` double NOT NULL,
-  `series_spacingy` double NOT NULL,
-  `series_imgrows` int(11) NOT NULL,
-  `series_imgcols` int(11) NOT NULL,
-  `series_imgslices` int(11) NOT NULL,
-  `series_kvp` double NOT NULL,
-  `series_datacollectiondiameter` double NOT NULL,
-  `series_contrastbolusroute` varchar(255) NOT NULL,
-  `series_rotationdirection` varchar(10) NOT NULL,
-  `series_exposuretime` double NOT NULL,
-  `series_xraytubecurrent` double NOT NULL,
-  `series_filtertype` varchar(255) NOT NULL,
-  `series_generatorpower` double NOT NULL,
-  `series_convolutionkernel` varchar(255) NOT NULL,
-  `numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_datatype` varchar(50) NOT NULL,
-  `series_status` varchar(50) NOT NULL,
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_numfiles` int(11) NOT NULL,
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_contrastbolusagent` varchar(255) DEFAULT NULL,
+  `series_bodypartexamined` varchar(255) DEFAULT NULL,
+  `series_scanoptions` varchar(255) DEFAULT NULL,
+  `series_spacingz` double DEFAULT NULL,
+  `series_spacingx` double DEFAULT NULL,
+  `series_spacingy` double DEFAULT NULL,
+  `series_imgrows` int(11) DEFAULT NULL,
+  `series_imgcols` int(11) DEFAULT NULL,
+  `series_imgslices` int(11) DEFAULT NULL,
+  `series_kvp` double DEFAULT NULL,
+  `series_datacollectiondiameter` double DEFAULT NULL,
+  `series_contrastbolusroute` varchar(255) DEFAULT NULL,
+  `series_rotationdirection` varchar(10) DEFAULT NULL,
+  `series_exposuretime` double DEFAULT NULL,
+  `series_xraytubecurrent` double DEFAULT NULL,
+  `series_filtertype` varchar(255) DEFAULT NULL,
+  `series_generatorpower` double DEFAULT NULL,
+  `series_convolutionkernel` varchar(255) DEFAULT NULL,
+  `numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_datatype` varchar(50) DEFAULT NULL,
+  `series_status` varchar(50) DEFAULT NULL,
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_numfiles` int(11) DEFAULT NULL,
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -794,46 +769,46 @@ CREATE TABLE `ct_series` (
 
 CREATE TABLE `data_requests` (
   `request_id` int(11) NOT NULL,
-  `req_username` varchar(50) NOT NULL,
-  `req_ip` varchar(30) NOT NULL,
-  `req_groupid` int(11) NOT NULL,
-  `req_pipelinedownloadid` int(11) NOT NULL COMMENT 'filled if this is part of a pipeline download',
-  `req_modality` varchar(20) NOT NULL,
-  `req_downloadimaging` tinyint(1) NOT NULL,
-  `req_downloadbeh` tinyint(1) NOT NULL,
-  `req_downloadqc` tinyint(1) NOT NULL,
-  `req_destinationtype` varchar(20) NOT NULL COMMENT 'nfs, localftp, remoteftp',
-  `req_nfsdir` varchar(255) NOT NULL,
-  `req_seriesid` int(11) NOT NULL,
-  `req_subjectprojectid` int(11) NOT NULL,
-  `req_filetype` varchar(20) NOT NULL,
-  `req_gzip` tinyint(1) NOT NULL,
-  `req_anonymize` int(11) NOT NULL,
-  `req_preserveseries` tinyint(1) NOT NULL,
-  `req_dirformat` varchar(50) NOT NULL,
-  `req_timepoint` int(11) NOT NULL,
-  `req_ftpusername` varchar(50) NOT NULL,
-  `req_ftppassword` varchar(50) NOT NULL,
-  `req_ftpserver` varchar(100) NOT NULL,
+  `req_username` varchar(50) DEFAULT NULL,
+  `req_ip` varchar(30) DEFAULT NULL,
+  `req_groupid` int(11) DEFAULT NULL,
+  `req_pipelinedownloadid` int(11) DEFAULT NULL COMMENT 'filled if this is part of a pipeline download',
+  `req_modality` varchar(20) DEFAULT NULL,
+  `req_downloadimaging` tinyint(1) DEFAULT NULL,
+  `req_downloadbeh` tinyint(1) DEFAULT NULL,
+  `req_downloadqc` tinyint(1) DEFAULT NULL,
+  `req_destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
+  `req_nfsdir` varchar(255) DEFAULT NULL,
+  `req_seriesid` int(11) DEFAULT NULL,
+  `req_subjectprojectid` int(11) DEFAULT NULL,
+  `req_filetype` varchar(20) DEFAULT NULL,
+  `req_gzip` tinyint(1) DEFAULT NULL,
+  `req_anonymize` int(11) DEFAULT NULL,
+  `req_preserveseries` tinyint(1) DEFAULT NULL,
+  `req_dirformat` varchar(50) DEFAULT NULL,
+  `req_timepoint` int(11) DEFAULT NULL,
+  `req_ftpusername` varchar(50) DEFAULT NULL,
+  `req_ftppassword` varchar(50) DEFAULT NULL,
+  `req_ftpserver` varchar(100) DEFAULT NULL,
   `req_ftpport` int(11) NOT NULL DEFAULT '21',
-  `req_ftppath` varchar(255) NOT NULL,
-  `req_ftplog` text NOT NULL,
-  `req_nidbusername` varchar(255) NOT NULL,
-  `req_nidbpassword` varchar(255) NOT NULL,
-  `req_nidbserver` varchar(255) NOT NULL,
+  `req_ftppath` varchar(255) DEFAULT NULL,
+  `req_ftplog` text,
+  `req_nidbusername` varchar(255) DEFAULT NULL,
+  `req_nidbpassword` varchar(255) DEFAULT NULL,
+  `req_nidbserver` varchar(255) DEFAULT NULL,
   `req_nidbinstanceid` int(11) NOT NULL DEFAULT '0',
   `req_nidbsiteid` int(11) NOT NULL DEFAULT '0',
   `req_nidbprojectid` int(11) NOT NULL DEFAULT '0',
-  `req_downloadid` int(11) NOT NULL,
-  `req_behonly` tinyint(1) NOT NULL,
-  `req_behformat` varchar(35) NOT NULL,
-  `req_behdirrootname` varchar(50) NOT NULL,
-  `req_behdirseriesname` varchar(255) NOT NULL,
+  `req_downloadid` int(11) DEFAULT NULL,
+  `req_behonly` tinyint(1) DEFAULT NULL,
+  `req_behformat` varchar(35) DEFAULT NULL,
+  `req_behdirrootname` varchar(50) DEFAULT NULL,
+  `req_behdirseriesname` varchar(255) DEFAULT NULL,
   `req_date` timestamp NULL DEFAULT NULL,
   `req_completedate` timestamp NULL DEFAULT NULL,
-  `req_cputime` double NOT NULL,
-  `req_status` varchar(25) NOT NULL,
-  `req_results` text NOT NULL,
+  `req_cputime` double DEFAULT NULL,
+  `req_status` varchar(25) DEFAULT NULL,
+  `req_results` text,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -846,16 +821,16 @@ CREATE TABLE `data_requests` (
 CREATE TABLE `ecg_series` (
   `ecgseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `series_status` varchar(255) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_status` varchar(255) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -868,17 +843,17 @@ CREATE TABLE `ecg_series` (
 CREATE TABLE `eeg_series` (
   `eegseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_altdesc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `series_status` varchar(255) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_status` varchar(255) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -892,9 +867,9 @@ CREATE TABLE `enrollment` (
   `enrollment_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL,
   `subject_id` int(11) DEFAULT NULL,
-  `enroll_subgroup` varchar(50) NOT NULL,
+  `enroll_subgroup` varchar(50) DEFAULT NULL,
   `enroll_startdate` datetime DEFAULT NULL,
-  `enroll_enddate` datetime NOT NULL,
+  `enroll_enddate` datetime DEFAULT NULL,
   `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -908,11 +883,11 @@ CREATE TABLE `enrollment` (
 
 CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `projectchecklist_id` int(11) NOT NULL,
-  `notes` text NOT NULL,
-  `date_completed` datetime NOT NULL,
-  `completedby` varchar(255) NOT NULL COMMENT 'username, not ID, in case the user_id is deleted'
+  `enrollment_id` int(11) DEFAULT NULL,
+  `projectchecklist_id` int(11) DEFAULT NULL,
+  `notes` text,
+  `date_completed` datetime DEFAULT NULL,
+  `completedby` varchar(255) DEFAULT NULL COMMENT 'username, not ID, in case the user_id is deleted'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -923,10 +898,10 @@ CREATE TABLE `enrollment_checklist` (
 
 CREATE TABLE `enrollment_missingdata` (
   `missingdata_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `projectchecklist_id` int(11) NOT NULL,
-  `missing_reason` varchar(255) NOT NULL,
-  `missingreason_date` datetime NOT NULL
+  `enrollment_id` int(11) DEFAULT NULL,
+  `projectchecklist_id` int(11) DEFAULT NULL,
+  `missing_reason` varchar(255) DEFAULT NULL,
+  `missingreason_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -938,16 +913,16 @@ CREATE TABLE `enrollment_missingdata` (
 CREATE TABLE `et_series` (
   `etseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_altdesc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -959,9 +934,9 @@ CREATE TABLE `et_series` (
 
 CREATE TABLE `families` (
   `family_id` int(11) NOT NULL,
-  `family_uid` varchar(10) NOT NULL,
-  `family_createdate` datetime NOT NULL,
-  `family_name` varchar(255) NOT NULL,
+  `family_uid` varchar(10) DEFAULT NULL,
+  `family_createdate` datetime DEFAULT NULL,
+  `family_name` varchar(255) DEFAULT NULL,
   `family_isactive` tinyint(1) NOT NULL DEFAULT '1',
   `family_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -974,9 +949,9 @@ CREATE TABLE `families` (
 
 CREATE TABLE `family_members` (
   `familymember_id` int(11) NOT NULL,
-  `family_id` int(11) NOT NULL,
-  `subject_id` int(11) NOT NULL,
-  `fm_createdate` datetime NOT NULL
+  `family_id` int(11) DEFAULT NULL,
+  `subject_id` int(11) DEFAULT NULL,
+  `fm_createdate` datetime DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -989,13 +964,13 @@ CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
   `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
-  `data_id` int(11) NOT NULL,
-  `data_destination` varchar(255) NOT NULL,
-  `modality` varchar(50) NOT NULL,
-  `anonymize_fields` text NOT NULL,
+  `data_id` int(11) DEFAULT NULL,
+  `data_destination` varchar(255) DEFAULT NULL,
+  `modality` varchar(50) DEFAULT NULL,
+  `anonymize_fields` text,
   `request_status` enum('pending','deleting','complete','error') NOT NULL DEFAULT 'pending',
-  `request_message` varchar(255) NOT NULL,
-  `username` varchar(50) NOT NULL,
+  `request_message` varchar(255) DEFAULT NULL,
+  `username` varchar(50) DEFAULT NULL,
   `requestdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
@@ -1009,10 +984,10 @@ CREATE TABLE `fileio_requests` (
 
 CREATE TABLE `groups` (
   `group_id` int(11) NOT NULL,
-  `group_name` varchar(255) NOT NULL,
-  `group_type` varchar(25) NOT NULL COMMENT 'subject, study, series',
-  `group_owner` int(11) NOT NULL COMMENT 'user_id of the group owner',
-  `instance_id` int(11) NOT NULL
+  `group_name` varchar(255) DEFAULT NULL,
+  `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series',
+  `group_owner` int(11) DEFAULT NULL COMMENT 'user_id of the group owner',
+  `instance_id` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1023,10 +998,10 @@ CREATE TABLE `groups` (
 
 CREATE TABLE `group_data` (
   `subjectgroup_id` int(11) NOT NULL,
-  `group_id` int(11) NOT NULL,
-  `data_id` int(11) NOT NULL,
-  `modality` varchar(10) NOT NULL,
-  `date_added` date NOT NULL
+  `group_id` int(11) DEFAULT NULL,
+  `data_id` int(11) DEFAULT NULL,
+  `modality` varchar(10) DEFAULT NULL,
+  `date_added` date DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1038,15 +1013,15 @@ CREATE TABLE `group_data` (
 CREATE TABLE `gsr_series` (
   `gsrseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` text,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1058,63 +1033,63 @@ CREATE TABLE `gsr_series` (
 
 CREATE TABLE `importlogs` (
   `importlog_id` bigint(20) NOT NULL,
-  `filename_orig` text NOT NULL,
-  `filename_new` varchar(255) NOT NULL,
-  `fileformat` varchar(255) NOT NULL,
-  `importstartdate` datetime NOT NULL,
-  `result` text NOT NULL,
-  `importid` int(11) NOT NULL,
-  `importgroupid` int(11) NOT NULL,
-  `importsiteid` int(11) NOT NULL,
-  `importprojectid` int(11) NOT NULL,
-  `importpermanent` tinyint(1) NOT NULL,
-  `importanonymize` tinyint(1) NOT NULL,
-  `importuuid` varchar(255) NOT NULL,
-  `patientid_orig` varchar(50) NOT NULL,
-  `modality_orig` varchar(255) NOT NULL,
-  `patientname_orig` varchar(255) NOT NULL,
-  `patientdob_orig` varchar(255) NOT NULL,
-  `patientsex_orig` varchar(255) NOT NULL,
-  `stationname_orig` varchar(255) NOT NULL,
-  `institution_orig` varchar(255) NOT NULL,
-  `studydatetime_orig` varchar(255) NOT NULL,
-  `seriesdatetime_orig` varchar(255) NOT NULL,
-  `seriesnumber_orig` varchar(255) NOT NULL,
-  `studydesc_orig` varchar(255) NOT NULL,
-  `seriesdesc_orig` varchar(255) NOT NULL,
-  `protocol_orig` varchar(255) NOT NULL,
-  `patientage_orig` varchar(255) NOT NULL,
-  `slicenumber_orig` varchar(255) NOT NULL,
-  `instancenumber_orig` varchar(255) NOT NULL,
-  `slicelocation_orig` varchar(255) NOT NULL,
-  `acquisitiondatetime_orig` varchar(255) NOT NULL,
-  `contentdatetime_orig` varchar(255) NOT NULL,
-  `sopinstance_orig` varchar(255) NOT NULL,
-  `modality_new` varchar(255) NOT NULL,
-  `patientname_new` varchar(255) NOT NULL,
-  `patientdob_new` varchar(255) NOT NULL,
-  `patientsex_new` varchar(255) NOT NULL,
-  `stationname_new` varchar(255) NOT NULL,
-  `studydatetime_new` varchar(255) NOT NULL,
-  `seriesdatetime_new` varchar(255) NOT NULL,
-  `seriesnumber_new` varchar(255) NOT NULL,
-  `studydesc_new` varchar(255) NOT NULL,
-  `seriesdesc_new` varchar(255) NOT NULL,
-  `protocol_new` varchar(255) NOT NULL,
-  `patientage_new` varchar(255) NOT NULL,
-  `subject_uid` varchar(255) NOT NULL,
-  `study_num` int(11) NOT NULL,
-  `subjectid` int(11) NOT NULL,
-  `studyid` int(11) NOT NULL,
-  `seriesid` int(11) NOT NULL,
-  `enrollmentid` int(11) NOT NULL,
-  `project_number` varchar(255) NOT NULL,
-  `series_created` tinyint(1) NOT NULL,
-  `study_created` tinyint(1) NOT NULL,
-  `subject_created` tinyint(1) NOT NULL,
-  `family_created` tinyint(1) NOT NULL,
-  `enrollment_created` tinyint(1) NOT NULL,
-  `overwrote_existing` tinyint(1) NOT NULL
+  `filename_orig` text,
+  `filename_new` varchar(255) DEFAULT NULL,
+  `fileformat` varchar(255) DEFAULT NULL,
+  `importstartdate` datetime DEFAULT NULL,
+  `result` text,
+  `importid` int(11) DEFAULT NULL,
+  `importgroupid` int(11) DEFAULT NULL,
+  `importsiteid` int(11) DEFAULT NULL,
+  `importprojectid` int(11) DEFAULT NULL,
+  `importpermanent` tinyint(1) DEFAULT NULL,
+  `importanonymize` tinyint(1) DEFAULT NULL,
+  `importuuid` varchar(255) DEFAULT NULL,
+  `patientid_orig` varchar(50) DEFAULT NULL,
+  `modality_orig` varchar(255) DEFAULT NULL,
+  `patientname_orig` varchar(255) DEFAULT NULL,
+  `patientdob_orig` varchar(255) DEFAULT NULL,
+  `patientsex_orig` varchar(255) DEFAULT NULL,
+  `stationname_orig` varchar(255) DEFAULT NULL,
+  `institution_orig` varchar(255) DEFAULT NULL,
+  `studydatetime_orig` varchar(255) DEFAULT NULL,
+  `seriesdatetime_orig` varchar(255) DEFAULT NULL,
+  `seriesnumber_orig` varchar(255) DEFAULT NULL,
+  `studydesc_orig` varchar(255) DEFAULT NULL,
+  `seriesdesc_orig` varchar(255) DEFAULT NULL,
+  `protocol_orig` varchar(255) DEFAULT NULL,
+  `patientage_orig` varchar(255) DEFAULT NULL,
+  `slicenumber_orig` varchar(255) DEFAULT NULL,
+  `instancenumber_orig` varchar(255) DEFAULT NULL,
+  `slicelocation_orig` varchar(255) DEFAULT NULL,
+  `acquisitiondatetime_orig` varchar(255) DEFAULT NULL,
+  `contentdatetime_orig` varchar(255) DEFAULT NULL,
+  `sopinstance_orig` varchar(255) DEFAULT NULL,
+  `modality_new` varchar(255) DEFAULT NULL,
+  `patientname_new` varchar(255) DEFAULT NULL,
+  `patientdob_new` varchar(255) DEFAULT NULL,
+  `patientsex_new` varchar(255) DEFAULT NULL,
+  `stationname_new` varchar(255) DEFAULT NULL,
+  `studydatetime_new` varchar(255) DEFAULT NULL,
+  `seriesdatetime_new` varchar(255) DEFAULT NULL,
+  `seriesnumber_new` varchar(255) DEFAULT NULL,
+  `studydesc_new` varchar(255) DEFAULT NULL,
+  `seriesdesc_new` varchar(255) DEFAULT NULL,
+  `protocol_new` varchar(255) DEFAULT NULL,
+  `patientage_new` varchar(255) DEFAULT NULL,
+  `subject_uid` varchar(255) DEFAULT NULL,
+  `study_num` int(11) DEFAULT NULL,
+  `subjectid` int(11) DEFAULT NULL,
+  `studyid` int(11) DEFAULT NULL,
+  `seriesid` int(11) DEFAULT NULL,
+  `enrollmentid` int(11) DEFAULT NULL,
+  `project_number` varchar(255) DEFAULT NULL,
+  `series_created` tinyint(1) DEFAULT NULL,
+  `study_created` tinyint(1) DEFAULT NULL,
+  `subject_created` tinyint(1) DEFAULT NULL,
+  `family_created` tinyint(1) DEFAULT NULL,
+  `enrollment_created` tinyint(1) DEFAULT NULL,
+  `overwrote_existing` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1125,18 +1100,18 @@ CREATE TABLE `importlogs` (
 
 CREATE TABLE `import_received` (
   `importreceived_id` bigint(20) NOT NULL,
-  `import_transactionid` int(11) NOT NULL,
-  `import_uploadid` int(11) NOT NULL,
-  `import_filename` varchar(255) NOT NULL,
-  `import_filesize` bigint(20) NOT NULL,
-  `import_datetime` datetime NOT NULL,
-  `import_md5` varchar(40) NOT NULL,
-  `import_success` tinyint(1) NOT NULL,
-  `import_userid` int(11) NOT NULL,
-  `import_instanceid` int(11) NOT NULL,
-  `import_projectid` int(11) NOT NULL,
-  `import_siteid` int(11) NOT NULL,
-  `import_route` varchar(255) NOT NULL
+  `import_transactionid` int(11) DEFAULT NULL,
+  `import_uploadid` int(11) DEFAULT NULL,
+  `import_filename` varchar(255) DEFAULT NULL,
+  `import_filesize` bigint(20) DEFAULT NULL,
+  `import_datetime` datetime DEFAULT NULL,
+  `import_md5` varchar(40) DEFAULT NULL,
+  `import_success` tinyint(1) DEFAULT NULL,
+  `import_userid` int(11) DEFAULT NULL,
+  `import_instanceid` int(11) DEFAULT NULL,
+  `import_projectid` int(11) DEFAULT NULL,
+  `import_siteid` int(11) DEFAULT NULL,
+  `import_route` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1147,8 +1122,8 @@ CREATE TABLE `import_received` (
 
 CREATE TABLE `import_requestdirs` (
   `importrequestdir_id` int(11) NOT NULL,
-  `importrequest_id` int(11) NOT NULL,
-  `dir_num` int(11) NOT NULL,
+  `importrequest_id` int(11) DEFAULT NULL,
+  `dir_num` int(11) DEFAULT NULL,
   `dir_type` enum('modality','seriesdesc','seriesnum','studydesc','studydatetime','thefiles','beh','subjectid') NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1160,36 +1135,36 @@ CREATE TABLE `import_requestdirs` (
 
 CREATE TABLE `import_requests` (
   `importrequest_id` int(11) NOT NULL,
-  `import_transactionid` int(11) NOT NULL,
-  `import_datatype` varchar(255) NOT NULL,
-  `import_modality` varchar(50) NOT NULL,
+  `import_transactionid` int(11) DEFAULT NULL,
+  `import_datatype` varchar(255) DEFAULT NULL,
+  `import_modality` varchar(50) DEFAULT NULL,
   `import_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `import_status` varchar(50) NOT NULL,
-  `import_message` varchar(255) NOT NULL,
+  `import_status` varchar(50) DEFAULT NULL,
+  `import_message` varchar(255) DEFAULT NULL,
   `import_startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `import_enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `import_equipment` varchar(255) NOT NULL,
-  `import_siteid` int(11) NOT NULL,
-  `import_projectid` int(11) NOT NULL,
-  `import_instanceid` int(11) NOT NULL,
-  `import_uuid` varchar(255) NOT NULL,
-  `import_subjectid` varchar(255) NOT NULL,
-  `import_anonymize` tinyint(1) NOT NULL,
-  `import_permanent` tinyint(1) NOT NULL,
-  `import_matchidonly` tinyint(1) NOT NULL,
-  `import_filename` varchar(255) NOT NULL,
-  `import_seriesnotes` text NOT NULL,
-  `import_altuids` text NOT NULL,
-  `import_userid` int(11) NOT NULL,
-  `import_fileisseries` tinyint(1) NOT NULL COMMENT 'if each file should be its own series',
-  `numfilestotal` int(11) NOT NULL,
-  `numfilessuccess` int(11) NOT NULL,
-  `numfilesfail` int(11) NOT NULL,
-  `numbehtotal` int(11) NOT NULL,
-  `numbehsuccess` int(11) NOT NULL,
-  `numbehfail` int(11) NOT NULL,
-  `uploadreport` mediumtext NOT NULL,
-  `archivereport` mediumtext NOT NULL
+  `import_equipment` varchar(255) DEFAULT NULL,
+  `import_siteid` int(11) DEFAULT NULL,
+  `import_projectid` int(11) DEFAULT NULL,
+  `import_instanceid` int(11) DEFAULT NULL,
+  `import_uuid` varchar(255) DEFAULT NULL,
+  `import_subjectid` varchar(255) DEFAULT NULL,
+  `import_anonymize` tinyint(1) DEFAULT NULL,
+  `import_permanent` tinyint(1) DEFAULT NULL,
+  `import_matchidonly` tinyint(1) DEFAULT NULL,
+  `import_filename` varchar(255) DEFAULT NULL,
+  `import_seriesnotes` text,
+  `import_altuids` text,
+  `import_userid` int(11) DEFAULT NULL,
+  `import_fileisseries` tinyint(1) DEFAULT NULL COMMENT 'if each file should be its own series',
+  `numfilestotal` int(11) DEFAULT NULL,
+  `numfilessuccess` int(11) DEFAULT NULL,
+  `numfilesfail` int(11) DEFAULT NULL,
+  `numbehtotal` int(11) DEFAULT NULL,
+  `numbehsuccess` int(11) DEFAULT NULL,
+  `numbehfail` int(11) DEFAULT NULL,
+  `uploadreport` mediumtext,
+  `archivereport` mediumtext
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1200,11 +1175,11 @@ CREATE TABLE `import_requests` (
 
 CREATE TABLE `import_transactions` (
   `importtrans_id` int(11) NOT NULL,
-  `transaction_startdate` datetime NOT NULL,
-  `transaction_enddate` datetime NOT NULL,
-  `transaction_status` varchar(20) NOT NULL,
-  `transaction_source` varchar(255) NOT NULL,
-  `transaction_username` varchar(255) NOT NULL
+  `transaction_startdate` datetime DEFAULT NULL,
+  `transaction_enddate` datetime DEFAULT NULL,
+  `transaction_status` varchar(20) DEFAULT NULL,
+  `transaction_source` varchar(255) DEFAULT NULL,
+  `transaction_username` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1996,7 +1971,8 @@ CREATE TABLE `project_checklist` (
   `protocol_name` text NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
   `count` int(11) NOT NULL COMMENT 'total number of this item',
   `frequency` int(11) NOT NULL COMMENT 'spacing between the items',
-  `frequency_unit` enum('hour','day','week','month','year') NOT NULL
+  `frequency_unit` enum('hour','day','week','month','year') NOT NULL,
+  `rdocexperiment_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
