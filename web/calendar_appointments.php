@@ -318,7 +318,7 @@
 						$ttitle = $row['appt_title'];
 					}
 				
-					DisplayForm("","This appointment overlaps with an existing appointment(s): [$ttitle: $tstart - $tend]","",$username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, "");
+					DisplayForm("","<b>This appointment overlaps with an existing appointment</b><br>[$ttitle: $tstart - $tend]","",$username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, "");
 					return;
 				}
 			}
@@ -552,7 +552,7 @@
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold"><?=$pagetitle?></td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
+				<td colspan="2" align="center" style="color:red"><?=$message?><? if ($message != "") { ?><br><br><img src="images/ruhroh.gif" width="20%"><? } ?></td>
 			</tr>
 			<tr>
 				<td class="label">Title</td>

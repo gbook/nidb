@@ -32,9 +32,9 @@ session_start();
     require "functions.php";
     require "includes.php";
     require "menu.php";
-    //echo "<pre>";
-    //print_r($_POST);
-    //echo "</pre>";
+
+	//PrintVariable($_POST);
+
     /* ----- setup variables ----- */
     $action = GetVariable("action");
     $id = GetVariable("id");
@@ -54,6 +54,7 @@ session_start();
     $measures = GetVariable("measures");
     $columns = GetVariable("columns");
     $groupmeasures = GetVariable("groupmeasures");
+    $studylist = GetVariable("studylist");
 
 
     /* determine action */
@@ -82,7 +83,10 @@ session_start();
         case 'viewgroup':
             ViewGroup($id, $measures, $columns, $groupmeasures);
             break;
-
+        case 'updatestudygroup':
+            UpdateStudyGroup($id, $studylist);
+            ViewGroup($id, $measures, $columns, $groupmeasures);
+            break;
         default:
             DisplayGroupList();
             break;
@@ -90,6 +94,8 @@ session_start();
 
 
     /* ------------------------------------ functions ------------------------------------ */
+	
+	
     /* -------------------------------------------- */
     /* ------- AddGroup --------------------------- */
     /* -------------------------------------------- */
@@ -129,7 +135,6 @@ session_start();
                 else {
                     /* insert the uidids */
                     $sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
-//echo "$sqlstring<br>";
                     $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
                 }
@@ -153,7 +158,6 @@ session_start();
                 else {
                     /* insert the uidids */
                     $sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
-//echo "$sqlstring<br>";
                     $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
                 }
@@ -161,9 +165,7 @@ session_start();
         }
     }
 
-    /* -------------------------------------------- */
-    /* ------- AddStudiesToGroup ------------------ */
-    /* -------------------------------------------- */
+	
     /* -------------------------------------------- */
     /* ------- AddStudiesToGroup ------------------ */
     /* -------------------------------------------- */
@@ -187,7 +189,6 @@ session_start();
                 else {
                     /* insert the seriesids */
                     $sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', '')";
-//echo "$sqlstring<br>";
                     $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
                 }
@@ -211,7 +212,6 @@ session_start();
                 else {
                     /* insert the studyids */
                     $sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
-//echo "$sqlstring<br>";
                     $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                     ?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> added</span></div><?
                 }
@@ -234,13 +234,63 @@ session_start();
             else {
                 /* insert the seriesids */
                 $sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $seriesid, '$modality')";
-//echo "$sqlstring<br>";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 ?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
             }
         }
     }
 
+	
+    /* -------------------------------------------- */
+    /* ------- UpdateStudyGroup ------------------- */
+    /* -------------------------------------------- */
+    function UpdateStudyGroup($id, $studylist) {
+		
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+
+		if (trim($id) == "") {
+            ?><div align="center"><span class="message">ID blank</span></div><?
+			return;
+		}
+
+		/* start transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		$studies = preg_split('/\s+/', $studylist);
+		$studies = mysqli_real_escape_array($studies);
+		$studies = array_unique($studies);
+
+		/* delete all old group entries */
+		$sqlstring = "delete from group_data where group_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* loop through all the studies and insert them */
+		foreach ($studies as $study) {
+			if (trim($study) == "") { continue; }
+			
+			$uid = substr($study,0,8);
+			$studynum = substr($study,8);
+
+			$sqlstring = "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$uid' AND b.study_num='$studynum'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$studyid = $row['study_id'];
+
+			//echo "[$study] --> [$studyid]<br>";
+			
+			/* insert the studyids */
+			$sqlstring = "insert into group_data (group_id, data_id) values ($id, $studyid)";
+			//echo "$sqlstring<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+
+		/* commit the transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+	}
+	
 
     /* -------------------------------------------- */
     /* ------- RemoveGroupItem -------------------- */
@@ -250,7 +300,6 @@ session_start();
 
         foreach ($itemid as $item) {
             $sqlstring = "delete from group_data where subjectgroup_id = $item";
-//echo "$sqlstring<br>";
             $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
             ?><div align="center"><span class="message">Item <?=$item?> deleted</span></div><?
         }
@@ -490,11 +539,9 @@ session_start();
         if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
         if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
         if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
-        //PrintVariable($studylist);
 
         if ($measures == "all") {
             $sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
-    //PrintSQL($sqlstringD);
             $resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 
             if ($groupmeasures == "byvalue") {
@@ -511,14 +558,10 @@ session_start();
                         }
 
                         if (is_numeric(substr($value,0,6))) {
-    //echo "$value --6--> ";
                             $value = substr($value,0,6);
-    //echo "$value<br>";
                         }
                         elseif (is_numeric(substr($value,0,5))) {
-    //echo "$value --5--> ";
                             $value = substr($value,0,5);
-    //echo "$value<br>";
                         }
                         elseif (is_numeric(substr($value,0,4))) {
                             $value = substr($value,0,4);
@@ -550,13 +593,10 @@ session_start();
                     }
                     $measuredata[$rowD['subject_id']][$rowD['measure_name']]['notes'][] = $rowD['measure_notes'];
                     $measurenames[] = $rowD['measure_name'];
-    //$i++;
                 }
                 $measurenames = array_unique($measurenames);
                 natcasesort($measurenames);
             }
-    //PrintVariable($measurenames, 'MeasureNames');
-    //PrintVariable($measuredata, 'MeasureData');
         }
 
         /* setup the CSV header */
@@ -895,7 +935,6 @@ session_start();
                                 $modality = strtolower($modality);
                                 /* get the demographics (series level) */
                                 $sqlstring = "select b.*, c.study_num, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
-    //print "[$sqlstring]<br>";
                                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                                 mysqli_data_seek($result,0);
                                 while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1118,7 +1157,6 @@ session_start();
                                     case "6": $education = "Bachelors Degree"; break;
                                     case "7": $education = "Masters Degree"; break;
                                     case "8": $education = "Doctoral Degree"; break;
-//default: $education = "Not specified"; break;
                                 }
                             }
 
@@ -1231,116 +1269,33 @@ session_start();
     /* CHANGE MARCH 2017
     /* UPDATE GROUP STUDIES VIA TEXT INPUT
     /* -------------------------------------------- */
-    /* ------- DisplayGroupStudiesSummary ----------- */
+    /* ------- DisplayGroupStudiesSummary --------- */
     /* -------------------------------------------- */
 
     function DisplayGroupStudiesSummary($id) {
 
-        ?>
-        <p bgcolor="silver">
-            <?
-            echo "<br><bgcolor='silver'><i>This is the complete list of the studies in this group. If you delete or add any study, the group will be changed accordingly.</i>";
-
-            $sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-
-            $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-            $all_items = "";
-            $all_itemsA = array();
-            $all_items_SGID = array();
-
-            while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-                $studynum = $row['study_num'];
-                $uid = $row['uid'];
-                $sgid = $row['subjectgroup_id'];
-                $item = $uid . $studynum;
-                array_push($all_itemsA, $item);
-                array_push($all_items_SGID, $sgid);
-                $all_items .=  $item . "\n";
-            }
-
-            ?>
+		?>
+		<i>This is the complete list of the studies in this group. If you delete or add any study, the group will be changed accordingly.</i>
         <form action="groups.php"  method="post">
+		<input type="hidden" name="action" value="updatestudygroup">
+		<input type="hidden" name="id" value="<?=$id?>">
 
-            <?
-            if (isset($_POST['Update'])){
-                $newlist = preg_replace('/\r\n|[\r\n]/', ',', $_POST['text_area']);
-                //echo("newlist:");
-                $newlistA = explode(',',$newlist);
-                //print_r($newlistA);
-
-                foreach($all_itemsA as $item){
-                    if (!in_array($item, $newlistA)){
-                        $item = substr($item, 0, 8);
-
-                        $sqlstring = "select a.subjectgroup_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id and d.uid = '$item'";
-                        $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-                        $sgid = "";
-                        while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-                            $sgid = $row['subjectgroup_id'];
-                        }
-                        if ($sgid != ""){
-                            $studyids = Array();
-                            array_push($studyids, $sgid);
-                            RemoveGroupItem($studyids);
-                            //echo("Removed: $item $id\n");
-                        }
-                    }
-                }
-
-                foreach($newlistA as $item){
-                    if (!in_array($item, $all_itemsA)){
-                        $subject = substr($item, 0, 8);
-                        $study_num = substr($item, 8, strlen($item));
-
-                        $sqlstring = "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$subject' AND b.study_num='$study_num'";
-                        //echo ("select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$item' AND b.study_num='$study_num'");
-                        $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-                        $studyid = 0;
-                        while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-                            $studyid = intval($row['study_id']);
-                        }
-
-                        if ($studyid != 0){
-                            //echo ("sqlstring is $sqlstring");
-                            //echo ("studyid is $item");
-                            $studyids = Array();
-                            array_push($studyids,$studyid);
-                            AddStudiesToGroup($id, "", $studyids, "");
-                            //AddedStudiesToGroup($groupid, $seriesids, $studyids, $modality)
-                            //echo("Added: $item\r\n");
-                        }
-                    }
-                }
-            }
-
+		<?
+            $studies = "";
+			
             $sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-
-            $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-            $all_items = "";
-            $all_itemsA = array();
-            $all_items_SGID = array();
-
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
             while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
                 $studynum = $row['study_num'];
                 $uid = $row['uid'];
-                $sgid = $row['subjectgroup_id'];
-                $item = $uid . $studynum;
-                array_push($all_itemsA, $item);
-                array_push($all_items_SGID, $sgid);
-                $all_items .=  $item . "\n";
+                $studies .=  $uid . $studynum . "\n";
             }
 
             ?>
             <br>
-            <textarea name='text_area'  style='width:15em; margin-left:1em' rows='10'><?php print("$all_items"); ?></textarea>
+            <textarea name='studylist' style='width:15em; margin-left:1em' rows='10'><?=$studies?></textarea>
             <br>
-            <input type="submit" name="Update" style='width:15em; margin-left:1em' value=Update />
-
-            <input type="hidden" name=action value=viewgroup />
-            <input type="hidden" name=id value="<?php echo("$id"); ?>"/>
-
+            <input type="submit" value="Update">
         </form>
         <?
     }
