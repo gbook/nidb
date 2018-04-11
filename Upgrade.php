@@ -31,13 +31,24 @@
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
 	    /* this script will always create a backup of the databse, but you can configure these other options... */
-		$doRenameDatabase = 0; /* renames original database */
-		$doCreateNewSchema = 0; /* create blank database with new schema */
-		$doUpgradeDatabase = 0; /* insert old data into new schema */
-		$doUpdateFiles = 0;
+		$doRenameDatabase = 1; /* renames original database */
+		$doCreateNewSchema = 1; /* create blank database with new schema */
+		$doUpgradeDatabase = 1; /* insert old data into new schema */
+		$doUpdateFiles = 1;
 
 
 	/* ----- done editing variables ----- */
+
+/* Checking and installing 'pv' */
+
+$Ck=exec("yum info pv | grep Repo | awk '{print $3}'");
+
+if ($Ck=='installed'){}
+else {
+	exec('yum install pv');}
+
+
+
 
 
 /* Checking and updating files  */
