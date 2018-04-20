@@ -701,7 +701,7 @@ sub ProcessDataRequests {
 				}
 				
 				# --------------- OPTION 4 - NDAR/RDoC ---------------
-				if ($req_destinationtype eq "ndar") {
+				if (($req_destinationtype eq "ndar") || ($req_destinationtype eq "ndarcsv")) {
 					# build destination path
 					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
 					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
@@ -732,49 +732,52 @@ sub ProcessDataRequests {
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 					
 						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-						MakePath($tmpdir);
-						if (($modality eq "mr") && ($data_type eq "dicom")) {
-							$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							Anonymize($tmpdir,2,'','');
-						}
-						elsif (($modality eq "mr") && ($data_type eq "parrec")) {
-							$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-						}
-						else {
-							$systemstring = "cp -r $indir/* $tmpdir";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-						}
-						
-						if (-d $indir) {
-							# zip the data to the out directory
-							my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
-							$systemstring = "zip -vjrq1 $zipfile $tmpdir";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							WriteLog("Done zipping image files...");
-							$systemstring = "unzip -Z $zipfile";
-							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-
-							my $behzipfile;
-							my $behdesc;
-							if ($numfilesbeh > 0) {
-								$behzipfile = "$uid-$study_num-$series_num-beh.zip";
-								$systemstring = "zip -vjrq1 $fullexportdir/$behzipfile $behindir";
+						if ($req_destinationtype eq "ndar") {						
+							MakePath($tmpdir);
+							if (($modality eq "mr") && ($data_type eq "dicom")) {
+								$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								WriteLog("Done zipping beh files...");
-								$systemstring = "unzip -Z $zipfile";
+								Anonymize($tmpdir,2,'','');
+							}
+							elsif (($modality eq "mr") && ($data_type eq "parrec")) {
+								$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								
-								$behdesc = "Behavioral/design data file";
+								$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							}
 							else {
-								$behzipfile = "";
-								$behdesc = "";
+								$systemstring = "cp -r $indir/* $tmpdir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							}
+						}						
+						if (-d $indir) {
+							my $behzipfile;
+							my $behdesc;
+							if ($req_destinationtype eq "ndar") {
+								# zip the data to the out directory
+								my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
+								$systemstring = "zip -vjrq1 $zipfile $tmpdir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								WriteLog("Done zipping image files...");
+								$systemstring = "unzip -Z $zipfile";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 
+								if ($numfilesbeh > 0) {
+									$behzipfile = "$uid-$study_num-$series_num-beh.zip";
+									$systemstring = "zip -vjrq1 $fullexportdir/$behzipfile $behindir";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									WriteLog("Done zipping beh files...");
+									$systemstring = "unzip -Z $zipfile";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									
+									$behdesc = "Behavioral/design data file";
+								}
+								else {
+									$behzipfile = "";
+									$behdesc = "";
+								}
+							}
+							
 							if (!$headerwritten) {
 								WriteNDARHeader($headerfile, $modality);
 								$headerwritten = 1;
@@ -1125,6 +1128,8 @@ sub Anonymize() {
 			}
 			if ($anon == 2) {
 				# Full anonymization. remove all names, dates, locations. ANYTHING identifiable
+				# gdcmanon cannot handle more than 8 --replace arguments, it ignores anything more than that and leaves them un-anonymized
+				
 				my $s = "GDCM_RESOURCES_PATH=$cfg{'scriptdir'}/gdcm/Source/InformationObjectDefinition; export GDCM_RESOURCES_PATH; $cfg{'scriptdir'}/./gdcmanon -V --dumb -i $File::Find::name";
 				$s .= " --replace 8,12='19000101'"; # InstanceCreationDate
 				$s .= " --replace 8,13='19000101'"; # InstanceCreationTime

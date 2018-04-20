@@ -667,7 +667,7 @@ sub IsDICOMFile {
 sub GetSQLComparison {
 	my ($c) = @_;
 
-	WriteLog("Inside GetSQLComparison($c)");
+	#WriteLog("Inside GetSQLComparison($c)");
 	
 	$c =~ s/\s*//g; # remove all whitespace
 	
@@ -704,7 +704,7 @@ sub GetSQLComparison {
 	#if (trim($comp) eq "") { $comp = 0; }
 	if (trim($num) eq "") { $num = 0; }
 
-	WriteLog("Inside GetSQLComparison($c) - [$comp] [$num]");
+	#WriteLog("Inside GetSQLComparison($c) - [$comp] [$num]");
 	
 	return ($comp, $num);
 }
@@ -830,6 +830,89 @@ sub InsertAnalysisEvent {
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 }
 
+
+sub generate_table {
+
+    my %params = @_;
+    my $rows = $params{rows} or die "Must provide rows!";
+
+    # foreach col, get the biggest width
+    my $widths = _maxwidths($rows);
+    my $max_index = _max_array_index($rows);
+
+    # use that to get the field format and separators
+    my $format = _get_format($widths);
+    my $row_sep = _get_row_separator($widths);
+    my $head_row_sep = _get_header_row_separator($widths);
+
+    # here we go...
+    my @table;
+    push @table, $row_sep;
+
+    # if the first row's a header:
+    my $data_begins = 0;
+    if ( $params{header_row} ) {
+        my $header_row = $rows->[0];
+        $data_begins++;
+        push @table, sprintf(
+                         $format, 
+                         map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
+                     );
+        push @table, $params{separate_rows} ? $head_row_sep : $row_sep;
+    }
+
+    # then the data
+    foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
+        push @table, sprintf(
+	    $format, 
+	    map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
+	);
+        push @table, $row_sep if $params{separate_rows};
+    }
+
+    # this will have already done the bottom if called explicitly
+    push @table, $row_sep unless $params{separate_rows};
+    return join("\n",grep {$_} @table);
+}
+
+sub _get_cols_and_rows ($) {
+    my $rows = shift;
+    return ( List::Util::max( map { scalar @$_ } @$rows), scalar @$rows);
+}
+
+sub _maxwidths {
+    my $rows = shift;
+    # what's the longest array in this list of arrays?
+    my $max_index = _max_array_index($rows);
+    my $widths = [];
+    for my $i (0..$max_index) {
+        # go through the $i-th element of each array, find the longest
+        my $max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+        push @$widths, $max;
+    }
+    return $widths;
+}
+
+# return highest top-index from all rows in case they're different lengths
+sub _max_array_index {
+    my $rows = shift;
+    return List::Util::max( map { $#$_ } @$rows );
+}
+
+sub _get_format {
+    my $widths = shift;
+    return "| ".join(" | ",map { "%-${_}s" } @$widths)." |";
+}
+
+sub _get_row_separator {
+    my $widths = shift;
+    return "+-".join("-+-",map { '-' x $_ } @$widths)."-+";
+}
+
+sub _get_header_row_separator {
+    my $widths = shift;
+    return "O=".join("=O=",map { '=' x $_ } @$widths)."=O";
+}
 
 # must return 1 for this file to be included correctly
 1;

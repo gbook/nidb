@@ -386,45 +386,47 @@
 								
 							</td>
 						</tr>
+						<!--
 						<tr>
 							<td class="body">
 							<?
-								$sqlstring = "SELECT (move_maxx-move_minx + move_maxy-move_miny + move_maxz-move_minz) 'totalmovement', datediff(c.study_datetime, e.birthdate) 'ageatscan', e.gender FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where datediff(c.study_datetime, e.birthdate) < 45656 and e.gender in ('M','F')";
-								$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
-								$i=0;
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									if (($row['totalmovement'] > 0) && ($row['totalmovement'] < 50)) {
-										//print_r($row);
-										$y[] = number_format($row['totalmovement'],2);
-										$x[] = number_format($row['ageatscan']/365.25,2);
-										if ($row['gender'] == 'F')
-											$c[] = 'FF0000'; //$c[] = 'FFC0CB';
-										elseif ($row['gender'] == 'M')
-											$c[] = '0000FF'; //$c[] = '4169E1';
-										else
-											$c[] = '888888';
-										$i++;
-									}
-									//if ($i>100) break;
-								}
-								//print_r($x);
-								$chd = implode(",",$x) . "|" . implode(",",$y);
-								$chco = implode("|",$c);
+								// $sqlstring = "SELECT (move_maxx-move_minx + move_maxy-move_miny + move_maxz-move_minz) 'totalmovement', datediff(c.study_datetime, e.birthdate) 'ageatscan', e.gender FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where datediff(c.study_datetime, e.birthdate) < 45656 and e.gender in ('M','F')";
+								// $result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+								// $i=0;
+								// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									// if (($row['totalmovement'] > 0) && ($row['totalmovement'] < 50)) {
+										// //print_r($row);
+										// $y[] = number_format($row['totalmovement'],2);
+										// $x[] = number_format($row['ageatscan']/365.25,2);
+										// if ($row['gender'] == 'F')
+											// $c[] = 'FF0000'; //$c[] = 'FFC0CB';
+										// elseif ($row['gender'] == 'M')
+											// $c[] = '0000FF'; //$c[] = '4169E1';
+										// else
+											// $c[] = '888888';
+										// $i++;
+									// }
+									// //if ($i>100) break;
+								// }
+								// //print_r($x);
+								// $chd = implode(",",$x) . "|" . implode(",",$y);
+								// $chco = implode("|",$c);
 								
-								$x = implode(",",$x);
-								$y = implode(",",$y);
-								$c = implode(",",$c);
+								// $x = implode(",",$x);
+								// $y = implode(",",$y);
+								// $c = implode(",",$c);
 								
-								$chartfilename = DrawScatterPlot(600,300,$x,$y,$c);
+								// $chartfilename = DrawScatterPlot(600,300,$x,$y,$c);
 							?>
 							<b>Age vs movement</b><br>
-							<img src="data:image/png;base64,<?=base64_encode(file_get_contents($chartfilename))?>">
+							<img src="data:image/png;base64,<?//=base64_encode(file_get_contents($chartfilename))?>">
 							<?
 								/* image data should've been sent to the browser, so delete the temp image */
-								unlink($chartfilename);
+								//unlink($chartfilename);
 							?>
 							</td>
 						</tr>
+						-->
 					</table>
 				</td>
 			</tr>

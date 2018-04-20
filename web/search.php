@@ -3160,7 +3160,7 @@
 							$('.format').slideUp();
 							$('.dirstructure').slideUp();
 						}
-						else if ($('#destination:checked').val() == 'ndar') {
+						else if (($('#destination:checked').val() == 'ndar') || ($('#destination:checked').val() == 'ndarcsv')) {
 							$('.export').slideUp();
 							$('.format').slideUp();
 							$('.dirstructure').slideUp();
@@ -3328,14 +3328,14 @@
 						<table class="subdownload" width="100%">
 							<tr>
 								<td class="label">
-									Download Type
+									Destination
 								</td>
 								<td class="main">
 									<table>
 										<tr>
-											<td valign="top" align="right">Destination</td>
+											<td valign="top" align="right"><b>This</b> server</td>
 											<td valign="top">
-												<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web <span class="tiny">Download zipped file via webpage</span><br>
+												<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web (http download)<br>
 												<? if ($GLOBALS['isadmin']) { ?>
 												<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
 												<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
@@ -3370,73 +3370,59 @@
 													</tr>
 												</table>
 												<br>
-												<? } 
-											if (!$GLOBALS['cfg']['ispublic']) {
-												if ($s_resultorder != 'subject') {
-													?>
-													<input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP site<br>
-													<?
-													if (!$GLOBALS['isguest']) {
-														?>
-														<input type="radio" name="destination" id="destination" value="remoteftp">Remote FTP site
-														<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
-															<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
-														</table>
-														<br>
-														<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
-														<select name="remoteconnid" class="remotenidb">
-															<option value="">(Select connection)</option>
-															<?
-																$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-																$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-																while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-																	$connid = $row['remoteconn_id'];
-																	$connname = $row['conn_name'];
-																	$remoteserver = $row['remote_server'];
-																	$remoteusername = $row['remote_username'];
-																	$remotepassword = $row['remote_password'];
-																	$remoteinstanceid = $row['remote_instanceid'];
-																	$remoteprojectid = $row['remote_projectid'];
-																	$remotesiteid = $row['remote_siteid'];
-																	?>
-																	<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
-																	<?
-																}
-															?>
-														</select>
-														<?
-													}
+												<?
 												}
-												if (!$GLOBALS['isguest']) {
-													if ($s_resultorder != 'subject') {
-														?>
-														<br>
-														<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" name="nfsdir" size="50">
-														<?
-													}
+												if ($s_resultorder != 'subject') {
+													if (!$GLOBALS['cfg']['ispublic']) {
+													?>
+													<input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>FTP<br>
+													<? } ?>
+													<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission<br>
+													<input type="radio" name="destination" id="destination" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
+													<?
 												}
 													?>
 												<br>
 											</td>
 										</tr>
-										<?
-										}
-									?>
 										<tr>
-											<td valign="top" align="right">Export<br><span class="tiny">Placed in local FTP</span></td>
+											<td valign="top" align="right"><b>External</b> server</td>
 											<td valign="top">
 											<?
-											if (!$GLOBALS['isguest']) {
-												if ($s_resultorder != 'subject') {
+											if ($s_resultorder != 'subject') {
+												?>
+												<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" name="nfsdir" size="50"><br>
+												<input type="radio" name="destination" id="destination" value="remoteftp">Remote FTP site
+												<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
+													<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
+													<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
+													<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
+													<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
+													<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
+												</table>
+												<br>
+												<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
+												<select name="remoteconnid" class="remotenidb">
+													<option value="">(Select connection)</option>
+													<?
+														$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
+														$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+														while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+															$connid = $row['remoteconn_id'];
+															$connname = $row['conn_name'];
+															$remoteserver = $row['remote_server'];
+															$remoteusername = $row['remote_username'];
+															$remotepassword = $row['remote_password'];
+															$remoteinstanceid = $row['remote_instanceid'];
+															$remoteprojectid = $row['remote_projectid'];
+															$remotesiteid = $row['remote_siteid'];
+															?>
+															<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
+															<?
+														}
 													?>
-												<input type="radio" name="destination" id="destination" value="export">Export package<br>
-												<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission</span><br>
+												</select>
 												<?
-												}
 											}
 											?>
 											</td>

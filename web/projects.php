@@ -170,7 +170,13 @@
 			DeleteStudyTemplate($templateid);
 			DisplayStudyTemplateList($id);
 			break;
+# My Changes Asim
+		case 'assessmentinfo':
+                        AssessmentsInfo($id);
+                        DisplayStudyTemplateList($id);
+                        break;
 		default:
+#..................
 			if ($id == '') {
 				DisplayProjectList();
 			}
@@ -2295,7 +2301,26 @@
 		</div>
 		<?
 	}
+
+
+
+# Asim Addtition .........................................................................
+
+
+	function AssessmentsInfo($id) {
+
+
+
+		DisplayProjectsMenu('assessments', $id);
+
+
+
 	
+}
+
+
+
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayInstanceSummary ------------- */

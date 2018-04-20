@@ -41,6 +41,7 @@ use Sort::Naturally;
 use Net::SMTP::TLS;
 use Data::Dumper;
 use Text::ParseWords;
+use Text::Table::Tiny; # qw/ generate_table /;
 use POSIX qw(ceil floor);
 
 require 'nidbroutines.pl';
@@ -170,7 +171,10 @@ sub ProcessPipelines() {
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
 		
-		if (($pipelinesubmitdelay eq "") || ($pipelinesubmitdelay == 0)) {
+		if (!defined($pipelinesubmitdelay)) {
+			$pipelinesubmitdelay = 6;
+		}
+		elsif (($pipelinesubmitdelay eq "") || ($pipelinesubmitdelay == 0)) {
 			$pipelinesubmitdelay = 6;
 		}
 		# remove any whitespace from the queue... SGE hates whitespace
@@ -1387,8 +1391,22 @@ sub GetData() {
 		
 		WriteLog("Study modality is [$modality]");
 		$datalog .= "-----------------------------------------------\n";
-		$datalog .= "---------- Checking data steps ----------\n";
+		$datalog .= "---------- Checking data steps ----------------\n";
 		$datalog .= "-----------------------------------------------\n";
+		
+		my $datarows;
+		$datarows->[0]->[0] = 'step';
+		$datarows->[0]->[1] = 'enabled';
+		$datarows->[0]->[2] = 'optional';
+		$datarows->[0]->[3] = 'protocol';
+		$datarows->[0]->[4] = 'modality';
+		$datarows->[0]->[5] = 'imagetype';
+		$datarows->[0]->[6] = 'type';
+		$datarows->[0]->[7] = 'level';
+		$datarows->[0]->[8] = 'assoctype';
+		$datarows->[0]->[9] = 'numboldreps';
+		$datarows->[0]->[10] = 'FOUND';
+		$datarows->[0]->[11] = 'dir';
 		
 		# ------------------------------------------------------------------------
 		# check all of the steps to see if this data spec is valid
@@ -1409,7 +1427,7 @@ sub GetData() {
 			my $seriesdescfield = 'series_desc';
 			if ($modality ne 'mr') { $seriesdescfield = 'series_protocol'; }
 			
-			$datalog .= "Step [$i], checking:
+			$datalog .= "Step [$i], CHECKING:
         protocol [$protocol]
         modality [$modality]
         imagetype [$imagetype]
@@ -1419,6 +1437,19 @@ sub GetData() {
         assoctype [$assoctype]
         optional [$optional]
         numboldreps [$numboldreps]\n";
+		
+			$datarows->[$i+1]->[0] = $i;
+			$datarows->[$i+1]->[1] = $enabled;
+			$datarows->[$i+1]->[2] = $optional;
+			$datarows->[$i+1]->[3] = $protocol;
+			$datarows->[$i+1]->[4] = $modality;
+			$datarows->[$i+1]->[5] = $imagetype;
+			$datarows->[$i+1]->[6] = $type;
+			$datarows->[$i+1]->[7] = $level;
+			$datarows->[$i+1]->[8] = $assoctype;
+			$datarows->[$i+1]->[9] = $numboldreps;
+			$datarows->[$i+1]->[10] = "";
+			$datarows->[$i+1]->[11] = "";
 			
 			# check if the step is enabled
 			if (!$enabled) { $datalog .= "    Data specification step [$i] is NOT enabled. Skipping this download step\n"; next; }
@@ -1431,6 +1462,7 @@ sub GetData() {
 			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 			if ($result->numrows < 1) {
 				$datalog .= "    ERROR: modality [$modality] not found\n";
+				$datarows->[$i+1]->[10] = "no";
 				$stepIsInvalid = 1;
 				last;
 			}
@@ -1505,10 +1537,12 @@ sub GetData() {
 				my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($resultC->numrows > 0) {
 					$datalog .= "    Found " . $resultC->numrows . " matching subject-level series\n";
+					$datarows->[$i+1]->[10] = "yes (".$resultC->numrows.")";
 				}
 				else {
 					$datalog .= "    Found 0 rows matching the subject-level required protocol(s)\n";
 					$stepIsInvalid = 1;
+					$datarows->[$i+1]->[10] = "no";
 					last;
 				}
 			}
@@ -1611,14 +1645,12 @@ sub GetData() {
 
 			WriteLog("Working on step [$i] id [$id]");
 
-			#$sqlstring = "update analysis set analysis_statusmessage = 'pending' where analysis_id = $analysisRowID";
-			
 			# expand the comparison into SQL
 			my ($comparison, $num) = GetSQLComparison($numboldreps);
-			WriteLog("BOLD reps comparison [$comparison] [$num]");
+			#WriteLog("BOLD reps comparison [$comparison] [$num]");
 
 			$datalog .= "Copying data for step [$i] id [$id]\n";
-			$datalog .= "    bold reps comparison [$comparison] [$num]\n";
+			#$datalog .= "    bold reps comparison [$comparison] [$num]\n";
 
 			# check to see if we should even run this step
 			if ($enabled) {
@@ -1636,8 +1668,8 @@ sub GetData() {
 				
 					# get a list of series satisfying the search criteria, if it exists
 					if ($level eq 'study') {
-						WriteLog("BOLD reps comparison [$comparison] [$num] inside StudyLevel");
-						$datalog .= "    BOLD reps check: comparison [$comparison] num [$num] inside StudyLevel\n";
+						#WriteLog("BOLD reps comparison [$comparison] [$num] inside StudyLevel");
+						#$datalog .= "    BOLD reps check: comparison [$comparison] num [$num] inside StudyLevel\n";
 						
 						$datalog .= "    This data step is study-level\n        protocols [$protocols]\n        criteria [$criteria]\n        imagetype [$imagetype]\n";
 						
@@ -1660,7 +1692,7 @@ sub GetData() {
 						# get the subject ID and study type, based on the current study ID
 						my $sqlstringA = "select b.subject_id, a.study_type, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = $studyid";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-						WriteLog($sqlstringA);
+						#WriteLog($sqlstringA);
 						if ($resultA->numrows > 0) {
 							my %rowA = $resultA->fetchhash;
 							my $subjectid = $rowA{'subject_id'};
@@ -1678,7 +1710,7 @@ sub GetData() {
 								}
 								$sqlstringA .= " ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
 								my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-								WriteLog($sqlstringA);
+								#WriteLog($sqlstringA);
 								my $otherstudyid;
 								if ($resultA->numrows > 0) {
 									my %rowA = $resultA->fetchhash;
@@ -1698,9 +1730,6 @@ sub GetData() {
 								if ($imagetypes ne "''") {
 									$sqlstring .= " and image_type in ($imagetypes)";
 								}
-								#if (($comparison != 0) && ($num != 0)) {
-								#	$sqlstring .= " and numfiles $comparison $num";
-								#}
 								
 								# determine the ORDERing and LIMITs
 								switch ($criteria) {
@@ -1746,6 +1775,8 @@ sub GetData() {
 					my $newseriesnum = 1;
 					my $resultC = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($resultC->numrows > 0) {
+					
+						$datarows->[$i+1]->[10] = "yes";
 					
 						WriteLog("Found " . $resultC->numrows . " matching subject-level series");
 						$datalog .= "    type [$type] data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
@@ -1879,6 +1910,7 @@ sub GetData() {
 								remove_tree($tmpdir);
 							}
 						
+							$datarows->[$i+1]->[11] = $newanalysispath;
 							
 							# copy the beh data
 							if ($behformat ne "behnone") {
@@ -1924,7 +1956,10 @@ sub GetData() {
 				$datalog .= "    This data item [$protocol] is not enabled\n";
 			}
 		}
-		$datalog .= "Leaving GetData(). Copied [$numdownloaded] series\n";
+		#WriteLog(Dumper($datarows));
+		my $datatable = generate_table(rows => $datarows, header_row => 1);
+		WriteLog("\n$datatable");
+		$datalog .= "\n$datatable\nLeaving GetData(). Copied [$numdownloaded] series\n";
 		WriteLog("Leaving GetData() successfully => ret($numdownloaded, datalog)");
 		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Finished copying data [$numdownloaded] series downloaded");
 		return ($numdownloaded, $datalog, $datareport);
@@ -2270,7 +2305,7 @@ sub SetPipelineProcessStatus() {
 	my $result;
 	
 	if ($status eq 'started') {
-		$sqlstring = "insert into pipeline_procs (pp_processid, pp_status, pp_startdate, pp_lastcheckin, pp_currentpipeline, pp_currentsubject, pp_currentstudy) values ($$,'started',now(),now(),0,0,0)";
+		$sqlstring = "insert ignore into pipeline_procs (pp_processid, pp_status, pp_startdate, pp_lastcheckin, pp_currentpipeline, pp_currentsubject, pp_currentstudy) values ($$,'started',now(),now(),0,0,0)";
 	}
 	elsif ($status eq 'complete') {
 		$sqlstring = "delete from pipeline_procs where pp_processid = $$";
@@ -2416,6 +2451,7 @@ sub GetAnalysisInfo {
 	my $msg = "Checking if this analysis already exists\n";
 	my $sqlstring = "select * from analysis where pipeline_id = $pid and study_id = $sid";
 	WriteLog($sqlstring);
+	$msg .= " [$sqlstring]";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	my %row = $result->fetchhash;
 	my $analysisRowID = trim($row{'analysis_id'});

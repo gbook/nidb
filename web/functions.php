@@ -1459,12 +1459,13 @@
 	/* -------------------------------------------- */
 	function DisplayProjectsMenu($menuitem, $id) {
 		switch ($menuitem) {
-			case "info":
+			case "assessments":
 				?>
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
+						<td class="menuheaderactive"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
@@ -1474,11 +1475,28 @@
 				</div>
 				<?
 				break;
+			 case "info":
+                                ?>
+                                <div align="center">
+                                <table width="50%">
+                                        <tr>
+						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+                                                <td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project</a></td>
+                                                <td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+                                                <td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+                                                <td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+                                                <td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
+                                        </tr>
+                                </table>
+                                </div>
+                                <?
+                                break;
 			case "subjects":
 				?>
 				<div align="center">
 				<table width="50%">
 					<tr>
+						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheaderactive">
 							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
@@ -1497,6 +1515,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
+						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a><br>
@@ -1514,6 +1533,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
+						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
@@ -1532,6 +1552,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
+						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>

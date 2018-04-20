@@ -115,7 +115,7 @@
 				</li>
 				<li><a href="search.php"><b>Search</b></a>
 					<ul>
-						<li><a href="requeststatus.php">Data request status</a></li>
+						<li><a href="requeststatus.php">Download status</a></li>
 						<li><a href="publicdownloads.php">Public Downloads</a></li>
 					</ul>
 				</li>
