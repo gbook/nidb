@@ -41,7 +41,6 @@ use Sort::Naturally;
 use Net::SMTP::TLS;
 use Data::Dumper;
 use Text::ParseWords;
-use Text::Table::Tiny; # qw/ generate_table /;
 use POSIX qw(ceil floor);
 
 require 'nidbroutines.pl';
