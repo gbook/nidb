@@ -169,6 +169,7 @@ sub ProcessPipelines() {
 		my $pipelineuseprofile = $row{'pipeline_useprofile'};
 		my $pipelineremovedata = $row{'pipeline_removedata'};
 		my $pipelineresultscript = $row{'pipeline_resultsscript'};
+		my $pipelinegroupbysubject = $row{'pipeline_groupbysubject'};
 		
 		if (!defined($pipelinesubmitdelay)) {
 			$pipelinesubmitdelay = 6;
@@ -700,7 +701,6 @@ sub ProcessPipelines() {
 			my $analysispath;
 			my $studypath;
 			my $analysisRowID;
-			my $pseudogroupanalysispath;
 			my $groupanalysispath;
 			my $realpipelinedirectory;
 			
@@ -718,7 +718,7 @@ sub ProcessPipelines() {
 					my $sqlstring = "select pipeline_name, pipeline_level from pipelines where pipeline_id = $pipelinedep";
 					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 					if ($result->numrows > 0) {
-						WriteLog("Found " . $result->numrows . " series for second level pipeline");
+						WriteLog("Found " . $result->numrows . " pipelines for second level pipeline");
 						my %row = $result->fetchhash;
 						$dependencyname = $row{'pipeline_name'};
 						$dependencylevel = $row{'pipeline_level'};
@@ -736,23 +736,17 @@ sub ProcessPipelines() {
 					$realpipelinedirectory = $pipelinedirectory;
 					$realpipelinedirectory =~ s/\/mount//;
 					WriteLog("1 [$pipelinedirectory] --> [$realpipelinedirectory]");
-					print "1 [$pipelinedirectory] --> [$realpipelinedirectory]\n";
 				}
 				else {
 					$pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory;
 					$realpipelinedirectory = $pipelinedirectory;
 					WriteLog("2 [$pipelinedirectory] --> [$realpipelinedirectory]");
-					print "2 [$pipelinedirectory] --> [$realpipelinedirectory]\n";
 				}
 				
-				#WriteLog(`mkdir -p $pipelinedirectory/$pipelinename/$dependencyname`);
 				MakePath("$pipelinedirectory/$pipelinename/$dependencyname");
 				$groupanalysispath = "$pipelinedirectory/$pipelinename";
-				#WriteLog(`mkdir -p $groupanalysispath`);
 				MakePath($groupanalysispath);
 				chmod(0777,$groupanalysispath);
-				$pseudogroupanalysispath = $groupanalysispath;
-				$pseudogroupanalysispath =~ s/\/mount//;
 
 				MakePath("$groupanalysispath/pipeline");
 				chmod(0777,"$groupanalysispath/pipeline");
@@ -773,13 +767,16 @@ sub ProcessPipelines() {
 				}
 				
 				# loop through the groups
+				if ($pipelinegroupids eq "") {
+					next PIPELINE;
+				}
 				$sqlstring = "select * from groups where group_id in ($pipelinegroupids)";
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				if ($result->numrows > 0) {
 					while (my %row = $result->fetchhash) {
 						my $groupname = $row{'group_name'};
 						my $groupid = $row{'group_id'};
-						# get a list of subjects in the group that have the dependency
+						# get a list of studies in the group that have the dependency
 						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval $pipelinesubmitdelay hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
 						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 						WriteLog($sqlstringA);
@@ -794,14 +791,13 @@ sub ProcessPipelines() {
 							WriteLog("No studies found [$sqlstringA]");
 							SetPipelineStatusMessage($pid, "No studies found (Maybe 1st/2nd level group mismatch?)");
 							SetPipelineStopped($pid);
-							#SetModuleStopped();
 							next PIPELINE;
 						}
 
 						foreach my $sid(@studyids) {
 							# get information about the study
 							my $sqlstringB = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
-							WriteLog($sqlstringB);
+							#WriteLog($sqlstringB);
 							my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 							my %rowB = $resultB->fetchhash;
 							my $uid = $rowB{'uid'};
@@ -810,7 +806,7 @@ sub ProcessPipelines() {
 							my $numseries = 0;
 							my $datalog;
 							if (defined($uid)) {
-								WriteLog("StudyDateTime: $studydatetime");
+								#WriteLog("StudyDateTime: $studydatetime");
 								print "StudyDateTime: $studydatetime\n";
 								
 								if ($pipelinedirectory eq "") {
@@ -818,28 +814,36 @@ sub ProcessPipelines() {
 								}
 								$analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
 								$studypath = "$pipelinedirectory/$uid/$studynum";
-								WriteLog("$analysispath");
-								
-								MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname");
+								#WriteLog("$analysispath");
 
-								WriteLog("This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype]");
+								WriteLog("StudyDateTime [$studydatetime]. This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype] groupbysubject [$pipelinegroupbysubject] analysispath [$analysispath]");
+								my $studydir;
+								if ($pipelinegroupbysubject) {
+									$studydir = "$uid/$studydatetime";
+									MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid");
+								}
+								else {
+									$studydir = "$uid$studynum";
+									MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname");
+								}
+								
 								# create hard link in the analysis directory
 								my $systemstring;
 								if ($dependencylevel == 1) {
 									switch ($deplinktype) {
-										case "hardlink" { $systemstring = "cp -aul $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
-										case "softlink" { $systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
-										case "regularcopy" { $systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "hardlink" { $systemstring = "cp -auL $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "softlink" { $systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "regularcopy" { $systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
 									}
 								}
 								else {
 									switch ($deplinktype) {
-										case "hardlink" { $systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
-										case "softlink" { $systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
-										case "regularcopy" { $systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid$studynum"; }
+										case "hardlink" { $systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "softlink" { $systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "regularcopy" { $systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
 									}
 								}
-								WriteLog("Running copy command [$systemstring]");
+								#WriteLog("Running copy command [$systemstring]");
 								
 								my $cpresults = `$systemstring 2>&1`;
 								if (($cpresults =~ /cannot stat/) || ($cpresults =~ /No such file or/) || ($cpresults =~ /error/)) {
@@ -2066,7 +2070,7 @@ sub GetStudyToDoList() {
 	
 	my @list = ();
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-	WriteLog("Pushing all the studyids onto an array");
+	#WriteLog("Pushing all the studyids onto an array");
 	if ($result->rows > 0) {
 		while (my $row = $result->fetchrow_hashref()) {
 			my $studyid = $row->{study_id};

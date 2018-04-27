@@ -40,55 +40,55 @@
 	//PrintVariable($_POST,'post');
 	
 	/* ----- setup variables ----- */
-	$vars['action'] = GetVariable("action");
-	$vars['id'] = GetVariable("id");
-	$vars['username'] = GetVariable("username");
-	$vars['password'] = GetVariable("password");
-	$vars['fullname'] = GetVariable("fullname");
-	$vars['email'] = GetVariable("email");
-	$vars['enabled'] = GetVariable("enabled");
-	$vars['isadmin'] = GetVariable("isadmin");
-	$vars['isguest'] = GetVariable("isguest");
-	$vars['instanceid'] = GetVariable("instanceid");
-	$vars['dataprojects'] = GetVariable("dataprojects");
-	$vars['phiprojects'] = GetVariable("phiprojects");
-	$vars['writedataprojects'] = GetVariable("writedataprojects");
-	$vars['writephiprojects'] = GetVariable("writephiprojects");
+	$action = GetVariable("action");
+	$id = GetVariable("id");
+	$username = GetVariable("username");
+	$password = GetVariable("password");
+	$fullname = GetVariable("fullname");
+	$email = GetVariable("email");
+	$enabled = GetVariable("enabled");
+	$isadmin = GetVariable("isadmin");
+	$isguest = GetVariable("isguest");
+	$instanceid = GetVariable("instanceid");
+	$dataprojects = GetVariable("dataprojects");
+	$phiprojects = GetVariable("phiprojects");
+	$writedataprojects = GetVariable("writedataprojects");
+	$writephiprojects = GetVariable("writephiprojects");
 	
 	/* determine action */
-	switch ($vars['action']) {
+	switch ($action) {
 		case 'editform':
-			DisplayUserForm("edit", $vars['id']);
+			DisplayUserForm("edit", $id);
 			break;
 		case 'addform':
 			DisplayUserForm("add", "");
 			break;
 		case 'enable':
-			EnableUser($vars['id']);
+			EnableUser($id);
 			DisplayUserList();
 			break;
 		case 'disable':
-			DisableUser($vars['id']);
+			DisableUser($id);
 			DisplayUserList();
 			break;
 		case 'makeadmin':
-			MakeAdminUser($vars['id']);
+			MakeAdminUser($id);
 			DisplayUserList();
 			break;
 		case 'notadmin':
-			MakeNotAdminUser($vars['id']);
+			MakeNotAdminUser($id);
 			DisplayUserList();
 			break;
 		case 'update':
-			UpdateUser($vars['id'], $vars['username'], $vars['password'], $vars['fullname'], $vars['email'], $vars['enabled'], $vars['isadmin'], $vars['isguest'], $vars['instanceid'], $vars['dataprojects'], $vars['phiprojects'], $vars['writedataprojects'], $vars['writephiprojects']);
+			UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects);
 			DisplayUserList();
 			break;
 		case 'add':
-			AddUser($vars['username'], $vars['password'], $vars['fullname'], $vars['email'], $vars['enabled'], $vars['isadmin'], $vars['isguest'], $vars['instanceid'], $vars['dataprojects'], $vars['phiprojects'], $vars['writedataprojects'], $vars['writephiprojects']);
+			AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects);
 			DisplayUserList();
 			break;
 		case 'delete':
-			DeleteUser($vars['id']);
+			DeleteUser($id);
 			break;
 		default:
 			DisplayUserList();
@@ -107,13 +107,14 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
+		$isadmin = mysqli_real_escape_string($GLOBALS['linki'], $isadmin) + 0;
 
 		/* determine their current login type */
 		$sqlstring = "select login_type from users where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$logintype = $row['login_type'];
-		if ($logintype = "Standard") {
+		if ($logintype == "Standard") {
 			if ($isguest) {
 				$logintype = "Guest";
 			}
@@ -612,7 +613,8 @@
 		
 	?>
 	
-	<table class="graydisplaytable">
+	<div align="center">
+	<table class="graydisplaytable dropshadow">
 		<thead>
 			<tr>
 				<th>Username</th>
@@ -633,11 +635,64 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];
+					$username = trim($row['username']);
+					$fullname = trim($row['user_fullname']);
+					$email = trim($row['user_email']);
+					$login_type = $row['login_type'];
+					//$instancename = $row['instance_name'];
+					$lastlogin = $row['user_lastlogin'];
+					$logincount = $row['user_logincount'];
+					$enabled = $row['user_enabled'];
+					$isadmin = $row['user_isadmin'];
+					
+					if ($username == "") {
+						$username = "(blank)";
+					}
+			?>
+			<tr>
+				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
+				<td><?=$fullname?></td>
+				<td><?=$email?></td>
+				<td><?=$login_type?></td>
+				<!--<td class="tiny"><?=$instancename?></td>-->
+				<td><?=$lastlogin?></td>
+				<td><?=$logincount?></td>
+				<td>
+					<?
+						if ($enabled) {
+							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+						}
+						else {
+							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+						}
+					?>
+				</td>
+				<td>
+					<?
+						if ($isadmin) {
+							?><a href="adminusers.php?action=notadmin&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+						}
+						else {
+							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+						}
+					?>
+				</td>
+				<!--<td><?if ($enabled) echo "&#10004;";?></td>
+				<td><?if ($isadmin) echo "&#10004;";?></td> -->
+			</tr>
+			<? } ?>
+			<tr><td colspan="8" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray; padding: 10px; background-color: lightyellow"><b>The Following users are unaffiliated with an instance</b></td></tr>
+			<?
+				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '' or b.instance_id is null order by username";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['user_id'];
 					$username = $row['username'];
 					$fullname = $row['user_fullname'];
 					$email = $row['user_email'];
 					$login_type = $row['login_type'];
-					//$instancename = $row['instance_name'];
+					$instancename = $row['instance_name'];
 					$lastlogin = $row['user_lastlogin'];
 					$logincount = $row['user_logincount'];
 					$enabled = $row['user_enabled'];
@@ -674,60 +729,13 @@
 				<!--<td><?if ($enabled) echo "&#10004;";?></td>
 				<td><?if ($isadmin) echo "&#10004;";?></td> -->
 			</tr>
-			<? } ?>
-			<tr><td colspan="8" align="center">The Following users are unaffiliated with an instance</td></tr>
-			<?
-				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '' or b.instance_id is null order by username";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['user_id'];
-					$username = $row['username'];
-					$fullname = $row['user_fullname'];
-					$email = $row['user_email'];
-					$login_type = $row['login_type'];
-					$instancename = $row['instance_name'];
-					$lastlogin = $row['user_lastlogin'];
-					$logincount = $row['user_logincount'];
-					$enabled = $row['user_enabled'];
-					$isadmin = $row['user_isadmin'];
-			?>
-			<tr>
-				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-				<td><?=$fullname?></td>
-				<td><?=$email?></td>
-				<td><?=$login_type?></td>
-				<td class="tiny"><?=$instancename?></td>
-				<td><?=$lastlogin?></td>
-				<td><?=$logincount?></td>
-				<td>
-					<?
-						if ($enabled) {
-							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td>
-				<td>
-					<?
-						if ($isadmin) {
-							?><a href="adminusers.php?action=notadmin&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td>
-				<!--<td><?if ($enabled) echo "&#10004;";?></td>
-				<td><?if ($isadmin) echo "&#10004;";?></td> -->
-			</tr>
 			<? 
 				}
 			?>
 		</tbody>
 	</table>
+	</div>
+	<br><br><br><br><br><br>
 	<?
 	}
 ?>
