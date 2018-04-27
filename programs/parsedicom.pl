@@ -615,7 +615,7 @@ sub InsertDICOM {
 	open(F, $dicomfile); # open the dicom file as a text file, since part of the CSA header is stored as text, not binary
 	my @dcmlines=<F>;
 	close(F);
-	foreach my $line(@dcmlines) {	
+	foreach my $line(@dcmlines) {
 		if ($line =~ /\]\.dInPlaneRot/i) {
 			if (length($line) > 150) {
 				my $idx = index($line, '.dInPlaneRot');
@@ -650,6 +650,7 @@ sub InsertDICOM {
 	$report .= WriteLog("PhaseEncodingDirectionPositive = [$val]") . "\n";
 	$PhaseEncodingDirectionPositive = EscapeMySQLString(trim($val));
 	$PhaseEncodeAngle = EscapeMySQLString(trim($PhaseEncodeAngle));
+	if ($PhaseEncodeAngle eq "") { $PhaseEncodeAngle = "NULL"; }
 	
 	# CT specific tags
 	my $ContrastBolusAgent = trim($info->{'ContrastBolusAgent'});
@@ -959,7 +960,12 @@ sub InsertDICOM {
 		$report .= WriteLog("[$sqlstring]") . "\n";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		%row = $result->fetchhash;
-		$study_num = $row{'study_num'} + 1;
+		if (defined($row{'study_num'})) {
+			$study_num = $row{'study_num'} + 1;
+		}
+		else {
+			$study_num = 1;
+		}
 		
 		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname', now())";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -1014,7 +1020,7 @@ sub InsertDICOM {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'mrseries_id'};
 			
-			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = '$PhaseEncodeAngle', PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete'";
+			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = $PhaseEncodeAngle, PhaseEncodingDirectionPositive = '$PhaseEncodingDirectionPositive', series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete'";
 			if ($NumberOfTemporalPositions > 0) {
 				$sqlstring .= ", dimT = '$NumberOfTemporalPositions', dimN = 4";
 			}
@@ -1051,7 +1057,7 @@ sub InsertDICOM {
 		else {
 			
 			# create seriesRowID if it doesn't exist
-			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', '$PhaseEncodeAngle', '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$InversionTime', '$PercentSampling', '$PercentPhaseFieldOfView', '$AcquisitionMatrix', '$SliceThickness', '$SpacingBetweenSlices', '$PixelBandwidth', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname', now())";
+			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', $PhaseEncodeAngle, '$PhaseEncodingDirectionPositive', '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$InversionTime', '$PercentSampling', '$PercentPhaseFieldOfView', '$AcquisitionMatrix', '$SliceThickness', '$SpacingBetweenSlices', '$PixelBandwidth', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname', now())";
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
