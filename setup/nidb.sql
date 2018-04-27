@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 28, 2018 at 01:52 PM
+-- Generation Time: Apr 27, 2018 at 06:14 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -19,6 +19,31 @@ SET time_zone = "+00:00";
 --
 -- Database: `nidb`
 --
+
+DELIMITER $$
+--
+-- Functions
+--
+CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars` (`prm_strInput` VARCHAR(255)) RETURNS VARCHAR(255) CHARSET utf8 NO SQL
+    DETERMINISTIC
+BEGIN
+  DECLARE i INT DEFAULT 1;
+  DECLARE v_char VARCHAR(1);
+  DECLARE v_parseStr VARCHAR(255) DEFAULT ' ';
+ 
+WHILE (i <= LENGTH(prm_strInput) )  DO 
+ 
+  SET v_char = SUBSTR(prm_strInput,i,1);
+  IF v_char REGEXP  '^[A-Za-z0-9 ]+$' THEN  #alphanumeric
+    
+        SET v_parseStr = CONCAT(v_parseStr,v_char);  
+
+  END IF;
+  SET i = i + 1;
+END WHILE; 
+RETURN trim(v_parseStr);
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -218,6 +243,7 @@ CREATE TABLE `assessment_formfields` (
 
 CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
   `form_title` varchar(100) DEFAULT NULL,
   `form_desc` text,
   `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
@@ -266,6 +292,7 @@ CREATE TABLE `audio_series` (
   `audio_desc` text,
   `audio_cputime` double DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -384,6 +411,7 @@ CREATE TABLE `binary_series` (
   `series_numfiles` int(11) DEFAULT NULL,
   `series_description` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1515,7 +1543,7 @@ CREATE TABLE `mr_scanparams` (
 
 CREATE TABLE `mr_series` (
   `mrseries_id` int(11) NOT NULL,
-  `study_id` int(11) DEFAULT NULL,
+  `study_id` int(11) NOT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
   `series_desc` varchar(255) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
   `series_altdesc` varchar(255) NOT NULL,
@@ -1615,6 +1643,7 @@ CREATE TABLE `nm_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1700,6 +1729,7 @@ CREATE TABLE `pipelines` (
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
   `pipeline_groupid` text,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
+  `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT '0',
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
@@ -2398,6 +2428,7 @@ CREATE TABLE `surgery_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2730,7 +2761,8 @@ ALTER TABLE `assessment_formfields`
 -- Indexes for table `assessment_forms`
 --
 ALTER TABLE `assessment_forms`
-  ADD PRIMARY KEY (`form_id`);
+  ADD PRIMARY KEY (`form_id`),
+  ADD KEY `project_id` (`project_id`);
 
 --
 -- Indexes for table `assessment_series`
