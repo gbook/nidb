@@ -216,7 +216,11 @@ sub ParseDirectory {
 	foreach my $file (@files) {
 		my $fsize = -s "$dir/$file";
 		if ($fsize < 1) {
-			WriteLog("Filesize of [$dir/$file] is [$fsize] bytes");
+			WriteLog("Filesize of [$dir/$file] is [$fsize] bytes!!");
+			$sqlstring = "update import_requests set import_status = 'error', import_message = 'File has size of 0 bytes', import_enddate = now(), archivereport = 'File [$file] is empty' where importrequest_id = '$importRowID'";
+			WriteLog($sqlstring);
+			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+			
 			next;
 		}
 		$runningCount++;
@@ -249,7 +253,7 @@ sub ParseDirectory {
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
-							$archivereport = EscapeMySQLString(trim($archivereport));
+							$archivereport = SanitizeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'PARREC', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -272,7 +276,7 @@ sub ParseDirectory {
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
-							$archivereport = EscapeMySQLString(trim($archivereport));
+							$archivereport = SanitizeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '" . uc($importDatatype) . "', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");

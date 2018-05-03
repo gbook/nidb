@@ -2441,7 +2441,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$sqlstring = "select b.username, a.pipeline_admin 'userid' from pipelines a left join users b on a.pipeline_admin = b.user_id group by a.pipeline_admin order by b.username";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$userids[$row['userid']] = $row['username'];
+			if ($row['username'] != "")
+				$userids[$row['userid']] = $row['username'];
 		}
 		
 		global $imgdata;

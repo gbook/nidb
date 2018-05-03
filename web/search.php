@@ -798,6 +798,9 @@
 										
 										<? if ($searchvars['s_resultorder'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
+										
+										<? if ($searchvars['s_resultorder'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultorder" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
 									</div>
 									<div id="tabs-4">
 										<table width="100%" cellspacing="0" cellpadding="3" style="font-size:11pt">
@@ -1050,6 +1053,10 @@
 				/* display only unique subject data */
 				SearchSubject($result);
 			}
+			elseif ($s_resultorder == 'thumbnails') {
+				/* display thumbnails */
+				SearchThumbnails($result);
+			}
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
 				SearchLongitudinal($result);
@@ -1245,7 +1252,6 @@
 				$displayids[$subjid] = GetPrimaryProjectID($subjid, $s_projectid);
 			}
 		}
-		//PrintVariable($displayids);
 		
 		/* get the measures, if requested */
 		$measurenames = null;
@@ -1505,7 +1511,6 @@
 				
 				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
-				$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 				
 				$series_datetime = date("g:ia",strtotime($series_datetime));
 				$series_size = HumanReadableFilesize($series_size);
@@ -1974,7 +1979,7 @@
 								if ($tables[$uid][$name] == "") { $dispval = "-"; }
 								else { $dispval = $tables[$uid][$name]; }
 								list($width, $height, $type, $attr) = getimagesize("/mount$filename");
-								$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
+								//$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
 							?>
 								<td style="padding:2px"><a href="preview.php?image=/mount<?=$dispval?>" class="preview"><img src="preview.php?image=/mount<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
 								
@@ -2305,6 +2310,236 @@
 		}
 	}
 
+	/* -------------------------------------------- */
+	/* ------- SearchThumbnails ------------------- */
+	/* -------------------------------------------- */
+	function SearchThumbnails(&$result, $s) {
+		error_reporting(-1);
+		ini_set('display_errors', '1');
+	
+		/* escape all the variables and put them back into meaningful variable names */
+		foreach ($s as $key => $value) {
+			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
+			else { $$key = $s[$key]; }
+		}
+
+		?>
+		<? if ($s_resultorder == "table") { ?>
+		<table width="100%" class="searchresultssheet">
+		<? } else { ?>
+		<table width="100%" class="searchresults">
+		<? } ?>
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$("#seriesall").click(function() {
+					var checked_status = this.checked;
+					$(".allseries").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+				});
+			});
+			</script>
+		<?
+		$projectids = array();
+		$projectnames = array();
+
+		/* get the users id */
+		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+		$userid = $rowC['user_id'];
+				
+		/* check to see which projects this user has access to view */
+		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
+		//print "$sqlstringC<br>";
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+			$projectids[] = $rowC['projectid'];
+		}
+		
+		/* tell the user if there are results for projects they don't have access to */
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$projectid = $row['project_id'];
+			$projectname = $row['project_name'];
+			$studyid = $row['study_id'];
+			$subjectid = $row['subject_id'];
+			$uid = $row['uid'];
+
+			if (!in_array($projectid, $projectids)) {
+				//echo "$projectid is not in projectids<br>";
+				if (!in_array($projectname, $projectnames)) {
+					//echo "$projectname is not in projectnames<br>";
+					$projectnames[] = $projectname;
+				}
+			}
+			
+			/* BUT! while we're in this loop, count the number of unique studies ... */
+			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
+				$studies[] = $studyid;
+			}
+			/* ... and # of unique subjects */
+			if ((!isset($subjects)) || (!in_array($subjectid, $subjects))) {
+				$subjects[] = $subjectid;
+			}
+			/* also a unique list of UIDs ... */
+			if ((!isset($uids)) || (!in_array($uid, $uids))) {
+				$uids[] = $uid;
+			}
+			/* ... and a unique list of SubjectIDs */
+			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
+				$subjectids[] = $subjectid;
+			}
+		}
+		
+		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
+		if (($s_projectid != "") && ($s_projectid != "all")) {
+			foreach ($subjectids as $subjid) {
+				$displayids[$subjid] = GetPrimaryProjectID($subjid, $s_projectid);
+			}
+		}
+		
+		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
+		if ($s['s_subjectuid'] != "") {
+			$uidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectuid']);
+			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
+		}
+		if ($s['s_subjectaltuid'] != "") {
+			$altuidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
+
+			/* get list of UIDs from the list of alternate UIDs */
+			$sqlstringX = "select altuid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid in (" . MakeSQLList($s['s_subjectaltuid']) . ")";
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+				$altuids[] = $rowX['altuid'];
+			}
+			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
+		}
+		if ($s['s_subjectgroupid'] != "") {
+			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
+			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
+			if (count($missingstudies) > 0) {
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
+					$missinguids[] = $rowY['uid'];
+				}
+			}
+		}
+		if ($s['s_studygroupid'] != "") {
+			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
+			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
+			if (count($missingstudies) > 0) {
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
+					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
+				}
+			}
+		}
+		?>
+		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysqli_num_rows($result)?> series</b> matching your query
+		<?
+			if (count($missinguids) > 0) {
+			?>
+				<details>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missinguids)?> UIDs not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missinguids)?></span>
+				</details>
+			<?
+			}
+			elseif ($uidsearchlist != '') {
+			?>
+				<br><span style="font-size:8pt">All UIDs found</span>
+			<?
+			}
+			
+			if (count($missingaltuids) > 0) {
+			?>
+				<details>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingaltuids)?> alternate UIDs not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missingaltuids)?></span>
+				</details>
+			<?
+			}
+			elseif ($altuidsearchlist != '') {
+			?>
+				<br><span style="font-size:8pt">All alternate UIDs found</span>
+			<?
+			}
+			
+			if (count($missingstudynums) > 0) {
+			?>
+				<details>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingstudynums)?> Studies not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missingstudynums)?></span>
+				</details>
+			<?
+			}
+		?>
+		<br><br>
+		<?
+		if (count($projectnames) > 0) {
+		?>
+			<div style="border: 2px solid darkred; background-color: #FFEEEE; text-align: left; padding:5px; border-radius: 5px">
+			<b>Your search results contain subjects enrolled in the following projects to which you do not have view access</b>
+			<br>Contact your PI or project administrator for access
+			<ul>
+			<?
+			natcasesort($projectnames);
+			foreach ($projectnames as $projectname) {
+				echo "<li>$projectname</li>\n";
+			}
+			?>
+			</ul>
+			</div>
+			<?
+		}
+		
+		/* ----- loop through the results and display them ----- */
+		?>
+		<table style="border: 1px solid #aaa; border-collapse: collapse">
+			<tr>
+			<?
+			$col = 0;
+		mysqli_data_seek($result,0); /* rewind the record pointer */
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+
+			$project_id = $row['project_id'];
+			/* if the user doesn't have view access to this project, skip to the next record */
+			if (($projectids == null) || (!in_array($project_id, $projectids))) {
+				continue;
+			}
+			$enrollment_id = $row['enrollment_id'];
+			$subjectid = $row['subject_id'];
+			$uid = $row['uid'];
+			$studyid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$seriesnum = $row['series_num'];
+			$seriesdesc = $row['series_desc'];
+
+			$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";
+			
+			//echo "$thumbpath<br>";
+			
+			?>
+				<td style="padding:15; border: 1px solid #aaa;" align="center">
+					<a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a> series <?=$seriesnum?>
+					<br>
+					<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="preview.php?image=<?=$thumbpath?>" style="max-width: 200px; padding: 8px"></a>
+					<br>
+					<?=$seriesdesc?>
+				</td>
+			<?
+			
+			$col++;
+			if ($col >= 6) {
+				$col = 0;
+				?></tr><tr><?
+			}
+		}
+		?></tr></table><?
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- SearchSubject ---------------------- */
