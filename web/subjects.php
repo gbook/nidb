@@ -917,7 +917,7 @@
 			<tr>
 				<td colspan="<?=count($subjects)+1?>" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray">
 					<br>
-					<input type="submit" value="Merge">
+					<input type="submit" value="Merge" disabled>
 					<br><br>
 				</td>
 			</tr>

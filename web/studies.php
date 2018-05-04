@@ -228,7 +228,7 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- AddGenericSeries ------------------- */
+	/* ------- MergeStudies ----------------------- */
 	/* -------------------------------------------- */
 	function MergeStudies($subjectid, $studyids) {
 		$subjectid = mysqli_real_escape_string($GLOBALS['linki'], $subjectid);
@@ -283,6 +283,11 @@
 			echo "Modality is blank. Can't merge studies with blank modalities<br>";
 			return;
 		}
+		
+		/* start a transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
 		/* get largest series number from the new study */
 		$sqlstring = "select max(series_num) 'maxseries' from $basemodality"."_series where study_id = $newstudyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -307,11 +312,11 @@
 					list($seriespath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $seriespath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
 					echo "<li>Moving data [<tt style='color:darkred'>$systemstring</tt>]";
-					echo shell_exec($systemstring);
+					echo "<pre>" . shell_exec($systemstring) . "</pre>";
 
-					$sqlstring = "update $modality"."_series set study_id = $newstudyid, series_num = $newseries where $modality"."series_id = $seriesid";
+					$sqlstringA = "update $modality"."_series set study_id = $newstudyid, series_num = $newseries where $modality"."series_id = $seriesid";
 					echo "<li>Changing database entry for <b>series</b> [$sqlstring]";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 					$newseries++;
 				}
 				$sqlstring = "delete from studies where study_id = $studyid";
@@ -320,6 +325,10 @@
 			}
 		}
 		echo "</ol>";
+		
+		/* commit the transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 	
 	
