@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 27, 2018 at 06:14 PM
+-- Generation Time: May 09, 2018 at 07:22 PM
 -- Server version: 10.0.28-MariaDB
 -- PHP Version: 7.0.17
 
@@ -20,30 +20,6 @@ SET time_zone = "+00:00";
 -- Database: `nidb`
 --
 
-DELIMITER $$
---
--- Functions
---
-CREATE DEFINER=`root`@`localhost` FUNCTION `RemoveNonAlphaNumericChars` (`prm_strInput` VARCHAR(255)) RETURNS VARCHAR(255) CHARSET utf8 NO SQL
-    DETERMINISTIC
-BEGIN
-  DECLARE i INT DEFAULT 1;
-  DECLARE v_char VARCHAR(1);
-  DECLARE v_parseStr VARCHAR(255) DEFAULT ' ';
- 
-WHILE (i <= LENGTH(prm_strInput) )  DO 
- 
-  SET v_char = SUBSTR(prm_strInput,i,1);
-  IF v_char REGEXP  '^[A-Za-z0-9 ]+$' THEN  #alphanumeric
-    
-        SET v_parseStr = CONCAT(v_parseStr,v_char);  
-
-  END IF;
-  SET i = i + 1;
-END WHILE; 
-RETURN trim(v_parseStr);
-END$$
-
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -55,25 +31,25 @@ DELIMITER ;
 CREATE TABLE `analysis` (
   `analysis_id` bigint(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
-  `pipeline_version` int(11) DEFAULT '0',
+  `pipeline_version` int(11) DEFAULT 0,
   `pipeline_dependency` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `analysis_qsubid` bigint(20) UNSIGNED DEFAULT NULL,
   `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
-  `analysis_notes` text,
+  `analysis_notes` text DEFAULT NULL,
   `analysis_iscomplete` tinyint(1) DEFAULT NULL,
-  `analysis_isbad` tinyint(1) DEFAULT '0',
-  `analysis_datalog` mediumtext,
+  `analysis_isbad` tinyint(1) DEFAULT 0,
+  `analysis_datalog` mediumtext DEFAULT NULL,
   `analysis_rerunresults` tinyint(1) DEFAULT NULL,
   `analysis_runsupplement` tinyint(1) DEFAULT NULL,
   `analysis_result` varchar(50) DEFAULT NULL,
-  `analysis_resultmessage` text,
+  `analysis_resultmessage` text DEFAULT NULL,
   `analysis_numseries` int(11) DEFAULT NULL,
   `analysis_swversion` varchar(255) DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
-  `analysis_disksize` double DEFAULT '0',
+  `analysis_disksize` double DEFAULT 0,
   `analysis_numfiles` int(11) DEFAULT NULL,
   `analysis_startdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
@@ -103,14 +79,14 @@ CREATE TABLE `analysis_data` (
 CREATE TABLE `analysis_group` (
   `analysisgroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
-  `pipeline_version` int(11) DEFAULT '0',
+  `pipeline_version` int(11) DEFAULT 0,
   `pipeline_dependency` int(11) DEFAULT NULL,
   `analysisgroup_status` enum('complete','pending','processing') DEFAULT NULL,
   `analysisgroup_statusmessage` varchar(255) DEFAULT NULL,
   `analysisgroup_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysisgroup_iscomplete` tinyint(1) DEFAULT NULL,
   `analysisgroup_result` varchar(50) DEFAULT NULL,
-  `analysisgroup_resultmessage` text,
+  `analysisgroup_resultmessage` text DEFAULT NULL,
   `analysisgroup_numstudies` int(11) DEFAULT NULL,
   `analysisgroup_startdate` timestamp NULL DEFAULT NULL,
   `analysisgroup_clusterstartdate` timestamp NULL DEFAULT NULL,
@@ -132,9 +108,9 @@ CREATE TABLE `analysis_history` (
   `study_id` int(11) DEFAULT NULL,
   `analysis_event` varchar(255) DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
-  `event_message` text,
-  `event_datetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `event_message` text DEFAULT NULL,
+  `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -158,12 +134,12 @@ CREATE TABLE `analysis_results` (
   `analysis_id` bigint(20) DEFAULT NULL,
   `result_type` char(1) DEFAULT NULL COMMENT 'image, file, text, value',
   `result_nameid` int(11) DEFAULT NULL,
-  `result_text` text,
+  `result_text` text DEFAULT NULL,
   `result_value` double DEFAULT NULL,
   `result_unitid` int(11) DEFAULT NULL,
-  `result_filename` text,
+  `result_filename` text DEFAULT NULL,
   `result_isimportant` tinyint(1) DEFAULT NULL,
-  `result_count` smallint(5) UNSIGNED DEFAULT '0'
+  `result_count` smallint(5) UNSIGNED DEFAULT 0
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -192,10 +168,10 @@ CREATE TABLE `assessments` (
   `experimentor` varchar(45) DEFAULT NULL COMMENT 'Just a name... anyone could adminisister the experiment, so they need not be registered in the system',
   `rater_username` varchar(25) DEFAULT NULL,
   `label` varchar(255) DEFAULT NULL,
-  `notes` text,
+  `notes` text DEFAULT NULL,
   `iscomplete` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -207,14 +183,14 @@ CREATE TABLE `assessment_data` (
   `formdata_id` int(11) NOT NULL,
   `formfield_id` int(11) DEFAULT NULL,
   `experiment_id` int(11) DEFAULT NULL,
-  `value_text` text,
+  `value_text` text DEFAULT NULL,
   `value_number` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL,
-  `value_binary` blob,
+  `value_binary` blob DEFAULT NULL,
   `value_date` date DEFAULT NULL,
   `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -225,11 +201,11 @@ CREATE TABLE `assessment_data` (
 CREATE TABLE `assessment_formfields` (
   `formfield_id` int(11) NOT NULL,
   `form_id` int(11) DEFAULT NULL,
-  `formfield_desc` text COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
-  `formfield_values` text COMMENT 'a list of possible values',
+  `formfield_desc` text DEFAULT NULL COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
+  `formfield_values` text DEFAULT NULL COMMENT 'a list of possible values',
   `formfield_datatype` enum('multichoice','singlechoice','string','text','number','date','header','binary','calculation') DEFAULT NULL COMMENT 'multichoice, singlechoice, string, text, number, date, header, binary',
   `formfield_calculation` varchar(255) DEFAULT NULL COMMENT '(q1+q4)/5',
-  `formfield_calculationconversion` text COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
+  `formfield_calculationconversion` text DEFAULT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
   `formfield_haslinebreak` tinyint(1) DEFAULT NULL,
   `formfield_scored` tinyint(1) DEFAULT NULL,
   `formfield_order` varchar(45) DEFAULT NULL
@@ -245,12 +221,12 @@ CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   `form_title` varchar(100) DEFAULT NULL,
-  `form_desc` text,
+  `form_desc` text DEFAULT NULL,
   `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
   `form_createdate` datetime DEFAULT NULL,
-  `form_ispublished` tinyint(1) NOT NULL DEFAULT '0',
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `form_ispublished` tinyint(1) NOT NULL DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -267,11 +243,11 @@ CREATE TABLE `assessment_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -289,12 +265,12 @@ CREATE TABLE `audio_series` (
   `series_size` double DEFAULT NULL,
   `series_notes` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL,
-  `audio_desc` text,
+  `audio_desc` text DEFAULT NULL,
   `audio_cputime` double DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -306,7 +282,7 @@ CREATE TABLE `audit_enrollment` (
   `auditenrollment_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text,
+  `audit_message` text DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
@@ -340,8 +316,8 @@ CREATE TABLE `audit_results` (
   `db_numfiles` int(11) DEFAULT NULL,
   `file_string` varchar(255) DEFAULT NULL,
   `db_string` varchar(255) DEFAULT NULL,
-  `audit_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `audit_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -354,7 +330,7 @@ CREATE TABLE `audit_series` (
   `series_id` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text,
+  `audit_message` text DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
@@ -371,7 +347,7 @@ CREATE TABLE `audit_study` (
   `auditstudy_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text,
+  `audit_message` text DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
@@ -388,7 +364,7 @@ CREATE TABLE `audit_subject` (
   `auditsubject_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text,
+  `audit_message` text DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
@@ -412,8 +388,8 @@ CREATE TABLE `binary_series` (
   `series_description` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -457,7 +433,7 @@ CREATE TABLE `calendar_appointments` (
   `appt_calendarid` int(11) DEFAULT NULL,
   `appt_projectid` int(11) DEFAULT NULL,
   `appt_title` varchar(250) DEFAULT NULL,
-  `appt_details` text,
+  `appt_details` text DEFAULT NULL,
   `appt_startdate` datetime DEFAULT NULL,
   `appt_enddate` datetime DEFAULT NULL,
   `appt_isalldayevent` tinyint(1) DEFAULT NULL,
@@ -530,10 +506,8 @@ CREATE TABLE `changelog` (
   `affected_studyid2` int(11) DEFAULT NULL,
   `affected_seriesid1` int(11) DEFAULT NULL,
   `affected_seriesid2` int(11) DEFAULT NULL,
-  `change_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `change_event` varchar(255) DEFAULT NULL,
-  `change_desc` text
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `change_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -546,9 +520,9 @@ CREATE TABLE `common` (
   `common_type` enum('number','file','text') NOT NULL,
   `common_group` varchar(100) DEFAULT NULL,
   `common_name` varchar(100) DEFAULT NULL,
-  `common_desc` text,
+  `common_desc` text DEFAULT NULL,
   `common_number` double DEFAULT NULL,
-  `common_text` text,
+  `common_text` text DEFAULT NULL,
   `common_file` varchar(255) DEFAULT NULL,
   `common_size` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -570,9 +544,8 @@ CREATE TABLE `consent_series` (
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `ishidden` tinyint(1) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -617,11 +590,11 @@ CREATE TABLE `cr_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -632,120 +605,13 @@ CREATE TABLE `cr_series` (
 CREATE TABLE `cs_prefs` (
   `csprefs_id` int(11) NOT NULL,
   `userid` int(11) DEFAULT NULL,
-  `description` text,
+  `description` text DEFAULT NULL,
   `shortname` varchar(255) DEFAULT NULL,
-  `extralines` text,
+  `extralines` text DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `do_dicomconvert` tinyint(1) DEFAULT NULL,
-  `do_reorient` tinyint(1) DEFAULT NULL,
-  `do_realign` tinyint(1) DEFAULT NULL,
-  `do_msdcalc` tinyint(1) DEFAULT NULL,
-  `do_coregister` tinyint(1) DEFAULT NULL,
-  `do_slicetime` tinyint(1) DEFAULT NULL,
-  `do_normalize` tinyint(1) DEFAULT NULL,
-  `do_smooth` tinyint(1) DEFAULT NULL,
-  `do_artrepair` tinyint(1) DEFAULT NULL,
-  `do_filter` tinyint(1) DEFAULT NULL,
-  `do_segment` tinyint(1) DEFAULT NULL,
-  `do_behmatchup` tinyint(1) DEFAULT NULL,
-  `do_stats` tinyint(1) DEFAULT NULL,
-  `do_censor` tinyint(1) DEFAULT NULL,
-  `do_autoslice` tinyint(1) DEFAULT NULL,
-  `do_db` tinyint(1) DEFAULT NULL,
-  `dicom_filepattern` varchar(255) DEFAULT NULL,
-  `dicom_format` varchar(255) DEFAULT NULL,
-  `dicom_writefileprefix` varchar(255) DEFAULT NULL,
-  `dicom_outputdir` text,
-  `reorient_pattern` varchar(255) DEFAULT NULL,
-  `reorient_vector` varchar(255) DEFAULT NULL,
-  `reorient_write` tinyint(1) DEFAULT NULL,
-  `realign_coregister` tinyint(1) DEFAULT NULL,
-  `realign_reslice` tinyint(1) DEFAULT NULL,
-  `realign_useinrialign` tinyint(1) DEFAULT NULL,
-  `realign_pattern` varchar(255) DEFAULT NULL,
-  `realign_inri_rho` varchar(255) DEFAULT NULL,
-  `realign_inri_cutoff` double DEFAULT NULL,
-  `realign_inri_quality` double DEFAULT NULL,
-  `realign_fwhm` double DEFAULT NULL,
-  `realign_tomean` tinyint(1) DEFAULT NULL,
-  `realign_pathtoweight` varchar(255) DEFAULT NULL,
-  `realign_writeresliceimg` tinyint(1) DEFAULT NULL,
-  `realign_writemean` tinyint(1) DEFAULT NULL,
-  `coreg_run` tinyint(1) DEFAULT NULL,
-  `coreg_runreslice` tinyint(1) DEFAULT NULL,
-  `coreg_ref` varchar(255) DEFAULT NULL,
-  `coreg_source` varchar(255) DEFAULT NULL,
-  `coreg_otherpattern` varchar(255) DEFAULT NULL,
-  `coreg_writeref` varchar(255) DEFAULT NULL,
-  `slicetime_pattern` varchar(255) DEFAULT NULL,
-  `slicetime_sliceorder` varchar(255) DEFAULT NULL,
-  `slicetime_refslice` varchar(255) DEFAULT NULL,
-  `slicetime_ta` varchar(255) DEFAULT NULL,
-  `norm_determineparams` tinyint(1) DEFAULT NULL,
-  `norm_writeimages` tinyint(1) DEFAULT NULL,
-  `norm_paramstemplate` varchar(255) DEFAULT NULL,
-  `norm_paramspattern` varchar(255) DEFAULT NULL,
-  `norm_paramssourceweight` varchar(255) DEFAULT NULL,
-  `norm_paramsmatname` varchar(255) DEFAULT NULL,
-  `norm_writepattern` varchar(255) DEFAULT NULL,
-  `norm_writematname` varchar(255) DEFAULT NULL,
-  `smooth_kernel` varchar(255) DEFAULT NULL,
-  `smooth_pattern` varchar(255) DEFAULT NULL,
-  `art_pattern` varchar(255) DEFAULT NULL,
-  `filter_pattern` varchar(255) DEFAULT NULL,
-  `filter_cuttofffreq` double DEFAULT NULL,
-  `segment_pattern` varchar(255) DEFAULT NULL,
-  `segment_outputgm` varchar(255) DEFAULT NULL,
-  `segment_outputwm` varchar(255) DEFAULT NULL,
-  `segment_outputcsf` varchar(255) DEFAULT NULL,
-  `segment_outputbiascor` int(11) DEFAULT NULL,
-  `segment_outputcleanup` int(11) DEFAULT NULL,
-  `is_fulltext` tinyint(1) DEFAULT NULL,
-  `fulltext` text,
-  `beh_queue` varchar(255) DEFAULT NULL,
-  `beh_digits` varchar(50) DEFAULT NULL,
-  `stats_makeasciis` tinyint(1) DEFAULT NULL,
-  `stats_asciiscriptpath` text,
-  `stats_behdirname` varchar(255) DEFAULT NULL,
-  `stats_relativepath` tinyint(1) DEFAULT NULL,
-  `stats_dirname` varchar(255) DEFAULT NULL,
-  `stats_pattern` varchar(255) DEFAULT NULL,
-  `stats_behunits` varchar(255) DEFAULT NULL,
-  `stats_volterra` tinyint(1) DEFAULT NULL,
-  `stats_basisfunction` int(11) DEFAULT NULL,
-  `stats_onsetfiles` text,
-  `stats_durationfiles` text,
-  `stats_regressorfiles` text,
-  `stats_regressornames` text,
-  `stats_paramnames` text,
-  `stats_paramorders` text,
-  `stats_paramfiles` text,
-  `stats_censorfiles` text,
-  `stats_fit_xbflength` int(11) DEFAULT NULL,
-  `stats_fit_xbforder` int(11) DEFAULT NULL,
-  `stats_timemodulation` text,
-  `stats_parametricmodulation` text,
-  `stats_globalfx` tinyint(1) DEFAULT NULL,
-  `stats_highpasscutoff` int(11) DEFAULT NULL,
-  `stats_serialcorr` tinyint(1) DEFAULT NULL,
-  `stats_tcontrasts` text,
-  `stats_tcon_columnlabels` text,
-  `stats_tcontrastnames` text,
-  `autoslice_cons` varchar(255) DEFAULT NULL,
-  `autoslice_p` double DEFAULT NULL,
-  `autoslice_background` varchar(255) DEFAULT NULL,
-  `autoslice_slices` varchar(255) DEFAULT NULL,
-  `autoslice_emailcons` varchar(255) DEFAULT NULL,
-  `db_overwritebeta` tinyint(1) DEFAULT NULL,
-  `db_fileprefix` varchar(255) DEFAULT NULL,
-  `db_betanums` text,
-  `db_threshold` double DEFAULT NULL,
-  `db_smoothkernel` varchar(255) DEFAULT NULL,
-  `db_imcalcs` text,
-  `db_imnames` text
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -783,11 +649,11 @@ CREATE TABLE `ct_series` (
   `series_status` varchar(50) DEFAULT NULL,
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_numfiles` int(11) DEFAULT NULL,
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -818,15 +684,15 @@ CREATE TABLE `data_requests` (
   `req_ftpusername` varchar(50) DEFAULT NULL,
   `req_ftppassword` varchar(50) DEFAULT NULL,
   `req_ftpserver` varchar(100) DEFAULT NULL,
-  `req_ftpport` int(11) NOT NULL DEFAULT '21',
+  `req_ftpport` int(11) NOT NULL DEFAULT 21,
   `req_ftppath` varchar(255) DEFAULT NULL,
-  `req_ftplog` text,
+  `req_ftplog` text DEFAULT NULL,
   `req_nidbusername` varchar(255) DEFAULT NULL,
   `req_nidbpassword` varchar(255) DEFAULT NULL,
   `req_nidbserver` varchar(255) DEFAULT NULL,
-  `req_nidbinstanceid` int(11) NOT NULL DEFAULT '0',
-  `req_nidbsiteid` int(11) NOT NULL DEFAULT '0',
-  `req_nidbprojectid` int(11) NOT NULL DEFAULT '0',
+  `req_nidbinstanceid` int(11) NOT NULL DEFAULT 0,
+  `req_nidbsiteid` int(11) NOT NULL DEFAULT 0,
+  `req_nidbprojectid` int(11) NOT NULL DEFAULT 0,
   `req_downloadid` int(11) DEFAULT NULL,
   `req_behonly` tinyint(1) DEFAULT NULL,
   `req_behformat` varchar(35) DEFAULT NULL,
@@ -836,9 +702,9 @@ CREATE TABLE `data_requests` (
   `req_completedate` timestamp NULL DEFAULT NULL,
   `req_cputime` double DEFAULT NULL,
   `req_status` varchar(25) DEFAULT NULL,
-  `req_results` text,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `req_results` text DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -855,12 +721,12 @@ CREATE TABLE `ecg_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(255) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -876,14 +742,14 @@ CREATE TABLE `eeg_series` (
   `series_altdesc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
   `series_protocol` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
-  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(255) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `ishidden` tinyint(1) DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -899,9 +765,9 @@ CREATE TABLE `enrollment` (
   `enroll_startdate` datetime DEFAULT NULL,
   `enroll_enddate` datetime DEFAULT NULL,
   `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
-  `irb_consent` blob COMMENT 'scanned image of the IRB consent form',
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `irb_consent` blob DEFAULT NULL COMMENT 'scanned image of the IRB consent form',
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -913,7 +779,7 @@ CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `projectchecklist_id` int(11) DEFAULT NULL,
-  `notes` text,
+  `notes` text DEFAULT NULL,
   `date_completed` datetime DEFAULT NULL,
   `completedby` varchar(255) DEFAULT NULL COMMENT 'username, not ID, in case the user_id is deleted'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -948,11 +814,11 @@ CREATE TABLE `et_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -965,9 +831,9 @@ CREATE TABLE `families` (
   `family_uid` varchar(10) DEFAULT NULL,
   `family_createdate` datetime DEFAULT NULL,
   `family_name` varchar(255) DEFAULT NULL,
-  `family_isactive` tinyint(1) NOT NULL DEFAULT '1',
-  `family_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `family_isactive` tinyint(1) NOT NULL DEFAULT 1,
+  `family_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -995,14 +861,12 @@ CREATE TABLE `fileio_requests` (
   `data_id` int(11) DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
-  `anonymize_fields` text,
+  `anonymize_fields` text DEFAULT NULL,
   `request_status` enum('pending','deleting','complete','error') NOT NULL DEFAULT 'pending',
   `request_message` varchar(255) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
-  `requestdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1047,11 +911,11 @@ CREATE TABLE `gsr_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text,
+  `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1061,11 +925,11 @@ CREATE TABLE `gsr_series` (
 
 CREATE TABLE `importlogs` (
   `importlog_id` bigint(20) NOT NULL,
-  `filename_orig` text,
+  `filename_orig` text DEFAULT NULL,
   `filename_new` varchar(255) DEFAULT NULL,
   `fileformat` varchar(255) DEFAULT NULL,
   `importstartdate` datetime DEFAULT NULL,
-  `result` text,
+  `result` text DEFAULT NULL,
   `importid` int(11) DEFAULT NULL,
   `importgroupid` int(11) DEFAULT NULL,
   `importsiteid` int(11) DEFAULT NULL,
@@ -1166,7 +1030,7 @@ CREATE TABLE `import_requests` (
   `import_transactionid` int(11) DEFAULT NULL,
   `import_datatype` varchar(255) DEFAULT NULL,
   `import_modality` varchar(50) DEFAULT NULL,
-  `import_datetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `import_datetime` timestamp NOT NULL DEFAULT current_timestamp(),
   `import_status` varchar(50) DEFAULT NULL,
   `import_message` varchar(255) DEFAULT NULL,
   `import_startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -1181,8 +1045,8 @@ CREATE TABLE `import_requests` (
   `import_permanent` tinyint(1) DEFAULT NULL,
   `import_matchidonly` tinyint(1) DEFAULT NULL,
   `import_filename` varchar(255) DEFAULT NULL,
-  `import_seriesnotes` text,
-  `import_altuids` text,
+  `import_seriesnotes` text DEFAULT NULL,
+  `import_altuids` text DEFAULT NULL,
   `import_userid` int(11) DEFAULT NULL,
   `import_fileisseries` tinyint(1) DEFAULT NULL COMMENT 'if each file should be its own series',
   `numfilestotal` int(11) DEFAULT NULL,
@@ -1191,8 +1055,8 @@ CREATE TABLE `import_requests` (
   `numbehtotal` int(11) DEFAULT NULL,
   `numbehsuccess` int(11) DEFAULT NULL,
   `numbehfail` int(11) DEFAULT NULL,
-  `uploadreport` mediumtext,
-  `archivereport` mediumtext
+  `uploadreport` mediumtext DEFAULT NULL,
+  `archivereport` mediumtext DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1283,7 +1147,7 @@ CREATE TABLE `instance_pricing` (
   `pricing_unit` varchar(255) NOT NULL,
   `pricing_price` double NOT NULL,
   `pricing_comments` text NOT NULL,
-  `pricing_internal` tinyint(1) NOT NULL DEFAULT '1'
+  `pricing_internal` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1363,8 +1227,8 @@ CREATE TABLE `measures` (
   `measure_rater2` varchar(50) NOT NULL,
   `measure_isdoubleentered` tinyint(1) NOT NULL,
   `measure_datecomplete` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `measure_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1400,7 +1264,7 @@ CREATE TABLE `modules` (
   `module_id` int(11) NOT NULL,
   `module_name` varchar(200) NOT NULL,
   `module_status` varchar(25) NOT NULL,
-  `module_numrunning` int(11) NOT NULL DEFAULT '0',
+  `module_numrunning` int(11) NOT NULL DEFAULT 0,
   `module_laststart` datetime NOT NULL,
   `module_laststop` datetime NOT NULL,
   `module_isactive` tinyint(1) NOT NULL
@@ -1443,8 +1307,8 @@ CREATE TABLE `mostrecent` (
   `user_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `mostrecent_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `mostrecent_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1478,8 +1342,8 @@ CREATE TABLE `mr_qa` (
   `motion_rsq` double NOT NULL,
   `cputime` double DEFAULT NULL,
   `status` varchar(25) NOT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1546,51 +1410,51 @@ CREATE TABLE `mr_series` (
   `study_id` int(11) NOT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
   `series_desc` varchar(255) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
-  `series_altdesc` varchar(255) NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc(0018,0024)',
+  `series_altdesc` varchar(255) NOT NULL DEFAULT '',
+  `series_protocol` varchar(255) NOT NULL DEFAULT '',
+  `series_sequencename` varchar(45) NOT NULL DEFAULT '' COMMENT 'epfid2d1_64, etc(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
   `series_te` double DEFAULT NULL COMMENT '(0018,0081)',
-  `series_ti` double NOT NULL,
+  `series_ti` double NOT NULL DEFAULT 0,
   `series_flip` double DEFAULT NULL COMMENT '(0018,1314)',
-  `percent_sampling` double NOT NULL,
-  `percent_phaseFOV` double NOT NULL,
-  `phaseencodedir` varchar(20) NOT NULL COMMENT 'either ROW or COL. when combined with phaseencodeangle, it will give the A>P, R>L etc',
-  `phaseencodeangle` double NOT NULL COMMENT 'in radians',
-  `PhaseEncodingDirectionPositive` tinyint(1) NOT NULL,
+  `percent_sampling` double DEFAULT NULL,
+  `percent_phaseFOV` double DEFAULT NULL,
+  `phaseencodedir` varchar(20) NOT NULL DEFAULT '' COMMENT 'either ROW or COL. when combined with phaseencodeangle, it will give the A>P, R>L etc',
+  `phaseencodeangle` double DEFAULT NULL COMMENT 'in radians',
+  `PhaseEncodingDirectionPositive` tinyint(1) DEFAULT NULL,
   `series_spacingx` double DEFAULT NULL COMMENT '(0028,0030) field 1',
   `series_spacingy` double DEFAULT NULL COMMENT '(0028,0030) field 2',
   `series_spacingz` double DEFAULT NULL COMMENT '(0018,0050)',
   `series_fieldstrength` double DEFAULT NULL COMMENT '(0018,0087)',
-  `acq_matrix` varchar(20) NOT NULL COMMENT '(0018,1310)',
+  `acq_matrix` varchar(20) NOT NULL DEFAULT '' COMMENT '(0018,1310)',
   `img_rows` int(11) DEFAULT NULL COMMENT '(0028,0010)',
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
-  `slicethickness` double NOT NULL,
-  `slicespacing` double NOT NULL,
-  `dimN` int(11) NOT NULL COMMENT 'from fslval dim0',
-  `dimX` int(11) NOT NULL COMMENT 'from fslval dim1',
-  `dimY` int(11) NOT NULL COMMENT 'from fslval dim2',
-  `dimZ` int(11) NOT NULL COMMENT 'from fslval dim3',
-  `dimT` int(11) NOT NULL COMMENT 'from fslval dim4',
-  `bandwidth` double NOT NULL,
-  `image_type` varchar(255) NOT NULL,
-  `image_comments` varchar(255) NOT NULL,
-  `bold_reps` int(11) NOT NULL,
+  `slicethickness` double NOT NULL DEFAULT 0,
+  `slicespacing` double DEFAULT NULL,
+  `dimN` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim0',
+  `dimX` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim1',
+  `dimY` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim2',
+  `dimZ` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim3',
+  `dimT` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim4',
+  `bandwidth` double NOT NULL DEFAULT 0,
+  `image_type` varchar(255) NOT NULL DEFAULT '',
+  `image_comments` varchar(255) NOT NULL DEFAULT '',
+  `bold_reps` int(11) NOT NULL DEFAULT 0,
   `numfiles` int(11) DEFAULT NULL,
-  `series_size` double NOT NULL COMMENT 'number of bytes',
-  `data_type` varchar(20) NOT NULL,
-  `is_derived` tinyint(1) NOT NULL DEFAULT '0',
-  `numfiles_beh` int(11) NOT NULL,
-  `beh_size` double NOT NULL,
-  `series_notes` text NOT NULL,
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
+  `data_type` varchar(20) NOT NULL DEFAULT '',
+  `is_derived` tinyint(1) NOT NULL DEFAULT 0,
+  `numfiles_beh` int(11) NOT NULL DEFAULT 0,
+  `beh_size` double NOT NULL DEFAULT 0,
+  `series_notes` text NOT NULL DEFAULT '',
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
-  `series_createdate` datetime NOT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 PACK_KEYS=0;
+  `series_createdby` varchar(50) NOT NULL DEFAULT '',
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
+  `series_createdate` datetime NOT NULL DEFAULT current_timestamp(),
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1608,8 +1472,8 @@ CREATE TABLE `mr_studyqa` (
   `t1_matrixremovethreshold` double NOT NULL,
   `t1_snrremovethreshold` double NOT NULL,
   `cputime` double DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1644,8 +1508,8 @@ CREATE TABLE `nm_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1703,8 +1567,8 @@ CREATE TABLE `ot_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1722,21 +1586,21 @@ CREATE TABLE `pipelines` (
   `pipeline_group` varchar(255) DEFAULT NULL,
   `pipeline_directory` varchar(255) DEFAULT NULL,
   `pipeline_usetmpdir` tinyint(1) DEFAULT NULL,
-  `pipeline_tmpdir` text,
-  `pipeline_dependency` text,
+  `pipeline_tmpdir` text DEFAULT NULL,
+  `pipeline_dependency` text DEFAULT NULL,
   `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
   `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
-  `pipeline_groupid` text,
+  `pipeline_groupid` text DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
-  `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT '0',
+  `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
   `pipeline_laststart` datetime DEFAULT NULL,
   `pipeline_lastfinish` datetime DEFAULT NULL,
   `pipeline_lastcheck` datetime DEFAULT NULL,
-  `pipeline_completefiles` text COMMENT 'comma separated list of files to check to assume the analysis is complete',
+  `pipeline_completefiles` text DEFAULT NULL COMMENT 'comma separated list of files to check to assume the analysis is complete',
   `pipeline_numproc` int(11) DEFAULT NULL COMMENT 'number of concurrent jobs allowed to run',
   `pipeline_queue` varchar(255) DEFAULT NULL,
   `pipeline_submithost` varchar(255) DEFAULT NULL,
@@ -1745,17 +1609,17 @@ CREATE TABLE `pipelines` (
   `pipeline_maxwalltime` bigint(20) DEFAULT NULL COMMENT 'maximum wall execution time in minutes',
   `pipeline_submitdelay` int(11) DEFAULT NULL COMMENT 'delay after studydatetime in hours',
   `pipeline_datacopymethod` varchar(50) DEFAULT NULL,
-  `pipeline_notes` text,
+  `pipeline_notes` text DEFAULT NULL,
   `pipeline_useprofile` tinyint(1) DEFAULT NULL,
   `pipeline_removedata` tinyint(1) DEFAULT NULL,
-  `pipeline_resultsscript` text,
-  `pipeline_enabled` tinyint(1) DEFAULT '0',
+  `pipeline_resultsscript` text DEFAULT NULL,
+  `pipeline_enabled` tinyint(1) DEFAULT 0,
   `pipeline_testing` tinyint(1) DEFAULT NULL,
   `pipeline_isprivate` tinyint(1) DEFAULT NULL,
   `pipeline_ishidden` tinyint(1) DEFAULT NULL,
-  `pipeline_version` int(11) DEFAULT '1',
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `pipeline_version` int(11) DEFAULT 1,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1766,7 +1630,7 @@ CREATE TABLE `pipelines` (
 CREATE TABLE `pipeline_data_def` (
   `pipelinedatadef_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
-  `pipeline_version` int(11) NOT NULL DEFAULT '0',
+  `pipeline_version` int(11) NOT NULL DEFAULT 0,
   `pdd_order` int(11) NOT NULL,
   `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest','usesizecriteria') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
@@ -1776,7 +1640,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_imagetype` varchar(255) NOT NULL,
   `pdd_modality` varchar(255) NOT NULL,
   `pdd_dataformat` varchar(30) NOT NULL,
-  `pdd_gzip` tinyint(1) NOT NULL DEFAULT '0',
+  `pdd_gzip` tinyint(1) NOT NULL DEFAULT 0,
   `pdd_location` varchar(255) NOT NULL COMMENT 'path to the data, relative to the root subject directory',
   `pdd_useseries` tinyint(1) NOT NULL,
   `pdd_preserveseries` tinyint(1) NOT NULL,
@@ -1824,8 +1688,8 @@ CREATE TABLE `pipeline_download` (
   `pd_behdirrootname` varchar(50) NOT NULL,
   `pd_createdate` datetime NOT NULL,
   `pd_status` varchar(25) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1888,8 +1752,8 @@ CREATE TABLE `pipeline_status` (
   `pipelinestatus_order` int(11) NOT NULL,
   `pipelinestatus_status` enum('pending','complete','running') NOT NULL,
   `pipelinestatus_result` text NOT NULL,
-  `pipelinestatus_lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `pipelinestatus_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1900,10 +1764,10 @@ CREATE TABLE `pipeline_status` (
 CREATE TABLE `pipeline_steps` (
   `pipelinestep_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
-  `pipeline_version` int(11) NOT NULL DEFAULT '1',
+  `pipeline_version` int(11) NOT NULL DEFAULT 1,
   `ps_supplement` tinyint(1) NOT NULL,
-  `ps_command` text,
-  `ps_workingdir` text,
+  `ps_command` text DEFAULT NULL,
+  `ps_workingdir` text DEFAULT NULL,
   `ps_order` int(11) DEFAULT NULL,
   `ps_description` varchar(255) DEFAULT NULL,
   `ps_enabled` tinyint(1) NOT NULL,
@@ -1928,8 +1792,8 @@ CREATE TABLE `ppi_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -1970,9 +1834,9 @@ CREATE TABLE `prescriptions` (
 
 CREATE TABLE `projects` (
   `project_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL DEFAULT '0',
+  `instance_id` int(11) NOT NULL DEFAULT 0,
   `project_uid` varchar(20) DEFAULT NULL,
-  `project_usecustomid` tinyint(1) DEFAULT '0' COMMENT '1 - uses custom IDs, 2 - uses NiDB UIDs',
+  `project_usecustomid` tinyint(1) DEFAULT 0 COMMENT '1 - uses custom IDs, 2 - uses NiDB UIDs',
   `project_name` varchar(60) NOT NULL,
   `project_admin` int(11) DEFAULT NULL,
   `project_pi` int(11) DEFAULT NULL,
@@ -1982,8 +1846,8 @@ CREATE TABLE `projects` (
   `project_enddate` date DEFAULT NULL,
   `project_irbapprovaldate` date DEFAULT NULL,
   `project_status` varchar(15) DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a';
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2062,8 +1926,8 @@ CREATE TABLE `pr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2102,7 +1966,7 @@ CREATE TABLE `qc_modules` (
   `qcmodule_id` int(11) NOT NULL,
   `qcm_modality` varchar(20) NOT NULL,
   `qcm_name` varchar(255) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
-  `qcm_isenabled` tinyint(1) NOT NULL DEFAULT '1'
+  `qcm_isenabled` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2147,7 +2011,7 @@ CREATE TABLE `qc_results` (
   `qcresults_valuetext` blob NOT NULL,
   `qcresults_valuefile` varchar(255) DEFAULT NULL,
   `qcresults_datetime` datetime DEFAULT NULL,
-  `qcresults_cputime` double NOT NULL DEFAULT '0'
+  `qcresults_cputime` double NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2211,9 +2075,8 @@ CREATE TABLE `remote_logins` (
   `remotelogin_id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `ip` varchar(100) NOT NULL,
-  `login_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `login_result` enum('success','failure') NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `login_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2261,8 +2124,8 @@ CREATE TABLE `snp_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2282,8 +2145,8 @@ CREATE TABLE `sr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2313,18 +2176,18 @@ CREATE TABLE `studies` (
   `study_notes` varchar(255) DEFAULT NULL,
   `study_doradread` tinyint(1) DEFAULT NULL,
   `study_radreaddate` datetime DEFAULT NULL,
-  `study_radreadfindings` text,
+  `study_radreadfindings` text DEFAULT NULL,
   `study_subjectage` double DEFAULT NULL,
   `study_etsnellenchart` int(11) DEFAULT NULL,
   `study_etvergence` varchar(255) DEFAULT NULL,
   `study_ettracking` varchar(255) DEFAULT NULL,
   `study_snpchip` varchar(255) DEFAULT NULL,
   `study_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
-  `study_isactive` tinyint(1) DEFAULT '1',
+  `study_isactive` tinyint(1) DEFAULT 1,
   `study_createdby` varchar(50) DEFAULT NULL,
   `study_createdate` datetime DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2378,11 +2241,11 @@ CREATE TABLE `subjects` (
   `uuid2` varchar(255) DEFAULT NULL,
   `guid` varchar(255) DEFAULT NULL,
   `cancontact` tinyint(1) DEFAULT NULL,
-  `isactive` tinyint(1) DEFAULT '1',
+  `isactive` tinyint(1) DEFAULT 1,
   `isimported` tinyint(1) DEFAULT NULL,
   `importeduuid` varchar(255) DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2429,8 +2292,8 @@ CREATE TABLE `surgery_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2481,9 +2344,8 @@ CREATE TABLE `task_series` (
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `ishidden` tinyint(1) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2496,7 +2358,7 @@ CREATE TABLE `users` (
   `username` varchar(45) NOT NULL,
   `password` varchar(45) NOT NULL,
   `login_type` enum('NIS','Standard','Guest','Pending') DEFAULT NULL,
-  `user_instanceid` int(11) DEFAULT '0',
+  `user_instanceid` int(11) DEFAULT 0,
   `user_fullname` varchar(150) DEFAULT NULL,
   `user_firstname` varchar(255) DEFAULT NULL,
   `user_midname` char(1) DEFAULT NULL,
@@ -2515,15 +2377,15 @@ CREATE TABLE `users` (
   `user_website` varchar(255) DEFAULT NULL,
   `user_dept` varchar(255) DEFAULT NULL,
   `user_lastlogin` timestamp NULL DEFAULT NULL,
-  `user_logincount` int(11) DEFAULT '0',
-  `user_enabled` tinyint(1) DEFAULT '0',
-  `user_isadmin` tinyint(1) DEFAULT '0',
-  `user_issiteadmin` tinyint(1) DEFAULT '0',
-  `user_canimport` tinyint(1) DEFAULT '0',
+  `user_logincount` int(11) DEFAULT 0,
+  `user_enabled` tinyint(1) DEFAULT 0,
+  `user_isadmin` tinyint(1) DEFAULT 0,
+  `user_issiteadmin` tinyint(1) DEFAULT 0,
+  `user_canimport` tinyint(1) DEFAULT 0,
   `sendmail_dailysummary` tinyint(1) DEFAULT NULL,
-  `user_enablebeta` tinyint(1) DEFAULT '0',
-  `lastupdate` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `user_enablebeta` tinyint(1) DEFAULT 0,
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2541,11 +2403,8 @@ CREATE TABLE `users_pending` (
   `user_country` varchar(255) NOT NULL,
   `user_email` varchar(100) DEFAULT NULL,
   `emailkey` varchar(255) NOT NULL,
-  `signupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `user_firstname` varchar(255) NOT NULL,
-  `user_midname` varchar(255) NOT NULL,
-  `user_lastname` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `signupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2588,8 +2447,8 @@ CREATE TABLE `user_project` (
   `view_phi` tinyint(1) NOT NULL,
   `write_data` tinyint(1) NOT NULL,
   `write_phi` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2609,8 +2468,8 @@ CREATE TABLE `us_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2632,8 +2491,8 @@ CREATE TABLE `video_series` (
   `video_cputime` double NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 -- --------------------------------------------------------
 
@@ -2668,8 +2527,8 @@ CREATE TABLE `xa_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp
+) ;
 
 --
 -- Indexes for dumped tables
@@ -2706,14 +2565,6 @@ ALTER TABLE `analysis_group`
   ADD KEY `pipeline_id` (`pipeline_id`);
 
 --
--- Indexes for table `analysis_history`
---
-ALTER TABLE `analysis_history`
-  ADD PRIMARY KEY (`analysishistory_id`),
-  ADD KEY `analysis_id` (`analysis_id`,`pipeline_id`,`pipeline_version`,`study_id`),
-  ADD KEY `analysis_event` (`analysis_event`);
-
---
 -- Indexes for table `analysis_resultnames`
 --
 ALTER TABLE `analysis_resultnames`
@@ -2738,19 +2589,6 @@ ALTER TABLE `analysis_resultunit`
   ADD UNIQUE KEY `units` (`result_unit`);
 
 --
--- Indexes for table `assessments`
---
-ALTER TABLE `assessments`
-  ADD PRIMARY KEY (`experiment_id`),
-  ADD KEY `fk_experiments_subject_project1` (`enrollment_id`);
-
---
--- Indexes for table `assessment_data`
---
-ALTER TABLE `assessment_data`
-  ADD PRIMARY KEY (`formdata_id`);
-
---
 -- Indexes for table `assessment_formfields`
 --
 ALTER TABLE `assessment_formfields`
@@ -2758,38 +2596,11 @@ ALTER TABLE `assessment_formfields`
   ADD KEY `fk_formfielddef_formdef1` (`form_id`);
 
 --
--- Indexes for table `assessment_forms`
---
-ALTER TABLE `assessment_forms`
-  ADD PRIMARY KEY (`form_id`),
-  ADD KEY `project_id` (`project_id`);
-
---
--- Indexes for table `assessment_series`
---
-ALTER TABLE `assessment_series`
-  ADD PRIMARY KEY (`assessmentseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `audio_series`
---
-ALTER TABLE `audio_series`
-  ADD PRIMARY KEY (`audioseries_id`);
-
---
 -- Indexes for table `audit_enrollment`
 --
 ALTER TABLE `audit_enrollment`
   ADD PRIMARY KEY (`auditenrollment_id`),
   ADD KEY `subject_id` (`enrollment_id`);
-
---
--- Indexes for table `audit_results`
---
-ALTER TABLE `audit_results`
-  ADD PRIMARY KEY (`auditresult_id`);
 
 --
 -- Indexes for table `audit_series`
@@ -2811,12 +2622,6 @@ ALTER TABLE `audit_study`
 ALTER TABLE `audit_subject`
   ADD PRIMARY KEY (`auditsubject_id`),
   ADD KEY `subject_id` (`subject_id`);
-
---
--- Indexes for table `binary_series`
---
-ALTER TABLE `binary_series`
-  ADD PRIMARY KEY (`binaryseries_id`);
 
 --
 -- Indexes for table `calendars`
@@ -2856,12 +2661,6 @@ ALTER TABLE `calendar_projects`
   ADD PRIMARY KEY (`project_id`);
 
 --
--- Indexes for table `changelog`
---
-ALTER TABLE `changelog`
-  ADD PRIMARY KEY (`changelog_id`);
-
---
 -- Indexes for table `common`
 --
 ALTER TABLE `common`
@@ -2869,79 +2668,10 @@ ALTER TABLE `common`
   ADD UNIQUE KEY `common_group` (`common_group`,`common_name`);
 
 --
--- Indexes for table `consent_series`
---
-ALTER TABLE `consent_series`
-  ADD PRIMARY KEY (`consentseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
 -- Indexes for table `contacts`
 --
 ALTER TABLE `contacts`
   ADD PRIMARY KEY (`contact_id`);
-
---
--- Indexes for table `cr_series`
---
-ALTER TABLE `cr_series`
-  ADD PRIMARY KEY (`crseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
--- Indexes for table `cs_prefs`
---
-ALTER TABLE `cs_prefs`
-  ADD PRIMARY KEY (`csprefs_id`),
-  ADD UNIQUE KEY `shortname` (`shortname`),
-  ADD KEY `idx_cs_prefs` (`userid`);
-
---
--- Indexes for table `ct_series`
---
-ALTER TABLE `ct_series`
-  ADD PRIMARY KEY (`ctseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `data_requests`
---
-ALTER TABLE `data_requests`
-  ADD PRIMARY KEY (`request_id`),
-  ADD KEY `req_groupid` (`req_groupid`),
-  ADD KEY `req_date` (`req_date`),
-  ADD KEY `req_status` (`req_status`),
-  ADD KEY `idx_data_requests` (`req_username`);
-
---
--- Indexes for table `ecg_series`
---
-ALTER TABLE `ecg_series`
-  ADD PRIMARY KEY (`ecgseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `series_desc` (`series_desc`),
-  ADD KEY `series_protocol` (`series_protocol`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `eeg_series`
---
-ALTER TABLE `eeg_series`
-  ADD PRIMARY KEY (`eegseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `series_desc` (`series_desc`),
-  ADD KEY `series_protocol` (`series_protocol`),
-  ADD KEY `ishidden` (`ishidden`),
-  ADD KEY `series_altdesc` (`series_altdesc`);
-
---
--- Indexes for table `enrollment`
---
-ALTER TABLE `enrollment`
-  ADD PRIMARY KEY (`enrollment_id`),
-  ADD KEY `project_id` (`project_id`,`subject_id`),
-  ADD KEY `subject_id` (`subject_id`);
 
 --
 -- Indexes for table `enrollment_checklist`
@@ -2957,32 +2687,10 @@ ALTER TABLE `enrollment_missingdata`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`projectchecklist_id`);
 
 --
--- Indexes for table `et_series`
---
-ALTER TABLE `et_series`
-  ADD PRIMARY KEY (`etseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`),
-  ADD KEY `series_altdesc` (`series_altdesc`);
-
---
--- Indexes for table `families`
---
-ALTER TABLE `families`
-  ADD PRIMARY KEY (`family_id`),
-  ADD UNIQUE KEY `family_uid` (`family_uid`);
-
---
 -- Indexes for table `family_members`
 --
 ALTER TABLE `family_members`
   ADD PRIMARY KEY (`familymember_id`);
-
---
--- Indexes for table `fileio_requests`
---
-ALTER TABLE `fileio_requests`
-  ADD PRIMARY KEY (`fileiorequest_id`);
 
 --
 -- Indexes for table `groups`
@@ -2998,14 +2706,6 @@ ALTER TABLE `group_data`
   ADD PRIMARY KEY (`subjectgroup_id`),
   ADD UNIQUE KEY `group_id` (`group_id`,`data_id`,`modality`),
   ADD KEY `idx_group_data` (`modality`);
-
---
--- Indexes for table `gsr_series`
---
-ALTER TABLE `gsr_series`
-  ADD PRIMARY KEY (`gsrseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `importlogs`
@@ -3097,13 +2797,6 @@ ALTER TABLE `measurenames`
   ADD UNIQUE KEY `measure_name` (`measure_name`);
 
 --
--- Indexes for table `measures`
---
-ALTER TABLE `measures`
-  ADD PRIMARY KEY (`measure_id`),
-  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_type`,`measure_valuestring`,`measure_valuenum`,`measure_isdoubleentered`);
-
---
 -- Indexes for table `modalities`
 --
 ALTER TABLE `modalities`
@@ -3136,22 +2829,6 @@ ALTER TABLE `module_procs`
   ADD UNIQUE KEY `module_name` (`module_name`,`process_id`);
 
 --
--- Indexes for table `mostrecent`
---
-ALTER TABLE `mostrecent`
-  ADD PRIMARY KEY (`mostrecent_id`),
-  ADD UNIQUE KEY `user_id_2` (`user_id`,`study_id`),
-  ADD UNIQUE KEY `user_id` (`user_id`,`subject_id`),
-  ADD KEY `idx_mostrecent` (`subject_id`);
-
---
--- Indexes for table `mr_qa`
---
-ALTER TABLE `mr_qa`
-  ADD PRIMARY KEY (`mrqa_id`),
-  ADD KEY `mriseries_id` (`mrseries_id`);
-
---
 -- Indexes for table `mr_qcparams`
 --
 ALTER TABLE `mr_qcparams`
@@ -3165,38 +2842,11 @@ ALTER TABLE `mr_scanparams`
   ADD UNIQUE KEY `protocol_name` (`protocol_name`,`sequence_name`,`tr_min`,`tr_max`,`te_min`,`te_max`,`ti_min`,`ti_max`,`flip_min`,`flip_max`,`xdim_min`,`xdim_max`,`ydim_min`,`ydim_max`,`zdim_min`,`zdim_max`,`tdim_min`,`tdim_max`,`slicethickness_min`,`slicethickness_max`,`slicespacing_min`,`slicespacing_max`,`bandwidth_min`,`bandwidth_max`);
 
 --
--- Indexes for table `mr_series`
---
-ALTER TABLE `mr_series`
-  ADD PRIMARY KEY (`mrseries_id`),
-  ADD UNIQUE KEY `study_id_2` (`study_id`,`series_num`),
-  ADD KEY `series_desc` (`series_desc`),
-  ADD KEY `study_id` (`study_id`),
-  ADD KEY `series_protocol` (`series_protocol`),
-  ADD KEY `series_tr` (`series_tr`),
-  ADD KEY `series_altdesc` (`series_altdesc`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `mr_studyqa`
---
-ALTER TABLE `mr_studyqa`
-  ADD PRIMARY KEY (`mrstudyqa_id`),
-  ADD KEY `mriseries_id` (`study_id`);
-
---
 -- Indexes for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
   ADD PRIMARY KEY (`site_id`),
   ADD UNIQUE KEY `uuid` (`site_uuid`);
-
---
--- Indexes for table `nm_series`
---
-ALTER TABLE `nm_series`
-  ADD PRIMARY KEY (`nmseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
 -- Indexes for table `notifications`
@@ -3212,22 +2862,6 @@ ALTER TABLE `notification_user`
   ADD KEY `idx_notifications` (`user_id`);
 
 --
--- Indexes for table `ot_series`
---
-ALTER TABLE `ot_series`
-  ADD PRIMARY KEY (`otseries_id`),
-  ADD KEY `fk_mri_series_studies1` (`study_id`),
-  ADD KEY `series_desc` (`series_desc`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `pipelines`
---
-ALTER TABLE `pipelines`
-  ADD PRIMARY KEY (`pipeline_id`),
-  ADD UNIQUE KEY `pipeline_name` (`pipeline_name`,`pipeline_version`);
-
---
 -- Indexes for table `pipeline_data_def`
 --
 ALTER TABLE `pipeline_data_def`
@@ -3239,12 +2873,6 @@ ALTER TABLE `pipeline_data_def`
 ALTER TABLE `pipeline_dependencies`
   ADD PRIMARY KEY (`pipelinedep_id`),
   ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`parent_id`);
-
---
--- Indexes for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  ADD PRIMARY KEY (`pipelinedownload_id`);
 
 --
 -- Indexes for table `pipeline_groups`
@@ -3266,12 +2894,6 @@ ALTER TABLE `pipeline_procs`
   ADD PRIMARY KEY (`pp_processid`);
 
 --
--- Indexes for table `pipeline_status`
---
-ALTER TABLE `pipeline_status`
-  ADD PRIMARY KEY (`pipelinestatus_id`);
-
---
 -- Indexes for table `pipeline_steps`
 --
 ALTER TABLE `pipeline_steps`
@@ -3279,28 +2901,11 @@ ALTER TABLE `pipeline_steps`
   ADD KEY `fk_pipeline_steps_pipelines1` (`pipeline_id`);
 
 --
--- Indexes for table `ppi_series`
---
-ALTER TABLE `ppi_series`
-  ADD PRIMARY KEY (`ppiseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ppi_series` (`ishidden`);
-
---
 -- Indexes for table `prescriptionnames`
 --
 ALTER TABLE `prescriptionnames`
   ADD PRIMARY KEY (`rxname_id`),
   ADD UNIQUE KEY `measure_name` (`rx_name`);
-
---
--- Indexes for table `projects`
---
-ALTER TABLE `projects`
-  ADD PRIMARY KEY (`project_id`),
-  ADD UNIQUE KEY `project_costcenter` (`project_costcenter`),
-  ADD KEY `fk_projects_users` (`project_admin`),
-  ADD KEY `fk_projects_users1` (`project_pi`);
 
 --
 -- Indexes for table `project_checklist`
@@ -3326,14 +2931,6 @@ ALTER TABLE `protocolgroup_items`
 ALTER TABLE `protocol_group`
   ADD PRIMARY KEY (`protocolgroup_id`),
   ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
-
---
--- Indexes for table `pr_series`
---
-ALTER TABLE `pr_series`
-  ADD PRIMARY KEY (`prseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
 
 --
 -- Indexes for table `public_downloads`
@@ -3391,13 +2988,6 @@ ALTER TABLE `remote_connections`
   ADD PRIMARY KEY (`remoteconn_id`);
 
 --
--- Indexes for table `remote_logins`
---
-ALTER TABLE `remote_logins`
-  ADD PRIMARY KEY (`remotelogin_id`),
-  ADD KEY `idx_remote_logins` (`username`);
-
---
 -- Indexes for table `snps`
 --
 ALTER TABLE `snps`
@@ -3412,31 +3002,6 @@ ALTER TABLE `snp_alleles`
   ADD UNIQUE KEY `snp_id` (`snp_id`,`enrollment_id`);
 
 --
--- Indexes for table `snp_series`
---
-ALTER TABLE `snp_series`
-  ADD PRIMARY KEY (`snpseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `sr_series`
---
-ALTER TABLE `sr_series`
-  ADD PRIMARY KEY (`srseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
--- Indexes for table `studies`
---
-ALTER TABLE `studies`
-  ADD PRIMARY KEY (`study_id`),
-  ADD KEY `fk_studies_subject_project1` (`enrollment_id`),
-  ADD KEY `subject_id` (`study_num`),
-  ADD KEY `study_modality` (`study_modality`),
-  ADD KEY `study_datetime` (`study_datetime`);
-
---
 -- Indexes for table `study_template`
 --
 ALTER TABLE `study_template`
@@ -3447,15 +3012,6 @@ ALTER TABLE `study_template`
 --
 ALTER TABLE `study_templateitems`
   ADD PRIMARY KEY (`studytemplateitem_id`);
-
---
--- Indexes for table `subjects`
---
-ALTER TABLE `subjects`
-  ADD PRIMARY KEY (`subject_id`),
-  ADD UNIQUE KEY `uid` (`uid`),
-  ADD KEY `isactive` (`isactive`),
-  ADD KEY `name` (`name`,`birthdate`,`gender`,`isactive`);
 
 --
 -- Indexes for table `subject_altuid`
@@ -3474,13 +3030,6 @@ ALTER TABLE `subject_relation`
   ADD KEY `idx_subject_relation_0` (`subjectid2`);
 
 --
--- Indexes for table `surgery_series`
---
-ALTER TABLE `surgery_series`
-  ADD PRIMARY KEY (`surgeryseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
 -- Indexes for table `system_messages`
 --
 ALTER TABLE `system_messages`
@@ -3495,28 +3044,6 @@ ALTER TABLE `tags`
   ADD KEY `tag` (`tag`);
 
 --
--- Indexes for table `task_series`
---
-ALTER TABLE `task_series`
-  ADD PRIMARY KEY (`taskseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `username` (`username`);
-
---
--- Indexes for table `users_pending`
---
-ALTER TABLE `users_pending`
-  ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `user_email` (`user_email`);
-
---
 -- Indexes for table `user_instance`
 --
 ALTER TABLE `user_instance`
@@ -3524,39 +3051,10 @@ ALTER TABLE `user_instance`
   ADD UNIQUE KEY `user_id` (`user_id`,`instance_id`);
 
 --
--- Indexes for table `user_project`
---
-ALTER TABLE `user_project`
-  ADD PRIMARY KEY (`userproject_id`),
-  ADD KEY `user_id` (`user_id`,`project_id`);
-
---
--- Indexes for table `us_series`
---
-ALTER TABLE `us_series`
-  ADD PRIMARY KEY (`usseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
--- Indexes for table `video_series`
---
-ALTER TABLE `video_series`
-  ADD PRIMARY KEY (`videoseries_id`),
-  ADD KEY `ishidden` (`ishidden`);
-
---
 -- Indexes for table `weather`
 --
 ALTER TABLE `weather`
   ADD PRIMARY KEY (`observation_id`);
-
---
--- Indexes for table `xa_series`
---
-ALTER TABLE `xa_series`
-  ADD PRIMARY KEY (`xaseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables

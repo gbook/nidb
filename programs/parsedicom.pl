@@ -519,16 +519,16 @@ sub InsertDICOM {
 	my $costcenter;
 	my $study_num;
 
-	my $importID = '';
-	my $importInstanceID = '';
-	my $importSiteID = 0;
-	my $importProjectID = '';
-	my $importPermanent = '';
-	my $importAnonymize = '';
-	my $importMatchIDOnly = '';
-	my $importUUID = '';
-	my $importSeriesNotes = '';
-	my $importAltUIDs = '';
+	my $importID = 'NULL';
+	my $importInstanceID = 'NULL';
+	my $importSiteID = 'NULL';
+	my $importProjectID = 'NULL';
+	my $importPermanent = 'NULL';
+	my $importAnonymize = 'NULL';
+	my $importMatchIDOnly = 'NULL';
+	my $importUUID = 'NULL';
+	my $importSeriesNotes = 'NULL';
+	my $importAltUIDs = 'NULL';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -546,6 +546,7 @@ sub InsertDICOM {
 		$importSeriesNotes = $row{'import_seriesnotes'};
 		$importAltUIDs = $row{'import_altuids'};
 	}
+	if ($importRowID eq '') { $importRowID = 'NULL'; }
 	
 	$report .= WriteLog("Parsing $files[0]") . "\n";
 	my $fsize = -s $files[0];
@@ -605,7 +606,7 @@ sub InsertDICOM {
 	my $EchoTime = trim($info->{'EchoTime'}); if ($EchoTime eq '') { $EchoTime = 0.0; }
 	my $AcquisitionMatrix = trim($info->{'AcquisitionMatrix'});
 	my $InPlanePhaseEncodingDirection = EscapeMySQLString(trim($info->{'InPlanePhaseEncodingDirection'}));
-	my $InversionTime = trim($info->{'InversionTime'});
+	my $InversionTime = trim($info->{'InversionTime'}); if ($InversionTime eq '') { $InversionTime = 0.0; }
 	my $PercentSampling = trim($info->{'PercentSampling'}); if ($PercentSampling eq '') { $PercentSampling = 0.0; }
 	my $PercentPhaseFieldOfView = trim($info->{'PercentPhaseFieldOfView'}); if ($PercentPhaseFieldOfView eq '') { $PercentPhaseFieldOfView = 0.0; }
 	my $PixelBandwidth = trim($info->{'PixelBandwidth'}); if ($PixelBandwidth eq '') { $PixelBandwidth = 0; }
@@ -614,7 +615,7 @@ sub InsertDICOM {
 	
 	# attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header
 	my $PhaseEncodeAngle = "";
-	my $PhaseEncodingDirectionPositive = "";
+	my $PhaseEncodingDirectionPositive;
 	my $dicomfile = $files[0];
 	open(F, $dicomfile); # open the dicom file as a text file, since part of the CSA header is stored as text, not binary
 	my @dcmlines=<F>;
@@ -885,7 +886,7 @@ sub InsertDICOM {
 	$sqlstring = "select project_id from projects where project_costcenter = '$costcenter'";
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	%row = $result->fetchhash;
-	if (($importProjectID eq '') || ($importProjectID eq '0') || ($importProjectID == 0)) {
+	if (($importProjectID eq 'NULL') || ($importProjectID eq '') || ($importProjectID eq '0') || ($importProjectID == 0)) {
 		$projectRowID = $row{'project_id'};
 	}
 	else {
@@ -947,10 +948,10 @@ sub InsertDICOM {
 			$report .= WriteLog("Found instance ID [$foundInstanceRowID] comparing to import instance ID [$importInstanceID]") . "\n";
 			
 			# if the study already exists within the instance specified in the project, then update the existing study, otherwise create a new one
-			if (($foundInstanceRowID == $importInstanceID) || ($importInstanceID eq '') || ($importInstanceID == 0)) {
+			if (($importProjectID eq 'NULL') || ($foundInstanceRowID == $importInstanceID) || ($importInstanceID eq '') || ($importInstanceID == 0)) {
 				$studyFound = 1;
 				$studyRowID = $study_id;
-				my $sqlstringA = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_ageatscan = $patientage, study_height = '$PatientSize', study_weight = '$PatientWeight', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_nidbsite = '$importSiteID', study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
+				my $sqlstringA = "update studies set study_modality = '$Modality', study_datetime = '$StudyDateTime', study_ageatscan = $patientage, study_height = '$PatientSize', study_weight = '$PatientWeight', study_desc = '$StudyDescription', study_operator = '$OperatorsName', study_performingphysician = '$PerformingPhysiciansName', study_site = '$StationName', study_nidbsite = $importSiteID, study_institution = '$InstitutionName - $InstitutionAddress', study_status = 'complete' where study_id = $studyRowID";
 				$report .= WriteLog("[$sqlstringA]") . "\n";
 				$report .= WriteLog("StudyID [$study_id] exists, updating") . "\n";
 				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
@@ -972,7 +973,7 @@ sub InsertDICOM {
 			$study_num = 1;
 		}
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', '$importSiteID', '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname', now())";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values ($enrollmentRowID, $study_num, '$PatientID', '$Modality', '$StudyDateTime', $patientage, '$PatientSize', '$PatientWeight', '$StudyDescription', '$OperatorsName', '$PerformingPhysiciansName', '$StationName', $importSiteID, '$InstitutionName - $InstitutionAddress', 'complete', '$scriptname', now())";
 		$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = $result->insertid;
 		$report .= WriteLog("[$sqlstring]") . "\n";
@@ -1025,7 +1026,7 @@ sub InsertDICOM {
 			my %row = $result->fetchhash;
 			$seriesRowID = $row{'mrseries_id'};
 			
-			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = $PhaseEncodeAngle, PhaseEncodingDirectionPositive = $PhaseEncodingDirectionPositive, series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', series_ti = '$InversionTime', percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete'";
+			$sqlstring = "update mr_series set series_datetime = '$SeriesDateTime', series_desc = '$SeriesDescription', series_protocol = '$ProtocolName', series_sequencename = '$SequenceName',series_tr = '$RepetitionTime', series_te = '$EchoTime',series_flip = '$FlipAngle', phaseencodedir = '$InPlanePhaseEncodingDirection', phaseencodeangle = $PhaseEncodeAngle, PhaseEncodingDirectionPositive = $PhaseEncodingDirectionPositive, series_spacingx = '$pixelX',series_spacingy = '$pixelY', series_spacingz = '$SliceThickness', series_fieldstrength = '$MagneticFieldStrength', img_rows = '$Rows', img_cols = '$Columns', img_slices = '$zsize', series_ti = $InversionTime, percent_sampling = '$PercentSampling', percent_phasefov = '$PercentPhaseFieldOfView', acq_matrix = '$AcquisitionMatrix', slicethickness = '$SliceThickness', slicespacing = '$SpacingBetweenSlices', bandwidth = '$PixelBandwidth', image_type = '$ImageType', image_comments = '$ImageComments', bold_reps = '$boldreps', numfiles = '$numfiles', series_notes = '$importSeriesNotes', series_status = 'complete'";
 			if ($NumberOfTemporalPositions > 0) {
 				$sqlstring .= ", dimT = '$NumberOfTemporalPositions', dimN = 4";
 			}
@@ -1062,7 +1063,7 @@ sub InsertDICOM {
 		else {
 			
 			# create seriesRowID if it doesn't exist
-			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', $PhaseEncodeAngle, $PhaseEncodingDirectionPositive, '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', '$InversionTime', '$PercentSampling', '$PercentPhaseFieldOfView', '$AcquisitionMatrix', '$SliceThickness', '$SpacingBetweenSlices', '$PixelBandwidth', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname', now())";
+			$sqlstring = "insert into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values ($studyRowID, '$SeriesDateTime', '$SeriesDescription', '$ProtocolName', '$SequenceName', '$SeriesNumber', '$RepetitionTime', '$EchoTime', '$FlipAngle', '$InPlanePhaseEncodingDirection', $PhaseEncodeAngle, $PhaseEncodingDirectionPositive, '$pixelX', '$pixelY', '$SliceThickness', '$MagneticFieldStrength', '$Rows', '$Columns', '$zsize', $InversionTime, '$PercentSampling', '$PercentPhaseFieldOfView', '$AcquisitionMatrix', '$SliceThickness', '$SpacingBetweenSlices', '$PixelBandwidth', '$ImageType', '$ImageComments', '$boldreps', '$numfiles', '$importSeriesNotes', 'dicom', 'complete', '$scriptname', now())";
 			#print "[$sqlstring]\n";
 			my $result2 = SQLQuery($sqlstring, __FILE__, __LINE__);
 			$seriesRowID = $result2->insertid;
@@ -1219,7 +1220,7 @@ sub InsertDICOM {
 		`$systemstring 2>&1`;
 		
 		# insert an import log record
-		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
+		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', $importID, $importRowID, $importSiteID, $importProjectID, $importPermanent, $importAnonymize, '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
 	}
 	$report .= WriteLog("Done renaming files A") . "\n";
 	$sqlstringA .= join(',', @sqlinserts);
