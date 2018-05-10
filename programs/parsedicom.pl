@@ -526,9 +526,9 @@ sub InsertDICOM {
 	my $importPermanent = 'NULL';
 	my $importAnonymize = 'NULL';
 	my $importMatchIDOnly = 'NULL';
-	my $importUUID = 'NULL';
-	my $importSeriesNotes = 'NULL';
-	my $importAltUIDs = 'NULL';
+	my $importUUID = '';
+	my $importSeriesNotes = '';
+	my $importAltUIDs = '';
 	# if there is an importRowID, check to see how that thing is doing
 	$sqlstring = "select * from import_requests where importrequest_id = '$importRowID'";
 	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -713,6 +713,13 @@ sub InsertDICOM {
 	if ($PatientAge =~ /M/) { $PatientAge =~ s/M//g; $PatientAge = $PatientAge/12.0; }
 	if ($PatientAge =~ /W/) { $PatientAge =~ s/W//g; $PatientAge = $PatientAge/52.0; }
 	if ($PatientAge =~ /D/) { $PatientAge =~ s/D//g; $PatientAge = $PatientAge/365.25; }
+
+	# fix patient birthdate
+	if (($PatientBirthDate eq "") || ($PatientBirthDate eq "XXXXXXXX") || ($PatientBirthDate =~ /[a-z]/i) || ($PatientBirthDate =~ /anonymous/i) || ($PatientBirthDate eq '0-00-00') || ($PatientBirthDate eq '00-00-00')) {
+		$report .= WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0000-01-01]") . "\n";
+		$PatientBirthDate = "0000-01-01";
+	}
+	$report .= WriteLog("Birthdate: [$PatientBirthDate]") . "\n";
 	
 	my $patientage;
 	if (($PatientAge eq '') || ($PatientAge == 0)) {
@@ -725,13 +732,6 @@ sub InsertDICOM {
 	# remove non-printable characters
 	$PatientName =~ s/[[:^print:]]+//g;
 	$PatientSex =~ s/[[:^print:]]+//g;
-	
-	if (($PatientBirthDate eq "") || ($PatientBirthDate eq "XXXXXXXX") || ($PatientBirthDate =~ /[a-z]/i) || ($PatientBirthDate =~ /anonymous/i)) {
-		$report .= WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0001-01-01]") . "\n";
-		$PatientBirthDate = "0001-01-01";
-	}
-
-	$report .= WriteLog("Birthdate: [$PatientBirthDate]") . "\n";
 	
 	# extract the costcenter
 	if ( $StudyDescription =~ /clinical/i ) {
@@ -757,7 +757,7 @@ sub InsertDICOM {
 	push @idsearchlist, @altuidlist;
 	my $SQLIDs = "'$PatientID'";
 	foreach my $tmpID (@idsearchlist) {
-		if ((trim($tmpID) ne '') && (trim($tmpID) ne 'none') && (trim(lc($tmpID)) ne 'na') && (trim($tmpID) ne '0')) {
+		if ((trim($tmpID) ne '') && (trim($tmpID) ne 'none') && (trim(lc($tmpID)) ne 'na') && (trim($tmpID) ne '0') && (trim(lc($tmpID)) ne 'null')) {
 			$SQLIDs .= ",'$tmpID'";
 		}
 	}
@@ -1533,7 +1533,7 @@ sub InsertParRec {
 	push @idsearchlist, @altuidlist;
 	my $SQLIDs = "'$PatientID'";
 	foreach my $tmpID (@idsearchlist) {
-		if (trim($tmpID) ne '') {
+		if ((trim($tmpID) ne '') && (trim($tmpID) ne 'none') && (trim(lc($tmpID)) ne 'na') && (trim($tmpID) ne '0') && (trim(lc($tmpID)) ne 'null')) {
 			$SQLIDs .= ",'$tmpID'";
 		}
 	}
@@ -1938,7 +1938,7 @@ sub InsertEEG {
 	push @idsearchlist, @altuidlist;
 	my $SQLIDs = "'$PatientID'";
 	foreach my $tmpID (@idsearchlist) {
-		if (trim($tmpID) ne '') {
+		if ((trim($tmpID) ne '') && (trim($tmpID) ne 'none') && (trim(lc($tmpID)) ne 'na') && (trim($tmpID) ne '0') && (trim(lc($tmpID)) ne 'null')) {
 			$SQLIDs .= ",'$tmpID'";
 		}
 	}
