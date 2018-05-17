@@ -853,6 +853,10 @@ sub generate_table {
 
     # foreach col, get the biggest width
     my $widths = _maxwidths($rows);
+	if ($widths == 0) {
+		return "No data to generate table";
+	}
+	
     my $max_index = _max_array_index($rows);
 
     # use that to get the field format and separators
@@ -902,7 +906,14 @@ sub _maxwidths {
     my $widths = [];
     for my $i (0..$max_index) {
         # go through the $i-th element of each array, find the longest
-        my $max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+        my $max;
+		eval {
+			$max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+		};
+		if ($@) {
+			print "Weird exception about modifying a constant variable...\n";
+			return 0;
+		}
         push @$widths, $max;
     }
     return $widths;
@@ -911,7 +922,15 @@ sub _maxwidths {
 # return highest top-index from all rows in case they're different lengths
 sub _max_array_index {
     my $rows = shift;
-    return List::Util::max( map { $#$_ } @$rows );
+	my $v;
+	eval {
+		$v = List::Util::max( map { $#$_ } @$rows );
+	};
+	if ($@) {
+		print "Weird exception about modifying a constant variable...\n";
+		return 0;
+	}
+    return $v;
 }
 
 sub _get_format {

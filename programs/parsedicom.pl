@@ -651,6 +651,7 @@ sub InsertDICOM {
 		$val =~ s/Data '//g;
 		$val =~ s/'//g;
 		$val = trim($val);
+		if ($val eq 'Data') { $val = ''; }
 	}
 	$report .= WriteLog("PhaseEncodingDirectionPositive = [$val]") . "\n";
 	$PhaseEncodingDirectionPositive = EscapeMySQLString(trim($val));
