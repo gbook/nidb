@@ -43,6 +43,7 @@
 		case 'viewfiles': DisplayFiles($analysisid, $fileviewtype); break;
 		case 'viewresults': DisplayResults($analysisid, $studyid); break;
 		case 'viewhistory': DisplayHistory($analysisid); break;
+		case 'viewgraph': DisplayGraph($analysisid); break;
 		default:
 	}
 ?></div><?
@@ -562,6 +563,69 @@
 		?>
 		</table>
 		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayGraph ----------------------- */
+	/* -------------------------------------------- */
+	function DisplayGraph($analysisid) {
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		
+		$imgdata = CreateGraphFromAnalysisID($analysisid);
+		
+		?>
+		Graph for [<?=$analysisid?>]
+		<img border=1 src='data:image/png;base64,<?=$imgdata?>'>
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- CreateGraphFromAnalysisID ---------- */
+	/* -------------------------------------------- */
+	function CreateGraphFromAnalysisID($analysisid) {
+
+		$dotfile = tempnam("/tmp",'DOTDOT');
+		$pngfile = tempnam("/tmp",'DOTPNG');
+		
+		$d[] = "digraph G {";
+		$sqlstring = "select * from pipelines where pipeline_id in (select pipeline_id from analysis where analysis_id = $analysisid)";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$pipelinename = $row['pipeline_name'];
+			$deps = $row['pipeline_dependency'];
+			$groupids = $row['pipeline_groupid'];
+			
+			if ($deps != '') {
+				$sqlstringA = "select * from pipelines where pipeline_id in ($deps)";
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$depname = $rowA['pipeline_name'];
+					$d[] = " \"$depname\" -> \"$pipelinename\";";
+				}
+			}
+			
+			if ($groupids != '') {
+				$sqlstringA = "select * from groups where group_id in ($groupids)";
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$groupname = $rowA['group_name'];
+					$d[] = " \"$groupname\" -> \"$pipelinename\";";
+					$d[] = " \"$groupname\" [shape=box,style=filled,color=\"lightblue\"];";
+				}
+			}
+		}
+		$d[] = "}";
+		$d = array_unique($d);
+		$dot = implode("\n",$d);
+		echo "<pre>$dot</pre>";
+		file_put_contents($dotfile,$dot);
+		$systemstring = "dot -Tpng $dotfile -o $pngfile";
+		exec($systemstring);
+		//echo $dot;
+		$imdata = base64_encode(file_get_contents($pngfile));
+		return $imdata;
 	}
 ?>
 </body>

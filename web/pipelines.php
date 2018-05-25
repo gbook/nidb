@@ -2476,8 +2476,26 @@ echo "#$ps_command     $logged $ps_desc\n";
 			if (trim($username) == "") { $username = "(unknown)"; }
 			?>
 			<br><br>
-			Pipelines owned by <b><?=$username?></b>
-			<table class="smallgraydisplaytable" width="100%" style="margin-top: 5px">
+			Pipelines owned by <b><?=$username?></b> &nbsp; &nbsp; Filter by pipeline name <input id="pipelinenamefilter<?=$username?>" type="text" />
+			<script type="text/javascript">
+				function filterTable(event) {
+					var filter = event.target.value.toUpperCase();
+					var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
+					
+					for (var i = 0; i < rows.length; i++) {
+						var firstCol = rows[i].cells[0].textContent.toUpperCase();
+						var secondCol = rows[i].cells[1].textContent.toUpperCase();
+						if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+							rows[i].style.display = "";
+						} else {
+							rows[i].style.display = "none";
+						}      
+					}
+				}
+
+				document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
+			</script>
+			<table class="smallgraydisplaytable" id="pipelinetable<?=$username?>" width="100%" style="margin-top: 5px">
 				<thead>
 					<tr style="vertical-align: top;text-align:left">
 						<th style="font-size:12pt">Pipeline Group</th>
@@ -2920,7 +2938,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		return $imdata;
 	}
 
-
+	
 	/* -------------------------------------------- */
 	/* ------- GetClusterStats -------------------- */
 	/* -------------------------------------------- */

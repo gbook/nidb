@@ -486,6 +486,11 @@
 				e.preventDefault();
 				$("#dialogbox").load("viewanalysis.php?action=viewhistory&analysisid=" + id + "&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>").dialog({height:800, width:1200});
 			});
+			$("a.viewgraph").click(function(e) {
+				var id = jQuery(this).attr("id");
+				e.preventDefault();
+				$("#dialogbox").load("viewanalysis.php?action=viewgraph&analysisid=" + id + "&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>").dialog({height:800, width:1200});
+			});
 		});
 		</script>
 
@@ -563,6 +568,7 @@
 					<th align="left">History</th>
 					<th align="left">Files</th>
 					<th align="left">Results</th>
+					<th align="left">Graph</th>
 					<th align="left">Notes</th>
 					<th align="left" <? if ($sortby == "message") { echo "style='background-color: #fff'"; } ?>>
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
@@ -831,10 +837,11 @@
 					</td>
 					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
 					<? if ($analysis_status != "") { ?>
-					<td><a href="#" class="viewlog" id="<?=$analysis_id?>" title="View log files"><img src="images/log16.png"></a></td>
-					<td><a href="#" class="viewhistory" id="<?=$analysis_id?>" title="View analysis history"><img src="images/history16.png"></a></td>
-					<td><a href="#" class="viewfiles" id="<?=$analysis_id?>" title="View file listing"><img src="images/folder16.png"></a></td>
-					<td><a href="#" class="viewresults" id="<?=$analysis_id?>" title="View analysis results"><img src="images/chart16.png"></a></td>
+					<td align="center"><a href="#" class="viewlog" id="<?=$analysis_id?>" title="View log files"><img src="images/log16.png"></a></td>
+					<td align="center"><a href="#" class="viewhistory" id="<?=$analysis_id?>" title="View analysis history"><img src="images/history16.png"></a></td>
+					<td align="center"><a href="#" class="viewfiles" id="<?=$analysis_id?>" title="View file listing"><img src="images/folder16.png"></a></td>
+					<td align="center"><a href="#" class="viewresults" id="<?=$analysis_id?>" title="View analysis results"><img src="images/chart16.png"></a></td>
+					<td align="center"><a href="#" class="viewgraph" id="<?=$analysis_id?>" title="View analysis graph"><img src="images/graph16.png"></a></td>
 					<? } else { ?>
 					<td></td>
 					<td></td>
