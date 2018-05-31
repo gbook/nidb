@@ -2476,7 +2476,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 			if (trim($username) == "") { $username = "(unknown)"; }
 			?>
 			<br><br>
-			Pipelines owned by <b><?=$username?></b> &nbsp; &nbsp; Filter by pipeline name <input id="pipelinenamefilter<?=$username?>" type="text" />
+			<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
+				<tr>
+					<td style="background-color: #DDD; padding:5px">
+			<b style="color: #00008B;font-size:14pt"><?=$username?></b> &nbsp; &nbsp; <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/>
 			<script type="text/javascript">
 				function filterTable(event) {
 					var filter = event.target.value.toUpperCase();
@@ -2495,7 +2498,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 				document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
 			</script>
-			<table class="smallgraydisplaytable" id="pipelinetable<?=$username?>" width="100%" style="margin-top: 5px">
+					</td>
+				</tr>
+			</table>
+			<table class="smallgraydisplaytable" id="pipelinetable<?=$username?>" width="100%">
 				<thead>
 					<tr style="vertical-align: top;text-align:left">
 						<th style="font-size:12pt">Pipeline Group</th>

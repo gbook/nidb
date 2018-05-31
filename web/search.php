@@ -1665,7 +1665,7 @@
 									<td class="header1"><a href="subjects.php?id=<?=$subject_id?>" class="header1" style="color: <?=$displayidcolor?>;"><?=$displayid?></a></td>
 									<td class="header3">
 										<?
-										if (mb_strlen($altuidlist) > 60) {
+										if (strlen($altuidlist) > 60) {
 											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,60)?>...</span><?
 										}
 										else {
@@ -4507,9 +4507,6 @@
 	/* ------- ProcessRequest --------------------- */
 	/* -------------------------------------------- */
 	function ProcessRequest($r, $username) {
-		$downloadimaging = $r['downloadimaging'];
-		$downloadbeh = $r['downloadbeh'];
-		$downloadqc = $r['downloadqc'];
 		$ip = getenv('REMOTE_ADDR');
 		$modality = $r['modality'];
 		$destinationtype = $r['destination'];
@@ -4532,13 +4529,13 @@
 		$publicdownloaddesc = $r['publicdownloaddesc'];
 		$publicdownloadreleasenotes = $r['publicdownloadreleasenotes'];
 		$publicdownloadpassword = $r['publicdownloadpassword'];
-		$publicdownloadshareinternal = $r['publicdownloadshareinternal'];
-		$publicdownloadregisterrequired = $r['publicdownloadregisterrequired'];
+		$publicdownloadshareinternal = ($r['publicdownloadshareinternal'] == 1) ? 1 : 0;
+		$publicdownloadregisterrequired = ($r['publicdownloadregisterrequired'] == 1) ? 1 : 0;
 		$publicdownloadexpire = $r['publicdownloadexpire'];
-		$preserveseries = $r['preserveseries'];
+		$preserveseries = ($r['preserveseries'] == 1) ? 1 : 0;
 		$filetype = $r['filetype'];
-		$gzip = $r['gzip'];
-		$anonymize = $r['anonymize'];
+		$gzip = ($r['gzip'] == 1) ? 1 : 0;
+		$anonymize = ($r['anonymize'] == 1) ? 1 : 0;
 		$dirformat = $r['dirformat'];
 		$timepoints = $r['timepoints'];
 		$behformat = $r['behformat'];
@@ -4553,14 +4550,10 @@
 		$seriesmeta = $r['seriesmeta'];
 		$seriesdata = $r['seriesdata'];
 		$allsubject = $r['allsubject'];
-		$downloadimaging = $r['downloadimaging'];
-		$downloadbeh = $r['downloadbeh'];
-		$downloadqc = $r['downloadqc'];
+		$downloadimaging = ($r['downloadimaging'] == 1) ? 1 : 0;
+		$downloadbeh = ($r['downloadbeh'] == 1) ? 1 : 0;
+		$downloadqc = ($r['downloadqc'] == 1) ? 1 : 0;
 
-		//echo "<pre>";
-		//print_r($r);
-		//echo "</pre>";
-		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
 		if (($seriesids == "") && ($enrollmentids == "")) {
@@ -4589,7 +4582,6 @@
 		}
 
 		$requestingip = $ip;
-		//$destinationtype = $destination;
 		?>
 			<table>
 				<tr><td align="right"><b>Your IP</b></td><td>&nbsp;<? echo $requestingip; ?></td></tr>
@@ -4669,7 +4661,6 @@
 				/* set all of the download options */
 				$preserveseries = 1;
 				$filetype = 'export';
-				//$dirformat = '';
 				
 				/* if only seriesids have been selected, thats the only data that will be exported */
 				
@@ -4686,7 +4677,6 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$modalities[] = strtolower($row['study_modality']);
 				}
-				//print_r($modalities);
 				
 				/* loop through all modalities and do the following: */
 				foreach ($modalities as $modality) {
@@ -4701,17 +4691,11 @@
 		
 		$numseries = 0;
 		foreach ($sqlstrings as $modality => $sqlstring) {
-			//PrintSQL($sqlstring);
-			
-			//echo "(A) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
-			
 			$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
-			//PrintSQLTable($result);
 			
 			$numseries += mysqli_num_rows($result);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
-				//echo "(B) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
 				$safe = true;
 				
 				/* go through the list and populate the request table */
@@ -4737,7 +4721,6 @@
 					$run = $series_num;
 				}
 				else {
-					//echo "current: $currentstudyid... last: $laststudyid<br>";
 					if ($laststudyid != $currentstudyid) {
 						$run = 1;
 					}
@@ -4758,6 +4741,7 @@
 				}
 				
 				$timepoint = $timepoints[$series_id];
+				if (trim($timepoint) == '') { $timepoint = 'null'; }
 				if ($safe) {
 					$totalseriessize += $series_size;
 					
@@ -4768,13 +4752,17 @@
 						$remotenidbserver = $rowC['remote_server'];
 						$remotenidbusername = $rowC['remote_username'];
 						$remotenidbpassword = $rowC['remote_password'];
-						$remoteinstanceid = $rowC['remote_instanceid'];
+						$remoteinstanceid = (trim($rowC['remote_instanceid']) == '') ? 'null' : $rowC['remote_instanceid'];
 						$remoteprojectid = $rowC['remote_projectid'];
 						$remotesiteid = $rowC['remote_siteid'];
 					}
+					$remoteinstanceid = ($remoteinstanceid == '') ? 'null' : $remoteinstanceid;
+					$remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
+					$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
+					$publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
+					$behonly = ($behonly == 1) ? 1 : 0;
 					
-					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', '$downloadimaging', '$downloadbeh', '$downloadqc', '$destinationtype', '$nfsdir', $series_id, '$filetype', '$gzip', '$anonymize', '$preserveseries', '$dirformat', '$timepoint', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', '$remoteftpport', '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', '$remoteinstanceid' , '$remotesiteid', '$remoteprojectid', '$publicDownloadRowID', '$behonly', '$behformat', '$behdirnameroot','$behdirnameseries', now())";
-					//PrintSQL($sqlstringA);
+					$sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$nfsdir', $series_id, '$filetype', $gzip, $anonymize, $preserveseries, '$dirformat', $timepoint, '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', $remoteinstanceid , $remotesiteid, $remoteprojectid, $publicDownloadRowID, $behonly, '$behformat', '$behdirnameroot','$behdirnameseries', now())";
 					$resultA = MySQLiQuery($sqlstringA, __FILE__ , __LINE__);
 					
 					?>
@@ -4801,9 +4789,6 @@
 					<?
 				}
 				$laststudyid = $currentstudyid;
-
-				//echo "(C) $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remoteinstanceid, $remotesiteid, $remoteprojectid<br>";
-				
 			}
 		}
 		?>
@@ -4838,9 +4823,6 @@
 	/* ------- MakeSQLList ------------------------ */
 	/* -------------------------------------------- */
 	function MakeSQLList($str) {
-		#preg_replace('/[\^\,\-\'\s+]/', $s_subjectuid);
-	
-		//$str = str_ireplace(array('^',',','-',"'"), " ", $str);
 		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
 		foreach ($parts as $part) {
 			$newparts[] = "'" . trim($part) . "'";

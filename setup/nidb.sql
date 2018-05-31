@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 15, 2018 at 01:52 PM
+-- Generation Time: May 31, 2018 at 06:37 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -67,7 +67,16 @@ CREATE TABLE `analysis_data` (
   `analysisdata_id` int(11) NOT NULL,
   `analysis_id` bigint(20) DEFAULT NULL,
   `data_id` int(11) DEFAULT NULL,
-  `modality` varchar(25) DEFAULT NULL
+  `modality` varchar(25) DEFAULT NULL,
+  `data_enabled` tinyint(1) DEFAULT NULL,
+  `data_optional` tinyint(1) DEFAULT NULL,
+  `data_imagetype` varchar(100) DEFAULT NULL,
+  `data_type` varchar(100) DEFAULT NULL,
+  `data_level` varchar(255) DEFAULT NULL,
+  `data_assoctype` varchar(255) DEFAULT NULL,
+  `data_numboldreps` varchar(20) DEFAULT NULL,
+  `data_found` tinyint(1) DEFAULT NULL,
+  `data_path` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -110,6 +119,17 @@ CREATE TABLE `analysis_history` (
   `analysis_hostname` varchar(255) DEFAULT NULL,
   `event_message` text DEFAULT NULL,
   `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `analysis_parent`
+--
+
+CREATE TABLE `analysis_parent` (
+  `analysis_id` int(11) NOT NULL,
+  `analysisparent_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -219,7 +239,7 @@ CREATE TABLE `assessment_formfields` (
 
 CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL DEFAULT 0,
   `form_title` varchar(100) DEFAULT NULL,
   `form_desc` text DEFAULT NULL,
   `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
@@ -800,9 +820,9 @@ CREATE TABLE `data_requests` (
   `req_nidbusername` varchar(255) DEFAULT NULL,
   `req_nidbpassword` varchar(255) DEFAULT NULL,
   `req_nidbserver` varchar(255) DEFAULT NULL,
-  `req_nidbinstanceid` int(11) NOT NULL DEFAULT 0,
-  `req_nidbsiteid` int(11) NOT NULL DEFAULT 0,
-  `req_nidbprojectid` int(11) NOT NULL DEFAULT 0,
+  `req_nidbinstanceid` int(11) DEFAULT 0,
+  `req_nidbsiteid` int(11) DEFAULT 0,
+  `req_nidbprojectid` int(11) DEFAULT 0,
   `req_downloadid` int(11) DEFAULT NULL,
   `req_behonly` tinyint(1) DEFAULT NULL,
   `req_behformat` varchar(35) DEFAULT NULL,
@@ -2737,7 +2757,7 @@ ALTER TABLE `assessment_formfields`
 -- Indexes for table `assessment_forms`
 --
 ALTER TABLE `assessment_forms`
-  ADD PRIMARY KEY (`form_id`),
+  ADD PRIMARY KEY (`form_id`,`project_id`) USING BTREE,
   ADD KEY `project_id` (`project_id`);
 
 --
