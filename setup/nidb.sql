@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 31, 2018 at 06:37 PM
+-- Generation Time: Jun 01, 2018 at 06:34 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -2214,6 +2214,69 @@ CREATE TABLE `remote_logins` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `search_history`
+--
+
+CREATE TABLE `search_history` (
+  `searchhistory_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `date_added` timestamp NOT NULL DEFAULT current_timestamp(),
+  `saved_name` varchar(255) NOT NULL DEFAULT '',
+  `subjectuid` text DEFAULT NULL,
+  `subjectaltuid` text DEFAULT NULL,
+  `subjectname` varchar(255) DEFAULT NULL,
+  `subjectdobstart` date DEFAULT NULL,
+  `subjectdobend` date DEFAULT NULL,
+  `ageatscanmin` double DEFAULT NULL,
+  `ageatscanmax` double DEFAULT NULL,
+  `subjectgender` char(1) DEFAULT NULL,
+  `subjectgroupid` int(11) DEFAULT NULL,
+  `projectid` int(11) DEFAULT NULL,
+  `enrollsubgroup` varchar(255) DEFAULT NULL,
+  `measuresearch` text DEFAULT NULL,
+  `measurelist` text DEFAULT NULL,
+  `studyinstitution` varchar(255) DEFAULT NULL,
+  `studyequipment` varchar(255) DEFAULT NULL,
+  `studyaltscanid` text DEFAULT NULL,
+  `studydatestart` date DEFAULT NULL,
+  `studydateend` date DEFAULT NULL,
+  `studydesc` text DEFAULT NULL,
+  `studyphysician` varchar(255) DEFAULT NULL,
+  `studyoperator` varchar(255) DEFAULT NULL,
+  `studytype` varchar(255) DEFAULT NULL,
+  `studymodality` varchar(255) DEFAULT NULL,
+  `studygroupid` int(11) DEFAULT NULL,
+  `seriesdesc` text DEFAULT NULL,
+  `usealtseriesdesc` tinyint(1) DEFAULT NULL,
+  `seriessequence` text DEFAULT NULL,
+  `seriesimagetype` text DEFAULT NULL,
+  `seriestr` varchar(255) DEFAULT NULL,
+  `seriesimagecomments` text DEFAULT NULL,
+  `seriesnum` varchar(255) DEFAULT NULL,
+  `seriesnumfiles` varchar(255) DEFAULT NULL,
+  `seriesgroupid` int(11) DEFAULT NULL,
+  `pipelineid` int(11) DEFAULT NULL,
+  `pipelineresultname` text DEFAULT NULL,
+  `pipelineresultunit` text DEFAULT NULL,
+  `pipelineresultvalue` text DEFAULT NULL,
+  `pipelineresultcompare` text DEFAULT NULL,
+  `pipelineresulttype` char(1) DEFAULT NULL,
+  `pipelinecolorize` tinyint(1) DEFAULT NULL,
+  `pipelinecormatrix` tinyint(1) DEFAULT NULL,
+  `pipelineresultstats` tinyint(1) DEFAULT NULL,
+  `resultorder` varchar(255) DEFAULT NULL,
+  `formid` int(11) DEFAULT NULL,
+  `formfieldid` int(11) DEFAULT NULL,
+  `formcriteria` text DEFAULT NULL,
+  `formvalue` text DEFAULT NULL,
+  `audit` tinyint(1) DEFAULT NULL,
+  `qcbuiltinvariable` text DEFAULT NULL,
+  `qcvariableid` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `snps`
 --
 
@@ -3394,6 +3457,12 @@ ALTER TABLE `remote_logins`
   ADD KEY `idx_remote_logins` (`username`);
 
 --
+-- Indexes for table `search_history`
+--
+ALTER TABLE `search_history`
+  ADD PRIMARY KEY (`searchhistory_id`);
+
+--
 -- Indexes for table `snps`
 --
 ALTER TABLE `snps`
@@ -4139,6 +4208,12 @@ ALTER TABLE `remote_connections`
 --
 ALTER TABLE `remote_logins`
   MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `search_history`
+--
+ALTER TABLE `search_history`
+  MODIFY `searchhistory_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `snps`

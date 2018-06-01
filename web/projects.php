@@ -2488,8 +2488,34 @@
 		?>
 		View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>
-		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>		
-		<table class="sortable graydisplaytable" width="100%">
+		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
+		
+		<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
+			<tr>
+				<td style="background-color: #DDD; padding:5px">
+		<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
+		<script type="text/javascript">
+			function filterTable(event) {
+				var filter = event.target.value.toUpperCase();
+				var rows = document.querySelector("#projecttable tbody").rows;
+				
+				for (var i = 0; i < rows.length; i++) {
+					var firstCol = rows[i].cells[0].textContent.toUpperCase();
+					var secondCol = rows[i].cells[1].textContent.toUpperCase();
+					if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+						rows[i].style.display = "";
+					} else {
+						rows[i].style.display = "none";
+					}      
+				}
+			}
+
+			document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
+		</script>
+				</td>
+			</tr>
+		</table>
+		<table class="sortable graydisplaytable" id="projecttable" width="100%">
 			<thead>
 				<tr>
 					<th data-sort="string-ins">Name</th>
@@ -2555,20 +2581,23 @@
 									</tr>
 									<?
 								}
-							?>
+								?>
 									</table>
-                                                                 <td><a href="projects.php?action=show_rdoc_list&rdoc_label=<?=$rdoc_label?>"><?=$rdoc_label?></td> 
-
 								</td>
+								<td><a href="projects.php?action=show_rdoc_list&rdoc_label=<?=$rdoc_label?>"><?=$rdoc_label?></td> 
 							</tr>
 							<?
 						}
 						else {
 						?>
 							<tr>
-								<td colspan="5">
-									No access to <?=$name?>
-								</td>
+								<td>No access to <?=$name?></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
 							</tr>
 						<?
 						}

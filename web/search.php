@@ -46,6 +46,7 @@
 	$action = GetVariable("action");
 
 	/* searching variables */
+    $searchvars['s_searchhistoryid'] = GetVariable("s_searchhistoryid");
     $searchvars['s_projectid'] = GetVariable("s_projectid");
     $searchvars['s_enrollsubgroup'] = GetVariable("s_enrollsubgroup");
     $searchvars['s_subjectuid'] = GetVariable("s_subjectuid");
@@ -96,6 +97,8 @@
     $searchvars['s_audit'] = GetVariable("s_audit");
     $searchvars['s_qcbuiltinvariable'] = GetVariable("s_qcbuiltinvariable");
     $searchvars['s_qcvariableid'] = GetVariable("s_qcvariableid");
+
+	//PrintVariable($searchvars);
 	
 	/* data request variables */
 	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
@@ -159,6 +162,7 @@
 	switch ($action) {
 		case 'searchform': DisplaySearchForm($searchvars, $action); break;
 		case 'search':
+			UpdateSearchHistory($searchvars);
 			DisplaySearchForm($searchvars, $action);
 			Search($searchvars);
 			break;
@@ -177,84 +181,73 @@
 		$urllist['New Search'] = "search.php";
 		NavigationBar("Search", $urllist);
 		
+		/* if using a previous search, load it up */
+		if (isInteger($searchvars['s_searchhistoryid'])) {
+			$sqlstring = "select * from search_history where searchhistory_id = " . $searchvars['s_searchhistoryid'];
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			
+			$searchvars['s_subjectuid'] = $row['subjectuid'];
+			$searchvars['s_subjectaltuid'] = $row['subjectaltuid'];
+			$searchvars['s_subjectname'] = $row['subjectname'];
+			$searchvars['s_subjectdobstart'] = $row['subjectdobstart'];
+			$searchvars['s_subjectdobend'] = $row['subjectdobend'];
+			$searchvars['s_ageatscanmin'] = $row['ageatscanmin'];
+			$searchvars['s_ageatscanmax'] = $row['ageatscanmax'];
+			$searchvars['s_subjectgender'] = $row['subjectgender'];
+			$searchvars['s_subjectgroupid'] = $row['subjectgroupid'];
+			$searchvars['s_projectid'] = $row['projectid'];
+			$searchvars['s_enrollsubgroup'] = $row['enrollsubgroup'];
+			$searchvars['s_measuresearch'] = $row['measuresearch'];
+			$searchvars['s_measurelist'] = $row['measurelist'];
+			$searchvars['s_studyinstitution'] = $row['studyinstitution'];
+			$searchvars['s_studyequipment'] = $row['studyequipment'];
+			$searchvars['s_studyaltscanid'] = $row['studyaltscanid'];
+			$searchvars['s_studydatestart'] = $row['studydatestart'];
+			$searchvars['s_studydateend'] = $row['studydateend'];
+			$searchvars['s_studydesc'] = $row['studydesc'];
+			$searchvars['s_studyphysician'] = $row['studyphysician'];
+			$searchvars['s_studyoperator'] = $row['studyoperator'];
+			$searchvars['s_studytype'] = $row['studytype'];
+			$searchvars['s_studymodality'] = $row['studymodality'];
+			$searchvars['s_studygroupid'] = $row['studygroupid'];
+			$searchvars['s_seriesdesc'] = $row['seriesdesc'];
+			$searchvars['s_usealtseriesdesc'] = $row['usealtseriesdesc'];
+			$searchvars['s_seriessequence'] = $row['seriessequence'];
+			$searchvars['s_seriesimagetype'] = $row['seriesimagetype'];
+			$searchvars['s_seriestr'] = $row['seriestr'];
+			$searchvars['s_seriesimagecomments'] = $row['seriesimagecomments'];
+			$searchvars['s_seriesnum'] = $row['seriesnum'];
+			$searchvars['s_seriesnumfiles'] = $row['seriesnumfiles'];
+			$searchvars['s_seriesgroupid'] = $row['seriesgroupid'];
+			$searchvars['s_pipelineid'] = $row['pipelineid'];
+			$searchvars['s_pipelineresultname'] = $row['pipelineresultname'];
+			$searchvars['s_pipelineresultunit'] = $row['pipelineresultunit'];
+			$searchvars['s_pipelineresultvalue'] = $row['pipelineresultvalue'];
+			$searchvars['s_pipelineresultcompare'] = $row['pipelineresultcompare'];
+			$searchvars['s_pipelineresulttype'] = $row['pipelineresulttype'];
+			$searchvars['s_pipelinecolorize'] = $row['pipelinecolorize'];
+			$searchvars['s_pipelinecormatrix'] = $row['pipelinecormatrix'];
+			$searchvars['s_pipelineresultstats'] = $row['pipelineresultstats'];
+			$searchvars['s_resultorder'] = $row['resultorder'];
+			$searchvars['s_formid'] = $row['formid'];
+			$searchvars['s_formfieldid'] = $row['formfieldid'];
+			$searchvars['s_formcriteria'] = $row['formcriteria'];
+			$searchvars['s_formvalue'] = $row['formvalue'];
+			$searchvars['s_audit'] = $row['audit'];
+			$searchvars['s_qcbuiltinvariable'] = $row['qcbuiltinvariable'];
+			$searchvars['s_qcvariableid'] = $row['qcvariableid'];
+		}
+		
 	?>
-	<script type="text/javascript">
-	$(function() {
-		$(".datepick").datepicker({changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', minDate: '-130y', maxDate: '+130y'});
-	});
-	</script>
-
 	<style>
-		.sidelabel {
-			font-weight: bold;
-			font-size: 12pt;
-			border-right: solid 1px #CCC;
-			border-bottom: solid 1px #CCC;
-			padding-right: 15px;
-			padding-left: 10px;
-			text-align: right;
-		}
-		.toplabel {
-			color: white;
-			font-weight: bold;
-			font-size: 14pt;
-			padding-top: 5px;
-			padding-bottom: 5px;
-			text-align: center;
-			/*border-top-right-radius: 5px;*/
-			background-color: #3B5998;
-		}
-		.tiny {
-			font-size: 8pt;
-			color: gray;
-		}
-		.fieldlabel {
-			color: darkblue;
-			text-align: right;
-			vertical-align: middle;
-		}
-		.importantfield {
-			border: 1pt solid darkblue;
-			background-color: lightyellow;
-		}
-		.fakelink {
-			background-color: #DDD;
-			border-right: solid 2px #777
-			/*border-top: 2px solid #999;
-			border-left: 2px solid #444;
-			border-bottom: 2px solid #444;
-			border-radius:3px; */
-			padding: 1px 4px;
-			font-size:9pt;
-			font-weight: normal;
-			color: black;
-			cursor: pointer;
-			-moz-transform: rotate(-90deg);
-			-o-transform: rotate(-90deg);
-			-webkit-transform: rotate(-90deg);
-		}
-		.advancedhover:hover {
-			max-width: 25px;
-			background-color: #DDD;
-			color: #000;
-			border-right: 1px solid #444;
-			cursor: pointer;
-			align: center;
-			vertical-align: middle;
-			/*border-top-left-radius: 5px;
-			border-bottom-left-radius: 5px;*/
-		}
-		.advancedhover {
-			max-width: 25px;
-			background-color: #EEE;
-			color: #AAA;
-			border-right: 1px solid #AAA;
-			cursor: pointer;
-			align: center;
-			vertical-align: middle;
-			/*border-top-left-radius: 5px;
-			border-bottom-left-radius: 5px;*/
-		}
+		.sidelabel { font-weight: bold; font-size: 12pt; border-right: solid 1px #CCC; border-bottom: solid 1px #CCC; padding-right: 15px; padding-left: 10px; text-align: right; }
+		.toplabel { color: white; font-weight: bold; font-size: 14pt; padding-top: 5px; padding-bottom: 5px; text-align: center; background-color: #3B5998; }
+		.tiny { font-size: 8pt; color: gray; }
+		.fieldlabel { color: darkblue; text-align: right; vertical-align: middle; }
+		.importantfield { border: 1pt solid darkblue; background-color: lightyellow; }
+		.advancedhover:hover { max-width: 25px; background-color: #DDD; color: #000; border-right: 1px solid #444; cursor: pointer; align: center; vertical-align: middle; }
+		.advancedhover { max-width: 25px; background-color: #EEE; color: #AAA; border-right: 1px solid #AAA; cursor: pointer; align: center; vertical-align: middle; }
 	</style>
 	<script type="text/javascript">
 		$(document).ready(function() {
@@ -303,6 +296,7 @@
 	<table>
 		<tr>
 			<td>
+			<? DisplaySearchHistory(); ?>
 	<table cellspacing="0" cellpadding="3" style="border: 1px solid #ccc;">
 		<tr>
 			<td rowspan="9" id="searchtoggle" class="advancedhover" onMouseOver="this.classname='advancedhover';" onMouseOut="this.classname='advancednohover';">
@@ -945,12 +939,189 @@
 	<?
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateSearchHistory ---------------- */
+	/* -------------------------------------------- */
+	function UpdateSearchHistory($s) {
+		
+		/* get the users id */
+		$sqlstring = "select user_id from users where username = '" . $_SESSION['username'] ."'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
+		
+		if ($userid == "") { return; }
+		
+		/* only keep the 10 most recent searches */
+		$sqlstring = "delete from search_history where user_id = $userid and saved_name <> '' and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid and saved_name <> '' order by date_added asc limit 10) temp_tab)";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* escape all the variables and put them back into meaningful variable names */
+		foreach ($s as $key => $value) {
+			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
+			else { $$key = $s[$key]; }
+		}
+
+		$s_subjectuid = ($s_subjectuid == '') ? "null" : "'$s_subjectuid'";
+		$s_subjectaltuid = ($s_subjectaltuid == '') ? "null" : "'$s_subjectaltuid'";
+		$s_subjectname = ($s_subjectname == '') ? "null" : "'$s_subjectname'";
+		$s_subjectdobstart = ($s_subjectdobstart == '') ? "null" : "'$s_subjectdobstart'";
+		$s_subjectdobend = ($s_subjectdobend == '') ? "null" : "'$s_subjectdobend'";
+		$s_ageatscanmin = ($s_ageatscanmin == '') ? "null" : "'$s_ageatscanmin'";
+		$s_ageatscanmax = ($s_ageatscanmax == '') ? "null" : "'$s_ageatscanmax'";
+		$s_subjectgender = ($s_subjectgender == '') ? "null" : "'$s_subjectgender'";
+		$s_subjectgroupid = ($s_subjectgroupid == '') ? "null" : "'$s_subjectgroupid'";
+		$s_projectid = (($s_projectid == '') || ($s_projectid == 'all')) ? "null" : "'$s_projectid'";
+		$s_enrollsubgroup = ($s_enrollsubgroup == '') ? "null" : "'$s_enrollsubgroup'";
+		$s_measuresearch = ($s_measuresearch == '') ? "null" : "'$s_measuresearch'";
+		$s_measurelist = ($s_measurelist == '') ? "null" : "'$s_measurelist'";
+		$s_studyinstitution = ($s_studyinstitution == '') ? "null" : "'$s_studyinstitution'";
+		$s_studyequipment = ($s_studyequipment == '') ? "null" : "'$s_studyequipment'";
+		$s_studyaltscanid = ($s_studyaltscanid == '') ? "null" : "'$s_studyaltscanid'";
+		$s_studydatestart = ($s_studydatestart == '') ? "null" : "'$s_studydatestart'";
+		$s_studydateend = ($s_studydateend == '') ? "null" : "'$s_studydateend'";
+		$s_studydesc = ($s_studydesc == '') ? "null" : "'$s_studydesc'";
+		$s_studyphysician = ($s_studyphysician == '') ? "null" : "'$s_studyphysician'";
+		$s_studyoperator = ($s_studyoperator == '') ? "null" : "'$s_studyoperator'";
+		$s_studytype = ($s_studytype == '') ? "null" : "'$s_studytype'";
+		$s_studymodality = ($s_studymodality == '') ? "null" : "'$s_studymodality'";
+		$s_studygroupid = ($s_studygroupid == '') ? "null" : "'$s_studygroupid'";
+		$s_seriesdesc = ($s_seriesdesc == '') ? "null" : "'$s_seriesdesc'";
+		$s_usealtseriesdesc = ($s_usealtseriesdesc == '') ? "null" : "'$s_usealtseriesdesc'";
+		$s_seriessequence = ($s_seriessequence == '') ? "null" : "'$s_seriessequence'";
+		$s_seriesimagetype = ($s_seriesimagetype == '') ? "null" : "'$s_seriesimagetype'";
+		$s_seriestr = ($s_seriestr == '') ? "null" : "'$s_seriestr'";
+		$s_seriesimagecomments = ($s_seriesimagecomments == '') ? "null" : "'$s_seriesimagecomments'";
+		$s_seriesnum = ($s_seriesnum == '') ? "null" : "'$s_seriesnum'";
+		$s_seriesnumfiles = ($s_seriesnumfiles == '') ? "null" : "'$s_seriesnumfiles'";
+		$s_seriesgroupid = ($s_seriesgroupid == '') ? "null" : "'$s_seriesgroupid'";
+		$s_pipelineid = ($s_pipelineid == '') ? "null" : "'$s_pipelineid'";
+		$s_pipelineresultname = ($s_pipelineresultname == '') ? "null" : "'$s_pipelineresultname'";
+		$s_pipelineresultunit = ($s_pipelineresultunit == '') ? "null" : "'$s_pipelineresultunit'";
+		$s_pipelineresultvalue = ($s_pipelineresultvalue == '') ? "null" : "'$s_pipelineresultvalue'";
+		$s_pipelineresultcompare = ($s_pipelineresultcompare == '') ? "null" : "'$s_pipelineresultcompare'";
+		$s_pipelineresulttype = ($s_pipelineresulttype == '') ? "null" : "'$s_pipelineresulttype'";
+		$s_pipelinecolorize = ($s_pipelinecolorize == '') ? "null" : "'$s_pipelinecolorize'";
+		$s_pipelinecormatrix = ($s_pipelinecormatrix == '') ? "null" : "'$s_pipelinecormatrix'";
+		$s_pipelineresultstats = ($s_pipelineresultstats == '') ? "null" : "'$s_pipelineresultstats'";
+		$s_resultorder = ($s_resultorder == '') ? "null" : "'$s_resultorder'";
+		$s_formid = ($s_formid == '') ? "null" : "'$s_formid'";
+		$s_formfieldid = ($s_formfieldid == '') ? "null" : "'$s_formfieldid'";
+		$s_formcriteria = ($s_formcriteria == '') ? "null" : "'$s_formcriteria'";
+		$s_formvalue = ($s_formvalue == '') ? "null" : "'$s_formvalue'";
+		$s_audit = ($s_audit == '') ? "null" : "'$s_audit'";
+		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
+		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
+
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectid, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $s_projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
+		//PrintVariable($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySearchHistory --------------- */
+	/* -------------------------------------------- */
+	function DisplaySearchHistory() {
+		
+		/* get the users id */
+		$sqlstring = "select user_id from users where username = '" . $_SESSION['username'] ."'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
+		
+		if ($userid == "") { return; }
+		
+		$sqlstring = "select * from search_history where user_id = $userid order by date_added desc";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) < 1) {
+			echo "No search history";
+		}
+		else {
+			?>
+			<details>
+				<summary>Recent Searches</summary>
+			
+			<ul style="font-size: 8pt">
+			<?
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$searchhistoryid = $row['searchhistory_id'];
+				$userid = $row['user_id'];
+				$date_added = $row['date_added'];
+				$saved_name = $row['saved_name'];
+				
+				$s['UID(s)'] = $row['subjectuid'];
+				$s['Alt UID(s)'] = $row['subjectaltuid'];
+				$s['Name'] = $row['subjectname'];
+				$s['DOB Start'] = $row['subjectdobstart'];
+				$s['DOB End'] = $row['subjectdobend'];
+				$s['Age Min'] = $row['ageatscanmin'];
+				$s['Age Max'] = $row['ageatscanmax'];
+				$s['Gender'] = $row['subjectgender'];
+				$s['Subject Group ID'] = $row['subjectgroupid'];
+				$s['Project ID'] = $row['projectid'];
+				$s['Enroll Subgroup'] = $row['enrollsubgroup'];
+				$s['Measure Search'] = $row['measuresearch'];
+				$s['Measure List'] = $row['measurelist'];
+				$s['Institution'] = $row['studyinstitution'];
+				$s['Equipment'] = $row['studyequipment'];
+				$s['Study Alt Scan ID'] = $row['studyaltscanid'];
+				$s['Study Date Start'] = $row['studydatestart'];
+				$s['Study Date End'] = $row['studydateend'];
+				$s['Study Desc'] = $row['studydesc'];
+				$s['study Physician'] = $row['studyphysician'];
+				$s['Operator'] = $row['studyoperator'];
+				$s['Study Type'] = $row['studytype'];
+				$s['Modality'] = $row['studymodality'];
+				$s['Study Group ID'] = $row['studygroupid'];
+				$s['Series Desc'] = $row['seriesdesc'];
+				$s['usealtseriesdesc'] = $row['usealtseriesdesc'];
+				$s['Sequence'] = $row['seriessequence'];
+				$s['Image Type'] = $row['seriesimagetype'];
+				$s['TR'] = $row['seriestr'];
+				$s['Image Comments'] = $row['seriesimagecomments'];
+				$s['Series Num'] = $row['seriesnum'];
+				$s['Num Files'] = $row['seriesnumfiles'];
+				$s['Series Group ID'] = $row['seriesgroupid'];
+				$s['Pipeline ID'] = $row['pipelineid'];
+				$s['Pipeline Result Name'] = $row['pipelineresultname'];
+				$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
+				$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
+				//$s['Pipeline Result Compare'] = $row['pipelineresultcompare'];
+				$s['Pipeline Result Type'] = $row['pipelineresulttype'];
+				//$s['Pipeline Colorize'] = $row['pipelinecolorize'];
+				//$s['Pipeline Corr Matrix'] = $row['pipelinecormatrix'];
+				//$s['Pipeline Result Stats'] = $row['pipelineresultstats'];
+				$s['Result Order'] = $row['resultorder'];
+				$s['Form ID'] = $row['formid'];
+				$s['Form Field ID'] = $row['formfieldid'];
+				$s['Form Criteria'] = $row['formcriteria'];
+				$s['Form Value'] = $row['formvalue'];
+				//$s['Audit'] = $row['audit'];
+				//$s['QC Built-in Variable'] = $row['qcbuiltinvariable'];
+				//$s['QC Variable ID'] = $row['qcvariableid'];
+				
+				$searchterms = "";
+				foreach ($s as $key => $value) {
+					if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
+						$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+					}
+				}
+				if ($searchterms != "") {
+				?>
+				<li><a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>"><?=$date_added?></a> - <?=$searchterms?>
+				<?
+				}
+			}
+			echo "</ul></details>";
+		}
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- Search ----------------------------- */
 	/* -------------------------------------------- */
 	function Search($s) {
-		//print_r($s);
 		
 		$msg = ValidateSearchVariables($s);
 		
