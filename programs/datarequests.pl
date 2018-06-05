@@ -123,7 +123,7 @@ sub ProcessDataRequests {
 	my $lastgroupid = 0;
 	
 	# loop through all groups of data requests. each request in a group should have the same the modality
-	$sqlstring = "select distinct(req_groupid) 'req_groupid', req_modality, req_username, req_destinationtype, req_nidbserver, req_nidbusername, req_nidbpassword from data_requests where req_status = 'pending' or req_status = '' order by req_groupid, req_date";
+	$sqlstring = "select distinct(req_groupid) 'req_groupid', req_modality, req_username, req_destinationtype, req_nidbserver, req_nidbusername, req_nidbpassword from data_requests where req_status = 'pending' or (req_status = '' or req_status is null) order by req_groupid, req_date";
 	WriteLog($sqlstring);
 	#WriteLog('A');
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -148,7 +148,7 @@ sub ProcessDataRequests {
 			# check to see if ANY of the series in this group have already started processing, if so, skip it
 			# unless its a remotenidb group, then its ok to have multiple datarequest modules sending the same group
 			if ($req_destinationtype ne "remotenidb") {
-				my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status <> 'pending' and req_status <> 'cancelled')";
+				my $sqlstringA = "select req_status, req_date from data_requests where req_groupid = $groupid and (req_status <> '' and req_status is not null and req_status <> 'pending' and req_status <> 'cancelled')";
 				WriteLog("$sqlstringA");
 				my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 				if ($resultA->numrows > 0) {
@@ -246,7 +246,7 @@ sub ProcessDataRequests {
 				my %rowC = $resultC->fetchhash;
 				my $currentReqStatus = $rowC{'req_status'};
 				
-				if ($currentReqStatus eq "cancelled") {
+				if ((defined($currentReqStatus)) && ($currentReqStatus eq "cancelled")) {
 					next;
 				}
 				
@@ -278,7 +278,7 @@ sub ProcessDataRequests {
 				my $resultB = $db->query($sqlstringB) || SQLError($sqlstringB, $db->errmsg());
 				my %rowB = $resultB->fetchhash;
 				my $status = $rowB{'req_status'};
-				if (($status eq "processing") || ($status eq "complete")) {
+				if ((defined($status)) && (($status eq "processing") || ($status eq "complete"))) {
 					WriteLog("Another instance of this module is already processing this series. Status is [$status]");
 					next;
 				}
@@ -920,7 +920,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
-				if ($publicdownloadid != 0) {
+				if ((defined($publicdownloadid)) && ($publicdownloadid != 0)) {
 					my $sqlstringC = "update public_downloads set pd_status = 'complete' where pd_id = '$publicdownloadid'";
 					WriteLog("SQL: $sqlstringC");
 					my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);

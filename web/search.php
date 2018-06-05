@@ -1383,6 +1383,7 @@
 			$projectids[] = $rowC['projectid'];
 		}
 		
+		$totalbytes = 0;
 		/* tell the user if there are results for projects they don't have access to */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$projectid = $row['project_id'];
@@ -1399,7 +1400,7 @@
 				}
 			}
 			
-			/* BUT! while we're in this loop, count the number of unique studies ... */
+			/* ... AND ... while we're in this loop, count the number of unique studies ... */
 			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
 				$studies[] = $studyid;
 			}
@@ -1415,6 +1416,8 @@
 			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
 				$subjectids[] = $subjectid;
 			}
+			/* and get the total size of the data */
+			$totalbytes += $row['series_size'];
 		}
 		
 		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
@@ -1490,7 +1493,7 @@
 			}
 		}
 		?>
-		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysqli_num_rows($result)?> series</b> matching your query
+		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=number_format(mysqli_num_rows($result),0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
 		<?
 			if (count($missinguids) > 0) {
 			?>

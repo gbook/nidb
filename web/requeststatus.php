@@ -185,7 +185,7 @@
 		$avgcputime = $row['cpu'] + 0.5; /* add .5 sec just for yuks */
 
 		/* get the number processing or still pending */
-		$sqlstring = "SELECT count(*) 'count' FROM `data_requests` where req_status = 'pending' or req_status = 'processing' or req_status = ''";
+		$sqlstring = "SELECT count(*) 'count' FROM `data_requests` where req_status = 'pending' or req_status = 'processing' or req_status = '' or req_status is null";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numpending = $row['count']; /* add .5 sec just for yuks */
@@ -228,7 +228,7 @@
 			
 			$total = 0;
 			unset($totals);
-			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(req_status) 'count', req_date, max(lastupdate) 'lastupdate', req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
+			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(*) 'count', req_date, max(lastupdate) 'lastupdate', req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
 			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$requestdate = date("M j, Y G:i",strtotime($row2['req_date']));

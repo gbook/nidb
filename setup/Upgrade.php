@@ -23,63 +23,60 @@
 
 	/* ----- edit these variables ----- */
 	
-		$NIDBROOT = '/nidb';
+		$nidbdir = '/nidb';
+		$webdir = "/var/www/html";
+		
+		/* current database information */
 		$mysqlHostname = "localhost";
-		$mysqlUsername = "nidb";
-		$mysqlPassword = "password";
-		$mysqlDatabase = "nidb";
+		$mysqlUsername = "root";
+		$mysqlPassword = "brainmap";
+		$mysqlDatabase = "ado2";
+		
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
 	    /* this script will always create a backup of the databse, but you can configure these other options... */
 		$doRenameDatabase = 1; /* renames original database */
 		$doCreateNewSchema = 1; /* create blank database with new schema */
 		$doUpgradeDatabase = 1; /* insert old data into new schema */
-		$doUpdateFiles = 1;
+		$doUpdateFiles = 0; /* updates to the latest github version of the /program and /web files */
 
+		date_default_timezone_set("America/New_York");
 
 	/* ----- done editing variables ----- */
 
-/* Checking and installing 'pv' */
+	/* Checking and installing 'pv' */
+	$Ck=exec("yum info pv | grep Repo | awk '{print $3}'");
+	if ($Ck != 'installed') {
+		echo "pv is not installed, installing now\n";
+		exec('yum install pv');
+	}
 
-$Ck=exec("yum info pv | grep Repo | awk '{print $3}'");
+	/* Checking and updating files  */
+	if ($doUpdateFiles) {
+		// Changing directory to /nidb folder
+		chdir($nidbdir);
 
-if ($Ck=='installed'){}
-else {
-	exec('yum install pv');}
-
-
-
-
-
-/* Checking and updating files  */
-if ($doUpdateFiles) {
-	// Changing directory to /nidb folder
-        chdir($NIDBROOT);
-
-	// getting latest nidb files from github to a temporary directory
-        exec('svn export https://github.com/gbook/nidb/trunk temp');
-	
-
-	// Update files by copying new and updated programs
-        $TempDir = 'temp';
-        chdir($TempDir);
-        exec("cp -Ruv programs/* $NIDBROOT/programs");
-        exec("cp -Ruv web/* /var/www/html/");
-
-        chdir($NIDBROOT);
-        exec("cp -Ruv temp/* $NIDBROOT/install");
-	
-	// Delete the temporary directory
-        exec('rm -rf temp/');
-	
-	$CurrDir ="$NIDBROOT/install/setup/";
-	chdir($CurrDir);
-
-		}
+		// getting latest nidb files from github to a temporary directory
+		exec('svn export https://github.com/gbook/nidb/trunk temp');
 
 
-	
-	date_default_timezone_set("America/New_York");
+		// Update files by copying new and updated programs
+		$TempDir = 'temp';
+		chdir($TempDir);
+		exec("cp -Ruv programs/* $nidbdir/programs/");
+		exec("cp -Ruv web/* $webdir/");
+
+		chdir($nidbdir);
+		exec("cp -Ruv temp/* $nidbdir/install");
+
+		// Delete the temporary directory
+		exec('rm -rf temp/');
+
+		$CurrDir ="$nidbdir/install/setup/";
+		chdir($CurrDir);
+	}
+
+
 	$currentDatetime = date('YmdHis');
 	$backupDatabaseName = "$mysqlDatabase"."_$currentDatetime";
 	
@@ -148,7 +145,7 @@ if ($doUpdateFiles) {
 			mysqli_select_db($GLOBALS['linki'], $mysqlDatabase) or die ("Could not select database [$mysqlDatabase] on line [" . __LINE__ . "]");
 			
 			/* import the new schema */
-			$systemstring = "mysql -u $mysqlUsername -p$mysqlPassword $mysqlDatabase < $mysqlDatabase.sql";
+			$systemstring = "mysql -u $mysqlUsername -p$mysqlPassword $mysqlDatabase < $newSchemaFile";
 			echo "Running [$systemstring]...\n";
 			echo "Output: [" . `$systemstring` . "]\n";
 		}
@@ -248,7 +245,7 @@ if ($doUpdateFiles) {
 					$tables[$tablename]['columns'][$field]['default'] = $default;
 					$tables[$tablename]['columns'][$field]['extra'] = $extra;
 				}
-				echo "Found table [$tablename] with [$columnCount] columns and [$rowCount] rows\n";
+				echo "Table [$db.$tablename] has [$columnCount] columns and [$rowCount] rows\n";
 			}
 		}
 		
