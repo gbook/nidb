@@ -28,9 +28,9 @@
 		
 		/* current database information */
 		$mysqlHostname = "localhost";
-		$mysqlUsername = "root";
-		$mysqlPassword = "brainmap";
-		$mysqlDatabase = "ado2";
+		$mysqlUsername = "nidb";
+		$mysqlPassword = "password";
+		$mysqlDatabase = "nidb";
 		
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
@@ -58,7 +58,6 @@
 
 		// getting latest nidb files from github to a temporary directory
 		exec('svn export https://github.com/gbook/nidb/trunk temp');
-
 
 		// Update files by copying new and updated programs
 		$TempDir = 'temp';
