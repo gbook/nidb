@@ -582,7 +582,7 @@ sub InsertDICOM {
 	my $PerformingPhysiciansName = EscapeMySQLString(trim($info->{'PerformingPhysicianName'}));
 	my $ProtocolName = EscapeMySQLString(trim($info->{'ProtocolName'}));
 	my $SeriesDate = trim($info->{'SeriesDate'});
-	my $SeriesNumber = trim($info->{'SeriesNumber'}); if ($SeriesNumber eq '') { $SeriesNumber = 0; }
+	my $SeriesNumber = trim($info->{'SeriesNumber'}) + 0; if ($SeriesNumber eq '') { $SeriesNumber = 0; }
 	my $SeriesTime = trim($info->{'SeriesTime'});
 	my $StudyDate = trim($info->{'StudyDate'});
 	my $StudyDescription = EscapeMySQLString(trim($info->{'StudyDescription'}));
@@ -1890,7 +1890,7 @@ sub InsertEEG {
 		$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " 00:00:00";
 	}
 	elsif (length($parts[1]) == 14) {
-		$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " " . substr($parts[1],8,2) . ":" . substr($parts[1],10,2) . ":" . substr($parts[1],10,2);
+		$StudyDateTime = $SeriesDateTime = substr($parts[1],0,4) . "-" . substr($parts[1],4,2) . "-" . substr($parts[1],6,2) . " " . substr($parts[1],8,2) . ":" . substr($parts[1],10,2) . ":" . substr($parts[1],12,2);
 	}
 	
 	$SeriesDescription = $ProtocolName = trim($parts[2]);
@@ -1901,6 +1901,8 @@ sub InsertEEG {
 	$report .= WriteLog("Before fixing: PatientID [$PatientID], StudyDateTime [$StudyDateTime], SeriesDateTime [$SeriesDateTime], SeriesDescription [$SeriesDescription], OperatorsName [$OperatorsName], SeriesNumber [$SeriesNumber], FileNumber [$FileNumber]") . "\n";
 	
 	# check if anything is funny
+	$SeriesNumber += 0;
+	$FileNumber += 0;
 	if ($StudyDateTime eq "") { $StudyDateTime = "0000-00-00 00:00:00"; }
 	if ($SeriesDateTime eq "") { $SeriesDateTime = "0000-00-00 00:00:00"; }
 	if ($SeriesDescription eq "") { $SeriesDescription = "Unknown"; }

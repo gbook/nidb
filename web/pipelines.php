@@ -765,11 +765,11 @@
 	function ResetAnalyses($id) {
 		if (!ValidID($id,'Pipeline ID - F')) { return; }
 		
-		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_startdate is null)";
+		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_status = 'NoMatchingStudies')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows(); ?> analysis <b>data</b> rows deleted</span></div><?
 	
-		$sqlstring = "delete from analysis where analysis_startdate is null and pipeline_id = $id";
+		$sqlstring = "delete from analysis where analysis_status = 'NoMatchingStudies' and pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows(); ?> analysis rows deleted</span></div><?
 	}	
