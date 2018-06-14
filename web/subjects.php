@@ -204,7 +204,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update the tags */
-		SetTags('subject',$id,$tags);
+		SetTags('subject','',$id,$tags);
 		
 		/* delete entries for this subject from the altuid table ... */
 		$sqlstring = "delete from subject_altuid where subject_id = $id";
@@ -256,7 +256,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -279,7 +279,7 @@
 		} while ($count > 0);
 		
 		/* insert the new subject */
-		$sqlstring = "insert into subjects (name, birthdate, gender, ethnicity1, ethnicity2, handedness, education, phone1, email, marital_status, smoking_status, uid, uuid, guid, cancontact) values ('$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$phone', '$email', '$maritalstatus', '$smokingstatus', '$uid', ucase(md5(concat(RemoveNonAlphaNumericChars('$name'), RemoveNonAlphaNumericChars('$dob'),RemoveNonAlphaNumericChars('$gender')))), '$guid', '$cancontact')";
+		$sqlstring = "insert into subjects (name, birthdate, gender, ethnicity1, ethnicity2, handedness, education, phone1, email, marital_status, smoking_status, uid, uuid, guid, cancontact) values ('$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$phone', '$email', '$maritalstatus', '$smokingstatus', '$uid', uuid(), '$guid', $cancontact)";
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring); }
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$SubjectRowID = mysqli_insert_id($GLOBALS['linki']);
@@ -294,7 +294,7 @@
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring3); }
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		
-		SetTags('subject',$SubjectRowID,$tags);
+		SetTags('subject','',$SubjectRowID,$tags);
 		
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);

@@ -52,6 +52,7 @@
 	$altuid = GetVariable("altuid");
 	$instance = GetVariable("instance");
 	$dataformat = GetVariable("dataformat");
+	$modality = GetVariable("modality");
 	$numfiles = GetVariable("numfiles");
 	$matchidonly = GetVariable("matchidonly");
 	$altuids = GetVariable("altuids");
@@ -65,7 +66,7 @@
 	}
 	
 	switch($action) {
-		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
+		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
 		case 'getProjectList': GetProjectList($u, $instance); break;
@@ -277,7 +278,7 @@
 	/* -------------------------------------------- */
 	/* ------- UploadDICOM ------------------------ */
 	/* -------------------------------------------- */
-	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
+	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
 		//print_r($_POST);
 		//echo "\n";
@@ -285,6 +286,7 @@
 		$uuid = mysqli_real_escape_string($GLOBALS['linki'], $uuid);
 		$anonymize = mysqli_real_escape_string($GLOBALS['linki'], $anonymize);
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 		$equipmentid = mysqli_real_escape_string($GLOBALS['linki'], $equipmentid);
 		$siteid = mysqli_real_escape_string($GLOBALS['linki'], $siteid);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
@@ -332,16 +334,12 @@
 			exit(0);
 		}
 		
-		/* clear out the older stuff */
-		$sqlstring = "DELETE FROM import_received WHERE import_datetime < DATE_SUB(NOW(), INTERVAL 30 DAY)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
 		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
 			/* and check if we received at least 1 file */
 			if (count($_FILES['files']) > 0) {
 				/* get next import ID */
-				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
+				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
 				//echo "[[$sqlstring]]\n";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysqli_insert_id($GLOBALS['linki']);
@@ -396,10 +394,6 @@
 						$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
 					}
 					
-					/* record this received file in the import_received table */
-					//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-					//echo "$sqlstring\n";
-					//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
 				/* go through all the beh files and save them */
@@ -424,9 +418,6 @@
 
 							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
 						}
-						/* record this received file in the import_received table */
-						//$sqlstring = "insert into import_received (import_transactionid, import_uploadid, import_filename, import_filesize, import_datetime, import_md5, import_success, import_userid, import_instanceid, import_projectid, import_siteid, import_route) values ('$transactionid', '$uploadID', '$name', '$filesize', now(), '$filemd5', $success, '" . $GLOBALS['userid'] . "', '$instanceRowID', '$projectRowID', '$siteRowID', 'api.php-uploaddicom')";
-						//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					}
 				}
 				$report = mysqli_real_escape_string($GLOBALS['linki'], $report);

@@ -586,7 +586,7 @@ sub ProcessDataRequests {
 						}
 						
 						# build the cURL string to send the actual data
-						$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$modality' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
+						$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$data_type' -F 'modality=$modality' -F 'uuid=$uuid' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$series_num' ";
 						my $c = 0;
 						foreach my $f (@dcmfiles) {
 							$c++;

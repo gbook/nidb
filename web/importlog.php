@@ -48,10 +48,6 @@
 			DisplayMenu();
 			DisplayAllImportLog();
 			break;
-		case 'viewreceived':
-			DisplayMenu();
-			DisplayAllImportReceived();
-			break;
 		case 'viewtransactions':
 			DisplayMenu();
 			DisplayTransactions($useronly);
@@ -224,84 +220,7 @@
 		//PrintSQLTable($result,"importlog.php?action=displaylog",$orderby,8);
 	}
 	
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayAllImportReceived ----------- */
-	/* -------------------------------------------- */
-	function DisplayAllImportReceived() {
-		$sqlstring = "select * from import_received order by import_uploadid, import_filename";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$uploadid = $row['import_uploadid'];
-			$filename = $row['import_filename'];
-			$importdate = $row['import_datetime'];
-			$filesize = $row['import_filesize'];
-			$md5 = $row['import_md5'];
-			$userid = $row['import_userid'];
-			$instanceid = $row['import_instanceid'];
-			$projectid = $row['import_projectid'];
-			$siteid = $row['import_siteid'];
-			
-			$thelist[$uploadid]['count']++;
-			
-			$thelist[$uploadid]['importdate'] = $importdate;
-			$thelist[$uploadid]['userid'] = $userid;
-			$thelist[$uploadid]['instanceid'] = $instanceid;
-			$thelist[$uploadid]['projectid'] = $projectid;
-			$thelist[$uploadid]['siteid'] = $siteid;
-			
-			$i = $thelist[$uploadid]['count'];
-			$thelist[$uploadid]['files'][$i]['name'] = $filename;
-			$thelist[$uploadid]['files'][$i]['md5'] = $md5;
-			$thelist[$uploadid]['files'][$i]['size'] = $filesize;
-		}
-		
-		echo "<pre>Printing the list\n";
-		//print_r($thelist);
-		echo "Done printing the list\n</pre>";
-		?>
-		<table class="smallgraydisplaytable">
-			<thead>
-				<tr>
-					<th>Import ID</th>
-					<th>Files</th>
-					<th>Date/time</th>
-					<th>User ID</th>
-					<th>Instance ID</th>
-					<th>Project ID</th>
-					<th>Site ID</th>
-				</tr>
-			</thead>
-			<tbody>
-			<?
-			foreach ($thelist as $uploadid => $filelist) {
-				
-				$numfiles = $thelist[$uploadid]['count'];
-				$importdatetime = $thelist[$uploadid]['importdate'];
-				$userid = $thelist[$uploadid]['userid'];
-				$instanceid = $thelist[$uploadid]['instanceid'];
-				$projectid = $thelist[$uploadid]['projectid'];
-				$siteid = $thelist[$uploadid]['siteid'];
-				?>
-				<tr>
-					<td><?=$uploadid?></td>
-					<td><?=$numfiles?></td>
-					<td><?=$importdatetime?></td>
-					<td><?=$userid?></td>
-					<td><?=$instanceid?></td>
-					<td><?=$projectid?></td>
-					<td><?=$siteid?></td>
-				</tr>
-				<?
-			}
-			?>
-			</tbody>
-		</table>
-		<?
-		//PrintSQLTable($result,"importlog.php?action=displaylog",$orderby,8);
-	}
-	
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplayTransactions ---------------- */
 	/* -------------------------------------------- */
@@ -353,6 +272,7 @@
 			$numarchived = 0;
 			$numblank = 0;
 			$numerror = 0;
+			$numnull = 0;
 			unset($counts);
 			
 			$numblocks = 0;
@@ -386,6 +306,7 @@
 			$numarchived = $counts['archived'] + 0;
 			$numblank = $counts[''] + 0;
 			$numerror = $counts['error'] + 0;
+			$numnull = $counts['null'] + 0;
 
 			if (($numerror > 0) || ($numfilesfail > 0)) {
 				$statusicon = "&#9940;";

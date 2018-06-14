@@ -139,9 +139,9 @@ sub DoImportUploaded {
 			my $sqlstringA = "update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = $importrequest_id";
 			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 			
-			my $uploaddir;
+			my $uploaddir = '';
 			
-			if ($datatype eq '') { $datatype = "dicom"; }
+			if (($datatype eq '') || (uc($datatype) eq 'NULL')) { $datatype = "dicom"; }
 			
 			WriteLog("Datatype for $importrequest_id is [$datatype]");
 			

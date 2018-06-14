@@ -118,9 +118,9 @@ sub DoParse {
 
 	WriteLog("Connected to database");
 	
-	# before starting things off, delete any rows older than 30 days from the importlogs table
-	#my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 30 day)";
-	#my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	# before starting things off, delete any rows older than 4 days from the importlogs table
+	my $sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 4 day)";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# ----- parse all files in the main directory -----
 	if (ParseDirectory($cfg{'incomingdir'}, '')) {
@@ -1757,8 +1757,8 @@ sub InsertParRec {
 	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 	# delete any rows older than 10 days from the import log
-	$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
-	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	#$sqlstring = "delete from importlogs where importstartdate < date_sub(now(), interval 10 day)";
+	#$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	# get the size of the files and update the DB
 	my $dirsize;
