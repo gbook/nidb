@@ -76,7 +76,7 @@
 	$depdir = GetVariable("depdir");
 	$deplinktype = GetVariable("deplinktype");
 	$groupid = GetVariable("groupid");
-	$dynamicgroupid = GetVariable("dynamicgroupid");
+	//$dynamicgroupid = GetVariable("dynamicgroupid");
 	$level = GetVariable("level");
 	$ishidden = GetVariable("pipelineishidden");
 	$groupbysubject = GetVariable("groupbysubject");
@@ -111,18 +111,18 @@
 	/* determine action */
 	switch ($action) {
 		case 'editpipeline': DisplayPipelineForm("edit", $id); break;
-		case 'viewpipeline': DisplayPipeline($id, $version); break;
+		case 'viewversion': DisplayVersion($id, $version); break;
 		case 'addform': DisplayPipelineForm("add", ""); break;
-		case 'updatepipelinedef':
-			UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir);
+		case 'updatepipelineoptions':
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $dependency, $groupbysubject);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden, $groupbysubject);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $groupbysubject);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $level, $groupbysubject);
 			DisplayPipelineForm("edit", $id);
 			break;
 		case 'changeowner':
@@ -163,14 +163,14 @@
 				DisplayPipelineForm("edit", $id);
 			}
 			break;
-		case 'testingoff':
-			DisablePipelineTesting($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
-			break;
-		case 'testingon':
-			EnablePipelineTesting($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
-			break;
+		//case 'testingoff':
+		//	DisablePipelineTesting($id);
+		//	DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+		//	break;
+		//case 'testingon':
+		//	EnablePipelineTesting($id);
+		//	DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+		//	break;
 		case 'viewpipelinelist':
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
 			break;
@@ -185,7 +185,10 @@
 	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelineresultsscript, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $ishidden, $groupbysubject) {
+	/* this function does NOT CHANGE the version    */
+	/* number                                       */
+	/* -------------------------------------------- */
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
@@ -206,32 +209,11 @@
 		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
-		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
-		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
-		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
-		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
 		$ishidden = mysqli_real_escape_string($GLOBALS['linki'], $ishidden);
-		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
-		if (is_array($dependency)) {
-			$dependencies = implode(",",$dependency);
-		}
-		else {
-			$dependencies = $dependency;
-		}
-		
-		if (is_array($groupid)) {
-			$groupids = implode(",",$groupid);
-		}
-		else {
-			$groupids = $groupid;
-		}
-
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dynamicgroupid = '$dynamicgroupid', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_ishidden = '$ishidden', pipeline_groupbysubject = '$groupbysubject' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_directory = '$pipelinedirectory', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete any existing dependencies, and insert the current dependencies */
@@ -254,313 +236,86 @@
 		?><div align="center" class="message"><span class="message">Pipeline info [<?=$pipelinetitle?>] updated</span></div><?
 	}
 
-
-	/* -------------------------------------------- */
-	/* ------- AddPipeline ------------------------ */
-	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $dynamicgroupid, $level, $groupbysubject) {
-		/* perform data checks */
-		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
-		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
-		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], $pipelinegroup);
-		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
-		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
-		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
-		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
-		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
-		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
-		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
-		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
-		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
-		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
-		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
-		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
-		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
-		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
-		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
-		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
-		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
-		if (is_array($dependency)) {
-			$dependencies = implode(",",$dependency);
-		}
-		if (is_array($groupid)) {
-			$groupids = implode2(",",$groupid);
-		}
-		if (is_array($dynamicgroupids)) {
-			$dynamicgroupids = implode2(",",$dynamicgroupid);
-		}
-		
-		/* get userid */
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
-		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_dynamicgroupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinemaxwalltime', '$pipelinesubmitdelay', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$dynamicgroupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0, '$groupbysubject')";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
-		
-		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><?
-		
-		return $pipelineid;
-	}
-
 	
 	/* -------------------------------------------- */
-	/* ------- CopyPipeline ----------------------- */
+	/* ------- UpdatePipelineOptions -------------- */
 	/* -------------------------------------------- */
-	function CopyPipeline($id, $newname) {
-		
-		if (!ValidID($id,'Pipeline ID - B')) { return; }
-
-		$newname = mysqli_real_escape_string($GLOBALS['linki'], trim($newname));
-
-		if ($newname == "") {
-			echo "New pipeline name is blank";
-			return;
-		}
-		/* check if the new pipeline name already exists */
-		$sqlstring = "select * from pipelines where pipeline_name = '$newname'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			echo "New pipeline name already exists";
-			return;
-		}
-		
-		?>
-		<span class="tiny">
-		<ol>
-		<?
-		
-		/* this process of copying a row is cumbersome...
-		   ...but there is no need to change the column definitions below to reflect future table changes */
-		
-		$history = "";
-		
-		$sqlstring = "start transaction";
-		//PrintSQL("$sqlstring");
-		echo "<li><b>Starting transaction</b> [$sqlstring]\n";
-		$history .= "1) Starting transaction [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-
-		/* ------ copy the pipeline definition ------ */
-		/* create a temp table, which automatically creates the columns */
-		$sqlstring = "create temporary table tmp_pipeline$id select * from pipelines where pipeline_id = $id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Creating temp table from existing pipeline table spec [$sqlstring]\n";
-		$history .= "2) Creating temp table from existing pipeline table spec [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* for DEBUG, display the original table */
-		$sqlstring = "select * from pipelines where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Original [pipelines] table:" . PrintSQLTable($result,"","","",true) . "\n";
-
-		/* for DEBUG, display the copied temp table */
-		$sqlstring = "select * from tmp_pipeline$id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Temp [tmp_pipeline$id] table:" . PrintSQLTable($result,"","","",true) . "\n";
-		
-		/* get the new pipeline id */
-		$sqlstring = "select (max(pipeline_id)+1) 'newid' from pipelines";
-		//PrintSQL("$sqlstring");
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newid = $row['newid'];
-		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
-		$history .= "3) Getting new pipeline ID [$newid] [$sqlstring]\n";
-
-		/* this new pipeline_id does not exist... we know that. But the ID may still be in the pipeline_steps table
-		   so delete everything from the pipeline_steps table with the new ID */
-		$sqlstring = "delete from pipeline_steps where pipeline_id = $newid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		echo "<li>Deleting from pipeline_steps table [$sqlstring]\n";
-		$history .= "3.1) Deleting from pipeline_steps table [$sqlstring]\n";
-
-		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
-		//PrintSQL("$sqlstring");
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$version = $row['pipeline_version'];
-		echo "<li>Getting pipeline version [$version] [$sqlstring]\n";
-		$history .= "4) Getting pipeline version [$version] [$sqlstring]\n";
-
-		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = '', pipeline_lastfinish = '', pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
-		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
-		$history .= "5) Making changes to new pipeline in temp table [$sqlstring]\n";
-		//PrintSQL("$sqlstring");
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* insert the changed row into the pipeline table */
-		$sqlstring = "insert into pipelines select * from tmp_pipeline$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Getting new pipeline ID [$sqlstring]\n";
-		$history .= "6) Getting new pipeline ID [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete the tmp table */
-		$sqlstring = "drop table tmp_pipeline$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Deleting temp table [$sqlstring]\n";
-		$history .= "7) Deleting temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* ------ copy the data specification ------ */
-		/* create a temp table, which automatically creates the columns */
-		$sqlstring = "create temporary table tmp_dataspec$id (select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version)";
-		//PrintSQL("$sqlstring");
-		echo "<li>Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
-		$history .= "8) Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* for DEBUG, display the original table */
-		$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Original [pipeline_data_def] table:" . PrintSQLTable($result,"","","",true) . "\n";
-
-		/* for DEBUG, display the copied temp table */
-		$sqlstring = "select * from tmp_dataspec$id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Temp [tmp_dataspec$id] table:" . PrintSQLTable($result,"","","",true) . "\n";
-		
-		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = ''";
-		//PrintSQL("$sqlstring");
-		echo "<li>Make changes to temp table [$sqlstring]\n";
-		$history .= "9) Make changes to temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* insert the changed rows into the pipeline_data_def table */
-		$sqlstring = "insert into pipeline_data_def select * from tmp_dataspec$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Insert temp table rows into pipeline_data_def [$sqlstring]\n";
-		$history .= "10) Insert temp table rows into pipeline_data_def [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete the tmp table */
-		$sqlstring = "drop table tmp_dataspec$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Drop temp table [$sqlstring]\n";
-		$history .= "11) Drop temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* ------ copy the pipeline steps specification ------ */
-		/* create a temp table, which automatically creates the columns */
-		$sqlstring = "create temporary table tmp_steps$id (select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version)";
-		//PrintSQL("$sqlstring");
-		echo "<li>Create temp table from pipeline_steps spec [$sqlstring]\n";
-		$history .= "12) Create temp table from pipeline_steps spec [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-
-		/* for DEBUG, display the original table */
-		$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Original [pipeline_steps] table:" . PrintSQLTable($result,"","","",true) . "\n";
-
-		/* for DEBUG, display the copied temp table */
-		$sqlstring = "select * from tmp_steps$id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$history .= "Temp [tmp_steps$id] table:" . PrintSQLTable($result,"","","",true) . "\n";
-		
-		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_steps$id set pipeline_id = $newid, pipeline_version = 1, pipelinestep_id = ''";
-		//PrintSQL("$sqlstring");
-		echo "<li>Make changes to temp table [$sqlstring]\n";
-		$history .= "13) Make changes to temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* insert the changed rows into the pipeline_data_def table */
-		$sqlstring = "insert into pipeline_steps select * from tmp_steps$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Insert temp rows into pipeline_steps table [$sqlstring]\n";
-		$history .= "14) Insert temp rows into pipeline_steps table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete the tmp table */
-		$sqlstring = "drop table tmp_steps$id";
-		//PrintSQL("$sqlstring");
-		echo "<li>Drop temp table [$sqlstring]\n";
-		$history .= "15) Drop temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* copy any dependencies */
-		$sqlstring = "select * from pipeline_dependencies where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$parentid = $row['parent_id'];
-			$sqlstringA = "insert ignore into pipeline_dependencies (pipeline_id, parent_id) values ($newid,'$parentid')";
-			echo "<li>Copy dependency [$sqlstringA]\n";
-			$history .= "16) Copy dependency [$sqlstringA]\n";
-			//PrintSQL($sqlstring);
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-		}
-		
-		/* ------ all done ------ */
-		$sqlstring = "commit";
-		//PrintSQL("$sqlstring");
-		echo "<li><b>Commit the transaction</b> [$sqlstring]\n";
-		$history .= "17) Commit the transaction [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		?>
-		</ol>
-		<?
-		
-		//$sqlstring = "select * from pipelines where pipeline_id = $newid";
-		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//echo "AFTER COPY (new pipeline)<br>\n";
-		//PrintVariable($row);
-		
-		echo "DEBUG - ignore this stuff<br>";
-		PrintVariable($history);
-		
-		$history = mysqli_real_escape_string($GLOBALS['linki'], trim($history));
-		$sqlstring = "insert into changelog (performing_userid, change_datetime, change_event, change_desc) values (" . $GLOBALS['userid'] . ", now(), 'pipelinecopy', '$history')";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
-
-	
+	/* this function CHANGES the version number     */
 	/* -------------------------------------------- */
-	/* ------- UpdatePipelineDef ------------------ */
-	/* -------------------------------------------- */
-	function UpdatePipelineDef($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality,$dd_datalevel,$dd_studyassoc,$dd_dataformat,$dd_imagetype,$dd_gzip,$dd_location,$dd_seriescriteria,$dd_numboldreps,$dd_behformat,$dd_behdir,$dd_useseriesdirs,$dd_optional,$dd_preserveseries,$dd_usephasedir) {
+	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $dependency, $groupbysubject) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
-		
+
 		?>
 		<span class="tiny">
 		<ol>
 		<?
 		$sqlstring = "start transaction";
-		//PrintSQL("$sqlstring");
 		echo "<li><b>Starting transaction</b>";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		/* determine the current and next pipeline version # */
+		/* get the current and next pipeline version # */
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$oldversion = $row['pipeline_version'];
 		$newversion = $oldversion + 1;
 		echo "<li>Got new version number [$newversion]";
+
+		/* insert row in the pipeline version table */
+		$sqlstring = "insert into pipeline_version (pipeline_id, version, version_datetime, version_notes) values ($id, $newversion, now(), '')";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Updated pipeline_version table";
 		
-		//echo "<pre>";
+		/* the pipeline option information is updated in two tables, for backward compatibility...
+		   old pipelines do not do version control on the pipeline options */
+		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
+		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
+		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
+		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
+		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
+		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
+		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
+		else { $dependencies = $dependency; }
+		if (is_array($groupid)) { $groupids = implode(",",$groupid); }
+		else { $groupids = $groupid; }
+
+		/* update the pipeline table */
+		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Updated pipelines table";
+		
+		/* delete any existing dependencies, and insert the current dependencies */
+		$sqlstring = "delete from pipeline_dependencies where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Deleted old dependencies";
+
+		if ($dependency != '') {
+			if (is_array($dependency)) {
+				foreach ($dependency as $dep) {
+					$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dep')";
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					echo "<li>Inserted dependency ($dep)";
+				}
+			}
+			else {
+				$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dependency')";
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				echo "<li>Inserted dependency ($dependency)";
+			}
+		}
+
+		/* add row to the pipeline_options table for the new version */
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_groupbysubject, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$groupbysubject', '$completefiles', '$pipelineresultscript')";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Updated pipeline_options table";
+		
 		/* split up the commandlist into commands, then split them into enabled, command, description, logged, etc */
 		$commands = explode("\n",$commandlist);
 		$step = 1;
 		foreach ($commands as $line) {
 			/* remove any trailing carriage returns or whitespace */
 			$line = rtrim($line);
-			
-			/* remove empty lines */
-			//if ($line == "") {
-			//	continue;
-			//}
 			
 			/* check if the command should be logged */
 			if (stristr($line, '{NOLOG}') === false) {
@@ -591,13 +346,10 @@
 				}
 			}
 			
-			//echo "[$line] --> command [" . $command[$step] . "] comment [" . $description[$step] . "]<br>";
-
 			$workingdir[$step] = "";
 			$steporder[$step] = $step;
 			$step++;
 		}
-		//PrintVariable($command);
 		/* insert all the new fields with NEW version # */
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($command[$i]) != "") {
@@ -682,26 +434,26 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]);
+				$dd_enabled[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]) + 0;
 				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
 				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
 				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
 				$dd_datalevel[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i]);
-				$dd_studyassoc[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]);
+				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
 				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
 				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);
-				$dd_gzip[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]);
+				$dd_gzip[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]) + 0;
 				$dd_location[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_location[$i]);
 				$dd_seriescriteria[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_seriescriteria[$i]);
 				$dd_numboldreps[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_numboldreps[$i]);
 				$dd_behformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behformat[$i]);
 				$dd_behdir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]);
-				$dd_optional[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]);
-				$dd_preserveseries[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]);
-				$dd_usephasedir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]);
+				$dd_useseriesdirs[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]) + 0;
+				$dd_optional[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]) + 0;
+				$dd_preserveseries[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]) + 0;
+				$dd_usephasedir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]) + 0;
 				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', '$dd_enabled[$i]', '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
 				echo "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -720,8 +472,277 @@
 		
 		?></ol></span><div align="center"><span class="message">Data specification [<?=$id?>] updated</span></div><?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddPipeline ------------------------ */
+	/* -------------------------------------------- */
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $level, $groupbysubject) {
+		/* perform data checks */
+		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
+		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
+		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], $pipelinegroup);
+		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
+		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
+		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
+		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
+		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
+		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
+		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
+		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
+		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
+		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
+		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
+		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
+		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
+		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
+		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
+		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
+		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
+		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
+		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
+		if (is_array($dependency)) {
+			$dependencies = implode(",",$dependency);
+		}
+		if (is_array($groupid)) {
+			$groupids = implode2(",",$groupid);
+		}
+		//if (is_array($dynamicgroupids)) {
+		//	$dynamicgroupids = implode2(",",$dynamicgroupid);
+		//}
+		
+		/* get userid */
+		$sqlstring = "select user_id from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
+		
+		/* insert the new form */
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_level, pipeline_directory, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinemaxwalltime', '$pipelinesubmitdelay', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$level', '$pipelinedirectory', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject)";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
+		
+		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><?
+		
+		return $pipelineid;
+	}
+
 	
-	
+	/* -------------------------------------------- */
+	/* ------- CopyPipeline ----------------------- */
+	/* -------------------------------------------- */
+	function CopyPipeline($id, $newname) {
+		
+		if (!ValidID($id,'Pipeline ID - B')) { return; }
+
+		$newname = mysqli_real_escape_string($GLOBALS['linki'], trim($newname));
+
+		if ($newname == "") {
+			echo "New pipeline name is blank";
+			return;
+		}
+		/* check if the new pipeline name already exists */
+		$sqlstring = "select * from pipelines where pipeline_name = '$newname'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			echo "New pipeline name already exists";
+			return;
+		}
+		
+		?>
+		<span class="tiny">
+		<ol>
+		<?
+		
+		/* this process below of copying a row is cumbersome...
+		   ...BUT there is no need to change the column definitions in this code to reflect future table changes */
+		
+		$history = "";
+		
+		$sqlstring = "start transaction";
+		//PrintSQL("$sqlstring");
+		echo "<li><b>Starting transaction</b> [$sqlstring]\n";
+		$history .= "1) Starting transaction [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		/* ------ copy the pipeline definition ------ */
+		/* create a temp table, which automatically creates the columns */
+		$sqlstring = "create temporary table tmp_pipeline$id select * from pipelines where pipeline_id = $id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Creating temp table from existing pipeline table spec [$sqlstring]\n";
+		$history .= "2) Creating temp table from existing pipeline table spec [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* for DEBUG, display the original table */
+		$sqlstring = "select * from pipelines where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Original TABLE [pipelines]\n" . PrintSQLTable($result,"","","",true) . "\n\n";
+
+		/* for DEBUG, display the copied temp table */
+		$sqlstring = "select * from tmp_pipeline$id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Temp TABLE [tmp_pipeline$id]\n" . PrintSQLTable($result,"","","",true) . "\n\n";
+		
+		/* get the new pipeline id */
+		$sqlstring = "select (max(pipeline_id)+1) 'newid' from pipelines";
+		//PrintSQL("$sqlstring");
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$newid = $row['newid'];
+		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
+		$history .= "3) Getting new pipeline ID [$newid] [$sqlstring]\n";
+
+		/* this new pipeline_id does not exist... we know that. But the ID may still be in the pipeline_steps table
+		   so delete everything from the pipeline_steps table with the new ID */
+		$sqlstring = "delete from pipeline_steps where pipeline_id = $newid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		echo "<li>Deleting from pipeline_steps table [$sqlstring]\n";
+		$history .= "3.1) Deleting from pipeline_steps table [$sqlstring]\n";
+
+		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
+		//PrintSQL("$sqlstring");
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$version = $row['pipeline_version'];
+		echo "<li>Getting pipeline version [$version] [$sqlstring]\n";
+		$history .= "4) Getting pipeline version [$version] [$sqlstring]\n";
+
+		/* make any changes to the new pipeline before inserting */
+		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = '', pipeline_lastfinish = '', pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
+		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
+		$history .= "5) Making changes to new pipeline in temp table [$sqlstring]\n";
+		//PrintSQL("$sqlstring");
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* insert the changed row into the pipeline table */
+		$sqlstring = "insert into pipelines select * from tmp_pipeline$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Getting new pipeline ID [$sqlstring]\n";
+		$history .= "6) Getting new pipeline ID [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* delete the tmp table */
+		$sqlstring = "drop table tmp_pipeline$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Deleting temp table [$sqlstring]\n";
+		$history .= "7) Deleting temp table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* ------ copy the data specification ------ */
+		/* create a temp table, which automatically creates the columns */
+		$sqlstring = "create temporary table tmp_dataspec$id (select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version)";
+		//PrintSQL("$sqlstring");
+		echo "<li>Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
+		$history .= "8) Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* for DEBUG, display the original table */
+		$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Original TABLE [pipeline_data_def] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
+
+		/* for DEBUG, display the copied temp table */
+		$sqlstring = "select * from tmp_dataspec$id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Temp TABLE [tmp_dataspec$id] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
+		
+		/* make any changes to the new pipeline before inserting */
+		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = ''";
+		//PrintSQL("$sqlstring");
+		echo "<li>Make changes to temp table [$sqlstring]\n";
+		$history .= "9) Make changes to temp table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* insert the changed rows into the pipeline_data_def table */
+		$sqlstring = "insert into pipeline_data_def select * from tmp_dataspec$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Insert temp table rows into pipeline_data_def [$sqlstring]\n";
+		$history .= "10) Insert temp table rows into pipeline_data_def [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* delete the tmp table */
+		$sqlstring = "drop table tmp_dataspec$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Drop temp table [$sqlstring]\n";
+		$history .= "11) Drop temp table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* ------ copy the pipeline steps specification ------ */
+		/* create a temp table, which automatically creates the columns */
+		$sqlstring = "create temporary table tmp_steps$id (select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version)";
+		//PrintSQL("$sqlstring");
+		echo "<li>Create temp table from pipeline_steps spec [$sqlstring]\n";
+		$history .= "12) Create temp table from pipeline_steps spec [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		/* for DEBUG, display the original table */
+		$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Original TABLE [pipeline_steps] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
+
+		/* for DEBUG, display the copied temp table */
+		$sqlstring = "select * from tmp_steps$id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history .= "Temp TABLE [tmp_steps$id] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
+		
+		/* make any changes to the new pipeline before inserting */
+		$sqlstring = "update tmp_steps$id set pipeline_id = $newid, pipeline_version = 1, pipelinestep_id = ''";
+		//PrintSQL("$sqlstring");
+		echo "<li>Make changes to temp table [$sqlstring]\n";
+		$history .= "13) Make changes to temp table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* insert the changed rows into the pipeline_data_def table */
+		$sqlstring = "insert into pipeline_steps select * from tmp_steps$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Insert temp rows into pipeline_steps table [$sqlstring]\n";
+		$history .= "14) Insert temp rows into pipeline_steps table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* delete the tmp table */
+		$sqlstring = "drop table tmp_steps$id";
+		//PrintSQL("$sqlstring");
+		echo "<li>Drop temp table [$sqlstring]\n";
+		$history .= "15) Drop temp table [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		/* copy any dependencies */
+		$sqlstring = "select * from pipeline_dependencies where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$parentid = $row['parent_id'];
+			$sqlstringA = "insert ignore into pipeline_dependencies (pipeline_id, parent_id) values ($newid,'$parentid')";
+			echo "<li>Copy dependency [$sqlstringA]\n";
+			$history .= "16) Copy dependency [$sqlstringA]\n";
+			//PrintSQL($sqlstring);
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+		}
+		
+		/* ------ all done ------ */
+		$sqlstring = "commit";
+		//PrintSQL("$sqlstring");
+		echo "<li><b>Commit the transaction</b> [$sqlstring]\n";
+		$history .= "17) Commit the transaction [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		?>
+		</ol>
+		<?
+		
+		//$sqlstring = "select * from pipelines where pipeline_id = $newid";
+		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//echo "AFTER COPY (new pipeline)<br>\n";
+		//PrintVariable($row);
+		
+		echo "DEBUG - ignore this stuff<br>";
+		PrintVariable($history);
+		
+		$history = mysqli_real_escape_string($GLOBALS['linki'], trim($history));
+		$sqlstring = "insert into changelog (performing_userid, change_datetime, change_event, change_desc) values (" . $GLOBALS['userid'] . ", now(), 'pipelinecopy', '$history')";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- ChangeOwner ------------------------ */
 	/* -------------------------------------------- */
@@ -811,23 +832,23 @@
 	/* -------------------------------------------- */
 	/* ------- EnablePipelineTesting -------------- */
 	/* -------------------------------------------- */
-	function EnablePipelineTesting($id) {
-		if (!ValidID($id,'Pipeline ID - J')) { return; }
+	//function EnablePipelineTesting($id) {
+	//	if (!ValidID($id,'Pipeline ID - J')) { return; }
 
-		$sqlstring = "update pipelines set pipeline_testing = 1 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
+	//	$sqlstring = "update pipelines set pipeline_testing = 1 where pipeline_id = $id";
+	//	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//}
 
 
 	/* -------------------------------------------- */
 	/* ------- DisablePipelineTesting ------------- */
 	/* -------------------------------------------- */
-	function DisablePipelineTesting($id) {
-		if (!ValidID($id,'Pipeline ID - K')) { return; }
+	//function DisablePipelineTesting($id) {
+	//	if (!ValidID($id,'Pipeline ID - K')) { return; }
 		
-		$sqlstring = "update pipelines set pipeline_testing = 0 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
+	//	$sqlstring = "update pipelines set pipeline_testing = 0 where pipeline_id = $id";
+	//	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//}
 
 
 	/* -------------------------------------------- */
@@ -873,7 +894,7 @@
 			$completefiles = $row['pipeline_completefiles'];
 			$dependency = $row['pipeline_dependency'];
 			$groupid = $row['pipeline_groupid'];
-			$dynamicgroupid = $row['pipeline_dynamicgroupid'];
+			//$dynamicgroupid = $row['pipeline_dynamicgroupid'];
 			$level = $row['pipeline_level'];
 			$owner = $row['username'];
 			$ishidden = $row['pipeline_ishidden'];
@@ -893,12 +914,12 @@
 			
 			$formaction = "update";
 			$formtitle = "$title";
-			$submitbuttonlabel = "Update Pipeline Info";
+			$submitbuttonlabel = "Save Pipeline";
 		}
 		else {
 			$formaction = "add";
 			$formtitle = "Add new pipeline";
-			$submitbuttonlabel = "Add Pipeline Info";
+			$submitbuttonlabel = "Add Pipeline";
 			$remove = "0";
 			$level = 1;
 			//$directory = "/home/" . $GLOBALS['username'];
@@ -992,11 +1013,12 @@
 			}
 		?>
 		<br>
-		<fieldset style="border: 3px solid #999; border-radius:5px">
-			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> version <?=$version?> </legend>
-		<table>
+		<table width="100%">
 			<tr>
-				<td style="padding-right:40px" valign="top">
+				<td style="padding-right:40px" valign="top" width="50%">
+					<fieldset style="border: 3px solid #999; border-radius:5px">
+					<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> v<?=$version?> Settings</legend>
+				
 					<table class="entrytable" style="border:0px">
 						<form method="post" action="pipelines.php">
 						<input type="hidden" name="action" value="<?=$formaction?>">
@@ -1012,10 +1034,6 @@
 							<td valign="top"><input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Notes<br><span class="tiny">Any information about the analysis</span></td>
-							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
-						</tr>
-						<tr>
 							<td class="label" valign="top">Stats level</td>
 							<td valign="top">
 								<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>First <span class="tiny">subject level</span><br>
@@ -1023,7 +1041,13 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Group</td>
+							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and will contain all of the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdir']?>]</span>"></td>
+							<td valign="top">
+								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Pipeline group <img src="images/help.gif" title="<b>Pipeline group</b><br><br>Pipelines can be grouped together using a group name. This is different than a group of subjects or studies"></td>
 							<td valign="top">
 								<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
 							</td>
@@ -1039,17 +1063,8 @@
 							</datalist>
 						</tr>
 						<tr>
-							<td colspan="2">
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this analysis) will be created inside this directory and will contain the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdir']?>]</span>"></td>
-							<td valign="top">
-								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
-							</td>
-						</tr>
-						<tr>
-							<td colspan="2" class="label" style="padding-left: 30px; border-top: 2px solid #555">Cluster &nbsp; <span class="tiny">Any operation performed on the data will use these settings</span></td>
+							<td class="label" valign="top">Notes</td>
+							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Data transfer method <img src="images/help.gif" title="<b>Data transfer method</b><br><br><b>NFS</b> copies via the the <tt>cp</tt> command assumes the filesystem you want to write to is mounted on this server<br><br>Copying via <b>scp</b> uses secure copy and assumes you have a passwordless login setup between this server and the one you are copying to"></td>
@@ -1087,8 +1102,8 @@
 							<td valign="top"><input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7"> <span class="tiny">time in hours</span></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top" style="border-bottom: 2px solid #555">Queue name <img src="images/help.gif" title="<b>Queue name</b><br><br>The sun grid (SGE) queue to submit to"></td>
-							<td valign="top" style="border-bottom: 2px solid #555"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required><br><span class="tiny">Comma separated list</span></td>
+							<td class="label" valign="top">Queue name <img src="images/help.gif" title="<b>Queue name</b><br><br>The sun grid (SGE) queue to submit to"></td>
+							<td valign="top"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required> <span class="tiny">Comma separated list</span></td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Use temporary directory <img src="images/help.gif" title="<b>Use tmp directory</b><br><br>This option will copy all data into the temporary directory first, process it there, and copy it back to its final location"></td>
@@ -1096,191 +1111,10 @@
 							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful"></td>
-							<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
-							<span class="tiny">Comma seperated list of files (relative paths)</span></td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Results script <img src="images/help.gif" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></td>
-							<td valign="top">
-								<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
-							</td>
-						</tr>
-						<tr class="level1">
-							<td class="label" valign="top">Pipeline dependency<br>
-							</td>
-							<td valign="top">
-								<table class="entrytable">
-									<tr>
-										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">(it is a child pipeline of...)</span></td>
-										<td valign="top">
-											<select name="dependency[]" <?=$disabled?> multiple="multiple" size="7">
-												<option value="">(No dependency)</option>
-												<?
-													$sqlstring = "select * from pipelines order by pipeline_name";
-													$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-													while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-														$d_name = $row['pipeline_name'];
-														$d_id = $row['pipeline_id'];
-														$d_ver = $row['pipeline_version'];
-														
-														if (($d_name != "") && ($d_id != "")) {
-															/* get the number of analyses in the pipeline */
-															$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
-															$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-															$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-															$nummembers = $rowA['count'];
-															
-															if (in_array($d_id, explode(",",$dependency))) { $selected = "selected"; }
-															//if ($d_id == $dependency) { $selected = "selected"; }
-															else { $selected = ""; }
-															if ($id != $d_id) {
-																?>
-																<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?>  [<?=$nummembers?>]</option>
-																<?
-															}
-														}
-													}
-												?>
-											</select><br>
-											<span class="tiny">ctrl+click to select multiple</span>
-										</td>
-									</tr>
-									<tr>
-										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
-										<td valign="top">
-											<input type="radio" name="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
-											<input type="radio" name="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
-										</td>
-									</tr>
-									<tr>
-										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
-										<td valign="top">
-											<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>> root directory <img src="images/help.gif" title="copies all files into the analysis root directory <code>{analysisrootdir}/*</code>"><br>
-											<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>> sub-directory <img src="images/help.gif" title="copies dependency into a subdirectory of the analysis <code>{analysisrootdir}/<i>DependencyName</i>/*</code>">
-										</td>
-									</tr>
-									<tr>
-										<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Linking type</td>
-										<td valign="top">
-											<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
-											<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
-											<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
-										</td>
-									</tr>
-								</table>
-								Dependency tree
-								<?
-									if ($dependency != "") {
-										$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$parentid = $row['pipeline_id'];
-											$parents[$parentid]['name'] = $row['pipeline_name'];
-											$parents[$parentid]['desc'] = $row['pipeline_desc'];
-											$parents[$parentid]['notes'] = $row['pipeline_notes'];
-										}
-									}
-									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id')";
-									//PrintSQL($sqlstring);
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$childid = $row['pipeline_id'];
-										$children[$childid]['name'] = $row['pipeline_name'];
-										$children[$childid]['desc'] = $row['pipeline_desc'];
-										$children[$childid]['notes'] = $row['pipeline_notes'];
-									}
-								?>
-								<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
-									<tr>
-										<td align="center">
-											<table style="font-size:10pt">
-												<tr>
-												<?
-													if (count($parents) > 0) {
-														foreach ($parents as $parentid => $info) {
-															?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
-														}
-													}
-													else {
-														?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
-													}
-												?>
-												</tr>
-											</table>
-										</td>
-									</tr>
-									<tr>
-										<td align='center' style="border-top: 2px solid #526FAA; border-bottom: 2px solid #526FAA; font-weight: bold; background-color:#eee" title="This pipeline"><?=$title?></td>
-									</tr>
-									<tr>
-										<td align="center">
-											<table style="font-size:10pt">
-												<tr>
-												<?
-													if (count($children) > 0) {
-														foreach ($children as $child => $info) {
-															?>
-															<tr>
-																<td align="left" style="padding: 2px 10px">
-																&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
-																</td>
-															</tr>
-															<?
-														}
-													}
-													else {
-														?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
-													}
-												?>
-												</tr>
-											</table>
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<tr class="level1">
-							<td class="label" valign="top">Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
-							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
-							</td>
-							<td valign="top">
-								<select name="groupid[]" <?=$disabled?> multiple="multiple" size="7">
-									<option value="">(No group)</option>
-									<?
-										$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$g_name = $row['group_name'];
-											$g_id = $row['group_id'];
-											
-											/* get the number of members of the group */
-											$sqlstringA = "select count(*) 'count' from group_data where group_id = $g_id";
-											$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-											$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-											$nummembers = $rowA['count'];
-											
-											if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
-											else { $selected = ""; }
-											?>
-											<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
-											<?
-										}
-									?>
-								</select><br>
-								<span class="tiny">ctrl+click to select multiple</span>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Group by Subject<br>
-							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
-							</td>
-							<td valign="top" title="<b>Group by Subject</b><br><br>Useful for longitudinal studies"><input type="checkbox" name="groupbysubject" value="1" <? if ($groupbysubject) { echo "checked"; } ?>></td>
-						</tr>
-						<tr>
 							<td class="label" valign="top">Hidden?</td>
 							<td valign="top" title="<b>Hidden</b><br><br>Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up"><input type="checkbox" name="pipelineishidden" value="1" <? if ($ishidden) { echo "checked"; } ?>></td>
 						</tr>
+						
 						<tr>
 							<td colspan="2" align="center">
 								<br>
@@ -1290,6 +1124,7 @@
 						</form>
 					</table>
 				</td>
+				
 				<? if ($formaction == "update") { ?>
 					<script>
 						function GetNewPipelineName(){
@@ -1306,200 +1141,291 @@
 					<input type="hidden" name="newname" id="newname" value="<?=$id?>">
 					</form>
 				<td valign="top">
-					<b style="color: #555; font-size:11pt;">Analyses</b><br>
-					<p style="margin-left: 25px">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><img src="images/preview.gif"> <b>View analyses</b></a><br>
-						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis"><img src="images/preview.gif"> View ignored studies</a><br>
-						<!--<a href="analysis.php?action=viewlists&id=<?=$id?>"><img src="images/preview.gif"> View analysis lists</a>-->
-						<a href="pipelines.php?action=viewpipeline&id=<?=$id?>"><img src="images/printer16.png" border="0"> View previous versions</a><br>
-					</p>
+					<fieldset style="border: 3px solid #999; border-radius:5px">
+					<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> Operations </legend>
 					
-					<details>
-						<summary><b style="color: #555; font-size:11pt;">Pipeline Operations</b></summary>
-						<p style="margin-left: 25px">
-							<a href="pipelines.php?action=resetanalyses&id=<?=$id?>" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><img src="images/reset16.png"> Reprocess ignored studies</a>
-							<br>
-							<img src="images/copy16.gif"> <a href="#" onClick="GetNewPipelineName();">Copy to new pipeline...</a>
-							<? if (!$readonly) { ?>
-							<form style="margin-left: 25px">
-							<input type="hidden" name="action" value="changeowner">
-							<input type="hidden" name="id" value="<?=$id?>">
-							Change pipeline owner to: <select name="newuserid">
-								<?
-									$sqlstring="select * from users where user_enabled = 1 order by username";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$userid = $row['user_id'];
-										$username = $row['username'];
-										$userfullname = $row['user_fullname'];
-										if ($userfullname != "") {
-											$userfullname = "[$userfullname]";
-										}
-										?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
-									}
-								?>
-							</select>
-							<input type="submit" value="Change">
-							</form>
-						<p style="margin-left: 25px">
-							<a href="pipelines.php?action=detach$id=<?=$id?>" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><img src="images/disconnect16.png"> Detach entire pipeline</a><br>
-							<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
-							<? } ?>
-						</p>
-					</details>
-					<br><br>
-					<?
-						/* gather statistics about the analyses */
-						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$totaltime = $row['cluster_time'];
-						$totaltime = number_format(($totaltime/60/60),2);
-						
-						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$totaltimesuccess = $row['cluster_timesuccess'];
-						$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
-						
-						$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numcomplete = $row['numcomplete'];
-
-						$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numcompletesuccess = $row['numcompletesuccess'];
-						
-						$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numprocessing = $row['numprocessing'];
-						
-						$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numpending = $row['numpending'];
-						
-						/* get mean processing times */
-						$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							//$analysis_id = $row['analysis_id'];
-							$analysistimes[] = $row['analysis_time'];
-							$clustertimes[] = $row['cluster_time'];
-						}
-						if (count($clustertimes) == 0) {
-							$clustertimes[] = 0;
-						}
-						if (count($analysistimes) == 0) {
-							$analysistimes[] = 0;
-						}
-						
-						?>
-					<table class="twocoltable">
+					
+					<table class="entrytable" style="border:0px">
 						<tr>
-							<th colspan="2">Analysis Statistics</th>
+							<td class="label" valign="top">View</td>
+							<td valign="top" style="padding-bottom: 10pt">
+								<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><b>Analyses</b></a><br>
+								<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis">Ignored studies<br>
+								<a href="pipelines.php?action=viewversion&id=<?=$id?>">Pipeline versions<br>
+								<br>
+							</td>
 						</tr>
 						<tr>
-							<td>Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
-							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
-						</tr>
-						<tr>
-							<td>Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
-							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
-						</tr>
-						<tr>
-							<td>Currently processing</td>
-							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
-						</tr>
-						<tr>
-							<td>Pending<br><span class="tiny">analyses yet to be submitted</span></td>
-							<td><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
-						</tr>
-						</tr>
-							<td>Setup Time</td>
-							<td><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
-							<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
-						</tr>
-						<tr>
-							<td>Cluster Time</td>
-							<td><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
-							<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
-						</tr>
-						<tr>
-							<td colspan="2">
-								<!-- display performance by hostname -->
-								<details>
-									<summary style="color: #3B5998"> Computing Performance </summary>
-									<table class="smallgraydisplaytable">
-										<tr>
-											<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
-										</tr>
-										<tr>
-											<td><b>Hostname</b></td>
-											<td><b>Avg CPU</b></td>
-											<td><b>Count</b></td>
-										</tr>
+							<td class="label" valign="top">Operations</td>
+							<td valign="top" style="padding-bottom: 10pt">
+								<a href="pipelines.php?action=resetanalyses&id=<?=$id?>" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><img src="images/reset16.png"> Reprocess ignored studies</a>
+								<br>
+								<img src="images/copy16.gif"> <a href="#" onClick="GetNewPipelineName();">Copy to new pipeline...</a>
+								<? if (!$readonly) { ?>
+								<br><br>
+								<form style="margin-left: 23px">
+								<input type="hidden" name="action" value="changeowner">
+								<input type="hidden" name="id" value="<?=$id?>">
+								Change pipeline owner to: <select name="newuserid">
+									<option value="">(Select new owner)</option>
 									<?
-										$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+										$sqlstring="select * from users where user_enabled = 1 order by username";
 										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-											$count = $row['count'];
-											$hostname = $row['analysis_hostname'];
-											?>
-											<tr>
-												<td><?=$hostname?></td>
-												<td><?=$cpuhrs?> hrs</td>
-												<td><?=$count?></td>
-											</tr>
-											<?
+											$userid = $row['user_id'];
+											$username = $row['username'];
+											$userfullname = $row['user_fullname'];
+											if ($username != "") {
+												if ($userfullname != "") {
+													$userfullname = "[$userfullname]";
+												}
+												?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+											}
 										}
 									?>
-									</table>
-								</details>
+								</select>
+								<input type="submit" value="Change">
+								</form>
+								<a href="pipelines.php?action=detach$id=<?=$id?>" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><img src="images/disconnect16.png"> Detach entire pipeline</a><br>
+								<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
+								<? } ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Analysis statistics</td>
+							<td valign="top" style="padding-bottom: 10pt">
+							<?
+								/* gather statistics about the analyses */
+								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$totaltime = $row['cluster_time'];
+								$totaltime = number_format(($totaltime/60/60),2);
+								
+								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$totaltimesuccess = $row['cluster_timesuccess'];
+								$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
+								
+								$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numcomplete = $row['numcomplete'];
+
+								$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numcompletesuccess = $row['numcompletesuccess'];
+								
+								$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numprocessing = $row['numprocessing'];
+								
+								$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numpending = $row['numpending'];
+								
+								/* get mean processing times */
+								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
+								//PrintSQL($sqlstring);
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									//$analysis_id = $row['analysis_id'];
+									$analysistimes[] = $row['analysis_time'];
+									$clustertimes[] = $row['cluster_time'];
+								}
+								if (count($clustertimes) == 0) {
+									$clustertimes[] = 0;
+								}
+								if (count($analysistimes) == 0) {
+									$analysistimes[] = 0;
+								}
+								
+								?>
+							<table>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
+								</tr>
+								</tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
+									<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
+									<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
+									<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
+									<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<!-- display performance by hostname -->
+										<details>
+											<summary style="color: #3B5998"> Computing Performance </summary>
+											<table class="smallgraydisplaytable">
+												<tr>
+													<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+												</tr>
+												<tr>
+													<td><b>Hostname</b></td>
+													<td><b>Avg CPU</b></td>
+													<td><b>Count</b></td>
+												</tr>
+											<?
+												$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+												$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+													$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+													$count = $row['count'];
+													$hostname = $row['analysis_hostname'];
+													?>
+													<tr>
+														<td><?=$hostname?></td>
+														<td><?=$cpuhrs?> hrs</td>
+														<td><?=$count?></td>
+													</tr>
+													<?
+												}
+											?>
+											</table>
+										</details>
+									</td>
+								</tr>
+							</table>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Dependency</td>
+							<td valign="top" style="padding-bottom: 10pt">
+							<?
+								if ($dependency != "") {
+									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$parentid = $row['pipeline_id'];
+										$parents[$parentid]['name'] = $row['pipeline_name'];
+										$parents[$parentid]['desc'] = $row['pipeline_desc'];
+										$parents[$parentid]['notes'] = $row['pipeline_notes'];
+									}
+								}
+								$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id')";
+								//PrintSQL($sqlstring);
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$childid = $row['pipeline_id'];
+									$children[$childid]['name'] = $row['pipeline_name'];
+									$children[$childid]['desc'] = $row['pipeline_desc'];
+									$children[$childid]['notes'] = $row['pipeline_notes'];
+								}
+							?>
+							<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
+								<tr>
+									<td align="center">
+										<table style="font-size:10pt">
+											<tr>
+											<?
+												if (count($parents) > 0) {
+													foreach ($parents as $parentid => $info) {
+														?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
+													}
+												}
+												else {
+													?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
+												}
+											?>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr>
+									<td align='center' style="font-weight: bold; font-size: 14pt; background-color:#eee" title="This pipeline"><?=$title?></td>
+								</tr>
+								<tr>
+									<td align="center">
+										<table style="font-size:10pt">
+											<tr>
+											<?
+												if (count($children) > 0) {
+													foreach ($children as $child => $info) {
+														?>
+														<tr>
+															<td align="left" style="padding: 2px 10px">
+															&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+															</td>
+														</tr>
+														<?
+													}
+												}
+												else {
+													?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
+												}
+											?>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Data location</td>
+							<td valign="top" style="padding-bottom: 10pt">
+								<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
+								<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top">Help</td>
+							<td valign="top" style="padding-bottom: 10pt">
+							<details style="font-size:10pt">
+								<summary style="color: #3B5998"> Pipeline not working? </summary>
+								There are several things that can cause the pipeline not to (or appear not to) process your data
+								<ol>
+									<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
+										<ul>
+											<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
+											<li>Check the "Image type". For MR, this can also vary over time.
+											<li>Make sure the data items are enabled and at least one item is not optional
+											<li>Make sure at least one data item is at the study level
+											<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
+											<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
+										</ul>
+									<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
+									<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
+									<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
+									<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
+									<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
+								</ol>
+								The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
+							</details>
 							</td>
 						</tr>
 					</table>
-					<br>
-					<br>
-					<span style="color:#555; font-size:11pt; font-weight: bold">Where is my data?</span><br><br>
-					<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
-					<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
-					</span>
-					<br><br><br>
-					<span style="color:#555; font-size:11pt; font-weight: bold">Pipeline not working?</span><br>
-					<details style="font-size:10pt">
-						<summary style="color: #3B5998"> Help! </summary>
-						There are several things that can cause the pipeline not to (or appear not to) process your data
-						<ol>
-							<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
-								<ul>
-									<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
-									<li>Check the "Image type". For MR, this can also vary over time.
-									<li>Make sure the data items are enabled and at least one item is not optional
-									<li>Make sure at least one data item is at the study level
-									<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
-									<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
-								</ul>
-							<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
-							<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
-							<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
-							<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
-							<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
-						</ol>
-						The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
-					</details>
+
+					<!-- <a href="pipelines.php?action=viewversion&id=<?=$id?>"><img src="images/printer16.png" border="0"> View previous versions</a><br> -->
+					</fieldset>
 				</td>
 					<?
 				}
 			?>
 			</tr>
 		</table>
-		</fieldset>
 
 		<?
 		if ($type == "edit") {
@@ -1515,16 +1441,136 @@
 
 		
 		<fieldset style="border: 3px solid #999; border-radius:5px">
-			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> Pipeline specification </legend>
-			
+			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> Pipeline Options </legend>
 		<form method="post" action="pipelines.php" name="stepsform" id="stepsform">
-		<input type="hidden" name="action" value="updatepipelinedef">
+		<input type="hidden" name="action" value="updatepipelineoptions">
 		<input type="hidden" name="id" value="<?=$id?>">
-		<? if (($level == 1) || (($level == 2) && ($dependency == ''))) { ?>
+		<?
+			if (($level == 1) || (($level == 2) && ($dependency == ''))) {
+		?>
 		<br>
 		<style>
 			td.dataheader { padding: 5px; border-bottom: 2px solid #999; background-color: #eee; text-align: center }
 		</style>
+		
+		<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;" class="level1">Options</div>
+			<table class="entrytable">
+				<tr>
+					<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful"></td>
+					<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
+					<span class="tiny">Comma seperated list of files (relative paths)</span></td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Results script <img src="images/help.gif" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></td>
+					<td valign="top">
+						<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top">Pipeline dependency<br>
+					</td>
+					<td valign="top">
+						<table class="entrytable">
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">(it is a child pipeline of...)</span></td>
+								<td valign="top">
+									<select name="dependency[]" <?=$disabled?> multiple="multiple" size="7">
+										<option value="">(No dependency)</option>
+										<?
+											$sqlstring = "select * from pipelines order by pipeline_name";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$d_name = $row['pipeline_name'];
+												$d_id = $row['pipeline_id'];
+												$d_ver = $row['pipeline_version'];
+												
+												if (($d_name != "") && ($d_id != "")) {
+													/* get the number of analyses in the pipeline */
+													$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
+													$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+													$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+													$nummembers = $rowA['count'];
+													
+													if (in_array($d_id, explode(",",$dependency))) { $selected = "selected"; }
+													//if ($d_id == $dependency) { $selected = "selected"; }
+													else { $selected = ""; }
+													if ($id != $d_id) {
+														?>
+														<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?>  [<?=$nummembers?>]</option>
+														<?
+													}
+												}
+											}
+										?>
+									</select><br>
+									<span class="tiny">ctrl+click to select multiple</span>
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
+								<td valign="top">
+									<input type="radio" name="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
+									<input type="radio" name="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
+								<td valign="top">
+									<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>> root directory <img src="images/help.gif" title="copies all files into the analysis root directory <code>{analysisrootdir}/*</code>"><br>
+									<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>> sub-directory <img src="images/help.gif" title="copies dependency into a subdirectory of the analysis <code>{analysisrootdir}/<i>DependencyName</i>/*</code>">
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Linking type</td>
+								<td valign="top">
+									<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
+									<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
+									<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top">Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
+					<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
+					</td>
+					<td valign="top">
+						<select name="groupid[]" <?=$disabled?> multiple="multiple" size="7">
+							<option value="">(No group)</option>
+							<?
+								$sqlstring = "select * from groups where group_type = 'study' order by group_name";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$g_name = $row['group_name'];
+									$g_id = $row['group_id'];
+									
+									/* get the number of members of the group */
+									$sqlstringA = "select count(*) 'count' from group_data where group_id = $g_id";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+									$nummembers = $rowA['count'];
+									
+									if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
+									else { $selected = ""; }
+									?>
+									<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
+									<?
+								}
+							?>
+						</select><br>
+						<span class="tiny">ctrl+click to select multiple</span>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Group by Subject <img src="images/help.gif" title="<b>Group by Subject</b><br><br>Useful for longitudinal analyses. <u>Second level pipelines only</u>"><br>
+					<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
+					</td>
+					<td valign="top" title="<b>Group by Subject</b><br><br>Useful for longitudinal studies"><input type="checkbox" name="groupbysubject" value="1" <? if ($groupbysubject) { echo "checked"; } ?>></td>
+				</tr>
+			</table>
+
+		<br>
 		<div style="text-align:left; font-size:12pt; font-weight: bold; color:#214282;" class="level1">Data</div>
 		<br>
 		<table class="level1" cellspacing="0" cellpadding="0">
@@ -2013,7 +2059,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<tr>
 				<td colspan="6" align="center">
 					<br><br>
-					<input type="submit" <?=$disabled?> value="Update Pipeline Definition Only">
+					<input type="submit" <?=$disabled?> value="Save Pipeline Options">
 				</td>
 			</tr>
 			</form>
@@ -2156,9 +2202,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 	
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayPipeline -------------------- */
+	/* ------- DisplayVersion --------------------- */
 	/* -------------------------------------------- */
-	function DisplayPipeline($id, $version) {
+	function DisplayVersion($id, $version) {
 		/* check the parameters */
 		if (!ValidID($id,'Pipeline ID - N')) { return; }
 	
@@ -2177,178 +2223,203 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 		?>
 		<form method="post" action="pipelines.php" name="versionform">
-		<input type="hidden" name="action" value="viewpipeline">
+		<input type="hidden" name="action" value="viewversion">
 		<input type="hidden" name="id" value="<?=$id?>">
-		View different version:
+		<b>View previous version</b>
 		<select name="version" onchange='versionform.submit()'>
 			<option value="">(select version)</option>
 		<?
-		$sqlstring = "select distinct(pipeline_version) from pipeline_steps where pipeline_id = $id order by pipeline_version desc";
+		$sqlstring = "select * from pipeline_version where pipeline_id = $id order by version desc";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$versionnumber = $row['pipeline_version'];
+			$versionnumber = $row['version'];
+			$versiondatetime = date("M n, Y H:i:s", strtotime($row['version_datetime']));
+			$versionnotes = $row['version_notes'];
 			?>
-			<option value="<?=$versionnumber?>"><?=$versionnumber?>
+			<option value="<?=$versionnumber?>"><b><?=$versionnumber?></b> - <?=$versiondatetime?>
 			<?
 		}
 		?>
 		</select>
 		</form>
-		<?
-	?>
-
-		<div align="center">
-
-		<br><br>
-		<table class="codetable">
+		
+		<table class="entrytable">
 			<tr>
-				<td class="title" colspan="3"><?=$title?> version <?=$version?></td>
+				<td class="label">Pipeline</td>
+				<td>
+					<?=$title?> version <?=$version?>
+					<br>
+					<?=$desc?>
+				</td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><?=$desc?></td>
-			</tr>
-			<tr>
-				<td colspan="3">&nbsp;</td>
-			</tr>
-			<tbody>
-				<tr>
-					<td class="sectionhead">
-						Data
-						<table>
+				<td class="label">Options</td>
+				<td>
+					<?
+						$sqlstring = "select a.*, b.group_name, c.pipeline_name from pipeline_options a left join groups b on a.pipeline_groupid = b.group_id left join pipelines c on a.pipeline_dependency = c.pipeline_id where a.pipeline_id = $id and a.pipeline_version = $version";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$dependency = $row['pipeline_dependency'];
+						$dependencylevel = $row['pipeline_dependencylevel'];
+						$dependencydir = $row['pipeline_dependencydir'];
+						$deplinktype = $row['pipeline_deplinktype'];
+						$groupid = $row['pipeline_groupid'];
+						$grouptype = $row['pipeline_grouptype'];
+						$groupbysubject = $row['pipeline_groupbysubject'];
+						$dynamicgroupid = $row['pipeline_dynamicgroupid'];
+						$completefiles = $row['pipeline_completefiles'];
+						$resultsscript = $row['pipeline_resultsscript'];
+						$groupname = $row['group_name'];
+						$parentname = $row['pipeline_name'];
+						?>
+						<table class="twocoltable">
 							<tr>
-								<td></td>
-								<td class="colhead">Protocol (full)</td>
-								<td class="colhead">Modality</td>
-								<td class="colhead">Data format</td>
-								<td class="colhead">Location</td>
-								<td class="colhead">Use series?</td>
-								<td class="colhead">Preserve series?</td>
-								<td class="colhead">Beh format</td>
-								<td class="colhead">Beh dir</td>
+								<td>Dependency<br><span class="tiny">parent pipeline</span></td>
+								<td><?=$parentname?></td>
 							</tr>
-							<?
-							$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
-							//PrintSQL($sqlstring);
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$pipelinedatadef_id = $row['pipelinedatadef_id'];
-								$pdd_order = $row['pdd_order'];
-								$pdd_protocol = $row['pdd_protocol'];
-								$pdd_modality = $row['pdd_modality'];
-								$pdd_dataformat = $row['pdd_dataformat'];
-								$pdd_imagetype = $row['pdd_imagetype'];
-								$pdd_gzip = $row['pdd_gzip'];
-								$pdd_location = $row['pdd_location'];
-								$pdd_useseries = $row['pdd_useseries'];
-								$pdd_preserveseries = $row['pdd_preserveseries'];
-								$pdd_usephasedir = $row['pdd_usephasedir'];
-								$pdd_behformat = $row['pdd_behformat'];
-								$pdd_behdir = $row['pdd_behdir'];
-								$pdd_enabled = $row['pdd_enabled'];
-								?>
-								<tr style="color:<? if (!$pdd_enabled) { echo "#BBBBBB"; } else { echo "#000000"; } ?>">
-									<td class="order"><?=$pdd_order?></td>
-									<td class="datadef"><?=$pdd_protocol?></td>
-									<td class="datadef"><?=$pdd_modality?></td>
-									<td class="datadef"><?=$pdd_dataformat?></td>
-									<td class="datadef"><?=$pdd_imagetype?></td>
-									<td class="datadef"><?=$pdd_gzip?></td>
-									<td class="datadef"><?=$pdd_location?></td>
-									<td class="datadef"><?=$pdd_useseries?></td>
-									<td class="datadef"><?=$pdd_preserveseries?></td>
-									<td class="datadef"><?=$pdd_usephasedir?></td>
-									<td class="datadef"><?=$pdd_behformat?></td>
-									<td class="datadef"><?=$pdd_behdir?></td>
-								</tr>
-								<?
-							}
-							?>
-						</table>
-					</td>
-				</tr>
-				
-				<tr>
-					<td class="sectionhead">
-						<br>
-						Steps
-						<table>
-							<?
-								/* display all other rows, sorted by order */
-								$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version order by ps_order + 0";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$pipelinestep_id = $row['pipelinestep_id'];
-									$ps_desc = $row['ps_description'];
-									$ps_order = $row['ps_order'];
-									$ps_command = $row['ps_command'];
-									$ps_workingdir = $row['ps_workingdir'];
-									//$ps_parameters = $row['ps_parameters'];
-									$ps_enabled = $row['ps_enabled'];
-									$ps_logged = $row['ps_logged'];
-									?>
-									<tr style="color:<? if (!$ps_enabled) { echo "#BBBBBB"; } else { echo "#000000"; } ?>; font-family: courier new; font-size:10pt;">
-										<td>
-										<?=$ps_order?> <?=$ps_command?> <span style="color:green"># <?=$ps_desc?></span>
-										</td>
-									</tr>
-									<?
-								}
-							?>
-						</table>
-					</td>
-				</tr>
-
-				<tr>
-					<td class="sectionhead">
-						<br>
-						SGE job file
-						<table>
 							<tr>
-								<td style="text-align: left; background-color: white; border: 1px solid #666666; padding:8px">
-								<tt>
-								#!/bin/sh<br>
-								#$ -N <?=$title?><br>
-								#$ -S /bin/sh<br>
-								#$ -j y<br>
-								#$ -o {$subjectpath}/pipeline<br>
-								#$ -u nidb<br>
-								
-								cd {subjectroot};<br>
-								<?
-								/* display all other rows, sorted by order */
-								$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version order by ps_order + 0";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$pipelinestep_id = $row['pipelinestep_id'];
-									$ps_desc = $row['ps_description'];
-									$ps_order = $row['ps_order'];
-									$ps_command = $row['ps_command'];
-									$ps_workingdir = $row['ps_workingdir'];
-									$ps_enabled = $row['ps_enabled'];
-									$ps_logged = $row['ps_logged'];
-									
-									if (!$ps_enabled) { echo "# "; }
-									echo "<br># $ps_desc<br>";
-									if (!$ps_enabled) { echo "# "; }
-									echo "cd $ps_workingdir; ";
-									if (!$ps_enabled) { echo "# "; }
-									echo "$ps_command; ";
-									if ($ps_logged) { echo " > $id-$ps_order.log"; }
-									echo "<br>";
-								}
-								?>
-								</tt>
-								</td>
+								<td>Dependency matching criteria</td>
+								<td><?=$dependencylevel?></td>
+							</tr>
+							<tr>
+								<td>Dependency Dir</td>
+								<td><?=$dependencydir?></td>
+							</tr>
+							<tr>
+								<td>Dependency Copy method</td>
+								<td><?=$deplinktype?></td>
+							</tr>
+							<tr>
+								<td>Group</td>
+								<td><?=$groupname?></td>
+							</tr>
+							<tr>
+								<td>Group type</td>
+								<td><?=$grouptype?></td>
+							</tr>
+							<tr>
+								<td>Group by subject</td>
+								<td><?=$groupbysubject?></td>
+							</tr>
+							<tr>
+								<td>Dependency Dir</td>
+								<td><?=$completefiles?></td>
+							</tr>
+							<tr>
+								<td>Results script</td>
+								<td><?=$resultsscript?></td>
 							</tr>
 						</table>
-					</td>
-				</tr>
-				
-			</tbody>
+						<?
+					?>
+				</td>
+			</tr>
+			<tr>
+				<td class="label">Data</td>
+				<td>
+					<table class="displaytable">
+						<thead>
+						<tr>
+							<th></th>
+							<th>Enabled</th>
+							<th>Optional</th>
+							<th>Protocol</th>
+							<th>Modality</th>
+							<th>Image type</th>
+							<th>Data format</th>
+							<th>Series criteria</th>
+							<th>Type</th>
+							<th>Level</th>
+							<th>Association type</th>
+							<th>Num BOLD reps</th>
+							<th>gzip</th>
+							<th>Directory</th>
+							<th>Use series?</th>
+							<th>Preserve series?</th>
+							<th>Use phase dir?</th>
+							<th>Beh format</th>
+							<th>Beh dir</th>
+						</tr>
+						</thead>
+						<?
+						$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
+						//PrintSQL($sqlstring);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$pipelinedatadef_id = $row['pipelinedatadef_id'];
+							$pdd_order = $row['pdd_order'];
+							$pdd_seriescriteria = $row['pdd_seriescriteria'];
+							$pdd_type = $row['pdd_type'];
+							$pdd_level = $row['pdd_level'];
+							$pdd_assoctype = $row['pdd_assoctype'];
+							$pdd_protocol = $row['pdd_protocol'];
+							$pdd_imagetype = $row['pdd_imagetype'];
+							$pdd_modality = $row['pdd_modality'];
+							$pdd_dataformat = $row['pdd_dataformat'];
+							$pdd_gzip = $row['pdd_gzip'];
+							$pdd_location = $row['pdd_location'];
+							$pdd_useseries = $row['pdd_useseries'];
+							$pdd_preserveseries = $row['pdd_preserveseries'];
+							$pdd_usephasedir = $row['pdd_usephasedir'];
+							$pdd_behformat = $row['pdd_behformat'];
+							$pdd_behdir = $row['pdd_behdir'];
+							$pdd_enabled = $row['pdd_enabled'];
+							$pdd_optional = $row['pdd_optional'];
+							$pdd_numboldreps = $row['pdd_numboldreps'];
+							?>
+							<tr style="color:<? if (!$pdd_enabled) { echo "#BBBBBB"; } else { echo "#000000"; } ?>">
+								<td><?=$pdd_order?></td>
+								<td><? if ($pdd_enabled) { echo "&#10003"; } ?></td>
+								<td><? if ($pdd_optional) { echo "&#10003"; } ?></td>
+								<td><b><?=$pdd_protocol?></b></td>
+								<td><?=$pdd_modality?></td>
+								<td><tt><?=$pdd_imagetype?></tt></td>
+								<td><?=$pdd_dataformat?></td>
+								<td><?=$pdd_seriescriteria?></td>
+								<td><?=$pdd_type?></td>
+								<td><?=$pdd_level?></td>
+								<td><?=$pdd_assoctype?></td>
+								<td><?=$pdd_numboldreps?></td>
+								<td><? if ($pdd_gzip) { echo "&#10003"; } ?></td>
+								<td><tt><?=$pdd_location?></tt></td>
+								<td><? if ($pdd_useseries) { echo "&#10003"; } ?></td>
+								<td><? if ($pdd_preserveseries) { echo "&#10003"; } ?></td>
+								<td><? if ($pdd_usephasedir) { echo "&#10003"; } ?></td>
+								<td><?=$pdd_behformat?></td>
+								<td><tt><?=$pdd_behdir?></tt></td>
+							</tr>
+							<?
+						}
+						?>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="label">Script</td>
+				<td style="border-radius: 4px; padding: 10px">
+					<style>
+						ol.code { background-color: #ccc; margin-right: 5px; font-family: courier new; font-size:10pt; white-space: pre; border: 1px solid black; }
+						li.code { counter-increment: custom; background-color: #fff; padding: 1px}
+					</style>
+					<ol class="code"><?
+						/* display all other rows, sorted by order */
+						$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version order by ps_order + 0";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$pipelinestep_id = $row['pipelinestep_id'];
+							$ps_desc = $row['ps_description'];
+							$ps_order = $row['ps_order'];
+							$ps_command = $row['ps_command'];
+							$ps_workingdir = $row['ps_workingdir'];
+							$ps_enabled = $row['ps_enabled'];
+							$ps_logged = $row['ps_logged'];
+							?><li class="code"><?=$ps_command?> <span style="color:green"># <?=$ps_desc?></span><?
+						}
+					?></ol>
+				</td>
+			</tr>
 		</table>
 		<br><br>
-		
-		</div>
 	<?
 	}
 
@@ -2440,6 +2511,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$userids[$GLOBALS['userid']] = $GLOBALS['username'];
 		$sqlstring = "select b.username, a.pipeline_admin 'userid' from pipelines a left join users b on a.pipeline_admin = b.user_id group by a.pipeline_admin order by b.username";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//PrintSQLTable($result,'','','',false);
+		//PrintVariable(PrintSQLTable($result,'','','', true));
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			if ($row['username'] != "")
 				$userids[$row['userid']] = $row['username'];
@@ -2772,9 +2845,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 		MarkTime("GetPipelineInfo() first call");
 
 		/* yes, this variable is supposed to be global...
-		   the reason being; there is a good chance the pipeline info will be needed many times,
+		   the reason being: there is a good chance the pipeline info will be needed many times,
 		   with the info being needed at different locations in the code. Rather than loading
-		   everything at once, this loads what is needed to display and keeps it for later
+		   everything at once, this loads what is needed to display and keeps it for later,
 		   kind of like caching ... */
 		global $info;
 		
@@ -2800,7 +2873,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$info[$id]['pipelinegroup'] = $row['pipeline_group'];
 			$info[$id]['dependency'] = $row['pipeline_dependency'];
 			$info[$id]['groupid'] = $row['pipeline_groupid'];
-			$info[$id]['dynamicgroupid'] = $row['pipeline_dynamicgroupid'];
+			//$info[$id]['dynamicgroupid'] = $row['pipeline_dynamicgroupid'];
 			$info[$id]['level'] = $row['pipeline_level'];
 			if ($row['pipeline_directory'] == "") {
 				$info[$id]['directory'] = $GLOBALS['cfg']['analysisdir'];

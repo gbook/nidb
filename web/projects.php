@@ -1256,21 +1256,8 @@
 		</div>
 		<br>
 		<script type="text/javascript">
-			//$(document).ready(function() {
-			//	$('#checkall').click(function() {
-			//		//alert('Something happened again');
-			//		var checked_status = this.checked;
-			//		$(".allcheck").find("input[type='checkbox']").each(function() {
-			//			this.checked = checked_status;
-			//		});
-			//	});
-			//});
-			
 			function CheckAll(checkbox) {
-				//alert('Hi there');
 				var checked_status = checkbox.checked;
-				/* document.getElementById("checkall") */
-				//alert(checked_status);
 				$(".allcheck").find("input[type='checkbox']").each(function() {
 					this.checked = checked_status;
 				});
@@ -1318,6 +1305,7 @@
 				$sex = $row['gender'];
 				$uid = $row['uid'];
 				$subjectid = $row['subject_id'];
+				$enrollmentid = $row['enrollment_id'];
 				$project_name = $row['project_name'];
 				$project_costcenter = $row['project_costcenter'];
 				$isactive = $row['isactive'];
@@ -1331,7 +1319,7 @@
 				}
 				
 				$altids = array();
-				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' order by isprimary desc";
+				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' and altuid <> '' order by isprimary desc";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$isprimary = $rowA['isprimary'];
@@ -1343,6 +1331,7 @@
 						$altids[] = $altid;
 					}
 				}
+				$altids = array_unique($altids);
 				$altuidlist = implode2(", ",$altids);
 				
 				if ($lastuid != $uid) {

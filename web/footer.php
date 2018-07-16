@@ -49,7 +49,7 @@
 			<a href="about.php" style="color: white; text-decoration:none"><img src="images/nidb_plain.png" style="height:15px; border: 4px white solid; border-radius:2px"> v<?=$GLOBALS['cfg']['version']?></a>
 		</td>
 		<td width="33%" align="center" style="font-size:8pt; color: white">
-			Generated: <? echo date("D M j, Y g:i a T"); ?><br>
+			<?=basename(__FILE__)?> generated: <? echo date("D M j, Y g:i a T"); ?><br>
 			Page load time: <?=$pagetotaltime?> sec &nbsp; &nbsp; System load <?=$percentLoad?>%
 		</td>
 		<td align="right" style="font-size:8pt; color: white">

@@ -32,7 +32,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes.php";
 	require "menu.php";
@@ -73,11 +72,12 @@
 		<li><a href="importlog.php">Import Logs</a>
 		<li><a href="admininstances.php">Instances</a>
 		<li><a href="adminaudits.php">Audits</a>
-		<li><a href="cleanup.php">Clean-up</a>
-		<li><a href="system.php">System info</a>
-		<li><a href="stats.php">Usage stats</a>
+		<li><a href="cleanup.php">Clean-up data</a>
+		<li><a href="stats.php">System usage</a>
+		<li><a href="status.php">System status</a>
 		<li><a href="longqc.php">Longitudinal QC</a>
 		<li><a href="adminemail.php">Mass email</a>
+		<li><a href="system.php">NiDB Settings...</a>
 		</ul>
 		<?
 	}

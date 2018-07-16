@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 01, 2018 at 06:34 PM
+-- Generation Time: Jul 16, 2018 at 07:37 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -207,7 +207,7 @@ CREATE TABLE `assessment_data` (
   `value_number` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL,
   `value_binary` blob DEFAULT NULL,
-  `value_date` date DEFAULT NULL,
+  `value_date` date DEFAULT current_timestamp(),
   `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -226,8 +226,8 @@ CREATE TABLE `assessment_formfields` (
   `formfield_datatype` enum('multichoice','singlechoice','string','text','number','date','header','binary','calculation') DEFAULT NULL COMMENT 'multichoice, singlechoice, string, text, number, date, header, binary',
   `formfield_calculation` varchar(255) DEFAULT NULL COMMENT '(q1+q4)/5',
   `formfield_calculationconversion` text DEFAULT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
-  `formfield_haslinebreak` tinyint(1) DEFAULT NULL,
-  `formfield_scored` tinyint(1) DEFAULT NULL,
+  `formfield_haslinebreak` tinyint(1) DEFAULT 0,
+  `formfield_scored` tinyint(1) DEFAULT 0,
   `formfield_order` varchar(45) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -1114,29 +1114,7 @@ CREATE TABLE `importlogs` (
   `family_created` tinyint(1) DEFAULT NULL,
   `enrollment_created` tinyint(1) DEFAULT NULL,
   `overwrote_existing` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `import_received`
---
-
-CREATE TABLE `import_received` (
-  `importreceived_id` bigint(20) NOT NULL,
-  `import_transactionid` int(11) DEFAULT NULL,
-  `import_uploadid` int(11) DEFAULT NULL,
-  `import_filename` varchar(255) DEFAULT NULL,
-  `import_filesize` bigint(20) DEFAULT NULL,
-  `import_datetime` datetime DEFAULT NULL,
-  `import_md5` varchar(40) DEFAULT NULL,
-  `import_success` tinyint(1) DEFAULT NULL,
-  `import_userid` int(11) DEFAULT NULL,
-  `import_instanceid` int(11) DEFAULT NULL,
-  `import_projectid` int(11) DEFAULT NULL,
-  `import_siteid` int(11) DEFAULT NULL,
-  `import_route` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;
 
 -- --------------------------------------------------------
 
@@ -1767,7 +1745,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest','usesizecriteria') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
   `pdd_level` enum('study','subject') NOT NULL,
-  `pdd_assoctype` enum('nearesttime','samestudytype','nearestintime') NOT NULL,
+  `pdd_assoctype` enum('nearesttime','samestudytype','nearestintime','') NOT NULL,
   `pdd_protocol` text NOT NULL,
   `pdd_imagetype` varchar(255) NOT NULL,
   `pdd_modality` varchar(255) NOT NULL,
@@ -1855,6 +1833,28 @@ CREATE TABLE `pipeline_history` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `pipeline_options`
+--
+
+CREATE TABLE `pipeline_options` (
+  `pipelineoptions_id` int(11) NOT NULL,
+  `pipeline_id` int(11) DEFAULT NULL,
+  `pipeline_version` int(11) NOT NULL DEFAULT 0,
+  `pipeline_dependency` text DEFAULT NULL,
+  `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
+  `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
+  `pipeline_deplinktype` varchar(25) DEFAULT NULL,
+  `pipeline_groupid` text DEFAULT NULL,
+  `pipeline_grouptype` varchar(25) DEFAULT NULL,
+  `pipeline_groupbysubject` tinyint(1) DEFAULT NULL,
+  `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
+  `pipeline_completefiles` text DEFAULT NULL,
+  `pipeline_resultsscript` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `pipeline_procs`
 --
 
@@ -1905,6 +1905,20 @@ CREATE TABLE `pipeline_steps` (
   `ps_enabled` tinyint(1) NOT NULL,
   `ps_logged` tinyint(1) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pipeline_version`
+--
+
+CREATE TABLE `pipeline_version` (
+  `pipelineversion_id` int(11) NOT NULL,
+  `pipeline_id` int(11) NOT NULL,
+  `version` int(11) NOT NULL,
+  `version_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `version_notes` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2422,7 +2436,7 @@ CREATE TABLE `subjects` (
   `name` varchar(255) NOT NULL,
   `birthdate` date DEFAULT NULL,
   `gender` char(1) DEFAULT NULL,
-  `ethnicity1` enum('hispanic','nothispanic') DEFAULT NULL,
+  `ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
   `ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
   `height` double DEFAULT NULL COMMENT 'stored in cm',
   `weight` double DEFAULT NULL COMMENT 'stored in kg',
@@ -3076,13 +3090,6 @@ ALTER TABLE `importlogs`
   ADD KEY `studydatetime_orig` (`studydatetime_orig`);
 
 --
--- Indexes for table `import_received`
---
-ALTER TABLE `import_received`
-  ADD PRIMARY KEY (`importreceived_id`),
-  ADD KEY `idx_import_received` (`import_transactionid`);
-
---
 -- Indexes for table `import_requests`
 --
 ALTER TABLE `import_requests`
@@ -3319,6 +3326,12 @@ ALTER TABLE `pipeline_history`
   ADD PRIMARY KEY (`analysis_id`);
 
 --
+-- Indexes for table `pipeline_options`
+--
+ALTER TABLE `pipeline_options`
+  ADD PRIMARY KEY (`pipelineoptions_id`);
+
+--
 -- Indexes for table `pipeline_procs`
 --
 ALTER TABLE `pipeline_procs`
@@ -3336,6 +3349,12 @@ ALTER TABLE `pipeline_status`
 ALTER TABLE `pipeline_steps`
   ADD PRIMARY KEY (`pipelinestep_id`),
   ADD KEY `fk_pipeline_steps_pipelines1` (`pipeline_id`);
+
+--
+-- Indexes for table `pipeline_version`
+--
+ALTER TABLE `pipeline_version`
+  ADD PRIMARY KEY (`pipelineversion_id`);
 
 --
 -- Indexes for table `ppi_series`
@@ -3904,12 +3923,6 @@ ALTER TABLE `importlogs`
   MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `import_received`
---
-ALTER TABLE `import_received`
-  MODIFY `importreceived_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `import_requests`
 --
 ALTER TABLE `import_requests`
@@ -4102,6 +4115,12 @@ ALTER TABLE `pipeline_history`
   MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `pipeline_options`
+--
+ALTER TABLE `pipeline_options`
+  MODIFY `pipelineoptions_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `pipeline_status`
 --
 ALTER TABLE `pipeline_status`
@@ -4112,6 +4131,12 @@ ALTER TABLE `pipeline_status`
 --
 ALTER TABLE `pipeline_steps`
   MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pipeline_version`
+--
+ALTER TABLE `pipeline_version`
+  MODIFY `pipelineversion_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ppi_series`

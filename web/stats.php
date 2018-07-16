@@ -334,6 +334,7 @@
 									</tr>
 								</table>
 								<br><br>
+								<!--
 								<table cellspacing="0" cellpadding="2" style="font-size:10pt">
 									<tr>
 										<td colspan="13" align="center" style="border-bottom: 1pt solid darkgray"><span class="header">Scan History (# sessions per month)</span></td>
@@ -355,35 +356,35 @@
 									</tr>
 								<?
 								
-									$sqlstring = "select year(min(study_datetime)) firstyear from studies where study_datetime > '0000-00-00 00:00:01' and study_modality = 'MR'";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
-									$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-									$firstyear = $row['firstyear'];
+									//$sqlstring = "select year(min(study_datetime)) firstyear from studies where study_datetime > '0000-00-00 00:00:01' and study_modality = 'MR'";
+									//$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+									//$firstyear = $row['firstyear'];
 									
-									$numyears = $currentyear - $firstyear;
+									//$numyears = $currentyear - $firstyear;
 									
-									for ($year=$firstyear;$year<=$currentyear;$year++) {
+									//for ($year=$firstyear;$year<=$currentyear;$year++) {
 										?>
 										<tr>
 											<td>
 												<a href="reports.php?action=yearstudy&year=<?=$year?>&modality=MR"><b><?=$year?></b></a>
 											</td>
 										<?
-										for ($month=1;$month<=12;$month++) {
-											$sqlstring = "select count(*) count from studies where year(study_datetime) = $year and month(study_datetime) = $month and study_modality = 'MR'";
-											#echo "$sqlstring<br>";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
-											$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-											$count = $row['count'];
-											echo "<td align=right>$count &nbsp;</td>";
-										}
+										//for ($month=1;$month<=12;$month++) {
+										//	$sqlstring = "select count(*) count from studies where year(study_datetime) = $year and month(study_datetime) = $month and study_modality = 'MR'";
+										//	#echo "$sqlstring<br>";
+										//	$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+										//	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										//	$count = $row['count'];
+										//	echo "<td align=right>$count &nbsp;</td>";
+										//}
 										?>
 										</tr>
 										<?
-									}
+									//}
 								?>
 								</table>
-								
+								-->
 							</td>
 						</tr>
 						<!--

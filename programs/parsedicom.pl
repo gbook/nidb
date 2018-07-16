@@ -692,8 +692,8 @@ sub InsertDICOM {
 	if ($Modality eq "") { $Modality = 'OT'; }
 	$StudyDate =~ s/:/\-/g;
 	$SeriesDate =~ s/:/\-/g;
-	my $StudyDateTime = $info->{'StudyDateTime'} = $StudyDate . " " . $StudyTime;
-	my $SeriesDateTime = $info->{'SeriesDateTime'} = $SeriesDate . " " . $SeriesTime;
+	my $StudyDateTime = $info->{'StudyDateTime'} = trim($StudyDate . " " . $StudyTime);
+	my $SeriesDateTime = $info->{'SeriesDateTime'} = trim($SeriesDate . " " . $SeriesTime);
 	my ($pixelX, $pixelY) = split(/\\/, $PixelSpacing);
 	my ($mat1, $mat2, $mat3, $mat4) = split(/ /, $AcquisitionMatrix);
 	if (($SeriesNumber eq '') || (!defined($SeriesNumber))) {
@@ -715,6 +715,20 @@ sub InsertDICOM {
 	if ($PatientAge =~ /W/) { $PatientAge =~ s/W//g; $PatientAge = $PatientAge/52.0; }
 	if ($PatientAge =~ /D/) { $PatientAge =~ s/D//g; $PatientAge = $PatientAge/365.25; }
 
+	# fix studydatetime
+	if (($StudyDateTime eq "") || ($StudyDateTime eq "XXXXXXXX") || ($StudyDateTime =~ /[a-z]/i) || ($StudyDateTime =~ /anonymous/i) || ($StudyDateTime eq '0-00-00') || ($StudyDateTime eq '00-00-00')) {
+		$report .= WriteLog("Series datetime invalid [$StudyDateTime] setting to [0000-01-01]") . "\n";
+		$StudyDateTime = "0000-01-01";
+	}
+	$report .= WriteLog("StudyDateTime: [$StudyDateTime]") . "\n";
+	
+	# fix seriesdate
+	if (($SeriesDateTime eq "") || ($SeriesDateTime eq "XXXXXXXX") || ($SeriesDateTime =~ /[a-z]/i) || ($SeriesDateTime =~ /anonymous/i) || ($SeriesDateTime eq '0-00-00') || ($SeriesDateTime eq '00-00-00')) {
+		$report .= WriteLog("Series datetime invalid [$SeriesDateTime] setting to [0000-01-01]") . "\n";
+		$SeriesDateTime = "0000-01-01";
+	}
+	$report .= WriteLog("SeriesDateTime: [$SeriesDateTime]") . "\n";
+	
 	# fix patient birthdate
 	if (($PatientBirthDate eq "") || ($PatientBirthDate eq "XXXXXXXX") || ($PatientBirthDate =~ /[a-z]/i) || ($PatientBirthDate =~ /anonymous/i) || ($PatientBirthDate eq '0-00-00') || ($PatientBirthDate eq '00-00-00')) {
 		$report .= WriteLog("Patient birthdate invalid [$PatientBirthDate] setting to [0000-01-01]") . "\n";

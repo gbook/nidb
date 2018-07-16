@@ -572,11 +572,72 @@
 	function DisplayGraph($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 		
-		$imgdata = CreateGraphFromAnalysisID($analysisid);
+		//$imgdata = CreateGraphFromAnalysisID($analysisid);
+		
+		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
+		$sqlstring = "select * from analysis where analysis_id = $analysisid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelineid = $row['pipeline_id'];
+		$pipelineversion = $row['pipeline_version'];
+		$pipelinedependency = $row['pipeline_dependency'];
+		$studyid = $row['study_id'];
+		$datalog = $row['analysis_datalog'];
+
+		$sqlstring = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		
+		$sqlstring = "select * from pipelines where pipeline_id = $pipelineid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelinename = $row['pipeline_name'];
+		$deps = $row['pipeline_dependency'];
+		$groupids = $row['pipeline_groupid'];
+		
+		if ($deps != '') {
+			$sqlstringA = "select * from pipelines where pipeline_id in ($deps)";
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$depnames[] = $rowA['pipeline_name'];
+			}
+		}
+		
+		if ($groupids != '') {
+			$sqlstringA = "select * from groups where group_id in ($groupids)";
+			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$groupnames[] = $rowA['group_name'];
+			}
+		}
 		
 		?>
+		<table border="1">
+			<tr>
+				<td></td>
+				<td>Data<?=$datalog?></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><?="$uid$studynum"?><br><?=$pipelinename?></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+		</table>
+		<?
+		
+		?>
+		<!--
 		Graph for [<?=$analysisid?>]
 		<img border=1 src='data:image/png;base64,<?=$imgdata?>'>
+		-->
 		<?
 	}
 

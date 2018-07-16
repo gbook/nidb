@@ -148,7 +148,8 @@
 						<li><a href="reports.php">Reports</a></li>
 						<li><a href="adminqc.php">QC</a></li>
 						<li><a href="importlog.php">Import Logs</a></li>
-						<li><a href="stats.php">Usage stats</a></li>
+						<li><a href="stats.php">System usage</a></li>
+						<li><a href="status.php">System status</a></li>
 						<li><a href="longqc.php">Longitudinal QC</a></li>
 						<? if ($GLOBALS['issiteadmin']) { ?>
 						<li><a href="cleanup.php">Clean-up</a></li>
