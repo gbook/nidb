@@ -695,6 +695,8 @@ sub InsertDICOM {
 	my $StudyDateTime = $info->{'StudyDateTime'} = trim($StudyDate . " " . $StudyTime);
 	my $SeriesDateTime = $info->{'SeriesDateTime'} = trim($SeriesDate . " " . $SeriesTime);
 	my ($pixelX, $pixelY) = split(/\\/, $PixelSpacing);
+	$pixelX += 0.0;
+	$pixelY += 0.0;
 	my ($mat1, $mat2, $mat3, $mat4) = split(/ /, $AcquisitionMatrix);
 	if (($SeriesNumber eq '') || (!defined($SeriesNumber))) {
 	#if ($SeriesNumber eq "") {
