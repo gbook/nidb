@@ -118,6 +118,23 @@
 				<td><pre><?=trim(`df -Th`)?></pre></td>
 			</tr>
 			<tr>
+				<td class="label">SQL table sizes</td>
+				<td><pre><?
+				/* get information about the modality table */
+				$largetables = array("analysis_results", "analysis_history", "analysis", "qc_results", "importlogs");
+				foreach ($largetables as $table) {
+					$sqlstringA = "show table status like '$table'";
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+					$numrows = $rowA['Rows'];
+					$tablesize = $rowA['Data_length'];
+					$indexsize = $rowA['Index_length'];
+					?><b><?=$table?></b>&#9;<?=number_format(($tablesize + $indexsize),0)?> bytes   <span class="tiny">(<?=number_format($numrows,0)?> rows)</span><br><?
+				}
+				?></pre>
+				</td>
+			</tr>
+			<tr>
 				<td class="label">Versions</td>
 				<td>
 					<b>OS</b> <tt><?=php_uname()?></tt><br>

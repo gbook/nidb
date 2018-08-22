@@ -62,6 +62,7 @@
     $searchvars['s_measurelist'] = GetVariable("s_measurelist");
     $searchvars['s_studyinstitution'] = GetVariable("s_studyinstitution");
     $searchvars['s_studyequipment'] = GetVariable("s_studyequipment");
+    $searchvars['s_studyid'] = GetVariable("s_studyid");
     $searchvars['s_studyaltscanid'] = GetVariable("s_studyaltscanid");
     $searchvars['s_studydatestart'] = GetVariable("s_studydatestart");
     $searchvars['s_studydateend'] = GetVariable("s_studydateend");
@@ -153,7 +154,7 @@
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your download request. Please go back to the search page and download less than [<?=$maxnumvars?>] data items.</div>
+		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -202,6 +203,7 @@
 			$searchvars['s_measurelist'] = $row['measurelist'];
 			$searchvars['s_studyinstitution'] = $row['studyinstitution'];
 			$searchvars['s_studyequipment'] = $row['studyequipment'];
+			$searchvars['s_studyid'] = $row['studyid'];
 			$searchvars['s_studyaltscanid'] = $row['studyaltscanid'];
 			$searchvars['s_studydatestart'] = $row['studydatestart'];
 			$searchvars['s_studydateend'] = $row['studydateend'];
@@ -462,6 +464,10 @@
 						</td>
 					</tr>
 					<tr>
+						<td class="fieldlabel" width="150px">Study ID(s)</td>
+						<td><input type="text" name="s_studyid" value="<?=$searchvars['s_studyid']?>" size="50" class="importantfield"></td>
+					</tr>
+					<tr>
 						<td class="fieldlabel" width="150px">Alternate Scan ID(s)</td>
 						<td><input type="text" name="s_studyaltscanid" value="<?=$searchvars['s_studyaltscanid']?>" size="50" class="importantfield"></td>
 					</tr>
@@ -676,7 +682,7 @@
 							<div id="tabs-min" class="tabs-min">
 								<div style="overflow:auto; width: 650px">
 									<ul>
-										<li><a href="#tabs-1">Download Data</a></li>
+										<li><a href="#tabs-1">Transfer Data</a></li>
 										<li><a href="#tabs-2">Assessments</a></li>
 										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
 										<li><a href="#tabs-4">Analysis</a></li>
@@ -978,6 +984,7 @@
 		$s_measurelist = ($s_measurelist == '') ? "null" : "'$s_measurelist'";
 		$s_studyinstitution = ($s_studyinstitution == '') ? "null" : "'$s_studyinstitution'";
 		$s_studyequipment = ($s_studyequipment == '') ? "null" : "'$s_studyequipment'";
+		$s_studyid = ($s_studyid == '') ? "null" : "'$s_studyid'";
 		$s_studyaltscanid = ($s_studyaltscanid == '') ? "null" : "'$s_studyaltscanid'";
 		$s_studydatestart = ($s_studydatestart == '') ? "null" : "'$s_studydatestart'";
 		$s_studydateend = ($s_studydateend == '') ? "null" : "'$s_studydateend'";
@@ -1014,7 +1021,7 @@
 		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
 		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
 
-		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectid, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $s_projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectid, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $s_projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
 		//PrintVariable($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
@@ -1065,6 +1072,7 @@
 				$s['Measure List'] = $row['measurelist'];
 				$s['Institution'] = $row['studyinstitution'];
 				$s['Equipment'] = $row['studyequipment'];
+				$s['Study ID'] = $row['studyid'];
 				$s['Study Alt Scan ID'] = $row['studyaltscanid'];
 				$s['Study Date Start'] = $row['studydatestart'];
 				$s['Study Date End'] = $row['studydateend'];
@@ -1248,7 +1256,8 @@
 		}
 		else {
 			?>
-			<span class="sublabel">Query returned <? echo number_format(mysqli_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
+			<span class="staticmessage">Query returned no results</span>
+			<br><br>
 			<details>
 				<summary style="font-size:9pt">View SQL query:</summary>
 				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>
@@ -1457,13 +1466,14 @@
 		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
 		if ($s['s_subjectuid'] != "") {
 			$uidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectuid']);
+			
 			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
 		}
 		if ($s['s_subjectaltuid'] != "") {
 			$altuidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
 			/* get list of UIDs from the list of alternate UIDs */
-			$sqlstringX = "select altuid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid in (" . MakeSQLList($s['s_subjectaltuid']) . ")";
+			$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 				$altuids[] = $rowX['altuid'];
@@ -1648,6 +1658,7 @@
 				$series_id = $row['mrseries_id'];
 				$series_datetime = $row['series_datetime'];
 				$series_desc = $row['series_desc'];
+				$series_protocol = $row['series_protocol'];
 				$series_altdesc = $row['series_altdesc'];
 				$sequence = $row['series_sequencename'];
 				$series_num = $row['series_num'];
@@ -1657,9 +1668,16 @@
 				$series_spacingz = $row['series_spacingz'];
 				$series_fieldstrength = $row['series_fieldstrength'];
 				$series_notes = $row['series_notes'];
+				$imagetype = $row['image_type'];
+				$imagecomments = $row['image_comments'];
 				$img_rows = $row['img_rows'];
 				$img_cols = $row['img_cols'];
 				$img_slices = $row['img_slices'];
+				$dimn = $row['dimN'];
+				$dimx = $row['dimX'];
+				$dimy = $row['dimY'];
+				$dimz = $row['dimZ'];
+				$dimt = $row['dimT'];
 				$bold_reps = $row['bold_reps'];
 				$numfiles = $row['numfiles'];
 				$series_size = $row['series_size'];
@@ -1903,10 +1921,14 @@
 			if ($study_modality == "mr") {
 				if ($s_resultorder == "csv") {
 					if ($s_usealtseriesdesc) {
-						$csv .= "$series_num, $series_altdesc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
+						//$csv .= "$series_num, $series_altdesc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
+
+						$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					else {
-						$csv .= "$series_num, $series_desc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
+						//$csv .= "$series_num, $series_desc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
+						
+						$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					if (count($measurenames) > 0) {
 						foreach ($measurenames as $measure) {
@@ -2241,6 +2263,7 @@
 				$tables["$uid$studynum"]['age'] = $ageatscan;
 				$tables["$uid$studynum"]['gender'] = $gender;
 				$tables["$uid$studynum"]['subjectid'] = $subject_id;
+				$tables["$uid$studynum"]['altuids'] = implode2("|", GetAlternateUIDs($subject_id));
 				$tables["$uid$studynum"]['studyid'] = $study_id;
 				$tables["$uid$studynum"]['studynum'] = $studynum;
 				$tables["$uid$studynum"]['studydate'] = $study_datetime;
@@ -2254,13 +2277,13 @@
 			}
 
 			if ($s_resultorder == "pipelinecsv") {
-				$csv = "uid,studynum,datetime,sex,age";
+				$csv = "uid,studynum,altuids,datetime,sex,age";
 				foreach ($names2 as $name2 => $blah) {
 					$csv .= ",$name2";
 				}
 				$csv .= "\n";
 				foreach ($tables as $uid => $valuepair) {
-					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['altuids'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
 					foreach ($names2 as $name2 => $blah) {
 						$csv .= ',' . $tables[$uid][$name2];
 					}
@@ -3729,7 +3752,7 @@
 			<table class="download">
 				<tr>
 					<td class="title">
-						Download Data
+						Transfer Data
 					</td>
 				</tr>
 				<tr>
@@ -4076,7 +4099,7 @@
 				</tr>
 				<tr>
 					<td style="background-color: white; border-radius:5px; padding: 8px" align="left">
-						<input type="submit" name="download" value="Download" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
+						<input type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
 					</td>
 				</tr>
 			</table>
@@ -4168,6 +4191,20 @@
 		}
 		if ($s_studyinstitution != "") { $sqlwhere .= " and `studies`.study_institution like '%$s_studyinstitution%'"; }
 		if ($s_studyequipment != "") { $sqlwhere .= " and `studies`.study_site like '%$s_studyequipment%'"; }
+		if ($s_studyid != "") {
+			/* check for any kind of delimiter, indicating more than one ID */
+			$s1 = array();
+			$arr = DelimitedListToArray($s_studyid);
+			foreach ($arr as $sid) {
+				/* first 8 characters are UID, remaining number(s) are studynum */
+				//PrintVariable($sid);
+				$uid = substr($sid,0,8);
+				$studynum = substr($sid,8);
+				$s1[] = "(`subjects`.uid = '$uid' and `studies`.study_num = $studynum)";
+			}
+			$s2 = implode2(' or ', $s1);
+			$sqlwhere .= " and ($s2)";
+		}
 		if ($s_studyaltscanid != "") {
 			if (preg_match('/[\^\,;\-\'\s]/', $s_studyaltscanid) == 0) {
 				$sqlwhere .= " and `studies`.study_alternateid like '%$s_studyaltscanid%'";
@@ -4556,7 +4593,7 @@
 			<?
 		}
 		/* return a header for the csv file */
-		return "Series Num, Protocol, UID, Sex, AgeAtScan, AltUIDs, StudyID, AltStudyID, Study num, Study date, study type, Project, height, weight, bmi, series time, XMoveMin, YMoveMin, ZMoveMin, XMoveMax, YMoveMax, ZMoveMax, XMoveTotal, YMoveTotal, ZMoveTotal, PitchTotal, RollTotal, YawTotal, PVSNR, IOSNR, xDim, yDim, Numiles, series size, sequence name, TR, num beh files, beh size";
+		return "UID, SeriesNum, SeriesDesc, Protocol, Sex, AgeAtScan, AltUIDs, StudyID, AltStudyID, StudyNum, StudyDate, StudyType, Project, Height, Weight, BMI, SeriesTime, XMoveMin, YMoveMin, ZMoveMin, XMoveMax, YMoveMax, ZMoveMax, XMoveTotal, YMoveTotal, ZMoveTotal, PitchTotal, RollTotal, YawTotal, PVSNR, IOSNR, nDim, xDim, yDim, zDim, tDim, NumFiles, SeriesSize, SequenceName, ImageType, ImageComment, TR, NumBehFiles, BehSize";
 	}
 
 	
@@ -4665,7 +4702,7 @@
 		$dicomtags = mysqli_real_escape_string($GLOBALS['linki'], $r['dicomtags']);
 		
 		if (($seriesids == "") && ($enrollmentids == "")) {
-			echo "You didn't select any series or subjects to download/export! Go back and select something<br>";
+			echo "You didn't select any series or subjects to transfer! Go back and select something<br>";
 			return;
 		}
 		
@@ -4731,7 +4768,7 @@
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
 		if (($seriesids == "") && ($enrollmentids == "")) {
-			echo "You didn't select any series or subjects to download/export! Go back and select something<br>";
+			echo "You didn't select any series or subjects to transfer! Go back and select something<br>";
 			exit(0);
 		}
 		if ($destinationtype == "nfs") {
@@ -4976,10 +5013,10 @@
 		<?
 		if (($destinationtype == "localftp") || ($destinationtype == "export")) {
 			?>
-			Your data has been queued for FTP download.<br><br>
+			Your data has been queued for FTP transfer<br><br>
 			<div align="center">
 			<table><tr><td style="border: solid yellow 1pt; background-color:lightyellow">
-			Use the following information to login to the FTP server and download your data:<br>
+			Use the following information to login to the FTP server and transfer your data:<br>
 			<pre>
 		Server/Host: <?=$GLOBALS['cfg']['localftphostname'];?>
 		Login: <?=$GLOBALS['cfg']['localftpusername'];?>
@@ -5002,6 +5039,20 @@
 			$newparts[] = "'" . trim($part) . "'";
 		}
 		return implode2(",", $newparts);
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- DelimitedListToArray --------------- */
+	/* -------------------------------------------- */
+	function DelimitedListToArray($str) {
+		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
+		$newparts = array();
+		foreach ($parts as $part) {
+			$newparts[] = trim($part);
+		}
+		//PrintVariable($newparts);
+		return $newparts;
 	}
 	
 	

@@ -396,11 +396,11 @@ sub ProcessDataRequests {
 				if (-e $indir) {
 					WriteLog("indir [$indir] exists");
 					if (IsDirEmpty($indir)) {
-						WriteLog("indir [$indir] exists but is empty");
+						WriteLog("indir [$indir] exists, but is EMPTY");
 					}
 				}
 				else {
-					WriteLog("indir [$indir] does not exist");
+					WriteLog("ERROR: *********** indir [$indir] DOES NOT EXIST ***********");
 					$newstatus = 'problem';
 					$results .= "[$indir] does not exist\n";
 				}
@@ -450,7 +450,8 @@ sub ProcessDataRequests {
 							WriteLog("Download Imaging option selected");
 							# output the correct file type
 							if (($req_filetype eq "dicom") || (($data_type ne "dicom") && ($data_type ne "parrec"))) {
-								$systemstring = "cp $indir/* $fullexportdir";
+								# use rsync instead of cp because of the number of files limit
+								$systemstring = "rsync $indir/* $fullexportdir/";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 							}
 							elsif ($req_filetype eq "qc") {
@@ -478,7 +479,7 @@ sub ProcessDataRequests {
 								WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $data_type)");
 								
 								WriteLog("About to copy files from $tmpdir to $fullexportdir");
-								$systemstring = "cp $tmpdir/* $fullexportdir";
+								$systemstring = "rsync $tmpdir/* $fullexportdir/";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 								WriteLog("Done copying files...");
 							}
@@ -520,7 +521,8 @@ sub ProcessDataRequests {
 						
 						# if its a public download, zip it and update the entry in the public downloads table
 						if (($req_destinationtype eq "publicdownload") || ($req_destinationtype eq "web")) {
-							$systemstring = "cp $tmpdir/* $tmpwebdir";
+							$systemstring = "rsync $tmpdir/* $tmpwebdir/";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						}
 						
 						$newstatus = "complete";
@@ -547,7 +549,7 @@ sub ProcessDataRequests {
 						MakePath($tmpdir);
 						MakePath($tmpzipdir);
 						MakePath("$tmpzipdir/beh");
-						$systemstring = "cp $indir/* $tmpdir/";
+						$systemstring = "rsync $indir/* $tmpdir/";
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						Anonymize($tmpdir,4,uc($sha1name),uc($sha1dob));
 						
@@ -1037,7 +1039,7 @@ sub SendToRemoteFTP() {
 
 	if (!$req_behonly) {
 		if ($data_type ne "dicom") {
-			my $systemstring = "cp $indir/* $tmpdir";
+			my $systemstring = "rsync $indir/* $tmpdir/";
 			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {

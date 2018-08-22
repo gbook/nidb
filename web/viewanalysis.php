@@ -572,8 +572,6 @@
 	function DisplayGraph($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 		
-		//$imgdata = CreateGraphFromAnalysisID($analysisid);
-		
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
 		$sqlstring = "select * from analysis where analysis_id = $analysisid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -583,6 +581,10 @@
 		$pipelinedependency = $row['pipeline_dependency'];
 		$studyid = $row['study_id'];
 		$datalog = $row['analysis_datalog'];
+		$datatable = $row['analysis_datatable'];
+		
+		if ($datatable == "") { $datatable = "No record of data download found. Check <tt>data.log</tt> in the pipeline directory"; }
+		else { $datatable = "<pre><tt>$datatable</tt></pre>"; }
 
 		$sqlstring = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -604,6 +606,8 @@
 				$depnames[] = $rowA['pipeline_name'];
 			}
 		}
+		$dependencylist = implode2("<br>", $depnames);
+		if ($dependencylist == "") { $dependencylist = "None"; }
 		
 		if ($groupids != '') {
 			$sqlstringA = "select * from groups where group_id in ($groupids)";
@@ -612,32 +616,256 @@
 				$groupnames[] = $rowA['group_name'];
 			}
 		}
+		$grouplist = implode2("<br>", $groupnames);
+		if ($grouplist == "") { $grouplist = "None"; }
 		
+		$datasearchtable = "<table class='smalldisplaytable'>
+			<thead>
+			<tr>
+				<th></th>
+				<th>Enabled</th>
+				<th>Optional</th>
+				<th>Protocol</th>
+				<th>Modality</th>
+				<th>Image type</th>
+				<th>Data format</th>
+				<th>Series criteria</th>
+				<th>Type</th>
+				<th>Level</th>
+				<th>Association type</th>
+				<th>Num BOLD reps</th>
+				<th>gzip</th>
+				<th>Directory</th>
+				<th>Use series?</th>
+				<th>Preserve series?</th>
+				<th>Use phase dir?</th>
+				<th>Beh format</th>
+				<th>Beh dir</th>
+			</tr>
+			</thead>";
+		$sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = $pipelineversion order by pdd_order + 0";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$pipelinedatadef_id = $row['pipelinedatadef_id'];
+			$pdd_order = $row['pdd_order'];
+			$pdd_seriescriteria = $row['pdd_seriescriteria'];
+			$pdd_type = $row['pdd_type'];
+			$pdd_level = $row['pdd_level'];
+			$pdd_assoctype = $row['pdd_assoctype'];
+			$pdd_protocol = $row['pdd_protocol'];
+			$pdd_imagetype = $row['pdd_imagetype'];
+			$pdd_modality = $row['pdd_modality'];
+			$pdd_dataformat = $row['pdd_dataformat'];
+			$pdd_gzip = $row['pdd_gzip'];
+			$pdd_location = $row['pdd_location'];
+			$pdd_useseries = $row['pdd_useseries'];
+			$pdd_preserveseries = $row['pdd_preserveseries'];
+			$pdd_usephasedir = $row['pdd_usephasedir'];
+			$pdd_behformat = $row['pdd_behformat'];
+			$pdd_behdir = $row['pdd_behdir'];
+			$pdd_enabled = $row['pdd_enabled'];
+			$pdd_optional = $row['pdd_optional'];
+			$pdd_numboldreps = $row['pdd_numboldreps'];
+			
+			$datasearchtable .= "<tr>
+								<td>$pdd_order</td>
+								<td>$pdd_enabled</td>
+								<td>$pdd_optional</td>
+								<td><b><tt>$pdd_protocol</tt></b></td>
+								<td>$pdd_modality</td>
+								<td><tt>$pdd_imagetype</tt></td>
+								<td>$pdd_dataformat</td>
+								<td>$pdd_seriescriteria</td>
+								<td>$pdd_type</td>
+								<td>$pdd_level</td>
+								<td>$pdd_assoctype</td>
+								<td>$pdd_numboldreps</td>
+								<td>$pdd_gzip</td>
+								<td><tt>$pdd_location</tt></td>
+								<td>$pdd_useseries</td>
+								<td>$pdd_preserveseries</td>
+								<td>$pdd_usephasedir</td>
+								<td>$pdd_behformat</td>
+								<td><tt>$pdd_behdir</tt></td>
+							</tr>";
+
+		}
+		$datasearchtable .= "</table>";
+
+		$imgdata = CreateGraphFromAnalysisID($analysisid);
+
 		?>
-		<table border="1">
+		<style>
+			td.arrow { vertical-align: middle; text-align: center; font-size: 24pt; font-weight: bold; }
+			td.step { font-weight: bold; background-color: #ddd; vertical-align: middle; text-align: center; padding: 5px; border-radius: 10px 0px 0px 10px; }
+			td.stepdetail { border: 1px solid #ddd; padding: 5px; border-radius: 0px 10px 10px 0px; }
+		</style>
+		<table style="margin: 20pt; cellspacing: 0px; cellpadding: 4px; border-collapse: collapse">
 			<tr>
 				<td></td>
-				<td>Data<?=$datalog?></td>
+				<td></td>
+				<td class="step">Data search</td>
+				<td class="stepdetail">
+					<details><summary>Data search criteria</summary>
+					<?=$datasearchtable?>
+					</details>
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td class="arrow">&darr;</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>
+					<b>Dependencies</b><br><?=$dependencylist?><br><br>
+					<b>Groups</b><br><?=$grouplist?>
+				</td>
+				<td class="arrow">&rarr;<br>&rarr;</td>
+				<td class="step">
+					Analysis graph for study<br><br> <span style="color: darkblue"><?="$uid$studynum"?></span><br><br>
+					through pipeline<br><br><span style="color: darkblue"><?=$pipelinename?></span></td>
+				<td class="stepdetail">
+					<img border=1 src="data:image/png;base64,<?=$imgdata?>">
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td class="arrow">&darr;</td>
 				<td></td>
 			</tr>
 			<tr>
 				<td></td>
-				<td><?="$uid$studynum"?><br><?=$pipelinename?></td>
+				<td></td>
+				<td class="step">Data</td>
+				<td class="stepdetail"><?=$datatable?></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td class="arrow">&darr;</td>
 				<td></td>
 			</tr>
 			<tr>
 				<td></td>
 				<td></td>
+				<td class="step">Cluster</td>
+				<td class="stepdetail">
+					<details><summary>Cluster/processing history</summary>
+					<table class="smalldisplaytable">
+						<thead>
+							<tr>
+								<th>Cumulative time</th>
+								<th>Date/time</th>
+								<th>Pipeline version</th>
+								<th>Hostname</th>
+								<th>Event</th>
+								<th>Message</th>
+							</tr>
+						</thead>
+					<?
+					$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					/* get the first event to get the starting time */
+					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+					$pipeline_version = $row['pipeline_version'];
+					$analysis_event = $row['analysis_event'];
+					$analysis_hostname = $row['analysis_hostname'];
+					$event_message = $row['event_message'];
+					$startdatetime = $row['event_datetime'];
+					$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
+					?>
+					<tr>
+						<td>0</td>
+						<td nowrap><?=$event_datetime?></td>
+						<td><?=$pipeline_version?></td>
+						<td><?=$analysis_hostname?></td>
+						<td><?=$analysis_event?></td>
+						<td><?=$event_message?></td>
+					</tr>
+					<?
+					/* continue on with the rest of the events */
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$pipeline_version = $row['pipeline_version'];
+						$analysis_event = $row['analysis_event'];
+						$analysis_hostname = $row['analysis_hostname'];
+						$event_message = $row['event_message'];
+						$event_datetime = $row['event_datetime'];
+						$cumtime = FormatCountdown($event_datetime - $startdatetime);
+						
+						?>
+						<tr>
+							<td><?=$cumtime?></td>
+							<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+							<td><?=$pipeline_version?></td>
+							<td><?=$analysis_hostname?></td>
+							<td><?=$analysis_event?></td>
+							<td><?=$event_message?></td>
+						</tr>
+						<?
+					}
+					?>
+					</table>
+					</details>
+				</td>
+			</tr>
+			<tr>
 				<td></td>
+				<td></td>
+				<td class="arrow">&darr;</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td></td>
+				<td class="step">Results</td>
+				<td class="stepdetail">
+				<?
+					$numvalue = $numfile = $numtext = $numhtml = $numimage = 0;
+					$sqlstring = "select a.* from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$type = $row['result_type'];
+						switch($type) {
+							case "v": $numvalue++; break;
+							case "f": $numfile++; break;
+							case "t": $numtext++; break;
+							case "h": $numhtml++; break;
+							case "i": $numimage++; break;
+						}
+					}
+					if ($numvalue == 0) { $numvalue = "-"; }
+					if ($numfile == 0) { $numfile = "-"; }
+					if ($numtext == 0) { $numtext = "-"; }
+					if ($numhtml == 0) { $numhtml = "-"; }
+					if ($numimage == 0) { $numimage = "-"; }
+				?>
+				<table class="twocoltable">
+					<tr>
+						<td>Values</td>
+						<td><?=$numvalue?></td>
+					</tr>
+					<tr>
+						<td>Images</td>
+						<td><?=$numimage?></td>
+					</tr>
+					<tr>
+						<td>Files</td>
+						<td><?=$numfile?></td>
+					</tr>
+					<tr>
+						<td>Text</td>
+						<td><?=$numtext?></td>
+					</tr>
+					<tr>
+						<td>HTML</td>
+						<td><?=$numhtml?></td>
+					</tr>
+				</td>
 			</tr>
 		</table>
-		<?
-		
-		?>
-		<!--
-		Graph for [<?=$analysisid?>]
-		<img border=1 src='data:image/png;base64,<?=$imgdata?>'>
-		-->
 		<?
 	}
 
@@ -650,7 +878,42 @@
 		$dotfile = tempnam("/tmp",'DOTDOT');
 		$pngfile = tempnam("/tmp",'DOTPNG');
 		
-		$d[] = "digraph G {";
+		$d = "digraph G {
+		
+		rankdir	= LR
+		node [shape = plaintext];
+		
+		";
+
+		list($uid, $studynum, $pipelinename, $pipelineversion) = GetInfoFromAnalysisID($analysisid);
+		/* get current analysis info */
+		//$sqlstring = "select b.pipeline_name, a.pipeline_version, c.study_num from analysis a left join pipelines b on a.pipeline_id = b.pipeline_id left join studies c on a.study_id = c.study_id where a.analysis_id = '$analysisid'";
+		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//$pipelinename = $row['pipeline_name'];
+		//$pipelineversion = $row['pipeline_version'];
+		//$studyid = $row['study_id'];
+
+		/* get parent analysis info, if any */
+		$sqlstring = "select event_message from analysis_history where analysis_event = 'analysisdependencyid' and analysis_id = '$analysisid'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$parentanalysisid = $row['event_message'];
+
+		if ($parentanalysisid == "") {
+			$d .= "\"$pipelinename\";\n";
+			$d .= "node [shape = box, label=\"$uid$studynum\"] { rank=same; \"$pipelinename\" analysis; }\n";
+		}
+		else {
+			list($parentuid, $parentstudynum, $parentpipelinename, $parentpipelineversion) = GetInfoFromAnalysisID($parentanalysisid);
+			
+			$d .= "\"$parentpipelinename\" -> \"$pipelinename\";\n";
+			$d .= "node [shape = box, label=\"$uid$studynum\"] { rank=same; \"$pipelinename\" analysis; }\n";
+			$d .= "node [shape = box, label=\"$parentuid$parentstudynum\"] { rank=same; \"$parentpipelinename\" parentanalysis; }\n";
+			$d .= "parentanalysis -> analysis\n";
+		}
+		
+		/*
 		$sqlstring = "select * from pipelines where pipeline_id in (select pipeline_id from analysis where analysis_id = $analysisid)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -676,11 +939,13 @@
 					$d[] = " \"$groupname\" [shape=box,style=filled,color=\"lightblue\"];";
 				}
 			}
-		}
-		$d[] = "}";
-		$d = array_unique($d);
-		$dot = implode("\n",$d);
-		echo "<pre>$dot</pre>";
+		} */
+		
+		$d .= "}";
+		//$d = array_unique($d);
+		//$dot = implode("\n",$d);
+		$dot = $d;
+		//echo "<pre>$dot</pre>";
 		file_put_contents($dotfile,$dot);
 		$systemstring = "dot -Tpng $dotfile -o $pngfile";
 		exec($systemstring);
@@ -688,5 +953,27 @@
 		$imdata = base64_encode(file_get_contents($pngfile));
 		return $imdata;
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetInfoFromAnalysisID -------------- */
+	/* -------------------------------------------- */
+	function GetInfoFromAnalysisID($analysisid) {
+		
+		/* check for valid analysis ID */
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		
+		$sqlstring = "select a.pipeline_version, d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+		//echo "[$sqlstring]";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		$pipelinename = $row['pipeline_name'];
+		$pipelineversion = $row['pipeline_version'];
+
+		return array($uid, $studynum, $pipelinename, $pipelineversion);
+	}
+	
 ?>
 </body>

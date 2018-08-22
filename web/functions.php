@@ -574,12 +574,17 @@
 		}
 	
 		$altuids = array();
-		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
+		if ($enrollmentid == 0) {
+			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
+		}
+		else {
+			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
+		}
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$altuid = trim($row['altuid']);
 			
-			if ($altuid != '') {
+			if (($altuid != '') && (strtolower($altuid) != 'null')) {
 				$isprimary = $row['isprimary'];
 				if ($isprimary) {
 					$altuids[] = '*'. $altuid;
@@ -677,8 +682,11 @@
 		if (count($arr) > 1) {
 			return implode($chr,$arr);
 		}
-		else {
+		elseif (count($arr) == 1) {
 			return $arr[0];
+		}
+		else {
+			return "";
 		}
 		
 	}
@@ -1491,21 +1499,21 @@
 				<?
 				break;
 			 case "info":
-                                ?>
-                                <div align="center">
-                                <table width="50%">
-                                        <tr>
+				?>
+				<div align="center">
+				<table width="50%">
+					<tr>
 						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
-                                                <td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project</a></td>
-                                                <td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-                                                <td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-                                                <td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-                                                <td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-                                        </tr>
-                                </table>
-                                </div>
-                                <?
-                                break;
+						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project</a></td>
+						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
+						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
+						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
+						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
+					</tr>
+				</table>
+				</div>
+				<?
+				break;
 			case "subjects":
 				?>
 				<div align="center">
@@ -1554,7 +1562,7 @@
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheaderactive">
 							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
-							<a href="projecthecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
+							<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
 						</td>
 						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
@@ -1572,15 +1580,13 @@
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheaderactive" style="font-size:10pt; font-weight: normal">
-							<!--<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">View MR Scan Params checklist</a> (<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a>)<br>-->
+						<td class="menuheaderactive">
+							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>MR Scan QC</b></a><br>
+							<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
+							<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
 							<br>
-							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>View MR QC checklist</b></a><br>
-								<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
-								<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
-							<br>
-							<a href="mrqcchecklist.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
-							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
+							<a href="projects.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
+							<a href="projects.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
 							<? if ($GLOBALS['isadmin']) { ?>
 								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
 							<? } ?>

@@ -165,7 +165,7 @@ sub DoQC {
 						WriteLog("Skipping this MR series [$series_id] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first");
 					}
 				}
-				WriteLog("Finished checking data");
+				WriteLog("Finished checking for MR series that dont have a QC row");
 			}
 			else {
 				WriteLog("Nothing to do");

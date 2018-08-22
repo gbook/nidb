@@ -235,7 +235,7 @@
 		
 		$neworder = 1;
 
-		DisplayMenu('checklist', $projectid);
+		DisplayProjectsMenu('checklist', $projectid);
 
 	?>
 
@@ -383,7 +383,7 @@
 		}
 		$numenrollments = count($enrollment);
 		
-		DisplayMenu('checklist', $projectid);
+		DisplayProjectsMenu('checklist', $projectid);
 		
 		?>
 		<br>
@@ -401,6 +401,7 @@
 				<th data-sort="string-ins">GUID</th>
 				<th data-sort="string-ins">Alt ID</th>
 				<th data-sort="string-ins">Enroll date</th>
+				<th data-sort="string-ins"># studies</th>
 				<th data-sort="string-ins">Group</th>
 		<?
 		$totals = array(0,0,0,0,0);
@@ -478,6 +479,7 @@
 				<td><?=$guid?></td>
 				<td style="<?=$customidstyle?>"><?=$altuid?></td>
 				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
+				<td><?=count($studyids)?></td>
 				<td><?=$enrollsubgroup?></td>
 			<?
 			$ii = 5;

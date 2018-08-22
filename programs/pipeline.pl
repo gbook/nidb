@@ -403,9 +403,9 @@ sub ProcessPipelines() {
 
 					# ********************
 					# only continue through this section (and submit the analysis) if
-					# a) there is no analysis or ...
-					# b) there is an existing analysis and it needs the results rerun or ...
-					# c) there is an existing analysis and it needs a supplement run
+					# a) there is no analysis
+					# b) OR there is an existing analysis and it needs the results rerun
+					# c) OR there is an existing analysis and it needs a supplement run
 					# ********************
 					if (($runsupplement eq "1") || ($rerunresults eq "1") || ($analysisRowID eq "")) {
 						# if the analysis doesn't yet exist, insert a temporary row, to be updated later, in the analysis table as a placeholder so that no other pipeline processes try to run it
@@ -430,9 +430,12 @@ sub ProcessPipelines() {
 						my $numseries = 0;
 						my $datalog;
 						my $datareport;
+						my $datatable;
 						if (defined($uid)) {
 						
+							my $dependencyanalysisid = 0;
 							my $submiterror = 0;
+							
 							WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
 							print "StudyDateTime: $studydatetime\n";
 							my $analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
@@ -442,10 +445,11 @@ sub ProcessPipelines() {
 							WriteLog("Should have created this analysis setup log [$setuplogF]");
 							
 							# get the nearest study for this subject that has the dependency
-							my $sqlstringA = "select study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = $subjectid and a.pipeline_id = '$pipelinedep' and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, '$studydatetime')) limit 1";
+							my $sqlstringA = "select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = $subjectid and a.pipeline_id = '$pipelinedep' and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, '$studydatetime')) limit 1";
 							my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 							my %rowA = $resultA->fetchhash;
 							my $studynum_nearest = $rowA{'study_num'};
+							my $dependencyanalysisid = $rowA{'analysis_id'};
 							
 							# create the dependency path
 							my $deppath = "";
@@ -462,7 +466,8 @@ sub ProcessPipelines() {
 									my $depstatus = CheckDependency($sid,$pipelinedep);
 									if ($depstatus ne "") {
 										my $datalog2 = EscapeMySQLString($setuplog);
-										my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_status = '$depstatus', analysis_startdate = null where analysis_id = $analysisRowID";
+										my $datatable2 = EscapeMySQLString($datatable);
+										my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_datatable = '$datatable2', analysis_status = '$depstatus', analysis_startdate = null where analysis_id = $analysisRowID";
 										my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 										next;
 									}
@@ -475,8 +480,11 @@ sub ProcessPipelines() {
 
 							# get the data if we are not running a supplement, and not rerunning the results
 							if ((!$runsupplement) && (!$rerunresults)) {
-								($numseries,$datalog,$datareport) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
+								($numseries, $datalog, $datareport, $datatable) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
 							}
+							my $datatable2 = EscapeMySQLString($datatable);
+							my $sqlstringC = "update analysis set analysis_datatable = '$datatable2' where analysis_id = $analysisRowID";
+							my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
 
 							# again check if there are any series to actually run the pipeline on...
 							# ... but its ok to run if any of the following are true
@@ -511,6 +519,7 @@ sub ProcessPipelines() {
 											SetPipelineStopped($pid);
 											next PIPELINE; # using a GOTO... so sad, but it had to be done
 										}
+										InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "This pipeline is dependent on pipeline [$dependencyname]");
 									}
 									else {
 										$setuplog .= WriteLog("No pipeline dependencies [$pipelinedep]") . "\n";
@@ -531,6 +540,8 @@ sub ProcessPipelines() {
 										WriteLog("This is a level [$pipelinelevel] pipeline. deplinktype [$deplinktype] depdir [$depdir]");
 										$setuplog .= "This is a level [$pipelinelevel] pipeline. deplinktype [$deplinktype] depdir [$depdir]";
 										
+										InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "Parent pipeline (dependency) will be copied to directory [$depdir] using method [$deplinktype]");
+										
 										if ($depdir eq "subdir") {
 											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
 											switch ($deplinktype) {
@@ -547,6 +558,10 @@ sub ProcessPipelines() {
 												case "regularcopy" { $systemstring = "cp -au $deppath/$dependencyname/* $analysispath/"; }
 											}
 										}
+
+										InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "Copied dependency by running [$systemstring]");
+										InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysisdependencyid', "$dependencyanalysisid");
+										
 										# copy any dependencies
 										$setuplog .= WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . `$systemstring 2>&1`) . "\n";
 										
@@ -561,6 +576,7 @@ sub ProcessPipelines() {
 									}
 									else {
 										$setuplog .= WriteLog("Pipelinedep was 0 [$pipelinedep]") . "\n";
+										InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "No dependencies specified for this pipeline");
 									}
 									
 									# now safe to write out the setuplog 
@@ -640,9 +656,10 @@ sub ProcessPipelines() {
 								AppendLog($setuplogF, WriteLog("GetData() returned 0 series"));
 								# update the analysis table with the datalog to people can check later on why something didn't process
 								my $datalog2 = EscapeMySQLString($datalog);
-								my $sqlstringC = "update analysis set analysis_datalog = '$datalog2' where analysis_id = $analysisRowID";
+								my $datatable2 = EscapeMySQLString($datatable);
+								my $sqlstringC = "update analysis set analysis_datalog = '$datalog2', analysis_datatable = '$datatable2' where analysis_id = $analysisRowID";
 								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
-								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysissetuperror', "No data found, 0 series returned from search. Setup log:\n\n [$datalog]");
+								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysissetuperror', "No data found, 0 series returned from search");
 							}
 							AppendLog($setuplogF, WriteLog("Submitted $numsubmitted jobs so far"));
 							print "Submitted $numsubmitted jobs so far\n";
@@ -663,12 +680,15 @@ sub ProcessPipelines() {
 								# save some database space, since most entries will be blank
 								$sqlstring = "update analysis set analysis_status = 'NoMatchingStudies', analysis_startdate = null where analysis_id = $analysisRowID";
 								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "This study did not have any matching data");
 							}
 							
 						}
 					}
 					else {
 						WriteLog("This analysis already has an entry in the analysis table");
+						InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "This analysis already has an entry in the analysis table");
 					}
 					if (!IsPipelineEnabled($pid)) {
 						SetPipelineStatusMessage($pid, 'Pipeline disabled while running. Normal stop.');
@@ -1364,6 +1384,7 @@ sub GetData() {
 	my $numdownloaded = 0;
 	my $datalog = "";
 	my $datareport = "";
+	my $datatable = "Empty data table";
 	
 	# get pipeline information, for data copying preferences
 	my $sqlstring = "select * from pipelines where pipeline_id = $pid";
@@ -1380,7 +1401,7 @@ sub GetData() {
 	if ($row{'pipeline_clusteruser'} eq "") { $clusteruser = $cfg{'clusteruser'}; }
 	else { $clusteruser = $row{'pipeline_clusteruser'}; }
 	
-	InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', 'Checking for data');
+	#InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', 'Checking for data');
 	
 	# get list of series for this study
 	$sqlstring = "select study_modality, study_num from studies where study_id = $studyid";
@@ -1410,6 +1431,7 @@ sub GetData() {
 		$datarows->[0]->[9] = 'numboldreps';
 		$datarows->[0]->[10] = 'FOUND';
 		$datarows->[0]->[11] = 'dir';
+		$datarows->[0]->[12] = 'explanation';
 		
 		# ------------------------------------------------------------------------
 		# check all of the steps to see if this data spec is valid
@@ -1453,12 +1475,19 @@ sub GetData() {
 			$datarows->[$i+1]->[9] = $numboldreps;
 			$datarows->[$i+1]->[10] = "";
 			$datarows->[$i+1]->[11] = "";
+			$datarows->[$i+1]->[12] = "";
 			
 			# check if the step is enabled
-			if (!$enabled) { $datalog .= "    Data specification step [$i] is NOT enabled. Skipping this download step\n"; next; }
+			if (!$enabled) {
+				$datarows->[$i+1]->[12] = "This step is not enabled, skipping";
+				$datalog .= "    Data specification step [$i] is NOT enabled. Skipping this download step\n"; next;
+			}
 			
 			# check if the step is optional
-			if ($optional) { $datalog .= "    Data step [$i] is OPTIONAL. Ignoring the checks\n"; next; }
+			if ($optional) {
+				$datarows->[$i+1]->[12] = "This step is optional, skipping the checks";
+				$datalog .= "    Data step [$i] is OPTIONAL. Ignoring the checks\n"; next;
+			}
 				
 			# make sure the requested modality table exists
 			$sqlstring = "show tables like '$modality"."_series'";
@@ -1515,6 +1544,8 @@ sub GetData() {
 						}
 						$sqlstring .= " ORDER BY ABS( DATEDIFF( `$modality" . "_series`.series_datetime, '$studydate' ) ) LIMIT 1";
 						$datalog .= "    Searching for subject-level data nearest in time [$sqlstring]\n";
+						
+						$datarows->[$i+1]->[12] = "Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan";
 					}
 					elsif ($assoctype eq 'all') {
 						WriteLog("Searching for all subject-level data...");
@@ -1523,6 +1554,8 @@ sub GetData() {
 							$sqlstring .= " and `$modality" . "_series`.image_type in ($imagetypes)";
 						}
 						$datalog .= "    Searching for all subject-level data [$sqlstring]\n";
+						
+						$datarows->[$i+1]->[12] = "Searching for ALL data from the same SUBJECT and modality";
 					}
 					else {
 						# find the data from the same subject and modality that has the same study_type
@@ -1533,6 +1566,8 @@ sub GetData() {
 						}
 						$sqlstring .= " and `studies`.study_type = '$studytype'";
 						$datalog .= "    Searching for subject-level data with same study type [$sqlstring]\n";
+						
+						$datarows->[$i+1]->[12] = "Searching for data from the same SUBJECT and modality, with the same study type (visit)";
 					}
 				}
 				WriteLog($sqlstring);
@@ -1588,8 +1623,10 @@ sub GetData() {
 		
 		# check for any bad data items
 		if ($stepIsInvalid) {
+			my $datatable = generate_table(rows => $datarows, header_row => 1);
+		
 			# bail out of this function, the data spec didn't work out for this subject
-			return (0,$datalog, $datareport);
+			return (0,$datalog, $datareport, $datatable);
 		}
 		
 		# ------ end checking the data steps --------------------------------------
@@ -1599,7 +1636,7 @@ sub GetData() {
 		
 		WriteLog("Modality: $modality");
 
-		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Started copying data to [$analysispath]");
+		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Started copying data to [<tt>$analysispath</tt>]");
 		
 		$datalog .= "\n\n------------------------------------------------------------------------------\n";
 		$datalog .= "---------- Required data for this study exists, beginning data copy ----------\n";
@@ -1964,14 +2001,14 @@ sub GetData() {
 		WriteLog("\n$datatable");
 		$datalog .= "\n$datatable\nLeaving GetData(). Copied [$numdownloaded] series\n";
 		WriteLog("Leaving GetData() successfully => ret($numdownloaded, datalog)");
-		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', "Finished copying data [$numdownloaded] series downloaded");
-		return ($numdownloaded, $datalog, $datareport);
+		InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydataend', "Finished copying data [$numdownloaded] series downloaded");
+		return ($numdownloaded, $datalog, $datareport, $datatable);
 	}
 	else {
 		$datareport .= "Study [$studyid] does not exist";
 		$datalog .= "Study [$studyid] does not exist - No data to download\n";
 		WriteLog("Leaving GetData() unsuccessfully => ret(0, $datalog). This study had no series at all");
-		return (0,$datalog, $datareport);
+		return (0,$datalog, $datareport, $datatable);
 	}
 }
 
