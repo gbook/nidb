@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 16, 2018 at 07:37 PM
+-- Generation Time: Aug 29, 2018 at 03:44 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -42,6 +42,7 @@ CREATE TABLE `analysis` (
   `analysis_iscomplete` tinyint(1) DEFAULT NULL,
   `analysis_isbad` tinyint(1) DEFAULT 0,
   `analysis_datalog` mediumtext DEFAULT NULL,
+  `analysis_datatable` text DEFAULT '',
   `analysis_rerunresults` tinyint(1) DEFAULT NULL,
   `analysis_runsupplement` tinyint(1) DEFAULT NULL,
   `analysis_result` varchar(50) DEFAULT NULL,
@@ -115,7 +116,7 @@ CREATE TABLE `analysis_history` (
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `analysis_event` varchar(255) DEFAULT NULL,
+  `analysis_event` enum('','analysiscopy','analysiscopydata','analysiscopydataend','analysiscreated','analysiscreatelink','analysisdeleted','analysisdeleteerror','analysisdependencyid','analysismessage','analysispending','analysisrecheck','analysissetuperror','analysissubmiterror','analysissubmitted','complete','completesupplement','processing','started','startedsupplement') DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
   `event_message` text DEFAULT NULL,
   `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -2251,6 +2252,7 @@ CREATE TABLE `search_history` (
   `measurelist` text DEFAULT NULL,
   `studyinstitution` varchar(255) DEFAULT NULL,
   `studyequipment` varchar(255) DEFAULT NULL,
+  `studyid` text DEFAULT NULL,
   `studyaltscanid` text DEFAULT NULL,
   `studydatestart` date DEFAULT NULL,
   `studydateend` date DEFAULT NULL,
