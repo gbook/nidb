@@ -29,7 +29,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Configuration</title>
+		<title>NiDB - Settings</title>
 	</head>
 
 <body>
@@ -117,6 +117,8 @@
     $c['uploadeddir'] = GetVariable("uploadeddir");
     $c['tmpdir'] = GetVariable("tmpdir");
     $c['deleteddir'] = GetVariable("deleteddir");
+	$systemmessage = GetVariable("systemmessage");
+	$messageid = GetVariable("messageid");
 	
 	/* determine action */
 	switch ($action) {
@@ -124,13 +126,43 @@
 			WriteConfig($c);
 			DisplayConfig();
 			break;
+		case 'setsystemmessage':
+			SetSystemMessage($systemmessage);
+			DisplayConfig();
+			break;
+		case 'deletesystemmessage':
+			DeleteSystemMessage($messageid);
+			DisplayConfig();
+			break;
 		default:
-		DisplayConfig();
+			DisplayConfig();
 	}
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
+	/* -------------------------------------------- */
+	/* ------- SetSystemMessage-------------------- */
+	/* -------------------------------------------- */
+	function SetSystemMessage($msg) {
+		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
+		
+		$sqlstring = "insert into system_messages (message, message_date, message_status) values ('$msg', now(), 'active')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteSystemMessage----------------- */
+	/* -------------------------------------------- */
+	function DeleteSystemMessage($msgid) {
+		if (!isInteger($msgid)) { echo "Invalid message ID [$msgid]"; return; }
+		
+		$sqlstring = "update system_messages set message_status = 'deleted' where message_id = $msgid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+	
+	
 	/* -------------------------------------------- */
 	/* ------- WriteConfig ------------------------ */
 	/* -------------------------------------------- */
@@ -272,8 +304,8 @@
 		/* load the actual .cfg file */
 		$GLOBALS['cfg'] = LoadConfig();
 	
-		$urllist['System'] = "system.php";
-		NavigationBar("System", $urllist);
+		$urllist['System Settings'] = "system.php";
+		NavigationBar("System Settings", $urllist);
 
 		$dbconnect = true;
 		$devdbconnect = true;
@@ -282,7 +314,37 @@
 		
 		?>
 		
-		<center>Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></center>
+		<style>
+			legend { font-weight: bold; padding: 5px; border: 1px solid #aaa; }
+		</style>
+
+		<fieldset>
+			<legend>System message</legend>
+			
+			Current messages:<br>
+		<?
+			$sqlstring = "select * from system_messages where message_status = 'active'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$messageid = $row['message_id'];
+				$messagedate = $row['message_date'];
+				$message = $row['message'];
+				?><?=$messagedate?> - <b><?=$message?></b> <a href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" class="adminbutton">Delete</a><br><?
+			}
+		?>
+			<br>
+			<form method="post" action="system.php">
+			<input type="hidden" name="action" value="setsystemmessage">
+			<textarea name="systemmessage"></textarea>
+			<input type="submit" value="Set message">
+			</form>
+		</fieldset>
+		
+		<br><br>
+		
+		<fieldset>
+		<legend>NiDB Settings</legend>
+		<div align="center">Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></div>
 		<br><br>
 		<form name="configform" method="post" action="system.php">
 		<input type="hidden" name="action" value="updateconfig">
@@ -707,8 +769,12 @@
 			</tr>
 		</table>
 		</form>
+		</fieldset>
 		
 		<br><br>
+		
+		<fieldset>
+		<legend>PHP Variables</legend>
 		<table class="twocoltable">
 			<thead>
 				<tr>
@@ -733,11 +799,14 @@
 				<td><?=get_cfg_var('max_file_uploads')?></td>
 			</tr>
 		</table>
-		
+		</fieldset>
 		<br><br>
 		
+		<fieldset>
+		<legend>Cron</legend>
 		Crontab for <?=system("whoami"); ?><br>
 		<pre><?=system("crontab -l"); ?></pre>
+		</fieldset>
 		<?
 	}
 ?>
