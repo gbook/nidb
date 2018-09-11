@@ -1181,8 +1181,8 @@ sub InsertDICOM {
 			}
 			
 			my $tags2 = $exifTool->ImageInfo("$outdir/$file");
-			my $SliceNumber = trim($tags2->{'AcquisitionNumber'});
-			my $InstanceNumber = trim($tags2->{'InstanceNumber'});
+			my $SliceNumber = trim($tags2->{'AcquisitionNumber'}) + 0;
+			my $InstanceNumber = trim($tags2->{'InstanceNumber'}) + 0;
 			my $SliceLocation = trim($tags2->{'SliceLocation'});
 			my $AcquisitionTime = trim($tags2->{'AcquisitionTime'});
 			my $ContentTime = trim($tags2->{'ContentTime'});
@@ -1208,8 +1208,8 @@ sub InsertDICOM {
 	my @sqlinserts;
 	foreach my $file (sort @files) {
 		my $tags3 = $exifTool->ImageInfo($file);
-		my $SliceNumber = trim($tags3->{'AcquisitionNumber'});
-		my $InstanceNumber = trim($tags3->{'InstanceNumber'});
+		my $SliceNumber = trim($tags3->{'AcquisitionNumber'}) + 0;
+		my $InstanceNumber = trim($tags3->{'InstanceNumber'}) + 0;
 		my $SliceLocation = trim($tags3->{'SliceLocation'});
 		my $AcquisitionTime = trim($tags3->{'AcquisitionTime'});
 		my $ContentTime = trim($tags3->{'ContentTime'});
