@@ -1,6 +1,4 @@
 <?
-	//error_reporting(-1);
-	//ini_set('display_errors', '1');
  // ------------------------------------------------------------------------------
  // NiDB search.php
  // Copyright (C) 2004 - 2018
@@ -148,7 +146,8 @@
     $requestvars['seriesmeta'] = GetVariable("seriesmeta");
     $requestvars['seriesdata'] = GetVariable("seriesdata");
     $requestvars['allsubject'] = GetVariable("allsubject");
-	
+
+	//PrintVariable($requestvars);
 	
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
@@ -4743,7 +4742,7 @@
 		$publicdownloadshareinternal = ($r['publicdownloadshareinternal'] == 1) ? 1 : 0;
 		$publicdownloadregisterrequired = ($r['publicdownloadregisterrequired'] == 1) ? 1 : 0;
 		$publicdownloadexpire = $r['publicdownloadexpire'];
-		$preserveseries = ($r['preserveseries'] == 1) ? 1 : 0;
+		if ($r['preserveseries'] == '') { $preserveseries = 0; } else { $preserveseries = $r['preserveseries']; }
 		$filetype = $r['filetype'];
 		$gzip = ($r['gzip'] == 1) ? 1 : 0;
 		$anonymize = ($r['anonymize'] == 1) ? 1 : 0;

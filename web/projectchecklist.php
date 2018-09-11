@@ -365,7 +365,7 @@
 		//PrintVariable($checklist);
 		
 		/* get the project enrollment data */
-		$sqlstring = "select a.*, b.subject_id, b.uid, b.guid, b.isactive, c.study_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join studies c on a.enrollment_id = c.enrollment_id where a.project_id = $projectid and (a.enroll_enddate > now() or a.enroll_enddate = '0000-00-00') and b.isactive = 1 order by b.uid asc";
+		$sqlstring = "select a.*, b.subject_id, b.uid, b.guid, b.isactive, c.study_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join studies c on a.enrollment_id = c.enrollment_id where a.project_id = $projectid and b.isactive = 1 order by b.uid asc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -382,7 +382,7 @@
 
 		}
 		$numenrollments = count($enrollment);
-		
+
 		DisplayProjectsMenu('checklist', $projectid);
 		
 		?>
@@ -391,7 +391,7 @@
 		<form action="subjects.php" method="post">
 		<input type="hidden" name="action" value="merge">
 		<input type="hidden" name="returnpage" value="projectchecklist.php?projectid=<?=$projectid?>">
-		<?=$numenrollments?> enrollments<br><br>
+		Displaying <?=$numenrollments?> enrollments<br><br>
 		<span class="tiny">Table is sortable. Click column headers to sort</span>
 		<table class="sortable graydisplaytable dropshadow" style="border-collapse: collapse">
 			<thead>
@@ -443,7 +443,6 @@
 			/* get studies associated with this enrollment */
 			$studyids = array();
 			$sqlstring = "select study_id from studies where enrollment_id = $enrollmentid";
-			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyids[] = "'" . $row['study_id'] . "'";
@@ -451,7 +450,6 @@
 			
 			/* get project specific altuid */
 			$sqlstring = "select altuid from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid and isprimary = 1";
-			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$altuid = $row['altuid'];

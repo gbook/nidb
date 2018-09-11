@@ -688,7 +688,7 @@
 		//PrintVariable($qcparms);
 
 		/* get list of studies, and then series, associated with this project */
-		$sqlstring = "select c.study_id, c.study_num, a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where b.project_id = '$id' and c.study_modality = 'MR' order by a.uid, c.study_num";
+		$sqlstring = "select c.study_id, c.study_num, a.uid, a.subject_id, b.enrollment_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where b.project_id = '$id' and c.study_modality = 'MR' order by a.uid, c.study_num";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
 			
@@ -709,6 +709,8 @@
 			
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyid = $row['study_id'];
+				$subjectid = $row['subject_id'];
+				$enrollmentid = $row['enrollment_id'];
 				$uid = $row['uid'];
 				$studynum = $row['study_num'];
 				if ($studyid > 0) {
@@ -721,9 +723,16 @@
 					}
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 					if (mysqli_num_rows($resultA) > 0){
+						
+						/* get project specific altuid */
+						$sqlstringB = "select altuid from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid and isprimary = 1";
+						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+						$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+						$altuid = $rowB['altuid'];
+						
 						?>
 							<tr>
-								<td style="border: 1px solid black; padding: 2px 6px"><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
+								<td style="border: 1px solid black; padding: 2px 6px"><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a> &nbsp;Primary alt UID: <b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b></td>
 								<td style="border: 1px solid black; padding: 2px 6px"><b>Params</b></td>
 								<td style="border: 1px solid black; padding: 2px 6px"><b>Files on disk</b></td>
 								<td style="border: 1px solid black; padding: 2px 6px"><b>Avg Rating</b></td>

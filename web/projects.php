@@ -1192,7 +1192,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
 		
-		//PrintSQLTable($result);
 		/* get some stats about the project */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
@@ -1208,7 +1207,6 @@
 				$genders[$row['gender']]['ages'][] = $row['age'];
 			}
 		}
-		//PrintVariable($genders);
 		
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
@@ -1253,6 +1251,8 @@
 		<br><br>
 		<div align="center">
 		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
+		<br>
+		Displaying <?=$numstudies?> studies
 		</div>
 		<br>
 		<script type="text/javascript">
@@ -1746,10 +1746,18 @@
 			} 
 		</script>
 		
-		<? DisplayProjectsMenu("subjects", $id); ?>
+		<?
+			DisplayProjectsMenu("subjects", $id);
+			/* get all subjects, and their enrollment info, associated with the project */
+			$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$i=0;
+		?>
 		<br><br>
 		<div align="center">
 		<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
+		<br>
+		Displaying <?=mysqli_num_rows($result)?> enrollments
 		</div>
 		<br>
 		<table class="testgrid dropshadow" id='table1'>
@@ -1770,11 +1778,6 @@
 				<th>Enroll group</th>
 			</thead>
 		<?
-		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$i=0;
-		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
 			$uid = $row['uid'];
