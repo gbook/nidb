@@ -191,7 +191,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -199,7 +199,7 @@
 		$tags = explode(',',$tags);
 		
 		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $id";
+		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = $cancontact where subject_id = $id";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
@@ -217,22 +217,25 @@
 			$altuids = explode(',',$altuidsublist);
 			foreach ($altuids as $altuid) {
 				$altuid = trim($altuid);
-				$enrollmentid = $enrollmentids[$i];
-				//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
-				if (strpos($altuid, '*') !== FALSE) {
-					$altuid = str_replace('*','',$altuid);
-					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',1, '$enrollmentid')";
+				if ($altuid != "") {
+					$enrollmentid = $enrollmentids[$i];
+					if ($enrollmentid == "") { $enrollmentid = 0; }
+					//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
+					if (strpos($altuid, '*') !== FALSE) {
+						$altuid = str_replace('*','',$altuid);
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',1, '$enrollmentid')";
+					}
+					else {
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',0, '$enrollmentid')";
+					}
+					//PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
-				else {
-					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($id, '$altuid',0, '$enrollmentid')";
-				}
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$i++;
 		}
 		
-		?><div align="center"><span class="staticmessage"><span class="uid"><?=$uid?></span> updated</span></div><br><br><?
+		?><div align="center"><span class="staticmessage"><?=$uid?> updated</span></div><br><br><?
 	}
 
 
@@ -2521,11 +2524,6 @@
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="uid" value="<?=$uid?>">
-			<tr>
-				<td colspan="2" align="center">
-					<br><b><?=$formtitle?></b><br><br>
-				</td>
-			</tr>
 			<? if ($type == "add") { ?>
 			<tr title="This will encrypt the name and alternate UIDs.<br>It will also change the DOB to year only (ex. 1980-00-00)">
 				<td class="label">Encrypt</td>

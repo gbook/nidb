@@ -440,7 +440,7 @@ session_start();
                                     $uid = $row['uid'];
 
                                     /* get list of alternate subject UIDs */
-                                    $altuids = GetAlternateUIDs($subjectid);
+                                    $altuids = GetAlternateUIDs($subjectid,'');
 
                                     $parts = explode("^",$name);
                                     $name = substr($parts[1],0,1) . substr($parts[0],0,1);
@@ -727,7 +727,7 @@ session_start();
                                         $age = $studyageatscan;
                                     }
                                     /* get list of alternate subject UIDs */
-                                    $altuids = GetAlternateUIDs($subjectid);
+                                    $altuids = GetAlternateUIDs($subjectid,'');
 
                                     $parts = explode("^",$name);
                                     $name = substr($parts[1],0,1) . substr($parts[0],0,1);
@@ -958,7 +958,7 @@ session_start();
                                     $education = $row['education'];
                                     $uid = $row['uid'];
                                     /* get list of alternate subject UIDs */
-                                    $altuids = GetAlternateUIDs($subjectid);
+                                    $altuids = GetAlternateUIDs($subjectid,'');
 
                                     $parts = explode("^",$name);
                                     $name = substr($parts[1],0,1) . substr($parts[0],0,1);

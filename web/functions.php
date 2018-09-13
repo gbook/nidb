@@ -567,19 +567,25 @@
 	/* -------------------------------------------- */
 	/* ------- GetAlternateUIDs ------------------- */
 	/* -------------------------------------------- */
-	function GetAlternateUIDs($subjectid, $enrollmentid=0) {
+	function GetAlternateUIDs($subjectid, $enrollmentid) {
+
+		//echo "<br><br>GetAlternateUIDs($subjectid, $enrollmentid)<br><br>";
 		
 		if ($subjectid == "") {
 			return "";
 		}
 	
 		$altuids = array();
-		if ($enrollmentid == 0) {
+		/* need the type equality too because '' evaluates to 0... */
+		if ($enrollmentid === '') {
 			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
+			//echo "<br><br>Point A<br><br>";
 		}
 		else {
 			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
+			//echo "<br><br>Point B<br><br>";
 		}
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$altuid = trim($row['altuid']);

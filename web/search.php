@@ -1611,7 +1611,7 @@
 			}
 			
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id);
+			$altuids = GetAlternateUIDs($subject_id,'');
 			if (count($altuids) > 0) {
 				$altuidlist = implode2(",",$altuids);
 			}
@@ -2262,7 +2262,7 @@
 				$tables["$uid$studynum"]['age'] = $ageatscan;
 				$tables["$uid$studynum"]['gender'] = $gender;
 				$tables["$uid$studynum"]['subjectid'] = $subject_id;
-				$tables["$uid$studynum"]['altuids'] = implode2("|", GetAlternateUIDs($subject_id));
+				$tables["$uid$studynum"]['altuids'] = implode2("|", GetAlternateUIDs($subject_id,''));
 				$tables["$uid$studynum"]['studyid'] = $study_id;
 				$tables["$uid$studynum"]['studynum'] = $studynum;
 				$tables["$uid$studynum"]['studydate'] = $study_datetime;
@@ -2762,7 +2762,7 @@
 			$study_alternateid = $row['study_alternateid'];
 
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id);
+			$altuids = GetAlternateUIDs($subject_id,'');
 
 			?>
 			<tr>
@@ -2823,7 +2823,7 @@
 			$uuid = strtoupper($row['uuid']);
 
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id);
+			$altuids = GetAlternateUIDs($subject_id,'');
 			
 			$enroll_startdate = date("Y-m-d",strtotime($enroll_startdate));
 			if ($enroll_enddate = '0000-00-00 00:00:00') {
