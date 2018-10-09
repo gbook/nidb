@@ -383,7 +383,7 @@
 						<select name="s_projectid" class="importantfield">
 							<option value="all">All Projects</option>
 							<?
-								$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+								$sqlstring = "select * from projects a left join where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$project_id = $row['project_id'];

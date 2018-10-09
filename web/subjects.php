@@ -383,9 +383,11 @@
 		$projectcostcenter = $row['projectcostcenter'];
 
 		/* navigation bar */
+		
+		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$uid", $urllist,'','','','');
+		NavigationBar("$uid", $urllist,$perms);
 		
 		?>
 		<div align="center">
@@ -446,9 +448,10 @@
 		$projectcostcenter = $row['projectcostcenter'];
 
 		/* navigation bar */
+		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$uid", $urllist,'','','','');
+		NavigationBar("$uid", $urllist,$perms);
 		
 		?>
 		<div align="center">
@@ -1414,42 +1417,25 @@
 	function DisplaySubject($id) {
 		if (!ValidID($id,'Subject ID')) { return; }
 
-		/* get privacy information */
-		$username = $_SESSION['username'];
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
+		$userid = $_SESSION['userid'];
 		
-		$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_phi = 1";
-		//PrintSQL($sqlstring);
+		/* get list of projects associated with this subject */
+		$projectids = array();
+		$sqlstring = "select b.project_id from subjects a left join enrollment b on a.subject_id = b.subject_id where a.subject_id = '$id'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectname = $row['project_name'];
-				$projectcostcenter = $row['project_costcenter'];
-				$phiprojectlist[] = "$projectname ($projectcostcenter)";
+				$projectids[] = $row['project_id'];
 			}
-			$phiaccess = 1;
-		}
-		else {
-			$phiaccess = 0;
 		}
 		
-		$sqlstring = "select a.uid, c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectname = $row['project_name'];
-				$uid = $row['uid'];
-				$projectcostcenter = $row['project_costcenter'];
-				$dataprojectlist[] = "$projectname ($projectcostcenter)";
-			}
-			$dataaccess = 1;
-		}
-		else {
-			$dataaccess = 0;
-		}
+		$perms = GetCurrentUserProjectPermissions($projectids);
+		$urllist['Subjects'] = "subjects.php";
+		NavigationBar("$uid", $urllist, $perms);
+
+		/* update the mostrecent table */
+		UpdateMostRecent($userid, $id,'');
+		
 		
 		/* check if they have enrollments for a valid project */
 		$sqlstring = "select a.* from enrollment a right join projects b on a.project_id = b.project_id where a.subject_id = $id";
@@ -1461,12 +1447,6 @@
 		else {
 			$hasenrollments = 0;
 		}
-	
-		$urllist['Subjects'] = "subjects.php";
-		NavigationBar("$uid", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
-
-		/* update the mostrecent table */
-		UpdateMostRecent($userid, $id,'');
 		
 		/* get all existing info about this subject */
 		$sqlstring = "select * from subjects where subject_id = $id";
@@ -1570,9 +1550,10 @@
 						</tr>
 						<tr>
 							<td align="center" colspan="2" style="border-radius:5px; background-color: white; padding: 5px">
+								<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
 								<div align="left" style="font-weight: bold; font-size: 12pt">Demographics</div>
 								<div align="left">
-								<? if ($phiaccess) { ?>
+								<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
 								<details>
 									<summary class="tiny" style="color:darkred">Edit or delete</summary>
 									<div style="padding:5px; font-size:11pt">
@@ -1669,7 +1650,7 @@
 								<br><br>
 								<div align="left" style="font-weight: bold; font-size: 12pt">Family</div>
 								<div align="left">
-								<? if ($phiaccess) { ?>
+								<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
 								<details>
 								<summary class="tiny" style="color:darkred">Add family members</summary>
 									<table style="font-size: 10pt">
@@ -1706,22 +1687,6 @@
 											});
 										});
 										</script>
-										<style>
-										.ui-autocomplete {
-											max-height: 100px;
-											overflow-y: auto;
-											/* prevent horizontal scrollbar */
-											overflow-x: hidden;
-											/* add padding to account for vertical scrollbar */
-											padding-right: 20px;
-										}
-										/* IE 6 doesn't support max-height
-										 * we use height instead, but this forces the menu to always be this tall
-										 */
-										* html .ui-autocomplete {
-											height: 100px;
-										}
-										</style>									
 										<tr>
 											<form action="subjects.php" method="post">
 											<input type="hidden" name="id" value="<?=$id?>">
@@ -1758,6 +1723,12 @@
 									</tr>
 								</table>
 								<br>
+								<?
+								}
+								else {
+									echo "No permissions to view PHI";
+								}
+								?>
 							</td>
 						</tr>
 					</table>
@@ -1778,16 +1749,16 @@
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$project_id = $row['project_id'];
+										$projectid = $row['project_id'];
 										$project_name = $row['project_name'];
 										$project_costcenter = $row['project_costcenter'];
 										$project_enddate = $row['project_enddate'];
 										$user_fullname = $row['user_fullname'];
-										
-										if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-										//echo "[" . strtotime($project_enddate) . ":" . strtotime("now") . "]<br>";
+
+										$perms = GetCurrentUserProjectPermissions(array($projectid));
+										if (GetPerm($perms, 'modifyphi', $projectid)) { $disabled = ""; } else { $disabled="disabled"; }
 										?>
-										<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<option value="<?=$projectid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 										<?
 									}
 								?>
@@ -1812,6 +1783,13 @@
 								$costcenter = $rowA['project_costcenter'];
 								$project_enddate = $rowA['project_enddate'];
 								
+								$perms = GetCurrentUserProjectPermissions(array($projectid));
+								if (GetPerm($perms, 'projectadmin', $projectid)) { $projectadmin = 1; } else { $projectadmin = 0; }
+								if (GetPerm($perms, 'modifyphi', $projectid)) { $modifyphi = 1; } else { $modifyphi = 0; }
+								if (GetPerm($perms, 'viewphi', $projectid)) { $viewphi = 1; } else { $viewphi = 0; }
+								if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
+								if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
+
 								$enrolldate = date('M j, Y g:ia',strtotime($enroll_startdate));
 								
 								if ($row['irb_consent'] != "") { $irb = "Y"; }
@@ -1823,14 +1801,6 @@
 								}
 								else {
 									$enrolled = false;
-								}
-								
-								/* check if this user has data access to this project */
-								$projectaccess = 1;
-								$sqlstring2 = "select view_data from user_project where project_id = $projectid and view_data = 1 and user_id = $userid";
-								$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-								if (mysqli_num_rows($result2) < 1) {
-									$projectaccess = 0;
 								}
 								
 								$subjectaltids = implode2(', ',GetAlternateUIDs($id, $enrollmentid));
@@ -1855,20 +1825,22 @@
 											<a href="projects.php?id=<?=$projectid?>"><?=$project_name?> (<?=$costcenter?>)</a><br><br>
 											<div style="font-size:10pt; font-weight: normal;">
 											Enrolled: <a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a><br>
-											<? if ($phiaccess) { ?>
+											<? if ($modifyphi) { ?>
 											Group: <span id="enroll_subgroup" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
+											<? } elseif ($viewphi) { ?>
+											Group: <span style="font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
 											<? } ?>
 											<b>Project IDs:</b> <?=$subjectaltids;?>
 											<br>
 											<? if ($enroll_enddate != "0000-00-00 00:00:00") { ?>
 											<span style="color: darkred">Un-enroll date: <?=$enroll_enddate?></span><br>
 											<? } ?>
-											<? if ($phiaccess) { ?>
+											<? if ($viewphi) { ?>
 											<!--Project end date: <?=$project_enddate;?>-->
 											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a><br><br>
 											Diagnosis Tags: <?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?>
 											</div>
-											<? if (($enrolled) && ($GLOBALS['isadmin'])) { ?>
+											<? if (($enrolled) && ($projectadmin)) { ?>
 											<form action="subjects.php" method="post">
 											<input type="hidden" name="id" value="<?=$id?>">
 											<input type="hidden" name="action" value="changeproject">
@@ -1882,16 +1854,17 @@
 												$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
 												$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$project_id = $row['project_id'];
+													$projectid = $row['project_id'];
 													$project_name = $row['project_name'];
 													$project_costcenter = $row['project_costcenter'];
 													$project_enddate = $row['project_enddate'];
 													$user_fullname = $row['user_fullname'];
+
+													$perms = GetCurrentUserProjectPermissions(array($projectid));
+													if (GetPerm($perms, 'modifyphi', $projectid)) { $disabled = ""; } else { $disabled = "disabled"; }
 													
-													if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-													//echo "[" . strtotime($project_enddate) . ":" . strtotime("now") . "]<br>";
 													?>
-													<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+													<option value="<?=$projectid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 													<?
 												}
 											?>
@@ -1900,12 +1873,12 @@
 											</form>
 											</details>
 											<?
-												} /* end if phi access */
-											} /* end if enrolled */ ?>
+												} /* end if project admin */
+											} /* end if viewphi */ ?>
 										</td>
 										<td class="main">
 											<?
-												if (!$projectaccess) {
+												if (!$viewdata) {
 													echo "No data access privileges to this project";
 												}
 												else {
@@ -2084,18 +2057,20 @@
 													<td align="right">
 														<? if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+														<input type="hidden" name="projectid" value="<?=$projectid?>">
 														<input type="hidden" name="action" value="create">
 														<span style="font-size: 10pt">Add assessment:</span>
 														<select name="formid" <?=$disabled?>>
 															<option value="">(Select assessment)</option>
 														<?
-															$sqlstringB = "select * from assessment_forms where form_ispublished = 1 order by form_title";
+															$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
 															//$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 															$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 															while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 																$form_id = $rowB['form_id'];
 																$form_title = $rowB['form_title'];
-																?>
+																$projectid = $rowB['project_id'];
+															?>
 																<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
 																<?
 															}
@@ -2108,7 +2083,7 @@
 												</tr>
 											</table>
 												<?
-												$sqlstring3 = "select a.*, b.form_title from assessments a left join assessment_forms b on a.form_id = b.form_id where a.enrollment_id = $enrollmentid";
+												$sqlstring3 = "select a.*, b.form_title from assessments a left join assessment_forms b on a.form_id = b.form_id where a.enrollment_id = $enrollmentid and b.project_id = $projectid";
 												//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 												$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 												if (mysqli_num_rows($result3) > 0) {
@@ -2133,14 +2108,14 @@
 														if ($iscomplete) { $action = "view"; } else { $action = "edit"; }
 														?>
 														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'" onMouseOut="this.style.backgroundColor=''">
-															<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>"><?=$form_title?></a></td>
+															<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>"><?=$form_title?></a></td>
 															<td><?=$exp_admindate?></td>
 															<td><?=$experimentor?></td>
 															<td><?=$rater_username?></td>
 															<td><? if ($iscomplete) { echo "&#10004;"; }
 															else {
 																?>
-																<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>">Mark as complete</a>
+																<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>">Mark as complete</a>
 																<?
 															}
 															?></td>
@@ -2286,42 +2261,8 @@
 		if (!ValidID($enrollmentid,'Enrollment ID')) { return; }
 
 		/* get privacy information */
-		$username = $_SESSION['username'];
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
-		$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_phi = 1";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectname = $row['project_name'];
-				$projectcostcenter = $row['project_costcenter'];
-				$phiprojectlist[] = "$projectname ($projectcostcenter)";
-			}
-			$phiaccess = 1;
-		}
-		else {
-			$phiaccess = 0;
-		}
-		
-		$sqlstring = "select a.uid, c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = '$userid' and c.view_data = 1";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectname = $row['project_name'];
-				$uid = $row['uid'];
-				$projectcostcenter = $row['project_costcenter'];
-				$dataprojectlist[] = "$projectname ($projectcostcenter)";
-			}
-			$dataaccess = 1;
-		}
-		else {
-			$dataaccess = 0;
-		}
-		
+		$userid = $_SESSION['userid'];
+
 		/* check if they have enrollments for a valid project */
 		$sqlstring = "select a.* from enrollment a right join projects b on a.project_id = b.project_id where a.subject_id = $id";
 		//PrintSQL($sqlstring);
@@ -2333,8 +2274,9 @@
 			$hasenrollments = 0;
 		}
 	
+		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
-		NavigationBar("$uid", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
+		NavigationBar("$uid", $urllist, $perms);
 		
 		$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = $enrollmentid order by a.study_num asc";
 		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2457,14 +2399,8 @@
 			list($lastname, $firstname) = explode("^",$name);
 		
 			/* get privacy information */
-			$username = $_SESSION['username'];
-			$sqlstring = "select user_id from users where username = '$username'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$userid = $row['user_id'];
-			
+			$userid = $_SESSION['userid'];
 			$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = $userid and c.view_phi = 1";
-			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2504,9 +2440,10 @@
 			$phiaccess = 1;
 		}
 
+		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$formtitle", $urllist, 1, $phiaccess, $dataaccess, $phiprojectlist, $dataprojectlist);
+		NavigationBar("$formtitle", $urllist, $perms);
 		
 		/* kick them out if they shouldn't be seeing anything on this page */
 		if ((!$phiaccess) && (!$dataaccess)) {
@@ -2801,22 +2738,6 @@
 		});
 	});
 	</script>
-	<style>
-	.ui-autocomplete {
-		max-height: 150px;
-		overflow-y: auto;
-		/* prevent horizontal scrollbar */
-		overflow-x: hidden;
-		/* add padding to account for vertical scrollbar */
-		padding-right: 25px;
-	}
-	/* IE 6 doesn't support max-height
-	 * we use height instead, but this forces the menu to always be this tall
-	 */
-	* html .ui-autocomplete {
-		height: 150px;
-	}
-	</style>
 	
 	<table class="graydisplaytable" width="100%">
 		<thead>
@@ -2830,9 +2751,6 @@
 				<th>Projects</th>
 				<th>Active?</th>
 				<th>Activity date</th>
-				<? if ($GLOBALS['isadmin']) { ?>
-				<!--<th>Delete</td>-->
-				<? } ?>
 				<th>&nbsp;</th>
 				<th>&nbsp;</th>
 			</tr>
@@ -2994,10 +2912,7 @@
 						<br><br>
 						<select name="subjectgroupid">
 							<?
-								$sqlstring = "select user_id from users where username = '" . $_SESSION['username'] . "'";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$userid = $row['user_id'];
+								$userid = $_SESSION['userid'];
 							
 								$sqlstring = "select * from groups where group_type = 'subject' and group_owner = '$userid'";
 								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

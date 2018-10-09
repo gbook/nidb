@@ -40,6 +40,7 @@
 	$action = GetVariable("action");
 	$enrollmentid = GetVariable("enrollmentid");
 	$experimentid = GetVariable("experimentid");
+	$projectid = GetVariable("projectid");
 	$formid = GetVariable("formid");
 	$val_strings = GetVariables("string");
 	$val_numbers = GetVariables("number");
@@ -56,31 +57,32 @@
 	/* determine action */
 	switch ($action) {
 		case 'create':
-			CreateForm($enrollmentid, $formid, $username);
+			CreateForm($enrollmentid, $formid, $projectid, $username);
 			break;
 		case 'completed':
 			SetAsComplete($experimentid);
-			ViewForm($experimentid, "view");
+			ViewForm($experimentid, $projectid, "print");
 			break;
 		case 'save':
 			$experimentid = SaveForm($enrollmentid, $formid, $val_strings, $val_numbers, $val_texts, $val_dates, $val_files, $experimentor, $experimentdate, $username, $label, $notes);
-			ViewForm($experimentid, "view");
+			ViewForm($experimentid, $projectid, "edit");
 			break;
 		case 'update':
 			UpdateForm($experimentid, $enrollmentid, $formid, $val_strings, $val_numbers, $val_texts, $val_dates, $val_files, $experimentor, $experimentdate, $username, $label, $notes);
-			ViewForm($experimentid, "view");
+			ViewForm($experimentid, $projectid, "print");
 			break;
 		case 'view':
-			ViewForm($experimentid, "print");
+			ViewForm($experimentid, $projectid, "print");
 			break;
 		case 'edit':
-			ViewForm($experimentid, "edit");
+			ViewForm($experimentid, $projectid, "edit");
 			break;
 		case 'print':
 			PrintForm($experimentid);
 			break;
 		default:
 			echo "No action specified";
+//			 ViewForm($experimentid, $projectid, "view");
 	}
 	
 	
@@ -166,8 +168,8 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* insert all the strings */
-		if (isset($val_strings['string'])) {
-			foreach ($val_strings['string'] as $formfieldid => $value) {
+		if (isset($val_strings)) {
+			foreach ($val_strings as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_string, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
@@ -175,8 +177,8 @@
 			}
 		}
 		/* insert all the numbers */
-		if (isset($val_numbers['number'])) {
-			foreach ($val_numbers['number'] as $formfieldid => $value) {
+		if (isset($val_numbers)) {
+			foreach ($val_numbers as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_number, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
@@ -193,22 +195,24 @@
 			}
 		}
 		/* insert all the dates */
-		if (isset($val_dates['date'])) {
-			foreach ($val_dates['date'] as $formfieldid => $value) {
+		if (isset($val_dates)) {
+			foreach ($val_dates as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
+				if ($value==NULL){$value=date('Y-m-d');}	
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
+		 ?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
 	}
 	
 	/* -------------------------------------------- */
 	/* ------- CreateForm ------------------------- */
 	/* -------------------------------------------- */
-	function CreateForm($enrollmentid, $formid, $username) {
+	function CreateForm($enrollmentid, $formid, $projectid, $username) {
 	
-		$sqlstring = "select * from assessment_forms where form_id = $formid";
+		$sqlstring = "select * from assessment_forms where form_id = $formid and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
@@ -230,6 +234,7 @@
 		<form action="assessments.php" method="post">
 		<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 		<input type="hidden" name="formid" value="<?=$formid?>">
+		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="action" value="save">
 		
 		<table>
@@ -342,7 +347,7 @@
 	/* -------------------------------------------- */
 	/* ------- ViewForm --------------------------- */
 	/* -------------------------------------------- */
-	function ViewForm($experimentid, $viewtype) {
+	function ViewForm($experimentid,$projectid, $viewtype) {
 	
 		$sqlstring = "select * from assessments where experiment_id = $experimentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -356,7 +361,7 @@
 		$label = $row['label'];
 		$notes = $row['notes'];
 
-		$sqlstring = "select * from assessment_forms where form_id = $formid";
+		$sqlstring = "select * from assessment_forms where form_id = $formid and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
@@ -426,9 +431,19 @@
 			<tr>
 				<td colspan="2">&nbsp;</td>
 			</tr>
+			<tr>
+				<td></td>
+				<td><b>Value</b></td>
+				<td><b>Score</b></td>
+			</tr>
+
 			<?
 				/* display all other rows, sorted by order */
-				$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM assessment_formfields a left outer join assessment_data b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
+				if ($viewtype == "edit"){
+					 $sqlstring = "SELECT *  FROM assessment_formfields where form_id = $formid order by formfield_order + 0";
+				} else {
+					$sqlstring = "SELECT a.*, b.value_text, b.value_number, b.value_string, b.value_binary, b.value_date, b.update_username FROM assessment_formfields a left outer join assessment_data b on a.formfield_id = b.formfield_id where a.form_id = $formid and (b.experiment_id = $experimentid or b.experiment_id is NULL) order by a.formfield_order + 0";
+				      }
 				//echo $sqlstring;
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -527,7 +542,7 @@
 									case "date":
 										if ($viewtype == "print") { echo $value_date; }
 										else {
-											?><input type="date" name="date-<?=$formfield_id?>[]" value="<?=$value_date?>" <?=$readonly?>><span class="tiny">date</span><?
+											?><input type="date" name="date-<?=$formfield_id?>[]" value="<?=$value_date?>" <?=$readonly?>><span class="tiny">Current date is default value</span><?
 										}
 										break;
 									case "number":
@@ -561,9 +576,10 @@
 					<?
 				}
 				
-				if (!$iscomplete) {
+				if (!$iscomplete and $viewtype!="print") {
 			?>
 			<tr>
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
 				<td colspan="3" align="center">
 					<input type="submit" value="Update">
 				</td>

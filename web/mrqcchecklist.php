@@ -614,7 +614,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('mrqc', $id);
 		
@@ -1079,7 +1079,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
 		$urllist['Edit MR Scan Parameters'] = "mrqcchecklist.php?action=editmrparams&id=$projectid";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		DisplayProjectsMenu('mrqc', $projectid);
 		
@@ -1136,7 +1136,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('mrqc', $id);
 		
@@ -1386,7 +1386,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
 		$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$projectid";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		DisplayProjectsMenu('mrqc', $projectid);
 		

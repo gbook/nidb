@@ -435,6 +435,7 @@ sub ProcessPipelines() {
 						
 							my $dependencyanalysisid = 0;
 							my $submiterror = 0;
+							my $errormsg;
 							
 							WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
 							print "StudyDateTime: $studydatetime\n";
@@ -626,9 +627,34 @@ sub ProcessPipelines() {
 								WriteLog(join('|',@parts));
 								AppendLog($setuplogF, WriteLog("[$systemstring]: " . $sgeresult));
 								
-								if ($sgeresult =~ /error/) {
-									$sqlstring = "update analysis set analysis_qsubid = '0', analysis_status = 'error', analysis_statusmessage = 'Error submitting to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
+								# check the return message from qsub
+								if ($sgeresult =~ /invalid option/i) {
 									$submiterror = 1;
+									$errormsg = "Invalid qsub option";
+								}
+								elsif ($sgeresult =~ /directive error/i) {
+									$errormsg = "Invalid qsub directive";
+									$submiterror = 1;
+								}
+								elsif ($sgeresult =~ /cannot connect to server/i) {
+									$errormsg = "Invalid qsub hostname";
+									$submiterror = 1;
+								}
+								elsif ($sgeresult =~ /unknown queue/i) {
+									$errormsg = "Invalid queue";
+									$submiterror = 1;
+								}
+								elsif ($sgeresult =~ /queue is not enabled/i) {
+									$errormsg = "Queue is not enabled";
+									$submiterror = 1;
+								}
+								elsif ($sgeresult =~ /job exceeds queue resource limits/i) {
+									$errormsg = "Job exceeds resource limits";
+									$submiterror = 1;
+								}
+
+								if ($submiterror) {
+									$sqlstring = "update analysis set analysis_qsubid = '0', analysis_status = 'error', analysis_statusmessage = 'Submit Error [$errormsg]', analysis_enddate = now() where analysis_id = $analysisRowID";
 								}
 								else {
 									$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";

@@ -115,8 +115,8 @@ if ($email == "") {
 					<td class="subheader">Study #</td>
 					<td class="subheader">Date</td>
 					<td class="subheader">Modality</td>
-					<td class="subheader"># of Series</td>
 					<td class="subheader">Site</td>
+					<td class="subheader"># of Series</td>
 					<td class="subheader">Project</td>
 				</tr>
 			<?
@@ -131,24 +131,40 @@ if ($email == "") {
 					$study_num = $row['study_num'];
 					$uid = $row['uid'];
 					$project_name = $row['project_name'];
+					$projectid = $row['project_id'];
 					$project_costcenter = $row['project_costcenter'];
 					$familyuid = $row['family_uid'];
 					
-					$sqlstringA = "select count(*) 'seriescount' from " . strtolower($modality) . "_series where study_id = $study_id";
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-					$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-					$seriescount = $rowA['seriescount'];
-					?>
-					<tr>
-						<td title="Family UID: <b><?=$familyuid?></b>"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
-						<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
-						<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
-						<td style="font-size:8pt"><?=$modality?></td>
-						<td style="font-size:8pt"><?=$seriescount?></td>
-						<td style="font-size:8pt"><?=$study_site?></td>
-						<td style="font-size:8pt"><?=$project_name?> (<?=$project_costcenter?>)</td>
-					</tr>
-					<?
+					$perms = GetCurrentUserProjectPermissions(array($projectid));
+					if (GetPerm($perms, 'viewdata', $projectid)) {
+						$sqlstringA = "select count(*) 'seriescount' from " . strtolower($modality) . "_series where study_id = $study_id";
+						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+						$seriescount = $rowA['seriescount'];
+						?>
+						<tr>
+							<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
+							<td style="font-size:8pt"><?=$modality?></td>
+							<td style="font-size:8pt"><?=$seriescount?></td>
+							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt"><?=$project_name?> (<?=$project_costcenter?>)</td>
+						</tr>
+						<?
+					}
+					else {
+						?>
+						<tr>
+							<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
+							<td style="font-size:8pt"><?=$modality?></td>
+							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt" colspan="2">No permissions for <?=$project_name?> (<?=$project_costcenter?>)</td>
+						</tr>
+						<?
+					}
 				}
 			?>
 			</table>

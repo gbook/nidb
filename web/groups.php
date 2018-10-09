@@ -327,7 +327,7 @@ session_start();
         $grouptype = $row['group_type'];
 
         $urllist['Groups'] = "groups.php";
-        NavigationBar("$groupname - <span style='font-weight:normal'>$grouptype<span>", $urllist,0,'','','','');
+        NavigationBar("$groupname - <span style='font-weight:normal'>$grouptype<span>", $urllist);
         ?>
         <script>
             $(document).ready(function()
@@ -1202,7 +1202,7 @@ session_start();
 
         $urllist['Groups'] = "groups.php";
         $urllist['Add Group'] = "groups.php?action=addform";
-        NavigationBar("Groups", $urllist,0,'','','','');
+        NavigationBar("Groups", $urllist,0);
 
         ?>
 

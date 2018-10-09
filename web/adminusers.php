@@ -48,12 +48,12 @@
 	$email = GetVariable("email");
 	$enabled = GetVariable("enabled");
 	$isadmin = GetVariable("isadmin");
-	$isguest = GetVariable("isguest");
 	$instanceid = GetVariable("instanceid");
-	$dataprojects = GetVariable("dataprojects");
-	$phiprojects = GetVariable("phiprojects");
-	$writedataprojects = GetVariable("writedataprojects");
-	$writephiprojects = GetVariable("writephiprojects");
+	$projectadmin = GetVariable("projectadmin");
+	$modifydata = GetVariable("modifydata");
+	$viewdata = GetVariable("viewdata");
+	$modifyphi = GetVariable("modifyphi");
+	$viewphi = GetVariable("viewphi");
 	
 	/* determine action */
 	switch ($action) {
@@ -80,11 +80,11 @@
 			DisplayUserList();
 			break;
 		case 'update':
-			UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects);
+			UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
 			DisplayUserList();
 			break;
 		case 'add':
-			AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects);
+			AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid);
 			DisplayUserList();
 			break;
 		case 'delete':
@@ -101,28 +101,25 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateUser ------------------------- */
 	/* -------------------------------------------- */
-	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects) {
+	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
 		/* perform data checks */
 		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
 		$isadmin = mysqli_real_escape_string($GLOBALS['linki'], $isadmin) + 0;
+		$enabled = mysqli_real_escape_string($GLOBALS['linki'], $enabled) + 0;
 
+		/* start a transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
 		/* determine their current login type */
 		$sqlstring = "select login_type from users where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$logintype = $row['login_type'];
-		if ($logintype == "Standard") {
-			if ($isguest) {
-				$logintype = "Guest";
-			}
-			else {
-				$logintype = "Standard";
-			}
-		}
-		else {
+		if ($logintype != "Standard") {
 			$logintype = "NIS";
 		}
 		
@@ -145,57 +142,57 @@
 		$sqlstring = "delete from user_project where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		/* update/insert user_project view rows */
-		if (count($dataprojects) > 0) {
-			foreach ($dataprojects as $projectid) {
+		/* update/insert modify data rows */
+		if (count($projectadmin) > 0) {
+			foreach ($projectadmin as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_data = 1, view_phi = 0 where user_id = $id and project_id = $projectid";
+					$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
 		
-		/* update/insert user_project edit rows */
-		if (count($phiprojects) > 0) {
-			foreach ($phiprojects as $projectid) {
+		/* update/insert modify data rows */
+		if (count($modifydata) > 0) {
+			foreach ($modifydata as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+					$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 0, 1, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-
-		/* update/insert view rows */
-		if (count($writedataprojects) > 0) {
-			foreach ($writedataprojects as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set write_data = 1, write_phi = 0 where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
 		
-		/* update/insert edit rows */
-		if (count($writephiprojects) > 0) {
-			foreach ($writephiprojects as $projectid) {
+		/* update/insert view data rows */
+		if (count($viewdata) > 0) {
+			foreach ($viewdata as $projectid) {
+				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+				else {
+					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+		}
+		
+		/* update/insert modify phi rows */
+		if (count($modifyphi) > 0) {
+			foreach ($modifyphi as $projectid) {
 				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -203,11 +200,31 @@
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "insert into user_project (user_id, project_id, write_data, write_phi, write_data, write_phi) values ($id, $projectid, 0, 1, 0, 0)";
+					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
+		
+		/* update/insert view phi rows */
+		if (count($viewphi) > 0) {
+			foreach ($viewphi as $projectid) {
+				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+				else {
+					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+		}
+		
+		/* commit transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		?><div align="center"><span class="message"><?=$username?> updated</span></div><br><br><?
 	}
@@ -216,7 +233,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddUser ---------------------------- */
 	/* -------------------------------------------- */
-	function AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $isguest, $instanceid, $dataprojects, $phiprojects, $writedataprojects, $writephiprojects) {
+	function AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid) {
 		/* perform data checks */
 		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
@@ -224,15 +241,9 @@
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
 		$enabled = mysqli_real_escape_string($GLOBALS['linki'], $enabled) + 0;
 		$isadmin = mysqli_real_escape_string($GLOBALS['linki'], $isadmin) + 0;
-		$isguest = mysqli_real_escape_string($GLOBALS['linki'], $isguest) + 0;
 		
 		/* determine their current login type */
-		if ($isguest) {
-			$logintype = "Guest";
-		}
-		else {
-			$logintype = "Standard";
-		}
+		$logintype = "Standard";
 		
 		/* insert the new user */
 		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, '$isadmin', 0)";
@@ -245,37 +256,8 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
-		/* update/insert view rows */
-		if (is_array($dataprojects)) {
-			foreach ($dataprojects as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-		
-		/* update/insert edit rows */
-		if (is_array($phiprojects)) {
-			foreach ($phiprojects as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_phi, view_data, write_data, write_phi) values ($id, $projectid, 1, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
+		/* don't assign any permissions to a new user by default, it must be done manually */
+
 		?><div align="center"><span class="message"><?=$username?> added</span></div><br><br><?
 	}
 
@@ -344,7 +326,6 @@
 			$isadmin = $row['user_isadmin'];
 			if ($enabled == 1) $enabledcheck = "checked";
 			if ($isadmin == 1) $isadmincheck = "checked";
-			if ($login_type == "Guest") $isguestcheck = "checked";
 		
 			$formaction = "update";
 			$formtitle = "Updating $username";
@@ -392,7 +373,7 @@
 				<td class="label">Full name</td>
 				<td><input type="text" name="fullname" value="<?=$fullname?>" required></td>
 			</tr>
-			<? if (($login_type == "Guest") || ($login_type == "Standard") || ($type == "add")) { ?>
+			<? if (($login_type == "Standard") || ($type == "add")) { ?>
 			<tr>
 				<td class="label">Password</td>
 				<td><input type="password" name="password" id="password"></td>
@@ -407,16 +388,12 @@
 				<td><input type="text" name="email" value="<?=$email?>" required></td>
 			</tr>
 			<tr>
-				<td class="label">Enabled?</td>
+				<td class="label">Enabled</td>
 				<td><input type="checkbox" name="enabled" value="1" <?=$enabledcheck?>></td>
 			</tr>
 			<tr>
-				<td class="label">Admin?</td>
+				<td class="label">NiDB Admin</td>
 				<td><input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>></td>
-			</tr>
-			<tr>
-				<td class="label">Guest?</td>
-				<td><input type="checkbox" name="isguest" value="1" <?=$isguestcheck?>></td>
 			</tr>
 			<? if ($type == 'edit') { ?>
 				<script type="text/javascript">
@@ -441,47 +418,47 @@
 						$('input[name="fullname"]').attr('autocomplete', 'off');
 						$('input[name="password"]').attr('autocomplete', 'off');
 					}
-					$("#alldataprojects").click(function() {
+					$("#allprojectadmin").click(function() {
 						var checked_status = this.checked;
-						$(".dataprojects").find("input[type='checkbox']").each(function() {
+						$(".projectadmin").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 					});
-					$("#allphiprojects").click(function() {
+					$("#allmodifydata").click(function() {
 						var checked_status = this.checked;
-						$(".phiprojects").find("input[type='checkbox']").each(function() {
+						$(".modifydata").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 					});
-					$("#writealldataprojects").click(function() {
+					$("#allviewdata").click(function() {
 						var checked_status = this.checked;
-						$(".writedataprojects").find("input[type='checkbox']").each(function() {
+						$(".viewdata").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 					});
-					$("#writeallphiprojects").click(function() {
+					$("#allmodifyphi").click(function() {
 						var checked_status = this.checked;
-						$(".writephiprojects").find("input[type='checkbox']").each(function() {
+						$(".modifyphi").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+					});
+					$("#allviewphi").click(function() {
+						var checked_status = this.checked;
+						$(".viewphi").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 					});
 					/* show/hide projects for each instance */
 					$(".instances").click(function() {
-						console.log("I've been clicked!" + this.value);
+						//console.log("I've been clicked!" + this.value);
 						if (this.checked) {
-							console.log("Now I'm checked");
-							//$(".projects" + this.value).find("input[type='checkbox']").each(function() {
-							//	this.attr("enabled",true);
-							//});
+							//console.log("Now I'm checked");
 							$(".chkInstance" + this.value).attr("disabled",false);
 							$(".projects" + this.value).css("background-color","#fff");
 							$(".projects" + this.value).css("color", 'darkblue');
 						}
 						else {
-							console.log("Now I'm not checked");
-							//$(".projects" + this.value).find("input[type='checkbox']").each(function() {
-							//	this.attr("enabled",true);
-							//});
+							//console.log("Now I'm not checked");
 							$(".chkInstance" + this.value).attr("disabled",true);
 							$(".projects" + this.value).css("background-color", '#eee');
 							$(".projects" + this.value).css("color", '#777');
@@ -490,29 +467,32 @@
 				});
 				</script>
 			<tr>
-				<td class="label" valign="top">Project access</td>
+				<td class="label" valign="top">Project permissions</td>
 				<td>
 					<table cellspacing="0" cellpadding="1" class="smallgraydisplaytable">
 						<thead>
 						<tr>
 							<th></th>
+							<th></th>
 							<th colspan="2" align="center">Data</th>
-							<th colspan="2" align="center">PHI</th>
+							<th colspan="2" align="center">PHI/PII</th>
 						</tr>
 						<tr>
 							<th></th>
-							<th align="center">View &nbsp;</th>
-							<th align="center">Change &nbsp;</th>
-							<th align="center">View &nbsp;</th>
-							<th align="center">Change &nbsp;</th>
+							<th align="center">Project admin <img src="images/help.gif" title="<b>Project admin</b><br><br>User has the following permissions for the selected projects:<ul><li>Assign admin permissions to users<li>Modify all data<li>View all data<li>Modify PHI/PII<li>View PHI/PII"> &nbsp;</th>
+							<th align="center">Modify <img src="images/help.gif" title="User has permissions to modify, upload/import data, delete subjects/studies/series. Excluding PHI/PII"> &nbsp;</th>
+							<th align="center" title="User has permissions to view all data, excluding PHI/PII">View &nbsp;</th>
+							<th align="center" title="User has permissions to modify PHI/PII">Modify &nbsp;</th>
+							<th align="center" title="User has permissions to view, but not modify PHI/PII">View &nbsp;</th>
 						</tr>
 						</thead>
 						<tr style="color: darkblue; font-size:11pt; font-weight: bold">
 							<td>Select/unselect all<br><br></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="alldataprojects"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="writealldataprojects"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allphiprojects"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="writeallphiprojects"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allprojectadmin"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allmodifydata"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allviewdata"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allmodifyphi"></label></td>
+							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allviewphi"></label></td>
 						</tr>
 				<?
 					$sqlstring = "select * from user_instance where user_id = '$id'";
@@ -542,7 +522,7 @@
 						}
 						?>
 						<tr>
-							<td colspan="5"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>><b><?=$instance_name?></b></label></td>
+							<td colspan="7"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>><b><?=$instance_name?></b></label></td>
 						</tr>
 						<?
 							$bgcolor = "#EEFFEE";
@@ -558,12 +538,14 @@
 									$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 									if (mysqli_num_rows($resultB) > 0) {
 										$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+										$project_admin = $rowB['project_admin'];
 										$view_data = $rowB['view_data'];
 										$view_phi = $rowB['view_phi'];
 										$write_data = $rowB['write_data'];
 										$write_phi = $rowB['write_phi'];
 									}
 									else {
+										$project_admin = "";
 										$view_data = "";
 										$view_phi = "";
 										$write_data = "";
@@ -574,10 +556,21 @@
 								?>
 								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
 									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
-									<td align="center" class="dataprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="dataprojects[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View data for<br><b><?=$project_name?></b>"></label></td>
-									<td align="center" class="writedataprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writedataprojects[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change/upload data for<br><b><?=$project_name?></b>"></label></td>
-									<td align="center" class="phiprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="phiprojects[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="View PHI for<br><b><?=$project_name?></b>"></label></td>
-									<td align="center" class="writephiprojects checkcell"><label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="writephiprojects[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?> title="Change PHI for<br><b><?=$project_name?></b>"></label></td>
+									<td align="center" class="projectadmin checkcell">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									</td>
+									<td align="center" class="modifydata checkcell">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifydata[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									</td>
+									<td align="center" class="viewdata checkcell">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewdata[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									</td>
+									<td align="center" class="modifyphi checkcell">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifyphi[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									</td>
+									<td align="center" class="viewphi checkcell">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewphi[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									</td>
 								</tr>
 								<?
 								if ($bgcolor == "#EEFFEE") { $bgcolor = "#FFFFFF"; }
@@ -625,7 +618,7 @@
 				<th>Last Login</th>
 				<th>Login Count</th>
 				<th>Enabled</th>
-				<th>Admin</th>
+				<!--<th>Admin</th>-->
 			</tr>
 		</thead>
 		<tbody>
@@ -643,7 +636,7 @@
 					$lastlogin = $row['user_lastlogin'];
 					$logincount = $row['user_logincount'];
 					$enabled = $row['user_enabled'];
-					$isadmin = $row['user_isadmin'];
+					//$isadmin = $row['user_isadmin'];
 					
 					if ($username == "") {
 						$username = "(blank)";
@@ -667,7 +660,7 @@
 						}
 					?>
 				</td>
-				<td>
+				<!--<td>
 					<?
 						if ($isadmin) {
 							?><a href="adminusers.php?action=notadmin&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
@@ -676,7 +669,7 @@
 							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
 						}
 					?>
-				</td>
+				</td> -->
 				<!--<td><?if ($enabled) echo "&#10004;";?></td>
 				<td><?if ($isadmin) echo "&#10004;";?></td> -->
 			</tr>
@@ -716,6 +709,7 @@
 						}
 					?>
 				</td>
+				<!--
 				<td>
 					<?
 						if ($isadmin) {
@@ -725,7 +719,7 @@
 							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
 						}
 					?>
-				</td>
+				</td> -->
 				<!--<td><?if ($enabled) echo "&#10004;";?></td>
 				<td><?if ($isadmin) echo "&#10004;";?></td> -->
 			</tr>

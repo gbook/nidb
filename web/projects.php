@@ -170,13 +170,10 @@
 			DeleteStudyTemplate($templateid);
 			DisplayStudyTemplateList($id);
 			break;
-# My Changes Asim
 		case 'assessmentinfo':
-                        AssessmentsInfo($id);
-                        DisplayStudyTemplateList($id);
-                        break;
+			DisplayFormList($id);
+			break;
 		default:
-#..................
 			if ($id == '') {
 				DisplayProjectList();
 			}
@@ -827,7 +824,7 @@
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('studies', $id);
 		
@@ -956,7 +953,187 @@
 		<?
 	}
 
+# My Changes Asim 04/16/2018
+	/* -------------------------------------------- */
+	/* ------- DisplayForm ------------------------ */
+	/* -------------------------------------------- */
+	function DisplayForm($id) {
+	
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+	#	$desc = $row['form_desc'];
+		
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name]="projects.php";
+		$urllist['Assessments'] = "adminassessmentforms.php";
+#		$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
+		NavigationBar("Project Assessments", $urllist);
+	
+		DisplayProjectsMenu('assessments', $id);
+	
+	?>
+		<div align="center">
 
+		<br><br>
+		<table class="formentrytable">
+			<tr>
+				<td class="title" colspan="3"><?=$title?></td>
+			</tr>
+			<tr>
+				<td class="desc" colspan="3"><?=$desc?></td>
+			</tr>
+			<tr>
+				<td colspan="2">&nbsp;</td>
+				<td style="font-size:8pt; color: darkblue">Question #</td>
+				<td style="font-size:8pt; color: darkblue">Question ID</td>
+			</tr>
+			<?
+				/* display all other rows, sorted by order */
+				$sqlstring = "select * from assessment_formfields where form_id = $id order by formfield_order + 0";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$formfield_id = $row['formfield_id'];
+					$formfield_desc = $row['formfield_desc'];
+					$formfield_values = $row['formfield_values'];
+					$formfield_datatype = $row['formfield_datatype'];
+					$formfield_order = $row['formfield_order'];
+					$formfield_scored = $row['formfield_scored'];
+					$formfield_haslinebreak = $row['formfield_haslinebreak'];
+					
+					?>
+					<tr>
+						<? if ($formfield_datatype == "header") { ?>
+							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+						<? } else { ?>
+							<td class="field"><?=$formfield_desc?></td>
+							<td class="value">
+							<?
+								switch ($formfield_datatype) {
+									case "binary": ?><input type="file" name="value[]"><? break;
+									case "multichoice": ?>
+										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
+											<?
+												$values = explode(",", $formfield_values);
+												natsort($values);
+												foreach ($values as $value) {
+													$value = trim($value);
+												?>
+													<option value="<?=$value?>"><?=$value?></option>
+												<?
+												}
+											?>
+										</select>
+										<br>
+										<span class="tiny">Hold <b>Ctrl</b>+click to select multiple items</span>
+									<? break;
+									case "singlechoice": ?>
+											<?
+												$values = explode(",", $formfield_values);
+												//natsort($values);
+												foreach ($values as $value) {
+													$value = trim($value);
+												?>
+													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
+												<?
+													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
+												}
+											?>
+									<? break;
+									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
+								}
+							?>
+						<? } ?>
+						</td>
+						<? if ($formfield_scored) {?>
+						<td><input type="text" size="2"></td>
+						<? } ?>
+						<td class="order"><?=$formfield_order?></td>
+						<td class="order"><?=$formfield_id?></td>
+					</tr>
+					<?
+				}
+			?>
+		</table>
+		<br><br>
+		
+		</div>
+	<?
+
+	
+
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormList -------------------- */
+	/* -------------------------------------------- */
+	function DisplayFormList($id) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		
+		$urllist['Projects'] = "projects.php";
+		$urllist[$name] = "projects.php?actimn=displayFormList&id=$id";
+		$urllist['Add Form'] = "projectassessments.php?action=addform";
+#		NavigationBar("Admin", $urllist);
+		
+	?>
+
+	<table class="graydisplaytable">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Description</th>
+				<th>Creator</th>
+				<th>Create Date</th>
+				<th>Published</th>
+			</tr>
+		</thead>
+		<tbody>
+			<?
+				$sqlstring = "select a.*, b.username 'creatorusername', b.user_fullname 'creatorfullname' from assessment_forms a left join users b on a.form_creator = b.user_id order by a.form_title";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['form_id'];
+					$title = $row['form_title'];
+					$desc = $row['form_desc'];
+					$creatorusername = $row['creatorusername'];
+					$creatorfullname = $row['creatorfullname'];
+					$createdate = $row['form_createdate'];
+					$ispublished = $row['form_ispublished'];
+			?>
+			<tr>
+				<td>
+					<? if ($ispublished) { ?>
+					<a href="adminassessmentforms.php?action=viewform&id=<?=$id?>"><?=$title?></a>
+					<? } else { ?>
+					<a href="adminassessmentforms.php?action=editform&id=<?=$id?>"><?=$title?></a>
+					<? } ?>
+				</td>
+				<td><?=$desc?></td>
+				<td><?=$creatorfullname?></td>
+				<td><?=$createdate?></td>
+				<td><? if ($ispublished) { echo "&#10004;"; } ?></td>
+			</tr>
+			<? 
+				}
+			?>
+		</tbody>
+	</table>
+	<?
+	}
+
+# End My Changes Asim 04/16/2018
+	
 	/* -------------------------------------------- */
 	/* ------- DisplayStudyTemplateList ----------- */
 	/* -------------------------------------------- */
@@ -971,7 +1148,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
 		$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		?>
 		<table class="graydisplaytable">
@@ -1037,7 +1214,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
 		$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		if (($templateid == "") || ($templateid == 0)) {
 			$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
@@ -1166,7 +1343,7 @@
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		?>
 		<script type='text/javascript' src='scripts/x/x.js'></script>
@@ -1511,7 +1688,7 @@
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 
 		?>
 		<form method="post" action="projects.php">
@@ -1576,7 +1753,7 @@
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 
 		//PrintVariable($locallist);
 		$localseries = explode("\n",$locallist);
@@ -1682,7 +1859,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		# get the autocomplete list for the enrollgroup
 		$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
@@ -1890,7 +2067,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		?>
 		<? DisplayProjectsMenu("subjects", $id); ?>
@@ -2019,7 +2196,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Edit Group Protocols'] = "projects.php?action=viewuniqueseries&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $id";
@@ -2108,7 +2285,7 @@
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
 		$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
@@ -2203,7 +2380,7 @@
 	
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist,0,'','','','');
+		NavigationBar("$name", $urllist);
 		
 		/* get studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
@@ -2321,7 +2498,7 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$urllist['Projects'] = "projects.php";
-		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
+		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid, a.project_name FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id and d.isactive = 1 order by a.project_name, e.altuid";
@@ -2471,7 +2648,7 @@
 	function DisplayProjectList() {
 		
 		$urllist['Projects'] = "projects.php";
-		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist,0,'','','','');
+		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		if ($_SESSION['instanceid'] == "") {
 			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top left of the page.</div><?

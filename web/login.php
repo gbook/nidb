@@ -125,30 +125,19 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function CheckLogin($username, $password) {
 		$validlogin = false;
-		//if ($GLOBALS['cfg']['enablecas']){
-		//	Debug(__FILE__, __LINE__,"Checking against CAS server");
-		//	echo "Using CAS authentication<br>";
-		//	$username = AuthenticateCASUser();
-		//	exit(0);
-		//	if ($username != "") {
-		//		$validlogin = true;
-		//	}
-		//}
-		//else {
-			if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
-				Debug(__FILE__, __LINE__,"This is a Unix user account");
+		if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
+			Debug(__FILE__, __LINE__,"This is a Unix user account");
+			$validlogin = true;
+		}
+		else {
+			Debug(__FILE__, __LINE__,"Not a unix user account");
+			if (AuthenticateStandardUser($username, $password)) {
 				$validlogin = true;
 			}
 			else {
-				Debug(__FILE__, __LINE__,"Not a unix user account");
-				if (AuthenticateStandardUser($username, $password)) {
-					$validlogin = true;
-				}
-				else {
-					return false;
-				}
+				return false;
 			}
-		//}
+		}
 		
 		if ($validlogin) {
 			DoLogin($username);
@@ -162,18 +151,10 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function DoLogin($username) {
 		/* check if they are an admin */
-		$sqlstring = "select user_isadmin from users where username = '$username'";
+		$sqlstring = "select user_isadmin, user_id from users where username = '$username'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		if ($row['user_isadmin'] == '1')
-			$isadmin = true;
-		else
-			$isadmin = false;
-
-		/* check if they are an admin */
-		$sqlstring = "select user_isadmin from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
 		if ($row['user_isadmin'] == '1')
 			$isadmin = true;
 		else
@@ -191,13 +172,9 @@ window.onload = AreCookiesEnabled;
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 			
-		//$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
 		$_SESSION['username'] = $username;
 		$_SESSION['validlogin'] = "true";
+		$_SESSION['userid'] = $userid;
 		if ($isadmin) $_SESSION['isadmin'] = "true";
 		else $_SESSION['isadmin'] = "false";
 		
@@ -205,7 +182,6 @@ window.onload = AreCookiesEnabled;
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instanceid = $row['instance_id'];
-		//echo "[$sqlstring] - [$instanceid]<br>";
 		if ($instanceid == '') {
 			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -220,7 +196,6 @@ window.onload = AreCookiesEnabled;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instancename = $row['instance_name'];
-		//echo "[$sqlstring] - [$instancename]<br>";
 		
 		$_SESSION['instanceid'] = $instanceid;
 		$_SESSION['instancename'] = $instancename;
@@ -230,13 +205,10 @@ window.onload = AreCookiesEnabled;
 	/* ------- DoLogout --------------------------- */
 	/* -------------------------------------------- */
 	function DoLogout() {
-		//setcookie("username", "");
-		//setcookie("validlogin", "false");
 		session_destroy();
 		setcookie('MOD_AUTH_CAS', '', time()-1000, '/');
 		
 		if ($GLOBALS['cfg']['enablecas']) {
-			//phpCAS::client(CAS_VERSION_2_0, $GLOBALS['cfg']['casserver'], intval($GLOBALS['cfg']['casport']), $GLOBALS['cfg']['cascontext']);
 			phpCAS::logoutWithRedirectService($GLOBALS['cfg']['siteurl']);
 			echo "You have been logged out of NiDB through CAS. <a href='login.php'>Login</a> again.";
 		}

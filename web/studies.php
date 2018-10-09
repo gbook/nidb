@@ -571,10 +571,11 @@
 		$projectid = $row['project_id'];
 		$projectname = $row['project_name'];
 
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
 		$urllist[$projectname] = "projects.php?id=$projectid";
 		$urllist[$uid] = "subjects.php?id=$subjectid";
 		$urllist[$study_num] = "studies.php?id=$id";
-		NavigationBar("$uid$study_num", $urllist);
+		NavigationBar("$uid$study_num", $urllist, $perms);
 		
 		$formaction = "update";
 		$formtitle = "Updating study $study_num";
@@ -798,28 +799,14 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
-
-		$sqlstring = "select b.* from user_project a left join projects b on a.project_id = b.project_id where a.project_id = $projectid and a.view_data = 1 and a.user_id = '$userid'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectname = $row['project_name'];
-				$projectcostcenter = $row['project_costcenter'];
-				$dataprojectlist[] = "$projectname ($projectcostcenter)";
-			}
-			$dataaccess = 1;
-		}
-		else {
-			$dataaccess = 0;
-		}
 		
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
 		$urllist[$project_name] = "projects.php?id=$projectid";
 		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
 		$urllist["Study " . $study_num] = "studies.php?id=$id";
-		NavigationBar("$uid$study_num", $urllist, 1, null, $dataaccess, null, $dataprojectlist);
+		NavigationBar("$uid$study_num", $urllist, $perms);
 
-		if (!$dataaccess) {
+		if (!GetPerm($perms, 'viewdata', $projectid)) {
 			echo "You do not have data access to this project. Consult your NiDB administrator";
 			return;
 		}

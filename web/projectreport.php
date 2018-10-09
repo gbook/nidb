@@ -192,7 +192,7 @@
 		
 		$urllist['Project List'] = "projects.php";
 		$urllist['Project Report'] = "projectreport.php?action=viewprojectreport&projectid=$projectid";
-		NavigationBar("Project report for $projectname", $urllist,0,'','','','');
+		NavigationBar("Project report for $projectname", $urllist);
 		?>
 		<table class="graydisplaytable">
 			<thead>

@@ -797,22 +797,90 @@
 		
 		/* insert the new most recent entry */
 		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, mostrecent_date) values ($userid, $subjectid, $studyid, now())";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete rows other than the most recent 15 items */
 		$sqlstring = "DELETE FROM `mostrecent` WHERE mostrecent_id NOT IN ( SELECT mostrecent_id FROM ( SELECT mostrecent_id FROM `mostrecent` where user_id = $userid ORDER BY mostrecent_date DESC LIMIT 15) foo) and user_id = $userid";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- GetPerm ---------------------------- */
+	/* -------------------------------------------- */
+	function GetPerm($perms, $perm, $projectid) {
+		$hasperm = 0;
+		foreach ($perms as $pid => $p) {
+			if ($p[$perm] == 1) {
+				$hasperm = 1;
+				break;
+			}
+		}
+		return $hasperm;
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- GetCurrentUserProjectPermissions --- */
+	/* -------------------------------------------- */
+	function GetCurrentUserProjectPermissions($projectids) {
+		$perms = array();
+		$userid = $_SESSION['userid'];
+		
+		$projectidlist = implode2(',', $projectids);
+		
+		if ($projectidlist != "") {
+			$sqlstring = "select a.*, b.project_name from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and a.project_id in ($projectidlist)";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$projectid = $row['project_id'];
+					$perms[$projectid]['projectname'] = $row['project_name'];
+					$perms[$projectid]['projectadmin'] = $row['project_admin'] + 0;
+					$perms[$projectid]['viewdata'] = $row['view_data'] + 0;
+					$perms[$projectid]['viewphi'] = $row['view_phi'] + 0;
+					$perms[$projectid]['modifydata'] = $row['write_data'] + 0;
+					$perms[$projectid]['modifyphi'] = $row['write_phi'] + 0;
+					
+					/* fill in the implied permissions */
+					if ($perms[$projectid]['projectadmin']) {
+						$perms[$projectid]['modifyphi'] = 1;
+						$perms[$projectid]['viewphi'] = 1;
+						$perms[$projectid]['modifydata'] = 1;
+						$perms[$projectid]['viewdata'] = 1;
+					}
+					if ($perms[$projectid]['modifyphi']) {
+						$perms[$projectid]['viewphi'] = 1;
+						$perms[$projectid]['modifydata'] = 1;
+						$perms[$projectid]['viewdata'] = 1;
+					}
+					if ($perms[$projectid]['viewphi']) {
+						$perms[$projectid]['viewphi'] = 1;
+						$perms[$projectid]['viewdata'] = 1;
+					}
+					if ($perms[$projectid]['modifydata']) {
+						$perms[$projectid]['viewdata'] = 1;
+					}
+				}
+			}
+		}
+		
+		return $perms;
 	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- NavigationBar ---------------------- */
 	/* -------------------------------------------- */
-	function NavigationBar($title, $urllist, $displayaccess = 0, $phiaccess = 1, $dataaccess = 1, $phiprojectlist = array(), $dataprojectlist = array()) {
+	function NavigationBar($title, $urllist, $perms=array()) {
+		
+		$msg = "";
 		?>
+		<style>
+			.adminperms { background-color: #fc8171; padding: 1px 8px; color: #000; }
+			.perms { background-color: #91b7ff; padding: 1px 8px; color: #000; }
+		</style>
 		<table width="100%" cellspacing="0">
 			<tr>
 				<td>
@@ -826,49 +894,52 @@
 				?>
 				</span>
 				<?
-				if ($displayaccess) {
-					if ($phiaccess) {
-						if ($dataaccess) {
-							$accessmessage = "<b>Data</b> and <b>PHI</b> permissions";
+				if (count($perms) > 0) {
+					foreach ($perms as $projectid => $data) {
+						$admin = $data['projectadmin'];
+						$projectname = $data['projectname'];
+						$viewdata = $perms[$projectid]['viewdata'];
+						$viewphi = $perms[$projectid]['viewphi'];
+						$modifydata = $perms[$projectid]['modifydata'];
+						$modifyphi = $perms[$projectid]['modifyphi'];
+						
+						if ($admin) { $admin = "Admin"; }
+						if ($modifyphi) { $modifyphi = "Modify PHI"; }
+						if ($modifydata) { $modifydata = "Modify data"; }
+						if ($viewphi) { $viewphi = "View PHI"; }
+						if ($viewdata) { $viewdata = "View data"; }
+						
+						//echo "$projectname - $admin, $modifyphi, $modifydata, $viewphi, $viewdata<br>";
+						if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
+							$msg .= "<li>No permissions to access $projectname";
 						}
 						else {
-							$accessmessage = "<b>PHI</b> permissions";
-						}
-					}
-					else {
-						if ($dataaccess) {
-							$accessmessage = "<b>Data</b> permissions";
-						}
-						else {
-							$accessmessage = "No <b>data</b> or <b>PHI</b> permissions";
+							$msg .= "<li><b>$projectname</b>";
+							
+							if ($admin != '')
+								$msg .= " <span class='adminperms'>$admin</span> ";
+							if ($modifyphi != '')
+								$msg .= " <span class='perms'>$modifyphi</span> ";
+							if ($viewphi != '')
+								$msg .= " <span class='perms'>$viewphi</span> ";
+							if ($modifydata != '')
+								$msg .= " <span class='perms'>$modifydata</span> ";
+							if ($viewdata != '')
+								$msg .= " <span class='perms'>$viewdata</span> ";
 						}
 					}
 					
-					if (($phiaccess) || ($dataaccess)) {
-						$projectlist = "<ul>";
-						if (!empty($phiprojectlist)) {
-							foreach ($phiprojectlist as $phiproject) {
-								$projectlist .= "<li>[PHI] $phiproject\n";
-							}
-						}
-						if (!empty($dataprojectlist)) {
-							foreach ($dataprojectlist as $dataproject) {
-								$projectlist .= "<li>[Data] $dataproject\n";
-							}
-						}
-						$projectlist .= "</ul>";
-					}
-					
-					//print_r($phiprojectlist);
-				?>
-				<details style="font-size:8pt; margin-left:15px; color: #666666">
-				<summary><?=$accessmessage?></summary>
-				<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
-				You have access permission to this subject through the following projects
-				<?=$projectlist?>
-				</div>
-				</details>
-				<?
+					?>
+					<details style="font-size:8pt; margin-left:15px;">
+					<summary>Permissions summary</summary>
+					<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
+					Your access permissions for this subject
+					<ul>
+					<?=$msg?>
+					</ul>
+					</div>
+					</details>
+					<?
 				}
 				if (trim($title != "")) {
 				?>
@@ -1493,7 +1564,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheaderactive"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheaderactive"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
@@ -1504,12 +1575,12 @@
 				</div>
 				<?
 				break;
-			 case "info":
+			case "info":
 				?>
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
@@ -1525,7 +1596,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheaderactive">
 							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
@@ -1544,7 +1615,7 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a><br>
@@ -1562,13 +1633,13 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheaderactive">
 							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
-							<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
+							<a href="projecthecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
 						</td>
 						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
 					</tr>
@@ -1581,18 +1652,20 @@
 				<div align="center">
 				<table width="50%">
 					<tr>
-						<td class="menuheader"><a href="projects.php?action=assessmentinfo&id=<?=$id?>">Assessments</a></td>
+						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
 						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
 						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
 						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
 						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheaderactive">
-							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>MR Scan QC</b></a><br>
-							<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
-							<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
+						<td class="menuheaderactive" style="font-size:10pt; font-weight: normal">
+							<!--<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">View MR Scan Params checklist</a> (<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a>)<br>-->
 							<br>
-							<a href="projects.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
-							<a href="projects.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
+							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>View MR QC checklist</b></a><br>
+								<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
+								<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
+							<br>
+							<a href="mrqcchecklist.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
+							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
 							<? if ($GLOBALS['isadmin']) { ?>
 								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
 							<? } ?>
