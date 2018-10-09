@@ -61,7 +61,6 @@
 			break;
 		case 'addform':
 			DisplayNlinkForms($projectid);
-			DisplayFormForm("add",$projectid, ""); 
 			break;
 		case 'updatefields':
 			UpdateFields($formid, $datatype, $field, $order, $values, $linebreaks, $scored);
@@ -427,8 +426,8 @@
 				<td  class="desc" colspan="2"><?=$desc?></td>
 			</tr>
 			<tr>
-                                <td style="font-size:12pt; color: lightblue">Title</td>
-                                <td style="font-size:12pt; color: lightblue">Field</td>
+                                <td style="font-size:12pt; color: blue">Title</td>
+                                <td style="font-size:12pt; color: blue">Field</td>
                         </tr>
 			<?
 				/* display all other rows, sorted by order */
@@ -602,9 +601,9 @@
 			?>
 		</tbody>
 	</table>
-
-	<div align="right">
-	<button><h3> <b> <a class="button" href="projectassessments.php?action=addform&projectid=<?=$projectid?>"> Add Form </a></b></h3></button>
+	<br>
+	<div align="center">
+	<h3> <b> <a href="projectassessments.php?action=addform&projectid=<?=$projectid?>"> Add Form </a></b></h3>
 	<?
 	}
 
@@ -655,9 +654,10 @@
 		
 //PrintVariable($projectid);
 		
-
+	 DisplayFormForm("add",$projectid, "");
 	
 	?>
+
 	
 	<div align="center">
 	<br><br> <h2>  <b> Forms available to Copy </b> </h2> <br><br>	
@@ -671,7 +671,7 @@
 
 		<thead>
 			<tr>
-				<th align="left">Form Title  <font color="red"><?="  &isin;  "?> </font>  Project Name</th>
+				<th align="left">Form Title  <font><?=" -   "?> </font>  Project Name</th>
 				<th align="left">Description</th>
 				<th>Form Id</th>
 				<th align="left">Create Date</th>
@@ -706,7 +706,7 @@
 			                $projname = $row['project_name'];
 			?>
 			<tr>
-			 	<td><a href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"><?=$title?><font color="red"><?="  &isin;  "?> </font><b><?=$projname?></b></a></td>
+			 	<td><a href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"><?=$title?><font><?=" -   "?> </font><b><?=$projname?></b></a></td>
 				<td align=""><?=$desc?></td>	
 				<td align="center"><?=$formid?></td>
 				<td><?=$createdate?></td>
