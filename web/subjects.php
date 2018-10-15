@@ -383,7 +383,6 @@
 		$projectcostcenter = $row['projectcostcenter'];
 
 		/* navigation bar */
-		
 		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
@@ -1531,6 +1530,10 @@
 		}
 		
 		?>
+
+		<div align="center">
+			<span align="center" style="padding: 8pt; font-size: 18pt; font-weight: bold; background-color: #ffff87"><?=$uid?></span>
+		</div>
 		
 		<br>
 		
@@ -1538,21 +1541,16 @@
 			details[open] { border: 1px solid #ccc; background-color: #eee}
 		</style>
 		
-		<table width="100%" cellpadding="4">
+		<table width="100%">
 			<tr>
-				<td valign="top" align="center">
-				
-					<table class="download">
+				<td valign="top">
+					<table cellpadding="0" width="100%">
 						<tr>
-							<td class="title">
-								<?=$uid?>
-							</td>
-						</tr>
-						<tr>
-							<td align="center" colspan="2" style="border-radius:5px; background-color: white; padding: 5px">
+							<td style="border: 2px solid #444">
+								<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Demographics</div>
+								<div align="left" style="padding: 5px">
+								
 								<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
-								<div align="left" style="font-weight: bold; font-size: 12pt">Demographics</div>
-								<div align="left">
 								<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
 								<details>
 									<summary class="tiny" style="color:darkred">Edit or delete</summary>
@@ -1573,7 +1571,6 @@
 									</div>
 								</details>
 								<? } ?>
-								</div>
 								
 								<br>
 								<table class="reviewtable">
@@ -1729,21 +1726,19 @@
 									echo "No permissions to view PHI";
 								}
 								?>
+								</div>
 							</td>
 						</tr>
 					</table>
 				</td>
 				<td valign="top" align="center">
-					<table class="download">
+					<table width="100%">
 						<tr>
-							<td class="title">
-								Projects
-							</td>
 							<form action="subjects.php" method="post">
-							<td align="right" style="color: white">
+							<td style="padding-left: 10px">
 								<input type="hidden" name="id" value="<?=$id?>">
 								<input type="hidden" name="action" value="enroll">
-								<span style="font-size:10pt">Enroll subject in project:</span>
+								<b>Enroll in project</b>
 								<select name="projectid">
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
@@ -1764,15 +1759,14 @@
 								?>
 								</select>
 								<input type="submit" value="Enroll">
+								<br><br>
 							</td>
 							</form>
 						</tr>
 						
 						<?
 							$sqlstringA = "select a.project_id 'projectid', a.*, b.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
-							//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							//PrintSQL($sqlstringA);
 							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 								$enrollmentid = $rowA['enrollment_id'];
 								$enroll_startdate = $rowA['enroll_startdate'];
@@ -1795,7 +1789,6 @@
 								if ($row['irb_consent'] != "") { $irb = "Y"; }
 								else { $irb = "N"; }
 							
-								//echo "$enroll_enddate <--> " . date("Y-m-d H:i:s") . "<br>";
 								if (($enroll_enddate > date("Y-m-d H:i:s")) || ($enroll_enddate == "0000-00-00 00:00:00") || ($enroll_enddate == "") || ($enroll_enddate == strtolower("null"))) {
 									$enrolled = true;
 								}
@@ -1817,31 +1810,16 @@
 							});
 						</script>
 						<tr>
-							<td class="section" colspan="2">
+							<td style="background-color: #eee">
 							
-								<table class="subdownload" width="100%">
+								<table width="100%" style="border: 2px solid #444; border-spacing: 0px; margin: 0px" cellpadding="0">
 									<tr>
-										<td class="label" style="width: 200px; text-align: left; vertical-align: top;">
-											<a href="projects.php?id=<?=$projectid?>"><?=$project_name?> (<?=$costcenter?>)</a><br><br>
-											<div style="font-size:10pt; font-weight: normal;">
-											Enrolled: <a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a><br>
-											<? if ($modifyphi) { ?>
-											Group: <span id="enroll_subgroup" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
-											<? } elseif ($viewphi) { ?>
-											Group: <span style="font-size: 9pt;"><? echo $enrollgroup; ?></span><br>
-											<? } ?>
-											<b>Project IDs:</b> <?=$subjectaltids;?>
-											<br>
-											<? if ($enroll_enddate != "0000-00-00 00:00:00") { ?>
-											<span style="color: darkred">Un-enroll date: <?=$enroll_enddate?></span><br>
-											<? } ?>
-											<? if ($viewphi) { ?>
-											<!--Project end date: <?=$project_enddate;?>-->
-											Project status: <a href="projectreport.php?action=viewreport&enrollmentid=<?=$enrollmentid?>">View report</a><br><br>
-											Diagnosis Tags: <?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?>
-											</div>
-											<? if (($enrolled) && ($projectadmin)) { ?>
-											<form action="subjects.php" method="post">
+										<td style="width: 250px; text-align: left; vertical-align: top; background-color: #fff;">
+											<div style="background-color: #444; padding: 8px"><a href="projects.php?id=<?=$projectid?>" style="font-size: 12pt; font-weight: bold; color: #fff"><?=$project_name?> (<?=$costcenter?>)</a></div>
+											<?
+											if ($viewphi) {
+												if (($enrolled) && ($projectadmin)) { ?>
+											<form action="subjects.php" method="post" style="margin:0px; padding:0px; display:inline;">
 											<input type="hidden" name="id" value="<?=$id?>">
 											<input type="hidden" name="action" value="changeproject">
 											<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
@@ -1874,9 +1852,38 @@
 											</details>
 											<?
 												} /* end if project admin */
-											} /* end if viewphi */ ?>
+											} /* end if viewphi */
+											?>											
+											<table border="0" style="width: 100%; padding: 5px; font-size: 10pt">
+												<tr>
+													<td>ID</td>
+													<td><b style="background-color: #ffff87; padding: 5px"><?=$subjectaltids?></b></td>
+												</tr>
+												<tr>
+													<td>Group</td>
+													<? if ($modifyphi) { ?>
+													<td><span id="enroll_subgroup" title="Click to edit in place" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; border: 1px solid skyblue; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+													<? } elseif ($viewphi) { ?>
+													<td><span style="font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+													<? } ?>
+												</tr>
+												<tr>
+													<td>Enrolled</td>
+													<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
+												</tr>
+												<tr>
+													<td>Tags</td>
+													<td><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
+												</tr>
+												<? if ($enroll_enddate != "0000-00-00 00:00:00") { ?>
+												<tr>
+													<td style="color: darkred">Un-enroll date</td>
+													<td style="color: darkred"><?=$enroll_enddate?></td>
+												</tr>
+												<? } ?>
+											</table>
 										</td>
-										<td class="main">
+										<td style="padding: 6px">
 											<?
 												if (!$viewdata) {
 													echo "No data access privileges to this project";
@@ -1970,7 +1977,7 @@
 														<th>Study ID</th>
 														<th>Visit</th>
 														<th>Rad Read</th>
-														<? if ($GLOBALS['isadmin']) { ?><th><span class="tiny">Merge</span></th><? } ?>
+														<? if ($projectadmin) { ?><th><span class="tiny">Merge</span></th><? } ?>
 													</thead>
 													<tbody>
 													<?
@@ -2026,12 +2033,12 @@
 															<td><tt><?=$uid?><?=$study_num?></tt></td>
 															<td><?=$study_type?></td>
 															<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
-															<? if ($GLOBALS['isadmin']) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>
+															<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>
 														</tr>
 														<?
 													}
 													?>
-													<? if ($GLOBALS['isadmin']) { ?>
+													<? if ($projectadmin) { ?>
 													<tr>
 														<td colspan="11" align="right"><input type="submit" value="Merge" style="font-size:9pt"></td>
 													</tr>
@@ -2048,7 +2055,6 @@
 												?>
 											
 											<? if ($_SESSION['enablebeta']) { ?>
-											<br><br>
 											<!-- instruments table -->
 											<table width="100%">
 												<tr>
@@ -2400,34 +2406,14 @@
 		
 			/* get privacy information */
 			$userid = $_SESSION['userid'];
-			$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = $userid and c.view_phi = 1";
+			$sqlstring = "select c.project_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join projects c on b.project_id = c.project_id where a.subject_id = '$id'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$projectname = $row['project_name'];
-					$projectcostcenter = $row['project_costcenter'];
-					$phiprojectlist[] = "$projectname ($projectcostcenter)";
+					$projectids[] = $row['project_id'];
 				}
-				$phiaccess = 1;
 			}
-			else {
-				$phiaccess = 0;
-			}
-			
-			$sqlstring = "select c.*, d.*  from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on d.project_id = c.project_id where a.subject_id = '$id' and c.user_id = $userid and c.view_data = 1";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$projectname = $row['project_name'];
-					$projectcostcenter = $row['project_costcenter'];
-					$dataprojectlist[] = "$projectname ($projectcostcenter)";
-				}
-				$dataaccess = 1;
-			}
-			else {
-				$dataaccess = 0;
-			}			
+
 			$formaction = "confirmupdate";
 			$formtitle = "Updating &nbsp;<span class='uid'>" . $uid . "</span>";
 			$submitbuttonlabel = "Update";
@@ -2437,16 +2423,22 @@
 			$formtitle = "Add new subject";
 			$submitbuttonlabel = "Add";
 			$dob = "1900-01-01";
-			$phiaccess = 1;
+			$modifyphi = 1;
 		}
 
 		$perms = GetCurrentUserProjectPermissions($projectids);
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$formtitle", $urllist, $perms);
-		
+
+		if (GetPerm($perms, 'projectadmin', $projectid)) { $projectadmin = 1; } else { $projectadmin = 0; }
+		if (GetPerm($perms, 'modifyphi', $projectid)) { $modifyphi = 1; } else { $modifyphi = 0; }
+		if (GetPerm($perms, 'viewphi', $projectid)) { $viewphi = 1; } else { $viewphi = 0; }
+		if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
+		if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
+			
 		/* kick them out if they shouldn't be seeing anything on this page */
-		if ((!$phiaccess) && (!$dataaccess)) {
+		if ((!$modifyphi) && (!$viewphi)) {
 			return;
 		}
 	?>
@@ -2470,7 +2462,7 @@
 			<tr>
 				<td class="requiredlabel">First name</td>
 				<td>
-					<? if ($phiaccess) { ?>
+					<? if ($modifyphi) { ?>
 					<input type="text" size="50" name="firstname" value="<?=$firstname?>" style="background-color: lightyellow; border: 1px solid gray">
 					<? } else { ?>
 					<input type="text" size="50" name="firstname" value="" disabled style="background-color: lightgray; border: 1px solid gray">
@@ -2480,7 +2472,7 @@
 			<tr>
 				<td class="requiredlabel">Last name</td>
 				<td>
-					<? if ($phiaccess) { ?>
+					<? if ($modifyphi) { ?>
 					<input type="text" size="50" name="lastname" value="<?=$lastname?>" required style="background-color: lightyellow; border: 1px solid gray">
 					<? } else { ?>
 					<input type="text" size="50" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
@@ -2490,7 +2482,7 @@
 			<tr>
 				<td class="requiredlabel">Date of birth</td>
 				<td>
-					<? if ($phiaccess) { ?>
+					<? if ($modifyphi) { ?>
 					<input type="date" name="dob" value="<?=$dob?>" required style="background-color: lightyellow; border: 1px solid gray"><!--&nbsp;<span class="subtlemessage">YYYY-MM-DD</span>-->
 					<? } else { ?>
 					<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
@@ -2599,7 +2591,7 @@
 			<tr>
 				<td class="label">Phone</td>
 				<td>
-					<? if ($phiaccess) { ?>
+					<? if ($modifyphi) { ?>
 					<input type="text" name="phone" value="<?=$phone1?>"> <?=$phone1?>
 					<? } else { ?>
 					<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
@@ -2609,7 +2601,7 @@
 			<tr>
 				<td class="label">E-mail</td>
 				<td>
-				<? if ($phiaccess) { ?>
+				<? if ($modifyphi) { ?>
 				<input type="text" name="email" value="<?=$email?>">
 				<? } else { ?>
 				<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
@@ -2619,7 +2611,7 @@
 			<tr>
 				<td class="label">Marital Status</td>
 				<td>
-				<? if ($phiaccess) { ?>
+				<? if ($modifyphi) { ?>
 					<select name="maritalstatus">
 						<option value="" <? if ($maritalstatus == "") echo "selected"; ?>>(Select a status)</option>
 						<option value="unknown" <? if ($maritalstatus == "unknown") echo "selected"; ?>>Unknown</option>
@@ -2639,7 +2631,7 @@
 			<tr>
 				<td class="label">Smoking Status</td>
 				<td>
-				<? if ($phiaccess) { ?>
+				<? if ($modifyphi) { ?>
 					<select name="smokingstatus">
 						<option value="" <? if ($smokingstatus == "") echo "selected"; ?>>(Select a status)</option>
 						<option value="unknown" <? if ($smokingstatus == "unknown") echo "selected"; ?>>Unknown</option>

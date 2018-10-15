@@ -2684,7 +2684,7 @@
 				</td>
 			</tr>
 		</table>
-		<table class="sortable graydisplaytable" id="projecttable" width="100%">
+		<table class="sortable graydisplaytable" width="100%" id="projecttable">
 			<thead>
 				<tr>
 					<th data-sort="string-ins">Name</th>
@@ -2693,7 +2693,7 @@
 					<th data-sort="string-ins">Admin</th>
 					<th data-sort="string-ins">PI</th>
 					<th data-sort="int">Studies</th>
-                                        <th data-sort="string-ins">RDoC Submission</th>
+					<th data-sort="string-ins">RDoC Submission</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -2725,11 +2725,11 @@
 								<td><?=$costcenter?></td>
 								<td><?=$adminfullname?></td>
 								<td><?=$pifullname?></td>
-								<td align=left">
-									<table cellpadding="0" cellspacing="0" border="0">
 								<?
+								$totalstudies = 0;
+								$totalsize = 0.0;
+								$studydetail = "";
 								$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-								//PrintSQL($sqlstring);
 								$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 								while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 									$modality = $row2['study_modality'];
@@ -2741,17 +2741,17 @@
 										$projectModalitySize = $row3['modalitysize'];
 									}
 									
+									$totalstudies += $count;
+									$totalsize += $projectModalitySize;
+									
 									if ($modality == "") { $modality = "(blank)"; }
-									?>
-									<tr>
-									<td align="left" style="font-size:10pt; border: none; color: darkblue; padding: 0px 3px"><b><?=$modality?></b></td>
-									<td style="font-size:10pt; border: none; padding: 0px 3px"><?=$count?> <!--<span class="tiny"><?=number_format(($projectModalitySize/1024/1024/1024),1)?> GB</span>--></td>
-
-									</tr>
-									<?
+									
+									$studydetail .= "<li><b>$modality</b> - $count";
 								}
+								$studydetail = "<ul>$studydetail<ul>";
 								?>
-									</table>
+								<td align="left" title="<?=$studydetail?>">
+									<?=$totalstudies?>
 								</td>
 								<td><a href="projects.php?action=show_rdoc_list&rdoc_label=<?=$rdoc_label?>"><?=$rdoc_label?></td> 
 							</tr>
@@ -2760,7 +2760,7 @@
 						else {
 						?>
 							<tr>
-								<td>No access to <?=$name?></td>
+								<td style="color: #999; padding-left: 10px">No access to <b><?=$name?></b></td>
 								<td></td>
 								<td></td>
 								<td></td>

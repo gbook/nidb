@@ -71,14 +71,6 @@
 			DisableUser($id);
 			DisplayUserList();
 			break;
-		case 'makeadmin':
-			MakeAdminUser($id);
-			DisplayUserList();
-			break;
-		case 'notadmin':
-			MakeNotAdminUser($id);
-			DisplayUserList();
-			break;
 		case 'update':
 			UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
 			DisplayUserList();
@@ -605,22 +597,41 @@
 		NavigationBar("Admin", $urllist);
 		
 	?>
-	
 	<div align="center">
-	<table class="graydisplaytable dropshadow">
+	<table class="graydisplaytable dropshadow" id="usertable" width="80%">
 		<thead>
 			<tr>
 				<th>Username</th>
 				<th>Full name</th>
 				<th>Email</th>
 				<th>Login type</th>
-				<!--<th>Instance</th>-->
 				<th>Last Login</th>
 				<th>Login Count</th>
 				<th>Enabled</th>
-				<!--<th>Admin</th>-->
+			</tr>
+			<tr>
+				<th colspan="2" align="center"><input id="usernamefilter" type="text" placeholder="Filter by username or name"/></th>
+				<th colspan="5"></th>
 			</tr>
 		</thead>
+		<script type="text/javascript">
+			function filterTable(event) {
+				var filter = event.target.value.toUpperCase();
+				var rows = document.querySelector("#usertable tbody").rows;
+				
+				for (var i = 0; i < rows.length; i++) {
+					var firstCol = rows[i].cells[0].textContent.toUpperCase();
+					var secondCol = rows[i].cells[1].textContent.toUpperCase();
+					if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+						rows[i].style.display = "";
+					} else {
+						rows[i].style.display = "none";
+					}      
+				}
+			}
+
+			document.querySelector('#usernamefilter').addEventListener('keyup', filterTable, false);
+		</script>
 		<tbody>
 			<?
 				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' order by username";
@@ -632,11 +643,9 @@
 					$fullname = trim($row['user_fullname']);
 					$email = trim($row['user_email']);
 					$login_type = $row['login_type'];
-					//$instancename = $row['instance_name'];
 					$lastlogin = $row['user_lastlogin'];
 					$logincount = $row['user_logincount'];
 					$enabled = $row['user_enabled'];
-					//$isadmin = $row['user_isadmin'];
 					
 					if ($username == "") {
 						$username = "(blank)";
@@ -647,7 +656,6 @@
 				<td><?=$fullname?></td>
 				<td><?=$email?></td>
 				<td><?=$login_type?></td>
-				<!--<td class="tiny"><?=$instancename?></td>-->
 				<td><?=$lastlogin?></td>
 				<td><?=$logincount?></td>
 				<td>
@@ -660,24 +668,11 @@
 						}
 					?>
 				</td>
-				<!--<td>
-					<?
-						if ($isadmin) {
-							?><a href="adminusers.php?action=notadmin&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td> -->
-				<!--<td><?if ($enabled) echo "&#10004;";?></td>
-				<td><?if ($isadmin) echo "&#10004;";?></td> -->
 			</tr>
 			<? } ?>
 			<tr><td colspan="8" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray; padding: 10px; background-color: lightyellow"><b>The Following users are unaffiliated with an instance</b></td></tr>
 			<?
 				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '' or b.instance_id is null order by username";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];
@@ -696,7 +691,6 @@
 				<td><?=$fullname?></td>
 				<td><?=$email?></td>
 				<td><?=$login_type?></td>
-				<!--<td class="tiny"><?=$instancename?></td>-->
 				<td><?=$lastlogin?></td>
 				<td><?=$logincount?></td>
 				<td>
@@ -709,19 +703,6 @@
 						}
 					?>
 				</td>
-				<!--
-				<td>
-					<?
-						if ($isadmin) {
-							?><a href="adminusers.php?action=notadmin&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=makeadmin&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td> -->
-				<!--<td><?if ($enabled) echo "&#10004;";?></td>
-				<td><?if ($isadmin) echo "&#10004;";?></td> -->
 			</tr>
 			<? 
 				}

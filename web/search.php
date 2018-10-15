@@ -383,15 +383,18 @@
 						<select name="s_projectid" class="importantfield">
 							<option value="all">All Projects</option>
 							<?
-								$sqlstring = "select * from projects a left join where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+								$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$project_id = $row['project_id'];
 									$project_name = $row['project_name'];
 									$project_costcenter = $row['project_costcenter'];
 									if ($project_id == $searchvars['s_projectid']) { $selected = "selected"; } else { $selected = ""; }
+									
+									$perms = GetCurrentUserProjectPermissions(array($project_id));
+									if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
 									?>
-									<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<?=$project_id?>" <?=$selected?>  <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 									<?
 								}
 							?>
