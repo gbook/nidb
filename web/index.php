@@ -136,6 +136,8 @@ if ($email == "") {
 					$familyuid = $row['family_uid'];
 					
 					$perms = GetCurrentUserProjectPermissions(array($projectid));
+					//PrintVariable($projectid);
+					//PrintVariable($perms);
 					if (GetPerm($perms, 'viewdata', $projectid)) {
 						$sqlstringA = "select count(*) 'seriescount' from " . strtolower($modality) . "_series where study_id = $study_id";
 						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -147,8 +149,8 @@ if ($email == "") {
 							<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
 							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
 							<td style="font-size:8pt"><?=$modality?></td>
-							<td style="font-size:8pt"><?=$seriescount?></td>
 							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt"><?=$seriescount?></td>
 							<td style="font-size:8pt"><?=$project_name?> (<?=$project_costcenter?>)</td>
 						</tr>
 						<?

@@ -402,6 +402,11 @@
 	/* -------------------------------------------- */
 	function CreateNewStudyFromTemplate($modality, $enrollmentid, $id, $templateid) {
 		
+		if (!isInteger($templateid)) {
+			?><span class="staticmessage">Invalid templateID [<?=$templateid?>]</span><?
+			return;
+		}
+		
 		/* Get the protocol names and modality for this template */
 		$itemprotocols = array();
 		$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by a.item_order";
@@ -426,7 +431,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$project_id = $row['project_id'];
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, upper('$modality'), now(), '', '', '', 'pending')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, upper('$modality'), now(),'' , '', '', '', 'pending')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -1832,17 +1837,17 @@
 												$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
 												$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$projectid = $row['project_id'];
+													$pid = $row['project_id'];
 													$project_name = $row['project_name'];
 													$project_costcenter = $row['project_costcenter'];
 													$project_enddate = $row['project_enddate'];
 													$user_fullname = $row['user_fullname'];
 
-													$perms = GetCurrentUserProjectPermissions(array($projectid));
-													if (GetPerm($perms, 'modifyphi', $projectid)) { $disabled = ""; } else { $disabled = "disabled"; }
+													$perms = GetCurrentUserProjectPermissions(array($pid));
+													if (GetPerm($perms, 'modifyphi', $pid)) { $disabled = ""; } else { $disabled = "disabled"; }
 													
 													?>
-													<option value="<?=$projectid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+													<option value="<?=$pid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 													<?
 												}
 											?>
@@ -1909,7 +1914,8 @@
 																	<input type="hidden" name="action" value="newstudy">
 																	<span style="font-size:10pt">New <u>empty</u> study</span>
 																	<select name="modality">
-																		<option value="" style="<?=$style?>">(Select modality)</option>															<?
+																		<option value="" style="<?=$style?>">(Select modality)</option>
+																		<?
 																		$sqlstring = "select * from modalities order by mod_code";
 																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 																		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1933,7 +1939,8 @@
 																	<input type="hidden" name="action" value="newstudyfromtemplate">
 																	<span style="font-size:10pt">New study from <u>template</u></span>
 																	<select name="templateid">
-																		<option value="" style="<?=$style?>">(Select template)</option>															<?
+																		<option value="" style="<?=$style?>">(Select template)</option>
+																		<?
 																		$sqlstring = "select * from study_template where project_id = $projectid order by template_name asc";
 																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 																		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1957,7 +1964,6 @@
 											</table>
 											<?
 												$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = $enrollmentid order by a.study_datetime desc";
-												//$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
@@ -2423,7 +2429,7 @@
 			$formtitle = "Add new subject";
 			$submitbuttonlabel = "Add";
 			$dob = "1900-01-01";
-			$modifyphi = 1;
+			$modifyphi = $viewphi = 1;
 		}
 
 		$perms = GetCurrentUserProjectPermissions($projectids);
@@ -2436,11 +2442,13 @@
 		if (GetPerm($perms, 'viewphi', $projectid)) { $viewphi = 1; } else { $viewphi = 0; }
 		if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
 		if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
-			
+
 		/* kick them out if they shouldn't be seeing anything on this page */
-		if ((!$modifyphi) && (!$viewphi)) {
+		if ((!$modifyphi) && (!$viewphi) && ($type != 'add')) {
 			return;
 		}
+		
+		if ($type == 'add') { $modifyphi = 1; }
 	?>
 		<script type="text/javascript">
 			$(document).ready(function() {

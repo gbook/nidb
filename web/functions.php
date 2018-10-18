@@ -89,7 +89,7 @@
 	if (!$nologin) {
 		/* cookie info */
 		$username = $_SESSION['username'];
-		if ($_SESSION['validlogin'] != "true") {
+		if (($_SESSION['validlogin'] != "true") || ($_SESSION['userid'] == '') ) {
 			header("Location: login.php");
 		}
 		if (trim($username) == "") {
@@ -102,7 +102,6 @@
 	else {
 		/* no login checking */
 	}
-
 	
 	$instanceid = $_SESSION['instanceid'];
 	
@@ -702,11 +701,15 @@
 	/* ------- mysqli_real_escape_array ----------- */
 	/* -------------------------------------------- */
 	function mysqli_real_escape_array ($a) {
-		foreach ($a as $i => $val) {
-			$a[$i] = mysqli_real_escape_string($GLOBALS['linki'], $val);
+		if (is_array($a)) {
+			foreach ($a as $i => $val) {
+				$a[$i] = mysqli_real_escape_string($GLOBALS['linki'], $val);
+			}
+			return $a;
 		}
-		
-		return $a; 
+		else {
+			return mysqli_real_escape_string($GLOBALS['linki'], $a);
+		}
 	}
 	
 	
@@ -735,54 +738,62 @@
 	/* -------------------------------------------- */
 	/* ------- ResetQA ---------------------------- */
 	/* -------------------------------------------- */
-	function ResetQA($seriesid) {
-		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
+	function ResetQA($seriesids) {
 		
-		if ((is_numeric($seriesid)) && ($seriesid != "")) {
-			/* delete from the mr_qa table */
-			$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			
-			/* delete from the qc* tables */
-			$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$qcmoduleseriesid = $row['qcmoduleseries_id'];
-
-				if ($qcmoduleseriesid != "") {
-					$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					
-					$sqlstringB = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-					
-					/* delete the qa directory */
-					list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
-					
-					$qapath = "$path/qa";
-					if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
-						echo "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]<br>";
-					}
-					else {
-						/* check if the path is valid */
-						if (file_exists($qapath)) {
-							$systemstring = "rm -rv $qapath";
-							`$systemstring`;
-						}
-						else {
-							echo "[$qapath] does not exist<br>";
-						}
-					}
-					
-					?><div align="center"><span class="message">QC deleted [<?=$qcmoduleseriesid?>]</span></div><br><br><?
-				}
-				else {
-					echo "qcmoduleseries_id was blank<br>";
-				}
-			}
+		if (is_array($seriesids)) {
+			$seriesids = mysqli_real_escape_array($seriesids);
 		}
 		else {
-			?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+			$seriesids = array(mysqli_real_escape_string($GLOBALS['linki'], $seriesids));
+		}
+
+		foreach ($seriesids as $seriesid) {
+			if ((is_numeric($seriesid)) && ($seriesid != "")) {
+				/* delete from the mr_qa table */
+				$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				
+				/* delete from the qc* tables */
+				$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$qcmoduleseriesid = $row['qcmoduleseries_id'];
+
+					if ($qcmoduleseriesid != "") {
+						$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						
+						$sqlstringB = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
+						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+						
+						/* delete the qa directory */
+						list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
+						
+						$qapath = "$path/qa";
+						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
+							echo "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]<br>";
+						}
+						else {
+							/* check if the path is valid */
+							if (file_exists($qapath)) {
+								$systemstring = "rm -rv $qapath";
+								`$systemstring`;
+							}
+							else {
+								echo "[$qapath] does not exist<br>";
+							}
+						}
+						
+						?><div align="center"><span class="message">QC deleted [<?=$qcmoduleseriesid?>]</span></div><br><br><?
+					}
+					else {
+						echo "qcmoduleseries_id was blank<br>";
+					}
+				}
+			}
+			else {
+				?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+			}
 		}
 	}
 
@@ -810,6 +821,12 @@
 	/* ------- GetPerm ---------------------------- */
 	/* -------------------------------------------- */
 	function GetPerm($perms, $perm, $projectid) {
+		
+		//echo "Inside GetPerm() A<br>";
+		//PrintVariable($perms);
+		//PrintVariable($projectid);
+		//echo "Inside GetPerm() B<br>";
+		
 		$hasperm = 0;
 		foreach ($perms as $pid => $p) {
 			if ($p[$perm] == 1) {
