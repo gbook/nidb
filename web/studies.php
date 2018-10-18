@@ -352,25 +352,25 @@
 		
 		/* get lowest seriesdatetime, make that the new study time */
 		if (is_array($seriesids)) {
-			$sqlstring = "select min(series_datetime) 'newstudydatetime' from mr_series where mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode2(',',$seriesids) . ")";
 		}
 		else {
-			$sqlstring = "select min(series_datetime) 'newstudydatetime' from mr_series where mrseries_id = $seriesids";
+			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id = $seriesids";
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		echo "<li>Get new study datetime [ <tt>$sqlstring</tt> ]";
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newstudydatetime = $row['newstudydatetime'];
+		$oldstudynum = $row['study_num'];
 		echo "<li>New study datetime [$newstudydatetime]";
 		$logmsg .= "[$sqlstring] NewStudyDatetime [$newstudydatetime]\n";
 		
 		/* get largest study_num for this subject */
-		$sqlstring = "select max(study_num) 'maxstudynum', a.study_num, b.project_id, b.enrollment_id, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id = $subjectid";
+		$sqlstring = "select max(study_num) 'maxstudynum', b.project_id, b.enrollment_id, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id = $subjectid";
 		echo "<li>Get new study number [ <tt>$sqlstring</tt> ]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
-		$oldstudynum = $row['study_num'];
 		$projectid = $row['project_id'];
 		$enrollmentid = $row['enrollment_id'];
 		$newstudynum = $row['maxstudynum'] + 1;
