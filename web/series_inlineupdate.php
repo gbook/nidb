@@ -26,10 +26,6 @@
 	require "functions.php";
 	
 	if (isset($_POST['element_id'])) {
-		/* database connection */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
-		//mysqli_select_db($GLOBALS['cfg']['mysqldatabase']) or die ("Could not select database (" . $GLOBALS['cfg']['mysqldatabase'] . ") File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
-
 		$id = $_POST['id'];
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];

@@ -418,7 +418,7 @@
 			if (!file_exists($oldpath)) {
 				?><li><b style="color: red">The original path [<?=$oldpath?>] does not exist</b><?
 				$logmsg .= "Original path [$oldpath] does not exist\n";
-				continue;
+				return;
 			}
 			
 			$systemstring = "mkdir -pv $newpath 2>&1";
@@ -429,7 +429,7 @@
 			if (!file_exists($newpath)) {
 				?><li><b style="color: red">The new path [<?=$newpath?>] does not exist</b><?
 				$logmsg .= "New path [$newpath] does not exist! [$copyresults]\n";
-				continue;
+				return;
 			}
 			
 			$systemstring = "rsync -rtuv $oldpath/* $newpath/ 2>&1";
@@ -982,13 +982,13 @@
 			}
 		</style>
 
-		<table class="bluerounded">
+		<table style="border: 2px solid #444" cellspacing="0" cellpadding="0">
 			<tr>
-				<td class="title"><span style="margin-left:15px">Study Information</span>
+				<td style="background-color: #444; font-weight: bold; color: #fff; padding: 8px; font-size: 12pt"><span style="margin-left:15px">Study Information</span>
 				</td>
 			</tr>
 			<tr>
-				<td class="body">
+				<td style="padding: 8px">
 					<table class="reviewtable" width="100%">
 						<tr>
 							<td colspan="2" align="center">
@@ -1250,6 +1250,28 @@
 			textarea.inplace_field { background-color: white; font-family: courier new; font-size: 8pt; border: 1pt solid gray; width: 800px;  }
 			input.inplace_field { background-color: white; font-size: 8pt; border: 1pt solid gray; width: 200px;  }
 		</style>
+		
+		<?
+		/* get the actual MR series info */
+		$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mrseries_id = $row['mrseries_id'];
+			?>
+			<script type="text/javascript">
+				$(document).ready(function(){
+					$(".edit_inline<? echo $mrseries_id; ?>").editInPlace({
+						url: "series_inlineupdate.php",
+						params: "action=editinplace&modality=MR&id=<? echo $mrseries_id; ?>",
+						default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
+						bg_over: "white",
+						bg_out: "lightyellow",
+					});
+				});
+			</script>
+			<?
+		}
+		?>
 
 		<script type="text/javascript">
 		$(function() {
@@ -1591,26 +1613,14 @@
 								}
 							}
 							if ($isbadseries) { $rowcolor = "red"; }
-							if ($istestseries) { $rowcolor = "#AAAAAA"; }
-							if ($ishidden) { $rowcolor = "AAA"; }
+							if ($istestseries) { $rowcolor = "#AAA"; }
+							if ($ishidden) { $rowcolor = "#AAA"; }
 							
 							?>
 							<script type="text/javascript">
-								$(document).ready(function(){
-									$(".edit_inline<? echo $mrseries_id; ?>").editInPlace({
-										url: "series_inlineupdate.php",
-										params: "action=editinplace&modality=MR&id=<? echo $mrseries_id; ?>",
-										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
-										bg_over: "white",
-										bg_out: "lightyellow",
-									});
-								});
-							</script>
-							<script type="text/javascript">
 							// Popup window code
 							function newPopup(url) {
-								popupWindow = window.open(
-									url,'popUpWindow','height=700,width=800,left=10,top=10,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=no,status=yes')
+								popupWindow = window.open(url,'popUpWindow','height=700,width=800,left=10,top=10,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=no,status=yes')
 							}
 							</script>
 							<tr style="color: <?=$rowcolor?>">

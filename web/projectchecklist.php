@@ -388,21 +388,20 @@
 		?>
 		<br>
 		<div align="center">
-		<form action="subjects.php" method="post">
+		<!--<form action="subjects.php" method="post">
 		<input type="hidden" name="action" value="merge">
-		<input type="hidden" name="returnpage" value="projectchecklist.php?projectid=<?=$projectid?>">
-		Displaying <?=$numenrollments?> enrollments<br><br>
-		<span class="tiny">Table is sortable. Click column headers to sort</span>
-		<table class="sortable graydisplaytable dropshadow" style="border-collapse: collapse">
+		<input type="hidden" name="returnpage" value="projectchecklist.php?projectid=<?=$projectid?>">-->
+		<b>Displaying <?=$numenrollments?> enrollments</b> <span class="tiny">Table is sortable. Click column headers to sort</span><br><br>
+		<table class="sortable graydisplaytable" style="border-collapse: collapse; border: 1px solid #444">
 			<thead>
 			<tr>
-				<th>Merge</th>
-				<th data-sort="string-ins">UID</th>
-				<th data-sort="string-ins">GUID</th>
-				<th data-sort="string-ins">Alt ID</th>
-				<th data-sort="string-ins">Enroll date</th>
-				<th data-sort="string-ins"># studies</th>
-				<th data-sort="string-ins">Group</th>
+				<!--<th>Merge</th>-->
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">Primary ID</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">UID</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">GUID</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">Enroll date</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff"># studies</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">Group</th>
 		<?
 		$totals = array(0,0,0,0,0);
 		$ii = 5;
@@ -412,13 +411,13 @@
 			$modality = $item['modality'];
 			$protocol = $item['protocol'];
 			?>
-			<th data-sort="string-ins" title="<b>Modality</b> <?=$modality?><br><b>Protocol</b> <?=$protocol?><br><b>Description</b> <?=$desc?>"><?=$name?><br><span class="tiny"><?=$modality?></span></th>
+			<th data-sort="string-ins" title="<b>Modality</b> <?=$modality?><br><b>Protocol</b> <?=$protocol?><br><b>Description</b> <?=$desc?>"  style="background-color: #444; color: #fff"><?=$name?><br><span class="tiny" style="color: #fff"><?=$modality?></span></th>
 			<?
 			$totals[$ii] = 0;
 			$ii++;
 		}
 		?>
-				<th data-sort="string-ins">Complete data?</th>
+				<th data-sort="string-ins" style="background-color: #444; color: #fff">Complete data?</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -465,17 +464,19 @@
 
 			if (($usecustomid == 1) && ($altuid == "")) {
 				$customidstyle = "border: 1px solid red; background-color: orange";
+				$customidtext = "<i style='color: red'>missing ID</i>";
 			}
 			else {
 				$customidstyle = "";
+				$customidtext = $altuid;
 			}
 			
 			?>
 			<tr>
-				<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
+				<!--<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>-->
+				<td style="<?=$customidstyle?>"><?=$customidtext?></td>
 				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
 				<td><?=$guid?></td>
-				<td style="<?=$customidstyle?>"><?=$altuid?></td>
 				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
 				<td><?=count($studyids)?></td>
 				<td><?=$enrollsubgroup?></td>
@@ -501,23 +502,21 @@
 					$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "_series'";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					if (mysqli_num_rows($result) > 0) {
-						if (($studyids == '') || (count($studyids) == 0 )) {
-							$msg = "<span style='color: #ccc; font-size:14pt'>&nbsp;</span>";
+						
+						if (strtolower($modality) == "mr") { $numfilesfield = "numfiles"; } else { $numfilesfield = "series_numfiles"; }
+						/* valid modality */
+						$sqlstring = "select study_id from $modality" . "_series where study_id in (" . implode(',',$studyids) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . ")) and $numfilesfield > 0";
+						//PrintVariable($sqlstring);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							$studyid = $row['study_id'];
+							$msg = "<a href='studies.php?id=$studyid'>&#10004;</a>";
+							$totals[$ii]++;
+							$rowtotal++;
 						}
 						else {
-							$sqlstring = "select study_id from $modality" . "_series where study_id in (" . implode(',',$studyids) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . "))";
-							//PrintVariable($sqlstring);
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							if (mysqli_num_rows($result) > 0) {
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$studyid = $row['study_id'];
-								$msg = "<a href='studies.php?id=$studyid'>&#10004;</a>";
-								$totals[$ii]++;
-								$rowtotal++;
-							}
-							else {
-								$msg = "";
-							}
+							$msg = "";
 						}
 					}
 					else {
@@ -533,6 +532,8 @@
 							$msg = "";
 						}
 					}
+					
+					/* done checking, display if it was found or not */
 					if ($msg == "") {
 						$sqlstring = "select * from enrollment_missingdata where enrollment_id = '$enrollmentid' and projectchecklist_id = '$itemid'";
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -541,10 +542,10 @@
 							$missingdataid = $row['missingdata_id'];
 							$reason = $row['missing_reason'];
 							$date = $row['missingreason_date'];
-							?><td style="border: 1px solid #ffd699; background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);" title="<b><?=$reason?></b> - <?=$date?>"><a href="projectchecklist.php?action=setmissingdatareasonform&missingdataid=<?=$missingdataid?>&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>&reason=<?=$reason?>">&#10006;</a></td><?
+							?><td style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);" title="<b><?=$reason?></b> - <?=$date?>"><a href="projectchecklist.php?action=setmissingdatareasonform&missingdataid=<?=$missingdataid?>&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>&reason=<?=$reason?>">&#10006;</a></td><?
 						}
 						else {
-							?><td style="border: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);" title="Click to set reason for missing data"><a href="projectchecklist.php?action=setmissingdatareasonform&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>">?</a></td><?
+							?><td style="border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);" title="Click to set reason for missing data"><a href="projectchecklist.php?action=setmissingdatareasonform&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>">?</a></td><?
 						}
 					}
 					else {
@@ -552,135 +553,37 @@
 					}
 					$ii++;
 				}
+				
+				if ($rowtotal == count($checklist)) {
+					?><td style="border-left: 1px solid #ccc; text-align: center">&#10004;</td><?
+					$totals[$ii]++;
+				}
+				else {
+					?><td style="border-left: 1px solid #ccc; text-align: center; font-size:8pt">Nope. Only <?=$rowtotal?> of <?=count($checklist)?></td><?
+				}
 			}
 			else {
 				?><td colspan="<?=count($checklist)?>" align="center" style="border-left: 1px solid #ccc">No studies</td><?
-			}
-			
-			if ($rowtotal == count($checklist)) {
-				?><td style="border-left: 1px solid #ccc; text-align: center">&#10004;</td><?
-				$totals[$ii]++;
-			}
-			else {
-				?><td style="border-left: 1px solid #ccc; text-align: center; font-size:8pt">Nope. Only <?=$rowtotal?> of <?=count($checklist)?></td><?
 			}
 			?>
 			</tr>
 			<?
 		}
 		//PrintVariable($enrollment);
-		echo "<tr><td></td>";
+		echo "<tr><td style='border-top: 1px solid black;'>Totals </td>";
 		foreach ($totals as $i => $num) {
 			?><td style="border-top: 1px solid black; font-weight: bold"><?=$num?></td><?
 		}
 		?>
+				<td style='border-top: 1px solid black;'></td>
 			</tr>
 			</tbody>
 		</table>
-		<input type="submit" value="Merge subjects">
-		</form>
+		<!--<input type="submit" value="Merge subjects">
+		</form>-->
 		</div>
 		<?
 	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DisplayMenu ------------------------ */
-	/* -------------------------------------------- */
-	function DisplayMenu($menuitem, $id) {
-		switch ($menuitem) {
-			case "info":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
-				break;
-			case "subjects":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheaderactive">
-							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
-							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a>
-						</td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
-				break;
-			case "studies":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
-				break;
-			case "checklist":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheaderactive">
-							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
-							<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
-						</td>
-						<td class="menuheader"><a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
-				break;
-			case "mrqc":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheaderactive">
-							<a href="projects.php?action=viewmrparams&id=<?=$id?>">MR Scan QC</a><br>
-							<a href="projects.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit MR params</a><br>
-							<a href="projects.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
-							<a href="projects.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a>
-							<? if ($GLOBALS['isadmin']) { ?>
-								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
-							<? } ?>
-						</td>
-					</tr>
-				</table>
-				</div>
-				<?
-				break;
-		}
-	}
-	
 ?>
 
 

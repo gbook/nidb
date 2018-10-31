@@ -2760,7 +2760,7 @@
 						else {
 						?>
 							<tr>
-								<td style="color: #999; padding-left: 10px">No access to <b><?=$name?></b></td>
+								<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
 								<td></td>
 								<td></td>
 								<td></td>

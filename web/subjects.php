@@ -80,7 +80,7 @@
 	$uid2 = GetVariable("uid2");
 	$relation = GetVariable("relation");
 	$makesymmetric = GetVariable("makesymmetric");
-	$mergeuids = GetVariable("uids");
+	//$mergeuids = GetVariable("uids");
 	$ids = GetVariable("ids");
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
@@ -137,12 +137,12 @@
 			Obliterate($ids);
 			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			break;
-		case 'merge':
-			DisplayMergeSubjects($mergeuids, $returnpage);
-			break;
-		case 'mergesubjects':
-			DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $tags, $enrollgroup, $returnpage);
-			break;
+		//case 'merge':
+		//	DisplayMergeSubjects($mergeuids, $returnpage);
+		//	break;
+		//case 'mergesubjects':
+		//	DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $tags, $enrollgroup, $returnpage);
+		//	break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
 			DisplaySubject($id);
@@ -1967,9 +1967,9 @@
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
-												<form action="studies.php" method="post">
+												<!--<form action="studies.php" method="post">
 												<input type="hidden" name="subjectid" value="<?=$id?>">
-												<input type="hidden" name="action" value="mergestudies">
+												<input type="hidden" name="action" value="mergestudies">-->
 												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
 													<thead>
 														<th>#</th>
@@ -1983,7 +1983,7 @@
 														<th>Study ID</th>
 														<th>Visit</th>
 														<th>Rad Read</th>
-														<? if ($projectadmin) { ?><th><span class="tiny">Merge</span></th><? } ?>
+														<!--<? if ($projectadmin) { ?><th><span class="tiny">Merge</span></th><? } ?>-->
 													</thead>
 													<tbody>
 													<?
@@ -2044,11 +2044,13 @@
 														<?
 													}
 													?>
+													<!--
 													<? if ($projectadmin) { ?>
 													<tr>
 														<td colspan="11" align="right"><input type="submit" value="Merge" style="font-size:9pt"></td>
 													</tr>
 													<? } ?>
+													-->
 												</table>
 												</form>
 												<?
@@ -2779,14 +2781,14 @@
 				<td align="left"><input type="checkbox" name="searchactive" <? if ($searchactive == '1') { echo "checked"; } ?> value="1"></td>
 				<td> - </td>
 				<td align="left"><input type="submit" value="Search"></td>
-				<? if ($GLOBALS['isadmin']) { ?>
+				<!--<? if ($GLOBALS['isadmin']) { ?>
 				<td><input type="checkbox" id="rightcheckall"></td>
-				<? } ?>
+				<? } ?>-->
 			</tr>
 			</form>
 			
-			<form method="post" name="subjectlist" action="subjects.php">
-			<input type="hidden" name="action" value="merge">
+			<!--<form method="post" name="subjectlist" action="subjects.php">
+			<input type="hidden" name="action" value="merge">-->
 			<?
 				$subjectsfound = 0;
 				/* if all the fields are blank, only display the most recent subjects */
@@ -2906,9 +2908,11 @@
 				?>
 				<tr>
 					<td colspan="8">
+						<!--
 						<? if ($GLOBALS['issiteadmin']) {?>
 						<input type="submit" name="merge" value="Merge selected subjects" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='merge'" title="Merges all studies from the selected subjects">
 						<? } ?>
+						-->
 						<br><br>
 						<select name="subjectgroupid">
 							<?
