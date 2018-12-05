@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 09, 2018 at 05:27 PM
+-- Generation Time: Dec 05, 2018 at 08:56 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -840,6 +840,36 @@ CREATE TABLE `data_requests` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `drugnames`
+--
+
+CREATE TABLE `drugnames` (
+  `drugname_id` int(11) NOT NULL,
+  `drug_name` varchar(255) NOT NULL,
+  `drug_group` varchar(255) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `drugs`
+--
+
+CREATE TABLE `drugs` (
+  `drug_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `drug_startdate` datetime NOT NULL,
+  `drug_enddate` varchar(20) DEFAULT NULL,
+  `drug_doseamount` varchar(20) DEFAULT NULL,
+  `drug_dosefrequency` varchar(255) DEFAULT NULL,
+  `drug_route` varchar(255) DEFAULT NULL COMMENT 'oral, iv, suppository, etc',
+  `drugname_id` int(11) NOT NULL,
+  `drug_type` varchar(255) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `ecg_series`
 --
 
@@ -950,6 +980,69 @@ CREATE TABLE `et_series` (
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `exports`
+--
+
+CREATE TABLE `exports` (
+  `export_id` int(11) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `ip` varchar(30) DEFAULT NULL,
+  `download_imaging` tinyint(1) DEFAULT NULL,
+  `download_beh` tinyint(1) DEFAULT NULL,
+  `download_qc` tinyint(1) DEFAULT NULL,
+  `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
+  `filetype` varchar(20) DEFAULT NULL,
+  `do_gzip` tinyint(1) DEFAULT NULL,
+  `do_preserveseries` tinyint(1) DEFAULT NULL,
+  `anonymization_level` int(11) DEFAULT NULL,
+  `dirformat` varchar(50) DEFAULT NULL,
+  `beh_format` varchar(35) DEFAULT NULL,
+  `beh_dirrootname` varchar(50) DEFAULT NULL,
+  `beh_dirseriesname` varchar(255) DEFAULT NULL,
+  `nfsdir` varchar(255) DEFAULT NULL,
+  `remoteftp_username` varchar(50) DEFAULT NULL,
+  `remoteftp_password` varchar(50) DEFAULT NULL,
+  `remoteftp_server` varchar(100) DEFAULT NULL,
+  `remoteftp_port` int(11) NOT NULL DEFAULT 21,
+  `remoteftp_path` varchar(255) DEFAULT NULL,
+  `remoteftp_log` text DEFAULT NULL,
+  `remotenidb_username` varchar(255) DEFAULT NULL,
+  `remotenidb_password` varchar(255) DEFAULT NULL,
+  `remotenidb_server` varchar(255) DEFAULT NULL,
+  `remotenidb_instanceid` int(11) DEFAULT 0,
+  `remotenidb_siteid` int(11) DEFAULT 0,
+  `remotenidb_projectid` int(11) DEFAULT 0,
+  `publicdownloadid` int(11) DEFAULT NULL,
+  `bidsreadme` text DEFAULT '',
+  `submitdate` datetime DEFAULT NULL,
+  `startdate` datetime DEFAULT NULL,
+  `completedate` datetime DEFAULT NULL,
+  `cputime` double DEFAULT NULL,
+  `status` enum('submitted','pending','processing','complete','error','') NOT NULL DEFAULT '',
+  `log` text DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `exportseries`
+--
+
+CREATE TABLE `exportseries` (
+  `exportseries_id` int(11) NOT NULL,
+  `export_id` int(11) NOT NULL,
+  `series_id` int(11) NOT NULL,
+  `modality` varchar(25) NOT NULL DEFAULT '',
+  `startdate` datetime DEFAULT NULL,
+  `enddate` datetime DEFAULT NULL,
+  `timepoint_label` varchar(100) DEFAULT NULL,
+  `status` enum('','error','processing','complete','submitted') NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2084,23 +2177,23 @@ CREATE TABLE `pr_series` (
 
 CREATE TABLE `public_downloads` (
   `pd_id` int(11) NOT NULL,
-  `pd_createdate` datetime NOT NULL,
-  `pd_expiredate` datetime NOT NULL,
-  `pd_expiredays` int(11) NOT NULL,
+  `pd_createdate` datetime DEFAULT NULL,
+  `pd_expiredate` datetime DEFAULT NULL,
+  `pd_expiredays` int(11) DEFAULT NULL,
   `pd_createdby` varchar(50) NOT NULL COMMENT 'userid of the owner',
-  `pd_zippedsize` double NOT NULL,
-  `pd_unzippedsize` double NOT NULL,
-  `pd_filename` varchar(255) NOT NULL,
-  `pd_desc` varchar(255) NOT NULL,
-  `pd_notes` text NOT NULL,
-  `pd_filecontents` longtext NOT NULL,
-  `pd_shareinternal` tinyint(1) NOT NULL,
-  `pd_ispublic` tinyint(1) NOT NULL,
-  `pd_registerrequired` tinyint(1) NOT NULL,
-  `pd_password` varchar(255) NOT NULL,
-  `pd_status` varchar(50) NOT NULL,
-  `pd_key` varchar(255) NOT NULL,
-  `pd_numdownloads` bigint(20) NOT NULL
+  `pd_zippedsize` double DEFAULT 0,
+  `pd_unzippedsize` double DEFAULT 0,
+  `pd_filename` varchar(255) DEFAULT NULL,
+  `pd_desc` varchar(255) DEFAULT NULL,
+  `pd_notes` text DEFAULT NULL,
+  `pd_filecontents` longtext DEFAULT NULL,
+  `pd_shareinternal` tinyint(1) DEFAULT NULL,
+  `pd_ispublic` tinyint(1) DEFAULT NULL,
+  `pd_registerrequired` tinyint(1) DEFAULT NULL,
+  `pd_password` varchar(255) DEFAULT NULL,
+  `pd_status` varchar(50) DEFAULT NULL,
+  `pd_key` varchar(255) DEFAULT NULL,
+  `pd_numdownloads` bigint(20) NOT NULL DEFAULT 0
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2714,6 +2807,34 @@ CREATE TABLE `video_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `vitalnames`
+--
+
+CREATE TABLE `vitalnames` (
+  `vitalname_id` int(11) NOT NULL,
+  `vital_name` varchar(255) NOT NULL,
+  `normal_range` varchar(255) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vitals`
+--
+
+CREATE TABLE `vitals` (
+  `vital_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `vital_date` datetime NOT NULL,
+  `vital_value` varchar(20) NOT NULL,
+  `vital_notes` varchar(255) DEFAULT NULL,
+  `vitalname_id` int(11) NOT NULL,
+  `vital_type` varchar(255) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `weather`
 --
 
@@ -2991,6 +3112,19 @@ ALTER TABLE `data_requests`
   ADD KEY `idx_data_requests` (`req_username`);
 
 --
+-- Indexes for table `drugnames`
+--
+ALTER TABLE `drugnames`
+  ADD PRIMARY KEY (`drugname_id`),
+  ADD UNIQUE KEY `measure_name` (`drug_name`);
+
+--
+-- Indexes for table `drugs`
+--
+ALTER TABLE `drugs`
+  ADD PRIMARY KEY (`drug_id`);
+
+--
 -- Indexes for table `ecg_series`
 --
 ALTER TABLE `ecg_series`
@@ -3040,6 +3174,18 @@ ALTER TABLE `et_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`),
   ADD KEY `ishidden` (`ishidden`),
   ADD KEY `series_altdesc` (`series_altdesc`);
+
+--
+-- Indexes for table `exports`
+--
+ALTER TABLE `exports`
+  ADD PRIMARY KEY (`export_id`);
+
+--
+-- Indexes for table `exportseries`
+--
+ALTER TABLE `exportseries`
+  ADD PRIMARY KEY (`exportseries_id`);
 
 --
 -- Indexes for table `families`
@@ -3633,6 +3779,19 @@ ALTER TABLE `video_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `vitalnames`
+--
+ALTER TABLE `vitalnames`
+  ADD PRIMARY KEY (`vitalname_id`),
+  ADD UNIQUE KEY `measure_name` (`vital_name`);
+
+--
+-- Indexes for table `vitals`
+--
+ALTER TABLE `vitals`
+  ADD PRIMARY KEY (`vital_id`);
+
+--
 -- Indexes for table `weather`
 --
 ALTER TABLE `weather`
@@ -3848,6 +4007,18 @@ ALTER TABLE `data_requests`
   MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `drugnames`
+--
+ALTER TABLE `drugnames`
+  MODIFY `drugname_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `drugs`
+--
+ALTER TABLE `drugs`
+  MODIFY `drug_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `ecg_series`
 --
 ALTER TABLE `ecg_series`
@@ -3882,6 +4053,18 @@ ALTER TABLE `enrollment_missingdata`
 --
 ALTER TABLE `et_series`
   MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `exports`
+--
+ALTER TABLE `exports`
+  MODIFY `export_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `exportseries`
+--
+ALTER TABLE `exportseries`
+  MODIFY `exportseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `families`
@@ -4362,6 +4545,18 @@ ALTER TABLE `us_series`
 --
 ALTER TABLE `video_series`
   MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `vitalnames`
+--
+ALTER TABLE `vitalnames`
+  MODIFY `vitalname_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `vitals`
+--
+ALTER TABLE `vitals`
+  MODIFY `vital_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `weather`
