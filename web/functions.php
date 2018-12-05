@@ -1681,8 +1681,8 @@
 								<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
 								<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
 							<br>
-							<a href="mrqcchecklist.php?action=viewaltseriessummary&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View alt series names</a><br>
-							<a href="mrqcchecklist.php?action=viewuniqueseries&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit alt series names</a><br>
+							<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View BIDS datatypes</a><br>
+							<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit BIDS datatypes</a><br>
 							<? if ($GLOBALS['isadmin']) { ?>
 								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
 							<? } ?>

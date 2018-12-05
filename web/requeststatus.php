@@ -39,7 +39,7 @@
 	/* get variables */
 	$action = GetVariable("action");
 	$page = GetVariable("page");
-	$groupid = GetVariable("groupid");
+	$exportid = GetVariable("exportid");
 	$requestid = GetVariable("requestid");
 	$viewall = GetVariable("viewall");
 	
@@ -49,18 +49,18 @@
 			break;
 		case 'clearstatus':
 			ClearStatus($requestid);
-			ShowGroup($groupid, $page);
+			ViewExport($exportid, $page);
 			break;
 		case 'cancelgroup':
-			CancelGroup($groupid);
+			CancelGroup($exportid);
 			ShowList($viewall);
 			break;
 		case 'retryerrors':
-			RetryErrors($groupid);
+			RetryErrors($exportid);
 			ShowList($viewall);
 			break;
-		case 'showgroup':
-			ShowGroup($groupid, $page);
+		case 'viewexport':
+			ViewExport($exportid, $page);
 			break;
 		default:
 			ShowList($viewall);
@@ -150,233 +150,290 @@
 		NavigationBar("Data export status", $urllist);
 		
 		?>
-		
-		<div style="border: 1px solid #aaa; border-radius:4px; font-size:10pt; padding: 5px">
-			<b>Notes</b>
-			<ul>
-				<li>Some older version of Linux cannot unzip files > 4GB. Upgrade unzip to v6.0 or try <code>jar xf thefile.zip</code>
-			</ul>
-		</div>
-		<a href="requeststatus.php?viewall=1">View All Dates</a> (most recent 100 requests)
-		<table width="100%" cellspacing="0" cellpadding="2">
-			<tr>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Group</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Request Date</td>
-				<? if (!$GLOBALS['ispublic']) { ?>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Username</td>
-				<? } ?>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Total time</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Total size <span style="font-size:8pt; font-weight:normal; color: gray">(bytes)</span></td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Last update</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Status</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Download</td>
-				<!--<td style="font-weight:bold; border-bottom: solid 2pt black">&nbsp;Destination Path</td>-->
-			</tr>
+		<a href="requeststatus.php?viewall=1">Show all data exports</a>
+		<br><br>
+		<table class="graydisplaytable" width="100%">
+			<thead>
+				<th align="left">Request date</th>
+				<th align="left">Format</th>
+				<th align="left">Username</th>
+				<th align="right">Number of series</th>
+				<th align="right">Size</th>
+				<th align="left">Progress</th>
+				<th align="left">Status</th>
+				<th align="left">Download</th>
+			</thead>
 		<?
 		$completecolor = "66AAFF";
 		$processingcolor = "AAAAFF";
 		$errorcolor = "FF6666";
 		$othercolor = "EFEFFF";
 		
-		/* get the average processing time */
-		$sqlstring = "SELECT avg(req_cputime) 'cpu' FROM `data_requests` where req_status = 'complete'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$avgcputime = $row['cpu'] + 0.5; /* add .5 sec just for yuks */
-
-		/* get the number processing or still pending */
-		$sqlstring = "SELECT count(*) 'count' FROM `data_requests` where req_status = 'pending' or req_status = 'processing' or req_status = '' or req_status is null";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$numpending = $row['count']; /* add .5 sec just for yuks */
-		
-		$waittime = ($avgcputime + 0.5) * $numpending; /* in seconds */
-		//echo "[$waittime]";
-
-		/* get the number processing or still pending */
-		$sqlstring = "select date_add(now(), interval +$waittime second) 'waittime'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$completedate = $row['waittime'];
-		
-		/* get the groups that occur in the last 7 days */
 		if ($GLOBALS['issiteadmin']) {
-			if ($viewall) {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 order by req_groupid desc limit 100";
-			}
-			else {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 order by req_groupid desc";
-			}
+			if ($viewall) { $sqlstring = "select * from exports order by submitdate desc limit 100"; }
+			else { $sqlstring = "select * from exports order by submitdate desc limit 100"; }
 		}
 		else {
-			if ($viewall) {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc limit 100";
-			}
-			else {
-				$sqlstring = "SELECT distinct(req_groupid) 'groupid', req_modality FROM `data_requests` WHERE req_date > date_add(now(), interval -7 day) and req_groupid > 0 and req_username = '" . $GLOBALS['username'] . "' order by req_groupid desc";
-			}
+			if ($viewall) { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 100"; }
+			else { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 100"; }
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$groupid = $row['groupid'];
-			$modality = strtolower($row['req_modality']);
-			
-			$sqlstring = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id where a.req_groupid = $groupid";
-			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-			$totalbytes = $row2['totalbytes'];
+			$exportid = $row['export_id'];
+			$submitdate = $row['submitdate'];
+			$username = $row['username'];
+			$destinationtype = $row['destinationtype'];
+			$exportstatus = $row['status'];
 			
 			$total = 0;
+			$totalbytes = 0;
 			unset($totals);
-			$sqlstring = "SELECT req_status, sum(req_cputime) 'cpu', count(*) 'count', req_date, max(lastupdate) 'lastupdate', req_ip, req_username, req_destinationtype, req_nfsdir FROM `data_requests` where req_groupid = $groupid group by req_status";
-			$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-				$requestdate = date("M j, Y G:i",strtotime($row2['req_date']));
-				$requestingip = $row2['req_ip'];
-				$username = $row2['req_username'];
-				$lastupdate = $row2['lastupdate'];
-				$destinationtype = $row2['req_destinationtype'];
-				$destinationpath = $row2['req_nfsdir'];
-				$cpu = $row2['cpu'];
-				$totals[$row2['req_status']] = $row2['count'];
-				$total += $row2['count'];
+			$totals['submitted'] = 0;
+			$totals['processing'] = 0;
+			$totals['complete'] = 0;
+			$totals['error'] = 0;
+			$sqlstringA = "select * from exportseries where export_id = $exportid";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$numseries = mysqli_num_rows($result);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				//PrintVariable($rowA);
+				$modality = strtolower($rowA['modality']);
+				$seriesid = $rowA['series_id'];
+				$status = $rowA['status'];
+				$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+				$totalbytes += $rowB['series_size'];
 				
-				$min = floor($cpu/60);
-				$sec = round($cpu - ($min*60));
-				$sec = str_pad($sec,2,'0',STR_PAD_LEFT);
-				$minsec = "$min:$sec";
+				$total++;
+				switch ($status) {
+					case 'submitted': $totals['submitted']++; break;
+					case 'processing': $totals['processing']++; break;
+					case 'complete': $totals['complete']++; break;
+					case 'error': $totals['error']++; break;
+				}
 			}
-			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['problem'];
-			?>
-			<tr style="font-size:9pt">
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$groupid?>&nbsp;</td>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="requeststatus.php?action=showgroup&groupid=<?=$groupid?>"><?=$requestdate?></a>&nbsp;
-				<?
-					if (($GLOBALS['username'] == $username) || ($GLOBALS['issiteadmin'])) {
-						?>
-						<a href="requeststatus.php?action=cancelgroup&groupid=<?=$groupid?>" style="color:darkred; font-weight:bold" title="Cancel download">X</a>
-						<?
-					}
+				
+			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
+
+			if ($exportstatus == "error") {
+				$leftovers = $totals['complete'] = $totals['processing'] = 0;
+				$totals['error'] = $total;
+			}
+				
 				?>
-				</td>
-				<? if (!$GLOBALS['ispublic']) { ?>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$username?>&nbsp;</td>
-				<? } ?>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$minsec?>&nbsp;</td>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=number_format($totalbytes)?>&nbsp;</td>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$lastupdate?>&nbsp;</td>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray; font-size:10pt">
-					<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['problem']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>">
-					<?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+				<tr>
+					<td><?=date("D M j, Y h:ia",strtotime($submitdate))?></td>
+					<td><?=$destinationtype?></td>
+					<td><?=$username?></td>
+					<td align="right"><?=$numseries?></td>
+					<td align="right"><?=number_format($totalbytes)?></td>
+					<td>
+						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+					</td>
+					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=ucfirst($exportstatus)?></a></td>
+					<td><?
+					if ($destinationtype == "web") {
+						if (round($totals['complete']/$total)*100 == 100) {
+							$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
+							//echo "$zipfile<br>";
+							if (file_exists($zipfile)) {
+								$output = shell_exec("du -sb $zipfile");
+								//echo "[$output]<br>";
+								list($filesize, $fname) = preg_split('/\s+/', $output);
+							}
+							else {
+								$filesize = 0;
+							}
+							
+							if ($filesize == 0) {
+								echo "Zipping download...";
+							}
+							else {
+								?><a href="download/<?="NIDB-$exportid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+							}
+						}
+						else {
+							echo "Preparing download...";
+						}
+					}
+					?>
+					</td>
+				</tr>
+				<!--
+				<tr style="font-size:9pt">
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=$requestdate?></a>&nbsp;
 					<?
-						if ($totals['processing'] > 0) {
+						if (($GLOBALS['username'] == $username) || ($GLOBALS['issiteadmin'])) {
 							?>
-							<span style="color: darkblue; font-size:8pt"><?=$totals['processing']?> processing</span>
-							<?
-						}
-						if ($totals['problem'] > 0) {
-							?>
-							<br><span style="color: red; font-size:8pt"><?=$totals['problem']?> errors</span> 
-							<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
-							<?
-						}
-						if ($totals['cancelled'] > 0) {
-							?>
-							<br><span style="color: red; font-size:8pt"><?=$totals['cancelled']?> cancelled</span>
-							<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
-							<?
-						}
-						if (($totals['pending'] > 0) || ($totals['processing'] > 0) || ($totals[''] > 0)) {
-							?>
-							<br><span style="font-size:8pt">Expected completion: <?=$completedate?></span>
+							<a href="requeststatus.php?action=cancelgroup&groupid=<?=$groupid?>" style="color:darkred; font-weight:bold" title="Cancel download">X</a>
 							<?
 						}
 					?>
-				</td>
-				<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
-				<?
-				if ($destinationtype == "web") {
-					if (round($totals['complete']/$total)*100 == 100) {
-						$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$groupid.zip";
-						//echo "$zipfile<br>";
-						if (file_exists($zipfile)) {
-							$output = shell_exec("du -sb $zipfile");
-							//echo "[$output]<br>";
-							list($filesize, $fname) = preg_split('/\s+/', $output);
+					</td>
+					<? if (!$GLOBALS['ispublic']) { ?>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$username?>&nbsp;</td>
+					<? } ?>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$minsec?>&nbsp;</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=number_format($totalbytes)?>&nbsp;</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$lastupdate?>&nbsp;</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray; font-size:10pt">
+						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['problem']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>">
+						<?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+						<?
+							if ($totals['processing'] > 0) {
+								?>
+								<span style="color: darkblue; font-size:8pt"><?=$totals['processing']?> processing</span>
+								<?
+							}
+							if ($totals['problem'] > 0) {
+								?>
+								<br><span style="color: red; font-size:8pt"><?=$totals['problem']?> errors</span> 
+								<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
+								<?
+							}
+							if ($totals['cancelled'] > 0) {
+								?>
+								<br><span style="color: red; font-size:8pt"><?=$totals['cancelled']?> cancelled</span>
+								<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
+								<?
+							}
+							if (($totals['pending'] > 0) || ($totals['processing'] > 0) || ($totals[''] > 0)) {
+								?>
+								<br><span style="font-size:8pt">Expected completion: <?=$completedate?></span>
+								<?
+							}
+						?>
+					</td>
+					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
+					<?
+					if ($destinationtype == "web") {
+						if (round($totals['complete']/$total)*100 == 100) {
+							$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$groupid.zip";
+							//echo "$zipfile<br>";
+							if (file_exists($zipfile)) {
+								$output = shell_exec("du -sb $zipfile");
+								//echo "[$output]<br>";
+								list($filesize, $fname) = preg_split('/\s+/', $output);
+							}
+							else {
+								$filesize = 0;
+							}
+							
+							if ($filesize == 0) {
+								echo "Zipping download...";
+							}
+							else {
+								?><a href="download/<?="NIDB-$groupid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+							}
 						}
 						else {
-							$filesize = 0;
-						}
-						
-						if ($filesize == 0) {
-							echo "Zipping download...";
-						}
-						else {
-							?><a href="download/<?="NIDB-$groupid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+							echo "Preparing download...";
 						}
 					}
 					else {
-						echo "Preparing download...";
+						echo $destinationtype;
 					}
-				}
-				else {
-					echo $destinationtype;
-				}
-				?>
-				&nbsp;</td>
-				<!--<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? if ($GLOBALS['username'] == $username) { echo $destinationpath; } ?>&nbsp;</td>-->
-			</tr>
-			<?
-		}
+					?>
+				-->
+				<?
+			}
 		?>
 		</table>
 		<?
 	}
 	
 	/* --------------------------------------------------- */
-	/* ------- ShowGroup --------------------------------- */
+	/* ------- ViewExport -------------------------------- */
 	/* --------------------------------------------------- */
-	function ShowGroup($groupid, $page) {
+	function ViewExport($exportid) {
 		$urllist['Search'] = "search.php";
+		$urllist['Export status'] = "requeststatus.php";
 		NavigationBar("Data export status", $urllist);
-		
-		if ($page == "") { $page = 1; }
-		
-		$sqlstring = "select distinct(req_modality) from data_requests where req_groupid = $groupid";
+
+		$sqlstring = "select * from exports where export_id = $exportid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$modality = $row['req_modality'];
+		$log = $row['log'];
+		$status = ucfirst($row['status']);
 
+		if ($status == "Complete") { $color = "#229320"; }
+		elseif ($status == "Error") { $color = "#8E3023"; }
+		else { $color = "#3B5998"; }
+		?>
+		<table>
+			<tr>
+				<td valign="top" style="padding: 7px; color: white; background-color: <?=$color?>; width:200px; font-weight: bold"><?=$status?></td>
+				<td valign="top">
+					<details>
+					<summary>View Log</summary>
+					<tt><pre><?=$log?></pre></tt>
+					</details>
+				</td>
+			</tr>
+		</table>
+		
+		<br><br>
+		
+		<table class="graydisplaytable" width="100%">
+			<thead>
+				<th align="left">Subject</th>
+				<th align="left">Study</th>
+				<th align="left">Series</th>
+				<th align="right">Size</th>
+				<th align="left">Status</th>
+			</thead>
+		<?
+		$sqlstring = "select * from exportseries where export_id = $exportid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modality = strtolower($row['modality']);
+			$seriesid = $row['series_id'];
+			$status = $row['status'];
+			
+			$sqlstringB = "select a.*, b.*, d.project_name, e.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
+			$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+			$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+			$seriesdesc = $rowB['series_desc'];
+			$uid = $rowB['uid'];
+			$seriesnum = $rowB['series_num'];
+			$studynum = $rowB['study_num'];
+			$seriessize = $rowB['series_size'];
+			$totalbytes += $rowB['series_size'];
+			
+			$total++;
+			switch ($status) {
+				case 'submitted': $totals['submitted']++; break;
+				case 'processing': $totals['processing']++; break;
+				case 'complete': $totals['complete']++; break;
+				case 'error': $totals['error']++; break;
+			}
+			?>
+			<tr>
+				<td><?=$uid?></td>
+				<td><?="$uid$studynum"?></td>
+				<td><?=$seriesnum?> - <?=$seriesdesc?></td>
+				<td align="right"><?=number_format($seriessize)?></td>
+				<td><?=$status?></td>
+			</tr>
+			<?
+		}
+		?>
+		</table>
+		<?
+		return;
+		
+		
 		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numrows = mysqli_num_rows($result);
 
-		$numperpage = 500;
-		$limit = $numperpage * ($page-1);
-		
 		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	?>
-		<b>Showing <?=$numrows?> requests from the last 7 days</b>
-		<br>
-		<?=$numperpage?>/page: 
-		<?
-			$remainder = $numrows;
-			$pg = 1;
-			while (($remainder+$numperpage) > $numperpage) {
-				if ($pg == $page) {
-				?><a href="requeststatus.php?page=<?=$pg?>" style="color: red"><?=$pg?></a> <span style="color:lightgray">|</span> <?
-				}
-				else {
-				?><a href="requeststatus.php?page=<?=$pg?>" style="color: blue"><?=$pg?></a> <span style="color:lightgray">|</span> <?
-				}
-				
-				$remainder -= $numperpage;
-				$pg++;
-			}
-		?>
-		<HR>
+		<b>Showing <?=$numrows?> requests</b>
+		<br><br>
 		<table width="100%" cellspacing="0" cellpadding="2">
 			<tr>
 				<td style="font-weight:bold; border-bottom: solid 2pt black">UID</td>

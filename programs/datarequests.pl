@@ -47,6 +47,7 @@ use XML::Generator::DBI;
 use XML::Handler::YAWriter;
 use Cwd;
 use Digest::MD5::File qw(dir_md5_hex file_md5_hex url_md5_hex);
+use Data::Dumper;
 
 require 'nidbroutines.pl';
 our %cfg;
@@ -80,9 +81,9 @@ else {
 	#my $logfilename = "$lockfile";
 	$logfilename = "$cfg{'logdir'}/$scriptname" . CreateLogDate() . ".log";
 	open $log, '> ', $logfilename;
-	my $x = ProcessDataRequests();
+	my $x = ProcessDataExports();
 	close $log;
-	if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
+	#if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
 	print "Done. Deleting $lockfile\n";
 	unlink $lockfile;
 }
@@ -90,6 +91,1172 @@ else {
 exit(0);
 
 
+# ----------------------------------------------------------
+# --------- ProcessDataExports -----------------------------
+# ----------------------------------------------------------
+sub ProcessDataExports {
+	my $time = CreateCurrentDate();
+	WriteLog("$scriptname Running... Current Time is $time");
+
+	my $ret = 0;
+	# connect to the database
+	$db = Mysql->connect($cfg{'mysqlhost'}, $cfg{'mysqldatabase'}, $cfg{'mysqluser'}, $cfg{'mysqlpassword'}) || die ("Can NOT connect to $cfg{'mysqlhost'}\n");
+	
+	# check if this module should be running now or not
+	my $sqlstring = "select * from modules where module_name = '$scriptname' and module_isactive = 1";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows < 1) {
+		return 0;
+	}
+
+	ModuleDBCheckIn($scriptname, $db);
+	ModuleRunningCheckIn($scriptname, $db);
+	
+	$sqlstring = "select * from exports where status = 'submitted'";
+	WriteLog($sqlstring);
+	$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows > 0) {
+		while (my %row = $result->fetchhash) {
+		
+			# check if this module should be running now or not
+			if (!ModuleCheckIfActive($scriptname, $db)) {
+				WriteLog("Not supposed to be running right now");
+				# update the stop time
+				ModuleDBCheckOut($scriptname, $db);
+				return 0;
+			}
+		
+			# also just check in every so often
+			ModuleRunningCheckIn($scriptname, $db);
+		
+			my $exportid = $row{'export_id'};
+			my $username = $row{'username'};
+			my $destinationtype = $row{'destinationtype'};
+			my $downloadimaging = $row{'download_imaging'};
+			my $downloadbeh = $row{'download_beh'};
+			my $downloadqc = $row{'download_qc'};
+			my $nfsdir = $row{'nfsdir'};
+			my $filetype = $row{'filetype'};
+			my $dirformat = $row{'dirformat'};
+			my $preserveseries = $row{'do_preserveseries'};
+			my $gzip = $row{'do_gzip'};
+			my $anonymize = $row{'anonymize'};
+			my $beh_format = $row{'beh_format'};
+			my $beh_dirrootname = $row{'beh_dirrootname'};
+			my $beh_dirseriesname = $row{'beh_dirseriesname'};
+			my $remoteftpusername = $row{'remoteftp_username'};
+			my $remoteftppassword = $row{'remoteftp_password'};
+			my $remoteftpserver = $row{'remoteftp_server'};
+			my $remoteftpport = $row{'remoteftp_port'};
+			my $remoteftppath = $row{'remoteftp_path'};
+			my $remotenidbserver = $row{'remotenidb_server'};
+			my $remotenidbusername = $row{'remotenidb_username'};
+			my $remotenidbpassword = $row{'remotenidb_password'};
+			my $remotenidbinstanceid = $row{'remotenidb_instanceid'};
+			my $remotenidbprojectid = $row{'remotenidb_projectid'};
+			my $remotenidbsiteid = $row{'remotenidb_siteid'};
+			my $publicdownloadid = $row{'publicdownloadid'};
+			my $bidsreadme = $row{'bidsreadme'};
+			
+			WriteLog("Working on export [$exportid] of type [$destinationtype]. Checking to see if is still submitted, pending processing");
+			my $sqlstringA = "select status from exports where export_id = $exportid";
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			my %rowA = $resultA->fetchhash;
+			if (trim($rowA{'status'} ne "submitted")) { continue; } # the status of this export has changed, so another instance of this program may be working on it
+			
+			my $status = "processing";
+			my $log = "";
+			$sqlstringA = "update exports set status = '$status' where export_id = $exportid";
+			$resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			switch ($destinationtype) {
+				case 'web' 				{ ($status,$log) = ExportLocal($exportid, 'web', '', 0, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
+				case 'publicdownload' 	{ ($status,$log) = ExportLocal($exportid, 'publicdownload', '', $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
+				case 'nfs' 				{ ($status,$log) = ExportLocal($exportid, 'nfs', $nfsdir, 0, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
+				case 'export' 			{ ($status,$log) = ExportNiDB($exportid); }
+				case 'ndar' 			{ ($status,$log) = ExportNDAR($exportid, 0); }
+				case 'ndarcsv' 			{ ($status,$log) = ExportNDAR($exportid, 1); }
+				case 'bids' 			{ ($status,$log) = ExportBIDS($exportid, $bidsreadme); }
+				case 'remotenidb' 		{ ($status,$log) = ExportToRemoteNiDB($exportid, $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remotenidbinstanceid, $remotenidbprojectid, $remotenidbsiteid); }
+				case 'remoteftp' 		{ ($status,$log) = ExportToRemoteFTP($exportid, $remoteftpusername, $remoteftppassword, $remoteftpserver, $remoteftpport, $remoteftppath); }
+				case 'localftp' 		{ ($status,$log) = ExportToLocalFTP($exportid); }
+				else 					{ WriteLog("Unknown export type [$destinationtype]"); continue; }
+			}
+			$log = EscapeMySQLString($log);
+			$sqlstringA = "update exports set status = '$status', log = '$log' where export_id = $exportid";
+			$resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			$ret = 1;
+		}
+	}
+	
+	return $ret;
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportLocal ------------------------------------
+# ----------------------------------------------------------
+sub ExportLocal() {
+	my ($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname) = @_;
+	#WriteLog("Entering ExportLocal($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname)...");
+
+	my %s = GetExportSeriesList($exportid);
+
+	my $tmpexportdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
+
+	my $log = "";
+	my $exportstatus = "complete";
+	my $systemstring = "";
+	my $laststudynum = 0;
+	my $newseriesnum = 1;
+	foreach my $uid (nsort keys %s) {
+		foreach my $studynum (nsort keys $s{$uid}) {
+			foreach my $seriesnum (nsort keys $s{$uid}{$studynum}) {
+				my $exportseriesid = $s{$uid}{$studynum}{$seriesnum}{'exportseriesid'};
+				my $sqlstring = "update exportseries set status = 'processing' where exportseries_id = $exportseriesid";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+				my $seriesstatus = "complete";
+				
+				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
+				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
+				my $primaryaltuid = $s{$uid}{$studynum}{$seriesnum}{'primaryaltuid'};
+				my $altuids = $s{$uid}{$studynum}{$seriesnum}{'altuids'};
+				my $projectname = $s{$uid}{$studynum}{$seriesnum}{'projectname'};
+				my $studyid = $s{$uid}{$studynum}{$seriesnum}{'studyid'};
+				my $studytype = $s{$uid}{$studynum}{$seriesnum}{'studytype'};
+				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
+				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
+				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
+				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
+				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
+				my $qcindir = $s{$uid}{$studynum}{$seriesnum}{'qcdir'};
+				my $datadirexists = $s{$uid}{$studynum}{$seriesnum}{'datadirexists'};
+				my $behdirexists = $s{$uid}{$studynum}{$seriesnum}{'behdirexists'};
+				my $qcdirexists = $s{$uid}{$studynum}{$seriesnum}{'qcdirexists'};
+				my $datadirempty = $s{$uid}{$studynum}{$seriesnum}{'datadirempty'};
+				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
+				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
+
+				my $subjectdir = "$uid$studynum";
+				switch ($dirformat) {
+					case "shortid" { $subjectdir = "$uid$studynum"; }
+					case "shortstudyid" { $subjectdir = "$uid/$studynum"; }
+					case "altuid" {
+						if ($primaryaltuid eq "") { $subjectdir = $uid; }
+						else { $subjectdir = $primaryaltuid; }
+					}
+				}
+				
+				# renumber series if necessary
+				if (!$preserveseries) {
+					if ($laststudynum != $studynum) { $newseriesnum = 1; }
+					else { $newseriesnum++; }
+				}
+				else { $newseriesnum = $seriesnum; }
+				
+				WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
+				$log .= "Series number [$seriesnum] --> [$newseriesnum]\n";
+				my $rootoutdir;
+				if ($exporttype eq 'nfs') {
+					$rootoutdir = "$cfg{'mountdir'}$nfsdir/$subjectdir";
+				}
+				elsif ($exporttype eq 'web') {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				elsif ($exporttype eq 'localftp') {
+					$rootoutdir = "$cfg{'ftpdir'}/NiDB-" . CreateLogDate() . "/$subjectdir";
+				}
+				elsif ($exporttype eq 'publicdownload') {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				else {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				if (MakePath($rootoutdir)) {
+					WriteLog("Created rootoutdir [$rootoutdir]");
+				}
+				else {
+					$seriesstatus = "error";
+					$exportstatus = "error";
+					WriteLog("ERROR unable to create rootoutdir [$rootoutdir]");
+					$log .= "Unable to create output directory [$rootoutdir]\n";
+				}
+				
+				my $outdir = "$rootoutdir/$newseriesnum";
+				my $qcoutdir = "$outdir/qa";
+				my $behoutdir;
+				switch ($beh_format) {
+					case "behroot" { $behoutdir = $rootoutdir; }
+					case "behrootdir" { $behoutdir = "$rootoutdir/$beh_dirrootname"; }
+					case "behseries" { $behoutdir = $outdir; }
+					case "behseriesdir" { $behoutdir = "$outdir/$beh_dirseriesname"; }
+					else { $behoutdir = "$rootoutdir"; }
+				}
+				WriteLog("Destination is '$exporttype'. rootoutdir [$rootoutdir], outdir [$outdir], qcoutdir [$qcoutdir], behoutdir [$behoutdir]");
+
+				if ($downloadimaging) {
+					if ($datadirexists) {
+						if (!$datadirempty) {
+							# output the correct file type
+							if (($filetype eq "dicom") || (($datatype ne "dicom") && ($datatype ne "parrec"))) {
+								# use rsync instead of cp because of the number of files limit
+								$systemstring = "rsync $indir/* $outdir/";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							}
+							elsif ($filetype eq "qc") {
+								# copy only the qc data
+								$systemstring = "cp -R $indir/qa $qcoutdir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								
+								# write the series info to a text file
+								open (MRFILE,"> $outdir/seriesInfo.txt");
+								my $sqlstringC = "select * from mr_series where mrseries_id = $seriesid";
+								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+								my %rowC = $resultC->fetchhash;
+								foreach my $key ( keys %rowC ) {
+									print MRFILE "$key: $rowC{$key}\n";
+								}
+								close (MRFILE);
+							}
+							else {
+								my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+								MakePath($tmpdir);
+								ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype);
+								
+								WriteLog("About to copy files from $tmpdir to $outdir");
+								$systemstring = "rsync $tmpdir/* $outdir/";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								WriteLog("Done copying files...");
+								if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
+									rmtree($tmpdir);
+								}
+							}
+						}
+						else {
+							$seriesstatus = "error";
+							$exportstatus = "error";
+							WriteLog("ERROR [$indir] is empty");
+							$log .= "Directory [$indir] is empty\n";
+						}
+					}
+					else {
+						$seriesstatus = "error";
+						$exportstatus = "error";
+						WriteLog("ERROR indir [$indir] does not exist");
+						$log .= "Directory [$indir] does not exist\n";
+					}
+					
+				}
+				
+				# copy the beh data
+				if ($downloadbeh) {
+					if ($behdirexists) {
+						MakePath($behoutdir);
+						$systemstring = "cp -R $behindir/* $behoutdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						$systemstring = "chmod -Rf 777 $behoutdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					}
+					else {
+						$seriesstatus = "error";
+						$exportstatus = "error";
+						WriteLog("ERROR behindir [$behindir] does not exist");
+						$log .= "Directory [$behindir] does not exist\n";
+					}
+				}
+				
+				# copy the QC data
+				if ($downloadqc) {
+					if ($qcdirexists) {
+						MakePath($qcoutdir);
+						$systemstring = "cp -R $qcindir/* $qcoutdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						$systemstring = "chmod -Rf 777 $qcoutdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					}
+					else {
+						$seriesstatus = "error";
+						$exportstatus = "error";
+						WriteLog("ERROR qcindir [$qcindir] does not exist");
+						$log .= "Directory [$qcindir] does not exist\n";
+					}
+				}
+				
+				# give full permissions to the files that were downloaded
+				if ($exporttype eq "nfs") {
+					$systemstring = "chmod -Rf 777 $outdir";
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					
+					# change the modification/access timestamp to the current date/time
+					find sub { #print $File::Find::name;
+					utime(time,time,$File::Find::name) }, "$outdir";
+				}
+
+				
+				if ($filetype eq 'dicom') {
+					Anonymize($outdir,$anonymize,'Anonymous','Anonymous');
+				}
+				
+				$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				$laststudynum = $studynum;
+			}
+		}
+	}
+
+	# extra steps for web download
+	if ($exporttype eq "web") {
+		my $zipfile = "$cfg{'webdownloaddir'}/NIDB-$exportid.zip";
+		my $outdir;
+		WriteLog("Final zip file will be [$zipfile]");
+		WriteLog("tmpexportdir: [$tmpexportdir]");
+		$outdir = $tmpexportdir;
+		
+		my $pwd = getcwd;
+		WriteLog("Current directory is [$pwd], changing directory to [$outdir]");
+		if (-e $outdir) {
+			chdir($outdir);
+			if (-e $zipfile) { $systemstring = "zip -1grv $zipfile ."; }
+			else { $systemstring = "zip -1rv $zipfile ."; }
+			WriteLog("Beginning zipping...");
+			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			WriteLog("Finished zipping...");
+			WriteLog("Changing directory to [$pwd]");
+			chdir($pwd);
+		}
+		else {
+			WriteLog("outdir [$outdir] does not exist");
+		}
+		# if the tmpexportdir was created, delete it
+		if (-e $tmpexportdir) {
+			if ((trim($tmpexportdir) ne "") && (trim($tmpexportdir) ne ".") && (trim($tmpexportdir) ne "..") && (trim($tmpexportdir) ne "/")) {
+				WriteLog("Temporary export dir [$tmpexportdir] exists and will be deleted");
+				rmtree($tmpexportdir);
+			}
+		}
+		if (-e $zipfile) {
+			$log .= "Created .zip file [$zipfile]\n";
+		}
+		else {
+			$log .= "Unable to create [$zipfile]\n";
+		}
+	}
+	
+	# extra steps for publicdownload
+	if ($exporttype eq "publicdownload") {
+		my $sqlstringC = "select * from public_downloads where pd_id = $publicdownloadid";
+		WriteLog("SQL: $sqlstringC");
+		my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+		my %rowC = $resultC->fetchhash;
+		my $expiredays = $rowC{'pd_expiredays'};
+		my $zippedsize = $rowC{'pd_zippedsize'};
+		my $unzippedsize = $rowC{'pd_unzippedsize'};
+		
+		my $filename = "NiDB-$exportid.zip";
+		my $zipfile = "$cfg{'webdownloaddir'}/$filename";
+		my $outdir = $tmpexportdir;
+		
+		my $pwd = getcwd;
+		WriteLog("Current directory is [$pwd], changing directory to [$outdir]");
+		if (-e $outdir) {
+			chdir($outdir);
+			if (-e $zipfile) { $systemstring = "zip -1grq $zipfile ."; }
+			else { $systemstring = "zip -1rq $zipfile ."; }
+			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+			WriteLog("Changing directory to [$pwd]");
+			if (chdir($pwd)) { WriteLog("Successfully changed directory to [$pwd]"); }
+			$systemstring = "unzip -vl $zipfile";
+			WriteLog("Running [$systemstring]");
+			my $filecontents = `$systemstring`;
+			my @lines = split(/\n/, $filecontents);
+			my $lastline = $lines[-1];
+			my @parts = split(/\s+/,trim($lastline));
+			$unzippedsize = $parts[0];
+			$zippedsize = $parts[1];
+			$filecontents = EscapeMySQLString($filecontents);
+			
+			# update status, size, expire date, etc in the public download table
+			$sqlstringC = "update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval $expiredays day), pd_zippedsize = '$zippedsize', pd_unzippedsize = '$unzippedsize', pd_filename = '$filename', pd_filecontents = '$filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = $publicdownloadid";
+			#WriteLog("SQL: $sqlstringC");
+			$resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+		}
+		else {
+			$exportstatus = "error";
+			WriteLog("ERROR directory [$outdir] does not exist");
+			$log .= "Outdir [$zipfile] does not exist\n";
+		}
+		
+		if (-e $zipfile) {
+			$log .= "Created .zip file [$zipfile]\n";
+		}
+		else {
+			$exportstatus = "error";
+			WriteLog("ERROR unable to create zip file [$zipfile]");
+			$log .= "Unable to create [$zipfile]\n";
+		}
+		
+	}
+	
+	WriteLog("Leaving ExportLocal()...");
+	
+	return ($exportstatus, $log);
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportNiDB -------------------------------------
+# ----------------------------------------------------------
+sub ExportNiDB() {
+	my ($exportid) = @_;
+	WriteLog("Entering ExportNiDB($exportid)...");
+
+	WriteLog("Leaving ExportNiDB()...");
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportNDAR -------------------------------------
+# ----------------------------------------------------------
+sub ExportNDAR() {
+	my ($exportid, $csvonly) = @_;
+	WriteLog("Entering ExportNDAR($exportid, $csvonly)...");
+
+	my %s = GetExportSeriesList($exportid);
+
+	my $tmpexportdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
+
+	my $log = "";
+	my $exportstatus = "complete";
+	my $systemstring = "";
+	my $laststudynum = 0;
+	my $newseriesnum = 1;
+	foreach my $uid (nsort keys %s) {
+		foreach my $studynum (nsort keys $s{$uid}) {
+			foreach my $seriesnum (nsort keys $s{$uid}{$studynum}) {
+				my $exportseriesid = $s{$uid}{$studynum}{$seriesnum}{'exportseriesid'};
+				my $sqlstring = "update exportseries set status = 'processing' where exportseries_id = $exportseriesid";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+				my $seriesstatus = "complete";
+				
+				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
+				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
+				my $primaryaltuid = $s{$uid}{$studynum}{$seriesnum}{'primaryaltuid'};
+				my $altuids = $s{$uid}{$studynum}{$seriesnum}{'altuids'};
+				my $projectname = $s{$uid}{$studynum}{$seriesnum}{'projectname'};
+				my $studyid = $s{$uid}{$studynum}{$seriesnum}{'studyid'};
+				my $studytype = $s{$uid}{$studynum}{$seriesnum}{'studytype'};
+				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
+				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
+				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
+				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
+				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
+				my $qcindir = $s{$uid}{$studynum}{$seriesnum}{'qcdir'};
+				my $datadirexists = $s{$uid}{$studynum}{$seriesnum}{'datadirexists'};
+				my $behdirexists = $s{$uid}{$studynum}{$seriesnum}{'behdirexists'};
+				my $qcdirexists = $s{$uid}{$studynum}{$seriesnum}{'qcdirexists'};
+				my $datadirempty = $s{$uid}{$studynum}{$seriesnum}{'datadirempty'};
+				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
+				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
+
+				my $subjectdir = "$uid$studynum";
+				switch ($dirformat) {
+					case "shortid" { $subjectdir = "$uid$studynum"; }
+					case "shortstudyid" { $subjectdir = "$uid/$studynum"; }
+					case "altuid" {
+						if ($primaryaltuid eq "") { $subjectdir = $uid; }
+						else { $subjectdir = $primaryaltuid; }
+					}
+				}
+				
+				# renumber series if necessary
+				if (!$preserveseries) {
+					if ($laststudynum != $studynum) { $newseriesnum = 1; }
+					else { $newseriesnum++; }
+				}
+				else { $newseriesnum = $seriesnum; }
+				
+				WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
+				$log .= "Series number [$seriesnum] --> [$newseriesnum]\n";
+				my $rootoutdir;
+				if ($exporttype eq 'nfs') {
+					$rootoutdir = "$cfg{'mountdir'}$nfsdir/$subjectdir";
+				}
+				elsif ($exporttype eq 'web') {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				elsif ($exporttype eq 'localftp') {
+					$rootoutdir = "$cfg{'ftpdir'}/NiDB-" . CreateLogDate() . "/$subjectdir";
+				}
+				elsif ($exporttype eq 'publicdownload') {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				else {
+					$rootoutdir = "$tmpexportdir/$subjectdir";
+				}
+				if (MakePath($rootoutdir)) {
+					WriteLog("Created rootoutdir [$rootoutdir]");
+				}
+				else {
+					$seriesstatus = "error";
+					$exportstatus = "error";
+					WriteLog("ERROR unable to create rootoutdir [$rootoutdir]");
+					$log .= "Unable to create output directory [$rootoutdir]\n";
+				}
+				
+				my $outdir = "$rootoutdir/$newseriesnum";
+				my $qcoutdir = "$outdir/qa";
+				my $behoutdir;
+				switch ($beh_format) {
+					case "behroot" { $behoutdir = $rootoutdir; }
+					case "behrootdir" { $behoutdir = "$rootoutdir/$beh_dirrootname"; }
+					case "behseries" { $behoutdir = $outdir; }
+					case "behseriesdir" { $behoutdir = "$outdir/$beh_dirseriesname"; }
+					else { $behoutdir = "$rootoutdir"; }
+				}
+				WriteLog("Destination is '$exporttype'. rootoutdir [$rootoutdir], outdir [$outdir], qcoutdir [$qcoutdir], behoutdir [$behoutdir]");
+	
+					# build destination path
+					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
+					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
+					$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir";
+					my $headerfile = "$fullexportdir/ndar.csv";
+
+					# find out if there are any files in the input directory
+					$systemstring = "find . -maxdepth 1 -type f | wc -l";
+					my $filecount = trim(`$systemstring 2>&1`);
+					WriteLog("Found [$filecount] files in [$indir]");
+					if ($filecount < 1) {
+						$newstatus = "problem";
+						$results = "[$indir] was EMPTY. No files available to export\n";
+						WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data");
+					}
+					
+					# try to create the path
+					if (!-d $fullexportdir) {
+						WriteLog("Point 1");
+						if (!MakePath($fullexportdir)) {
+							$newstatus = "problem";
+							$results = "$fullexportdir not created. Check permissions on destination directory.\n";
+						}
+					}
+					# see if the directory has been created
+					if (-d $fullexportdir) {
+						$systemstring = "chmod -Rf 777 $fullexportdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					
+						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+						if ($req_destinationtype eq "ndar") {						
+							MakePath($tmpdir);
+							if (($modality eq "mr") && ($data_type eq "dicom")) {
+								$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								Anonymize($tmpdir,2,'','');
+							}
+							elsif (($modality eq "mr") && ($data_type eq "parrec")) {
+								$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							}
+							else {
+								$systemstring = "cp -r $indir/* $tmpdir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							}
+						}						
+						if (-d $indir) {
+							my $behzipfile;
+							my $behdesc;
+							if ($req_destinationtype eq "ndar") {
+								# zip the data to the out directory
+								my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
+								$systemstring = "zip -vjrq1 $zipfile $tmpdir";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								WriteLog("Done zipping image files...");
+								$systemstring = "unzip -Z $zipfile";
+								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+
+								if ($numfilesbeh > 0) {
+									$behzipfile = "$uid-$study_num-$series_num-beh.zip";
+									$systemstring = "zip -vjrq1 $fullexportdir/$behzipfile $behindir";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									WriteLog("Done zipping beh files...");
+									$systemstring = "unzip -Z $zipfile";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									
+									$behdesc = "Behavioral/design data file";
+								}
+								else {
+									$behzipfile = "";
+									$behdesc = "";
+								}
+							}
+							
+							if (!$headerwritten) {
+								WriteNDARHeader($headerfile, $modality);
+								$headerwritten = 1;
+							}
+							WriteNDARSeries($headerfile, "$uid-$study_num-$series_num.zip", $behzipfile, $behdesc, $series_id, $modality, "$indir/$data_type");
+						}
+						else {
+							$results .= "Unable to export $indir. Directory does not exist\n";
+						}
+						
+						if ($modality eq "mr") {
+							rmtree($tmpdir);
+						}
+					}
+					$newstatus = 'complete';
+	
+	WriteLog("Leaving ExportNDAR()...");
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportBIDS -------------------------------------
+# ----------------------------------------------------------
+sub ExportBIDS() {
+	my ($exportid, $bidsreadme) = @_;
+	WriteLog("Entering ExportBIDS($exportid)...");
+	
+	my %s = GetExportSeriesList($exportid);
+
+	my $rootoutdir = "$cfg{'ftpdir'}/NiDB-BIDS-" . CreateLogDate();
+
+	my $log = "";
+	my $exportstatus = "complete";
+	my $systemstring = "";
+	my $laststudynum = 0;
+	my $newseriesnum = 1;
+	my $i = 1; # the subject counter
+	foreach my $uid (nsort keys %s) {
+		my $j = 1; # the session (study) counter
+		foreach my $studynum (nsort keys $s{$uid}) {
+			foreach my $seriesnum (nsort keys $s{$uid}{$studynum}) {
+				my $exportseriesid = $s{$uid}{$studynum}{$seriesnum}{'exportseriesid'};
+				my $sqlstring = "update exportseries set status = 'processing' where exportseries_id = $exportseriesid";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+				my $seriesstatus = "complete";
+				
+				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
+				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
+				my $primaryaltuid = $s{$uid}{$studynum}{$seriesnum}{'primaryaltuid'};
+				my $altuids = $s{$uid}{$studynum}{$seriesnum}{'altuids'};
+				my $projectname = $s{$uid}{$studynum}{$seriesnum}{'projectname'};
+				my $studyid = $s{$uid}{$studynum}{$seriesnum}{'studyid'};
+				my $studytype = $s{$uid}{$studynum}{$seriesnum}{'studytype'};
+				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
+				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
+				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $seriesdesc = $s{$uid}{$studynum}{$seriesnum}{'seriesdesc'};
+				my $seriesaltdesc = $s{$uid}{$studynum}{$seriesnum}{'seriesaltdesc'};
+				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
+				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
+				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
+				my $qcindir = $s{$uid}{$studynum}{$seriesnum}{'qcdir'};
+				my $datadirexists = $s{$uid}{$studynum}{$seriesnum}{'datadirexists'};
+				my $behdirexists = $s{$uid}{$studynum}{$seriesnum}{'behdirexists'};
+				my $qcdirexists = $s{$uid}{$studynum}{$seriesnum}{'qcdirexists'};
+				my $datadirempty = $s{$uid}{$studynum}{$seriesnum}{'datadirempty'};
+				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
+				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
+
+				# create the subject identifier
+				my $subjectdir = "subj" . sprintf( "%04d", $i);
+				
+				# create the session (study) identifier
+				my $sessiondir = "sess" . sprintf( "%04d", $i);
+				
+				# determine the datatype (what they call the 'modality')
+				my $seriesdir = "";
+				if ($seriesaltdesc eq "") {
+					$seriesdir = $seriesdesc;
+					$seriesdir =~ s/[^a-zA-Z0-9_-]/_/g;
+				}
+				else {
+					$seriesdir = $seriesaltdesc;
+				}
+
+				my $outdir = $rootoutdir . "/$subjectdir/$sessiondir/$seriesdir";
+				
+				if (MakePath($outdir)) {
+					WriteLog("Created outdir [$outdir]");
+				}
+				else {
+					$seriesstatus = "error";
+					$exportstatus = "error";
+					WriteLog("ERROR unable to create outdir [$outdir]");
+					$log .= "Unable to create output directory [$outdir]\n";
+				}
+				
+				if ($datadirexists) {
+					if (!$datadirempty) {
+						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+						MakePath($tmpdir);
+						ConvertDicom('bids', $indir, $tmpdir, 1, $subjectdir, $sessiondir, $seriesdir, $datatype);
+						
+						WriteLog("About to copy files from $tmpdir to $outdir");
+						$systemstring = "rsync $tmpdir/* $outdir/";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						WriteLog("Done copying files...");
+						if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
+							rmtree($tmpdir);
+						}
+					}
+					else {
+						$seriesstatus = "error";
+						$exportstatus = "error";
+						WriteLog("ERROR [$indir] is empty");
+						$log .= "Directory [$indir] is empty\n";
+					}
+				}
+				else {
+					$seriesstatus = "error";
+					$exportstatus = "error";
+					WriteLog("ERROR indir [$indir] does not exist");
+					$log .= "Directory [$indir] does not exist\n";
+				}
+				
+				# copy the beh data
+				if ($behdirexists) {
+					$systemstring = "cp -R $behindir/* $outdir";
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+					$systemstring = "chmod -Rf 777 $outdir";
+					WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				}
+				
+				$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				
+				$laststudynum = $studynum;
+			}
+		}
+	}
+	
+	# write the readme file
+	my $readmefilename = "$rootoutdir/README";
+	open(my $f, '>', $readmefilename) or WriteLog("Could not open file '$readmefilename' $!");
+	print $f $bidsreadme;
+	close $f;
+
+	WriteLog("Leaving ExportBIDS()...");
+	return ($exportstatus, $log);
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportToRemoteNiDB -----------------------------
+# ----------------------------------------------------------
+sub ExportToRemoteNiDB() {
+	my ($exportid, $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remotenidbinstanceid, $remotenidbprojectid, $remotenidbsiteid) = @_;
+	WriteLog("Entering ExportToRemoteNiDB($exportid, $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remotenidbinstanceid, $remotenidbprojectid, $remotenidbsiteid)...");
+
+	my $log = "";
+	# check to see if the remote server is reachable ...
+	my $systemstring = "ping -c 1 $remotenidbserver > /dev/null && echo '1' || echo '0'";
+	if (!trim(`$systemstring 2>&1`)) {
+		WriteLog("ERROR: Unable to ping remote NiDB server [$remotenidbserver]");
+		$log .= "Unable to ping remote NiDB server [$remotenidbserver]";
+		return ("error", $log);
+	}
+	# ... and if our credentials work and we can start a transaction on it
+	my $transactionID = StartRemoteNiDBTransaction($remotenidbserver, $remotenidbusername, $remotenidbpassword);
+	if (($transactionID eq "") || ($transactionID < 1)) {
+		WriteLog("ERROR: Invalid transaction ID [$transactionID] received from [$remotenidbserver]");
+		$log .= "Invalid transaction ID [$transactionID] received from [$remotenidbserver]";
+		return ("error", $log);
+	}
+	
+	my $tmpexportdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
+
+	# get list of series to be transferred
+	my %s = GetExportSeriesList($exportid);
+
+	my $exportstatus = "complete";
+	$systemstring = "";
+	my $lastsid = 0;
+	my $newseriesnum = 1;
+	foreach my $uid (nsort keys %s) {
+		foreach my $studynum (nsort keys $s{$uid}) {
+			foreach my $seriesnum (nsort keys $s{$uid}{$studynum}) {
+				my $exportseriesid = $s{$uid}{$studynum}{$seriesnum}{'exportseriesid'};
+				my $sqlstring = "update exportseries set status = 'processing' where exportseries_id = $exportseriesid";
+				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+
+				my $seriesstatus = "complete";
+				
+				my $uid = $s{$uid}{$studynum}{$seriesnum}{'uid'};
+				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
+				my $primaryaltuid = $s{$uid}{$studynum}{$seriesnum}{'primaryaltuid'};
+				my $altuids = $s{$uid}{$studynum}{$seriesnum}{'altuids'};
+				my $projectname = $s{$uid}{$studynum}{$seriesnum}{'projectname'};
+				my $studynum = $s{$uid}{$studynum}{$seriesnum}{'studynum'};
+				my $studyid = $s{$uid}{$studynum}{$seriesnum}{'studyid'};
+				my $studytype = $s{$uid}{$studynum}{$seriesnum}{'studytype'};
+				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
+				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
+				my $seriesnum = $s{$uid}{$studynum}{$seriesnum}{'seriesnum'};
+				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
+				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $seriesnotes = $s{$uid}{$studynum}{$seriesnum}{'seriesnotes'};
+				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
+				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
+				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
+				my $qcindir = $s{$uid}{$studynum}{$seriesnum}{'qcdir'};
+				my $datadirexists = $s{$uid}{$studynum}{$seriesnum}{'datadirexists'};
+				my $behdirexists = $s{$uid}{$studynum}{$seriesnum}{'behdirexists'};
+				my $qcdirexists = $s{$uid}{$studynum}{$seriesnum}{'qcdirexists'};
+				my $datadirempty = $s{$uid}{$studynum}{$seriesnum}{'datadirempty'};
+				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
+				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
+
+				if ($datadirexists) {
+					if (!$datadirempty) {
+						# --------------- Send to remote NiDB site --------------------------
+						# for now, only DICOM data and beh can be sent to remote sites
+					
+						my $numfails = 0;
+						my $error = 1;
+						my $results = "";
+						
+						while (($error == 1) && ($numfails < 5)) {
+							my $indir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
+							my $behindir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/beh";
+							my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+							my $tmpzip = $cfg{'tmpdir'} . "/" . GenerateRandomString(12) . ".tar.gz";
+							my $tmpzipdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(12);
+							MakePath($tmpdir);
+							MakePath($tmpzipdir);
+							MakePath("$tmpzipdir/beh");
+							$systemstring = "rsync $indir/* $tmpdir/";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							Anonymize($tmpdir,4,'Anonymous','0000-00-00');
+							
+							# get the list of DICOM files
+							my @dcmfiles;
+							opendir(DIR,$tmpdir) || Error("Cannot open directory [$tmpdir]\n");
+							my @files = readdir(DIR);
+							closedir(DIR);
+							foreach my $f (@files) {
+								my $fulldir = "$tmpdir/$f";
+								WriteLog("Checking on [$fulldir]");
+								if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
+									push(@dcmfiles,$f);
+								}
+							}
+							my $numdcms = $#dcmfiles + 1;
+							WriteLog("Found [$numdcms] dcmfiles");
+							
+							if ($numdcms < 1) {
+								WriteLog("************* ERROR - Didn't find any DICOM files!!!! *************");
+							}
+							
+							my @behfiles;
+							# get the list of beh files
+							if (-e $behindir) {
+								opendir(DIR,$behindir) || Error("Cannot open directory [$behindir]\n");
+								my @bfiles = readdir(DIR);
+								closedir(DIR);
+								foreach my $f (@bfiles) {
+									my $fulldir = "$behindir/$f";
+									#WriteLog("Checking on [$fulldir]");
+									if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
+										push(@behfiles,$f);
+									}
+								}
+							}
+							
+							# build the cURL string to send the actual data
+							$systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionID' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$datatype' -F 'modality=$modality' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$seriesnum' ";
+							my $c = 0;
+							foreach my $f (@dcmfiles) {
+								$c++;
+								my $systemstring2 = "cp '$tmpdir/$f' $tmpzipdir/";
+								my $res = `$systemstring2 2>&1`;
+								if ($res ne "") {
+									WriteLog("$systemstring2 ($res)");
+								}
+								
+							}
+							
+							$c = 0;
+							foreach my $f (@behfiles) {
+								$c++;
+								my $systemstring2 = "cp '$behindir/$f' $tmpzipdir/beh/";
+								my $res = `$systemstring2 2>&1`;
+								if ($res ne "") {
+									WriteLog("$systemstring2 ($res)");
+								}
+							}
+							
+							# send the zip and send file
+							my $systemstring2 = "cd $tmpzipdir;GZIP=-1; tar -czf $tmpzip --warning=no-timestamp .; chmod 777 $tmpzip";
+							WriteLog("$systemstring2 (".`$systemstring2 2>&1`.")");
+							# get size before sending
+							my $zipsize = -s $tmpzip;
+							my $starttime = time();
+							# get MD5 before sending
+							my $zipmd5 = file_md5_hex($tmpzip);
+							$systemstring .= "-F 'files[]=\@$tmpzip' ";
+							$systemstring .= "$remotenidbserver/api.php";
+							$results = `$systemstring 2>&1`;
+							WriteLog("$systemstring ($results)");
+							my $elapsedtime = time() - $starttime + 0.0000001; # to avoid a divide by zero!
+							my $MBps = $zipsize/$elapsedtime/1000/1000;
+							WriteLog("$zipsize bytes transferred at " . sprintf("%.2f",$MBps) . " MB/s ");
+							$log .= "$zipsize bytes transferred at " . sprintf("%.2f",$MBps) . " MB/s ";
+							
+							my @parts = split(',',$results);
+							if (trim($parts[0]) eq 'SUCCESS') {
+								# a file was successfully received by api.php, now check the return md5
+								if (trim(uc($parts[1])) eq uc($zipmd5)) {
+									$seriesstatus = 'complete';
+									WriteLog("Upload success: MD5 match");
+									$error = 0;
+								}
+								else {
+									$seriesstatus = 'error';
+									$exportstatus = 'error';
+									$log .= "Upload fail: MD5 non-match\n";
+									WriteLog("Upload fail: MD5 non-match");
+									$error = 1;
+									$numfails++;
+								}
+							}
+							else {
+								$seriesstatus = 'error';
+								$exportstatus = 'error';
+								$log .= "Upload fail: got message [" . $results . "]\n";
+								WriteLog("Upload fail: got message [" . $results . "]");
+								$error = 1;
+								$numfails++;
+							}
+						}
+					}
+					else {
+						$seriesstatus = "error";
+						$exportstatus = "error";
+						WriteLog("ERROR [$indir] is empty");
+						$log .= "ERROR [$indir] is empty";
+					}
+				}
+				else {
+					$seriesstatus = "error";
+					$exportstatus = "error";
+					WriteLog("ERROR [$indir] does not exist");
+					$log .= "ERROR [$indir] does not exist";
+				}
+			}
+		}
+	}
+	
+	EndRemoteNiDBTransaction($transactionID, $remotenidbserver, $remotenidbusername, $remotenidbpassword);
+
+	WriteLog("Leaving ExportToRemoteNiDB()...");
+	
+	return ($exportstatus, $log);
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportToRemoteFTP ------------------------------
+# ----------------------------------------------------------
+sub ExportToRemoteFTP() {
+	my ($exportid, $remoteftpusername, $remoteftppassword, $remoteftpserver, $remoteftpport, $remoteftppath) = @_;
+	WriteLog("Entering ExportToRemoteFTP($exportid)...");
+
+	WriteLog("Leaving ExportToRemoteFTP()...");
+}
+
+
+# ----------------------------------------------------------
+# --------- ExportToLocalFTP -------------------------------
+# ----------------------------------------------------------
+sub ExportToLocalFTP() {
+	my ($exportid) = @_;
+	WriteLog("Entering ExportToLocalFTP($exportid)...");
+
+	WriteLog("Leaving ExportToLocalFTP()...");
+}
+
+
+# ----------------------------------------------------------
+# --------- StartRemoteNiDBTransaction ---------------------
+# ----------------------------------------------------------
+sub StartRemoteNiDBTransaction() {
+	my ($remotenidbserver, $remotenidbusername, $remotenidbpassword) = @_;
+
+	# build a cURL string to start the transaction
+	my $systemstring = "curl -gs -F 'action=startTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' $remotenidbserver/api.php";
+	WriteLog("[$systemstring] --> (" . `$systemstring 2>&1` . ")");
+	my $t = trim(`$systemstring`);
+	WriteLog("Remote NiDB transactionID: [$t]");
+	
+	return $t;
+}
+
+
+# ----------------------------------------------------------
+# --------- EndRemoteNiDBTransaction -----------------------
+# ----------------------------------------------------------
+sub EndRemoteNiDBTransaction() {
+	my ($tid, $remotenidbserver, $remotenidbusername, $remotenidbpassword) = @_;
+	
+	# build a cURL string to end the transaction
+	my $systemstring = "curl -gs -F 'action=endTransaction' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$tid' $remotenidbserver/api.php";
+	WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+}
+
+
+# ----------------------------------------------------------
+# --------- GetExportSeriesList ----------------------------
+# ----------------------------------------------------------
+sub GetExportSeriesList() {
+	my ($exportid) = @_;
+	
+	my %series;
+
+	my $sqlstring = "select * from exportseries where export_id = $exportid";
+	WriteLog($sqlstring);
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
+	if ($result->numrows > 0) {
+		while (my %row = $result->fetchhash) {
+			my $modality = lc($row{'modality'});
+			my $seriesid = $row{'series_id'};
+			my $exportseriesid = $row{'exportseries_id'};
+			my $status = $row{'status'};
+
+			my $sqlstringA = "select a.*, b.*, c.enrollment_id, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
+			#WriteLog($sqlstringA);
+			my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
+			if ($resultA->numrows > 0) {
+				while (my %rowA = $resultA->fetchhash) {
+					my $uid = $rowA{'uid'};
+					my $subjectid = $rowA{'subject_id'};
+					my $studynum = $rowA{'study_num'};
+					my $studyid = $rowA{'study_id'};
+					my $studydatetime = $rowA{'study_datetime'};
+					my $seriesnum = $rowA{'series_num'};
+					my $seriessize = $rowA{'series_size'};
+					my $seriesnotes = $rowA{'series_notes'};
+					my $seriesdesc = $rowA{'series_desc'};
+					my $seriesaltdesc = $rowA{'series_altdesc'};
+					my $projectname = $rowA{'project_name'};
+					my $studyaltid = $rowA{'study_alternateid'};
+					my $studytype = $rowA{'study_type'};
+					my $datatype = $rowA{'data_type'};
+					my $enrollmentid = $rowA{'enrollment_id'};
+					my $datadir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
+					my $behdir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/beh";
+					my $qcdir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/qa";
+
+					# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
+					if (!defined($datatype) || $datatype eq '') {
+						$datatype = $modality;
+					}
+					
+					$series{$uid}{$studynum}{$seriesnum}{'exportseriesid'} = $exportseriesid;
+					$series{$uid}{$studynum}{$seriesnum}{'seriesid'} = $seriesid;
+					$series{$uid}{$studynum}{$seriesnum}{'subjectid'} = $subjectid;
+					$series{$uid}{$studynum}{$seriesnum}{'studyid'} = $studyid;
+					$series{$uid}{$studynum}{$seriesnum}{'modality'} = $modality;
+					$series{$uid}{$studynum}{$seriesnum}{'seriessize'} = $seriessize;
+					$series{$uid}{$studynum}{$seriesnum}{'seriesnotes'} = $seriesnotes;
+					$series{$uid}{$studynum}{$seriesnum}{'seriesdesc'} = $seriesdesc;
+					$series{$uid}{$studynum}{$seriesnum}{'seriesaltdesc'} = $seriesaltdesc;
+					$series{$uid}{$studynum}{$seriesnum}{'projectname'} = $projectname;
+					$series{$uid}{$studynum}{$seriesnum}{'studyaltid'} = $studyaltid;
+					$series{$uid}{$studynum}{$seriesnum}{'studytype'} = $studytype;
+					$series{$uid}{$studynum}{$seriesnum}{'datatype'} = $datatype;
+					$series{$uid}{$studynum}{$seriesnum}{'datadir'} = $datadir;
+					$series{$uid}{$studynum}{$seriesnum}{'behdir'} = $behdir;
+					$series{$uid}{$studynum}{$seriesnum}{'qcdir'} = $qcdir;
+
+					# ************* Check if source data directories exist *****************
+					# check if the indir directory exists or is empty
+					if (-e $datadir) {
+						$series{$uid}{$studynum}{$seriesnum}{'datadirexists'} = 1;
+						if (IsDirEmpty($datadir)) { $series{$uid}{$studynum}{$seriesnum}{'datadirempty'} = 1; }
+						else { $series{$uid}{$studynum}{$seriesnum}{'datadirempty'} = 0; }
+					}
+					else { $series{$uid}{$studynum}{$seriesnum}{'datadirexists'} = 0; }
+					
+					# check if the behdir directory exists or is empty
+					if (-e $behdir) {
+						$series{$uid}{$studynum}{$seriesnum}{'behdirexists'} = 1;
+						if (IsDirEmpty($behdir)) { $series{$uid}{$studynum}{$seriesnum}{'behdirempty'} = 1; }
+						else { $series{$uid}{$studynum}{$seriesnum}{'behdirempty'} = 0; }
+					}
+					else { $series{$uid}{$studynum}{$seriesnum}{'behdirexists'} = 0; }
+					
+					# check if the qcdir directory exists or is empty
+					if (-e $qcdir) {
+						$series{$uid}{$studynum}{$seriesnum}{'qcdirexists'} = 1;
+						if (IsDirEmpty($qcdir)) { $series{$uid}{$studynum}{$seriesnum}{'qcdirempty'} = 1; }
+						else { $series{$uid}{$studynum}{$seriesnum}{'qcdirempty'} = 0; }
+					}
+					else { $series{$uid}{$studynum}{$seriesnum}{'qcdirexists'} = 0; }
+
+					# get any alternate IDs
+					my @altuids;
+					my $primaryaltuid = "";
+					my $sqlstringB = "select altuid, isprimary from subject_altuid where enrollment_id = $enrollmentid and subject_id = $subjectid";
+					#WriteLog($sqlstringB);
+					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+					if ($resultB->numrows > 0) {
+						while (my %rowB = $resultB->fetchhash) {
+							if ($rowB{'isprimary'}) { $primaryaltuid = $rowB{'altuid'}; }
+							push(@altuids, $rowB{'altuid'});
+						}
+						#WriteLog(Dumper(\@altuids));
+						#WriteLog("primaryaltuid [$primaryaltuid]");
+						$series{$uid}{$studynum}{$seriesnum}{'primaryaltuid'} = $primaryaltuid;
+						$series{$uid}{$studynum}{$seriesnum}{'altuids'} = join(',',@altuids);
+					}
+					
+					# format the studydatetime if necessary
+					my ($sec, $min, $hour, $day, $month, $year, $tz) = strptime($studydatetime);
+					$year -= 100;
+					$year += 2000;
+					$month++;
+					if (length($hour) == 1) { $hour = "0" . $hour; }
+					if (length($sec) == 1) { $sec = "0" . $sec; }
+					if (length($min) == 1) { $min = "0" . $min; }
+					if (length($month) == 1) { $month = "0" . $month; }
+					if (length($day) == 1) { $day = "0" . $day; }
+					$series{$uid}{$studynum}{$seriesnum}{'studydatetime'} = "$year$month$day" . "_$hour$min$sec";
+					
+				}
+			}
+			else {
+				WriteLog("No rows found for this seriesid [$seriesid] and modality [$modality]");
+			}
+			
+		}
+	}
+	else {
+		WriteLog("No series rows found for this exportid [$exportid]");
+	}
+	
+	#WriteLog(Dumper(\%series));
+	
+	return %series;
+}
+
+
+
+
+
+
+
+
+
+
+			
 # ----------------------------------------------------------
 # --------- ProcessDataRequests ----------------------------
 # ----------------------------------------------------------
@@ -294,7 +1461,7 @@ sub ProcessDataRequests {
 				WriteLog("Destination type: $req_destinationtype");
 
 				my $subjectdir;
-				my $fullexportdir;
+				my $fullexportdir = "";
 				my $newdir;
 				my $behoutdir;
 				my $qcoutdir;
@@ -329,6 +1496,7 @@ sub ProcessDataRequests {
 						
 						$newdir = $altuid;
 					}
+					else { $newdir = $uid . $study_num; }
 				}
 
 				my $finalseriesnum;
@@ -384,7 +1552,7 @@ sub ProcessDataRequests {
 				WriteLog("Preserve [$req_preserveseries] Old [$series_num] New [$finalseriesnum]");
 			
 				# determine what the actual export directory should be
-				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $finalseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir);
+				($fullexportdir, $behoutdir, $qcoutdir) = GetOutputDirectories($req_destinationtype, $newdir, $finalseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir, $groupid);
 
 				my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/$data_type";
 				my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
@@ -427,7 +1595,8 @@ sub ProcessDataRequests {
 					WriteLog("qcindir [$qcindir] does not exist");
 				}
 				
-				# --------------- OPTION 1 - Copy locally (NFS, local FTP, Web, or Public download) ---------------
+				# -------------------------------------------------------------------------------------------------------
+				# --------------- OPTION 1 - Copy locally (NFS, local FTP, Web, BIDS, or Public download) ---------------
 				if (($req_destinationtype eq "nfs") || ($req_destinationtype eq "localftp") || ($req_destinationtype eq "web") || ($req_destinationtype eq "publicdownload")) {
 					#WriteLog("About to create $fullexportdir");
 					# try to create the path
@@ -474,9 +1643,9 @@ sub ProcessDataRequests {
 								MakePath($tmpdir);
 								WriteLog("Point 2");
 							
-								WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num)");
-								ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $data_type);
-								WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $data_type)");
+								WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $study_num, $series_num)");
+								ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num, $data_type);
+								WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num, $data_type)");
 								
 								WriteLog("About to copy files from $tmpdir to $fullexportdir");
 								$systemstring = "rsync $tmpdir/* $fullexportdir/";
@@ -533,6 +1702,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
+				# -------------------------------------------------------------------
 				# --------------- OPTION 2 - Send to remote NiDB site ---------------
 				# for now, only DICOM data and beh can be sent to remote sites
 				if ($req_destinationtype eq "remotenidb") {
@@ -652,6 +1822,7 @@ sub ProcessDataRequests {
 					}
 				}
 				
+				# ---------------------------------------------------------------------
 				# --------------- OPTION 3 - Export data in NiDB format ---------------
 				if ($req_destinationtype eq "export") {
 					# build destination path
@@ -702,6 +1873,7 @@ sub ProcessDataRequests {
 					$newstatus = 'complete';
 				}
 				
+				# ----------------------------------------------------
 				# --------------- OPTION 4 - NDAR/RDoC ---------------
 				if (($req_destinationtype eq "ndar") || ($req_destinationtype eq "ndarcsv")) {
 					# build destination path
@@ -797,9 +1969,16 @@ sub ProcessDataRequests {
 					$newstatus = 'complete';
 				}
 				
+				# ------------------------------------------------------------------
 				# --------------- OPTION 5 - Copy to remote ftp site ---------------
 				if ($req_destinationtype eq "remoteftp") {
 					SendToRemoteFTP($req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $remoteftpserver, $remoteftpusername, $remoteftppassword, $remoteftppath,$newdir);
+				}
+				
+				# ------------------------------------------------------------------
+				# --------------- OPTION 6 - BIDS export ---------------------------
+				if ($req_destinationtype eq "bids") {
+					WriteBIDS($fullexportdir, $req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $newdir);
 				}
 				
 				# finish up and record the time it took to process and the status
@@ -953,11 +2132,11 @@ sub ProcessDataRequests {
 # --------- GetOutputDirectories ---------------------------
 # ----------------------------------------------------------
 sub GetOutputDirectories() {
-	my ($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir) = @_;
+	my ($req_destinationtype, $newdir, $newseriesnum, $req_behdirrootname, $req_behdirseriesname, $tmpwebdir, $req_behformat, $req_nfsdir, $groupid) = @_;
 	
-	my $fullexportdir;
-	my $qcoutdir;
-	my $behoutdir;
+	my $fullexportdir = "";
+	my $qcoutdir = "";
+	my $behoutdir = "";
 	
 	switch ($req_destinationtype) {
 		case "localftp" {
@@ -983,6 +2162,18 @@ sub GetOutputDirectories() {
 				else { $behoutdir = "$tmpwebdir/$newdir"; }
 			}
 			WriteLog("Destination is 'web'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
+		}
+		case "bids" {
+			$fullexportdir = "$cfg{'ftpdir'}/$groupid/$newdir/$newseriesnum";
+			$qcoutdir = "$cfg{'ftpdir'}/$groupid/$newdir/$newseriesnum/qa";
+			switch ($req_behformat) {
+				case "behroot" { $behoutdir = "$cfg{'ftpdir'}/$groupid/$newdir"; }
+				case "behrootdir" { $behoutdir = "$cfg{'ftpdir'}/$groupid/$newdir/$req_behdirrootname"; }
+				case "behseries" { $behoutdir = "$cfg{'ftpdir'}/$groupid/$newdir/$newseriesnum"; }
+				case "behseriesdir" { $behoutdir = "$cfg{'ftpdir'}/$groupid/$newdir/$newseriesnum/$req_behdirseriesname"; }
+				else { $behoutdir = "$cfg{'ftpdir'}/$groupid/$newdir"; }
+			}
+			WriteLog("Destination is 'bids'. fullexportdir=[$fullexportdir] qcoutdir=[$qcoutdir] behoutdir=[$behoutdir]");
 		}
 		case "publicdownload" {
 			$fullexportdir = "$tmpwebdir/$newdir/$newseriesnum";
@@ -1043,9 +2234,9 @@ sub SendToRemoteFTP() {
 			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 		}
 		else {
-			WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num)");
-			ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $data_type);
-			WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num)");
+			WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num)");
+			ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num, $data_type);
+			WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num)");
 		}
 	}
 	# copy the beh data
@@ -1094,6 +2285,66 @@ sub SendToRemoteFTP() {
 	# change back to original directory before leaving
 	chdir($origDir);
 	
+	return ($results,$newstatus);
+}
+
+
+# ----------------------------------------------------------
+# --------- WriteBIDS --------------------------------------
+# ----------------------------------------------------------
+sub WriteBIDS() {
+	my ($fullexportdir, $behonly, $datatype, $indir, $filetype, $gzip, $uid, $studynum, $seriesnum, $behformat, $behoutdir, $behindir, $newseriesnum, $newdir) = @_;
+	
+	WriteLog("Entering function WriteBIDS($fullexportdir, $behonly, $datatype, $indir, $filetype, $gzip, $uid, $studynum, $seriesnum, $behformat, $behoutdir, $behindir, $newseriesnum, $newdir)");
+	
+	my $origDir = getcwd;
+	my $systemstring;
+	my $results;
+	my $newstatus;
+	my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+	MakePath($tmpdir);
+
+	WriteLog("Working in directory [$tmpdir]");
+	
+	# try to create the path
+	if (!-d $fullexportdir) {
+		WriteLog("[$fullexportdir] does not exist, attempting to create");
+		if (!MakePath($fullexportdir)) {
+			$newstatus = "problem";
+			$results = "$fullexportdir not created. Check permissions on destination directory.";
+		}
+	}
+					
+	if (!$behonly) {
+		if ($datatype ne "dicom") {
+			my $systemstring = "rsync $indir/* $tmpdir/";
+			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+		}
+		else {
+			WriteLog("Calling ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype)");
+			ConvertDicom('bids', $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype);
+			WriteLog("Done calling ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype)");
+		}
+	}
+	# copy the beh data
+	if ($behformat ne "behnone") {
+		unless(-d "$tmpdir$behoutdir"){
+			MakePath("$tmpdir$behoutdir") or die ("Could not create $tmpdir$behoutdir because [$!]");
+		}
+		$systemstring = "cp -R $behindir/* $behoutdir";
+		WriteLog("$systemstring (" . trim(`$systemstring 2>&1`) . ")");
+	}
+
+	$systemstring = "rsync $tmpdir/* $fullexportdir/";
+	#$systemstring = "cp -uvR $tmpdir/* $fullexportdir/";
+	WriteLog("$systemstring (" . trim(`$systemstring 2>&1`) . ")");
+
+	rmtree($tmpdir);
+
+	# change back to original directory before leaving
+	chdir($origDir);
+	
+	WriteLog("Leaving function WriteBIDS()");
 	return ($results,$newstatus);
 }
 
@@ -1279,7 +2530,7 @@ sub ThreadedSystemCall {
 # --------- ConvertDicom -----------------------------------
 # ----------------------------------------------------------
 sub ConvertDicom() {
-	my ($req_filetype, $indir, $outdir, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $data_type) = @_;
+	my ($filetype, $indir, $outdir, $req_gzip, $uid, $studynum, $seriesnum, $datatype) = @_;
 
 	my $sqlstring;
 
@@ -1288,8 +2539,11 @@ sub ConvertDicom() {
 	my $origDir = getcwd;
 	
 	my $gzip;
-	if ($req_gzip) { $gzip = "-g y"; }
-	else { $gzip = "-g n"; }
+	#if ($req_gzip) { $gzip = "-g y"; }
+	#else { $gzip = "-g n"; }
+	
+	if ($req_gzip) { $gzip = "-z y"; }
+	else { $gzip = "-z n"; }
 	
 	my $starttime = time;
 			
@@ -1297,15 +2551,18 @@ sub ConvertDicom() {
 	#my $outdir;
 	my $fileext;
 	
-	if ($data_type eq "dicom") { $fileext = "dcm"; }
-	elsif ($data_type eq "parrec") { $fileext = "par"; }
+	if ($datatype eq "dicom") { $fileext = "dcm"; }
+	elsif ($datatype eq "parrec") { $fileext = "par"; }
 	my $systemstring;
 	chdir($indir);
-	switch ($req_filetype) {
-		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
-		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
-		case "analyze4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
-		case "analyze3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+	switch ($filetype) {
+		#case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z y -o '$outdir' $indir"; }
+		#case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
+		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z 3 -o '$outdir' $indir"; }
+		#case "analyze4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		#case "analyze3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
+		case "bids" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b y -z y -o '$outdir' $indir"; }
 		else { return(0,0,0,0,0,0); }
 	}
 	
@@ -1320,13 +2577,13 @@ sub ConvertDicom() {
 	WriteLog(CompressText("$systemstring (" . `$systemstring 2>&1` . ")"));
 
 	# converstion should be done, so check if it actually gzipped the file
-	if ($req_gzip) {
+	if (($req_gzip) && ($filetype ne "bids")) {
 		$systemstring = "cd $outdir; gzip *";
 		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 	}
 	
 	# rename the files into something meaningful
-	my ($numimg, $numhdr, $numnii, $numgz) = BatchRenameFiles($outdir, $series_num, $study_num, $uid, $project_costcenter);
+	my ($numimg, $numhdr, $numnii, $numgz) = BatchRenameFiles($filetype, $outdir, $seriesnum, $studynum, $uid);
 	WriteLog("Done renaming files: $numimg, $numhdr, $numnii, $numgz");
 
 	WriteLog("About to get directory size...");
@@ -1347,19 +2604,21 @@ sub ConvertDicom() {
 # --------- BatchRenameFiles -------------------------------
 # ----------------------------------------------------------
 sub BatchRenameFiles {
-	my ($dir, $seriesnum, $studynum, $uid, $costcenter) = @_;
+	my ($filetype, $dir, $seriesnum, $studynum, $uid) = @_;
 	
 	chdir($dir) || die("Cannot open directory $dir!\n");
 	my @imgfiles = <*.img>;
 	my @hdrfiles = <*.hdr>;
 	my @niifiles = <*.nii>;
 	my @gzfiles = <*.nii.gz>;
+	my @jsonfiles = <*.json>;
+	my @bvecfiles = <*.bvec>;
+	my @bvalfiles = <*.bval>;
 
 	my $i = 1;
 	foreach my $imgfile (nsort @imgfiles) {
 		my $oldfile = $imgfile;
-		my $newfile = $uid . "_P$costcenter" . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".img";
-		#WriteLog("$oldfile => $newfile");
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".img";
 		WriteLog(`mv $oldfile $newfile 2>&1`);
 		$i++;
 	}
@@ -1367,8 +2626,7 @@ sub BatchRenameFiles {
 	$i = 1;
 	foreach my $hdrfile (nsort @hdrfiles) {
 		my $oldfile = $hdrfile;
-		my $newfile = $uid . "_P$costcenter" . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".hdr";
-		#WriteLog("$oldfile => $newfile");
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".hdr";
 		WriteLog(`mv $oldfile $newfile 2>&1`);
 		$i++;
 	}
@@ -1376,8 +2634,7 @@ sub BatchRenameFiles {
 	$i = 1;
 	foreach my $niifile (nsort @niifiles) {
 		my $oldfile = $niifile;
-		my $newfile = $uid . "_P$costcenter" . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".nii";
-		#WriteLog("$oldfile => $newfile");
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".nii";
 		WriteLog(`mv $oldfile $newfile 2>&1`);
 		$i++;
 	}
@@ -1385,8 +2642,31 @@ sub BatchRenameFiles {
 	$i = 1;
 	foreach my $gzfile (nsort @gzfiles) {
 		my $oldfile = $gzfile;
-		my $newfile = $uid . "_P$costcenter" . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".nii.gz";
-		WriteLog("$oldfile => $newfile");
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".nii.gz";
+		WriteLog(`mv $oldfile $newfile 2>&1`);
+		$i++;
+	}
+	
+	$i = 1;
+	foreach my $jsonfile (nsort @jsonfiles) {
+		my $oldfile = $jsonfile;
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".json";
+		WriteLog(`mv $oldfile $newfile 2>&1`);
+		$i++;
+	}
+
+	$i = 1;
+	foreach my $bvecfile (nsort @bvecfiles) {
+		my $oldfile = $bvecfile;
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".bvec";
+		WriteLog(`mv $oldfile $newfile 2>&1`);
+		$i++;
+	}
+
+	$i = 1;
+	foreach my $bvalfile (nsort @bvalfiles) {
+		my $oldfile = $bvalfile;
+		my $newfile = $uid . "_$studynum" . "_$seriesnum" . "_" . sprintf('%05d',$i) . ".bval";
 		WriteLog(`mv $oldfile $newfile 2>&1`);
 		$i++;
 	}

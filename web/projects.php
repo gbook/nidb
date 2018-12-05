@@ -83,11 +83,11 @@
 			ChangeProject($newprojectid, $studyids);
 			DisplayStudiesTable($id);
 			break;
-		case 'viewuniqueseries':
-			DisplayUniqueSeries($id);
+		case 'editbidsdatatypes':
+			EditBIDSDatatypes($id);
 			break;
-		case 'viewaltseriessummary':
-			DisplayAltSeriesSummary($id);
+		case 'viewbidsdatatypes':
+			ViewBIDSDatatypes($id);
 			break;
 		case 'displayprojectinfo':
 			DisplayProjectInfo($id);
@@ -128,7 +128,7 @@
 			break;
 		case 'changealternatenames':
 			ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames);
-			DisplayUniqueSeries($id);
+			EditBIDSDatatypes($id);
 			break;
 		case 'obliteratesubject':
 			ObliterateSubject($studyids);
@@ -1365,7 +1365,7 @@
 		</style>
 		<?		
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
+		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
 		
@@ -2182,9 +2182,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayUniqueSeries ---------------- */
+	/* ------- EditBIDSDatatypes ---------------- */
 	/* -------------------------------------------- */
-	function DisplayUniqueSeries($id) {
+	function EditBIDSDatatypes($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
@@ -2195,7 +2195,7 @@
 		
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['Edit Group Protocols'] = "projects.php?action=viewuniqueseries&id=$id";
+		$urllist['Edit Group Protocols'] = "projects.php?action=editbidsdatatypes&id=$id";
 		NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
@@ -2206,7 +2206,7 @@
 			$modality = strtolower($row['study_modality']);
 			
 			if (($modality != "") && ($studyid != "")) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid'";
+				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -2240,12 +2240,12 @@
 				<th>Modality</th>
 				<th>Series Description</th>
 				<th>Count</th>
-				<th>New Description</th>
+				<th>BIDS datatype</th>
 			</thead>
 		<?
 		$i=0;
 		foreach ($seriesdescs as $modality => $serieslist) {
-			natksort($serieslist);
+			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
 			foreach ($serieslist as $series => $count) {
 
 				$currentaltdesc = "";
@@ -2272,9 +2272,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayAltSeriesSummary ------------ */
+	/* ------- ViewBIDSDatatypes ------------------ */
 	/* -------------------------------------------- */
-	function DisplayAltSeriesSummary($id) {
+	function ViewBIDSDatatypes($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		$sqlstring = "select * from projects where project_id = $id";
@@ -2284,26 +2284,28 @@
 		
 		$urllist['Projects'] = "projects.php";
 		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['Series Summary'] = "projects.php?action=viewuniqueseries&id=$id";
+		$urllist['Series Summary'] = "projects.php?action=editbidsdatatypes&id=$id";
 		NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$uid = $row['uid'];
-			$modality = strtolower($row['study_modality']);
-			
-			if (($modality != "") && ($studyid != "")) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$seriesaltdesc = $rowA['series_altdesc'];
-					if ($seriesaltdesc != "") {
-						$seriesdescs[$uid][$modality][$seriesaltdesc]++;
-						$uniqueseries[$modality][$seriesaltdesc]++;
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$studyid = $row['study_id'];
+				$studynum = $row['study_num'];
+				$uid = $row['uid'];
+				$modality = strtolower($row['study_modality']);
+				
+				if (($modality != "") && ($studyid != "")) {
+					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						$seriesaltdesc = $rowA['series_altdesc'];
+						if ($seriesaltdesc != "") {
+							$seriesdescs[$uid][$modality][$seriesaltdesc]++;
+							$uniqueseries[$modality][$seriesaltdesc]++;
+						}
 					}
 				}
 			}

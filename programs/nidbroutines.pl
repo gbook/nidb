@@ -786,28 +786,33 @@ sub MakePath {
 	#print "Creating path [$p]\n";
 	my $systemstring = "mkdir -pv '$p'";
 	WriteLog("[$systemstring]: " . trim(`$systemstring 2>&1`));
-	return 1;
-	
-	make_path($p, {mode => 0777, verbose => 1, error => \my $err});
-	if (@$err) {
-		for my $diag (@$err) {
-			my ($file, $message) = %$diag;
-			if ($file eq '') {
-				print "general error creating [$p]: $message\n";
-				WriteLog("general error creating [$p]: $message");
-			}
-			else {
-				print "problem unlinking $file: $message\n";
-				WriteLog("problem unlinking $file: $message");
-			}
-		}
-		return 0;
-	}
-	else {
-		print "No error encountered when creating [$p]\n";
-		WriteLog("No error encountered when creating [$p]");
+	if (-e $p) {
 		return 1;
 	}
+	else {
+		return 0;
+	}
+	
+	# make_path($p, {mode => 0777, verbose => 1, error => \my $err});
+	# if (@$err) {
+		# for my $diag (@$err) {
+			# my ($file, $message) = %$diag;
+			# if ($file eq '') {
+				# print "general error creating [$p]: $message\n";
+				# WriteLog("general error creating [$p]: $message");
+			# }
+			# else {
+				# print "problem unlinking $file: $message\n";
+				# WriteLog("problem unlinking $file: $message");
+			# }
+		# }
+		# return 0;
+	# }
+	# else {
+		# print "No error encountered when creating [$p]\n";
+		# WriteLog("No error encountered when creating [$p]");
+		# return 1;
+	# }
 }
 
 

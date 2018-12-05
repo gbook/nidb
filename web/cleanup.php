@@ -421,9 +421,11 @@
 		$numrows = mysqli_num_rows($result)
 		?>
 		
+		<!--
 		<form action="cleanup.php" method="post" name="theform">
-		<input type="hidden" name="action" value="deleteenrollments">
-		Found <?=$numrows?> empty enrollments
+		<input type="hidden" name="action" value="deletestudies">
+		-->
+		Found <?=$numrows?> orphaned studies
 		<table class="smallgraydisplaytable">
 			<thead>
 				<tr>
@@ -473,10 +475,11 @@
 		}
 		?>
 			<tr>
-				<td colspan="8" align="right"><input type="submit" value="Delete Enrollments"></td>
+				<td colspan="8" align="right"><input type="submit" disabled value="Delete Enrollments"></td>
 			</tr>
 			</tbody>
 		</table>
+		<form>
 		<?
 	}
 	
