@@ -78,12 +78,11 @@ if (CheckNumLockFiles($lockfileprefix, $cfg{'lockdir'}) >= $numinstances) {
 else {
 	my $logfilename;
 	($lockfile, $logfilename) = CreateLockFile($lockfileprefix, $cfg{'lockdir'}, $numinstances);
-	#my $logfilename = "$lockfile";
 	$logfilename = "$cfg{'logdir'}/$scriptname" . CreateLogDate() . ".log";
 	open $log, '> ', $logfilename;
 	my $x = ProcessDataExports();
 	close $log;
-	#if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
+	if (!$x) { unlink $logfilename; } # delete the logfile if nothing was actually done
 	print "Done. Deleting $lockfile\n";
 	unlink $lockfile;
 }
@@ -172,13 +171,13 @@ sub ProcessDataExports {
 				case 'web' 				{ ($status,$log) = ExportLocal($exportid, 'web', '', 0, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
 				case 'publicdownload' 	{ ($status,$log) = ExportLocal($exportid, 'publicdownload', '', $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
 				case 'nfs' 				{ ($status,$log) = ExportLocal($exportid, 'nfs', $nfsdir, 0, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
+				case 'localftp' 		{ ($status,$log) = ExportLocal($exportid, 'localftp', $nfsdir, 0, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname); }
 				case 'export' 			{ ($status,$log) = ExportNiDB($exportid); }
 				case 'ndar' 			{ ($status,$log) = ExportNDAR($exportid, 0); }
 				case 'ndarcsv' 			{ ($status,$log) = ExportNDAR($exportid, 1); }
 				case 'bids' 			{ ($status,$log) = ExportBIDS($exportid, $bidsreadme); }
 				case 'remotenidb' 		{ ($status,$log) = ExportToRemoteNiDB($exportid, $remotenidbserver, $remotenidbusername, $remotenidbpassword, $remotenidbinstanceid, $remotenidbprojectid, $remotenidbsiteid); }
 				case 'remoteftp' 		{ ($status,$log) = ExportToRemoteFTP($exportid, $remoteftpusername, $remoteftppassword, $remoteftpserver, $remoteftpport, $remoteftppath); }
-				case 'localftp' 		{ ($status,$log) = ExportToLocalFTP($exportid); }
 				else 					{ WriteLog("Unknown export type [$destinationtype]"); continue; }
 			}
 			$log = EscapeMySQLString($log);
@@ -197,7 +196,7 @@ sub ProcessDataExports {
 # ----------------------------------------------------------
 sub ExportLocal() {
 	my ($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname) = @_;
-	#WriteLog("Entering ExportLocal($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname)...");
+	WriteLog("Entering ExportLocal()...");
 
 	my %s = GetExportSeriesList($exportid);
 
@@ -227,6 +226,7 @@ sub ExportLocal() {
 				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
 				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
 				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $seriesdesc = $s{$uid}{$studynum}{$seriesnum}{'seriesdesc'};
 				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
 				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
 				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
@@ -256,7 +256,7 @@ sub ExportLocal() {
 				else { $newseriesnum = $seriesnum; }
 				
 				WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
-				$log .= "Series number [$seriesnum] --> [$newseriesnum]\n";
+				$log .= "$subjectdir - Series number [$seriesnum] --> [$newseriesnum]\n";
 				my $rootoutdir;
 				if ($exporttype eq 'nfs') {
 					$rootoutdir = "$cfg{'mountdir'}$nfsdir/$subjectdir";
@@ -275,6 +275,7 @@ sub ExportLocal() {
 				}
 				if (MakePath($rootoutdir)) {
 					WriteLog("Created rootoutdir [$rootoutdir]");
+					$log .= "Writing data to [$rootoutdir]\n";
 				}
 				else {
 					$seriesstatus = "error";
@@ -303,11 +304,13 @@ sub ExportLocal() {
 								# use rsync instead of cp because of the number of files limit
 								$systemstring = "rsync $indir/* $outdir/";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								$log .= "Copying raw data from [$indir] to [$outdir]\n";
 							}
 							elsif ($filetype eq "qc") {
 								# copy only the qc data
 								$systemstring = "cp -R $indir/qa $qcoutdir";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+								$log .= "Copying QC data from [$indir/qa] to [$qcoutdir]\n";
 								
 								# write the series info to a text file
 								open (MRFILE,"> $outdir/seriesInfo.txt");
@@ -323,7 +326,6 @@ sub ExportLocal() {
 								my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
 								MakePath($tmpdir);
 								ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype);
-								
 								WriteLog("About to copy files from $tmpdir to $outdir");
 								$systemstring = "rsync $tmpdir/* $outdir/";
 								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
@@ -331,6 +333,7 @@ sub ExportLocal() {
 								if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
 									rmtree($tmpdir);
 								}
+								$log .= "Converted DICOM/parrec data into $filetype using tmpdir [$tmpdir]. Final directory [$outdir]\n";
 							}
 						}
 						else {
@@ -357,6 +360,7 @@ sub ExportLocal() {
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						$systemstring = "chmod -Rf 777 $behoutdir";
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						$log .= "Copying behavioral data from [$behindir] to [$behoutdir]\n";
 					}
 					else {
 						$seriesstatus = "error";
@@ -374,6 +378,7 @@ sub ExportLocal() {
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						$systemstring = "chmod -Rf 777 $qcoutdir";
 						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						$log .= "Copying QC data from [$qcindir] to [$qcoutdir]\n";
 					}
 					else {
 						$seriesstatus = "error";
@@ -400,6 +405,7 @@ sub ExportLocal() {
 				
 				$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				$log .= "Series [$uid$studynum-$seriesnum ($seriesdesc)] complete\n";
 				
 				$laststudynum = $studynum;
 			}
@@ -512,6 +518,59 @@ sub ExportNiDB() {
 	my ($exportid) = @_;
 	WriteLog("Entering ExportNiDB($exportid)...");
 
+	# ********************************************************************
+	# This function is deprecated, but the code is left here for reference
+	# ********************************************************************
+	
+	# if ($req_destinationtype eq "export") {
+		# # build destination path
+		# my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
+		# $fullexportdir = "$cfg{'ftpdir'}/NIDB-$exportdir/$uid/$study_num/$series_num";
+
+		# # try to create the path
+		# if (!-d $fullexportdir) {
+			# WriteLog("Point 1");
+			# if (!MakePath($fullexportdir)) {
+				# $newstatus = "problem";
+				# $results .= "$fullexportdir not created. Check permissions on destination directory.\n";
+			# }
+		# }
+		# # see if the directory has been created
+		# if (-d $fullexportdir) {
+			# $systemstring = "chmod -Rf 777 $fullexportdir";
+			# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+		
+			# if (-d $indir) {
+				# $systemstring = "cp -R $indir/* $fullexportdir";
+				# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+				# WriteLog("Done copying files...");
+				# if (!defined($subjectwritten{'site'})) {
+					# WriteSiteMeta("$cfg{'ftpdir'}/NIDB-$exportdir");
+					# $subjectwritten{'site'} = 1;
+				# }
+				# if (!defined($subjectwritten{$uid})) {
+					# WriteSubjectMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid);
+					# $subjectwritten{$uid} = 1;
+				# }
+				# WriteLog("Checkpoint i");
+				# if (!defined($studywritten{"$uid$study_num"})) {
+					# WriteStudyMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid, $study_num);
+					# $studywritten{"$uid$study_num"} = 1;
+				# }
+				# WriteLog("Checkpoint ii");
+				# if (!defined($serieswritten{"$uid$study_num$series_num"})) {
+					# WriteSeriesMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid, $study_num, $series_num, $series_id, $modality);
+					# $serieswritten{"$uid$study_num$series_num"} = 1;
+				# }
+				# WriteLog("Checkpoint iii");
+			# }
+			# else {
+				# $results .= "Unable to export $indir. Directory does not exist\n";
+			# }
+		# }
+		# $newstatus = 'complete';
+	# }
+	
 	WriteLog("Leaving ExportNiDB()...");
 }
 
@@ -522,13 +581,24 @@ sub ExportNiDB() {
 sub ExportNDAR() {
 	my ($exportid, $csvonly) = @_;
 	WriteLog("Entering ExportNDAR($exportid, $csvonly)...");
+	my $exportstatus = "complete";
 
 	my %s = GetExportSeriesList($exportid);
 
-	my $tmpexportdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
-
+	my $rootoutdir = "$cfg{'ftpdir'}/NiDB-NDAR-" . CreateLogDate();
+	my $headerfile = "$rootoutdir/ndar.csv";
+	
+	if (MakePath($rootoutdir)) {
+		WriteLog("Created rootoutdir [$rootoutdir]");
+	}
+	else {
+		$exportstatus = "error";
+		WriteLog("ERROR unable to create rootoutdir [$rootoutdir]");
+		$log .= "Unable to create output directory [$rootoutdir]\n";
+		return ("error", $log);
+	}
+	
 	my $log = "";
-	my $exportstatus = "complete";
 	my $systemstring = "";
 	my $laststudynum = 0;
 	my $newseriesnum = 1;
@@ -551,6 +621,7 @@ sub ExportNDAR() {
 				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
 				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
 				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
+				my $numfilesbeh = $s{$uid}{$studynum}{$seriesnum}{'numfilesbeh'};
 				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
 				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
 				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
@@ -562,156 +633,70 @@ sub ExportNDAR() {
 				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
 				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
 
-				my $subjectdir = "$uid$studynum";
-				switch ($dirformat) {
-					case "shortid" { $subjectdir = "$uid$studynum"; }
-					case "shortstudyid" { $subjectdir = "$uid/$studynum"; }
-					case "altuid" {
-						if ($primaryaltuid eq "") { $subjectdir = $uid; }
-						else { $subjectdir = $primaryaltuid; }
-					}
-				}
-				
-				# renumber series if necessary
-				if (!$preserveseries) {
-					if ($laststudynum != $studynum) { $newseriesnum = 1; }
-					else { $newseriesnum++; }
-				}
-				else { $newseriesnum = $seriesnum; }
-				
-				WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
-				$log .= "Series number [$seriesnum] --> [$newseriesnum]\n";
-				my $rootoutdir;
-				if ($exporttype eq 'nfs') {
-					$rootoutdir = "$cfg{'mountdir'}$nfsdir/$subjectdir";
-				}
-				elsif ($exporttype eq 'web') {
-					$rootoutdir = "$tmpexportdir/$subjectdir";
-				}
-				elsif ($exporttype eq 'localftp') {
-					$rootoutdir = "$cfg{'ftpdir'}/NiDB-" . CreateLogDate() . "/$subjectdir";
-				}
-				elsif ($exporttype eq 'publicdownload') {
-					$rootoutdir = "$tmpexportdir/$subjectdir";
-				}
-				else {
-					$rootoutdir = "$tmpexportdir/$subjectdir";
-				}
-				if (MakePath($rootoutdir)) {
-					WriteLog("Created rootoutdir [$rootoutdir]");
-				}
-				else {
-					$seriesstatus = "error";
-					$exportstatus = "error";
-					WriteLog("ERROR unable to create rootoutdir [$rootoutdir]");
-					$log .= "Unable to create output directory [$rootoutdir]\n";
-				}
-				
-				my $outdir = "$rootoutdir/$newseriesnum";
-				my $qcoutdir = "$outdir/qa";
-				my $behoutdir;
-				switch ($beh_format) {
-					case "behroot" { $behoutdir = $rootoutdir; }
-					case "behrootdir" { $behoutdir = "$rootoutdir/$beh_dirrootname"; }
-					case "behseries" { $behoutdir = $outdir; }
-					case "behseriesdir" { $behoutdir = "$outdir/$beh_dirseriesname"; }
-					else { $behoutdir = "$rootoutdir"; }
-				}
-				WriteLog("Destination is '$exporttype'. rootoutdir [$rootoutdir], outdir [$outdir], qcoutdir [$qcoutdir], behoutdir [$behoutdir]");
-	
-					# build destination path
-					my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
-					my $behindir = "$cfg{'archivedir'}/$uid/$study_num/$series_num/beh";
-					$fullexportdir = "$cfg{'ftpdir'}/NDAR-$exportdir";
-					my $headerfile = "$fullexportdir/ndar.csv";
-
-					# find out if there are any files in the input directory
-					$systemstring = "find . -maxdepth 1 -type f | wc -l";
-					my $filecount = trim(`$systemstring 2>&1`);
-					WriteLog("Found [$filecount] files in [$indir]");
-					if ($filecount < 1) {
-						$newstatus = "problem";
-						$results = "[$indir] was EMPTY. No files available to export\n";
-						WriteLog("[$indir] is EMPTY! It may have subdirectories, but has no data");
+				if ($datadirexists) {
+					if (!-e $headerfile) {
+						WriteNDARHeader($headerfile, $modality);
 					}
 					
-					# try to create the path
-					if (!-d $fullexportdir) {
-						WriteLog("Point 1");
-						if (!MakePath($fullexportdir)) {
-							$newstatus = "problem";
-							$results = "$fullexportdir not created. Check permissions on destination directory.\n";
-						}
-					}
-					# see if the directory has been created
-					if (-d $fullexportdir) {
-						$systemstring = "chmod -Rf 777 $fullexportdir";
-						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-					
+					my $behzipfile = "";
+					my $behdesc = "";
+					if (!$csvonly) {
 						my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-						if ($req_destinationtype eq "ndar") {						
-							MakePath($tmpdir);
-							if (($modality eq "mr") && ($data_type eq "dicom")) {
-								$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								Anonymize($tmpdir,2,'','');
-							}
-							elsif (($modality eq "mr") && ($data_type eq "parrec")) {
-								$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							}
-							else {
-								$systemstring = "cp -r $indir/* $tmpdir";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-							}
-						}						
-						if (-d $indir) {
-							my $behzipfile;
-							my $behdesc;
-							if ($req_destinationtype eq "ndar") {
-								# zip the data to the out directory
-								my $zipfile = "$fullexportdir/$uid-$study_num-$series_num.zip";
-								$systemstring = "zip -vjrq1 $zipfile $tmpdir";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								WriteLog("Done zipping image files...");
-								$systemstring = "unzip -Z $zipfile";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-
-								if ($numfilesbeh > 0) {
-									$behzipfile = "$uid-$study_num-$series_num-beh.zip";
-									$systemstring = "zip -vjrq1 $fullexportdir/$behzipfile $behindir";
-									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-									WriteLog("Done zipping beh files...");
-									$systemstring = "unzip -Z $zipfile";
-									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-									
-									$behdesc = "Behavioral/design data file";
-								}
-								else {
-									$behzipfile = "";
-									$behdesc = "";
-								}
-							}
-							
-							if (!$headerwritten) {
-								WriteNDARHeader($headerfile, $modality);
-								$headerwritten = 1;
-							}
-							WriteNDARSeries($headerfile, "$uid-$study_num-$series_num.zip", $behzipfile, $behdesc, $series_id, $modality, "$indir/$data_type");
+						MakePath($tmpdir);
+						if (($modality eq "mr") && ($datatype eq "dicom")) {
+							$systemstring = "find $indir -iname '*.dcm' -exec cp {} $tmpdir \\;";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							Anonymize($tmpdir,2,'','');
+						}
+						elsif (($modality eq "mr") && ($datatype eq "parrec")) {
+							$systemstring = "find $indir -iname '*.par' -exec cp {} $tmpdir \\;";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							$systemstring = "find $indir -iname '*.rec' -exec cp {} $tmpdir \\;";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						}
 						else {
-							$results .= "Unable to export $indir. Directory does not exist\n";
+							$systemstring = "rsync $indir/* $tmpdir/";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
 						}
 						
+						# zip the data to the out directory
+						my $zipfile = "$rootoutdir/$uid-$studynum-$seriesnum.zip";
+						$systemstring = "zip -vjrq1 $zipfile $tmpdir";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+						WriteLog("Done zipping image files...");
+						$systemstring = "unzip -Z $zipfile";
+						WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+
+						if ($numfilesbeh > 0) {
+							$behzipfile = "$uid-$studynum-$seriesnum-beh.zip";
+							$systemstring = "zip -vjrq1 $rootoutdir/$behzipfile $behindir";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							WriteLog("Done zipping beh files...");
+							$systemstring = "unzip -Z $zipfile";
+							WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+							
+							$behdesc = "Behavioral/design data file";
+						}
 						if ($modality eq "mr") {
 							rmtree($tmpdir);
 						}
+						
 					}
-					$newstatus = 'complete';
+					WriteNDARSeries($headerfile, "$uid-$studynum-$seriesnum.zip", $behzipfile, $behdesc, $seriesid, $modality, "$indir/$datatype");
+					
+					$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+					$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				}
+				else {
+					$log .= "Unable to export $indir. Directory does not exist\n";
+				}
+			}
+		}
+	}
 	
 	WriteLog("Leaving ExportNDAR()...");
+	
+	return ($exportstatus, $log);
 }
 
 
@@ -1068,19 +1053,16 @@ sub ExportToRemoteNiDB() {
 sub ExportToRemoteFTP() {
 	my ($exportid, $remoteftpusername, $remoteftppassword, $remoteftpserver, $remoteftpport, $remoteftppath) = @_;
 	WriteLog("Entering ExportToRemoteFTP($exportid)...");
+	
+	# ********************************************************************
+	# This function is deprecated, but the code is left here for reference
+	# ********************************************************************
+
+	# if ($req_destinationtype eq "remoteftp") {
+		# SendToRemoteFTP($req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $remoteftpserver, $remoteftpusername, $remoteftppassword, $remoteftppath,$newdir);
+	# }
 
 	WriteLog("Leaving ExportToRemoteFTP()...");
-}
-
-
-# ----------------------------------------------------------
-# --------- ExportToLocalFTP -------------------------------
-# ----------------------------------------------------------
-sub ExportToLocalFTP() {
-	my ($exportid) = @_;
-	WriteLog("Entering ExportToLocalFTP($exportid)...");
-
-	WriteLog("Leaving ExportToLocalFTP()...");
 }
 
 
@@ -1149,6 +1131,7 @@ sub GetExportSeriesList() {
 					my $studyaltid = $rowA{'study_alternateid'};
 					my $studytype = $rowA{'study_type'};
 					my $datatype = $rowA{'data_type'};
+					my $numfilesbeh = $rowA{'numfiles_beh'};
 					my $enrollmentid = $rowA{'enrollment_id'};
 					my $datadir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
 					my $behdir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/beh";
@@ -1168,6 +1151,7 @@ sub GetExportSeriesList() {
 					$series{$uid}{$studynum}{$seriesnum}{'seriesnotes'} = $seriesnotes;
 					$series{$uid}{$studynum}{$seriesnum}{'seriesdesc'} = $seriesdesc;
 					$series{$uid}{$studynum}{$seriesnum}{'seriesaltdesc'} = $seriesaltdesc;
+					$series{$uid}{$studynum}{$seriesnum}{'numfilesbeh'} = $numfilesbeh;
 					$series{$uid}{$studynum}{$seriesnum}{'projectname'} = $projectname;
 					$series{$uid}{$studynum}{$seriesnum}{'studyaltid'} = $studyaltid;
 					$series{$uid}{$studynum}{$seriesnum}{'studytype'} = $studytype;
@@ -2842,7 +2826,7 @@ sub WriteNDARSeries() {
 		
 		#if ($usecustomid) {
 		my $altuid = GetPrimaryAlternateUID($subjectid, $enrollmentid);
-		if ($altuid == "") {
+		if ($altuid eq "") {
 			$srcsubjectid = $uid;
 		}
 		else {
@@ -2854,6 +2838,9 @@ sub WriteNDARSeries() {
 		my @dcmfiles = <*.dcm>;
 		my $exifTool = new Image::ExifTool;
 		my $tags = $exifTool->ImageInfo($dcmfiles[0]);
+		if (!defined($tags->{'ProtocolName'})) { $tags->{'ProtocolName'} = ""; }
+		if (!defined($tags->{'PercentPhaseFieldOfView'})) { $tags->{'PercentPhaseFieldOfView'} = 0; }
+		
 		my $Manufacturer = $tags->{'Manufacturer'};
 		my $PatientPosition = $tags->{'PatientPosition'};
 		my $AcquisitionMatrix = $tags->{'AcquisitionMatrix'};
