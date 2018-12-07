@@ -92,7 +92,7 @@
 	/* ----- Step 1 - rename (backup) the existing database ----- */
 	
 		/* dump the old database, "q" uses quick mode */
-		$systemstring = "mysqldump -qv -u$mysqlUsername -p$mysqlPassword $mysqlDatabase > $backupDatabaseName.sql";
+		$systemstring = "mysqldump -qv --single-transaction -u$mysqlUsername -p$mysqlPassword $mysqlDatabase > $backupDatabaseName.sql";
 		echo "Running [$systemstring]...\n";
 		echo "Output: [" . `$systemstring` . "]\n";
 		

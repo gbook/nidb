@@ -97,6 +97,7 @@
     $c['localftppassword'] = GetVariable("localftppassword");
 	
 	$c['analysisdir'] = GetVariable("analysisdir");
+	$c['analysisdirb'] = GetVariable("analysisdirb");
     $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
     $c['archivedir'] = GetVariable("archivedir");
     $c['backupdir'] = GetVariable("backupdir");
@@ -263,6 +264,7 @@
 
 # ----- Directories (alphabetical list) -----
 [analysisdir] = $analysisdir
+[analysisdirb] = $analysisdirb
 [groupanalysisdir] = $groupanalysisdir
 [archivedir] = $archivedir
 [backupdir] = $backupdir
@@ -638,7 +640,13 @@
 				<td class="variable">analysisdir</td>
 				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir])</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
+			</tr>
+			<tr>
+				<td class="variable">analysisdirb</td>
+				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">groupanalysisdir</td>

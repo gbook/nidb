@@ -151,6 +151,7 @@ sub ProcessPipelines() {
 		my $pipelinedependency = $row{'pipeline_dependency'};
 		my $pipelinegroupids = $row{'pipeline_groupid'} . '';
 		my $pipelinedirectory = $row{'pipeline_directory'};
+		my $pipelinedirstructure; if (!defined($row{'pipeline_dirstructure'})) { $pipelinedirstructure = ""; } else { $pipelinedirstructure = $row{'pipeline_dirstructure'}; }
 		my $usetmpdir = $row{'pipeline_usetmpdir'};
 		my $tmpdir = $row{'pipeline_tmpdir'};
 		my $clustertype = $row{'pipeline_clustertype'};
@@ -177,6 +178,14 @@ sub ProcessPipelines() {
 		elsif (($pipelinesubmitdelay eq "") || ($pipelinesubmitdelay == 0)) {
 			$pipelinesubmitdelay = 6;
 		}
+		my $analysisdir = "";
+		if ($pipelinedirstructure eq "b") {
+			$analysisdir = $cfg{'analysisdirb'};
+		}
+		else {
+			$analysisdir = $cfg{'analysisdir'};
+		}
+		
 		# remove any whitespace from the queue... SGE hates whitespace
 		$pipelinequeue =~ s/\s+//g;
 		
@@ -345,7 +354,9 @@ sub ProcessPipelines() {
 		elsif ($pipelinelevel == 1) {
 		
 			# fix the directory if its not the default or blank
-			if ($pipelinedirectory eq "") { $pipelinedirectory = $cfg{'analysisdir'}; }
+			if ($pipelinedirectory eq "") {
+				$pipelinedirectory = $analysisdir;
+			}
 			else { $pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory; }
 
 			if ($pipelinedependency eq "") { $pipelinedependency = "0"; }
@@ -439,10 +450,17 @@ sub ProcessPipelines() {
 							
 							WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
 							print "StudyDateTime: $studydatetime\n";
-							my $analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
+							
+							my $analysispath = "";
+							if ($pipelinedirstructure eq "b") {
+								$analysispath = "$pipelinedirectory/$pipelinename/$uid/$studynum";
+							}
+							else {
+								$analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
+							}
 							
 							# this file will record any events during setup
-							my $setuplogF = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename/pipeline/analysisSetup.log";
+							my $setuplogF = "$analysispath/pipeline/analysisSetup.log";
 							WriteLog("Should have created this analysis setup log [$setuplogF]");
 							
 							# get the nearest study for this subject that has the dependency
@@ -450,18 +468,18 @@ sub ProcessPipelines() {
 							my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
 							my %rowA = $resultA->fetchhash;
 							my $studynum_nearest = $rowA{'study_num'};
-							my $dependencyanalysisid = $rowA{'analysis_id'};
+							$dependencyanalysisid = $rowA{'analysis_id'};
 							
 							# create the dependency path
 							my $deppath = "";
 							if (($pipelinedep != 0) && ($pipelinedep ne "")) {
 								if ($deplevel eq "subject") {
 									$setuplog .= WriteLog("Dependency is a subject level (will match dep for same subject, any study)") . "\n";
-									$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
+									#$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
 								}
 								else {
 									$setuplog .= WriteLog("Dependency is a study level (will match dep for same subject, same study)") . "\n";
-									$deppath = "$pipelinedirectory/$uid/$studynum";
+									#$deppath = "$pipelinedirectory/$uid/$studynum";
 									
 									# check the dependency and see if there's anything amiss about it
 									my $depstatus = CheckDependency($sid,$pipelinedep);
@@ -529,6 +547,24 @@ sub ProcessPipelines() {
 									MakePath("$analysispath/pipeline");
 									chmod(0777,"$analysispath/pipeline");
 									if ($pipelinedep != 0) {
+										if ($deplevel eq "subject") {
+											if ($pipelinedirstructure eq "b") {
+												$deppath = "$pipelinedirectory/$dependencyname/$uid/$studynum_nearest";
+											}
+											else {
+												$deppath = "$pipelinedirectory/$uid/$studynum_nearest/$dependencyname";
+											}
+										}
+										else {
+											if ($pipelinedirstructure eq "b") {
+												$deppath = "$pipelinedirectory/$dependencyname/$uid/$studynum";
+											}
+											else {
+												$deppath = "$pipelinedirectory/$uid/$studynum/$dependencyname";
+											}
+											#$deppath = "$pipelinedirectory/$uid/$studynum/$dependencyname";
+										}
+
 										if (-e "$deppath/$dependencyname") {
 											$setuplog .= WriteLog("Full dependency path [$deppath/$dependencyname] exists") . "\n";
 										}
@@ -744,8 +780,7 @@ sub ProcessPipelines() {
 				next PIPELINE;
 			}
 		
-			my $analysispath;
-			my $studypath;
+			#my $analysispath;
 			my $analysisRowID;
 			my $groupanalysispath;
 			my $realpipelinedirectory;
@@ -856,13 +891,10 @@ sub ProcessPipelines() {
 								print "StudyDateTime: $studydatetime\n";
 								
 								if ($pipelinedirectory eq "") {
-									$pipelinedirectory = $cfg{'analysisdir'};
+									$pipelinedirectory = $analysisdir;
 								}
-								$analysispath = "$pipelinedirectory/$uid/$studynum/$pipelinename";
-								$studypath = "$pipelinedirectory/$uid/$studynum";
-								#WriteLog("$analysispath");
 
-								WriteLog("StudyDateTime [$studydatetime]. This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype] groupbysubject [$pipelinegroupbysubject] analysispath [$analysispath]");
+								WriteLog("StudyDateTime [$studydatetime]. This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype] groupbysubject [$pipelinegroupbysubject]");
 								my $studydir;
 								if ($pipelinegroupbysubject) {
 									$studydir = "$uid/$studydatetime";
@@ -877,9 +909,9 @@ sub ProcessPipelines() {
 								my $systemstring;
 								if ($dependencylevel == 1) {
 									switch ($deplinktype) {
-										case "hardlink" { $systemstring = "cp -auL $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-										case "softlink" { $systemstring = "cp -aus $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-										case "regularcopy" { $systemstring = "cp -au $cfg{'analysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "hardlink" { $systemstring = "cp -auL $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "softlink" { $systemstring = "cp -aus $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
+										case "regularcopy" { $systemstring = "cp -au $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
 									}
 								}
 								else {
