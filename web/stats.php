@@ -306,30 +306,30 @@
 									</tr>
 									<tr>
 								<?
-									for ($hour=0;$hour<24;$hour++) {
-										$sqlstring = "select count(*) count from studies where hour(study_datetime) = $hour and study_modality = 'MR'";
-										#echo "$sqlstring<br>";
-										$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
-										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-										$count = $row['count'];
-										$percent = round(($count/$numstudies)*100);
-										$counts[$hour] = $count;
-										//echo "[$count] [$numstudies] [$percent]";
-										#echo "<td align=right>$percent%&nbsp;</td>";
-										?>
+									// for ($hour=0;$hour<24;$hour++) {
+										// $sqlstring = "select count(*) count from studies where hour(study_datetime) = $hour and study_modality = 'MR'";
+										// #echo "$sqlstring<br>";
+										// $result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+										// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										// $count = $row['count'];
+										// $percent = round(($count/$numstudies)*100);
+										// $counts[$hour] = $count;
+										// //echo "[$count] [$numstudies] [$percent]";
+										// #echo "<td align=right>$percent%&nbsp;</td>";
+										// ?><!--
 										<td valign="bottom" align="center" style="border-right: solid 1px #CCCCCC;">
 											<table height="<? echo $percent*2; ?>px" cellpadding=0 cellspacing=0 width="15px">
 												<tr>
 													<td bgcolor="red" style="font-size: 0px">&nbsp;</td>
 												</tr>
 											</table>
-										</td>
+										</td>-->
 										<?
-									}
-									?> </tr><tr style="font-size:8pt"> <?
-									for ($hour=0;$hour<24;$hour++) {
-										echo "<td align=center>$counts[$hour]</td>";
-									}
+									// }
+									// ?> </tr><tr style="font-size:8pt"> <?
+									// for ($hour=0;$hour<24;$hour++) {
+										// echo "<td align=center>$counts[$hour]</td>";
+									// }
 								?>
 									</tr>
 								</table>

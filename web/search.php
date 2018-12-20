@@ -4082,11 +4082,11 @@
 												<b>Series Directories</b><br>
 												<table>
 													<tr>
-														<td><input type="radio" name="preserveseries" value="1">Preserve series number</td>
+														<td><input type="radio" name="preserveseries" value="1" checked>Preserve series number</td>
 														<td style="color:#333"><tt>8 9 10 &rarr; 8 9 10</tt></td>
 													</tr>
 													<tr>
-														<td><input type="radio" name="preserveseries" value="0" checked>Renumber series</td>
+														<td><input type="radio" name="preserveseries" value="0">Renumber series</td>
 														<td style="color:#333"><tt>8 9 10 &rarr; 1 2 3</tt></td>
 													</tr>
 													<tr>
@@ -4753,6 +4753,8 @@
 	/* ------- ProcessRequest --------------------- */
 	/* -------------------------------------------- */
 	function ProcessRequest($r, $username) {
+		//PrintVariable($r);
+		
 		$ip = getenv('REMOTE_ADDR');
 		$modality = $r['modality'];
 		$destinationtype = $r['destination'];
@@ -4801,6 +4803,8 @@
 		$downloadbeh = ($r['downloadbeh'] == 1) ? 1 : 0;
 		$downloadqc = ($r['downloadqc'] == 1) ? 1 : 0;
 
+		//echo "$downloadbeh";
+		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
 		if (($seriesids == "") && ($enrollmentids == "")) {
@@ -4858,7 +4862,7 @@
 			$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
 			$publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
 			$behonly = ($behonly == 1) ? 1 : 0;
-			$downloadbeh = $behonly;
+			//$downloadbeh = $behonly;
 		}
 		else {
 			?>Cannot send non-anonymized DICOM data to a remote server<?
@@ -4873,6 +4877,7 @@
 		}
 		
 		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_username, remotenidb_password, remotenidb_server, remotenidb_instanceid, remotenidb_siteid, remotenidb_projectid, publicdownloadid, bidsreadme, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', '$remotenidbusername', '$remotenidbpassword', '$remotenidbserver', $remoteinstanceid , $remotesiteid, $remoteprojectid, $publicDownloadRowID, '$bidsreadme', now(), 'submitted')";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
 		

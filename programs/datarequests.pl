@@ -186,7 +186,13 @@ sub ProcessDataExports {
 			$ret = 1;
 		}
 	}
+
+	# end the module and return the code
+	SetModuleStopped();
 	
+	# update the stop time
+	ModuleDBCheckOut($scriptname, $db);
+
 	return $ret;
 }
 
@@ -196,7 +202,7 @@ sub ProcessDataExports {
 # ----------------------------------------------------------
 sub ExportLocal() {
 	my ($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname) = @_;
-	WriteLog("Entering ExportLocal()...");
+	WriteLog("Entering ExportLocal($exportid, $exporttype, $nfsdir, $publicdownloadid, $downloadimaging, $downloadbeh, $downloadqc, $filetype, $dirformat, $preserveseries, $gzip, $anonymize, $beh_format, $beh_dirrootname, $beh_dirseriesname)...");
 
 	my %s = GetExportSeriesList($exportid);
 
@@ -231,6 +237,7 @@ sub ExportLocal() {
 				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
 				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
 				my $qcindir = $s{$uid}{$studynum}{$seriesnum}{'qcdir'};
+				my $numfiles = $s{$uid}{$studynum}{$seriesnum}{'numfiles'};
 				my $datadirexists = $s{$uid}{$studynum}{$seriesnum}{'datadirexists'};
 				my $behdirexists = $s{$uid}{$studynum}{$seriesnum}{'behdirexists'};
 				my $qcdirexists = $s{$uid}{$studynum}{$seriesnum}{'qcdirexists'};
@@ -297,59 +304,64 @@ sub ExportLocal() {
 				WriteLog("Destination is '$exporttype'. rootoutdir [$rootoutdir], outdir [$outdir], qcoutdir [$qcoutdir], behoutdir [$behoutdir]");
 
 				if ($downloadimaging) {
-					if ($datadirexists) {
-						if (!$datadirempty) {
-							# output the correct file type
-							if (($filetype eq "dicom") || (($datatype ne "dicom") && ($datatype ne "parrec"))) {
-								# use rsync instead of cp because of the number of files limit
-								$systemstring = "rsync $indir/* $outdir/";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								$log .= "Copying raw data from [$indir] to [$outdir]\n";
-							}
-							elsif ($filetype eq "qc") {
-								# copy only the qc data
-								$systemstring = "cp -R $indir/qa $qcoutdir";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								$log .= "Copying QC data from [$indir/qa] to [$qcoutdir]\n";
-								
-								# write the series info to a text file
-								open (MRFILE,"> $outdir/seriesInfo.txt");
-								my $sqlstringC = "select * from mr_series where mrseries_id = $seriesid";
-								my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
-								my %rowC = $resultC->fetchhash;
-								foreach my $key ( keys %rowC ) {
-									print MRFILE "$key: $rowC{$key}\n";
+					if ($numfiles > 0) {
+						if ($datadirexists) {
+							if (!$datadirempty) {
+								# output the correct file type
+								if (($modality ne "mr") || ($filetype eq "dicom") || (($datatype ne "dicom") && ($datatype ne "parrec"))) {
+									# use rsync instead of cp because of the number of files limit
+									$systemstring = "rsync $indir/* $outdir/";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									$log .= "Copying raw data from [$indir] to [$outdir]\n";
 								}
-								close (MRFILE);
+								elsif ($filetype eq "qc") {
+									# copy only the qc data
+									$systemstring = "cp -R $indir/qa $qcoutdir";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									$log .= "Copying QC data from [$indir/qa] to [$qcoutdir]\n";
+									
+									# write the series info to a text file
+									open (MRFILE,"> $outdir/seriesInfo.txt");
+									my $sqlstringC = "select * from mr_series where mrseries_id = $seriesid";
+									my $resultC = SQLQuery($sqlstringC, __FILE__, __LINE__);
+									my %rowC = $resultC->fetchhash;
+									foreach my $key ( keys %rowC ) {
+										print MRFILE "$key: $rowC{$key}\n";
+									}
+									close (MRFILE);
+								}
+								else {
+									my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
+									MakePath($tmpdir);
+									ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype);
+									WriteLog("About to copy files from $tmpdir to $outdir");
+									$systemstring = "rsync $tmpdir/* $outdir/";
+									WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
+									WriteLog("Done copying files...");
+									if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
+										rmtree($tmpdir);
+									}
+									$log .= "Converted DICOM/parrec data into $filetype using tmpdir [$tmpdir]. Final directory [$outdir]\n";
+								}
 							}
 							else {
-								my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-								MakePath($tmpdir);
-								ConvertDicom($filetype, $indir, $tmpdir, $gzip, $uid, $studynum, $seriesnum, $datatype);
-								WriteLog("About to copy files from $tmpdir to $outdir");
-								$systemstring = "rsync $tmpdir/* $outdir/";
-								WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-								WriteLog("Done copying files...");
-								if (($tmpdir ne "") && ($tmpdir ne "/") && ($tmpdir ne "/tmp")) {
-									rmtree($tmpdir);
-								}
-								$log .= "Converted DICOM/parrec data into $filetype using tmpdir [$tmpdir]. Final directory [$outdir]\n";
+								$seriesstatus = "error";
+								$exportstatus = "error";
+								WriteLog("ERROR [$indir] is empty");
+								$log .= "Directory [$indir] is empty\n";
 							}
 						}
 						else {
 							$seriesstatus = "error";
 							$exportstatus = "error";
-							WriteLog("ERROR [$indir] is empty");
-							$log .= "Directory [$indir] is empty\n";
+							WriteLog("ERROR indir [$indir] does not exist");
+							$log .= "Directory [$indir] does not exist\n";
 						}
 					}
 					else {
-						$seriesstatus = "error";
-						$exportstatus = "error";
-						WriteLog("ERROR indir [$indir] does not exist");
-						$log .= "Directory [$indir] does not exist\n";
+						WriteLog("numfiles is 0");
+						$log .= "Series contains 0 files\n";
 					}
-					
 				}
 				
 				# copy the beh data
@@ -363,11 +375,13 @@ sub ExportLocal() {
 						$log .= "Copying behavioral data from [$behindir] to [$behoutdir]\n";
 					}
 					else {
-						$seriesstatus = "error";
-						$exportstatus = "error";
-						WriteLog("ERROR behindir [$behindir] does not exist");
+						WriteLog("WARNING behindir [$behindir] does not exist");
 						$log .= "Directory [$behindir] does not exist\n";
 					}
+				}
+				else {
+					WriteLog("Not downloading beh data");
+					$log .= "Not downloading beh data\n";
 				}
 				
 				# copy the QC data
@@ -842,10 +856,12 @@ sub ExportToRemoteNiDB() {
 
 	my $log = "";
 	# check to see if the remote server is reachable ...
-	my $systemstring = "ping -c 1 $remotenidbserver > /dev/null && echo '1' || echo '0'";
-	if (!trim(`$systemstring 2>&1`)) {
-		WriteLog("ERROR: Unable to ping remote NiDB server [$remotenidbserver]");
-		$log .= "Unable to ping remote NiDB server [$remotenidbserver]";
+	#my $systemstring = "ping -c 1 $remotenidbserver > /dev/null && echo '1' || echo '0'"; # ping isn't always enabled in some networks :(
+	my $systemstring = "curl -sSf $remotenidbserver > /dev/null";
+	my $serverResponse = trim(`$systemstring 2>&1`);
+	if ($serverResponse ne "") {
+		WriteLog("ERROR: Unable to access remote NiDB server [$remotenidbserver]. Received error [$serverResponse]");
+		$log .= "Unable to access remote NiDB server [$remotenidbserver]. Received error [$serverResponse]";
 		return ("error", $log);
 	}
 	# ... and if our credentials work and we can start a transaction on it
@@ -861,6 +877,8 @@ sub ExportToRemoteNiDB() {
 	# get list of series to be transferred
 	my %s = GetExportSeriesList($exportid);
 
+	#WriteLog(Dumper(\%s));
+
 	my $exportstatus = "complete";
 	$systemstring = "";
 	my $lastsid = 0;
@@ -874,17 +892,14 @@ sub ExportToRemoteNiDB() {
 
 				my $seriesstatus = "complete";
 				
-				my $uid = $s{$uid}{$studynum}{$seriesnum}{'uid'};
 				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
 				my $primaryaltuid = $s{$uid}{$studynum}{$seriesnum}{'primaryaltuid'};
 				my $altuids = $s{$uid}{$studynum}{$seriesnum}{'altuids'};
 				my $projectname = $s{$uid}{$studynum}{$seriesnum}{'projectname'};
-				my $studynum = $s{$uid}{$studynum}{$seriesnum}{'studynum'};
 				my $studyid = $s{$uid}{$studynum}{$seriesnum}{'studyid'};
 				my $studytype = $s{$uid}{$studynum}{$seriesnum}{'studytype'};
 				my $studyaltid = $s{$uid}{$studynum}{$seriesnum}{'studyaltid'};
 				my $modality = $s{$uid}{$studynum}{$seriesnum}{'modality'};
-				my $seriesnum = $s{$uid}{$studynum}{$seriesnum}{'seriesnum'};
 				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
 				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
 				my $seriesnotes = $s{$uid}{$studynum}{$seriesnum}{'seriesnotes'};
@@ -899,6 +914,7 @@ sub ExportToRemoteNiDB() {
 				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
 				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
 
+				$log .= "uid [$uid] indir [$indir] datadirexists [$datadirexists]\n";
 				if ($datadirexists) {
 					if (!$datadirempty) {
 						# --------------- Send to remote NiDB site --------------------------
@@ -1025,15 +1041,15 @@ sub ExportToRemoteNiDB() {
 					else {
 						$seriesstatus = "error";
 						$exportstatus = "error";
-						WriteLog("ERROR [$indir] is empty");
-						$log .= "ERROR [$indir] is empty";
+						WriteLog("ERROR indir [$indir] is empty");
+						$log .= "ERROR indir [$indir] is empty\n";
 					}
 				}
 				else {
 					$seriesstatus = "error";
 					$exportstatus = "error";
-					WriteLog("ERROR [$indir] does not exist");
-					$log .= "ERROR [$indir] does not exist";
+					WriteLog("ERROR indir [$indir] does not exist");
+					$log .= "ERROR indir [$indir] does not exist\n";
 				}
 			}
 		}
@@ -1131,16 +1147,19 @@ sub GetExportSeriesList() {
 					my $studyaltid = $rowA{'study_alternateid'};
 					my $studytype = $rowA{'study_type'};
 					my $datatype = $rowA{'data_type'};
+					# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
+					if (!defined($datatype) || $datatype eq '') {
+						$datatype = $modality;
+					}
+					my $numfiles = $rowA{'numfiles'};
+					if ($modality ne "mr") {
+						$numfiles = $rowA{'series_numfiles'};
+					}
 					my $numfilesbeh = $rowA{'numfiles_beh'};
 					my $enrollmentid = $rowA{'enrollment_id'};
 					my $datadir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/$datatype";
 					my $behdir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/beh";
 					my $qcdir = "$cfg{'archivedir'}/$uid/$studynum/$seriesnum/qa";
-
-					# if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype will actually be the modality
-					if (!defined($datatype) || $datatype eq '') {
-						$datatype = $modality;
-					}
 					
 					$series{$uid}{$studynum}{$seriesnum}{'exportseriesid'} = $exportseriesid;
 					$series{$uid}{$studynum}{$seriesnum}{'seriesid'} = $seriesid;
@@ -1152,6 +1171,7 @@ sub GetExportSeriesList() {
 					$series{$uid}{$studynum}{$seriesnum}{'seriesdesc'} = $seriesdesc;
 					$series{$uid}{$studynum}{$seriesnum}{'seriesaltdesc'} = $seriesaltdesc;
 					$series{$uid}{$studynum}{$seriesnum}{'numfilesbeh'} = $numfilesbeh;
+					$series{$uid}{$studynum}{$seriesnum}{'numfiles'} = $numfiles;
 					$series{$uid}{$studynum}{$seriesnum}{'projectname'} = $projectname;
 					$series{$uid}{$studynum}{$seriesnum}{'studyaltid'} = $studyaltid;
 					$series{$uid}{$studynum}{$seriesnum}{'studytype'} = $studytype;
@@ -1168,7 +1188,6 @@ sub GetExportSeriesList() {
 						else { $series{$uid}{$studynum}{$seriesnum}{'datadirempty'} = 0; }
 					}
 					else { $series{$uid}{$studynum}{$seriesnum}{'datadirexists'} = 0; }
-					
 					# check if the behdir directory exists or is empty
 					if (-e $behdir) {
 						$series{$uid}{$studynum}{$seriesnum}{'behdirexists'} = 1;
@@ -1189,15 +1208,12 @@ sub GetExportSeriesList() {
 					my @altuids;
 					my $primaryaltuid = "";
 					my $sqlstringB = "select altuid, isprimary from subject_altuid where enrollment_id = $enrollmentid and subject_id = $subjectid";
-					#WriteLog($sqlstringB);
 					my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
 					if ($resultB->numrows > 0) {
 						while (my %rowB = $resultB->fetchhash) {
 							if ($rowB{'isprimary'}) { $primaryaltuid = $rowB{'altuid'}; }
 							push(@altuids, $rowB{'altuid'});
 						}
-						#WriteLog(Dumper(\@altuids));
-						#WriteLog("primaryaltuid [$primaryaltuid]");
 						$series{$uid}{$studynum}{$seriesnum}{'primaryaltuid'} = $primaryaltuid;
 						$series{$uid}{$studynum}{$seriesnum}{'altuids'} = join(',',@altuids);
 					}
@@ -1219,7 +1235,6 @@ sub GetExportSeriesList() {
 			else {
 				WriteLog("No rows found for this seriesid [$seriesid] and modality [$modality]");
 			}
-			
 		}
 	}
 	else {

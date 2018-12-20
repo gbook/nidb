@@ -21,6 +21,7 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	/* -------------------------------- */
 	/* ----- edit these variables ----- */
 	
 		$nidbdir = '/nidb';
@@ -43,6 +44,7 @@
 		date_default_timezone_set("America/New_York");
 
 	/* ----- done editing variables ----- */
+	/* ---------------------------------- */
 
 	/* Checking and installing 'pv' */
 	$Ck=exec("yum info pv | grep Repo | awk '{print $3}'");

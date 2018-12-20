@@ -45,14 +45,14 @@
 	
 	switch ($action) {
 		case 'viewdetails':
-			ViewDetails($requestid);
+			ViewDetails($exportid);
 			break;
-		case 'clearstatus':
-			ClearStatus($requestid);
+		case 'resetexport':
+			ResetExport($exportid);
 			ViewExport($exportid, $page);
 			break;
-		case 'cancelgroup':
-			CancelGroup($exportid);
+		case 'cancelexport':
+			CancelExport($exportid);
 			ShowList($viewall);
 			break;
 		case 'retryerrors':
@@ -68,26 +68,28 @@
 
 	
 	/* --------------------------------------------------- */
-	/* ------- CancelGroup ------------------------------- */
+	/* ------- CancelExport ------------------------------- */
 	/* --------------------------------------------------- */
-	function CancelGroup($groupid) {
-		$sqlstring = "update data_requests set req_status = 'cancelled' where req_groupid = $groupid";
+	function CancelExport($exportid) {
+		$sqlstring = "update exports set status = 'cancelled' where export_id = $exportid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">Group download <?=$groupid?> cancelled</span><?
+		?><span class="staticmessage">Export [<?=$exportid?>] cancelled</span><?
 	}
 
 	
 	/* --------------------------------------------------- */
-	/* ------- ClearStatus ------------------------------- */
+	/* ------- ResetExport ------------------------------- */
 	/* --------------------------------------------------- */
-	function ClearStatus($requestid) {
-		if ($requestid > 0) {
-			$sqlstring = "update data_requests set req_status = '' where request_id = $requestid";
+	function ResetExport($exportid) {
+		if ($exportid > 0) {
+			$sqlstring = "update exports set status = 'submitted', log = '' where export_id = $exportid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?><span class="staticmessage">Status for request [<?=$requestid?>] cleared</span><?
+			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			?><span class="staticmessage">Status reset for export [<?=$exportid?>]</span><?
 		}
 		else {
-			?>Invalid request ID<?
+			?>Invalid export ID [<?=$exportid?>]<?
 		}
 	}
 
@@ -95,22 +97,27 @@
 	/* --------------------------------------------------- */
 	/* ------- RetryErrors ------------------------------- */
 	/* --------------------------------------------------- */
-	function RetryErrors($groupid) {
-		$sqlstring = "select req_destinationtype from data_requests where req_groupid = $groupid";
+	function RetryErrors($exportid) {
+		$sqlstring = "select destinationtype from data_requests where req_groupid = $exportid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$desttype = $row['req_destinationtype'];
 		
 		/* the only download type that can resend single series is the remote NiDB. All others
-		   may have consecutive series to handle and must be completely rerun */
+		   may have consecutive/renumbered series and must be completely rerun */
 		if ($desttype == "remotenidb") {
-			$sqlstring = "update data_requests set req_status = '' where req_groupid = $groupid and req_status in ('problem', 'cancelled')";
+			$sqlstring = "update exports set status = 'submitted' where export_id = $exportid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid and status in ('error', 'cancelled')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
-			$sqlstring = "update data_requests set req_status = '' where req_groupid = $groupid";
+			$sqlstring = "update exports set status = 'submitted' where export_id = $exportid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">Group download <?=$groupid?> re-queued</span><?
+		?><span class="staticmessage">Export <?=$exportid?> re-queued</span><?
 	}
 	
 
@@ -161,6 +168,7 @@
 				<th align="right">Size</th>
 				<th align="left">Progress</th>
 				<th align="left">Status</th>
+				<th align="left">Actions</th>
 				<th align="left">Download</th>
 			</thead>
 		<?
@@ -194,7 +202,7 @@
 			$totals['error'] = 0;
 			$sqlstringA = "select * from exportseries where export_id = $exportid";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($result);
+			$numseries = mysqli_num_rows($resultA);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				//PrintVariable($rowA);
 				$modality = strtolower($rowA['modality']);
@@ -232,6 +240,13 @@
 						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
 					</td>
 					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=ucfirst($exportstatus)?></a></td>
+					<td>
+						<? if ($exportstatus == "error") { ?>
+						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>">Retry</a>
+						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
+						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>">Cancel</a>
+						<? } ?>
+					</td>
 					<td><?
 					if ($destinationtype == "web") {
 						if (round($totals['complete']/$total)*100 == 100) {
@@ -395,6 +410,9 @@
 			$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 			$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 			$seriesdesc = $rowB['series_desc'];
+			if ($modality != "mr") {
+				$seriesdesc = $rowB['series_protocol'];
+			}
 			$uid = $rowB['uid'];
 			$seriesnum = $rowB['series_num'];
 			$studynum = $rowB['study_num'];
@@ -483,7 +501,7 @@
 						<a href="requeststatus.php?action=viewdetails&requestid=<? echo $requestid; ?>"><span style="color:<? echo $color; ?>"><u><? echo $status; ?></u></span></a>&nbsp;
 						<?
 							if (in_array($status,array('processing','pending','problem','error','cancelled')) && $GLOBALS['isadmin']) {
-								?><a href="requeststatus.php?action=clearstatus&groupid=<?=$groupid?>&requestid=<?=$requestid?>" style="color: red" title="Clear status">x</a><?
+								?><a href="requeststatus.php?action=resetexport&groupid=<?=$groupid?>&requestid=<?=$requestid?>" style="color: red" title="Clear status">x</a><?
 							}
 						?>
 					</td>

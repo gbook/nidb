@@ -69,7 +69,7 @@
 				#menu-bar ul { background: #98bce5; display: none; margin: 0; padding: 0; width: 185px; position: absolute; top: 30px; left: 0; border: 1px solid #405785; }
 				#menu-bar ul li { float: none; margin: 0; padding: 0; color: #fff; }
 				#menu-bar ul a { padding:8px 0px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: normal; }
-				.menuheading { padding:8px 0px 8px 13px; margin:8px 0px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: bold; background: #405785; }
+				.menuheading { padding:8px 8px 8px 13px; margin:8px 8px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: bold; background: #304775; }
 				#menu-bar:after { content: "."; display: block; clear: both; visibility: hidden; line-height: 0; height: 0; }
 				#menu-bar { display: inline-block; }
 				  html[xmlns] #menu-bar { display: block; }
@@ -89,9 +89,11 @@
 								$subjectid = $row['subject_id'];
 								$date = date('M j g:ia',strtotime($row['mostrecent_date']));
 								$uid = $row['uid'];
-								?>
-								<li><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></li>
-								<?
+								if ($uid != "") {
+									?>
+									<li><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></li>
+									<?
+								}
 							}
 						}
 						?>
@@ -105,9 +107,11 @@
 								$studynum = $row['study_num'];
 								$date = date('M j g:ia',strtotime($row['mostrecent_date']));
 								$uid = $row['uid'];
-								?>
-								<li><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></li>
-								<?
+								if ($uid != "") {
+									?>
+									<li><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></li>
+									<?
+								}
 							}
 						}
 						?>
@@ -143,20 +147,21 @@
 						<li><a href="adminusers.php">Users</a></li>
 						<li><a href="adminprojects.php">Projects</a></li>
 						<li><a href="adminassessmentforms.php">Assessment Forms</a></li>
-						<li><a href="adminmodules.php">Modules</a></li>
 						<li><a href="adminmodalities.php">Modalities</a></li>
 						<li><a href="reports.php">Reports</a></li>
 						<li><a href="adminqc.php">QC</a></li>
 						<li><a href="importlog.php">Import Logs</a></li>
-						<li><a href="stats.php">System usage</a></li>
-						<li><a href="status.php">System status</a></li>
 						<li><a href="longqc.php">Longitudinal QC</a></li>
 						<? if ($GLOBALS['issiteadmin']) { ?>
 						<li><a href="cleanup.php">Clean-up</a></li>
 						<li><a href="adminsites.php">Sites</a></li>
 						<li><a href="admininstances.php">Instances</a></li>
 						<li><a href="adminaudits.php">Audits</a></li>
-						<li><a href="system.php">NiDB Settings...</a></li>
+						<li class="menuheading">NiDB Server...</li>
+						<li><a href="adminmodules.php">Modules</a></li>
+						<li><a href="status.php">Status</a></li>
+						<li><a href="stats.php">Usage</a></li>
+						<li><a href="system.php">Settings</a></li>
 						<? } ?>
 					</ul>
 				</li>
