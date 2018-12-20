@@ -421,10 +421,10 @@
 			
 			$total++;
 			switch ($status) {
-				case 'submitted': $totals['submitted']++; break;
-				case 'processing': $totals['processing']++; break;
-				case 'complete': $totals['complete']++; break;
-				case 'error': $totals['error']++; break;
+				case 'submitted': $totals['submitted']++; $bgcolor = "#fff"; $color="#444"; break;
+				case 'processing': $totals['processing']++; $bgcolor = "#526FAA"; $color="#fff"; break;
+				case 'complete': $totals['complete']++; $bgcolor = "#229320"; $color="#fff"; break;
+				case 'error': $totals['error']++; $bgcolor = "#8E3023"; $color="#fff"; break;
 			}
 			?>
 			<tr>
@@ -432,7 +432,7 @@
 				<td><?="$uid$studynum"?></td>
 				<td><?=$seriesnum?> - <?=$seriesdesc?></td>
 				<td align="right"><?=number_format($seriessize)?></td>
-				<td><?=$status?></td>
+				<td style="background-color: <?=$bgcolor?>; color: <?=$color?>"> <?=ucfirst($status)?></td>
 			</tr>
 			<?
 		}

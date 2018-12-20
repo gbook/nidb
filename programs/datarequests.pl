@@ -903,6 +903,7 @@ sub ExportToRemoteNiDB() {
 				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
 				my $seriessize = $s{$uid}{$studynum}{$seriesnum}{'seriessize'};
 				my $seriesnotes = $s{$uid}{$studynum}{$seriesnum}{'seriesnotes'};
+				my $seriesdesc = $s{$uid}{$studynum}{$seriesnum}{'seriesdesc'};
 				my $datatype = $s{$uid}{$studynum}{$seriesnum}{'datatype'};
 				my $indir = $s{$uid}{$studynum}{$seriesnum}{'datadir'};
 				my $behindir = $s{$uid}{$studynum}{$seriesnum}{'behdir'};
@@ -964,7 +965,6 @@ sub ExportToRemoteNiDB() {
 								closedir(DIR);
 								foreach my $f (@bfiles) {
 									my $fulldir = "$behindir/$f";
-									#WriteLog("Checking on [$fulldir]");
 									if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
 										push(@behfiles,$f);
 									}
@@ -1017,6 +1017,7 @@ sub ExportToRemoteNiDB() {
 								if (trim(uc($parts[1])) eq uc($zipmd5)) {
 									$seriesstatus = 'complete';
 									WriteLog("Upload success: MD5 match");
+									$log .= "Successfully sent data to [$remotenidbserver]";
 									$error = 0;
 								}
 								else {
@@ -1051,6 +1052,9 @@ sub ExportToRemoteNiDB() {
 					WriteLog("ERROR indir [$indir] does not exist");
 					$log .= "ERROR indir [$indir] does not exist\n";
 				}
+				$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				$log .= "Series [$uid$studynum-$seriesnum ($seriesdesc)] complete\n";
 			}
 		}
 	}
