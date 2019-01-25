@@ -29,10 +29,10 @@
 		$backupdir = "/usr2/nidb/backup"; /* directory with enough space to hold the database dump and existing web files */
 		
 		/* current database information */
-		$mysqlHostname = "ado2";
-		$mysqlUsername = "root";
-		$mysqlPassword = "brainmap";
-		$mysqlDatabase = "ado2";
+		$mysqlHostname = "localhost";
+		$mysqlUsername = "nidb";
+		$mysqlPassword = "password";
+		$mysqlDatabase = "nidb";
 		
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
