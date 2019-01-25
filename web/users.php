@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB users.php
- // Copyright (C) 2004 - 2018
+ // Copyright (C) 2004 - 2019
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -296,7 +296,7 @@
 
 		<form name="userform" action="users.php" method="post" autocomplete="off">
 		<input type="hidden" name="action" value="saveoptions">
-		<table class="bluedisplaytable" width="50%">
+		<table class="graydisplaytable" width="50%">
 			<thead>
 				<tr>
 					<th>User options for <?=$username?></th>

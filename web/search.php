@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB search.php
- // Copyright (C) 2004 - 2018
+ // Copyright (C) 2004 - 2019
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -154,7 +154,7 @@
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
+		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -243,13 +243,13 @@
 		
 	?>
 	<style>
-		.sidelabel { font-weight: bold; font-size: 12pt; border-right: solid 1px #CCC; border-bottom: solid 1px #CCC; padding-right: 15px; padding-left: 10px; text-align: right; }
-		.toplabel { color: white; font-weight: bold; font-size: 14pt; padding-top: 5px; padding-bottom: 5px; text-align: center; background-color: #3B5998; }
+		.sidelabel { font-weight: bold; font-size: 12pt; border-right: solid 1px #444; border-bottom: solid 1px #444; padding-right: 15px; padding-left: 10px; text-align: right; }
+		.toplabel { color: white; font-weight: bold; font-size: 14pt; padding-top: 5px; padding-bottom: 5px; text-align: center; background-color: #444; }
 		.tiny { font-size: 8pt; color: gray; }
 		.fieldlabel { color: darkblue; text-align: right; vertical-align: middle; }
-		.importantfield { border: 1pt solid darkblue; background-color: lightyellow; }
+		.importantfield { border: 1pt solid #444; background-color: lightyellow; }
 		.advancedhover:hover { max-width: 25px; background-color: #DDD; color: #000; border-right: 1px solid #444; cursor: pointer; align: center; vertical-align: middle; }
-		.advancedhover { max-width: 25px; background-color: #EEE; color: #AAA; border-right: 1px solid #AAA; cursor: pointer; align: center; vertical-align: middle; }
+		.advancedhover { max-width: 25px; background-color: #EEE; color: #AAA; border-right: 1px solid #444; cursor: pointer; align: center; vertical-align: middle; }
 	</style>
 	<script type="text/javascript">
 		$(document).ready(function() {
@@ -299,7 +299,7 @@
 		<tr>
 			<td>
 			<? DisplaySearchHistory(); ?>
-	<table cellspacing="0" cellpadding="3" style="border: 1px solid #ccc;">
+	<table cellspacing="0" cellpadding="3" style="border: 2px solid #444;">
 		<tr>
 			<td rowspan="9" id="searchtoggle" class="advancedhover" onMouseOver="this.classname='advancedhover';" onMouseOut="this.classname='advancednohover';">
 				<span style="display: block; -webkit-transform: rotate(-90deg); -moz-transform: rotate(-90deg); writing-mode: rl-bt;">Toggle&nbsp;advanced&nbsp;search</span>
@@ -311,7 +311,7 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Subject</td>
-			<td style="border-bottom: 1pt solid #CCC">
+			<td style="border-bottom: 1pt solid #444">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">
 						<td class="fieldlabel">UID(s)</td>
@@ -376,7 +376,7 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Enrollment</td>
-			<td style="border-bottom: 1pt solid #CCC">
+			<td style="border-bottom: 1pt solid #444">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr>
 						<td class="fieldlabel" width="150px">Project</td>
@@ -422,7 +422,7 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Study</td>
-			<td style="border-bottom: 1pt solid #CCC">
+			<td style="border-bottom: 1pt solid #444">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr class="advanced">
 						<td class="fieldlabel" width="150px">Institution</td>
@@ -607,7 +607,7 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Series</td>
-			<td style="border-bottom: 1pt solid #CCC">
+			<td style="border-bottom: 1pt solid #444">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr title="<b>Comma separated</b> protocols: search will be an AND<br><b>Semi-colon separated</b> protocols: search will be an OR">
 						<td class="fieldlabel" width="150px">Protocol</td>
@@ -672,8 +672,8 @@
 			</td>
 		</tr>
 		<tr>
-			<td class="sidelabel" style="color: gray">Results</td>
-			<td style="border-bottom: 1pt solid #CCC">
+			<td class="sidelabel" style="color: #666">Results</td>
+			<td style="border-bottom: 1pt solid #444">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr>
 						<td>
@@ -1050,7 +1050,7 @@
 		else {
 			?>
 			<details>
-				<summary>Recent Searches</summary>
+				<summary style="font-size: 10pt">Recent Searches</summary>
 			
 			<ul style="font-size: 8pt">
 			<?
@@ -3605,6 +3605,7 @@
 							$('.export').hide();
 							$('.format').show("highlight",{},1000);
 							$('.dirstructure').show("highlight",{},1000);
+							$('.datatoexport').show("highlight",{},1000);
 						}
 						
 						/* remote ftp */
@@ -3683,6 +3684,7 @@
 				});
 			</script>
 			
+			<!--
 			<table class="download">
 				<tr>
 					<td class="title">
@@ -3766,20 +3768,21 @@
 					</td>
 				</tr>
 			</table>
-			
+			-->
 			<br><br>
 			
-			<table class="download">
+			<table style="border: 2px solid #444" cellpadding="0" cellspacing="0">
 				<tr>
-					<td class="title">
-						Transfer Data
+					<td>
+						<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Transfer/Export Data</div>
+						<br><br>
 					</td>
 				</tr>
 				<tr>
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
-								<td class="label">
+								<td class="label" valign="top">
 									Destination
 								</td>
 								<td class="main">
@@ -3910,7 +3913,7 @@
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
-								<td class="label">
+								<td class="label" valign="top">
 									Data
 								</td>
 								<td class="main">
@@ -3928,7 +3931,7 @@
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
-								<td class="label">
+								<td class="label" valign="top">
 									Export
 								</td>
 								<td class="main">
@@ -3949,7 +3952,7 @@
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
-								<td class="label">
+								<td class="label" valign="top">
 									Format
 								</td>
 								<td class="main">
@@ -4025,7 +4028,7 @@
 					<td class="section">
 						<table class="subdownload" width="100%">
 							<tr>
-								<td class="label">
+								<td class="label" valign="top">
 									Directory<br>Structure
 								</td>
 								<td class="main">
@@ -4034,24 +4037,6 @@
 											<td valign="top">
 												<b>Directory Format</b>
 												<table cellspacing="0" cellpadding="0">
-													<!--
-													<tr>
-														<td><input type="radio" name="dirformat" value="datetime">Study datetime</td>
-														<td style="color:#333"><tt>20110704_123456</td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="dirformat" value="datetimeshortid">Study datetime with study ID</td>
-														<td style="color:#333"><tt>20110704_123456_S1234ABC1</td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="dirformat" value="datetimelongid">Study datetime with project and study ID &nbsp;</td>
-														<td style="color:#333"><tt>20110704_123456_S1234ABC_999999_1</td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="dirformat" value="datetimeorigid">Study datetime with original scan ID</td>
-														<td style="color:#333"><tt>20110704_123456_09037500</td>
-													</tr>
-													-->
 													<tr>
 														<td><input type="radio" name="dirformat" value="shortid" checked>Study ID</td>
 														<td style="color:#333"><tt>S1234ABC1</tt></td>
@@ -4060,12 +4045,6 @@
 														<td><input type="radio" name="dirformat" value="shortstudyid" checked>UID w/subdir</td>
 														<td style="color:#333"><tt>S1234ABC/1</tt></td>
 													</tr>
-													<!--
-													<tr>
-														<td><input type="radio" name="dirformat" value="longid">Project and study ID</td>
-														<td style="color:#333"><tt>S1234ABC_999999_1</tt></td>
-													</tr>
-													-->
 													<tr>
 														<td style="padding-right: 6px"><input type="radio" name="dirformat" value="altuid">Primary alternate subject ID<br><span class="tiny">With incremental study numbers</span></td>
 														<td style="color:#333"><tt>23505/1<br>23505/2</tt></td>
@@ -4134,7 +4113,9 @@
 				</tr>
 				<tr>
 					<td style="background-color: white; border-radius:5px; padding: 8px" align="left">
+						<br><br>
 						<input type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
+						<br><br>
 					</td>
 				</tr>
 			</table>

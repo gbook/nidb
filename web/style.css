@@ -1,7 +1,7 @@
 /*
  ------------------------------------------------------------------------------
  NIDB style.css
- Copyright (C) 2004 - 2013
+ Copyright (C) 2004 - 2019
  Gregory A Book <gbook@harthosp.org> <gbook@gbook.org>
  Olin Neuropsychiatry Research Center, Hartford Hospital
  ------------------------------------------------------------------------------
@@ -47,7 +47,6 @@ body {
 	position:absolute;
 	bottom:0;
 	left:0;
-	/*background:#ee5;*/
 }
 
 /* all form elements */
@@ -97,12 +96,6 @@ div.menu {
 a { text-decoration: none; color: #224ea5; }
 a:hover { text-decoration: underline; color: #224ea5; }
 
-td.data { text-align: center; vertical-align: middle; border-bottom: solid 1pt #BBBBBB; border-top: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; }
-
-td.free { border-bottom: solid 1pt #BBBBBB; border-right: solid 1pt #BBBBBB; border-top: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; text-align: center; vertical-align: middle; background-color: #DDDDDD; }
-
-td.bottom { border-bottom: solid 1pt #BBBBBB; border-right: solid 1pt #BBBBBB; border-left: solid 1pt #BBBBBB; }
-
 div.title { font-weight: bold; color: white; background-color: darkblue; }
 
 span.label { font-size: 8pt; font-weight: bold }
@@ -119,27 +112,12 @@ td.columnheaderright { font-weight: bold; text-align: center; vertical-align: bo
 .editor td.value { text-align: left; vertical-align: top; color: darkblue; font-size:11pt; }
 .editor .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
-.blockdisplay td.label { font-weight: bold; text-align: right; padding-right: 10px; vertical-align: top; color: #666666; font-size:12pt; white-space:nowrap; }
-.blockdisplay .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.blockdisplay .rightvalue { font-weight: normal; font-size:11pt; }
-
-/* search results */
-.patient { margin-top: 20px; }
-.patient td.titlename { width: 80%; padding: 4px; font-weight: bold; background-color: DBF7DD; font-size: 14pt; border-top: solid 2px gray; border-bottom: solid 1px gray; }
-.patient td.titlefield { background-color: DBF7DD; border-top: solid 2px gray; border-bottom: solid 1px gray; font-size: 10pt; }
-.patient td.titlefieldsmall { padding-right: 4px; font-size: 8pt; background-color: DBF7DD; border-top: solid 2px gray; border-bottom: solid 1px gray; }
-.patient .graylabel { font-size: 10pt; color: gray; }
-
 .study { margin-top: 2px; }
 .study td.scannerid { padding: 2px; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
 .study td.scanid { padding-left: 5px; font-weight: bold; color: darkblue; width: 10%; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
 .study td.study { border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
 .study td.detail { font-size: 9pt; border-bottom: 1px dashed #AAAAAA; background-color: EEEEDD; }
 .study .detaillabel { color: gray; font-size: 8pt; }
-
-table.series td.seriescell { padding-top: 2px; padding-bottom: 2px; padding-left: 5px; padding-right: 5px; border-top: 1px dashed #DDDDDD; font-size: 10pt; }
-table.series td.seriescellnew { padding-top: 2px; padding-bottom: 2px; padding-left: 5px; padding-right: 5px; border-top: 1px solid darkgray; font-size: 10pt; }
-
 
 td.rightvalue { text-align: left; vertical-align: top; }
 span.example { font-weight: normal; font-family: courier; color: darkred; font-size: 8pt; }
@@ -151,21 +129,7 @@ span.button { background-color: #DDDDDD; border-bottom: 1pt solid #555555; borde
 a.button { color:darkblue; text-decoration: none; }
 a.link { color: blue; text-decoration: underline; font-size: 11pt; }
 
-td.tableheader { border-top: 2pt solid darkblue; font-weight: bold; text-align: center; }
-td.colheadsmall { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; font-size: 10pt;}
-td.colheadsmallleft { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; font-size: 10pt;}
-td.colheadsmallright { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; background-color: #EEEEEE; font-size: 10pt;}
-
-td.tdsmall { vertical-align: top; font-size: 10pt; border-bottom: 1pt solid #BBBBBB; }
-td.tdtiny { vertical-align: top; font-size: 8pt; border-bottom: 1pt solid #BBBBBB; }
-
 span.description { color: darkblue; font-size: 10pt }
-
-.sampletext{color:#666;}
-
-td.mainmenu { color: black; background-color: lightsteelblue; border-top: solid 2pt #000000; border-bottom: solid 1pt #000000; font-size: 10pt; }
-td.mainmenucurrent { color: black; background-color: aliceblue; border-top: solid 2pt #000000; font-size: 10pt; }
-td.submenu { color: black; background-color: aliceblue; border-top: solid 2pt #000000; border-bottom: solid 1pt #000000; font-size: 10pt; }
 
 td.hover, tr.hover { background-color: aliceblue; }
 
@@ -175,7 +139,6 @@ td.hover, tr.hover { background-color: aliceblue; }
 .calendar td.day { font-size: 7pt; color: black; text-align: left; vertical-align: top; border-right: 1pt solid #DDDDDD; border-bottom: 1pt solid #DDDDDD; }
 
 /* entry table */
-/*.entrytable {border-top: 2px solid darkblue; border-bottom: 2px solid darkblue;}*/
 .entrytable  { font-size: 11pt; color: #003366; }
 .entrytable td.label { font-weight: bold; color: #555555; font-size: 11pt; padding: 5px; vertical-align:top; }
 .entrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 11pt; padding: 5px; vertical-align: top;}
@@ -184,21 +147,6 @@ td.hover, tr.hover { background-color: aliceblue; }
 .entrytable td { vertical-align: top; }
 .entrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 .entrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }
-/*.entrytable tbody tr:hover { background-color: #FFFFD4; }*/
-
-/* entry table */
-.smallentrytable {border-top: 1px solid gray; border-bottom: 1px solid gray; font-size: 10pt; }
-.smallentrytable th { padding: 4px 0px; border-spacing: 0px; }
-.smallentrytable td { padding: 4px 0px; border-spacing: 0px; vertical-align: top; text-align: center; }
-.smallentrytable td.label { font-weight: bold; color: #555555; font-size: 10pt; padding: 2px; }
-.smallentrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 10pt; padding: 2px;}
-.smallentrytable td.heading { font-weight: bold; color: darkblue; padding: 2px; }
-.smallentrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.smallentrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }
-.smallentrytable input.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
-.smallentrytable select.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
-.smallentrytable textarea.small{ font-size:9pt; border: 1px solid #CCCCCC; margin:1px }
-.smallentrytable tbody tr:hover { background-color: lightyellow; }
 
 /* display table (multiple rows) */
 .displaytable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; border-radius: 5px }
@@ -261,17 +209,6 @@ table.smallsimpledisplaytable { padding: 0px; border: 1px solid #eee; border-spa
 .smallsimpledisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 /* tiny gray display table (multiple rows) */
-table.tinygraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
-.tinygraydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
-.tinygraydisplaytable th { font-weight: bold; color: #333; font-size: 10pt; padding: 5px; background-color: #ddd; }
-.tinygraydisplaytable td { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 2px 4px; }
-.tinygraydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 3px 6px; background-color: #EFEFEF; }
-.tinygraydisplaytable tbody tr:hover { background-color: #eee; }
-.tinygraydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.tinygraydisplaytable a { text-decoration: none; color: #224ea5; }
-.tinygraydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
-
-/* tiny gray display table (multiple rows) */
 table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .tinytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
 .tinytable th { font-weight: bold; color: #333; font-size: 8pt; padding: 1px; background-color: #ddd; }
@@ -279,15 +216,6 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .tinytable tbody tr:hover { background-color: #eee; }
 .tinytable a { text-decoration: none; color: #224ea5; }
 .tinytable a:hover { text-decoration: underline; color: #224ea5; }
-
-/* gray display table (multiple rows) */
-table.bluedisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
-table.bluedisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
-table.bluedisplaytable th { font-weight: bold; color: #222; font-size: 12pt; padding: 5px; background-color: #abbbdb; }
-table.bluedisplaytable td.main { padding:10px }
-table.bluedisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-table.bluedisplaytable a { text-decoration: none; color: #224ea5; }
-table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 .movementsubtable { border-spacing: 0px; padding: 0px; margin: 0px; border: none; width: 100%; height: 100%; border-radius:0px; }
 .movementsubtable td.mainval { border: none; text-align: right; padding:8px; border-radius:0px; }
@@ -342,16 +270,13 @@ table.bluedisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 /*a { color: blue; } */
 
 /* update/delete/added messages */
-.message { text-align: center; color: white; background-color: darkred; border-radius: 5px; padding: 4px 15px; margin: 10px; }
-.staticmessage { text-align: center; color: white; background-color: darkred; border-radius: 5px; padding: 4px 15px; margin: 10px; }
+.message { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }
+.staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }
 .subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
 .error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
 
 /* any time the UID is shown */
 .uid { border: 1px black solid; text-align: center; font-weight: bold; letter-spacing: 0.5pt; color: white; background-color: darkblue; border-radius: 5px; padding: 2px 10px 2px 10px; }
-
-/* small text */
-.smallnote { font-weight: normal; font-size:9pt; color:#666666; }
 
 /* search result tables */
 .searchresultstudy { border-spacing: 0px; padding: 2px; border-top: solid 2px gray; background-color: beige; }
@@ -372,12 +297,11 @@ table.download { background-color: #093892; width: 100%; padding: 3px; border-sp
 table.download td.title { font-weight: bold; font-size: 14pt; color: white; }
 table.download td.section { background-color: #EEEEEE; border-radius: 5px; }
 
-table.subdownload { border-spacing: 0px; margin: 0px; }
-table.subdownload td.label { font-weight: bold; background-color: white; padding:8px 16px 8px 8px; width: 120px; text-align: right; }
-table.subdownload td.main { padding: 8px; vertical-align: top; }
-table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; }
+table.subdownload { margin: 0px; border-spacing: 0px }
+table.subdownload td.label { font-weight: bold; background-color: white; padding:8px 16px 8px 8px; width: 120px; text-align: right; vertical-align: top; color: #444;  border-top: 2px solid #444; }
+table.subdownload td.main { padding: 8px; vertical-align: top; border-top: 1px solid #888 }
+table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; border-top: 1px solid #888 }
 
-.verytiny { font-size: 7pt; font-weight:normal; color: #333333; }
 .tiny { font-size: 8pt; color: #666666; }
 /*.staticmessage { font-size: 9pt; color: darkred; }*/
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
@@ -403,17 +327,6 @@ table.formentrytable td.sectionheader { font-size: 12pt; color: darkblue; backgr
 table.formentrytable tr { background-color: #fff; border: 1px solid #fff }
 table.formentrytable tr:hover { background-color: #eee; border: 1px solid #666 }
 table.formentrytable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
-
-/* pipeline listing table */
-table.codetable { background-color: #EFEFEF; border: 1px solid #BBBBBB; padding: 8px; border-spacing: 0px; width: 100% }
-table.codetable td.title { font-size: 15pt; font-weight: bold; text-align: left; }
-table.codetable td.desc { font-size: 12pt; color: #666666; text-align: left; vertical-align: top; }
-table.codetable td.code { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; }
-table.codetable td.comment { font-size: 9pt; text-align: left; vertical-align: top; font-family: courier new; color: green }
-table.codetable td.colhead { font-size: 12pt; text-align: left; vertical-align: top; font-weight:bold; }
-table.codetable td.sectionhead { font-size: 14pt; text-align: left; vertical-align: top; font-weight:bold; color:darkblue; }
-table.codetable td.datadef { font-size: 10pt; text-align: left; vertical-align: top; }
-table.codetable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; }
 
 .completeform {text-align: center; font-size: 14pt; background-color: #CCFF99; border: 1px solid darkolivegreen; border-radius: 4px; color: darkolivegreen; font-weight: bold; padding: 5px;}
 .incompleteform {text-align: center; font-size: 14pt; background-color: #F5E6E6; border: 1px solid darkred; border-radius: 4px; color: darkred; font-weight: bold; padding: 5px;}
@@ -448,16 +361,6 @@ tr.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-
 tbody.nostyle tr:hover { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
 th.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
 td.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-
-/* ratings (highlighted) */
-a.highlightblack { color:rgba(0,0,0,0.4); font-size:12pt; text-decoration: none; }
-a.highlightblack:hover { color:rgba(0,0,0,1.0); font-size:12pt; text-decoration: none; }
-
-a.highlightred { color:rgba(255,0,0,0.4); font-size:12pt; text-decoration: none; }
-a.highlightred:hover { color:rgba(255,0,0,1.0); font-size:12pt; text-decoration: none; }
-
-a.highlightgreen { color:rgba(0,255,0,0.4); font-size:12pt; text-decoration: none; }
-a.highlightgreen:hover { color:rgba(0,255,0,1.0); font-size:12pt; text-decoration: none; }
 
 .codelisting { background-color: #DDDDDD; font-family: courier new; padding-left: 4px; padding-right: 4px; font-size:85%}
 
@@ -500,9 +403,6 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 .editoroptions { font-size:10pt; padding:5px; }
 .editoroptions:hover { background-color: #DDDDDD; text-decoration: underline; cursor:pointer; }
 .smalldesc { font-size: 9pt; vertical-align: top; }
-
-.linkhighlight { text-decoration: none; padding:0px 10px; }
-.linkhighlight:hover { background-color: #FFF82B; text-decoration: underline; }
 
 /* report menu table */
 .reporttable { border-spacing: 0px; padding: 0px; border-top: 1px solid #666666; border-bottom: 1px solid #666666; }

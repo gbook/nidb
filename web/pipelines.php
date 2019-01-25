@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB pipelines.php
- // Copyright (C) 2004 - 2018
+ // Copyright (C) 2004 - 2019
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -852,7 +852,6 @@
 			$completefiles = $row['pipeline_completefiles'];
 			$dependency = $row['pipeline_dependency'];
 			$groupid = $row['pipeline_groupid'];
-			//$dynamicgroupid = $row['pipeline_dynamicgroupid'];
 			$level = $row['pipeline_level'];
 			$owner = $row['username'];
 			$ishidden = $row['pipeline_ishidden'];
@@ -999,7 +998,7 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and will contain all of the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdir']?>]</span>"></td>
+							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and will contain all of the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdirb']?>]</span>"></td>
 							<td valign="top">
 								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
 							</td>
@@ -1007,8 +1006,8 @@
 						<tr>
 							<td class="label" valign="top">Directory structure</td>
 							<td valign="top">
-								<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><?=$GLOBALS['cfg']['pipelinedir']?> <tt style="font-size: 10pt">/S1234ABC/1/ThisPipeline</tt><br>
-								<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><?=$GLOBALS['cfg']['pipelinedir']?> <tt style="font-size: 10pt">/ThisPipeline/S1234ABC/1</tt>
+								<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><?=$GLOBALS['cfg']['analysisdir']?> <tt style="font-size: 10pt">/S1234ABC/1/ThisPipeline</tt><br>
+								<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><?=$GLOBALS['cfg']['analysisdirb']?> <tt style="font-size: 10pt">/ThisPipeline/S1234ABC/1</tt>
 							</td>
 						</tr>
 						<tr>
@@ -1351,7 +1350,18 @@
 							<td class="label" valign="top">Data location</td>
 							<td valign="top" style="padding-bottom: 10pt">
 								<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
-								<? if ($directory != "") { echo $directory; } else { echo $GLOBALS['cfg']['analysisdir']; } ?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
+								<?
+									if ($directory != "") {
+										echo $directory;
+									} else {
+										if ($dirstructure == "b") {
+											echo $GLOBALS['cfg']['analysisdirb'];
+										}
+										else {
+											echo $GLOBALS['cfg']['analysisdir'];
+										}
+									}
+								?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
 								</span>
 							</td>
 						</tr>
@@ -2838,10 +2848,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$info[$id]['pipelinegroup'] = $row['pipeline_group'];
 			$info[$id]['dependency'] = $row['pipeline_dependency'];
 			$info[$id]['groupid'] = $row['pipeline_groupid'];
-			//$info[$id]['dynamicgroupid'] = $row['pipeline_dynamicgroupid'];
 			$info[$id]['level'] = $row['pipeline_level'];
+			$info[$id]['dirstructure'] = $row['pipeline_dirstructure'];
 			if ($row['pipeline_directory'] == "") {
-				$info[$id]['directory'] = $GLOBALS['cfg']['analysisdir'];
+				if ($info[$id]['dirstructure'] == "b") {
+					$info[$id]['directory'] = $GLOBALS['cfg']['analysisdirb'];
+				}
+				else {
+					$info[$id]['directory'] = $GLOBALS['cfg']['analysisdir'];
+				}
 			}
 			else {
 				$info[$id]['directory'] = $row['pipeline_directory'];
@@ -2855,36 +2870,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$info[$id]['finish'] = $row['pipeline_lastfinish'];
 			$info[$id]['lastcheck'] = $row['pipeline_lastcheck'];
 
-			//if ($info[$id]['runtime'] == '00:00:00') { $info[$id]['runtime'] = ''; } else { $info[$id]['runtime'] = "(".$info[$id]['runtime'].")";}
-			
-			//if ($info[$id]['dependency'] != "") {
-			//	$sqlstring0 = "select pipeline_name from pipelines where pipeline_id in (".$info[$id]['dependency'].")";
-			//	$result0 = MySQLiQuery($sqlstring0,__FILE__,__LINE__);
-			//	while ($row0 = mysqli_fetch_array($result0, MYSQLI_ASSOC)) {
-			//		$info[$id]['dependencynames'][] = $row0['pipeline_name'];
-			//	}
-			//}
-
-			//if ($groupid != "") {
-			//	$sqlstring0 = "select group_name from groups where group_id in (".$info[$id]['groupid'].")";
-			//	$result0 = MySQLiQuery($sqlstring0,__FILE__,__LINE__);
-			//	while ($row0 = mysqli_fetch_array($result0, MYSQLI_ASSOC)) {
-			//		$info[$id]['groupnames'][] = $row0['group_name'];
-			//	}
-			//}
-			
-			//if ($dynamicgroupid != "") {
-			//	$sqlstring0 = "select group_name from groups where group_id = ".$info[$id]['dynamicgroupid'];
-			//	$result0 = MySQLiQuery($sqlstring0,__FILE__,__LINE__);
-			//	$row0 = mysqli_fetch_array($result0, MYSQLI_ASSOC);
-			//	$info[$id]['dynamicgroupname'] = $row0['group_name'];
-			//}
-			
-			//$sqlstring2 = "select count(*) 'numsteps' from pipeline_steps where pipeline_id = $id and pipeline_version = ".$info[$id]['version'];
-			//$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-			//$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-			//$info[$id]['numsteps'] = $row2['numsteps'];
-			
 			MarkTime("GetPipelineInfo($id) pre size");
 			
 			$sqlstringD = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";

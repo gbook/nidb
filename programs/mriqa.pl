@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB mriqa.pl
-# Copyright (C) 2004 - 2018
+# Copyright (C) 2004 - 2019
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ sub QA() {
 
 			WriteLog("Checkpoint F");
 
-			if ($is_derived) {
+			if (($is_derived) || ($datatype eq "nifti")) {
 				WriteLog("Checkpoint G");
 				$systemstring = "cp -v $cfg{'archivedir'}/$uid/$study_num/$series_num/nifti/* $tmpdir";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
@@ -234,14 +234,14 @@ sub QA() {
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 				WriteLog("Checkpoint L");
 				
-				chdir($tmpdir);
-				WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
-				$systemstring = "find . -name '*.nii.gz' | head -1 | xargs -i cp -v {} 4D.nii.gz";
-				WriteLog("$systemstring (" . `$systemstring` . ")");
-				$systemstring = "find . -name '*.nii' | head -1 | xargs -i cp -v {} 4D.nii";
-				WriteLog("$systemstring (" . `$systemstring` . ")");
-				chdir($indir);
 			}
+			chdir($tmpdir);
+			WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
+			$systemstring = "find . -name '*.nii.gz' | head -1 | xargs -i cp -v {} 4D.nii.gz";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			$systemstring = "find . -name '*.nii' | head -1 | xargs -i cp -v {} 4D.nii";
+			WriteLog("$systemstring (" . `$systemstring` . ")");
+			chdir($indir);
 			
 			# create a 4D file to pass to the SNR program and run the SNR program on it
 			$systemstring = "$cfg{'scriptdir'}/./nii_qa.sh -i $tmpdir/*.nii* -o $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/qa.txt -v 2 -t $tmpdir";
@@ -283,15 +283,25 @@ sub QA() {
 			$systemstring = "fslstats $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/Tvariance.nii.gz -R > $cfg{'archivedir'}/$uid/$study_num/$series_num/qa/minMaxVariance.txt";
 			WriteLog("$systemstring (" . `$systemstring` . ")");
 
-			# create thumbnails
+			# create thumbnails (try 4 different ways before giving up)
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
-				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it");
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it (1)");
 				$systemstring = "slicer $tmpdir/4D.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
-				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it");
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it (2)");
 				$systemstring = "slicer $tmpdir/4D.nii -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it (3)");
+				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/$datatype/*.nii.gz -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
+				WriteLog("$systemstring (" . `$systemstring` . ")");
+			}
+			if (! -e "$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png") {
+				WriteLog("$cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png does not exist, attempting to create it (4)");
+				$systemstring = "slicer $cfg{'archivedir'}/$uid/$study_num/$series_num/$datatype/*.nii -a $cfg{'archivedir'}/$uid/$study_num/$series_num/thumb.png";
 				WriteLog("$systemstring (" . `$systemstring` . ")");
 			}
 			

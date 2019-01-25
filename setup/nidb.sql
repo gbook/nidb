@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 05, 2018 at 08:56 PM
+-- Generation Time: Jan 24, 2019 at 04:35 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -208,7 +208,7 @@ CREATE TABLE `assessment_data` (
   `value_number` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL,
   `value_binary` blob DEFAULT NULL,
-  `value_date` date DEFAULT current_timestamp(),
+  `value_date` date DEFAULT NULL,
   `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -1017,12 +1017,12 @@ CREATE TABLE `exports` (
   `remotenidb_siteid` int(11) DEFAULT 0,
   `remotenidb_projectid` int(11) DEFAULT 0,
   `publicdownloadid` int(11) DEFAULT NULL,
-  `bidsreadme` text DEFAULT '',
+  `bidsreadme` text DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `completedate` datetime DEFAULT NULL,
   `cputime` double DEFAULT NULL,
-  `status` enum('submitted','pending','processing','complete','error','') NOT NULL DEFAULT '',
+  `status` enum('submitted','pending','processing','complete','error','cancelled','') NOT NULL DEFAULT '',
   `log` text DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -1041,7 +1041,7 @@ CREATE TABLE `exportseries` (
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
   `timepoint_label` varchar(100) DEFAULT NULL,
-  `status` enum('','error','processing','complete','submitted') NOT NULL DEFAULT ''
+  `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -1789,6 +1789,7 @@ CREATE TABLE `pipelines` (
   `pipeline_level` int(11) DEFAULT NULL COMMENT '1,2,3, N (first, second, third, Nth level)',
   `pipeline_group` varchar(255) DEFAULT NULL,
   `pipeline_directory` varchar(255) DEFAULT NULL,
+  `pipeline_dirstructure` char(1) DEFAULT NULL,
   `pipeline_usetmpdir` tinyint(1) DEFAULT NULL,
   `pipeline_tmpdir` text DEFAULT NULL,
   `pipeline_dependency` text DEFAULT NULL,

@@ -26,19 +26,20 @@
 	
 		$nidbdir = '/nidb';
 		$webdir = "/var/www/html";
+		$backupdir = "/usr2/nidb/backup"; /* directory with enough space to hold the database dump and existing web files */
 		
 		/* current database information */
-		$mysqlHostname = "localhost";
-		$mysqlUsername = "nidb";
-		$mysqlPassword = "password";
-		$mysqlDatabase = "nidb";
+		$mysqlHostname = "ado2";
+		$mysqlUsername = "root";
+		$mysqlPassword = "brainmap";
+		$mysqlDatabase = "ado2";
 		
 		$newSchemaFile = "nidb.sql"; /* this .sql file should be in the same directory as this script, and be the SCHEMA ONLY. NO DATA in there */
 	
-	    /* this script will always create a backup of the databse, but you can configure these other options... */
-		$doRenameDatabase = 1; /* renames original database */
-		$doCreateNewSchema = 1; /* create blank database with new schema */
-		$doUpgradeDatabase = 1; /* insert old data into new schema */
+	    /* this script will always create a (live) backup of the databse, but you can configure these other options... */
+		$doRenameDatabase = 0; /* renames original database */
+		$doCreateNewSchema = 0; /* create blank database with new schema */
+		$doUpgradeDatabase = 0; /* insert old data into new schema */
 		$doUpdateFiles = 0; /* updates to the latest github version of the /program and /web files */
 
 		date_default_timezone_set("America/New_York");
@@ -46,6 +47,26 @@
 	/* ----- done editing variables ----- */
 	/* ---------------------------------- */
 
+	echo "Running update with the following variables
+
+nidbdir = $nidbdir
+webdir = $webdir
+backupdir = $backupdir
+
+mysqlHostname = $mysqlHostname
+mysqlUsername = $mysqlUsername
+mysqlPassword = $mysqlPassword
+mysqlDatabase = $mysqlDatabase
+		
+newSchemaFile = $newSchemaFile
+
+doRenameDatabase = $doRenameDatabase
+doCreateNewSchema = $doCreateNewSchema
+doUpgradeDatabase = $doUpgradeDatabase
+doUpdateFiles = $doUpdateFiles
+
+";
+	
 	/* Checking and installing 'pv' */
 	$Ck=exec("yum info pv | grep Repo | awk '{print $3}'");
 	if ($Ck != 'installed') {
@@ -80,6 +101,7 @@
 
 	$currentDatetime = date('YmdHis');
 	$backupDatabaseName = "$mysqlDatabase"."_$currentDatetime";
+	$backupDatabaseFile = "$backupdir/$backupDatabaseName.sql";
 	
 	/* connect to DB */
 	$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error($linki));
@@ -94,7 +116,7 @@
 	/* ----- Step 1 - rename (backup) the existing database ----- */
 	
 		/* dump the old database, "q" uses quick mode */
-		$systemstring = "mysqldump -qv --single-transaction -u$mysqlUsername -p$mysqlPassword $mysqlDatabase > $backupDatabaseName.sql";
+		$systemstring = "mysqldump -q --single-transaction --compact -u$mysqlUsername -p$mysqlPassword $mysqlDatabase > $backupDatabaseFile";
 		echo "Running [$systemstring]...\n";
 		echo "Output: [" . `$systemstring` . "]\n";
 		
@@ -106,7 +128,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* import the file into the backup database */
-		$systemstring = "pv $backupDatabaseName.sql | mysql -u $mysqlUsername -p$mysqlPassword $backupDatabaseName";
+		$systemstring = "pv $backupDatabaseFile | mysql -h $mysqlHostname -u $mysqlUsername -p$mysqlPassword $backupDatabaseName";
 		echo "Running [$systemstring]...\n";
 		echo "Output: [" . `$systemstring` . "]\n";
 
@@ -146,18 +168,18 @@
 			mysqli_select_db($GLOBALS['linki'], $mysqlDatabase) or die ("Could not select database [$mysqlDatabase] on line [" . __LINE__ . "]");
 			
 			/* import the new schema */
-			$systemstring = "mysql -u $mysqlUsername -p$mysqlPassword $mysqlDatabase < $newSchemaFile";
+			$systemstring = "mysql -h $mysqlHostname -u $mysqlUsername -p$mysqlPassword $mysqlDatabase < $newSchemaFile";
 			echo "Running [$systemstring]...\n";
 			echo "Output: [" . `$systemstring` . "]\n";
 		}
 
-	/* ---------------------------------------------------------- */
-	/* ----- Step 3 - copy data from old database to new          */
-	/* ----- This assumes columns can only be added to the new    */
-	/* ----- database. So, the new schema should ALWAYS have at   */
-	/* ----- least the same schema as the old database. It is     */
-	/* ----- expected that the new schema will never drop columns */
-	/* ----- from the old database                                */
+	/* ----------------------------------------------------------- */
+	/* ----- Step 3 - copy data from old database to new           */
+	/* ----- This assumes columns have only beeen added to the new */
+	/* ----- database. So, the new schema should ALWAYS have at    */
+	/* ----- least the same schema as the old database. It is      */
+	/* ----- expected that the new schema will never drop columns  */
+	/* ----- from the old database                                 */
 	
 		if ($doUpgradeDatabase) {
 			/* make sure we're still connected to the database */
@@ -181,7 +203,6 @@
 					$linki = mysqli_connect($mysqlHostname, $mysqlUsername, $mysqlPassword) or die ("Could not connect to database: " . mysqli_error($linki));
 					mysqli_select_db($linki, $backupDatabaseName) or die ("Could not select database [$db] on line [" . __LINE__ . "]");
 					
-//					$columns = '';
 					$columns = array();
 					$sqlstring = "show columns from $tablename";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -212,42 +233,48 @@
 		mysqli_select_db($GLOBALS['linki'], $db) or die ("Could not select database [$db] on line [" . __LINE__ . "]");
 		
 		/* get list of tables */
+		$tables = array();
 		$sqlstring = "show tables";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tablename = $row["Tables_in_$db"];
-			//$tables[$tablename] = "";
 			$tables[$tablename] = array();
 		}
 		
-		foreach ($tables as $tablename => $val) {
-			if ($tablename != "") {
-				$sqlstring = "select count(*) 'count' from $tablename";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$rowCount = $row['count'];
-				
-				$tables[$tablename]['rowcount'] = $rowCount;
+		if (count($tables) > 0) {
+			foreach ($tables as $tablename => $val) {
+				if ($tablename != "") {
+					$sqlstring = "select count(*) 'count' from $tablename";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+					$rowCount = $row['count'];
+					
+					$tables[$tablename]['rowcount'] = $rowCount;
 
-				$sqlstring = "show columns from $tablename";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$columnCount = mysqli_num_rows($result);
-				$tables[$tablename]['columncount'] = $columnCount;
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$field = $row['Field'];
-					$type = $row['Type'];
-					$null = $row['Null'];
-					$key = $row['Key'];
-					$default = $row['Default'];
-					$extra = $row['Extra'];
-					$tables[$tablename]['columns'][$field]['type'] = $type;
-					$tables[$tablename]['columns'][$field]['null'] = $null;
-					$tables[$tablename]['columns'][$field]['key'] = $key;
-					$tables[$tablename]['columns'][$field]['default'] = $default;
-					$tables[$tablename]['columns'][$field]['extra'] = $extra;
+					$sqlstring = "show columns from $tablename";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$columnCount = mysqli_num_rows($result);
+					$tables[$tablename]['columncount'] = $columnCount;
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$field = $row['Field'];
+						$type = $row['Type'];
+						$null = $row['Null'];
+						$key = $row['Key'];
+						$default = $row['Default'];
+						$extra = $row['Extra'];
+						$tables[$tablename]['columns'][$field]['type'] = $type;
+						$tables[$tablename]['columns'][$field]['null'] = $null;
+						$tables[$tablename]['columns'][$field]['key'] = $key;
+						$tables[$tablename]['columns'][$field]['default'] = $default;
+						$tables[$tablename]['columns'][$field]['extra'] = $extra;
+					}
+					echo "Table [$db.$tablename] has [$columnCount] columns and [$rowCount] rows\n";
 				}
-				echo "Table [$db.$tablename] has [$columnCount] columns and [$rowCount] rows\n";
 			}
+		}
+		else {
+			echo "ERROR - no tables found in database [$db]\n";
+			exit(0);
 		}
 		
 		echo "Finished getting schema for [$db]\n";
@@ -268,4 +295,3 @@
 			return $result;
 		}
 	}
-	

@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB updatePhaseEncoding.pl
-# Copyright (C) 2004 - 2018
+# Copyright (C) 2004 - 2019
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------

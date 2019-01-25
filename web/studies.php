@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB studies.php
- // Copyright (C) 2004 - 2018
+ // Copyright (C) 2004 - 2019
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -1813,7 +1813,7 @@
 			input.inplace_field { background-color: white; font-size: 8pt; border: 1pt solid gray; width: 200px;  }
 		</style>
 		
-		<span class="smallnote"><b>Upload file(s) by clicking the button or drag-and-drop (Firefox and Chrome only)</b><br>
+		<span class="tiny"><b>Upload file(s) by clicking the button or drag-and-drop (Firefox and Chrome only)</b><br>
 		DICOM files will only be associated with the study under which they were originally run... If you upload files from a different study, they won't show up here.</span>
 		<br><br>
 		<div id="file-uploader-demo1">		

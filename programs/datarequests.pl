@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------------------------------
 # NIDB datarequests.pl
-# Copyright (C) 2004 - 2018
+# Copyright (C) 2004 - 2019
 # Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
@@ -261,6 +261,12 @@ sub ExportLocal() {
 					else { $newseriesnum++; }
 				}
 				else { $newseriesnum = $seriesnum; }
+
+				if ($preserveseries == 2) {
+					my $seriesdir = $seriesdesc;
+					$seriesdir =~ s/[^a-zA-Z0-9_-]/_/g;
+					$newseriesnum = "$seriesnum" . "_$seriesdir";
+				}
 				
 				WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
 				$log .= "$subjectdir - Series number [$seriesnum] --> [$newseriesnum]\n";
