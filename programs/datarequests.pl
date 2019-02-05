@@ -108,6 +108,8 @@ sub ProcessDataExports {
 		return 0;
 	}
 
+	# update the start time
+	SetModuleRunning();
 	ModuleDBCheckIn($scriptname, $db);
 	ModuleRunningCheckIn($scriptname, $db);
 	
@@ -539,57 +541,8 @@ sub ExportNiDB() {
 	WriteLog("Entering ExportNiDB($exportid)...");
 
 	# ********************************************************************
-	# This function is deprecated, but the code is left here for reference
+	# This function is deprecated
 	# ********************************************************************
-	
-	# if ($req_destinationtype eq "export") {
-		# # build destination path
-		# my $indir = "$cfg{'archivedir'}/$uid/$study_num/$series_num";
-		# $fullexportdir = "$cfg{'ftpdir'}/NIDB-$exportdir/$uid/$study_num/$series_num";
-
-		# # try to create the path
-		# if (!-d $fullexportdir) {
-			# WriteLog("Point 1");
-			# if (!MakePath($fullexportdir)) {
-				# $newstatus = "problem";
-				# $results .= "$fullexportdir not created. Check permissions on destination directory.\n";
-			# }
-		# }
-		# # see if the directory has been created
-		# if (-d $fullexportdir) {
-			# $systemstring = "chmod -Rf 777 $fullexportdir";
-			# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-		
-			# if (-d $indir) {
-				# $systemstring = "cp -R $indir/* $fullexportdir";
-				# WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-				# WriteLog("Done copying files...");
-				# if (!defined($subjectwritten{'site'})) {
-					# WriteSiteMeta("$cfg{'ftpdir'}/NIDB-$exportdir");
-					# $subjectwritten{'site'} = 1;
-				# }
-				# if (!defined($subjectwritten{$uid})) {
-					# WriteSubjectMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid);
-					# $subjectwritten{$uid} = 1;
-				# }
-				# WriteLog("Checkpoint i");
-				# if (!defined($studywritten{"$uid$study_num"})) {
-					# WriteStudyMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid, $study_num);
-					# $studywritten{"$uid$study_num"} = 1;
-				# }
-				# WriteLog("Checkpoint ii");
-				# if (!defined($serieswritten{"$uid$study_num$series_num"})) {
-					# WriteSeriesMeta("$cfg{'ftpdir'}/NIDB-$exportdir", $uid, $study_num, $series_num, $series_id, $modality);
-					# $serieswritten{"$uid$study_num$series_num"} = 1;
-				# }
-				# WriteLog("Checkpoint iii");
-			# }
-			# else {
-				# $results .= "Unable to export $indir. Directory does not exist\n";
-			# }
-		# }
-		# $newstatus = 'complete';
-	# }
 	
 	WriteLog("Leaving ExportNiDB()...");
 }
@@ -1081,12 +1034,8 @@ sub ExportToRemoteFTP() {
 	WriteLog("Entering ExportToRemoteFTP($exportid)...");
 	
 	# ********************************************************************
-	# This function is deprecated, but the code is left here for reference
+	# This function is deprecated
 	# ********************************************************************
-
-	# if ($req_destinationtype eq "remoteftp") {
-		# SendToRemoteFTP($req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $remoteftpserver, $remoteftpusername, $remoteftppassword, $remoteftppath,$newdir);
-	# }
 
 	WriteLog("Leaving ExportToRemoteFTP()...");
 }
@@ -1346,78 +1295,6 @@ sub GetOutputDirectories() {
 }
 
 
-# ----------------------------------------------------------
-# --------- SendToRemoteFTP --------------------------------
-# ----------------------------------------------------------
-sub SendToRemoteFTP() {
-	my ($req_behonly, $data_type, $indir, $req_filetype, $req_gzip, $uid, $project_costcenter, $study_num, $series_num, $req_behformat, $behoutdir, $behindir, $newseriesnum, $remoteftpserver, $remoteftpusername, $remoteftppassword, $remoteftppath,$newdir) = @_;
-	
-	my $origDir = getcwd;
-	my $systemstring;
-	my $tmpdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(10);
-	MakePath($tmpdir);
-
-	if (!$req_behonly) {
-		if ($data_type ne "dicom") {
-			my $systemstring = "rsync $indir/* $tmpdir/";
-			WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-		}
-		else {
-			WriteLog("Calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num)");
-			ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num, $data_type);
-			WriteLog("Done calling ConvertDicom($req_filetype, $indir, $tmpdir, $req_gzip, $uid, $study_num, $series_num)");
-		}
-	}
-	# copy the beh data
-	if ($req_behformat ne "behnone") {
-		unless(-d "$tmpdir$behoutdir"){
-			MakePath("$tmpdir$behoutdir") or die ("Could not create $tmpdir$behoutdir because [$!]");
-		}
-		$systemstring = "cp -R $behindir/* $tmpdir$behoutdir";
-		WriteLog("$systemstring (" . `$systemstring 2>&1` . ")");
-	}
-	
-	my $zipfile = "$tmpdir/$newseriesnum.zip";
-	$systemstring = "zip -1j $zipfile $tmpdir/*";
-	WriteLog(`$systemstring 2>&1`);
-
-	chdir($tmpdir);
-	
-	# #my $zipfilepath = "$cfg{'archivedir'}/$studyscannerid/$studyscannerid" . "_$seriesnumber" . "_$imgformat.7z";
-	my $ftpbatchfile = "FTPBatch-" . CreateLogDate() . ".sh";
-	open FTPBAT, "> $ftpbatchfile";
-	
-	print FTPBAT "#!/bin/sh\n";
-	print FTPBAT "/usr/kerberos/bin/ftp -nuiv $remoteftpserver <<EOT\n";
-	print FTPBAT "user $remoteftpusername $remoteftppassword ^D\n";
-	print FTPBAT "cd / ^D\n";
-	# # loop through mkdir's that need to be made
-	print FTPBAT "mkdir $remoteftppath/$newdir ^D\n";
-	print FTPBAT "cd $remoteftppath/$newdir ^D\n";
-	print FTPBAT "binary ^D\n";
-	#print FTPBAT "lcd $tmpdir ^D\n";
-	print FTPBAT "put $tmpdir/$newseriesnum.zip $newseriesnum.zip ^D\n";
-	print FTPBAT "pwd ^D\n";
-	print FTPBAT "status ^D\n";
-	print FTPBAT "quit ^D\n";
-	print FTPBAT "EOT\n";
-	close FTPBAT;
-	chmod(0777, $ftpbatchfile);
-
-	my $results = `./$ftpbatchfile 2>&1`;
-	WriteLog("[$results]");
-	unlink $ftpbatchfile;
-	my $newstatus = "check log";
-	
-	rmtree($tmpdir);
-	
-	# change back to original directory before leaving
-	chdir($origDir);
-	
-	return ($results,$newstatus);
-}
-
-
 # -------------------------------------------------------------------------
 # -------------- Anonymize ------------------------------------------------
 # -------------------------------------------------------------------------
@@ -1608,30 +1485,23 @@ sub ConvertDicom() {
 	my $origDir = getcwd;
 	
 	my $gzip;
-	#if ($req_gzip) { $gzip = "-g y"; }
-	#else { $gzip = "-g n"; }
-	
 	if ($req_gzip) { $gzip = "-z y"; }
 	else { $gzip = "-z n"; }
 	
 	my $starttime = time;
 			
 	WriteLog("Working on [$indir]");
-	#my $outdir;
-	my $fileext;
+
+	# in case of par/rec, the argument list to dcm2niix is a file instead of a directory
+	my $fileext = "";
+	if ($datatype eq "parrec") { $fileext = "/*.par"; }
 	
-	if ($datatype eq "dicom") { $fileext = "dcm"; }
-	elsif ($datatype eq "parrec") { $fileext = "par"; }
 	my $systemstring;
 	chdir($indir);
 	switch ($filetype) {
-		#case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
-		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z y -o '$outdir' $indir"; }
-		#case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -o '$outdir' *.$fileext"; }
-		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z 3 -o '$outdir' $indir"; }
-		#case "analyze4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_4D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
-		#case "analyze3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2nii -b '$cfg{'scriptdir'}/dcm2nii_3D.ini' -a y -e y $gzip -p n -i n -d n -f n -n n -s y -o '$outdir' *.$fileext"; }
-		case "bids" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b y -z y -o '$outdir' $indir"; }
+		case "nifti4d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z y -o '$outdir' $indir$fileext"; }
+		case "nifti3d" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b n -z 3 -o '$outdir' $indir$fileext"; }
+		case "bids" { $systemstring = "$cfg{'scriptdir'}/./dcm2niix -1 -b y -z y -o '$outdir' $indir$fileext"; }
 		else { return(0,0,0,0,0,0); }
 	}
 	
@@ -1742,82 +1612,6 @@ sub BatchRenameFiles {
 	
 	return ($#imgfiles+1, $#hdrfiles+1, $#niifiles+1, $#gzfiles+1);
 }
-
-
-# -------------------------------------------------------------------------
-# -------------- WriteSiteMeta --------------------------------------------
-# -------------------------------------------------------------------------
-# sub WriteSiteMeta() {
-	# my ($outpath) = @_;
-
-	# my $sqlstring = "SELECT site_uuid, site_name, site_address, site_contact from nidb_sites where site_id = 1";
-	# WriteXMLFromSQL($sqlstring, "$outpath/site.xml");
-# }
-
-
-# -------------------------------------------------------------------------
-# -------------- WriteSubjectMeta -----------------------------------------
-# -------------------------------------------------------------------------
-# sub WriteSubjectMeta() {
-	# my ($outpath, $uid) = @_;
-
-	# my $sqlstring = "SELECT birthdate, gender, ethnicity1, ethnicity2, height, weight, handedness, education, uid, uuid from subjects where uid = '$uid'";
-	# WriteXMLFromSQL($sqlstring, "$outpath/$uid/subject.xml");
-# }
-
-
-# -------------------------------------------------------------------------
-# -------------- WriteStudyMeta -----------------------------------------
-# -------------------------------------------------------------------------
-# sub WriteStudyMeta() {
-	# my ($outpath, $uid, $study_num) = @_;
-
-	# my $sqlstring = "SELECT enroll_subgroup from enrollment where enrollment_id in (select enrollment_id from studies where study_num = $study_num and enrollment_id in (SELECT enrollment_id from enrollment where subject_id in (select subject_id from subjects where uid = '$uid')))";
-	# WriteXMLFromSQL($sqlstring, "$outpath/$uid/enrollment.xml");
-	
-	# $sqlstring = "select study_num, study_desc, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_bmi, study_performingphysician, study_site, study_institution, study_notes, study_radreadfindings from studies where study_num = $study_num and enrollment_id in (SELECT enrollment_id from enrollment where subject_id in (select subject_id from subjects where uid = '$uid'))";
-	# WriteXMLFromSQL($sqlstring, "$outpath/$uid/$study_num/study.xml");
-	
-# }
-
-
-# -------------------------------------------------------------------------
-# -------------- WriteSeriesMeta ------------------------------------------
-# -------------------------------------------------------------------------
-# sub WriteSeriesMeta() {
-	# my ($outpath, $uid, $study_num, $series_num, $seriesid, $modality) = @_;
-
-	# my $sqlstring = "SELECT * from " . $modality . "_series where " . $modality . "series_id = $seriesid";
-	# WriteXMLFromSQL($sqlstring, "$outpath/$uid/$study_num/$series_num/series.xml");
-	
-	# if (lc($modality) eq "mr") {
-		# $sqlstring = "select * from mr_qa where mrseries_id = $seriesid";
-		# WriteXMLFromSQL($sqlstring, "$outpath/$uid/$study_num/$series_num/qa/qa.xml");
-	# }
-# }
-
-
-# -------------------------------------------------------------------------
-# -------------- WriteXMLFromSQL ------------------------------------------
-# -------------------------------------------------------------------------
-# sub WriteXMLFromSQL() {
-	# my ($sql, $outpath) = @_;
-	
-	# WriteLog("Running [$sql]");
-	# my $str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-	# my $result = SQLQuery($sql, __FILE__, __LINE__);
-	# if ($result->numrows > 0) {
-		# while (my %row = $result->fetchhash) {
-			# foreach my $column (keys %row) {
-				# $str .= "\n\t<$column>" . $row{$column} . "</$column>";
-			# }
-		# }
-	# }
-	
-	# open(FILE,"> $outpath");
-	# print FILE $str;
-	# close(FILE);
-# }
 
 
 # -------------------------------------------------------------------------
