@@ -142,7 +142,7 @@ td.hover, tr.hover { background-color: aliceblue; }
 .entrytable  { font-size: 11pt; color: #003366; }
 .entrytable td.label { font-weight: bold; color: #555555; font-size: 11pt; padding: 5px; vertical-align:top; }
 .entrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 11pt; padding: 5px; vertical-align: top;}
-.entrytable td.heading { font-weight: bold; color: #333; padding: 5px; vertical-align: top; }
+.entrytable td.heading { font-weight: bold; color: #333; padding: 5px; vertical-align: top; font-size: 14pt }
 .entrytable td.variable { font-weight: normal; color: #333; padding: 5px; vertical-align: top; }
 .entrytable td { vertical-align: top; }
 .entrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
@@ -298,7 +298,7 @@ table.download td.title { font-weight: bold; font-size: 14pt; color: white; }
 table.download td.section { background-color: #EEEEEE; border-radius: 5px; }
 
 table.subdownload { margin: 0px; border-spacing: 0px }
-table.subdownload td.label { font-weight: bold; background-color: white; padding:8px 16px 8px 8px; width: 120px; text-align: right; vertical-align: top; color: #444;  border-top: 2px solid #444; }
+table.subdownload td.label { font-weight: bold; background-color: white; padding:8px 16px 8px 8px; width: 120px; text-align: right; vertical-align: top; color: #444;  border-top: 3px solid #444; }
 table.subdownload td.main { padding: 8px; vertical-align: top; border-top: 1px solid #888 }
 table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; border-top: 1px solid #888 }
 

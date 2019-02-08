@@ -98,8 +98,13 @@ class qqFileUploader {
         $allowedExtensions = array_map("strtolower", $allowedExtensions);
         //echo "check A";
             
-        $this->allowedExtensions = $allowedExtensions;        
-        $this->sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
+        $this->allowedExtensions = $allowedExtensions;
+		if (($GLOBALS['cfg']['uploadsizelimit'] == "") || ($GLOBALS['cfg']['uploadsizelimit'] < 0)) {
+			$this->sizeLimit = 100 * 1024 * 1024;
+		}
+		else {
+			$this->sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
+		}
         //echo "check B";
         
         $this->checkServerSettings();       
@@ -160,6 +165,9 @@ class qqFileUploader {
         if ($size > $this->sizeLimit) {
             return array('error' => 'File is too large');
         }
+		if ($this->sizeLimit == 0) {
+            return array('error' => 'Max upload file size is not set, contact NiDB admin');
+		}
 		//return array('error'=>'made it to checkpoint 4');
         
         $pathinfo = pathinfo($this->file->getName());

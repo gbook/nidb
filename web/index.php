@@ -103,11 +103,15 @@ if ($email == "") {
 		<td valign="top" width="50%">
 			<img src="images/nidb_short_notext_small.png">
 			<br><br>
+			<?
+				if ($GLOBALS['cfg']['displayrecentstudies']) {
+					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];
+			?>
 			<table class="graydisplaytable" width="90%">
 				<tr>
 					<th colspan="7">
 						<b>New Imaging Studies</b><br>
-						<span class="sublabel">Collected in past 72 hours</span>
+						<span class="sublabel">Collected in past <?=$numrecentdays?> days</span>
 					</th>
 				</tr>
 				<tr>
@@ -120,7 +124,7 @@ if ($email == "") {
 					<td class="subheader">Project</td>
 				</tr>
 			<?
-				$sqlstring = "select a.*, c.*, d.uid, d.subject_id, f.family_uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id left join family_members e on d.subject_id = e.subject_id left join families f on e.family_id = f.family_id where d.isactive = 1 and (a.study_datetime > now() - interval 72 hour) and a.study_datetime <= now() and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') and a.study_modality <> '' order by a.study_datetime desc";
+				$sqlstring = "select a.*, c.*, d.uid, d.subject_id, f.family_uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id left join family_members e on d.subject_id = e.subject_id left join families f on e.family_id = f.family_id where d.isactive = 1 and (a.study_datetime > now() - interval $numrecentdays day) and a.study_datetime <= now() and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') and a.study_modality <> '' order by a.study_datetime desc";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$study_id = $row['study_id'];
@@ -170,6 +174,9 @@ if ($email == "") {
 				}
 			?>
 			</table>
+			<?
+				}
+			?>
 		</td>
 		<td valign="top">
 			<table class="graydisplaytable" width="90%">

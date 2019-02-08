@@ -69,7 +69,7 @@
 				#menu-bar ul { background: #98bce5; display: none; margin: 0; padding: 0; width: 185px; position: absolute; top: 30px; left: 0; border: 1px solid #405785; }
 				#menu-bar ul li { float: none; margin: 0; padding: 0; color: #fff; }
 				#menu-bar ul a { padding:8px 0px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: normal; }
-				.menuheading { padding:8px 8px 8px 13px; margin:8px 8px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: bold; background: #304775; }
+				#menu-bar .menuheading { padding:8px 8px 8px 13px; color:#fff !important; font-size:14px; font-style:normal; font-family:arial; font-weight: bold; background: #304775; }
 				#menu-bar:after { content: "."; display: block; clear: both; visibility: hidden; line-height: 0; height: 0; }
 				#menu-bar { display: inline-block; }
 				  html[xmlns] #menu-bar { display: block; }

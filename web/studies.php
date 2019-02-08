@@ -169,7 +169,7 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- AddGenericSeries ------------------- */
+	/* ------- AddRating -------------------------- */
 	/* -------------------------------------------- */
 	function AddRating($seriesid, $modality, $value, $username) {
 		$sqlstring = "select user_id from users where username = '$username'";

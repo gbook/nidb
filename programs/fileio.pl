@@ -578,9 +578,9 @@ sub DeleteAnalysis() {
 						WriteLog($sqlstringD);
 						my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 
-						my $sqlstringE = "delete from analysis_group where analysis_id = $analysisid";
-						WriteLog($sqlstringE);
-						my $resultE = SQLQuery($sqlstringE, __FILE__, __LINE__);
+						#my $sqlstringE = "delete from analysis_group where analysis_id = $analysisid";
+						#WriteLog($sqlstringE);
+						#my $resultE = SQLQuery($sqlstringE, __FILE__, __LINE__);
 						
 						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 					}
@@ -606,9 +606,9 @@ sub DeleteAnalysis() {
 				WriteLog($sqlstringD);
 				my $resultD = SQLQuery($sqlstringD, __FILE__, __LINE__);
 
-				my $sqlstringE = "delete from analysis_group where analysis_id = $analysisid";
-				WriteLog($sqlstringE);
-				my $resultE = SQLQuery($sqlstringE, __FILE__, __LINE__);
+				#my $sqlstringE = "delete from analysis_group where analysis_id = $analysisid";
+				#WriteLog($sqlstringE);
+				#my $resultE = SQLQuery($sqlstringE, __FILE__, __LINE__);
 						
 				InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleted', "Analysis was deleted");
 			}			

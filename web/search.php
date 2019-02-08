@@ -697,7 +697,7 @@
 										<input type="radio" name="s_resultorder" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
 										
 										<? if ($searchvars['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Series List<br>
+										<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Display all series <span class="tiny">(use for "Select All")</span><br>
 
 										<? if ($searchvars['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
@@ -3768,7 +3768,22 @@
 											<?
 											if ($s_resultorder != 'subject') {
 												?>
-												<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" name="nfsdir" size="50"><br>
+												<script>
+													function CheckNFSPath() {
+														var xhttp = new XMLHttpRequest();
+														xhttp.onreadystatechange = function() {
+															if (this.readyState == 4 && this.status == 200) {
+																document.getElementById("pathcheckresult").innerHTML = this.responseText;
+															}
+														};
+														var nfsdir = document.getElementById("nfsdir").value;
+														//alert(nfsdir);
+														xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
+														xhttp.send();
+													}
+												</script>
+												<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
+												<br>
 												<input type="radio" name="destination" id="destination" value="remoteftp">Remote FTP site
 												<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
 													<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
@@ -3877,8 +3892,6 @@
 												<span class="tiny">Conversion to other formats only available if native data in DICOM format</span><br>
 												<input type="radio" name="filetype" id="filetype" value="nifti3d" checked>Nifti 3D<br>
 												<input type="radio" name="filetype" id="filetype" value="nifti4d">Nifti 4D<br>
-												<!--<input type="radio" name="filetype" id="filetype" value="analyze3d">Analyze 3D<br>
-												<input type="radio" name="filetype" id="filetype" value="analyze4d">Analyze 4D<br>-->
 												<input type="radio" name="filetype" id="filetype" value="dicom">DICOM<br>
 												<div class="dicom" style="padding-left: 15px;">
 												<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>

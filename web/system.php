@@ -86,6 +86,8 @@
     $c['enableremoteconn'] = GetVariable("enableremoteconn");
     $c['enablecalendar'] = GetVariable("enablecalendar");
     $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
+    $c['displayrecentstudies'] = GetVariable("displayrecentstudies");
+    $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
 
     $c['enablecas'] = GetVariable("enablecas");
     $c['casserver'] = GetVariable("casserver");
@@ -233,12 +235,6 @@
 
 # ----- Site/server options -----
 [siteurl] = $siteurl
-[usecluster] = $usecluster
-[queuename] = $queuename
-[queueuser] = $queueuser
-[clustersubmithost] = $clustersubmithost
-[qsubpath] = $qsubpath
-[clusteruser] = $clusteruser
 [version] = $version
 [sitename] = $sitename
 [sitenamedev] = $sitenamedev
@@ -250,6 +246,16 @@
 [enableremoteconn] = $enableremoteconn
 [enablecalendar] = $enablecalendar
 [uploadsizelimit] = $uploadsizelimit
+[displayrecentstudies] = $displayrecentstudies
+[displayrecentstudydays] = $displayrecentstudydays
+
+# ----- cluster -----
+[usecluster] = $usecluster
+[queuename] = $queuename
+[queueuser] = $queueuser
+[clustersubmithost] = $clustersubmithost
+[qsubpath] = $qsubpath
+[clusteruser] = $clusteruser
 
 # ----- CAS authentication -----
 [enablecas] = $enablecas
@@ -317,7 +323,8 @@
 		?>
 		
 		<style>
-			legend { font-weight: bold; padding: 5px; border: 1px solid #aaa; }
+			legend { font-weight: bold; padding: 8px; background-color: #444; color: #fff; border: 2px solid #444; font-size: 14pt }
+			fieldset { background-color: #eee; border: 2px solid #444; }
 		</style>
 
 		<fieldset>
@@ -364,15 +371,15 @@
 			</tr>
 			<tr>
 				<td class="variable">debug</td>
-				<td><input type="text" name="debug" value="<?=$GLOBALS['cfg']['debug']?>" size="45"></td>
+				<td><input type="checkbox" name="debug" value="1" <? if ($GLOBALS['cfg']['debug']) { echo "checked"; } ?>></td>
 				<td></td>
-				<td>Enable debugging for the PHP pages. Will display all SQL statements. 1 for yes, 0 for no.</td>
+				<td>Enable debugging for the PHP pages. Will display all SQL statements.</td>
 			</tr>
 			<tr>
 				<td class="variable">hideerrors</td>
-				<td><input type="text" name="hideerrors" value="<?=$GLOBALS['cfg']['hideerrors']?>" size="45"></td>
+				<td><input type="checkbox" name="hideerrors" value="1" <? if ($GLOBALS['cfg']['hideerrors']) { echo "checked"; } ?>></td>
 				<td></td>
-				<td>Hide a SQL error if it occurs. Emails are always sent. 1 for yes, 0 for no. Always leave as 1 for production systems for security purposes!</td>
+				<td>Hide a SQL error if it occurs. Emails are always sent. Always leave checked on production systems for security purposes!</td>
 			</tr>
 			
 			<tr>
@@ -382,7 +389,7 @@
 				<td class="variable">mysqlhost</td>
 				<td><input type="text" name="mysqlhost" value="<?=$GLOBALS['cfg']['mysqlhost']?>" size="45"></td>
 				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Database hostname (should be localhost or 127.0.0.0 unless the database is running a different server from the website)</td>
+				<td>Database hostname (should be localhost or 127.0.0.1 unless the database is running a different server from the website)</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqluser</td>
@@ -481,10 +488,92 @@
 				<td>Full URL of the NiDB website</td>
 			</tr>
 			<tr>
-				<td class="variable">usecluster</td>
-				<td><input type="text" name="usecluster" value="<?=$GLOBALS['cfg']['usecluster']?>" size="45"></td>
+				<td class="variable">version</td>
+				<td><input type="text" name="version" value="<?=$GLOBALS['cfg']['version']?>" size="45"></td>
 				<td></td>
-				<td>Use a cluster to perform QC. 1 for yes, 0 for no</td>
+				<td>NiDB version. No need to change this</td>
+			</tr>
+			<tr>
+				<td class="variable">sitename</td>
+				<td><input type="text" name="sitename" value="<?=$GLOBALS['cfg']['sitename']?>" size="45"></td>
+				<td></td>
+				<td>Displayed on NiDB main page and some email notifications</td>
+			</tr>
+			<tr>
+				<td class="variable">sitenamedev</td>
+				<td><input type="text" name="sitenamedev" value="<?=$GLOBALS['cfg']['sitenamedev']?>" size="45"></td>
+				<td></td>
+				<td>Development site name</td>
+			</tr>
+			<tr>
+				<td class="variable">sitecolor</td>
+				<td><input type="color" name="sitecolor" value="<?=$GLOBALS['cfg']['sitecolor']?>" size="45"></td>
+				<td></td>
+				<td>Hex code for color in the upper left of the menu</td>
+			</tr>
+			<tr>
+				<td class="variable">ispublic</td>
+				<td><input type="checkbox" name="ispublic" value="1" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Set to 1 if this installation is on a public server and only has port 80 open</td>
+			</tr>
+			<tr>
+				<td class="variable">sitetype</td>
+				<td><input type="text" name="sitetype" value="<?=$GLOBALS['cfg']['sitetype']?>" size="45"></td>
+				<td></td>
+				<td>Options are local, public, or commercial</td>
+			</tr>
+			<tr>
+				<td class="variable">allowphi</td>
+				<td><input type="checkbox" name="allowphi" value="1" <? if ($GLOBALS['cfg']['allowphi']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Checked to allow PHI (name, DOB) on server. Unchecked to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
+			</tr>
+			<tr>
+				<td class="variable">allowrawdicomexport</td>
+				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
+			</tr>
+			<tr>
+				<td class="variable">enableremoteconn</td>
+				<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Allow this server to send data to remote NiDB servers</td>
+			</tr>
+			<tr>
+				<td class="variable">enablecalendar</td>
+				<td><input type="checkbox" name="enablecalendar" value="1" <? if ($GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable the calendar</td>
+			</tr>
+			<tr>
+				<td class="variable">uploadsizelimit</td>
+				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>" size="45"></td>
+				<td></td>
+				<td>Upload size limit in megabytes (MB). Current PHP upload filesize limit [upload_max_filesize] is <?=get_cfg_var('upload_max_filesize')?> and max POST size [post_max_size] is <?=get_cfg_var('post_max_size')?></td>
+			</tr>
+			<tr>
+				<td class="variable">displayrecentstudies</td>
+				<td><input type="checkbox" name="displayrecentstudies" value="1" <? if ($GLOBALS['cfg']['displayrecentstudies']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Display recently collected studies on the Home page</td>
+			</tr>
+			<tr>
+				<td class="variable">displayrecentstudydays</td>
+				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>" size="45"></td>
+				<td></td>
+				<td>Number of days to display of recently collected studies on the Home page</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" class="heading"><br>Cluster</td>
+			</tr>
+			<tr>
+				<td class="variable">usecluster</td>
+				<td><input type="checkbox" name="usecluster" value="1" <? if ($GLOBALS['cfg']['usecluster']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Use a cluster to perform QC</td>
 			</tr>
 			<tr>
 				<td class="variable">queuename</td>
@@ -516,79 +605,13 @@
 				<td></td>
 				<td>username under which jobs will be submitted to the cluster for the pipeline system</td>
 			</tr>
-			<tr>
-				<td class="variable">version</td>
-				<td><input type="text" name="version" value="<?=$GLOBALS['cfg']['version']?>" size="45"></td>
-				<td></td>
-				<td>NiDB version. No need to change this</td>
-			</tr>
-			<tr>
-				<td class="variable">sitename</td>
-				<td><input type="text" name="sitename" value="<?=$GLOBALS['cfg']['sitename']?>" size="45"></td>
-				<td></td>
-				<td>Displayed on NiDB main page and some email notifications</td>
-			</tr>
-			<tr>
-				<td class="variable">sitenamedev</td>
-				<td><input type="text" name="sitenamedev" value="<?=$GLOBALS['cfg']['sitenamedev']?>" size="45"></td>
-				<td></td>
-				<td>Development site name</td>
-			</tr>
-			<tr>
-				<td class="variable">sitecolor</td>
-				<td><input type="color" name="sitecolor" value="<?=$GLOBALS['cfg']['sitecolor']?>" size="45"></td>
-				<td></td>
-				<td>Hex code for color in the upper left of the menu</td>
-			</tr>
-			<tr>
-				<td class="variable">ispublic</td>
-				<td><input type="text" name="ispublic" value="<?=$GLOBALS['cfg']['ispublic']?>" size="2" maxlength="1"></td>
-				<td></td>
-				<td>Set to 1 if this installation is on a public server and only has port 80 open</td>
-			</tr>
-			<tr>
-				<td class="variable">sitetype</td>
-				<td><input type="text" name="sitetype" value="<?=$GLOBALS['cfg']['sitetype']?>" size="45"></td>
-				<td></td>
-				<td>Options are local, public, or commercial</td>
-			</tr>
-			<tr>
-				<td class="variable">allowphi</td>
-				<td><input type="text" name="allowphi" value="<?=$GLOBALS['cfg']['allowphi']?>" size="45"></td>
-				<td></td>
-				<td>1 to allow PHI (name, DOB) on server. 0 to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
-			</tr>
-			<tr>
-				<td class="variable">allowrawdicomexport</td>
-				<td><input type="text" name="allowrawdicomexport" value="<?=$GLOBALS['cfg']['allowrawdicomexport']?>" size="45"></td>
-				<td></td>
-				<td>1 to allow DICOM files to be downloaded from this server without being anonymized first (Also removes the Download and 3D viewier icons on the study page</td>
-			</tr>
-			<tr>
-				<td class="variable">enableremoteconn</td>
-				<td><input type="text" name="enableremoteconn" value="<?=$GLOBALS['cfg']['enableremoteconn']?>" size="45"></td>
-				<td></td>
-				<td>1 to allow this server to send data to remote NiDB servers, 0 to disable this option</td>
-			</tr>
-			<tr>
-				<td class="variable">enablecalendar</td>
-				<td><input type="text" name="enablecalendar" value="<?=$GLOBALS['cfg']['enablecalendar']?>" size="45"></td>
-				<td></td>
-				<td>1 to enable the calendar, 0 to disable</td>
-			</tr>
-			<tr>
-				<td class="variable">uploadsizelimit</td>
-				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>" size="45"></td>
-				<td></td>
-				<td>Upload size limit in megabytes (MB). Current PHP upload filesize limit [upload_max_filesize] is <?=get_cfg_var('upload_max_filesize')?> and max POST size [post_max_size] is <?=get_cfg_var('post_max_size')?></td>
-			</tr>
 
 			<tr>
 				<td colspan="4" class="heading"><br>CAS Authentication</td>
 			</tr>
 			<tr>
 				<td class="variable">enablecas</td>
-				<td><input type="text" name="enablecas" value="<?=$GLOBALS['cfg']['enablecas']?>" size="5" maxlength="1"></td>
+				<td><input type="checkbox" name="enablecas" value="1" <? if ($GLOBALS['cfg']['enablecas']) { echo "checked"; } ?>></td>
 				<td></td>
 				<td>Uses CAS authentication instead of locally stored usernames</td>
 			</tr>
