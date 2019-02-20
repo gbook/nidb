@@ -2653,12 +2653,12 @@
 		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		if ($_SESSION['instanceid'] == "") {
-			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top left of the page.</div><?
+			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top right corner of the page.</div><?
 		}
 		
 		?>
-		View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
-		<br><br>
+		<!--View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
+		<br><br>-->
 		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
 		
 		<table width="100%" style="border: 1px solid #ddd" cellspacing="0">

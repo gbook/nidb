@@ -592,8 +592,7 @@
 	function DisplayUserList() {
 	
 		$urllist['Administration'] = "admin.php";
-		$urllist['User List'] = "adminusers.php";
-		$urllist['Add User'] = "adminusers.php?action=addform";
+		$urllist['Uses'] = "adminusers.php";
 		NavigationBar("Admin", $urllist);
 		
 	?>
@@ -601,17 +600,18 @@
 	<table class="graydisplaytable dropshadow" id="usertable" width="80%">
 		<thead>
 			<tr>
-				<th>Username</th>
+				<th colspan="7" align="left" style="padding: 14px; background-color: #fff; border-bottom: 1px solid #666">
+					<a href="adminusers.php?action=addform" class="adminbutton2">Add User</a>
+				</th>
+			</tr>
+			<tr>
+				<th align="left">Username <input id="usernamefilter" type="text" placeholder="Filter by username or name"/></th>
 				<th>Full name</th>
 				<th>Email</th>
 				<th>Login type</th>
 				<th>Last Login</th>
 				<th>Login Count</th>
 				<th>Enabled</th>
-			</tr>
-			<tr>
-				<th colspan="2" align="center"><input id="usernamefilter" type="text" placeholder="Filter by username or name"/></th>
-				<th colspan="5"></th>
 			</tr>
 		</thead>
 		<script type="text/javascript">
@@ -633,6 +633,7 @@
 			document.querySelector('#usernamefilter').addEventListener('keyup', filterTable, false);
 		</script>
 		<tbody>
+			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>Users in this project group (<?=$_SESSION['instancename']?>)</b></td></tr>
 			<?
 				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' order by username";
 				//PrintSQL($sqlstring);
@@ -670,9 +671,9 @@
 				</td>
 			</tr>
 			<? } ?>
-			<tr><td colspan="8" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray; padding: 10px; background-color: lightyellow"><b>The Following users are unaffiliated with an instance</b></td></tr>
+			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All other users</b></td></tr>
 			<?
-				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '' or b.instance_id is null order by username";
+				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' order by username";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];

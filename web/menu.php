@@ -127,7 +127,7 @@
 				<li><a href="pipelines.php">Analysis</a>
 					<ul>
 						<li><a href="pipelines.php">Pipelines</a></li>
-						<li><a href="common.php">Common Objects</a></li>
+						<!--<li><a href="common.php">Common Objects</a></li>-->
 						<li><a href="cluster.php">Cluster Stats</a></li>
 					</ul>
 				</li>

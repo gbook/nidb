@@ -1740,10 +1740,10 @@
 					<table width="100%">
 						<tr>
 							<form action="subjects.php" method="post">
-							<td style="padding-left: 10px">
+							<td style="padding: 10px; background-color: #444; color: #fff">
 								<input type="hidden" name="id" value="<?=$id?>">
 								<input type="hidden" name="action" value="enroll">
-								<b>Enroll in project</b>
+								<b>Enroll in project</b> &nbsp; 
 								<select name="projectid">
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
@@ -1764,9 +1764,11 @@
 								?>
 								</select>
 								<input type="submit" value="Enroll">
-								<br><br>
 							</td>
 							</form>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
 						</tr>
 						
 						<?

@@ -686,8 +686,8 @@
 								<div style="overflow:auto; width: 650px">
 									<ul>
 										<li><a href="#tabs-1">Transfer Data</a></li>
-										<li><a href="#tabs-2">Assessments</a></li>
 										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
+										<li><a href="#tabs-2">Assessments</a></li>
 										<li><a href="#tabs-4">Analysis</a></li>
 										<li><a href="#tabs-5">QC</a></li>
 										<li><a href="#tabs-6">Admin</a></li>

@@ -660,6 +660,18 @@
 				<td colspan="4" class="heading"><br>Directories</td>
 			</tr>
 			<tr>
+				<td class="variable"><b>scriptdir</b></td>
+				<td><input type="text" name="scriptdir" value="<?=$GLOBALS['cfg']['scriptdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><b>Directory for Perl programs, scripts, and settings file (Backend)</b></td>
+			</tr>
+			<tr>
+				<td class="variable"><b>webdir</b></td>
+				<td><input type="text" name="webdir" value="<?=$GLOBALS['cfg']['webdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['webdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><b>Root of the website directory (Frontend)</b></td>
+			</tr>
+			<tr>
 				<td class="variable">analysisdir</td>
 				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
@@ -748,18 +760,6 @@
 				<td><input type="text" name="problemdir" value="<?=$GLOBALS['cfg']['problemdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['problemdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Files which encounter problems during import/archiving are placed here</td>
-			</tr>
-			<tr>
-				<td class="variable">scriptdir</td>
-				<td><input type="text" name="scriptdir" value="<?=$GLOBALS['cfg']['scriptdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory in which the Perl programs reside.</td>
-			</tr>
-			<tr>
-				<td class="variable">webdir</td>
-				<td><input type="text" name="webdir" value="<?=$GLOBALS['cfg']['webdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['webdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Root directory of the website</td>
 			</tr>
 			<tr>
 				<td class="variable">webdownloaddir</td>

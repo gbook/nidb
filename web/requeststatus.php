@@ -156,8 +156,17 @@
 		$urllist['Search'] = "search.php";
 		NavigationBar("Data export status", $urllist);
 		
+		if ($viewall) {
+			?>
+			<b>Showing all exports</b> <a href="requeststatus.php?viewall=0">(show only most recent 30)</a>
+			<?
+		}
+		else {
+			?>
+			<b>Showing 30 most recent exports</b> <a href="requeststatus.php?viewall=1">(show all)</a>
+			<?
+		}
 		?>
-		<a href="requeststatus.php?viewall=1">Show all data exports</a>
 		<br><br>
 		<table class="graydisplaytable" width="100%">
 			<thead>
@@ -178,12 +187,12 @@
 		$othercolor = "EFEFFF";
 		
 		if ($GLOBALS['issiteadmin']) {
-			if ($viewall) { $sqlstring = "select * from exports order by submitdate desc limit 100"; }
-			else { $sqlstring = "select * from exports order by submitdate desc limit 100"; }
+			if ($viewall) { $sqlstring = "select * from exports order by submitdate desc"; }
+			else { $sqlstring = "select * from exports order by submitdate desc limit 30"; }
 		}
 		else {
-			if ($viewall) { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 100"; }
-			else { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 100"; }
+			if ($viewall) { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc"; }
+			else { $sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 30"; }
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -224,10 +233,10 @@
 				
 			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
 
-			if ($exportstatus == "error") {
-				$leftovers = $totals['complete'] = $totals['processing'] = 0;
-				$totals['error'] = $total;
-			}
+			//if ($exportstatus == "error") {
+			//	$leftovers = $totals['complete'] = $totals['processing'] = 0;
+			//	$totals['error'] = $total;
+			//}
 				
 				?>
 				<tr>
@@ -239,22 +248,20 @@
 					<td>
 						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
 					</td>
-					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=ucfirst($exportstatus)?></a></td>
+					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status"><?=ucfirst($exportstatus)?></a></td>
 					<td>
 						<? if ($exportstatus == "error") { ?>
-						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>">Retry</a>
+						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series">Retry</a>
 						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>">Cancel</a>
+						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series">Cancel</a>
 						<? } ?>
 					</td>
 					<td><?
 					if ($destinationtype == "web") {
-						if (round($totals['complete']/$total)*100 == 100) {
+						if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
 							$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
-							//echo "$zipfile<br>";
 							if (file_exists($zipfile)) {
 								$output = shell_exec("du -sb $zipfile");
-								//echo "[$output]<br>";
 								list($filesize, $fname) = preg_split('/\s+/', $output);
 							}
 							else {
@@ -265,7 +272,7 @@
 								echo "Zipping download...";
 							}
 							else {
-								?><a href="download/<?="NIDB-$exportid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+								?><a href="download/<?="NIDB-$exportid.zip"?>" title="Download zip file">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
 							}
 						}
 						else {
@@ -275,82 +282,6 @@
 					?>
 					</td>
 				</tr>
-				<!--
-				<tr style="font-size:9pt">
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=$requestdate?></a>&nbsp;
-					<?
-						if (($GLOBALS['username'] == $username) || ($GLOBALS['issiteadmin'])) {
-							?>
-							<a href="requeststatus.php?action=cancelgroup&groupid=<?=$groupid?>" style="color:darkred; font-weight:bold" title="Cancel download">X</a>
-							<?
-						}
-					?>
-					</td>
-					<? if (!$GLOBALS['ispublic']) { ?>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$username?>&nbsp;</td>
-					<? } ?>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$minsec?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=number_format($totalbytes)?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray" align="right"><?=$lastupdate?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray; font-size:10pt">
-						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['problem']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>">
-						<?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
-						<?
-							if ($totals['processing'] > 0) {
-								?>
-								<span style="color: darkblue; font-size:8pt"><?=$totals['processing']?> processing</span>
-								<?
-							}
-							if ($totals['problem'] > 0) {
-								?>
-								<br><span style="color: red; font-size:8pt"><?=$totals['problem']?> errors</span> 
-								<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
-								<?
-							}
-							if ($totals['cancelled'] > 0) {
-								?>
-								<br><span style="color: red; font-size:8pt"><?=$totals['cancelled']?> cancelled</span>
-								<a href="requeststatus.php?action=retryerrors&groupid=<?=$groupid?>" style="color:darkred; font-size:12pt;" title="Restart failed or cancelled series">&#8634;</a>
-								<?
-							}
-							if (($totals['pending'] > 0) || ($totals['processing'] > 0) || ($totals[''] > 0)) {
-								?>
-								<br><span style="font-size:8pt">Expected completion: <?=$completedate?></span>
-								<?
-							}
-						?>
-					</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
-					<?
-					if ($destinationtype == "web") {
-						if (round($totals['complete']/$total)*100 == 100) {
-							$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$groupid.zip";
-							//echo "$zipfile<br>";
-							if (file_exists($zipfile)) {
-								$output = shell_exec("du -sb $zipfile");
-								//echo "[$output]<br>";
-								list($filesize, $fname) = preg_split('/\s+/', $output);
-							}
-							else {
-								$filesize = 0;
-							}
-							
-							if ($filesize == 0) {
-								echo "Zipping download...";
-							}
-							else {
-								?><a href="download/<?="NIDB-$groupid.zip"?>">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
-							}
-						}
-						else {
-							echo "Preparing download...";
-						}
-					}
-					else {
-						echo $destinationtype;
-					}
-					?>
-				-->
 				<?
 			}
 		?>
@@ -397,6 +328,7 @@
 				<th align="left">Series</th>
 				<th align="right">Size</th>
 				<th align="left">Status</th>
+				<th align="left">Message</th>
 			</thead>
 		<?
 		$sqlstring = "select * from exportseries where export_id = $exportid";
@@ -405,6 +337,7 @@
 			$modality = strtolower($row['modality']);
 			$seriesid = $row['series_id'];
 			$status = $row['status'];
+			$statusmessage = $row['statusmessage'];
 			
 			$sqlstringB = "select a.*, b.*, d.project_name, e.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
 			$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
@@ -433,6 +366,7 @@
 				<td><?=$seriesnum?> - <?=$seriesdesc?></td>
 				<td align="right"><?=number_format($seriessize)?></td>
 				<td style="background-color: <?=$bgcolor?>; color: <?=$color?>"> <?=ucfirst($status)?></td>
+				<td><?=$statusmessage?></td>
 			</tr>
 			<?
 		}
