@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 24, 2019 at 04:35 PM
+-- Generation Time: Feb 28, 2019 at 07:02 PM
 -- Server version: 10.2.14-MariaDB
 -- PHP Version: 7.2.5
 
@@ -1016,6 +1016,8 @@ CREATE TABLE `exports` (
   `remotenidb_instanceid` int(11) DEFAULT 0,
   `remotenidb_siteid` int(11) DEFAULT 0,
   `remotenidb_projectid` int(11) DEFAULT 0,
+  `remotenidb_connectionid` int(11) DEFAULT NULL,
+  `remotenidb_transactionid` int(11) DEFAULT NULL,
   `publicdownloadid` int(11) DEFAULT NULL,
   `bidsreadme` text DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
@@ -1041,7 +1043,8 @@ CREATE TABLE `exportseries` (
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
   `timepoint_label` varchar(100) DEFAULT NULL,
-  `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT ''
+  `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT '',
+  `statusmessage` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
