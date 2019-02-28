@@ -150,14 +150,29 @@ sub ProcessDataExports {
 			my $remoteftpserver = $row{'remoteftp_server'};
 			my $remoteftpport = $row{'remoteftp_port'};
 			my $remoteftppath = $row{'remoteftp_path'};
-			my $remotenidbserver = $row{'remotenidb_server'};
-			my $remotenidbusername = $row{'remotenidb_username'};
-			my $remotenidbpassword = $row{'remotenidb_password'};
-			my $remotenidbinstanceid = $row{'remotenidb_instanceid'};
-			my $remotenidbprojectid = $row{'remotenidb_projectid'};
-			my $remotenidbsiteid = $row{'remotenidb_siteid'};
+			my $remotenidbconnid = $row{'remotenidb_connectionid'};
 			my $publicdownloadid = $row{'publicdownloadid'};
 			my $bidsreadme = $row{'bidsreadme'};
+
+			my $remotenidbserver = '';
+			my $remotenidbusername = '';
+			my $remotenidbpassword = '';
+			my $remotenidbinstanceid = '';
+			my $remotenidbprojectid = '';
+			my $remotenidbsiteid = '';
+			WriteLog("remotenidbconnid [$remotenidbconnid]");
+			if (trim($remotenidbconnid) ne "") {
+				my $sqlstringB = "select * from remote_connections where remoteconn_id = $remotenidbconnid";
+				WriteLog("$sqlstringB");
+				my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
+				my %rowB = $resultB->fetchhash;
+				$remotenidbserver = $rowB{'remote_server'};
+				$remotenidbusername = $rowB{'remote_username'};
+				$remotenidbpassword = $rowB{'remote_password'};
+				$remotenidbinstanceid = $rowB{'remote_instanceid'};
+				$remotenidbprojectid = $rowB{'remote_projectid'};
+				$remotenidbsiteid = $rowB{'remote_siteid'};
+			}
 			
 			WriteLog("Working on export [$exportid] of type [$destinationtype]. Checking to see if is still submitted, pending processing");
 			my $sqlstringA = "select status from exports where export_id = $exportid";
@@ -223,6 +238,7 @@ sub ExportLocal() {
 				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 				my $seriesstatus = "complete";
+				my $statusmessage = "";
 				
 				my $subjectid = $s{$uid}{$studynum}{$seriesnum}{'subjectid'};
 				my $seriesid = $s{$uid}{$studynum}{$seriesnum}{'seriesid'};
@@ -297,6 +313,7 @@ sub ExportLocal() {
 					$exportstatus = "error";
 					WriteLog("ERROR unable to create rootoutdir [$rootoutdir]");
 					$log .= "Unable to create output directory [$rootoutdir]\n";
+					$statusmessage = "Unable to create rootoutdir [$rootoutdir]";
 				}
 				
 				my $outdir = "$rootoutdir/$newseriesnum";
@@ -357,6 +374,7 @@ sub ExportLocal() {
 								$exportstatus = "error";
 								WriteLog("ERROR [$indir] is empty");
 								$log .= "Directory [$indir] is empty\n";
+								$statusmessage = "Directory [$indir] is empty. Data missing from disk";
 							}
 						}
 						else {
@@ -364,6 +382,7 @@ sub ExportLocal() {
 							$exportstatus = "error";
 							WriteLog("ERROR indir [$indir] does not exist");
 							$log .= "Directory [$indir] does not exist\n";
+							$statusmessage = "Directory [$indir] does not exist. Data missing from disk";
 						}
 					}
 					else {
@@ -407,6 +426,7 @@ sub ExportLocal() {
 						$exportstatus = "error";
 						WriteLog("ERROR qcindir [$qcindir] does not exist");
 						$log .= "Directory [$qcindir] does not exist\n";
+						$statusmessage = "Directory [$qcindir] does not exist";
 					}
 				}
 				
@@ -425,7 +445,7 @@ sub ExportLocal() {
 					Anonymize($outdir,$anonymize,'Anonymous','Anonymous');
 				}
 				
-				$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+				$sqlstring = "update exportseries set status = '$seriesstatus', statusmessage = '$statusmessage' where exportseries_id = $exportseriesid";
 				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 				$log .= "Series [$uid$studynum-$seriesnum ($seriesdesc)] complete\n";
 				
@@ -830,6 +850,10 @@ sub ExportToRemoteNiDB() {
 		$log .= "Invalid transaction ID [$transactionID] received from [$remotenidbserver]";
 		return ("error", $log);
 	}
+	
+	# update the exports table with the transaction ID
+	my $sqlstring = "update exports set remotenidb_transactionid = $transactionID where export_id = $exportid";
+	my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 	
 	my $tmpexportdir = $cfg{'tmpdir'} . "/" . GenerateRandomString(20);
 

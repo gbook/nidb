@@ -52,10 +52,6 @@
 			DisplayMenu();
 			DisplayTransactions($useronly);
 			break;
-		case 'viewsingletransaction':
-			DisplayMenu();
-			DisplaySingleTransaction($transactionid);
-			break;
 		case 'viewuploadblocks':
 			DisplayMenu();
 			DisplayUploadBlocks($transactionid);
@@ -152,9 +148,7 @@
 			$institution = $row['institution_orig'];
 			$equipment = $row['stationname_orig'];
 			$modality = $row['modality_orig'];
-			//$studydatetime = date('M j g:ia',strtotime($row['studydatetime_orig']));
 			$studydatetime = $row['studydatetime'];
-			//$seriesdatetime = date('M j g:ia',strtotime($row['seriesdatetime_orig']));
 			$seriesdatetime = $row['seriesdatetime'];
 			$seriesnum = $row['seriesnumber_orig'];
 			$numfiles = $row['numfiles'];

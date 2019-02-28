@@ -243,29 +243,30 @@ window.onload = AreCookiesEnabled;
 	/* ------- AuthenticateUnixUser --------------- */
 	/* -------------------------------------------- */
 	function AuthenticateUnixUser($username, $password) {
-		/* attempt to authenticate a unix user */
-		$pwent = posix_getpwnam($username);
-		$password_hash = $pwent["passwd"];
-		//echo "User info for $username: {{$password_hash}}";
-		//print_r($pwent);
-		//if($pwent == false)
-		//	return false;
+		
+		if (($username != "root") && ($username != "")) {
 			
-		$autharray = explode(":",`ypmatch $username passwd`);
-		if ($autharray[0] != $username) {
-			return false;
+			/* attempt to authenticate a unix user */
+			$pwent = posix_getpwnam($username);
+			$password_hash = $pwent["passwd"];
+
+			if (trim(shell_exec("command -v ypmatch")) != "") {
+					
+				$autharray = explode(":",`ypmatch $username passwd`);
+				if ($autharray[0] != $username) {
+					return false;
+				}
+				
+				$cryptpw = crypt($password, $autharray[1]);
+				
+				if($cryptpw == $autharray[1])
+					return true;
+			}
 		}
-			
-		//echo "<pre>blahablah";
-		//print_r($autharray);
-		//echo "</pre>";
 		
-		$cryptpw = crypt($password, $autharray[1]);
-		
-		if($cryptpw == $autharray[1])
-			return true;
 		return false;
 	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- AuthenticateCASUser ---------------- */

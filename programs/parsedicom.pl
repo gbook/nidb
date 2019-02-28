@@ -249,11 +249,10 @@ sub ParseDirectory {
 					if (lc($file) =~ /\.par$/) {
 						WriteLog("Filetype is .par");
 						my ($ret,$report) = InsertParRec($file, $importRowID);
-						$archivereport .= $report;
+						$archivereport .= SanitizeMySQLString(trim($report));
 						if ($ret ne "") {
 							WriteLog("InsertParRec($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
-							$archivereport = SanitizeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', 'PARREC', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							WriteLog($sqlstring);
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
@@ -272,11 +271,10 @@ sub ParseDirectory {
 					elsif ((lc($file) =~ /\.cnt$/) || (lc($file) =~ /\.3dd$/) || (lc($file) =~ /\.dat$/) || (lc($file) =~ /\.edf$/) || (lc($importModality eq 'eeg')) || (lc($importDatatype eq 'eeg')) || (lc($importModality eq 'et')) || (lc($importDatatype eq 'et')) ) {
 						WriteLog("Filetype is one of [.cnt .3dd .dat .edf]");
 						my ($ret,$report) = InsertEEG($file, $importRowID, uc($importDatatype));
-						$archivereport .= $report;
+						$archivereport .= SanitizeMySQLString(trim($report));
 						if ($ret ne "") {
 							WriteLog("InsertEEG($file, $importRowID) failed: [$ret]");
 							$ret = EscapeMySQLString(trim($ret));
-							$archivereport = SanitizeMySQLString(trim($archivereport));
 							my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '" . uc($importDatatype) . "', '$importRowID', now(), '[$ret], moving to the problem directory')";
 							my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 							move("$dir/$file","$cfg{'problemdir'}/$file");
@@ -299,6 +297,7 @@ sub ParseDirectory {
 								my $sqlstring = "insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values ('$file', '$filetype', '$importRowID', now(), 'Corrupted DICOM or not valid DICOM file, moving to the problem directory')";
 								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 								move("$dir/$file","$cfg{'problemdir'}/$file");
+								$archivereport .= "Corrupted or invalid DICOM file, moving to the problem directory [$cfg{'problemdir'}/$file]\n";
 							}
 							else {
 								push @{ $dicomfiles{ trim($tags->{'InstitutionName'}) }{ trim($tags->{'StationName'}) }{ trim($tags->{'Modality'}) }{ trim($tags->{'PatientName'}) }{ trim($tags->{'PatientBirthDate'}) }{ trim($tags->{'PatientSex'}) }{ trim($tags->{'StudyDateTime'}) }{ trim($tags->{'SeriesNumber'}) }{ 'files' } } , $newfilename;
@@ -359,6 +358,7 @@ sub ParseDirectory {
 										# unique to the institution, equipment, modality, patient, DOB, sex, studydatetime, series...
 										# so send them forth
 										my ($ret,$report) = InsertDICOM($importRowID, @files);
+										$archivereport .= SanitizeMySQLString(trim($report));
 										if ($ret ne "") {
 											WriteLog("InsertDICOM($importRowID, ...) failed: [$ret]");
 										}
@@ -1204,7 +1204,7 @@ sub InsertDICOM {
 	$report .= WriteLog("Beginning renumbering of new files") . "\n";
 	# renumber the NEWLY added files to make them unique
 	# create a SQL string for batch insert
-	my $sqlstringA = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ";
+	my $sqlstringA = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientid_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ";
 	my @sqlinserts;
 	foreach my $file (sort @files) {
 		my $tags3 = $exifTool->ImageInfo($file);
@@ -1237,7 +1237,7 @@ sub InsertDICOM {
 		`$systemstring 2>&1`;
 		
 		# insert an import log record
-		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', $importID, $importRowID, $importSiteID, $importProjectID, $importPermanent, $importAnonymize, '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
+		push(@sqlinserts, "('$file', '$outdir/$newname', 'DICOM', now(), 'successful', $importID, $importRowID, $importSiteID, $importProjectID, $importPermanent, $importAnonymize, '$importUUID', '$IL_modality_orig', '$PatientID', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '$SliceNumber', '$InstanceNumber', '$SliceLocation', '".trim($tags3->{'AcquisitionTime'})."', '".trim($tags3->{'ContentTime'})."', '".trim($tags3->{'SOPInstanceUID'})."', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '".EscapeMySQLString($patientage)."', '$subjectRealUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')");
 	}
 	$report .= WriteLog("Done renaming files A") . "\n";
 	$sqlstringA .= join(',', @sqlinserts);

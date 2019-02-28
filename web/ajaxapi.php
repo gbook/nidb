@@ -25,11 +25,18 @@
 
 	$action = GetVariable("action");
 	$nfspath = GetVariable("nfspath");
+	$connectionid = GetVariable("connectionid");
+	$transactionid = GetVariable("transactionid");
+	$detail = GetVariable("detail");
+	$total = GetVariable("total");
 
 	/* determine action */
 	switch($action) {
 		case 'validatepath':
 			ValidatePath($nfspath);
+			break;
+		case 'remoteexportstatus':
+			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
 			break;
 	}
 	
@@ -80,5 +87,175 @@
 		if ($exists && $writeable) { $color = "green"; } else { $color = "red"; }
 		echo " <span style='color: $color'>$msg</span>";
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoteExportStatus ----------------- */
+	/* -------------------------------------------- */
+	function RemoteExportStatus($connectionid, $transactionid, $detail=0, $total) {
+		?><link rel="stylesheet" type="text/css" href="style.css"><?
+
+		if (($connectionid == "") || (!IsInteger($connectionid))) {
+			return;
+		}
+		if (($transactionid == "") || (!IsInteger($transactionid))) {
+			return;
+		}
+		
+		$sqlstring = "select * from remote_connections where remoteconn_id = $connectionid";
+		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$remotenidbserver = $row['remote_server'];
+		$remotenidbusername = $row['remote_username'];
+		$remotenidbpassword = $row['remote_password'];
+		$remoteinstanceid = $row['remote_instanceid'];
+		$remoteprojectid = $row['remote_projectid'];
+		$remotesiteid = $row['remote_siteid'];
+
+		if ($detail) {
+			$systemstring = "curl -gs -F 'action=getTransactionStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remoteinstanceid' -F 'projectid=$remoteprojectid' -F 'siteid=$remotesiteid' $remotenidbserver/api.php";
+			$report1 = json_decode(shell_exec($systemstring), true);
+
+			?>
+			<div align="center">Block receipt status</div>
+			<table class="graydisplaytable" width="100%">
+				<thead>
+					<th align="left">Block</th>
+					<th align="left">Start</th>
+					<th align="left">End</th>
+					<th align="left">Status</th>
+					<th align="left">Message</th>
+				</thead>
+			<?
+			foreach ($report1 as $block => $info) {
+				?>
+				<tr>
+					<td><?=$block?></td>
+					<td><?=$info['import_startdate']?></td>
+					<td><?=$info['import_enddate']?></td>
+					<td><?=$info['import_status']?></td>
+					<td><?=$info['import_message']?></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+			<?
+
+			$systemstring = "curl -gs -F 'action=getArchiveStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remoteinstanceid' -F 'projectid=$remoteprojectid' -F 'siteid=$remotesiteid' $remotenidbserver/api.php";
+			$report2 = json_decode(shell_exec($systemstring), true);
+			?>
+			<br>
+			<div align="center">Archiving status</div>
+			<table class="graydisplaytable" width="100%">
+				<thead>
+					<th align="left">Original ID</th>
+					<th align="left">New UID/Study</th>
+					<th align="left">Study datetime</th>
+					<th align="left">Modality</th>
+					<th align="left">Equipment</th>
+					<th align="left">Protocol</th>
+					<th align="left"># files</th>
+				</thead>
+			<?
+			foreach ($report2 as $block => $info) {
+				$status = $info['result'];
+				$patientid_orig = $info['patientid_orig'];
+				$studydatetime_orig = $info['studydatetime_orig'];
+				$modality_orig = $info['modality_orig'];
+				$stationname_orig = $info['stationname_orig'];
+				$seriesdesc_orig = $info['seriesdesc_orig'];
+				$subject_uid = $info['subject_uid'];
+				$study_num = $info['study_num'];
+				$numfiles = $info['numfiles'];
+				?>
+				<tr>
+					<td><?=$patientid_orig?></td>
+					<td><?="$subject_uid/$study_num"?></td>
+					<td><?=$studydatetime_orig?></td>
+					<td><?=$modality_orig?></td>
+					<td><?=$stationname_orig?></td>
+					<td><?=$seriesdesc_orig?></td>
+					<td><?=$numfiles?></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+			<?
+		}
+		else {
+			$systemstring = "curl -gs -F 'action=getTransactionStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remoteinstanceid' -F 'projectid=$remoteprojectid' -F 'siteid=$remotesiteid' $remotenidbserver/api.php";
+			$report = json_decode(shell_exec($systemstring), true);
+
+			/*
+			values returned from "getTransactionStatus"
+			
+				importrequest_id
+				import_transactionid
+				import_datatype
+				import_modality
+				import_datetime
+				import_status
+				import_message
+				import_startdate
+				import_enddate
+				import_equipment
+				import_siteid
+				import_projectid
+				import_instanceid
+				import_uuid
+				import_subjectid
+				import_anonymize
+				import_permanent
+				import_matchidonly
+				import_filename
+				import_seriesnotes
+				import_altuids
+				import_userid
+				import_fileisseries
+				numfilestotal
+				numfilessuccess
+				numfilesfail
+				numbehtotal
+				numbehsuccess
+				numbehfail
+				uploadreport
+				archivereport
+				project_name
+				site_name
+				instance_name
+			*/
+		
+			$numtotal = 0;
+			$numsuccess = 0;
+			$numfail = 0;
+			$numprocessing = 0;
+			$archivesuccess = 0;
+			$archiveerror = 0;
+			foreach ($report as $block => $info) {
+				$numtotal += $info['numfilestotal'];
+				$numsuccess += $info['numfilessuccess'];
+				$numfail += $info['numfilesfail'];
+				$numprocessing += $numtotal - $numsuccess - $numfail;
+				
+				if ($info['import_status'] == 'archived')
+					$archivesuccess++;
+				elseif ($info['import_status'] == 'error')
+					$archiveerror++;
+			}
+			$completecolor = "66AAFF";
+			$processingcolor = "AAAAFF";
+			$errorcolor = "FF6666";
+			$othercolor = "EFEFFF";
+
+			?>
+			<span style="font-size: 11pt">
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
+			<br>
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
+			</span>
+			<?
+		}
+	}
 ?>

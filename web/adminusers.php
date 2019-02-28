@@ -243,10 +243,10 @@
 		$id = mysqli_insert_id($GLOBALS['linki']);
 		
 		/* and then insert the new user_instance rows */
-		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, $instid, 0, 0)";
+		//foreach ($instanceid as $instid) {
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, " . $_SESSION['instanceid'] . ", 0, 0)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
+		//}
 		
 		/* don't assign any permissions to a new user by default, it must be done manually */
 
@@ -325,7 +325,7 @@
 		}
 		else {
 			$formaction = "add";
-			$formtitle = "Add new user";
+			$formtitle = "Add new user to this instance";
 			$submitbuttonlabel = "Add";
 		}
 		
@@ -345,7 +345,7 @@
 		</style>
 		<div align="center">
 		<table class="entrytable">
-			<form method="post" action="adminusers.php">
+			<form method="post" action="adminusers.php" autocomplete="off">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
@@ -368,11 +368,11 @@
 			<? if (($login_type == "Standard") || ($type == "add")) { ?>
 			<tr>
 				<td class="label">Password</td>
-				<td><input type="password" name="password" id="password"></td>
+				<td><input type="password" name="password" id="password" autocomplete="new-password"></td>
 			</tr>
 			<tr>
 				<td class="label">Re-enter Password</td>
-				<td><input type="password" name="password-check" id="password-check"></td>
+				<td><input type="password" name="password-check" id="password-check" autocomplete="new-password"></td>
 			</tr>
 			<? } ?>
 			<tr>
@@ -673,7 +673,7 @@
 			<? } ?>
 			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All other users</b></td></tr>
 			<?
-				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' order by username";
+				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' group by username order by username";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];

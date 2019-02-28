@@ -175,7 +175,7 @@
 				<th align="left">Username</th>
 				<th align="right">Number of series</th>
 				<th align="right">Size</th>
-				<th align="left">Progress</th>
+				<th align="left">Progress<img src="images/help.gif" title="Progress from data sent to a remote site may not be visible if your login information has changed on the remote server, or if the remote server has deleted its log files"></th>
 				<th align="left">Status</th>
 				<th align="left">Actions</th>
 				<th align="left">Download</th>
@@ -201,6 +201,8 @@
 			$username = $row['username'];
 			$destinationtype = $row['destinationtype'];
 			$exportstatus = $row['status'];
+			$connectionid = $row['remotenidb_connectionid'];
+			$transactionid = $row['remotenidb_transactionid'];
 			
 			$total = 0;
 			$totalbytes = 0;
@@ -232,26 +234,32 @@
 			}
 				
 			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
-
-			//if ($exportstatus == "error") {
-			//	$leftovers = $totals['complete'] = $totals['processing'] = 0;
-			//	$totals['error'] = $total;
-			//}
 				
+				if ($destinationtype == 'remotenidb') {
+					$completelabel = 'sent';
+				}
+				else {
+					$completelabel = 'complete';
+				}
 				?>
 				<tr>
-					<td><?=date("D M j, Y h:ia",strtotime($submitdate))?></td>
+					<td style="white-space: nowrap;"><?=date("D M j, Y h:ia",strtotime($submitdate))?></td>
 					<td><?=$destinationtype?></td>
 					<td><?=$username?></td>
 					<td align="right"><?=$numseries?></td>
 					<td align="right"><?=number_format($totalbytes)?></td>
-					<td>
-						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% complete <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+					<td style="white-space: nowrap; width: 20%">
+						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% <?=$completelabel?> <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
+						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
+						<? } ?>
 					</td>
 					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status"><?=ucfirst($exportstatus)?></a></td>
 					<td>
 						<? if ($exportstatus == "error") { ?>
 						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series">Retry</a>
+						<? } elseif ($exportstatus == "complete") { ?>
+						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series">Resend</a>
 						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
 						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series">Cancel</a>
 						<? } ?>
@@ -301,6 +309,9 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$log = $row['log'];
+		$destinationtype = $row['destinationtype'];
+		$connectionid = $row['remotenidb_connectionid'];
+		$transactionid = $row['remotenidb_transactionid'];
 		$status = ucfirst($row['status']);
 
 		if ($status == "Complete") { $color = "#229320"; }
@@ -312,7 +323,7 @@
 				<td valign="top" style="padding: 7px; color: white; background-color: <?=$color?>; width:200px; font-weight: bold"><?=$status?></td>
 				<td valign="top">
 					<details>
-					<summary>View Log</summary>
+					<summary>View Export Log</summary>
 					<tt><pre><?=$log?></pre></tt>
 					</details>
 				</td>
@@ -321,131 +332,83 @@
 		
 		<br><br>
 		
-		<table class="graydisplaytable" width="100%">
-			<thead>
-				<th align="left">Subject</th>
-				<th align="left">Study</th>
-				<th align="left">Series</th>
-				<th align="right">Size</th>
-				<th align="left">Status</th>
-				<th align="left">Message</th>
-			</thead>
-		<?
-		$sqlstring = "select * from exportseries where export_id = $exportid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$modality = strtolower($row['modality']);
-			$seriesid = $row['series_id'];
-			$status = $row['status'];
-			$statusmessage = $row['statusmessage'];
-			
-			$sqlstringB = "select a.*, b.*, d.project_name, e.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
-			$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-			$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-			$seriesdesc = $rowB['series_desc'];
-			if ($modality != "mr") {
-				$seriesdesc = $rowB['series_protocol'];
-			}
-			$uid = $rowB['uid'];
-			$seriesnum = $rowB['series_num'];
-			$studynum = $rowB['study_num'];
-			$seriessize = $rowB['series_size'];
-			$totalbytes += $rowB['series_size'];
-			
-			$total++;
-			switch ($status) {
-				case 'submitted': $totals['submitted']++; $bgcolor = "#fff"; $color="#444"; break;
-				case 'processing': $totals['processing']++; $bgcolor = "#526FAA"; $color="#fff"; break;
-				case 'complete': $totals['complete']++; $bgcolor = "#229320"; $color="#fff"; break;
-				case 'error': $totals['error']++; $bgcolor = "#8E3023"; $color="#fff"; break;
-			}
-			?>
+		<table width="100%" style="border: 2px solid #444;" cellpadding="0" cellspacing="0">
 			<tr>
-				<td><?=$uid?></td>
-				<td><?="$uid$studynum"?></td>
-				<td><?=$seriesnum?> - <?=$seriesdesc?></td>
-				<td align="right"><?=number_format($seriessize)?></td>
-				<td style="background-color: <?=$bgcolor?>; color: <?=$color?>"> <?=ucfirst($status)?></td>
-				<td><?=$statusmessage?></td>
+				<td style="background-color: #444; color: #fff; padding: 8px"><b>LOCAL NiDB</b> sending status</td>
 			</tr>
-			<?
-		}
-		?>
-		</table>
-		<?
-		return;
-		
-		
-		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numrows = mysqli_num_rows($result);
-
-		$sqlstring = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid, f.* from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id left join data_requests f on f.req_seriesid = a.$modality" . "series_id where f.req_groupid = $groupid order by req_groupid, uid, study_num, series_num";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	?>
-		<b>Showing <?=$numrows?> requests</b>
-		<br><br>
-		<table width="100%" cellspacing="0" cellpadding="2">
 			<tr>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">UID</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Study Date</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Destination type</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">FTP</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Study Num</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Format</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Status</td>
-				<td style="font-weight:bold; border-bottom: solid 2pt black">Complete date</td>
-			</tr>
-		<?
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$requestid = $row['request_id'];
-				$series_id = $row[$modality . 'series_id'];
-				$series_desc = $row['series_desc'];
-				$series_num = $row['series_num'];
-				$study_id = $row['study_id'];
-				$study_num = $row['study_num'];
-				$study_datetime = $row['study_datetime'];
-				$uid = $row['uid'];
-				$series_size = $row['series_size'];
-				$project_name = $row['project_name'];
-				$project_costcenter = $row['project_costcenter'];
-				$status = $row['req_status'];
-				$completedate = $row['req_completedate'];
-				$format = $row['req_filetype'];
-				$cpu = $row['req_cputime'];
-				$destinationtype = $row['req_destinationtype'];
-				
-				if ($status == "complete") { $color = "#009933"; }
-				if ($status == "processing") { $color = "#0000FF"; }
-				if ($status == "pending") { $color = "#0000FF"; }
-				if ($status == "problem") { $color = "#FF0000"; }
-				if ($status == "error") { $color = "#FF0000"; }
-				if ($status == "cancelled") { $color = "#FF0000"; }
-				
-				?>
-				<tr style="font-size:10pt">
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$uid?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><?=$study_datetime?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $destinationtype; ?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo "$remoteftpserver$destinationpath"; ?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><a href="studies.php?id=<? echo $study_id; ?>"><span style="color: darkblue; text-decoration:underline"><?=$uid?><?=$study_num?></span></a>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $format; ?>&nbsp;</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray">
-						<a href="requeststatus.php?action=viewdetails&requestid=<? echo $requestid; ?>"><span style="color:<? echo $color; ?>"><u><? echo $status; ?></u></span></a>&nbsp;
-						<?
-							if (in_array($status,array('processing','pending','problem','error','cancelled')) && $GLOBALS['isadmin']) {
-								?><a href="requeststatus.php?action=resetexport&groupid=<?=$groupid?>&requestid=<?=$requestid?>" style="color: red" title="Clear status">x</a><?
-							}
+				<td>
+					<table class="graydisplaytable" width="100%">
+						<thead>
+							<th align="left">Subject</th>
+							<th align="left">Study</th>
+							<th align="left">Series</th>
+							<th align="right">Size</th>
+							<th align="left">Status</th>
+							<th align="left">Message</th>
+						</thead>
+					<?
+					$sqlstring = "select * from exportseries where export_id = $exportid";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$modality = strtolower($row['modality']);
+						$seriesid = $row['series_id'];
+						$status = $row['status'];
+						$statusmessage = $row['statusmessage'];
+						
+						$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
+						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+						$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+						$seriesdesc = $rowB['series_desc'];
+						if ($modality != "mr") {
+							$seriesdesc = $rowB['series_protocol'];
+						}
+						$subjectid = $rowB['subject_id'];
+						$studyid = $rowB['study_id'];
+						$uid = $rowB['uid'];
+						$seriesnum = $rowB['series_num'];
+						$studynum = $rowB['study_num'];
+						$seriessize = $rowB['series_size'];
+						$totalbytes += $rowB['series_size'];
+						
+						$total++;
+						switch ($status) {
+							case 'submitted': $totals['submitted']++; $bgcolor = "#fff"; $color="#444"; break;
+							case 'processing': $totals['processing']++; $bgcolor = "#526FAA"; $color="#fff"; break;
+							case 'complete': $totals['complete']++; $bgcolor = "#229320"; $color="#fff"; break;
+							case 'error': $totals['error']++; $bgcolor = "#8E3023"; $color="#fff"; break;
+						}
 						?>
-					</td>
-					<td style="border-bottom: solid 1pt gray; border-right: solid 1pt lightgray"><? echo $completedate; ?>&nbsp;</td>
-				</tr>
-				<?
-			}
-		?>
+						<tr>
+							<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+							<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+							<td><?=$seriesnum?> - <?=$seriesdesc?></td>
+							<td align="right"><?=number_format($seriessize)?></td>
+							<td style="background-color: <?=$bgcolor?>; color: <?=$color?>"> <?=ucfirst($status)?></td>
+							<td><?=$statusmessage?></td>
+						</tr>
+						<?
+					}
+					?>
+					</table>
+				</td>
+			</tr>
 		</table>
-	<?
+
+		<? if ($destinationtype == 'remotenidb') { ?>
+		<br><br>
+		<table width="100%" style="border: 2px solid #444;" cellpadding="0" cellspacing="0">
+			<tr>
+				<td style="background-color: #444; color: #fff; padding: 8px"><b>REMOTE NiDB</b> archiving status</td>
+			</tr>
+			<tr>
+				<td>
+					<iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=1&total=<?=$total?>" width="100%" height="600px" style="border: 0px">No iframes available?</iframe>
+				</td>
+			</tr>
+		</table>
+		<? } ?>
+		<?
 	}
 	?>
 <? include("footer.php") ?>

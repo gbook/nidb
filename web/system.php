@@ -129,6 +129,10 @@
 			WriteConfig($c);
 			DisplayConfig();
 			break;
+		case 'testemail':
+			TestEmail();
+			DisplayConfig();
+			break;
 		case 'setsystemmessage':
 			SetSystemMessage($systemmessage);
 			DisplayConfig();
@@ -145,7 +149,7 @@
 	/* ------------------------------------ functions ------------------------------------ */
 
 	/* -------------------------------------------- */
-	/* ------- SetSystemMessage-------------------- */
+	/* ------- SetSystemMessage ------------------- */
 	/* -------------------------------------------- */
 	function SetSystemMessage($msg) {
 		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
@@ -156,13 +160,28 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DeleteSystemMessage----------------- */
+	/* ------- DeleteSystemMessage ---------------- */
 	/* -------------------------------------------- */
 	function DeleteSystemMessage($msgid) {
 		if (!isInteger($msgid)) { echo "Invalid message ID [$msgid]"; return; }
 		
 		$sqlstring = "update system_messages set message_status = 'deleted' where message_id = $msgid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestEmail -------------------------- */
+	/* -------------------------------------------- */
+	function TestEmail() {
+		$to = $GLOBALS['cfg']['adminemail'];
+		$subject = "Testing email send from " . $GLOBALS['cfg']['sitename'] . " (" . $GLOBALS['cfg']['siteurl'] . ")";
+		$body = "If you receive this message, your NiDB email is working";
+		
+		/* send the email */
+		if (!SendGmail($to,$subject,$body, 1, 0)) {
+			return "System error. Unable to send email!";
+		}
 	}
 	
 	
@@ -434,7 +453,8 @@
 				<td>Development database (default is <tt>nidb</tt>)</td>
 			</tr>
 			<tr>
-				<td colspan="4" class="heading"><br>Email</td>
+				<td class="heading"><br>Email</td>
+				<td colspan="3" valign="bottom" title="Send a test email to the admin email account"><br><a href="system.php?action=testemail">Send test email</a></td>
 			</tr>
 			<tr>
 				<td class="variable">emaillib</td>

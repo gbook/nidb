@@ -290,8 +290,10 @@
         $headers = $mime->headers($headers);
 
 		$smtp = Mail::factory('smtp', array(
-				'host' => "ssl://" . $GLOBALS['cfg']['emailserver'],
+				/*'host' => "ssl://" . $GLOBALS['cfg']['emailserver'],*/
+				'host' => $GLOBALS['cfg']['emailserver'],
 				'port' => 465,
+				'debug' => true,
 				'auth' => true,
 				'username' => $GLOBALS['cfg']['emailusername'],
 				'password' => $GLOBALS['cfg']['emailpassword']
@@ -299,12 +301,12 @@
 	
 		/* wrap the body in an HTML mime type and copywrite footer */
 		//$body = "MIME-Version: 1.0\nContent-Type: multipart/mixed; BOUNDARY=\"$boundry\"\n\n--$boundry\nContent-Type: text/html\n"
-		$body = "<html><body style=\"font-family: arial, helvetica, sans-serif\">" . $body . "<br><br><br><hr><small style='font-size:8pt; color: #666'>Email sent from " . $GLOBALS['cfg']['siteurl'] . ". If you received this email in error, please disregard it.<br><br>&copy; 2004-" . date("Y") . $GLOBALS['cfg']['sitename'] . ", powered by NiDB http://github.com/gbook/nidb</small></body></html>";
+		$body = "<html><body style=\"font-family: arial, helvetica, sans-serif\">" . $body . "<br><br><br><hr><small style='font-size:8pt; color: #666'>Email sent from " . $GLOBALS['cfg']['siteurl'] . ". If you received this email in error, please disregard it.<br><br>&copy; 2004-" . date("Y") . " " . $GLOBALS['cfg']['sitename'] . ", powered by NiDB http://github.com/gbook/nidb</small></body></html>";
 		$mail = $smtp->send($to, $headers, $body);
 
 		if ($debug) {
 			?>
-			<table>
+			<table border="1">
 				<tr>
 					<td>To</td>
 					<td><?=$to?></td>
@@ -1455,7 +1457,7 @@
 	/* -------------------------------------------- */
 	function MoveStudyToSubject($studyid, $newuid) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$newuid = mysqli_real_escape_string($GLOBALS['linki'], $newuid);
+		$newuid = trim(mysqli_real_escape_string($GLOBALS['linki'], $newuid));
 	
 		echo "<ol>";
 		echo "<li>Inside MoveStudyToSubject($studyid, $newuid)</li>";

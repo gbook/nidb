@@ -120,12 +120,12 @@
 	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
 	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
 	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
-	$requestvars['remotenidbserver'] = GetVariable("remotenidbserver");
-	$requestvars['remotenidbusername'] = GetVariable("remotenidbusername");
-	$requestvars['remotenidbpassword'] = GetVariable("remotenidbpassword");
-	$requestvars['remoteinstanceid'] = GetVariable("remoteinstanceid");
-	$requestvars['remotesiteid'] = GetVariable("remotesiteid");
-	$requestvars['remoteprojectid'] = GetVariable("remoteprojectid");
+	//$requestvars['remotenidbserver'] = GetVariable("remotenidbserver");
+	//$requestvars['remotenidbusername'] = GetVariable("remotenidbusername");
+	//$requestvars['remotenidbpassword'] = GetVariable("remotenidbpassword");
+	//$requestvars['remoteinstanceid'] = GetVariable("remoteinstanceid");
+	//$requestvars['remotesiteid'] = GetVariable("remotesiteid");
+	//$requestvars['remoteprojectid'] = GetVariable("remoteprojectid");
 	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
 	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
 	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
@@ -4677,12 +4677,12 @@
 		$remoteftpport = $r['remoteftpport'];
 		$remoteftppath = $r['remoteftppath'];
 		$remoteconnid = $r['remoteconnid'];
-		$remotenidbserver = $r['remotenidbserver'];
-		$remotenidbusername = $r['remotenidbusername'];
-		$remotenidbpassword = $r['remotenidbpassword'];
-		$remoteinstanceid = $r['remoteinstanceid'];
-		$remotesiteid = $r['remotesiteid'];
-		$remoteprojectid = $r['remoteprojectid'];
+		//$remotenidbserver = $r['remotenidbserver'];
+		//$remotenidbusername = $r['remotenidbusername'];
+		//$remotenidbpassword = $r['remotenidbpassword'];
+		//$remoteinstanceid = $r['remoteinstanceid'];
+		//$remotesiteid = $r['remotesiteid'];
+		//$remoteprojectid = $r['remoteprojectid'];
 		$publicdownloaddesc = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloaddesc']);
 		$publicdownloadreleasenotes = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadreleasenotes']);
 		$publicdownloadpassword = $r['publicdownloadpassword'];
@@ -4755,20 +4755,21 @@
 		if ($safe) {
 			$totalseriessize += $series_size;
 			
-			if (trim($remoteconnid) != "") {
-				$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
-				$resultC = MySQLiQuery($sqlstringC, __FILE__ , __LINE__);
-				$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-				$remotenidbserver = $rowC['remote_server'];
-				$remotenidbusername = $rowC['remote_username'];
-				$remotenidbpassword = $rowC['remote_password'];
-				$remoteinstanceid = (trim($rowC['remote_instanceid']) == '') ? 'null' : $rowC['remote_instanceid'];
-				$remoteprojectid = $rowC['remote_projectid'];
-				$remotesiteid = $rowC['remote_siteid'];
-			}
-			$remoteinstanceid = ($remoteinstanceid == '') ? 'null' : $remoteinstanceid;
-			$remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
-			$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
+			$remoteconnid = ($remoteconnid == '') ? 'null' : $remoteconnid;
+			//if (trim($remoteconnid) != "") {
+				//$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
+				//$resultC = MySQLiQuery($sqlstringC, __FILE__ , __LINE__);
+				//$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+				//$remotenidbserver = $rowC['remote_server'];
+				//$remotenidbusername = $rowC['remote_username'];
+				//$remotenidbpassword = $rowC['remote_password'];
+				//$remoteinstanceid = (trim($rowC['remote_instanceid']) == '') ? 'null' : $rowC['remote_instanceid'];
+				//$remoteprojectid = $rowC['remote_projectid'];
+				//$remotesiteid = $rowC['remote_siteid'];
+			//}
+			//$remoteinstanceid = ($remoteinstanceid == '') ? 'null' : $remoteinstanceid;
+			//$remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
+			//$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
 			$publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
 			$behonly = ($behonly == 1) ? 1 : 0;
 			//$downloadbeh = $behonly;
@@ -4785,7 +4786,7 @@
 			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
 		
-		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_username, remotenidb_password, remotenidb_server, remotenidb_instanceid, remotenidb_siteid, remotenidb_projectid, publicdownloadid, bidsreadme, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', '$remotenidbusername', '$remotenidbpassword', '$remotenidbserver', $remoteinstanceid , $remotesiteid, $remoteprojectid, $publicDownloadRowID, '$bidsreadme', now(), 'submitted')";
+		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
@@ -4799,144 +4800,7 @@
 		}
 		$numseries = count($seriesids);
 		
-		/* old */
-		// if ($destinationtype == 'export') {
-		
-			// if ($enrollmentids == "") {
-				// $seriesidlist = implode2(",", $seriesids);
-				// $sqlstrings[$modality] = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid from " . $modality . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where " . $modality . "series_id in ($seriesidlist) order by uid, study_num, series_num";
-			// }
-			// else {
-				// /* set all of the download options */
-				// $preserveseries = 1;
-				// $filetype = 'export';
-				
-				// /* if only seriesids have been selected, thats the only data that will be exported */
-				
-				// /* get enrollment IDs from the series IDs */
-				// $seriesidlist = implode2(",", $seriesids);
-				// $sqlstring = "select distinct(b.enrollment_id) from " . $modality . "_series a left join studies b on a.study_id = b.study_id where a.series_id in ($seriesidlist)";
-				// //PrintSQL($sqlstring);
-				
-				// $enrollmentidlist = implode2(",", $enrollmentids);
-				// /* get modality list from studies table */
-				// $sqlstring = "select distinct(study_modality) 'study_modality' from studies where enrollment_id in ($enrollmentidlist)";
-				// $result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
-				// $numseries = mysqli_num_rows($result);
-				// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					// $modalities[] = strtolower($row['study_modality']);
-				// }
-				
-				// /* loop through all modalities and do the following: */
-				// foreach ($modalities as $modality) {
-					// $sqlstrings[$modality] = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid from " . $modality . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where b.enrollment_id in ($enrollmentidlist) order by uid, study_num, series_num";
-				// }
-			// }
-		// }
-		// else {
-			// $seriesidlist = implode2(",", $seriesids);
-			// $sqlstrings[$modality] = "select a.*, b.*, d.project_name, d.project_costcenter, e.uid from " . $modality . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where " . $modality . "series_id in ($seriesidlist) order by uid, study_num, series_num";
-		// }
-		
-		// $numseries = 0;
-		// foreach ($sqlstrings as $modality => $sqlstring) {
-			// $result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
-			
-			// $numseries += mysqli_num_rows($result);
-			// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-
-				// $safe = true;
-				
-				// /* go through the list and populate the request table */
-				// $series_id = $row[$modality . 'series_id'];
-				// $series_num = $row['series_num'];
-				// $study_id = $row['study_id'];
-				// $study_num = $row['study_num'];
-				// $study_datetime = $row['study_datetime'];
-				// $uid = $row['uid'];
-				// $series_size = $row['series_size'];
-				// $project_name = $row['project_name'];
-				// $project_costcenter = $row['project_costcenter'];
-			
-				// if (($img_format == "dicom") && ($destinationtype == "remoteftp")) {
-					// $safe = false;
-				// }
-				
-				// $currentstudyid = $study_id;
-				
-				// if ($preserveseries) {
-					// $run = $series_num;
-				// }
-				// else {
-					// if ($laststudyid != $currentstudyid) {
-						// $run = 1;
-					// }
-					// else {
-						// $run++;
-					// }
-				// }
-				
-				// $remoteftpport = 21;
-				// $remoteftpsecure = 0;
-				
-				// $timepoint = $timepoints[$series_id];
-				// if (trim($timepoint) == '') { $timepoint = 'null'; }
-				// if ($safe) {
-					// $totalseriessize += $series_size;
-					
-					// if (trim($remoteconnid) != "") {
-						// $sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
-						// $resultC = MySQLiQuery($sqlstringC, __FILE__ , __LINE__);
-						// $rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-						// $remotenidbserver = $rowC['remote_server'];
-						// $remotenidbusername = $rowC['remote_username'];
-						// $remotenidbpassword = $rowC['remote_password'];
-						// $remoteinstanceid = (trim($rowC['remote_instanceid']) == '') ? 'null' : $rowC['remote_instanceid'];
-						// $remoteprojectid = $rowC['remote_projectid'];
-						// $remotesiteid = $rowC['remote_siteid'];
-					// }
-					// $remoteinstanceid = ($remoteinstanceid == '') ? 'null' : $remoteinstanceid;
-					// $remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
-					// $remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
-					// $publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
-					// $behonly = ($behonly == 1) ? 1 : 0;
-					
-					// $sqlstringA = "insert into data_requests (req_username, req_ip, req_groupid, req_modality, req_downloadimaging, req_downloadbeh, req_downloadqc, req_destinationtype, req_nfsdir, req_seriesid, req_filetype, req_gzip, req_anonymize, req_preserveseries, req_dirformat, req_timepoint, req_ftpusername, req_ftppassword, req_ftpserver, req_ftpport, req_ftppath, req_nidbserver, req_nidbusername, req_nidbpassword, req_nidbinstanceid, req_nidbsiteid, req_nidbprojectid, req_downloadid, req_behonly, req_behformat, req_behdirrootname, req_behdirseriesname, req_date) values ('$username', '$ip', $groupid, '$modality', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$nfsdir', $series_id, '$filetype', $gzip, $anonymize, $preserveseries, '$dirformat', $timepoint, '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remotenidbserver', '$remotenidbusername', '$remotenidbpassword', $remoteinstanceid , $remotesiteid, $remoteprojectid, $publicDownloadRowID, $behonly, '$behformat', '$behdirnameroot','$behdirnameseries', now())";
-					// $resultA = MySQLiQuery($sqlstringA, __FILE__ , __LINE__);
-					
-					// ?><!--
-						<tr>
-							<td><?=$uid?></td>
-							<td><?=$study_datetime?></td>
-							<td><?=$uid?><?=$study_num?></td>
-							<td><?=$series_num?></td>
-							<td><?=$newdir?>/<?=$run?></td>
-							<td><?=$filetype?></td>
-							<td align="right"><?=number_format($series_size)?></td>
-							<td><?=$nfsdir;?></td>
-						</tr>-->
-					<?
-				// }
-				// else {
-					// ?><!--
-						<tr style="background-color: lightyellow">
-							<td style="color: red"><? echo $studyscanid; ?></td>
-							<td style="color: red"><? echo $studyscannerid; ?></td>
-							<td style="color: red"><? echo $seriesnumber; ?></td>
-							<td colspan="4" align="center" style="color: red">Can not send DICOM data directly to a remote FTP site</td>
-						</tr>-->
-					<?
-				// }
-				// $laststudyid = $currentstudyid;
-			// }
-		// }
-		// ?><!--
-			<tr>
-				<td colspan="6" style="border-top: 1px solid #AAAAAA"><?=$numseries?> series</td>
-				<td colspan="3" style="border-top: 1px solid #AAAAAA"><?=number_format($totalseriessize)?> bytes</td>
-			</tr>
-		</table>
-		<br><br>-->
+		?>
 		<div style="text-align: center">
 		Your data export with <?=$numseries?> series has been submitted<br>
 		Check data transfer <a href="requeststatus.php">status</a>

@@ -100,6 +100,29 @@
 			$institution = $row['user_institution'];
 			$country = $row['user_country'];
 			$email = $row['user_email'];
+			
+			$nameparts = explode(" ", $fullname);
+			elseif (count($nameparts) == 1) {
+				$fname = $nameparts[0];
+			}
+			elseif (count($nameparts) == 2) {
+				$fname = $nameparts[0];
+				$lname = $nameparts[1];
+			}
+			elseif (count($nameparts) == 3) {
+				$fname = $nameparts[0];
+				$mname = $nameparts[1];
+				$lname = $nameparts[2];
+			}
+			elseif (count($nameparts) > 3) {
+				$fname = $nameparts[0];
+				$mname = $nameparts[1];
+				$lname = implode(" ", array_slice(2, count($nameparts)-1));
+			}
+			else {
+				$fname = "Name not";
+				$lname = "Specified";
+			}
 		}
 		else {
 			return 0;

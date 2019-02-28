@@ -74,6 +74,8 @@
 		case 'getEquipmentList': GetEquipmentList(); break;
 		case 'startTransaction': StartTransaction($u); break;
 		case 'endTransaction': EndTransaction($transactionid); break;
+		case 'getTransactionStatus': GetTransactionStatus($transactionid); break;
+		case 'getArchiveStatus': GetArchiveStatus($transactionid); break;
 		default: echo "Welcome to NiDB v" . $GLOBALS['cfg']['version'];
 	}
 	
@@ -83,25 +85,18 @@
 	function Authenticate($username, $password) {
 		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		
-		//if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
-		//	$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-		//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//	return true;
-		//}
-		//else {
-			//echo "Not a UNIX account, trying standard account";
-			if (AuthenticateStandardUser($username, $password)) {
-				$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				return true;
-			}
-			else {
-				$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'failure')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				return false;
-			}
-		//}
+
+		//echo "Not a UNIX account, trying standard account";
+		if (AuthenticateStandardUser($username, $password)) {
+			$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			return true;
+		}
+		else {
+			$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'failure')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			return false;
+		}
 	}
 
 
@@ -134,27 +129,27 @@
 	/* ------- AuthenticateUnixUser --------------- */
 	/* -------------------------------------------- */
 	function AuthenticateUnixUser($username, $password) {
-		/* attempt to authenticate a unix user */
-		$pwent = posix_getpwnam($username);
-		$password_hash = $pwent["passwd"];
-		//echo "User info for $username: {{$password_hash}}";
-		//print_r($pwent);
-		//if($pwent == false)
-		//	return false;
+		
+		if (($username != "root") && ($username != "")) {
 			
-		$autharray = explode(":",`ypmatch $username passwd`);
-		if ($autharray[0] != $username) {
-			return false;
+			/* attempt to authenticate a unix user */
+			$pwent = posix_getpwnam($username);
+			$password_hash = $pwent["passwd"];
+
+			if (trim(shell_exec("command -v ypmatch")) != "") {
+					
+				$autharray = explode(":",`ypmatch $username passwd`);
+				if ($autharray[0] != $username) {
+					return false;
+				}
+				
+				$cryptpw = crypt($password, $autharray[1]);
+				
+				if($cryptpw == $autharray[1])
+					return true;
+			}
 		}
-			
-		//echo "<pre>blahablah";
-		//print_r($autharray);
-		//echo "</pre>";
 		
-		$cryptpw = crypt($password, $autharray[1]);
-		
-		if($cryptpw == $autharray[1])
-			return true;
 		return false;
 	}
 
@@ -177,6 +172,48 @@
 		$sqlstring = "update import_transactions set transaction_enddate = now(), transaction_status = 'uploadcomplete' where importtrans_id = $tid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		echo "Ok";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetTransactionStatus --------------- */
+	/* -------------------------------------------- */
+	function GetTransactionStatus($transactionid) {
+		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
+		
+		$sqlstring = "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = $transactionid order by import_datetime desc";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$a[] = $row;
+		}
+
+		echo json_encode($a);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetArchiveStatus ------------------- */
+	/* -------------------------------------------- */
+	function GetArchiveStatus($transactionid) {
+		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
+
+		$sqlstring = "select * from import_requests where import_transactionid = $transactionid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$groupids[] = $row['importrequest_id'];
+		}
+		$grouplist = implode2(',',$groupids);
+		if ($grouplist == "") {
+			$grouplist = 'null';
+		}
+		
+		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in ($grouplist) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$a[] = $row;
+		}
+
+		echo json_encode($a);
 	}
 
 	

@@ -147,7 +147,7 @@
 				<td>
 					<select name="modality">
 					<?
-						$modalities = NIDB\GetModalityList();
+						$modalities = GetModalityList();
 						foreach ($modalities as $modality) {
 							?><option value="<?=$modality?>"><?=$modality?></option><?
 						}
