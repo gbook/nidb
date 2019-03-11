@@ -34,7 +34,7 @@
 	$fileviewtype = GetVariable("fileviewtype");
 
 ?>
-<body>
+<body style="padding: 10px">
 <div style="font-size:10pt">
 <?	
 	/* determine action */
@@ -67,6 +67,7 @@
 		$pipelineversion = $row['pipeline_version'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
+		$pipelinedirstructure = $row['pipeline_dirstructure'];
 
 		if (($pipelineid == "") || ($pipelineid == 0)) { echo "Invalid pipeline ID<Br>"; return; }
 		if (($pipelineversion == "") || ($pipelineversion == 0)) { echo "Invalid pipeline version<Br>"; return; }
@@ -92,11 +93,23 @@
 		
 		/* build the correct path */
 		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
-			$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			if ($pipelinedirstructure == "b") {
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+			}
+			else {
+				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			}
 			//echo "(1) Path is [$path]<br>";
 		}
 		elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
-			$path = $GLOBALS['cfg']['mountdir'] . "$pipelinedirectory/$uid/$studynum/$pipelinename/pipeline";
+			
+			if ($pipelinedirstructure == "b") {
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+			}
+			else {
+				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			}
+			
 			//echo "(2) Path is [$path]<br>";
 		}
 		else {
@@ -166,12 +179,18 @@
 		$pipelineid = $row['pipeline_id'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
+		$pipelinedirstructure = $row['pipeline_dirstructure'];
 		
 		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";
 		/* build the correct path */
 		//if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 		if ($pipeline_level == 1) {
-			$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+			if ($pipelinedirstructure == "b") {
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+			}
+			else {
+				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			}
 			echo "(1) Path is [$path]<br>";
 		}
 		//elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {

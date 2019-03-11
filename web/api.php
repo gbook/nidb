@@ -187,7 +187,7 @@
 			$a[] = $row;
 		}
 
-		echo json_encode($a);
+		echo json_encode($a, JSON_FORCE_OBJECT);
 	}
 
 
@@ -213,7 +213,7 @@
 			$a[] = $row;
 		}
 
-		echo json_encode($a);
+		echo json_encode($a, JSON_FORCE_OBJECT);
 	}
 
 	

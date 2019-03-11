@@ -898,6 +898,9 @@ sub ExportToRemoteNiDB() {
 				my $behdirempty = $s{$uid}{$studynum}{$seriesnum}{'behdirempty'};
 				my $qcdirempty = $s{$uid}{$studynum}{$seriesnum}{'qcdirempty'};
 
+				# remove any non-alphanumeric characters
+				$seriesnotes =~ s/[^a-zA-Z0-9 _-]//g;
+				
 				$log .= "uid [$uid] indir [$indir] datadirexists [$datadirexists]\n";
 				if ($datadirexists) {
 					if (!$datadirempty) {

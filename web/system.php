@@ -478,7 +478,7 @@
 				<td class="variable">emailserver</td>
 				<td><input type="text" name="emailserver" value="<?=$GLOBALS['cfg']['emailserver']?>" size="45"></td>
 				<td></td>
-				<td>Email server for sending email. For gmail, it should be <tt>smtp.gmail.com</tt></td>
+				<td>Email server for sending email. For gmail, it should be <tt>tls://smtp.gmail.com</tt></td>
 			</tr>
 			<tr>
 				<td class="variable">emailport</td>

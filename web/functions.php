@@ -293,7 +293,7 @@
 				/*'host' => "ssl://" . $GLOBALS['cfg']['emailserver'],*/
 				'host' => $GLOBALS['cfg']['emailserver'],
 				'port' => 465,
-				'debug' => true,
+				'debug' => false,
 				'auth' => true,
 				'username' => $GLOBALS['cfg']['emailusername'],
 				'password' => $GLOBALS['cfg']['emailpassword']

@@ -415,8 +415,6 @@
 
 		if ($sortorder == "asc") { $sortarrow = "&uarr;"; } else { $sortarrow = "&darr;"; }
 		
-		//if ($sortby == "") { $sortby = "studydate"; }
-		
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
 		
@@ -466,31 +464,6 @@
 					this.checked = checked_status;
 				});
 			});
-			/* $("a.viewlog").click(function(e) {
-				var id = jQuery(this).attr("id");
-				e.preventDefault();
-				$("#dialogbox").load("viewanalysis.php?action=viewlogs&analysisid=" + id).dialog({height:800, width:1200});
-			});
-			$("a.viewfiles").click(function(e) {
-				var id = jQuery(this).attr("id");
-				e.preventDefault();
-				$("#dialogbox").load("viewanalysis.php?action=viewfiles&analysisid=" + id).dialog({height:800, width:1200});
-			});
-			$("a.viewresults").click(function(e) {
-				var id = jQuery(this).attr("id");
-				e.preventDefault();
-				$("#dialogbox").load("viewanalysis.php?action=viewresults&analysisid=" + id + "&studyid=<?=$study_id?>").dialog({height:800, width:1200});
-			});
-			$("a.viewhistory").click(function(e) {
-				var id = jQuery(this).attr("id");
-				e.preventDefault();
-				$("#dialogbox").load("viewanalysis.php?action=viewhistory&analysisid=" + id + "&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>").dialog({height:800, width:1200});
-			});
-			$("a.viewgraph").click(function(e) {
-				var id = jQuery(this).attr("id");
-				e.preventDefault();
-				$("#dialogbox").load("viewanalysis.php?action=viewgraph&analysisid=" + id + "&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>").dialog({height:800, width:1200});
-			}); */
 		});
 		</script>
 
@@ -623,6 +596,7 @@
 					<th></th>
 					<th></th>
 					<th><input type="submit" name="btnSubmitFilter" value="Filter"></th>
+					<th></th>
 				</tr>
 			</thead>
 			</form>
