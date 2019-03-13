@@ -982,7 +982,7 @@
 		}
 		else {
 			if (trim($varname) != "") {
-				?><div class="error"><b>Error</b> - <?=$varname?> was not valid ID</div><?
+				?><div class="error"><b>Error</b> - ID [<?=$varname?>] was not valid</div><?
 			}
 			return 0;
 		}

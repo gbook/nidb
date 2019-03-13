@@ -91,26 +91,26 @@
 			break;
 		case 'update':
 			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'mergestudies':
 			MergeStudies($subjectid, $studyids);
 			break;
 		case 'movestudytosubject':
 			MoveStudyToSubject($studyid, $newuid);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'movestudytoproject':
 			MoveStudyToProject($subjectid, $studyid, $newprojectid);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'moveseriestonewstudy':
 			MoveSeriesToNewStudy($subjectid, $studyid, $seriesids);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'upload':
 			Upload($modality, $studyid, $seriesid);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($studyid);
@@ -120,7 +120,7 @@
 			break;
 		case 'deleteseries':
 			DeleteSeries($studyid, $seriesids, $modality);
-			DisplayStudy($studyid, 0, 0, '', '', '', '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'editseries':
 			if (strtoupper($modality) != "MR") {
@@ -139,29 +139,29 @@
 			elseif ($modality == "MR") {
 				AddMRSeries($studyid);
 			}
-			DisplayStudy($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
+			DisplayStudy($studyid);
 			break;
 		case 'rateseries':
 			AddRating($seriesid, $modality, $value, $username);
-			DisplayStudy($studyid, "", "", "", "", "", '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'hideseries':
 			HideSeries($modality, $seriesids);
-			DisplayStudy($studyid, "", "", "", "", "", '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'unhideseries':
 			UnhideSeries($modality, $seriesids);
-			DisplayStudy($studyid, "", "", "", "", "", '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'resetqa':
 			ResetQA($seriesids);
-			DisplayStudy($studyid, "", "", "", "", "", '','','','', false);
+			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
-			DisplayStudy($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, true);
+			DisplayStudy($studyid);
 			break;
 		default:
-			DisplayStudy($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
+			DisplayStudy($studyid);
 	}
 	
 	
@@ -172,6 +172,12 @@
 	/* ------- AddRating -------------------------- */
 	/* -------------------------------------------- */
 	function AddRating($seriesid, $modality, $value, $username) {
+		/* check for valid inputs */
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $value));
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $username));
+		if (!ValidID($seriesid,'Series ID')) { return; }
+
 		$sqlstring = "select user_id from users where username = '$username'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -221,6 +227,7 @@
 		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
+		if (!ValidID($seriesid,'Series ID')) { return; }
 
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -541,6 +548,8 @@
 	/* ------- DeleteConfirm ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteConfirm($studyid) {
+		if (!ValidID($studyid,'Study ID')) { return; }
+		
 		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -574,6 +583,8 @@
 	/* ------- Delete ----------------------------- */
 	/* -------------------------------------------- */
 	function Delete($studyid) {
+		if (!ValidID($studyid,'Study ID')) { return; }
+		
 		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -601,6 +612,10 @@
 	/* ------- MoveStudyToProject ----------------- */
 	/* -------------------------------------------- */
 	function MoveStudyToProject($subjectid, $studyid, $newprojectid) {
+		if (!ValidID($subjectid,'Subject ID')) { return; }
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($newprojectid,'New Project ID')) { return; }
+		
 		/* get the subject project id which has this subject and the new projectid */
 		$sqlstring = "select * from enrollment where project_id = $newprojectid and subject_id = $subjectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -618,7 +633,9 @@
 	/* ------- Upload ----------------------------- */
 	/* -------------------------------------------- */
 	function Upload($modality, $studyid, $seriesid) {
-		$modality = strtolower($modality);
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		if (!ValidID($seriesid,'Series ID')) { return; }
+		if (!ValidID($studyid,'Study ID')) { return; }
 		
 		$sqlstring = "select a.uid, c.study_num, d.series_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on c.enrollment_id = b.enrollment_id left join $modality" . "_series d on d.study_id = c.study_id where d.$modality" . "series_id = $seriesid";
 		//echo "[[$sqlstring]]";
@@ -660,7 +677,6 @@
 	/* -------------------------------------------- */
 	/* ------- GetDirectoySize -------------------- */
 	/* -------------------------------------------- */
-	/* functions must be at the end of the script, classes at the beginning, eh? */
 	function GetDirectorySize($dirname) {
 		// open the directory, if the script cannot open the directory then return folderSize = 0
 		$dir_handle = opendir($dirname);
@@ -692,9 +708,7 @@
 	/* ------- DisplayStudyForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudyForm($studyid) {
-		if ($studyid == "") {
-			?><div class="staticmessage">Invalid or blank study ID [<?=$studyid?>]</div><?
-		}
+		if (!ValidID($studyid,'Study ID')) { return; }
 
 		$sqlstring = "select a.*, c.uid, c.subject_id, d.project_id, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -859,14 +873,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStudy ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayStudy($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, $displayfiles) {
+	function DisplayStudy($studyid) {
 		
-		if ($studyid == "") {
-			?><div class="staticmessage">Invalid or blank study ID [<?=$studyid?>]</div><?
-		}
+		if (!ValidID($studyid,'Study ID')) { return; }
 	
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$studyid'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
@@ -1173,10 +1183,6 @@
 				DisplayGenericSeries($studyid, $study_modality);
 			}
 			?>
-			<!--<br><br><br><br><br><br>-->
-			<?
-				//DisplayAnalyses($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline);
-			?>
 			<br><br><br><br><br><br>
 			<?
 		}
@@ -1187,9 +1193,9 @@
 	/* ------- DisplayMRSeries -------------------- */
 	/* -------------------------------------------- */
 	function DisplayMRSeries($studyid, $study_num, $uid) {
-		if ($studyid == "") {
-			?><div class="staticmessage">Invalid or blank study ID [<?=$studyid?>]</div><?
-		}
+		$uid = mysqli_real_escape_string($GLOBALS['linki'], $uid);
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($study_num,'Studynum')) { return; }
 	
 		$colors = GenerateColorGradient();
 
@@ -1789,6 +1795,9 @@
 	/* ------- DisplayCTSeries -------------------- */
 	/* -------------------------------------------- */
 	function DisplayCTSeries($studyid, $study_num, $uid) {
+		$uid = mysqli_real_escape_string($GLOBALS['linki'], $uid);
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($study_num,'Studynum')) { return; }
 
 		/* get the subject information */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
@@ -1939,7 +1948,12 @@
 	/* ------- DeleteSeries ----------------------- */
 	/* -------------------------------------------- */
 	function DeleteSeries($studyid, $series_id, $modality) {
-		$modality = strtolower($modality);
+
+		/* check for valid inputs */
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if ($modality == "") { echo "Modality was blank<br>"; return; }
 		
 		if ($modality == "mr") {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, requestdate) values ('delete','series','$series_id', '$modality', now())";
@@ -2061,11 +2075,17 @@
 	/* ------- DisplayGenericSeries --------------- */
 	/* -------------------------------------------- */
 	function DisplayGenericSeries($id, $modality) {
+		
+		/* check for valid inputs */
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		if (!ValidID($id,'Series ID')) { return; }
 		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
 			return;
 		}
+		
 		?>
+		
 		<SCRIPT LANGUAGE="Javascript">
 		<!---
 			function decision(message, url){
@@ -2187,34 +2207,19 @@
 				<tr>
 					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>"></td>
 					<td>
-						<!-- <select name="protocol">
-						?
-							$sqlstring = "select * from modality_protocol where modality = '$modality'";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$protocol = $row['protocol'];
-								?>
-								<option value=" ?=$protocol?>">?=$protocol?></option>
-								?
-							}
+						<input type="text" name="protocol" list="protocols">
+						<datalist id="protocols">
+						<?
+								$sqlstring = "select * from modality_protocol where modality = '$modality'";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$protocol = $row['protocol'];
+										?>
+												<option value=" <?=$protocol?>"><?=$protocol?></option>
+										<?
+								}
 						?>
-						</select> -->
-
-                                                <input type="text" name="protocol" list="protocols">
-                                                <datalist id="protocols">
-                                                <?
-                                                        $sqlstring = "select * from modality_protocol where modality = '$modality'";
-                                                        $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                                                        while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-                                                                $protocol = $row['protocol'];
-                                                                ?>
-                                                                        <option value=" <?=$protocol?>"><?=$protocol?></option>
-                                                                <?
-                                                        }
-                                                ?>
-                                                </datalist>
-
-
+						</datalist>
 					</td>
 					<td><input type="text" name="series_datetime" value="<?=date('Y-m-d h:i:s a')?>"></td>
 					<td><input type="text" name="notes"></td>
@@ -2358,6 +2363,11 @@
 	/* ------- DisplayAnalyses -------------------- */
 	/* -------------------------------------------- */
 	function DisplayAnalyses($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline) {
+
+		/* check for valid inputs */
+		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($search_pipelineid,'Pipeline ID')) { return; }
 
 		if ($imgperline == "") { $imgperline = 4; }
 		

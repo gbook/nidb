@@ -29,11 +29,15 @@
 	$transactionid = GetVariable("transactionid");
 	$detail = GetVariable("detail");
 	$total = GetVariable("total");
+	$jobid = GetVariable("jobid");
 
 	/* determine action */
 	switch($action) {
 		case 'validatepath':
 			ValidatePath($nfspath);
+			break;
+		case 'sgejobstatus':
+			DisplaySGEJobStatus($jobid);
 			break;
 		case 'remoteexportstatus':
 			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
@@ -95,12 +99,8 @@
 	function RemoteExportStatus($connectionid, $transactionid, $detail=0, $total) {
 		?><link rel="stylesheet" type="text/css" href="style.css"><?
 
-		if (($connectionid == "") || (!IsInteger($connectionid))) {
-			return;
-		}
-		if (($transactionid == "") || (!IsInteger($transactionid))) {
-			return;
-		}
+		if (($connectionid == "") || (!IsInteger($connectionid))) { return; }
+		if (($transactionid == "") || (!IsInteger($transactionid))) { return; }
 		
 		$sqlstring = "select * from remote_connections where remoteconn_id = $connectionid";
 		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
@@ -188,45 +188,6 @@
 			$systemstring = "curl -gs -F 'action=getTransactionStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' $remotenidbserver/api.php";
 			$report = json_decode(shell_exec($systemstring), true);
 
-			/*
-			values returned from "getTransactionStatus"
-			
-				importrequest_id
-				import_transactionid
-				import_datatype
-				import_modality
-				import_datetime
-				import_status
-				import_message
-				import_startdate
-				import_enddate
-				import_equipment
-				import_siteid
-				import_projectid
-				import_instanceid
-				import_uuid
-				import_subjectid
-				import_anonymize
-				import_permanent
-				import_matchidonly
-				import_filename
-				import_seriesnotes
-				import_altuids
-				import_userid
-				import_fileisseries
-				numfilestotal
-				numfilessuccess
-				numfilesfail
-				numbehtotal
-				numbehsuccess
-				numbehfail
-				uploadreport
-				archivereport
-				project_name
-				site_name
-				instance_name
-			*/
-		
 			$numtotal = 0;
 			$numsuccess = 0;
 			$numfail = 0;
@@ -257,5 +218,21 @@
 			</span>
 			<?
 		}
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplaySGEJobStatus ---------------- */
+	/* -------------------------------------------- */
+	function DisplaySGEJobStatus($jobid) {
+		if (($jobid == "") || (!IsInteger($jobid))) { return; }
+		
+		?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
+		$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
+		$out = shell_exec($systemstring);
+		if (trim($out) == "") {
+			?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This most likely means the cluster job has failed and was not able to update the status on NiDB. Check log files for the error"><?
+		}
+		?></body><?
 	}
 ?>

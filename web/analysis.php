@@ -777,15 +777,9 @@
 					<td>
 						<?
 							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
-								$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
-								//print_r($systemstring);
-								$out = shell_exec($systemstring);
-								//print_r($out);
-								if (trim($out) == "") {
-									?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This means the analysis is being setup and the data is being copied or the cluster job failed. Check log files for error"><?
-								}
 								?>
-								<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>">processing</a>
+								<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
+								<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>
 								<?
 							}
 							else {
@@ -799,6 +793,9 @@
 											break;
 										case 'complete':
 											$tip = "Analysis is complete";
+											break;
+										case 'error':
+											$tip = "An unspecified error has occured";
 											break;
 									}
 									?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
@@ -1517,7 +1514,7 @@
 		
 		?>
 		<div align="center">
-			<table width="70%" border="0" cellspacing="0" cellpadding="0">
+			<table width="70%" cellspacing="0" cellpadding="0" style="border: 1px solid #444;">
 				<tr>
 					<td style="color: #fff; background-color: #444; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
 				</tr>
