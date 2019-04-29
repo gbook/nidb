@@ -52,7 +52,7 @@ int moduleFileIO::Run() {
 			}
 			else if (fileio_operation == "copy") {
 				    if (data_type == "analysis") {
-						//found = CopyAnalysis(data_id, n->cfg["mountdir"] + data_destination);
+						found = CopyAnalysis(data_id, n->cfg["mountdir"] + data_destination, msg);
 					}
 			    }
 			else if (fileio_operation == "delete") {
@@ -87,7 +87,7 @@ int moduleFileIO::Run() {
 				}
 			}
 			else {
-				/* wrong data_type, so set it to 'error' */
+				/* unknown fileio_operation, so set it to 'error' */
 				QSqlQuery q;
 				q.prepare("update fileio_requests set request_status = 'error' where fileiorequest_id = :id");
 				q.bindValue(":id", fileiorequest_id);
@@ -166,6 +166,34 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 /* --------- CreateLinks ------------------------------------ */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::CreateLinks(int analysisid, QString destination, QString &msg) {
+	n->WriteLog(QString("In CreateLinks(%1, %2)").arg(analysisid).arg(destination));
+
+	/* check if destination is somewhat valid */
+	if ((destination == "") || (destination == ".") || (destination == "..") || (destination == "/") || (destination.contains("//"))) {
+		msg = "Invalid destination [" + destination + "]";
+		return false;
+	}
+
+	analysis a(analysisid, n); /* get the analysis info */
+	if (!a.isValid) { msg = "analysis was not valid: [" + a.msg + "]"; return false; }
+
+	if (n->MakePath(destination, msg)) {
+		QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
+		n->WriteLog(n->SystemCommand(systemstring));
+		n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
+		return true;
+	}
+	else {
+		msg += "Unable to create destination directory";
+		return false;
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CopyAnalysis ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::CopyAnalysis(int analysisid, QString destination, QString &msg) {
 	n->WriteLog(QString("In CopyAnalysis(%1, %2)").arg(analysisid).arg(destination));
 
 	/* check if destination is somewhat valid */
@@ -177,23 +205,123 @@ bool moduleFileIO::CreateLinks(int analysisid, QString destination, QString &msg
 	analysis a(analysisid, n); /* get the analysis info */
 	if (!a.isValid) { msg = "analysis was not valid: [" + a.msg + "]"; return false; }
 
-	//$destination = "$destination/$uid$studynum";
-	QDir dest(destination);
-	if (dest.exists()) {
-		n->WriteLog(QString("Path [" + destination + "] exists"));
+	destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
+	if (n->MakePath(destination, msg)) {
+		QString systemstring = QString("cp -ruv %1 %2").arg(a.analysispath).arg(destination);
+		n->WriteLog(n->SystemCommand(systemstring));
+		n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
+		return true;
 	}
 	else {
-		if (dest.mkpath(destination)) {
-			n->WriteLog(QString("Destination path [" + destination + "] created"));
+		msg += "Unable to create destination directory";
+		return false;
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DeleteAnalysis --------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
+	n->WriteLog("In DeleteAnalysis()");
+
+	analysis a(analysisid, n); /* get the analysis info */
+	if (!a.isValid) { msg = "Analysis was not valid: [" + a.msg + "]"; return false; }
+
+	/* attempt to kill the SGE job, if its running */
+	if (a.jobid > 0) {
+		QString systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
+		n->WriteLog(n->SystemCommand(systemstring));
+	}
+	else {
+		n->WriteLog(QString("SGE job id [%1] is not valid. Not attempting to kill the job").arg(a.jobid));
+	}
+
+	n->WriteLog("Analysispath: [" + a.analysispath + "]");
+
+	bool okToDeleteDBEntries = false;
+	if (n->RemoveDir(a.analysispath, msg)) {
+		/* QDir.remove worked */
+		okToDeleteDBEntries = true;
+	}
+	else {
+		QString systemstring = QString("sudo rm -rf %1").arg(a.analysispath);
+		n->WriteLog(n->SystemCommand(systemstring));
+
+		QDir d(a.analysispath);
+		if (d.exists()) {
+			n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after sudo rm -rf");
+
+			QSqlQuery q;
+			q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
+			q.bindValue(":analysisid", analysisid);
+			n->SQLQuery(q, "DeleteAnalysis");
+
+			n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+			return false;
 		}
 		else {
-			n->WriteLog(QString("Destination path [" + destination + "] not created"));
+			okToDeleteDBEntries = true;
 		}
 	}
 
-	QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
-	n->WriteLog(n->SystemCommand(systemstring));
-	n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
+	if (okToDeleteDBEntries) {
+		/* remove the database entries */
+		QSqlQuery q;
+		q.prepare("delete from analysis_data where analysis_id = :analysisid");
+		q.bindValue(":analysisid", analysisid);
+		n->SQLQuery(q, "DeleteAnalysis");
+
+		q.prepare("delete from analysis_results where analysis_id = :analysisid");
+		q.bindValue(":analysisid", analysisid);
+		n->SQLQuery(q, "DeleteAnalysis");
+
+		q.prepare("delete from analysis_history where analysis_id = :analysisid");
+		q.bindValue(":analysisid", analysisid);
+		n->SQLQuery(q, "DeleteAnalysis");
+
+		q.prepare("delete from analysis_group where analysis_id = :analysisid");
+		q.bindValue(":analysisid", analysisid);
+		n->SQLQuery(q, "DeleteAnalysis");
+
+		q.prepare("delete from analysis where analysis_id = :analysisid");
+		q.bindValue(":analysisid", analysisid);
+		n->SQLQuery(q, "DeleteAnalysis");
+	}
 
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DeletePipeline --------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
+	n->WriteLog("In DeletePipeline()");
+
+	/* get list of analyses associated with this pipeline */
+	QSqlQuery q;
+	q.prepare("select analysis_id from analysis where pipeline_id = :pipelineid");
+	q.bindValue(":pipelineid", pipelineid);
+	n->SQLQuery(q, "DeletePipeline");
+
+	if (q.size() > 0) {
+		while (q.next()) {
+			QString msg;
+			int analysisid = q.value("anlaysis_id").toInt();
+			if (!DeleteAnalysis(analysisid, msg))
+				n->WriteLog(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(msg));
+		}
+	}
+	else {
+		msg = "No analyses to delete for this pipeline";
+		n->WriteLog("No analyses to delete for this pipeline");
+	}
+
+	/* delete the actual pipeline entry */
+	q.prepare("delete from pipelines where pipeline_id = :pipelineid");
+	q.bindValue(":pipelineid", pipelineid);
+	n->SQLQuery(q, "DeletePipeline");
+
+	return 1;
 }

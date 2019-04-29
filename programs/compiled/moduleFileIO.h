@@ -12,6 +12,9 @@ public:
 	bool RecheckSuccess(int analysisid, QString &msg);
 	bool CreateLinks(int analysisid, QString destination, QString &msg);
 	QString GetAnalyisRootPath(int analysisid, QString &msg);
+	bool CopyAnalysis(int analysisid, QString destination, QString &msg);
+	bool DeleteAnalysis(int analysisid, QString &msg);
+	bool DeletePipeline(int pipelineid, QString &msg);
 
 private:
 	nidb *n;

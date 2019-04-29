@@ -20,7 +20,10 @@ public:
 	QString pipelinename;
 	int pipelineversion;
 	int pipelineid;
+	int pipelinelevel;
+	QString pipelinedirectory;
 	QString pipelinedirstructure;
+	int jobid;
 	bool isValid = true;
 	QString msg;
 private:

@@ -396,3 +396,54 @@ QString nidb::WriteLog(QString msg) {
 QString nidb::GetBuildDate() {
 	return builtDate;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- MakePath --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::MakePath(QString p, QString &msg) {
+
+	if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p == "/root") || (p == "/home")) {
+		msg = "Path is not valid [" + p + "]";
+		return false;
+	}
+
+	QDir path(p);
+	if (path.exists()) {
+		msg = QString("Path [" + p + "] exists");
+	}
+	else {
+		if (path.mkpath(p)) {
+			msg = QString("Destination path [" + p + "] created");
+		}
+		else {
+			msg = QString("Destination path [" + p + "] not created");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RemoveDir -------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::RemoveDir(QString p, QString &msg) {
+
+	if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
+		msg = "Path is not valid [" + p + "]";
+		return false;
+	}
+
+	QDir path(p);
+	if (path.removeRecursively()) {
+		return true;
+	}
+	else {
+		msg = "Unable to delete directory";
+		return false;
+	}
+
+	return true;
+}

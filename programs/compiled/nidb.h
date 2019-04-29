@@ -39,6 +39,8 @@ public:
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
 	QString GetBuildDate();
+	bool MakePath(QString p, QString &msg);
+	bool RemoveDir(QString p, QString &msg);
 
 private:
     void FatalError(QString err);
