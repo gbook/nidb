@@ -22,42 +22,36 @@ bool nidb::LoadConfig() {
 
 	if (configLoaded) return 1;
 
-    QFile f;
+	/* list of possible locations for the config file */
+	QStringList files;
+	files << "nidb.cfg"
+	      << "../nidb.cfg"
+	      << "../../nidb.cfg"
+	      << "../../../nidb.cfg"
+	      << "../../prod/programs/nidb.cfg"
+	      << "../../../../prod/programs/nidb.cfg"
+	      << "../programs/nidb.cfg"
+	      << "/home/nidb/programs/nidb.cfg"
+	      << "/nidb/programs/nidb.cfg"
+	      << "M:/programs/nidb.cfg"
+	         ;
 
-    if (f.exists("nidb.cfg")) {
-        f.setFileName("nidb.cfg");
-    }
-    else if (f.exists("../nidb.cfg")) {
-        f.setFileName("../nidb.cfg");
-    }
-    else if (f.exists("../../nidb.cfg")) {
-        f.setFileName("../../nidb.cfg");
-    }
-    else if (f.exists("../../../nidb.cfg")) {
-        f.setFileName("../../../nidb.cfg");
-    }
-    else if (f.exists("../../prod/programs/nidb.cfg")) {
-        f.setFileName("../../prod/programs/nidb.cfg");
-    }
-    else if (f.exists("../../../../prod/programs/nidb.cfg")) {
-        f.setFileName("../../../../prod/programs/nidb.cfg");
-    }
-    else if (f.exists("../programs/nidb.cfg")) {
-        f.setFileName("../programs/nidb.cfg");
-    }
-    else if (f.exists("/home/nidb/programs/nidb.cfg")) {
-        f.setFileName("/home/nidb/programs/nidb.cfg");
-    }
-    else if (f.exists("/nidb/programs/nidb.cfg")) {
-        f.setFileName("/nidb/programs/nidb.cfg");
-    }
-    else if (f.exists("M:/programs/nidb.cfg")) {
-        f.setFileName("M:/programs/nidb.cfg");
-    }
-    else {
+	QFile f;
+	bool found = false;
+	for (int i=0;i<files.size();i++) {
+		QFileInfo finfo(files[i]);
+		QString abspath = finfo.absoluteFilePath();
+		if (f.exists(abspath)) {
+			f.setFileName(abspath);
+			found = true;
+		}
+	}
+
+	if (!found) {
         qDebug() << "Config file not found";
         return false;
     }
+
     qDebug() << "Using config file [" << f.fileName() << "]";
 
     /* open and read the config file */
@@ -159,7 +153,6 @@ bool nidb::CreateLockFile() {
     pid = QCoreApplication::applicationPid();
     
 	lockFilepath = QString("%1/%2.%3").arg(cfg["lockdir"]).arg(module).arg(pid);
-	qDebug() << "Creating [" << lockFilepath << "]";
 	QFile f(lockFilepath);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QString d = CreateCurrentDate();
@@ -169,7 +162,8 @@ bool nidb::CreateLockFile() {
         return 1;
     }
     else {
-        return 0;
+		qDebug() << "Unable to create lock file [" << lockFilepath << "]";
+		return 0;
     }
 }
 
@@ -179,7 +173,6 @@ bool nidb::CreateLockFile() {
 /* ---------------------------------------------------------- */
 bool nidb::CreateLogFile () {
 	logFilepath = QString("%1/%2.log").arg(cfg["logdir"]).arg(module);
-	qDebug() << "Creating [" << logFilepath << "]";
 	QFile f(logFilepath);
 	if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		QString d = CreateCurrentDate() + " - Created log file for module";
@@ -189,6 +182,7 @@ bool nidb::CreateLogFile () {
 		return 1;
 	}
 	else {
+		qDebug() << "Unable to create log file [" << logFilepath << "]";
 		return 0;
 	}
 }
@@ -202,7 +196,7 @@ void nidb::DeleteLockFile() {
 	if (f.remove())
 		qDebug() << "Deleted lock file [" << lockFilepath << "]";
 	else
-		qDebug() << "Unable to delete lock file";
+		qDebug() << "Unable to delete lock file [" << lockFilepath << "]";
 }
 
 
@@ -215,7 +209,7 @@ void nidb::RemoveLogFile(bool keepLog) {
 		if (f.remove())
 			qDebug() << "Deleted log file [" << logFilepath << "]";
 		else
-			qDebug() << "Unable to delete log file";
+			qDebug() << "Unable to delete log file [" << logFilepath << "]";
 	}
 }
 

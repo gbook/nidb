@@ -56,8 +56,8 @@ int moduleFileIO::Run() {
 					}
 			    }
 			else if (fileio_operation == "delete") {
-				//if (data_type == "pipeline") { found = DeletePipeline(data_id); }
-				//else if (data_type == "analysis") { found = DeleteAnalysis(data_id); }
+				if (data_type == "pipeline") { found = DeletePipeline(data_id, msg); }
+				else if (data_type == "analysis") { found = DeleteAnalysis(data_id, msg); }
 				//else if (data_type == "groupanalysis") { found = DeleteGroupAnalysis(data_id); }
 				//else if (data_type == "subject") { found = DeleteSubject(data_id); }
 				//else if (data_type == "study") { found = DeleteStudy(data_id); }
