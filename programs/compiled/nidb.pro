@@ -21,6 +21,7 @@ SOURCES += \
         main.cpp \
     moduleExport.cpp \
     moduleFileIO.cpp \
+    moduleManager.cpp \
     nidb.cpp
 
 # Default rules for deployment.
@@ -32,4 +33,5 @@ HEADERS += \
     analysis.h \
     moduleExport.h \
     moduleFileIO.h \
+    moduleManager.h \
     nidb.h

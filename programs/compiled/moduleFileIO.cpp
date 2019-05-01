@@ -2,11 +2,18 @@
 #include <QDebug>
 #include <QSqlQuery>
 
+/* ---------------------------------------------------------- */
+/* --------- moduleFileIO ----------------------------------- */
+/* ---------------------------------------------------------- */
 moduleFileIO::moduleFileIO(nidb *a)
 {
 	n = a;
 }
 
+
+/* ---------------------------------------------------------- */
+/* --------- ~moduleFileIO ---------------------------------- */
+/* ---------------------------------------------------------- */
 moduleFileIO::~moduleFileIO()
 {
 
@@ -25,6 +32,7 @@ int moduleFileIO::Run() {
 	n->SQLQuery(q, "Run");
 
 	if (q.size() > 0) {
+		int i = 0;
 		while (q.next()) {
 			int fileiorequest_id = q.value("fileiorequest_id").toInt();
 			QString fileio_operation = q.value("fileio_operation").toString();
@@ -33,10 +41,11 @@ int moduleFileIO::Run() {
 			QString modality = q.value("modality").toString();
 			QString data_destination = q.value("data_destination").toString();
 			QString dicomtags = q.value("anonymize_fields").toString();
+			i++;
 
 			n->ModuleRunningCheckIn();
 
-			n->WriteLog(QString("Performing the following fileio operation [%1] on the datatype [%2]").arg(fileio_operation).arg(data_type));
+			n->WriteLog(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()-1).arg(fileio_operation).arg(data_type));
 			bool found = false;
 			QString msg;
 
@@ -104,7 +113,7 @@ int moduleFileIO::Run() {
 			else {
 				/* some error occurred, so set it to 'error' */
 				QSqlQuery q;
-				q.prepare("update fileio_requests set request_status = 'complete', request_message = ':msg' where fileiorequest_id = :id");
+				q.prepare("update fileio_requests set request_status = 'error', request_message = ':msg' where fileiorequest_id = :id");
 				q.bindValue(":msg", msg);
 				q.bindValue(":id", fileiorequest_id);
 				n->SQLQuery(q, "Run");
@@ -231,7 +240,7 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	/* attempt to kill the SGE job, if its running */
 	if (a.jobid > 0) {
 		QString systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
-		n->WriteLog(n->SystemCommand(systemstring));
+		n->WriteLog(n->SystemCommand(systemstring, true));
 	}
 	else {
 		n->WriteLog(QString("SGE job id [%1] is not valid. Not attempting to kill the job").arg(a.jobid));
@@ -240,29 +249,37 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	n->WriteLog("Analysispath: [" + a.analysispath + "]");
 
 	bool okToDeleteDBEntries = false;
-	if (n->RemoveDir(a.analysispath, msg)) {
-		/* QDir.remove worked */
-		okToDeleteDBEntries = true;
-	}
-	else {
-		QString systemstring = QString("sudo rm -rf %1").arg(a.analysispath);
-		n->WriteLog(n->SystemCommand(systemstring));
-
-		QDir d(a.analysispath);
-		if (d.exists()) {
-			n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after sudo rm -rf");
-
-			QSqlQuery q;
-			q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
-			q.bindValue(":analysisid", analysisid);
-			n->SQLQuery(q, "DeleteAnalysis");
-
-			n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
-			return false;
-		}
-		else {
+	if (QDir(a.analysispath).exists()) {
+		if (n->RemoveDir(a.analysispath, msg)) {
+			/* QDir.remove worked */
+			n->WriteLog("Analysispath removed");
 			okToDeleteDBEntries = true;
 		}
+		else {
+			QString systemstring = QString("sudo rm -rf %1").arg(a.analysispath);
+			n->WriteLog("Running " + systemstring);
+			n->WriteLog(n->SystemCommand(systemstring));
+
+			QDir d(a.analysispath);
+			if (d.exists()) {
+				n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after sudo rm -rf");
+
+				QSqlQuery q;
+				q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
+				q.bindValue(":analysisid", analysisid);
+				n->SQLQuery(q, "DeleteAnalysis");
+
+				n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+				return false;
+			}
+			else {
+				okToDeleteDBEntries = true;
+			}
+		}
+	}
+	else {
+		n->WriteLog("Path [" + a.analysispath + "] did not exist. Did not attempt to delete");
+		okToDeleteDBEntries = true;
 	}
 
 	if (okToDeleteDBEntries) {
@@ -277,10 +294,6 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 		n->SQLQuery(q, "DeleteAnalysis");
 
 		q.prepare("delete from analysis_history where analysis_id = :analysisid");
-		q.bindValue(":analysisid", analysisid);
-		n->SQLQuery(q, "DeleteAnalysis");
-
-		q.prepare("delete from analysis_group where analysis_id = :analysisid");
 		q.bindValue(":analysisid", analysisid);
 		n->SQLQuery(q, "DeleteAnalysis");
 

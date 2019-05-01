@@ -3,15 +3,25 @@
 #include "nidb.h"
 #include "moduleFileIO.h"
 #include "moduleExport.h"
+#include "moduleManager.h"
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+	//QCoreApplication a(argc, argv);
 
     QString module = argv[1];
+	bool keepLog = false;
+	if (argc == 3)
+		if (strcmp(argv[2], "debug"))
+			keepLog = true;
+
+	if (module.trimmed() == "") {
+		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules: export fileio mriqa modulemanager import pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
+		return 0;
+	}
 
 	qDebug() << "Initializating Neuroinformatics Database (NiDB) backend, with module [" << module << "]";
-
 	nidb *n = new nidb(module);
 
 	n->DatabaseConnect();
@@ -23,10 +33,11 @@ int main(int argc, char *argv[])
 			/* check if this module should be running now or not */
 			if (n->ModuleCheckIfActive()) {
 
+				n->CreateLogFile();
+
 				/* let the database know this module is running */
 				n->ModuleDBCheckIn();
 
-				bool keepLog = false;
 				/* run the module */
 				if (module == "fileio") {
 					moduleFileIO *m = new moduleFileIO(n);
@@ -35,6 +46,11 @@ int main(int argc, char *argv[])
 				}
 				else if (module == "export") {
 					moduleExport *m = new moduleExport(n);
+					keepLog = m->Run();
+					delete m;
+				}
+				else if (module == "modulemanager") {
+					moduleManager *m = new moduleManager(n);
 					keepLog = m->Run();
 					delete m;
 				}
@@ -63,7 +79,7 @@ int main(int argc, char *argv[])
 
     qDebug() << "Terminating NiDB with the [" << module << "] module";
 
-	exit(0);
+	return 0;
 
 	//return a.exec();
 }

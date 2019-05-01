@@ -38,6 +38,7 @@ public:
 	int SQLQuery(QSqlQuery &q, QString function, bool d=false);
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
+	//QString runCommand(const QString& cmd);
 	QString GetBuildDate();
 	bool MakePath(QString p, QString &msg);
 	bool RemoveDir(QString p, QString &msg);

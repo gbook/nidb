@@ -67,6 +67,7 @@ bool nidb::LoadConfig() {
                 var.remove('[').remove(']');
                 if (var != "") {
                     cfg[var] = value;
+					//qDebug() << var << ": " << value;
                 }
             }
         }
@@ -85,8 +86,6 @@ bool nidb::LoadConfig() {
 /* --------- DatabaseConnect -------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::DatabaseConnect() {
-
-    cfg["mysqlhost"] = "10.35.10.65";
 
     db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(cfg["mysqlhost"]);
@@ -126,8 +125,7 @@ int nidb::CheckNumLockFiles() {
     QDir dir;
 	dir.setPath(cfg["lockdir"]);
 
-	QString lockfileprefix = module;
-    lockfileprefix += ".*";
+	QString lockfileprefix = QString("%1.*").arg(module);
     QStringList filters;
     filters << lockfileprefix;
 
@@ -172,13 +170,14 @@ bool nidb::CreateLockFile() {
 /* --------- CreateLogFile ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::CreateLogFile () {
-	logFilepath = QString("%1/%2.log").arg(cfg["logdir"]).arg(module);
-	QFile f(logFilepath);
-	if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		QString d = CreateCurrentDate() + " - Created log file for module";
-		QTextStream fs(&f);
-		fs << d;
-		f.close();
+	logFilepath = QString("%1/%2%3.log").arg(cfg["logdir"]).arg(module).arg(CreateLogDate());
+	log.setFileName(logFilepath);
+
+	if (log.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		//QString d = "[" + CreateCurrentDate() + "] - Created log file for module";
+		//QTextStream fs(&log);
+		//fs << d;
+		WriteLog(QString("Starting the " + module + " module"));
 		return 1;
 	}
 	else {
@@ -221,7 +220,7 @@ QString nidb::CreateCurrentDate() {
     QString date;
 
     QDateTime d = QDateTime::currentDateTime();
-    date = d.toString("YYYY/MM/dd HH:mm:ss");
+	date = d.toString("yyyy/MM/dd HH:mm:ss");
 
     return date;
 }
@@ -234,7 +233,7 @@ QString nidb::CreateLogDate() {
 	QString date;
 
 	QDateTime d = QDateTime::currentDateTime();
-	date = d.toString("YYYYMMddHHmmss");
+	date = d.toString("yyyyMMddHHmmss");
 
 	return date;
 }
@@ -252,6 +251,7 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
 	if (cfg["debug"].toInt() || d) qDebug() << "Running SQL statement[" << sql <<"]";
 
     if (q.exec()) {
+		q.first();
         return q.size();
     }
     else {
@@ -296,7 +296,7 @@ void nidb::ModuleDBCheckIn() {
 /* ---------------------------------------------------------- */
 void nidb::ModuleDBCheckOut() {
 	QSqlQuery q;
-	q.prepare("update modules set module_laststart = now(), module_status = 'stopped', module_numrunning = module_numrunning + 1 where module_name = :module");
+	q.prepare("update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = :module");
 	q.bindValue(":module", module);
 	SQLQuery(q, "ModuleDBCheckOut");
 
@@ -346,23 +346,48 @@ void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversi
 /* ---------------------------------------------------------- */
 /* --------- SystemCommand ---------------------------------- */
 /* ---------------------------------------------------------- */
+/* this function does not work in Windows                     */
+/* ---------------------------------------------------------- */
 QString nidb::SystemCommand(QString s, bool detail) {
-	QProcess process;
-	process.start(/* command line stuff */);
-	process.waitForFinished(-1); // will wait forever until finished
-
 	QString ret;
-	QString stdOut = process.readAllStandardOutput();
-	QString stdErr = process.readAllStandardError();
+	QString output;
+	QProcess process;
+	process.setProcessChannelMode(QProcess::MergedChannels);
+	process.start(s);
+
+	/* Get the output */
+	if (process.waitForStarted(-1)) {
+		while(process.waitForReadyRead(-1)) {
+			output += process.readAll();
+		}
+	}
+	process.waitForFinished();
 
 	if (detail)
-		ret = QString("Command [%1] stdout [%2] stderr [%3]").arg(s).arg(stdOut).arg(stdErr);
+		ret = QString("Command [%1] outout [%2]").arg(s).arg(output);
 	else
-		ret = stdOut + stdErr;
+		ret = output;
 
 	return ret;
 }
 
+
+/*
+QString nidb::runCommand(const QString& cmd){
+	QString result;
+	QEventLoop looper;
+	QProcess *p = new QProcess(&looper);
+	p->setProcessChannelMode(QProcess::MergedChannels);
+	QObject::connect(p,static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),&looper,&QEventLoop::quit);
+	//QObject::connect(p,&QProcess::errorOccurred,[&result]()->void{ qDebug() << "Error in Process (command not found?)" << result; });
+	QObject::connect(p,&QProcess::errorOccurred,&looper,&QEventLoop::quit);
+	//QObject::connect(p,&QProcess::started,[p,&input]()->void{p->write((input +'\n').toLatin1());});
+	QObject::connect(p,&QProcess::readyReadStandardOutput,[p,&result]()->void{result+=p->readAllStandardOutput();});
+	//const QString c = QString("sh -c \" cd /home/dev; ./script\" ");
+	p->start(cmd);
+	looper.exec();
+	return result.trimmed();
+} */
 
 /* ---------------------------------------------------------- */
 /* --------- WriteLog --------------------------------------- */
@@ -376,7 +401,8 @@ QString nidb::WriteLog(QString msg) {
 	}
 	else {
 		if (msg.trimmed() != "") {
-			log.write(QString("[%1][%2] %3").arg(CreateCurrentDate()).arg(pid).arg(msg).toLatin1());
+			if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDate()).arg(pid).arg(msg).toLatin1()))
+				qDebug() << "Unable to write to log file!";
 		}
 	}
 
