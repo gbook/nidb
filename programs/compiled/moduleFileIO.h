@@ -2,6 +2,9 @@
 #define MODULEFILEIO_H
 #include "nidb.h"
 #include "analysis.h"
+#include "subject.h"
+#include "study.h"
+#include "series.h"
 
 class moduleFileIO
 {
@@ -15,6 +18,9 @@ public:
 	bool CopyAnalysis(int analysisid, QString destination, QString &msg);
 	bool DeleteAnalysis(int analysisid, QString &msg);
 	bool DeletePipeline(int pipelineid, QString &msg);
+	bool DeleteSubject(int subjectid, QString &msg);
+	bool DeleteStudy(int subjectid, QString &msg);
+	bool DeleteSeries(int seriesid, QString modality, QString &msg);
 
 private:
 	nidb *n;

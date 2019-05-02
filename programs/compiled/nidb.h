@@ -42,6 +42,7 @@ public:
 	QString GetBuildDate();
 	bool MakePath(QString p, QString &msg);
 	bool RemoveDir(QString p, QString &msg);
+	QString GenerateRandomString(int n);
 
 private:
     void FatalError(QString err);

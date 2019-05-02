@@ -9,7 +9,7 @@ nidb::nidb(QString m)
 {
 	module = m;
 
-	qDebug() << "Build date: " << builtDate;
+	qDebug() << "Build date: " << builtDate << " C++ version " << __cplusplus;
 
 	LoadConfig();
 }
@@ -466,4 +466,23 @@ bool nidb::RemoveDir(QString p, QString &msg) {
 	}
 
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GenerateRandomString --------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::GenerateRandomString(int n) {
+
+   const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+   qsrand(QTime::currentTime().msec());
+
+   QString randomString;
+   for(int i=0; i<n; ++i)
+   {
+	   int index = qrand() % possibleCharacters.length();
+	   QChar nextChar = possibleCharacters.at(index);
+	   randomString.append(nextChar);
+   }
+   return randomString;
 }

@@ -68,9 +68,9 @@ int moduleFileIO::Run() {
 				if (data_type == "pipeline") { found = DeletePipeline(data_id, msg); }
 				else if (data_type == "analysis") { found = DeleteAnalysis(data_id, msg); }
 				//else if (data_type == "groupanalysis") { found = DeleteGroupAnalysis(data_id); }
-				//else if (data_type == "subject") { found = DeleteSubject(data_id); }
-				//else if (data_type == "study") { found = DeleteStudy(data_id); }
-				//else if (data_type == "series") { found = DeleteSeries(data_id, modality); }
+				else if (data_type == "subject") { found = DeleteSubject(data_id, msg); }
+				else if (data_type == "study") { found = DeleteStudy(data_id, msg); }
+				else if (data_type == "series") { found = DeleteSeries(data_id, modality, msg); }
 			}
 			else if (fileio_operation == "detach") {
 			}
@@ -100,7 +100,7 @@ int moduleFileIO::Run() {
 				QSqlQuery q;
 				q.prepare("update fileio_requests set request_status = 'error' where fileiorequest_id = :id");
 				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run");
+				n->SQLQuery(q, "Run", true);
 			}
 
 			if (found) {
@@ -108,15 +108,15 @@ int moduleFileIO::Run() {
 				QSqlQuery q;
 				q.prepare("update fileio_requests set request_status = 'complete' where fileiorequest_id = :id");
 				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run");
+				n->SQLQuery(q, "Run", true);
 			}
 			else {
 				/* some error occurred, so set it to 'error' */
 				QSqlQuery q;
-				q.prepare("update fileio_requests set request_status = 'error', request_message = ':msg' where fileiorequest_id = :id");
+				q.prepare("update fileio_requests set request_status = 'error', request_message = :msg where fileiorequest_id = :id");
 				q.bindValue(":msg", msg);
 				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run");
+				n->SQLQuery(q, "Run", true);
 			}
 		}
 		n->WriteLog("Finished performing file IO");
@@ -337,4 +337,144 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 	n->SQLQuery(q, "DeletePipeline");
 
 	return 1;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DeleteSubject ---------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::DeleteSubject(int subjectid, QString &msg) {
+	n->WriteLog("In DeleteSubject()");
+
+	QSqlQuery q;
+
+	subject s(subjectid, n); /* get the subject info */
+	if (!s.isValid) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
+
+	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
+	QDir d;
+
+	if(d.rename(s.subjectpath, newpath)) {
+		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+
+		/* remove all database entries about this subject:
+		   TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
+		q.prepare("delete from mostrecent where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject", true);
+
+		q.prepare("delete from mostrecent where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject", true);
+
+		q.prepare("delete from family_members where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject", true);
+
+		q.prepare("delete from subject_relation where subject_id1 = :subjectid or subject_id2 = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+
+		q.prepare("delete from subject_altuid where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+
+		// delete all series
+		q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+		q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+		q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+
+		// delete all studies
+		q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+
+		// delete all enrollments
+		q.prepare("delete from enrollment where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+
+		// delete the subject
+		q.prepare("delete from subjects where subject_id = :subjectid");
+		q.bindValue(":subjectid", subjectid);
+		n->SQLQuery(q, "DeleteSubject");
+	}
+	else {
+		msg = QString("Error in moving [%1] to [%2]").arg(s.subjectpath).arg(newpath);
+		n->WriteLog(msg);
+		return false;
+	}
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DeleteStudy ------------------------------------ */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
+	n->WriteLog("In DeleteStudy()");
+
+	QSqlQuery q;
+	study s(studyid, n); /* get the study info */
+	if (!s.isValid) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
+
+	QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(n->GenerateRandomString(10));
+	QDir d;
+	if(d.rename(s.studypath, newpath)) {
+		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.studypath).arg(newpath));
+
+		// move all archive data to the deleted directory
+		// delete all series
+		q.prepare("delete from mr_series where study_id = :studyid");
+		q.bindValue(":studyid", studyid);
+		n->SQLQuery(q, "DeleteStudy");
+
+		// delete all studies
+		q.prepare("delete from studies where study_id = :studyid");
+		q.bindValue(":studyid", studyid);
+		n->SQLQuery(q, "DeleteStudy");
+	}
+	else {
+		msg = QString("Error in moving [%1] to [%2]").arg(s.studypath).arg(newpath);
+		n->WriteLog(msg);
+		return false;
+	}
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DeleteSeries ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
+	n->WriteLog("In DeleteSeries()");
+	modality = modality.toLower();
+
+	QSqlQuery q;
+	series s(seriesid, modality, n); /* get the series info */
+	if (!s.isValid) { msg = "Series was not valid: [" + s.msg + "]"; return false; }
+
+	QString newpath = QString("%1/%2-%3-%4-%5").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(n->GenerateRandomString(10));
+	QDir d;
+	if(d.rename(s.seriespath, newpath)) {
+		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.seriespath).arg(newpath));
+
+		QString sqlstring = QString("delete from %1_series where %1series_id = :seriesid").arg(modality);
+		q.prepare(sqlstring);
+		q.bindValue(":seriesid", seriesid);
+		n->SQLQuery(q, "DeleteSeries", true);
+
+	}
+	else {
+		msg = QString("Error in moving series [%1] to [%2]").arg(s.seriespath).arg(newpath);
+		n->WriteLog(msg);
+		return false;
+	}
+	return true;
 }

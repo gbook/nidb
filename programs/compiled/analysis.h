@@ -9,6 +9,8 @@ public:
 	analysis(int id, nidb *a);
 	nidb *n;
 
+	void PrintAnalysisInfo();
+
 	QString analysispath;
 	int analysisid;
 

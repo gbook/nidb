@@ -22,7 +22,10 @@ SOURCES += \
     moduleExport.cpp \
     moduleFileIO.cpp \
     moduleManager.cpp \
-    nidb.cpp
+    nidb.cpp \
+    series.cpp \
+    study.cpp \
+    subject.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -34,4 +37,7 @@ HEADERS += \
     moduleExport.h \
     moduleFileIO.h \
     moduleManager.h \
-    nidb.h
+    nidb.h \
+    series.h \
+    study.h \
+    subject.h

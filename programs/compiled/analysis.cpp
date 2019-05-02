@@ -67,3 +67,28 @@ void analysis::LoadAnalysisInfo() {
 		isValid = false;
 	}
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- PrintAnalysisInfo ------------------------------ */
+/* ---------------------------------------------------------- */
+void analysis::PrintAnalysisInfo() {
+	QString	output = QString("***** Analysis - [%1] *****\n").arg(analysisid);
+
+	output += QString("   uid: [%1]\n").arg(uid);
+	output += QString("   studynum: [%1]\n").arg(studynum);
+	output += QString("   subjectid: [%1]\n").arg(subjectid);
+	output += QString("   studyid: [%1]\n").arg(studyid);
+	output += QString("   pipelinename: [%1]\n").arg(pipelinename);
+	output += QString("   pipelineversion: [%1]\n").arg(pipelineversion);
+	output += QString("   pipelineid: [%1]\n").arg(pipelineid);
+	output += QString("   pipelinelevel: [%1]\n").arg(pipelinelevel);
+	output += QString("   pipelinedirectory: [%1]\n").arg(pipelinedirectory);
+	output += QString("   pipelinedirstructure: [%1]\n").arg(pipelinedirstructure);
+	output += QString("   jobid: [%1]\n").arg(jobid);
+	output += QString("   isValid: [%1]\n").arg(isValid);
+	output += QString("   msg: [%1]\n").arg(msg);
+	output += QString("   analysispath: [%1]\n").arg(analysispath);
+
+	n->WriteLog(output);
+}
