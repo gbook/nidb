@@ -246,16 +246,26 @@ QString nidb::CreateLogDate() {
 /* being passed in to this function                           */
 int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
 
+	/* get the SQL string that will be run */
 	QString sql = q.lastQuery();
+	QMapIterator<QString, QVariant> it(q.boundValues());
+	while (it.hasNext()) {
+		it.next();
+		sql.replace(it.key(),it.value().toString());
+	}
 
+	/* debugging */
 	if (cfg["debug"].toInt() || d) qDebug() << "Running SQL statement[" << sql <<"]";
 
+	/* run the query */
     if (q.exec()) {
 		q.first();
         return q.size();
     }
     else {
-        qDebug() << "SQL ERROR (Module: " << module << "  Function: " << function << ") SQL [" << sql << "]" << q.lastError().text();
+		QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error [%4]").arg(module).arg(function).arg(sql).arg(q.lastError().text());
+		qDebug() << err;
+		WriteLog(err);
         return -1;
     }
 }
@@ -372,23 +382,6 @@ QString nidb::SystemCommand(QString s, bool detail) {
 }
 
 
-/*
-QString nidb::runCommand(const QString& cmd){
-	QString result;
-	QEventLoop looper;
-	QProcess *p = new QProcess(&looper);
-	p->setProcessChannelMode(QProcess::MergedChannels);
-	QObject::connect(p,static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),&looper,&QEventLoop::quit);
-	//QObject::connect(p,&QProcess::errorOccurred,[&result]()->void{ qDebug() << "Error in Process (command not found?)" << result; });
-	QObject::connect(p,&QProcess::errorOccurred,&looper,&QEventLoop::quit);
-	//QObject::connect(p,&QProcess::started,[p,&input]()->void{p->write((input +'\n').toLatin1());});
-	QObject::connect(p,&QProcess::readyReadStandardOutput,[p,&result]()->void{result+=p->readAllStandardOutput();});
-	//const QString c = QString("sh -c \" cd /home/dev; ./script\" ");
-	p->start(cmd);
-	looper.exec();
-	return result.trimmed();
-} */
-
 /* ---------------------------------------------------------- */
 /* --------- WriteLog --------------------------------------- */
 /* ---------------------------------------------------------- */
@@ -464,8 +457,6 @@ bool nidb::RemoveDir(QString p, QString &msg) {
 		msg = "Unable to delete directory";
 		return false;
 	}
-
-	return true;
 }
 
 
@@ -485,4 +476,38 @@ QString nidb::GenerateRandomString(int n) {
 	   randomString.append(nextChar);
    }
    return randomString;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- FindAllFiles ----------------------------------- */
+/* ---------------------------------------------------------- */
+QStringList nidb::FindAllFiles(QString dir, QString pattern) {
+	QStringList files;
+	QDirIterator it(dir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
+	while (it.hasNext())
+		files << it.next();
+
+	return files;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- MoveAllFiles ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg) {
+	QStringList msgs;
+	bool ret = true;
+	QDirIterator it(indir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
+	while (it.hasNext()) {
+		QFile f(it.next());
+		QString newfile = QString("%1/%2.dcm").arg(outdir).arg(GenerateRandomString(20));
+		if (!f.rename(newfile)) {
+			msgs << QString("Error moving [%1] to [%2]").arg(QFileInfo(f).filePath()).arg(newfile);
+			ret = false;
+		}
+	}
+
+	msg = msgs.join(" | ");
+	return ret;
 }

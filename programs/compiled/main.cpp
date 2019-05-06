@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-	//QCoreApplication a(argc, argv);
+	QCoreApplication a(argc, argv);
 
     QString module = argv[1];
 	bool keepLog = false;
@@ -79,7 +79,9 @@ int main(int argc, char *argv[])
 
     qDebug() << "Terminating NiDB with the [" << module << "] module";
 
-	return 0;
+	/* exit the event loop */
+	a.exit();
 
-	//return a.exec();
+	/* assume everything is happy! */
+	return 0;
 }

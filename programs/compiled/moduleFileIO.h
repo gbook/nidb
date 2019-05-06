@@ -21,6 +21,8 @@ public:
 	bool DeleteSubject(int subjectid, QString &msg);
 	bool DeleteStudy(int subjectid, QString &msg);
 	bool DeleteSeries(int seriesid, QString modality, QString &msg);
+	bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
+	bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
 
 private:
 	nidb *n;

@@ -40,6 +40,7 @@ int moduleFileIO::Run() {
 			int data_id = q.value("data_id").toInt();
 			QString modality = q.value("modality").toString();
 			QString data_destination = q.value("data_destination").toString();
+			int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
 			QString dicomtags = q.value("anonymize_fields").toString();
 			i++;
 
@@ -81,18 +82,18 @@ int moduleFileIO::Run() {
 			}
 			else if (fileio_operation == "rearchive") {
 				if (data_type == "study") {
-					//found = RearchiveStudy(data_id,0);
+					found = RearchiveStudy(data_id, false, msg);
 				}
 				else if (data_type == "subject") {
-					//found = RearchiveSubject(data_id,0);
+					found = RearchiveSubject(data_id, false, rearchiveprojectid, msg);
 				}
 			}
 			else if (fileio_operation == "rearchiveidonly") {
 				if (data_type == "study") {
-					//found = RearchiveStudy(data_id,1);
+					found = RearchiveStudy(data_id, true, msg);
 				}
 				if (data_type == "subject") {
-					//found = RearchiveSubject(data_id,1);
+					found = RearchiveSubject(data_id, true, rearchiveprojectid, msg);
 				}
 			}
 			else {
@@ -371,7 +372,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString &msg) {
 		q.bindValue(":subjectid", subjectid);
 		n->SQLQuery(q, "DeleteSubject", true);
 
-		q.prepare("delete from subject_relation where subject_id1 = :subjectid or subject_id2 = :subjectid");
+		q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
 		q.bindValue(":subjectid", subjectid);
 		n->SQLQuery(q, "DeleteSubject");
 
@@ -380,13 +381,13 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString &msg) {
 		n->SQLQuery(q, "DeleteSubject");
 
 		// delete all series
-		q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 		q.bindValue(":subjectid", subjectid);
 		n->SQLQuery(q, "DeleteSubject");
-		q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 		q.bindValue(":subjectid", subjectid);
 		n->SQLQuery(q, "DeleteSubject");
-		q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid");
+		q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 		q.bindValue(":subjectid", subjectid);
 		n->SQLQuery(q, "DeleteSubject");
 
@@ -476,5 +477,175 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
 		n->WriteLog(msg);
 		return false;
 	}
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RearchiveStudy --------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
+	n->WriteLog("In DeleteSeries()");
+
+	QStringList msgs;
+	QSqlQuery q;
+	study s(studyid, n); /* get the series info */
+	if (!s.isValid) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
+
+	/* get instanceid */
+	q.prepare("select instance_id from projects where project_id = :projectid");
+	q.bindValue(":projectid", s.projectid);
+	n->SQLQuery(q, "RearchiveStudy", true);
+	int instanceid;
+	if (q.size() > 0)
+		instanceid = q.value("anlaysis_id").toInt();
+	else {
+		msg = "Invalid instance ID";
+		return false;
+	}
+
+	/* create an import request, based on the current instance, project, and site & get next import ID */
+	q.prepare("insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','',null,:projectid,:instanceid,'',null,null,:matchidonly)");
+	q.bindValue(":projectid", s.projectid);
+	q.bindValue(":instanceid", instanceid);
+	q.bindValue(":matchidonly", matchidonly);
+	n->SQLQuery(q, "RearchiveStudy", true);
+	int uploadid = q.lastInsertId().toInt();
+
+	/* create an import request dir */
+	QString outpath = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(uploadid);
+	QDir d;
+	if (!d.mkpath(outpath)) {
+		msg = "Unable to create outpath [" + outpath + "]";
+		return false;
+	}
+
+	/* move all DICOMs to the incomingdir */
+	QString m;
+	if (!n->MoveAllFiles(s.studypath,"*.dcm",outpath, m)) {
+		msgs << QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m);
+	}
+
+	/* move the old study to the deleted directory */
+	QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(n->GenerateRandomString(10));
+	QDir d2;
+	if(d2.rename(s.studypath, newpath)) {
+		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.studypath).arg(newpath));
+	}
+
+	/* update the import_requests table with the new uploadid */
+	q.prepare("update import_requests set import_status = 'pending' where importrequest_id = :uploadid");
+	q.bindValue(":uploadid", uploadid);
+	n->SQLQuery(q, "RearchiveStudy", true);
+
+	/* remove any reference to this study from the (enrollment, study) tables
+	 * delete all series */
+	q.prepare("delete from mr_series where study_id = :studyid");
+	q.bindValue(":studyid", studyid);
+	n->SQLQuery(q, "RearchiveStudy", true);
+
+	/* delete the study */
+	q.prepare("delete from studies where study_id = :studyid");
+	q.bindValue(":studyid", studyid);
+	n->SQLQuery(q, "RearchiveStudy", true);
+
+	msg = msgs.join(" | ");
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RearchiveSubject ------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int projectid, QString &msg) {
+	n->WriteLog("In DeleteSeries()");
+
+	QStringList msgs;
+	QSqlQuery q;
+	subject s(subjectid, n); /* get the series info */
+	if (!s.isValid) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
+
+	/* get instanceid */
+	q.prepare("select instance_id from projects where project_id = :projectid");
+	q.bindValue(":projectid", projectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+	int instanceid;
+	if (q.size() > 0)
+		instanceid = q.value("anlaysis_id").toInt();
+	else {
+		msg = "Invalid instance ID";
+		return false;
+	}
+
+	/* create an import request, based on the current instance, project, and site & get next import ID */
+	q.prepare("insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','',null,:projectid,:instanceid,'',null,null,:matchidonly)");
+	q.bindValue(":projectid", projectid);
+	q.bindValue(":instanceid", instanceid);
+	q.bindValue(":matchidonly", matchidonly);
+	n->SQLQuery(q, "RearchiveSubject", true);
+	int uploadid = q.lastInsertId().toInt();
+
+	/* create an import request dir */
+	QString outpath = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(uploadid);
+	QDir d;
+	if (!d.mkpath(outpath)) {
+		msg = "Unable to create outpath [" + outpath + "]";
+		return false;
+	}
+
+	/* move all DICOMs to the incomingdir */
+	QString m;
+	if (!n->MoveAllFiles(s.subjectpath,"*.dcm",outpath, m)) {
+		msgs << QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m);
+	}
+
+	/* move the remains of the subject directory to the deleted directory */
+	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
+	QDir d2;
+	if(d2.rename(s.subjectpath, newpath)) {
+		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+	}
+
+	/* update the import_requests table with the new uploadid */
+	q.prepare("update import_requests set import_status = 'pending' where importrequest_id = :uploadid");
+	q.bindValue(":uploadid", uploadid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	/* remove all database entries about this subject:
+	 * TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
+
+	q.prepare("delete from mostrecent where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from family_members where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from subject_altuid where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from enrollment where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	q.prepare("delete from subjects where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "RearchiveSubject", true);
+
+	msg = msgs.join(" | ");
 	return true;
 }

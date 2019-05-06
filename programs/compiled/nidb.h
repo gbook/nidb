@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QtSql>
 #include <QHostInfo>
+#include <QDirIterator>
 
 class nidb
 {
@@ -38,11 +39,12 @@ public:
 	int SQLQuery(QSqlQuery &q, QString function, bool d=false);
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
-	//QString runCommand(const QString& cmd);
 	QString GetBuildDate();
 	bool MakePath(QString p, QString &msg);
 	bool RemoveDir(QString p, QString &msg);
 	QString GenerateRandomString(int n);
+	QStringList FindAllFiles(QString dir, QString pattern);
+	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 
 private:
     void FatalError(QString err);
