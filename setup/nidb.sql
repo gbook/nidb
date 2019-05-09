@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 25, 2019 at 07:43 PM
--- Server version: 10.2.14-MariaDB
--- PHP Version: 7.2.5
+-- Generation Time: May 09, 2019 at 07:09 PM
+-- Server version: 10.2.23-MariaDB
+-- PHP Version: 7.2.17
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -512,6 +512,7 @@ CREATE TABLE `calendar_projects` (
 CREATE TABLE `changelog` (
   `changelog_id` int(11) NOT NULL,
   `performing_userid` int(11) DEFAULT NULL,
+  `performing_username` varchar(50) DEFAULT NULL,
   `affected_userid` int(11) DEFAULT NULL,
   `affected_instanceid1` int(11) DEFAULT NULL,
   `affected_instanceid2` int(11) DEFAULT NULL,
@@ -531,6 +532,22 @@ CREATE TABLE `changelog` (
   `change_event` varchar(255) DEFAULT NULL,
   `change_desc` text DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `changelog_subject`
+--
+
+CREATE TABLE `changelog_subject` (
+  `changelog_id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `change_date` datetime NOT NULL,
+  `changetype` enum('','delete','obliterate','move') NOT NULL,
+  `uid` varchar(10) NOT NULL,
+  `newuid` varchar(10) NOT NULL,
+  `log` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -1087,6 +1104,7 @@ CREATE TABLE `fileio_requests` (
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
+  `rearchiveprojectid` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
   `anonymize_fields` text DEFAULT NULL,
   `request_status` enum('pending','deleting','complete','error') NOT NULL DEFAULT 'pending',
@@ -3063,6 +3081,12 @@ ALTER TABLE `changelog`
   ADD PRIMARY KEY (`changelog_id`);
 
 --
+-- Indexes for table `changelog_subject`
+--
+ALTER TABLE `changelog_subject`
+  ADD PRIMARY KEY (`changelog_id`);
+
+--
 -- Indexes for table `common`
 --
 ALTER TABLE `common`
@@ -3966,6 +3990,12 @@ ALTER TABLE `calendar_projects`
 -- AUTO_INCREMENT for table `changelog`
 --
 ALTER TABLE `changelog`
+  MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `changelog_subject`
+--
+ALTER TABLE `changelog_subject`
   MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

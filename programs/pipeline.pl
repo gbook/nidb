@@ -499,7 +499,7 @@ sub ProcessPipelines() {
 
 							# get the data if we are not running a supplement, and not rerunning the results
 							if ((!$runsupplement) && (!$rerunresults)) {
-								($numseries, $datalog, $datareport, $datatable) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, @datadef);
+								($numseries, $datalog, $datareport, $datatable) = GetData($sid, $analysispath, $uid, $analysisRowID, $pipelineversion, $pid, $pipelinedep, $deplevel, @datadef);
 							}
 							my $datatable2 = EscapeMySQLString($datatable);
 							my $sqlstringC = "update analysis set analysis_datatable = '$datatable2' where analysis_id = $analysisRowID";
@@ -511,10 +511,10 @@ sub ProcessPipelines() {
 							#     b) runsupplement is true
 							#     c) this pipeline is dependent on another pipeline
 							my $okToRun = 0;
-							if ($numseries > 0) { $okToRun = 1; }
+							if ($numseries > 0) { $okToRun = 1; } # there is data to download from this study
 							if (($rerunresults) || ($rerunresults eq "1")) { $okToRun = 1; }
 							if (($runsupplement) || ($runsupplement eq "1")) { $okToRun = 1; }
-							if ($pipelinedep > 0) { $okToRun = 1; }
+							if (($pipelinedep > 0) && ($deplevel eq "study")) { $okToRun = 1; } # there is a parent pipeline and we're using the same study from the parent pipeline. may or may not have data to download
 							
 							# one of the above criteria has been satisfied, so its ok to run
 							if ($okToRun) {
@@ -582,17 +582,17 @@ sub ProcessPipelines() {
 										if ($depdir eq "subdir") {
 											$setuplog .= WriteLog("Dependency will be copied to a subdir") . "\n";
 											switch ($deplinktype) {
-												case "hardlink" { $systemstring = "cp -aul $deppath/$dependencyname $analysispath/"; }
-												case "softlink" { $systemstring = "cp -aus $deppath/$dependencyname $analysispath/"; }
-												case "regularcopy" { $systemstring = "cp -au $deppath/$dependencyname $analysispath/"; }
+												case "hardlink" { $systemstring = "cp -aul $deppath $analysispath/"; }
+												case "softlink" { $systemstring = "cp -aus $deppath $analysispath/"; }
+												case "regularcopy" { $systemstring = "cp -au $deppath $analysispath/"; }
 											}
 										}
 										else { # root dir
 											$setuplog .= WriteLog("Dependency will be copied to the root dir") . "\n";
 											switch ($deplinktype) {
-												case "hardlink" { $systemstring = "cp -aul $deppath/$dependencyname/* $analysispath/"; }
-												case "softlink" { $systemstring = "cp -aus $deppath/$dependencyname/* $analysispath/"; }
-												case "regularcopy" { $systemstring = "cp -au $deppath/$dependencyname/* $analysispath/"; }
+												case "hardlink" { $systemstring = "cp -aul $deppath/* $analysispath/"; }
+												case "softlink" { $systemstring = "cp -aus $deppath/* $analysispath/"; }
+												case "regularcopy" { $systemstring = "cp -au $deppath/* $analysispath/"; }
 											}
 										}
 
@@ -727,7 +727,7 @@ sub ProcessPipelines() {
 							print "Submitted $numsubmitted jobs so far\n";
 							
 							# mark the study in the analysis table
-							if (($numseries > 0) || (($pipelinedep != 0) && ($numseries == 0)) || ($runsupplement) || ($rerunresults eq "1")) {
+							if (($numseries > 0) || (($pipelinedep != 0) && ($deplevel eq "study")) || ($runsupplement) || ($rerunresults eq "1")) {
 								if (($rerunresults eq "1") || ($runsupplement)) {
 									$sqlstring = "update analysis set analysis_status = 'pending' where analysis_id = $analysisRowID";
 								}
@@ -740,7 +740,7 @@ sub ProcessPipelines() {
 							}
 							else {
 								# save some database space, since most entries will be blank
-								$sqlstring = "update analysis set analysis_status = 'NoMatchingStudies', analysis_startdate = null where analysis_id = $analysisRowID";
+								$sqlstring = "update analysis set analysis_status = 'NoMatchingSeries', analysis_startdate = null where analysis_id = $analysisRowID";
 								my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
 								InsertAnalysisEvent($analysisRowID, $pid, $pipelineversion, $sid, 'analysismessage', "This study did not have any matching data");
@@ -1108,7 +1108,7 @@ sub CreateClusterJobFile() {
 		else {
 			$jobfile .= "#\$ -J $pipelinename\n";
 		}
-		$jobfile .= "#\$ -o $analysispath/pipeline\n";
+		$jobfile .= "#\$ -o $analysispath/pipeline/\n";
 		$jobfile .= "#\$ --export=ALL\n";
 		$jobfile .= "#\$ --uid=" . $cfg{'queueuser'} . "\n\n";
 	}
@@ -1433,7 +1433,7 @@ sub GetUIDStudyNumListByGroup() {
 # --------- GetData ----------------------------------------
 # ----------------------------------------------------------
 sub GetData() {
-	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, $pipelinedep, @datadef) = @_;
+	my ($studyid, $analysispath, $uid, $analysisid, $pipelineversion, $pid, $pipelinedep, $deplevel, @datadef) = @_;
 	WriteLog("Inside GetData($analysispath)");
 	
 	# connect to the database
@@ -1673,6 +1673,14 @@ sub GetData() {
 			}
 		}
 		$datalog .= "---------- Done checking data steps ----------\n";
+
+		# if it's a subject level dependency, but there is no data found, we don't want to copy any dependencies
+		if (($stepIsInvalid) && ($deplevel eq "subject")) {
+			my $datatable = generate_table(rows => $datarows, header_row => 1);
+		
+			# bail out of this function, the data spec didn't work out for this subject
+			return (0,$datalog, $datareport, $datatable);
+		}
 		
 		# if there is a dependency, don't worry about the previous checks
 		if ($pipelinedep != 0) {
@@ -1686,6 +1694,7 @@ sub GetData() {
 			# bail out of this function, the data spec didn't work out for this subject
 			return (0,$datalog, $datareport, $datatable);
 		}
+		
 		
 		# ------ end checking the data steps --------------------------------------
 		# if we get to here, the data spec is valid for this study

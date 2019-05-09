@@ -349,11 +349,11 @@
 		$pipelinename = $row['pipeline_name'];
 
 		switch ($listtype) {
-			case 'failedanalyses': $sqlstring = "select uid, study_num, study_id, subject_id, study_datetime from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc"; break;
+			case 'failedanalyses': $sqlstring = "select uid, study_num, study_id, subject_id, study_datetime from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc"; break;
 			case 'successfulanalyses':
 			default:
 				?>Successful analyses<br><br><?
-				$sqlstring = "select d.uid, b.study_num, b.study_id, d.subject_id, b.study_datetime, weekofyear(b.study_datetime) 'week', c.project_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc";
+				$sqlstring = "select d.uid, b.study_num, b.study_id, d.subject_id, b.study_datetime, weekofyear(b.study_datetime) 'week', c.project_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc";
 				break;
 		}
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -420,7 +420,7 @@
 		
 		/* run the sql query here to get the row count */
 		if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
-			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 		}
 		else {
 			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
@@ -429,7 +429,7 @@
 			}
 			if ($searchstatus != "") {
 				if ($searchstatus == "allothers") {
-					$sqlstring .= " and analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+					$sqlstring .= " and analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 				}
 				else {
 					$sqlstring .= " and analysis_status = '$searchstatus'";
@@ -609,7 +609,7 @@
 			<tbody>
 				<?
 					if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
-						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 					}
 					else {
 						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
@@ -618,7 +618,7 @@
 						}
 						if ($searchstatus != "") {
 							if ($searchstatus == "allothers") {
-								$sqlstring .= " and a.analysis_status in ('','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+								$sqlstring .= " and a.analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 							}
 							else {
 								$sqlstring .= " and a.analysis_status = '$searchstatus'";
@@ -779,7 +779,7 @@
 							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
 								?>
 								<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
-								<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>
+								<!--<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>-->
 								<?
 							}
 							else {
@@ -966,7 +966,7 @@
 		$limitcount = $numperpage;
 		
 		/* run the sql query here to get the row count */
-		$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+		$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result);
 		$numpages = ceil($numrows/$numperpage);
@@ -1021,7 +1021,7 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
+					$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$analysis_id = $row['analysis_id'];

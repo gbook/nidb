@@ -1486,6 +1486,7 @@
 								<td valign="top">
 									<input type="radio" name="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
 									<input type="radio" name="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
+									<input type="radio" name="deplevel" value="studyfirst" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
 								</td>
 							</tr>
 							<tr>
@@ -1496,7 +1497,7 @@
 								</td>
 							</tr>
 							<tr>
-								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Linking type</td>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">File linking type</td>
 								<td valign="top">
 									<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
 									<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
@@ -2122,7 +2123,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 		?>
 		<div align="center">
-			<table width="70%" border="0" cellspacing="0" cellpadding="0">
+			<table width="70%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #444;">
 				<tr>
 					<td style="color: #fff; background-color: #444; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
 				</tr>

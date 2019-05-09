@@ -83,7 +83,8 @@
 	$search_swversion = GetVariable("search_swversion");
 	$imgperline = GetVariable("imgperline");
 	$studyids = GetVariable("studyids");
-
+	$copy_date = GetVariable("copy_date");
+	$study_modality = GetVariable("study_modality");
 	/* determine action */
 	switch($action) {
 		case 'editform':
@@ -119,7 +120,7 @@
 			Delete($studyid);
 			break;
 		case 'deleteseries':
-			DeleteSeries($studyid, $seriesids, $modality);
+			DeleteSeries($studyid, $seriesid, $modality);
 			DisplayStudy($studyid);
 			break;
 		case 'editseries':
@@ -158,7 +159,11 @@
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
-			DisplayStudy($studyid);
+			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, true);
+			break;
+		case 'saveStSe':
+			 UpdateStSe($id, $studydatetime, $studytype,$copy_date, $study_modality);
+			 DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
 		default:
 			DisplayStudy($studyid);
@@ -220,6 +225,34 @@
 	}
 
 
+        /* -------------------------------------------- */
+        /* ------- UpdateStSe ------------------------ */
+        /* -------------------------------------------- */
+        function UpdateStSe($id, $studydatetime, $studytype,$copy_date,$study_modality) {
+                /* perform data checks */
+                $studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
+                $studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
+		$copy_date = mysqli_real_escape_string($GLOBALS['linki'], $copy_date);
+		$study_modality = mysqli_real_escape_string($GLOBALS['linki'], $study_modality);
+		$studydatetime = date("Y-m-d H:i",strtotime($studydatetime));
+
+/*		PrintVariable($studydatetime);
+		PrintVariable($study_modality);	
+		*/
+/* Update Command */
+		$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $id";
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		 if ($copy_date=="Y"){
+			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
+                        $result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);	
+			?><div align="center"><span class="message">Study and Series Updated <?$copy_date?></span></div><br><br><?
+			}
+		else {
+                ?><div align="center"><span class="message">Study Updated <?$copy_date?></span></div><br><br><?
+		}
+        }
+
+
 	/* -------------------------------------------- */
 	/* ------- AddGenericSeries ------------------- */
 	/* -------------------------------------------- */
@@ -227,7 +260,7 @@
 		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
-		if (!ValidID($seriesid,'Series ID')) { return; }
+		if (!ValidID($studyid,'Series ID')) { return; }
 
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1952,7 +1985,7 @@
 		/* check for valid inputs */
 		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
 		if (!ValidID($studyid,'Study ID')) { return; }
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($series_id,'Series ID')) { return; }
 		if ($modality == "") { echo "Modality was blank<br>"; return; }
 		
 		if ($modality == "mr") {
@@ -2078,7 +2111,7 @@
 		
 		/* check for valid inputs */
 		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		if (!ValidID($id,'Series ID')) { return; }
+		if (!ValidID($id,'Study ID')) { return; }
 		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
 			return;
@@ -2210,18 +2243,18 @@
 						<input type="text" name="protocol" list="protocols">
 						<datalist id="protocols">
 						<?
-								$sqlstring = "select * from modality_protocol where modality = '$modality'";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$protocol = $row['protocol'];
-										?>
-												<option value=" <?=$protocol?>"><?=$protocol?></option>
-										<?
-								}
+							$sqlstring = "select * from modality_protocol where modality = '$modality'";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$protocol = $row['protocol'];
+								?>
+									<option value=" <?=$protocol?>"><?=$protocol?></option>
+								<?
+							}
 						?>
 						</datalist>
 					</td>
-					<td><input type="text" name="series_datetime" value="<?=date('Y-m-d h:i:s a')?>"></td>
+					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>"></td>
 					<td><input type="text" name="notes"></td>
 					<td></td>
 					<td></td>

@@ -97,7 +97,7 @@
 				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
 			}
 			else {
-				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
 			}
 			//echo "(1) Path is [$path]<br>";
 		}
@@ -107,7 +107,7 @@
 				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
 			}
 			else {
-				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
 			}
 			
 			//echo "(2) Path is [$path]<br>";
@@ -186,16 +186,16 @@
 		//if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 		if ($pipeline_level == 1) {
 			if ($pipelinedirstructure == "b") {
-				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum";
 			}
 			else {
-				$path = $GLOBALS['cfg']['mountdir'] . "/" . $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
 			}
 			echo "(1) Path is [$path]<br>";
 		}
 		//elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 		elseif ($pipeline_level == 0) {
-			$path = $GLOBALS['cfg']['mountdir'] . "$pipelinedirectory/$uid/$studynum/$pipelinename/pipeline";
+			$path = "$pipelinedirectory/$uid/$studynum/$pipelinename";
 			echo "(2) Path is [$path]<br>";
 		}
 		else {
@@ -248,6 +248,12 @@
 					if (stristr(strtolower($file),'.smoothwm') !== FALSE) { $filetype = 'mesh'; }
 					if (stristr(strtolower($file),'.sphere') !== FALSE) { $filetype = 'mesh'; }
 					if (stristr(strtolower($file),'.pial') !== FALSE) { $filetype = 'mesh'; }
+					if (stristr(strtolower($file),'.stats') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.label') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.touch') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.html') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.htm') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.fsf') !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),'.fsm') !== FALSE) { $filetype = 'mesh'; }
 					if (stristr(strtolower($file),'.orig') !== FALSE) { $filetype = 'mesh'; }
 					if (stristr(strtolower($file),'.png') !== FALSE) { $filetype = 'image'; }
@@ -476,7 +482,8 @@
 				$swversion = $row2['result_softwareversion'];
 				$important = $row2['result_isimportant'];
 				$lastupdate = $row2['result_lastupdate'];
-							
+				
+				if (!file_exists($filename)) { $filename = "/mount$filename"; }
 				if (strpos($units,'^') !== false) {
 					$units = str_replace('^','<sup>',$units);
 					$units .= '</sup>';
@@ -502,7 +509,7 @@
 									break;
 								case "i":
 									?>
-									<img src="preview.php?image=/mount<?=$filename?>" style="max-width:800px">
+									<img src="preview.php?image=<?=$filename?>" style="max-width:800px">
 									<?
 									break;
 							}

@@ -296,7 +296,7 @@ sub ExportLocal() {
 					$rootoutdir = "$tmpexportdir/$subjectdir";
 				}
 				elsif ($exporttype eq 'localftp') {
-					$rootoutdir = "$cfg{'ftpdir'}/NiDB-" . CreateLogDate() . "/$subjectdir";
+					$rootoutdir = "$cfg{'ftpdir'}/NiDB-$exportid/$subjectdir";
 				}
 				elsif ($exporttype eq 'publicdownload') {
 					$rootoutdir = "$tmpexportdir/$subjectdir";

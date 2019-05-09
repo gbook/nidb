@@ -610,12 +610,24 @@
 	/* ------- GetPrimaryProjectID ---------------- */
 	/* -------------------------------------------- */
 	function GetPrimaryProjectID($subjectid, $projectid) {
+		if (!ValidID($subjectid,'Subject ID')) { return; }
+		if (!ValidID($projectid,'Project ID')) { return; }
 	
-		if (($subjectid == "") || ($projectid == "")) {
-			return "";
-		}
+		//if (($subjectid == "") || ($projectid == "")) {
+		//	return "";
+		//}
 		
-		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = (select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid) order by isprimary desc limit 1";
+		$sqlstring = "select a.enrollment_id, b.uid, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.subject_id = $subjectid and a.project_id = $projectid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$enrollmentid = $row['enrollment_id'];
+		$uid = $row['uid'];
+		$projectname = $row['project_name'];
+		if (mysqli_num_rows($result) > 1) {
+			?><span class="staticmessage">Subject [<?=$uid?>] has more than one enrollment in the same project [<?=$projectname?>]. Using the first enrollment to get the primary ID.</span><br><br><?
+		}
+
+		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc limit 1";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQL($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);

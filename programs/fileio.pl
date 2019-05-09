@@ -466,7 +466,7 @@ sub DeleteAnalysis() {
 	
 	#my $analysisid = $id;
 	
-	my $sqlstring = "select a.analysis_qsubid, d.uid, b.study_num, b.study_id, e.pipeline_name, e.pipeline_id, e.pipeline_version, e.pipeline_level, e.pipeline_directory from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+	my $sqlstring = "select a.analysis_qsubid, d.uid, b.study_num, b.study_id, e.* from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 	WriteLog($sqlstring);
 	my $result = $db->query($sqlstring) || SQLError($db->errmsg(),$sqlstring);
 	my %row = $result->fetchhash;
@@ -479,6 +479,15 @@ sub DeleteAnalysis() {
 	my $studyid = $row{'study_id'};
 	my $pipelineid = $row{'pipeline_id'};
 	my $pipelineversion = $row{'pipeline_version'};
+	my $pipelinedirstructure; if (!defined($row{'pipeline_dirstructure'})) { $pipelinedirstructure = ""; } else { $pipelinedirstructure = $row{'pipeline_dirstructure'}; }
+
+	my $analysisdir;
+	if ($pipelinedirstructure eq "b") {
+		$analysisdir = $cfg{'analysisdirb'};
+	}
+	else {
+		$analysisdir = $cfg{'analysisdir'};
+	}
 
 	if ($pipelinelevel == 0) {
 		my $d = $pipelinedirectory;
@@ -509,14 +518,14 @@ sub DeleteAnalysis() {
 	else {
 		# check to see if anything isn't valid or is blank
 		my $OkDeleteDir = 1;
-		if (!defined($cfg{'analysisdir'})) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); $OkDeleteDir = 0; }
+		if (!defined($analysisdir)) { WriteLog("Something was wrong, cfg->analysisdir was not initialized"); $OkDeleteDir = 0; }
 		if (!defined($uid)) { WriteLog("Something was wrong, uid was not initialized"); $OkDeleteDir = 0; }
 		if (!defined($studynum)) { WriteLog("Something was wrong, studynum was not initialized"); $OkDeleteDir = 0; }
 		if (!defined($pipelinename)) { WriteLog("Something was wrong, pipelinename was not initialized"); $OkDeleteDir = 0; }
-		if (trim($cfg{'analysisdir'}) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); $OkDeleteDir = 0; }
-		if (trim($cfg{'analysisdir'}) eq '/') { WriteLog("Something was wrong, cfg->analysisdir is '/'"); $OkDeleteDir = 0; }
-		if (trim($cfg{'analysisdir'}) eq '/home') { WriteLog("Something was wrong, cfg->analysisdir is '/home'"); $OkDeleteDir = 0; }
-		if (trim($cfg{'analysisdir'}) eq '/root') { WriteLog("Something was wrong, cfg->analysisdir is '/root'"); $OkDeleteDir = 0; }
+		if (trim($analysisdir) eq '') { WriteLog("Something was wrong, cfg->analysisdir was blank"); $OkDeleteDir = 0; }
+		if (trim($analysisdir) eq '/') { WriteLog("Something was wrong, cfg->analysisdir is '/'"); $OkDeleteDir = 0; }
+		if (trim($analysisdir) eq '/home') { WriteLog("Something was wrong, cfg->analysisdir is '/home'"); $OkDeleteDir = 0; }
+		if (trim($analysisdir) eq '/root') { WriteLog("Something was wrong, cfg->analysisdir is '/root'"); $OkDeleteDir = 0; }
 		if (trim($uid) eq '') { WriteLog("Something was wrong, uid was blank"); $OkDeleteDir = 0; }
 		if (trim($studynum) eq '') { WriteLog("Something was wrong, studynum was blank"); $OkDeleteDir = 0; }
 		if (trim($pipelinename) eq '') { WriteLog("Something was wrong, pipelinename was blank"); $OkDeleteDir = 0; }
@@ -530,7 +539,13 @@ sub DeleteAnalysis() {
 			WriteLog("SGE job id [$sgeid] is not valid. Not attempting to kill the job");
 		}
 		
-		my $datapath = $cfg{'analysisdir'} . "/$uid/$studynum/$pipelinename";
+		my $datapath = "";
+		if ($pipelinedirstructure eq "b") {
+			$datapath = "$analysisdir/$pipelinename/$uid/$studynum";
+		}
+		else {
+			$datapath = "$analysisdir/$uid/$studynum/$pipelinename";
+		}
 		
 		if ($datapath eq "") { $OkDeleteDir = 0; }
 		if ($datapath eq ".") { $OkDeleteDir = 0; }
@@ -559,7 +574,7 @@ sub DeleteAnalysis() {
 						InsertAnalysisEvent($analysisid, $pipelineid, $pipelineversion, $studyid, 'analysisdeleteerror', "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [$datapath]");
 					}
 					else {
-						WriteLog("Datapath [$datapath] does not exist, deleting DB entries anyway. Checkpoint B");
+						WriteLog("Datapath [$datapath] does not exist. Deleting via sudo successful. Deleting DB entries. Checkpoint B");
 						
 						# clear the entry from the database
 						my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
@@ -587,7 +602,7 @@ sub DeleteAnalysis() {
 				}
 			}
 			else {
-				WriteLog("Datapath [$datapath] does not exist, deleting DB entries anyway. Checkpoint C");
+				WriteLog("Datapath [$datapath] does not exist, deleting via rmtree was successful. Deleting DB entries. Checkpoint C");
 				
 				# clear the entry from the database
 				my $sqlstringA = "delete from analysis_data where analysis_id = $analysisid";
@@ -853,7 +868,7 @@ sub RearchiveStudy() {
 			my $instanceRowID = $row{'instance_id'};
 			
 			# create an import request, based on the current instance, project, and site & get next import ID
-			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','','$matchidonly')";
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','',null,'$projectRowID', '$instanceRowID', '',null,null,'$matchidonly')";
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
@@ -928,7 +943,7 @@ sub RearchiveSubject() {
 			my $instanceRowID = $row{'instance_id'};
 			
 			# create an import request, based on the current instance, project, and site & get next import ID
-			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','','','$projectRowID', '$instanceRowID', '','','','$matchidonly')";
+			$sqlstring = "insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','',null,'$projectRowID', '$instanceRowID','',null,null,'$matchidonly')";
 			WriteLog($sqlstring);
 			$result = $db->query($sqlstring) || SQLError($sqlstring, $db->errmsg());
 			my $uploadID = $result->insertid;
