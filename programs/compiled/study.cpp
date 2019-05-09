@@ -28,18 +28,20 @@ void study::LoadStudyInfo() {
 	}
 	else {
 		QSqlQuery q;
-		q.prepare("select c.uid, a.study_num, b.project_id, b.enrollment_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
+		q.prepare("select c.uid, a.study_num, b.project_id, b.enrollment_id, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
 		q.bindValue(":studyid", studyid);
-		n->SQLQuery(q, "study->LoadStudyInfo");
+		n->SQLQuery(q, "study->LoadStudyInfo", true);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid study ID or recently deleted?";
 			isValid = false;
 		}
 		else {
+			q.first();
 			uid = q.value("uid").toString().trimmed();
 			studynum = q.value("study_num").toInt();
 			projectid = q.value("project_id").toInt();
 			enrollmentid = q.value("enrollment_id").toInt();
+			studydatetime = q.value("study_datetime").toDateTime();
 
 			/* check to see if anything isn't valid or is blank */
 			if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
@@ -74,6 +76,7 @@ void study::PrintStudyInfo() {
 	output += QString("   isValid: [%1]\n").arg(isValid);
 	output += QString("   msg: [%1]\n").arg(msg);
 	output += QString("   studypath: [%1]\n").arg(studypath);
+	output += QString("   studydatetime: [%1]\n").arg(studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
 
 	n->WriteLog(output);
 }

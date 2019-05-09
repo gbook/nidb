@@ -18,11 +18,12 @@ public:
 	bool CopyAnalysis(int analysisid, QString destination, QString &msg);
 	bool DeleteAnalysis(int analysisid, QString &msg);
 	bool DeletePipeline(int pipelineid, QString &msg);
-	bool DeleteSubject(int subjectid, QString &msg);
+	bool DeleteSubject(int subjectid, QString username, QString &msg);
 	bool DeleteStudy(int subjectid, QString &msg);
 	bool DeleteSeries(int seriesid, QString modality, QString &msg);
 	bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
 	bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
+	bool MoveStudyToSubject(int studyid, QString newuid, QString username, QString &msg);
 
 private:
 	nidb *n;

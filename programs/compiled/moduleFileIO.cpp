@@ -24,16 +24,20 @@ moduleFileIO::~moduleFileIO()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleFileIO::Run() {
-    qDebug() << "Entering the fileio module";
+	n->WriteLog("Entering the fileio module");
 
 	/* get list of things to delete */
-	QSqlQuery q;
-	q.prepare("select * from fileio_requests where request_status != 'complete' and request_status != 'deleting' and request_status != 'error'");
-	n->SQLQuery(q, "Run");
+	QSqlQuery q("select * from fileio_requests where request_status <> 'complete' and request_status <> 'deleting' and request_status <> 'error'");
+	n->SQLQuery(q, "Run", true);
 
 	if (q.size() > 0) {
 		int i = 0;
 		while (q.next()) {
+			n->ModuleRunningCheckIn();
+			bool found = false;
+			QString msg;
+			i++;
+
 			int fileiorequest_id = q.value("fileiorequest_id").toInt();
 			QString fileio_operation = q.value("fileio_operation").toString();
 			QString data_type = q.value("data_type").toString();
@@ -42,13 +46,9 @@ int moduleFileIO::Run() {
 			QString data_destination = q.value("data_destination").toString();
 			int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
 			QString dicomtags = q.value("anonymize_fields").toString();
-			i++;
+			QString username = q.value("username").toString();
 
-			n->ModuleRunningCheckIn();
-
-			n->WriteLog(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()-1).arg(fileio_operation).arg(data_type));
-			bool found = false;
-			QString msg;
+			n->WriteLog(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()).arg(fileio_operation).arg(data_type));
 
 			if (fileio_operation == "rechecksuccess") {
 				if (data_type == "analysis") {
@@ -69,13 +69,14 @@ int moduleFileIO::Run() {
 				if (data_type == "pipeline") { found = DeletePipeline(data_id, msg); }
 				else if (data_type == "analysis") { found = DeleteAnalysis(data_id, msg); }
 				//else if (data_type == "groupanalysis") { found = DeleteGroupAnalysis(data_id); }
-				else if (data_type == "subject") { found = DeleteSubject(data_id, msg); }
+				else if (data_type == "subject") { found = DeleteSubject(data_id, username, msg); }
 				else if (data_type == "study") { found = DeleteStudy(data_id, msg); }
 				else if (data_type == "series") { found = DeleteSeries(data_id, modality, msg); }
 			}
 			else if (fileio_operation == "detach") {
 			}
 			else if (fileio_operation == "move") {
+				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, username, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
 				//found = AnonymizeSeries(fileiorequest_id, data_id, modality, dicomtags);
@@ -98,26 +99,27 @@ int moduleFileIO::Run() {
 			}
 			else {
 				/* unknown fileio_operation, so set it to 'error' */
-				QSqlQuery q;
-				q.prepare("update fileio_requests set request_status = 'error' where fileiorequest_id = :id");
-				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run", true);
+				QSqlQuery q2;
+				q2.prepare("update fileio_requests set request_status = 'error', request_message = 'Unknown fileio_operation' where fileiorequest_id = :id");
+				q2.bindValue(":id", fileiorequest_id);
+				n->SQLQuery(q2, "Run", true);
 			}
 
 			if (found) {
 				/* set the status of the delete_request to complete */
-				QSqlQuery q;
-				q.prepare("update fileio_requests set request_status = 'complete' where fileiorequest_id = :id");
-				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run", true);
+				QSqlQuery q2;
+				q2.prepare("update fileio_requests set request_status = 'complete', request_message = :msg where fileiorequest_id = :id");
+				q2.bindValue(":msg", msg);
+				q2.bindValue(":id", fileiorequest_id);
+				n->SQLQuery(q2, "Run", true);
 			}
 			else {
 				/* some error occurred, so set it to 'error' */
-				QSqlQuery q;
-				q.prepare("update fileio_requests set request_status = 'error', request_message = :msg where fileiorequest_id = :id");
-				q.bindValue(":msg", msg);
-				q.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q, "Run", true);
+				QSqlQuery q2;
+				q2.prepare("update fileio_requests set request_status = 'error', request_message = :msg where fileiorequest_id = :id");
+				q2.bindValue(":msg", msg);
+				q2.bindValue(":id", fileiorequest_id);
+				n->SQLQuery(q2, "Run", true);
 			}
 		}
 		n->WriteLog("Finished performing file IO");
@@ -250,14 +252,19 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	n->WriteLog("Analysispath: [" + a.analysispath + "]");
 
 	bool okToDeleteDBEntries = false;
+
 	if (QDir(a.analysispath).exists()) {
+		int c;
+		double b;
+		n->GetDirSize(a.analysispath, b, c);
+		n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
 		if (n->RemoveDir(a.analysispath, msg)) {
 			/* QDir.remove worked */
 			n->WriteLog("Analysispath removed");
 			okToDeleteDBEntries = true;
 		}
 		else {
-			QString systemstring = QString("sudo rm -rf %1").arg(a.analysispath);
+			QString systemstring = QString("sudo rm -rfv %1").arg(a.analysispath);
 			n->WriteLog("Running " + systemstring);
 			n->WriteLog(n->SystemCommand(systemstring));
 
@@ -344,7 +351,7 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 /* ---------------------------------------------------------- */
 /* --------- DeleteSubject ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::DeleteSubject(int subjectid, QString &msg) {
+bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) {
 	n->WriteLog("In DeleteSubject()");
 
 	QSqlQuery q;
@@ -355,62 +362,70 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString &msg) {
 	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
 	QDir d;
 
-	if(d.rename(s.subjectpath, newpath)) {
-		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
-
-		/* remove all database entries about this subject:
-		   TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
-		q.prepare("delete from mostrecent where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject", true);
-
-		q.prepare("delete from mostrecent where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject", true);
-
-		q.prepare("delete from family_members where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject", true);
-
-		q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-
-		q.prepare("delete from subject_altuid where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-
-		// delete all series
-		q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-		q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-		q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-
-		// delete all studies
-		q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-
-		// delete all enrollments
-		q.prepare("delete from enrollment where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
-
-		// delete the subject
-		q.prepare("delete from subjects where subject_id = :subjectid");
-		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "DeleteSubject");
+	if (d.exists()) {
+		if (d.rename(s.subjectpath, newpath)) {
+			msg = n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+		}
+		else {
+			msg = QString("Error in moving [%1] to [%2]").arg(s.subjectpath).arg(newpath);
+			n->WriteLog(msg);
+			return false;
+		}
 	}
 	else {
-		msg = QString("Error in moving [%1] to [%2]").arg(s.subjectpath).arg(newpath);
-		n->WriteLog(msg);
-		return false;
+		n->WriteLog(QString("Subject path on disk [" + s.subjectpath + "] does not exist"));
 	}
+
+	/* remove all database entries about this subject:
+	   TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
+	q.prepare("delete from mostrecent where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject", true);
+	//q.numRowsAffected();
+
+	q.prepare("delete from mostrecent where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject", true);
+
+	q.prepare("delete from family_members where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject", true);
+
+	q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	q.prepare("delete from subject_altuid where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	// delete all series
+	q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+	q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+	q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	// delete all studies
+	q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	// delete all enrollments
+	q.prepare("delete from enrollment where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	// delete the subject
+	q.prepare("delete from subjects where subject_id = :subjectid");
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, "DeleteSubject");
+
+	n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
 	return true;
 }
 
@@ -497,8 +512,10 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	q.bindValue(":projectid", s.projectid);
 	n->SQLQuery(q, "RearchiveStudy", true);
 	int instanceid;
-	if (q.size() > 0)
+	if (q.size() > 0) {
+		q.first();
 		instanceid = q.value("anlaysis_id").toInt();
+	}
 	else {
 		msg = "Invalid instance ID";
 		return false;
@@ -570,8 +587,10 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	q.bindValue(":projectid", projectid);
 	n->SQLQuery(q, "RearchiveSubject", true);
 	int instanceid;
-	if (q.size() > 0)
+	if (q.size() > 0) {
+		q.first();
 		instanceid = q.value("anlaysis_id").toInt();
+	}
 	else {
 		msg = "Invalid instance ID";
 		return false;
@@ -647,5 +666,91 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	n->SQLQuery(q, "RearchiveSubject", true);
 
 	msg = msgs.join(" | ");
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- MoveStudyToSubject ----------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString username, QString &msg) {
+	QStringList msgs;
+
+	study thestudy(studyid, n); /* get the original study info */
+	if (!thestudy.isValid) { msg = "Original study was not valid: [" + thestudy.msg + "]"; return false; }
+
+	subject origsubject(thestudy.subjectid, n); /* get the original subject info */
+	if (!origsubject.isValid) { msg = "Original subject was not valid: [" + origsubject.msg + "]"; return false; }
+
+	subject newsubject(newuid, n); /* get the new subject info */
+	if (!newsubject.isValid) { msg = "New subject was not valid: [" + newsubject.msg + "]"; return false; }
+
+	QDateTime now = QDateTime::currentDateTime();
+	if (now < thestudy.studydatetime.addDays(1)) {
+		msg = "This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time";
+		return false;
+	}
+
+	/* check if the new subject is enrolled in the old project, if not, enroll them */
+	QSqlQuery q;
+	q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
+	q.bindValue(":subjectid", newsubject.subjectid);
+	q.bindValue(":projectid", thestudy.projectid);
+	n->SQLQuery(q, "MoveStudyToSubject", true);
+	int newenrollmentid;
+	if (q.size() > 0) {
+		q.first();
+		newenrollmentid = q.value("anlaysis_id").toInt();
+	}
+	else {
+		q.prepare("insert into enrollment (subject_id, project_id, enroll_startdate) values (:subjectid, :projectid, now())");
+		q.bindValue(":subjectid", newsubject.subjectid);
+		q.bindValue(":projectid", thestudy.projectid);
+		n->SQLQuery(q, "MoveStudyToSubject", true);
+		newenrollmentid = q.lastInsertId().toInt();
+	}
+
+	/* get the next study number for the new subject */
+	q.prepare("select max(a.study_num) 'maxstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
+	q.bindValue(":subjectid", newsubject.subjectid);
+	n->SQLQuery(q, "MoveStudyToSubject", true);
+	int newstudynum = 1;
+	if (q.size() > 0) {
+		q.first();
+		newstudynum = q.value("maxstudynum").toInt() + 1;
+	}
+
+	/* change the enrollment_id associated with the studyid */
+	q.prepare("update studies set enrollment_id = :enrollmentid, study_num = :newstudynum where study_id = :studyid");
+	q.bindValue(":enrollmentid", newenrollmentid);
+	q.bindValue(":newstudynum", newstudynum);
+	q.bindValue(":studyid", studyid);
+	n->SQLQuery(q, "MoveStudyToSubject", true);
+
+	/* copy the data, don't move in case there is a problem */
+	QString oldpath = thestudy.studypath;
+	QString newpath = QString("%1/%2").arg(newsubject.subjectpath).arg(newstudynum);
+
+	QDir d;
+	d.mkpath(newpath);
+	d.mkpath(oldpath);
+	if (!d.exists(newpath)) msgs << "Error creating newpath [" + newpath + "]";
+	if (!d.exists(oldpath)) msgs << "Error creating oldpath [" + oldpath + "]";
+
+	n->WriteLog("Moving data within archive directory");
+	QString systemstring = QString("rsync -rtuv %1/* %2 2>&1").arg(oldpath).arg(newpath);
+	msgs << n->SystemCommand(systemstring);
+
+	msg = msgs.join(" | ");
+	q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");
+	q.bindValue(":oldprojectid", thestudy.projectid);
+	q.bindValue(":oldsubjectid", origsubject.subjectid);
+	q.bindValue(":newsubjectid", newsubject.subjectid);
+	q.bindValue(":oldenrollmentid", thestudy.enrollmentid);
+	q.bindValue(":newenrollmentid", newenrollmentid);
+	q.bindValue(":studyid", studyid);
+	q.bindValue(":msg", msg);
+	n->SQLQuery(q, "MoveStudyToSubject", true);
+
 	return true;
 }

@@ -20,6 +20,7 @@ public:
 	QString studypath;
 	int enrollmentid;
 	int projectid;
+	QDateTime studydatetime;
 
 	bool isValid = true;
 	QString msg;

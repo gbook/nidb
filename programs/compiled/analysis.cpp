@@ -47,7 +47,7 @@ void analysis::LoadAnalysisInfo() {
 	if (studynum == 0) { n->WriteLog("Something was wrong, studynum was blank"); msg = "studynum was not initialized"; isValid = false; }
 	if (pipelinename == "") { n->WriteLog("Something was wrong, pipelinename was blank"); msg = "pipelinename was not initialized"; isValid = false; }
 
-	if (pipelinelevel == 0) {
+	if (pipelinelevel == 2) {
 		analysispath = QString("%1/%2/%3/%4").arg(n->cfg["groupanalysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
 	}
 	else {
@@ -55,11 +55,6 @@ void analysis::LoadAnalysisInfo() {
 			analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
 		else
 			analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
-	}
-
-	/* if there is a /mount prefix, remove it */
-	if (analysispath.left(6) == "/mount") {
-		analysispath.remove(0,6);
 	}
 
 	if ((analysispath == "") || (analysispath == ".") || (analysispath == "..") || (analysispath == "/") || analysispath.contains("//") || (analysispath == "/home") || (analysispath == "/root")) {

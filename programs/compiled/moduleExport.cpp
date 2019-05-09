@@ -24,7 +24,7 @@ moduleExport::~moduleExport()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleExport::Run() {
-	qDebug() << "Entering the manager module";
+	qDebug() << "Entering the export module";
 
     return 1;
 }

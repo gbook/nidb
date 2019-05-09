@@ -8,6 +8,7 @@
 #include <QtSql>
 #include <QHostInfo>
 #include <QDirIterator>
+#include "smtp/SmtpMime"
 
 class nidb
 {
@@ -31,7 +32,9 @@ public:
 	void ModuleDBCheckOut();
 	void ModuleRunningCheckIn();
 
+	/* logging */
 	void InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
+	void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
 
 	/* generic functions */
 	QString CreateCurrentDate();
@@ -45,6 +48,8 @@ public:
 	QString GenerateRandomString(int n);
 	QStringList FindAllFiles(QString dir, QString pattern);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
+	void GetDirSize(QString dir, double &bytes, int &filecount);
+	bool SendEmail(QString to, QString subject, QString body);
 
 private:
     void FatalError(QString err);

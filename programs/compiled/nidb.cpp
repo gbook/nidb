@@ -174,10 +174,7 @@ bool nidb::CreateLogFile () {
 	log.setFileName(logFilepath);
 
 	if (log.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		//QString d = "[" + CreateCurrentDate() + "] - Created log file for module";
-		//QTextStream fs(&log);
-		//fs << d;
-		WriteLog(QString("Starting the " + module + " module"));
+		WriteLog(QString("Created log file for the " + module + " module"));
 		return 1;
 	}
 	else {
@@ -255,16 +252,20 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
 	}
 
 	/* debugging */
-	if (cfg["debug"].toInt() || d) qDebug() << "Running SQL statement[" << sql <<"]";
+	if (cfg["debug"].toInt() || d) {
+		qDebug() << "Running SQL statement[" << sql <<"]";
+		WriteLog(sql);
+	}
 
 	/* run the query */
     if (q.exec()) {
-		q.first();
-        return q.size();
+		return q.size();
     }
     else {
-		QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error [%4]").arg(module).arg(function).arg(sql).arg(q.lastError().text());
+		QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error(DB) [%4] Error(driver) [%5]").arg(module).arg(function).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+		SendEmail(cfg["adminemail"], "SQL error", err);
 		qDebug() << err;
+		qDebug() << q.lastError();
 		WriteLog(err);
         return -1;
     }
@@ -363,7 +364,7 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	QString output;
 	QProcess process;
 	process.setProcessChannelMode(QProcess::MergedChannels);
-	process.start(s);
+	process.start("sh", QStringList() << "-c" << s);
 
 	/* Get the output */
 	if (process.waitForStarted(-1)) {
@@ -373,8 +374,9 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	}
 	process.waitForFinished();
 
+	output = output.trimmed();
 	if (detail)
-		ret = QString("Command [%1] outout [%2]").arg(s).arg(output);
+		ret = QString("Running command [%1], Output [%2]").arg(s).arg(output);
 	else
 		ret = output;
 
@@ -510,4 +512,80 @@ bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString 
 
 	msg = msgs.join(" | ");
 	return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetDirSize ------------------------------------- */
+/* ---------------------------------------------------------- */
+void nidb::GetDirSize(QString dir, double &bytes, int &filecount) {
+	filecount = 0;
+	bytes = 0.0;
+	QDirIterator it(dir, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+	while (it.hasNext()) {
+		filecount++;
+		it.next();
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SendEmail -------------------------------------- */
+/* ---------------------------------------------------------- */
+/* OpenSSL 1.0.x required for Qt compatibility                */
+/* ---------------------------------------------------------- */
+bool nidb::SendEmail(QString to, QString subject, QString body) {
+
+	SmtpClient smtp(cfg["emailserver"].replace("tls://",""), cfg["emailport"].toInt(), SmtpClient::TlsConnection);
+	smtp.setUser(cfg["emailusername"]);
+	smtp.setPassword(cfg["emailpassword"]);
+
+	/* create a MimeMessage object. This will be the email. */
+	MimeMessage message;
+	message.setSender(new EmailAddress(cfg["emailusername"], "NiDB"));
+	message.addRecipient(new EmailAddress(to, ""));
+	message.setSubject(subject);
+
+	/* add the body to the email */
+	MimeText text;
+	text.setText(body);
+	message.addPart(&text);
+
+	/* Now we can send the mail */
+	if (!smtp.connectToHost()) {
+		qDebug() << "Failed to connect to host [" << cfg["emailserver"] << "]";
+		smtp.quit();
+		return false;
+	}
+	if (!smtp.login()) {
+		qDebug() << "Failed to login using username [" << cfg["emailusername"] << "] and password [" << cfg["emailpassword"] << "]";
+		smtp.quit();
+		return false;
+	}
+	if (!smtp.sendMail(message)) {
+		qDebug() << "Failed to send [" << body << "]";
+		smtp.quit();
+		return false;
+	}
+	else {
+		qDebug() << "Sent email successfuly";
+	}
+	smtp.quit();
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- InsertSubjectChangeLog ------------------------- */
+/* ---------------------------------------------------------- */
+void nidb::InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log) {
+	QSqlQuery q;
+	q.prepare("insert ignore into changelog_subject (username, change_date, changetype, uid, newuid, log) values (:username, now(), :changetype, :uid, :newuid, :log)");
+	q.bindValue(":username", username);
+	q.bindValue(":changetype", changetype);
+	q.bindValue(":uid", uid);
+	q.bindValue(":newuid", newuid);
+	q.bindValue(":log", log);
+	SQLQuery(q, "InsertSubjectChangeLog");
 }

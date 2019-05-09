@@ -7,7 +7,27 @@ subject::subject(int id, nidb *a)
 	n = a;
 	subjectid = id;
 	LoadSubjectInfo();
-	//PrintSubjectInfo();
+}
+
+
+subject::subject(QString uid, nidb *a)
+{
+	n = a;
+
+	QSqlQuery q;
+	q.prepare("select subject_id from subjects where uid = :uid");
+	q.bindValue(":uid", uid);
+	n->SQLQuery(q, "subject->subject");
+	if (q.size() < 1) {
+		msg = "UID [" + uid + "] could not be found";
+		isValid = false;
+	}
+	else {
+		q.first();
+		subjectid = q.value("subject_id").toInt();
+	}
+
+	LoadSubjectInfo();
 }
 
 

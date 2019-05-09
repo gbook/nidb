@@ -38,6 +38,7 @@ void series::LoadSeriesInfo() {
 			isValid = false;
 		}
 		else {
+			q.first();
 			uid = q.value("uid").toString().trimmed();
 			studynum = q.value("study_num").toInt();
 			seriesnum = q.value("series_num").toInt();

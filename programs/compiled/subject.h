@@ -9,6 +9,7 @@ class subject
 public:
 	subject();
 	subject(int id, nidb *a);
+	subject(QString uid, nidb *a);
 	nidb *n;
 
 	void PrintSubjectInfo();

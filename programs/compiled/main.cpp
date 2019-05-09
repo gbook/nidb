@@ -5,6 +5,7 @@
 #include "moduleExport.h"
 #include "moduleManager.h"
 #include <iostream>
+#include <smtp/SmtpMime>
 
 int main(int argc, char *argv[])
 {
