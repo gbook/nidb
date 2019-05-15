@@ -117,6 +117,42 @@ void nidb::FatalError(QString err) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- GetNumThreads ---------------------------------- */
+/* ---------------------------------------------------------- */
+int nidb::GetNumThreads() {
+
+	if (module == "fileio") {
+		if (cfg["modulefileiothreads"] == "") return 1;
+		else return cfg["modulefileiothreads"].toInt();
+	}
+	else if (module == "export") {
+		if (cfg["modulefileiothreads"] == "") return 1;
+		else return cfg["modulefileiothreads"].toInt();
+	}
+	else if (module == "parsedicom") {
+		return 1;
+	}
+	else if (module == "mriqa") {
+		if (cfg["modulemriqathreads"] == "") return 1;
+		else return cfg["modulemriqathreads"].toInt();
+	}
+	else if (module == "pipeline") {
+		if (cfg["modulepipelinethreads"] == "") return 1;
+		else return cfg["modulepipelinethreads"].toInt();
+	}
+	else if (module == "importuploaded") {
+		return 1;
+	}
+	else if (module == "qc") {
+		if (cfg["moduleqcthreads"] == "") return 1;
+		else return cfg["moduleqcthreads"].toInt();
+	}
+
+	return 1;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- CheckNumLockFiles ------------------------------ */
 /* ---------------------------------------------------------- */
 int nidb::CheckNumLockFiles() {
@@ -283,9 +319,9 @@ bool nidb::ModuleCheckIfActive() {
 	SQLQuery(q, "ModuleCheckIfActive");
 
     if (q.size() < 1)
-        return 0;
+		return false;
     else
-        return 1;
+		return true;
 }
 
 
@@ -309,6 +345,11 @@ void nidb::ModuleDBCheckOut() {
 	QSqlQuery q;
 	q.prepare("update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = :module");
 	q.bindValue(":module", module);
+	SQLQuery(q, "ModuleDBCheckOut");
+
+	q.prepare("delete from module_procs where module_name = :module and process_id = :pid");
+	q.bindValue(":module", module);
+	q.bindValue(":pid", QCoreApplication::applicationPid());
 	SQLQuery(q, "ModuleDBCheckOut");
 
 	qDebug() << "Module checked out of database";
@@ -588,4 +629,110 @@ void nidb::InsertSubjectChangeLog(QString username, QString uid, QString newuid,
 	q.bindValue(":newuid", newuid);
 	q.bindValue(":log", log);
 	SQLQuery(q, "InsertSubjectChangeLog");
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ConvertDicom ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, int studynum, int seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+
+	QStringList msgs;
+
+	QString pwd = QDir::currentPath();
+
+	QString gzipstr;
+	if (gzip) gzipstr = "-z y";
+	else gzipstr = "-z n";
+
+	numfilesconv = 0; /* need to fix this to be correct at some point */
+
+	WriteLog("Working on [" + indir + "]");
+
+	/* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
+	QString fileext = "";
+	if (datatype == "parrec")
+		fileext = "/*.par";
+
+	/* do the conversion */
+	QString systemstring;
+	QDir::setCurrent(indir);
+	if (filetype == "nifti4d")
+		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir);
+	else if (filetype == "nifti4dme")
+		systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+	else if (filetype == "nifti3d")
+		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+	else if (filetype == "bids")
+		systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+	else
+		return false;
+
+	/* create the output directory */
+	QString m;
+	if (!MakePath(outdir, m)) {
+		msgs << "Unable to create path [" + outdir + "] because of error [" + m + "]";
+		return false;
+	}
+
+	/* delete any files that may already be in the output directory.. for example, an incomplete series was put in the output directory
+	 * remove any stuff and start from scratch to ensure proper file numbering */
+	if ((outdir != "") && (outdir != "/") ) {
+		systemstring = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
+		WriteLog(SystemCommand(systemstring, true));
+	}
+
+	/* conversion should be done, so check if it actually gzipped the file */
+	if ((gzip) && (filetype != "bids")) {
+		systemstring = "cd " + outdir + "; gzip *";
+		WriteLog(SystemCommand(systemstring, true));
+	}
+
+	/* rename the files into something meaningful */
+	m = "";
+	if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
+		msgs << "Error renaming output files [" + m + "]";
+
+	/* change back to original directory before leaving */
+	QDir::setCurrent(pwd);
+
+	msg = msgs.join("\n");
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- BatchRenameFiles ------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::BatchRenameFiles(QString dir, int seriesnum, int studynum, QString uid, int &numfilesrenamed, QString &msg) {
+
+	QDir d;
+	if (!d.exists(dir)) {
+		msg = "directory [" + dir + "] does not exist";
+		return false;
+	}
+
+	numfilesrenamed = 0;
+	QStringList exts;
+	exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+	/* loop through all the extensions we want to rename/renumber */
+	foreach (QString ext, exts) {
+		int i = 1;
+		QFile f;
+		QDirIterator it(dir, QStringList() << ext, QDir::Files);
+		while (it.hasNext()) {
+			QString fname = it.next();
+			f.setFileName(fname);
+			QFileInfo fi(f);
+			QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i).arg(ext);
+			qDebug() << fname + " --> " + newName;
+			if (f.rename(newName))
+				numfilesrenamed++;
+			else
+				qDebug() << "Error renaming file [" + fname + "] to [" + newName + "]";
+			i++;
+		}
+	}
+
+	return true;
 }

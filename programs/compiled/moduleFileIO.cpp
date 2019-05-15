@@ -27,7 +27,7 @@ int moduleFileIO::Run() {
 	n->WriteLog("Entering the fileio module");
 
 	/* get list of things to delete */
-	QSqlQuery q("select * from fileio_requests where request_status <> 'complete' and request_status <> 'deleting' and request_status <> 'error'");
+	QSqlQuery q("select * from fileio_requests where request_status = 'pending'");
 	n->SQLQuery(q, "Run", true);
 
 	if (q.size() > 0) {
@@ -38,15 +38,31 @@ int moduleFileIO::Run() {
 			QString msg;
 			i++;
 
-			int fileiorequest_id = q.value("fileiorequest_id").toInt();
-			QString fileio_operation = q.value("fileio_operation").toString();
-			QString data_type = q.value("data_type").toString();
+			int requestid = q.value("fileiorequest_id").toInt();
+			QString fileio_operation = q.value("fileio_operation").toString().trimmed();
+			QString data_type = q.value("data_type").toString().trimmed();
 			int data_id = q.value("data_id").toInt();
-			QString modality = q.value("modality").toString();
-			QString data_destination = q.value("data_destination").toString();
+			QString modality = q.value("modality").toString().trimmed();
+			QString data_destination = q.value("data_destination").toString().trimmed();
 			int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
-			QString dicomtags = q.value("anonymize_fields").toString();
-			QString username = q.value("username").toString();
+			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
+			QString username = q.value("username").toString().trimmed();
+
+			qDebug() << "requestid [" << requestid << "]";
+			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
+			QString status = GetIORequestStatus(requestid);
+			if (status == "pending") {
+				/* set the status, if something is wrong, skip this request */
+				if (!SetIORequestStatus(requestid, "pending")) {
+					n->WriteLog(QString("Unable to set fileiorequest_status to [%1]").arg(status));
+					continue;
+				}
+			}
+			else {
+				/* skip this IO request... the status was changed outside of this instance of the program */
+				n->WriteLog(QString("The status for this fileiorequest [%1] has been changed to [%2]. Skipping.").arg(requestid).arg(status));
+				continue;
+			}
 
 			n->WriteLog(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()).arg(fileio_operation).arg(data_type));
 
@@ -79,7 +95,7 @@ int moduleFileIO::Run() {
 				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, username, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
-				//found = AnonymizeSeries(fileiorequest_id, data_id, modality, dicomtags);
+				//found = AnonymizeSeries(requestid, data_id, modality, dicomtags);
 			}
 			else if (fileio_operation == "rearchive") {
 				if (data_type == "study") {
@@ -99,27 +115,16 @@ int moduleFileIO::Run() {
 			}
 			else {
 				/* unknown fileio_operation, so set it to 'error' */
-				QSqlQuery q2;
-				q2.prepare("update fileio_requests set request_status = 'error', request_message = 'Unknown fileio_operation' where fileiorequest_id = :id");
-				q2.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q2, "Run", true);
+				SetIORequestStatus(requestid, "error", msg);
 			}
 
 			if (found) {
 				/* set the status of the delete_request to complete */
-				QSqlQuery q2;
-				q2.prepare("update fileio_requests set request_status = 'complete', request_message = :msg where fileiorequest_id = :id");
-				q2.bindValue(":msg", msg);
-				q2.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q2, "Run", true);
+				SetIORequestStatus(requestid, "complete", msg);
 			}
 			else {
 				/* some error occurred, so set it to 'error' */
-				QSqlQuery q2;
-				q2.prepare("update fileio_requests set request_status = 'error', request_message = :msg where fileiorequest_id = :id");
-				q2.bindValue(":msg", msg);
-				q2.bindValue(":id", fileiorequest_id);
-				n->SQLQuery(q2, "Run", true);
+				SetIORequestStatus(requestid, "error", msg);
 			}
 		}
 		n->WriteLog("Finished performing file IO");
@@ -129,6 +134,49 @@ int moduleFileIO::Run() {
 	}
 
     return 1;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetIORequestStatus ----------------------------- */
+/* ---------------------------------------------------------- */
+QString moduleFileIO::GetIORequestStatus(int requestid) {
+	QSqlQuery q;
+	q.prepare("select request_status from fileio_requests where fileiorequest_id = :id");
+	q.bindValue(":id", requestid);
+	n->SQLQuery(q, "GetIORequestStatus", true);
+	q.first();
+	QString status = q.value("request_status").toString();
+	return status;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SetIORequestStatus ----------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg) {
+
+	if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (requestid > 0)) {
+		if (msg.trimmed() == "") {
+			QSqlQuery q;
+			q.prepare("update fileio_requests set request_status = :status where fileiorequest_id = :id");
+			q.bindValue(":id", requestid);
+			q.bindValue(":status", status);
+			n->SQLQuery(q, "SetIORequestStatus", true);
+		}
+		else {
+			QSqlQuery q;
+			q.prepare("update fileio_requests set request_status = :status, request_message = :msg where fileiorequest_id = :id");
+			q.bindValue(":id", requestid);
+			q.bindValue(":msg", msg);
+			q.bindValue(":status", status);
+			n->SQLQuery(q, "SetIORequestStatus", true);
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 
@@ -146,7 +194,7 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 	QSqlQuery q;
 	q.prepare("select pipeline_completefiles from pipelines a left join analysis b on a.pipeline_id = b.pipeline_id where b.analysis_id = :analysisid");
 	q.bindValue(":analysisid", analysisid);
-	n->SQLQuery(q, "Run");
+	n->SQLQuery(q, "RecheckSuccess");
 	q.first();
 	QString completefiles = q.value("uid").toString().trimmed();
 	QStringList filelist = completefiles.split(',');
@@ -362,18 +410,23 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
 	QDir d;
 
-	if (d.exists()) {
-		if (d.rename(s.subjectpath, newpath)) {
-			msg = n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+	if (s.subjectpath != "") {
+		if (d.exists(s.subjectpath)) {
+			if (d.rename(s.subjectpath, newpath)) {
+				msg = n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+			}
+			else {
+				msg = QString("Error in moving [%1] to [%2]").arg(s.subjectpath).arg(newpath);
+				n->WriteLog(msg);
+				return false;
+			}
 		}
 		else {
-			msg = QString("Error in moving [%1] to [%2]").arg(s.subjectpath).arg(newpath);
-			n->WriteLog(msg);
-			return false;
+			n->WriteLog(QString("Subject path on disk [" + s.subjectpath + "] does not exist"));
 		}
 	}
 	else {
-		n->WriteLog(QString("Subject path on disk [" + s.subjectpath + "] does not exist"));
+		n->WriteLog(QString("Subject has no path on disk"));
 	}
 
 	/* remove all database entries about this subject:

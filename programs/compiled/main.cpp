@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
 	int numlock = n->CheckNumLockFiles();
 
-    if (numlock < 3) {
+	if (numlock <= n->GetNumThreads()) {
 		if (n->CreateLockFile()) {
 			/* check if this module should be running now or not */
 			if (n->ModuleCheckIfActive()) {

@@ -98,7 +98,7 @@
 			MergeStudies($subjectid, $studyids);
 			break;
 		case 'movestudytosubject':
-			MoveStudyToSubject($studyid, $newuid);
+			MoveStudyToSubject2($studyid, $newuid);
 			DisplayStudy($studyid);
 			break;
 		case 'movestudytoproject':
@@ -640,6 +640,22 @@
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- MoveStudyToSubject2 ---------------- */
+	/* -------------------------------------------- */
+	function MoveStudyToSubject2($studyid, $newuid) {
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if ($newuid == "") { return; }
+		
+		/* insert row into fileio_requests */
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, requestdate) values ('move','study','$studyid','$newuid', now())";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+		?><div align="center"><span class="message">Study queued for move</span></div><?
+		
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- MoveStudyToProject ----------------- */

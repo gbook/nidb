@@ -18,11 +18,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     analysis.cpp \
-        main.cpp \
+    main.cpp \
     moduleExport.cpp \
     moduleFileIO.cpp \
     moduleManager.cpp \
     nidb.cpp \
+    remotenidbconnection.cpp \
     series.cpp \
     study.cpp \
     subject.cpp
@@ -38,6 +39,59 @@ HEADERS += \
     moduleFileIO.h \
     moduleManager.h \
     nidb.h \
+    remotenidbconnection.h \
     series.h \
     study.h \
     subject.h
+
+# Location of SMTP Library
+SMTP_LIBRARY_LOCATION = $$PWD/smtp
+win32:CONFIG(release, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/ -lSMTPEmail
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/debug/ -lSMTPEmail
+else:unix: LIBS += -L$$SMTP_LIBRARY_LOCATION/ -lSMTPEmail
+INCLUDEPATH += $$SMTP_LIBRARY_LOCATION
+DEPENDPATH += $$SMTP_LIBRARY_LOCATION
+
+
+# gdcm
+win32: {
+    GDCMBIN = C:/gdcmbin
+    GDCMSRC = C:/gdcm/Source
+}
+unix: {
+    GDCMBIN = ~/gdcmbin
+    GDCMSRC = ~/gdcm/Source
+}
+
+#contains(QT_ARCH, i386) {
+#    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Release/
+#    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Debug/
+#} else {
+    win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
+#}
+
+INCLUDEPATH += $$GDCMSRC/Attribute
+INCLUDEPATH += $$GDCMSRC/Common
+INCLUDEPATH += $$GDCMSRC/DataDictionary
+INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
+INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
+INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
+INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
+INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
+HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+
+LIBS += -lgdcmMSFF \
+    -lgdcmCommon \
+    -lgdcmDICT \
+    -lgdcmDSED \
+    -lgdcmIOD \
+    -lgdcmMEXD \
+    -lgdcmcharls \
+    -lgdcmexpat \
+    -lgdcmjpeg12 \
+    -lgdcmjpeg16 \
+    -lgdcmjpeg8 \
+    -lgdcmopenjp2 \
+    -lgdcmzlib \
+    -lsocketxx

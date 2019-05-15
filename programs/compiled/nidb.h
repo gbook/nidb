@@ -31,6 +31,7 @@ public:
 	void ModuleDBCheckIn();
 	void ModuleDBCheckOut();
 	void ModuleRunningCheckIn();
+	int GetNumThreads();
 
 	/* logging */
 	void InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
@@ -50,6 +51,8 @@ public:
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	void GetDirSize(QString dir, double &bytes, int &filecount);
 	bool SendEmail(QString to, QString subject, QString body);
+	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, int studynum, int seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+	bool BatchRenameFiles(QString dir, int seriesnum, int studynum, QString uid, int &numfilesrenamed, QString &msg);
 
 private:
     void FatalError(QString err);

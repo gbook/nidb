@@ -59,6 +59,14 @@
     $c['mysqldevuser'] = GetVariable("mysqldevuser");
     $c['mysqldevpassword'] = GetVariable("mysqldevpassword");
     $c['mysqldevdatabase'] = GetVariable("mysqldevdatabase");
+
+    $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
+    $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
+    $c['moduleparsedicomthreads'] = GetVariable("moduleparsedicomthreads");
+    $c['modulemriqathreads'] = GetVariable("modulemriqathreads");
+    $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
+    $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
+    $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
 	
     $c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
@@ -206,7 +214,7 @@
 # ------------------------------------------------------------------------------
 # NIDB nidb.cfg
 # Copyright (C) 2004-$year
-# Gregory A Book (gregory.book@hhchealth.org) (gbook@gbook.org)
+# Gregory A Book (gregory.book@hhchealth.org) (gregory.a.book@gmail.com)
 # Olin Neuropsychiatry Research Center, Hartford Hospital
 # ------------------------------------------------------------------------------
 # GPLv3 License:
@@ -241,6 +249,15 @@
 [mysqldevdatabase] = $mysqldevdatabase
 [mysqldevuser] = $mysqldevuser
 [mysqldevpassword] = $mysqldevpassword
+
+# ----- Database -----
+[modulefileiothreads] = $modulefileiothreads
+[moduleexportthreads] = $moduleexportthreads
+[moduleparsedicomthreads] = $moduleparsedicomthreads
+[modulemriqathreads] = $modulemriqathreads
+[modulepipelinethreads] = $modulepipelinethreads
+[moduleimportuploadedthreads] = $moduleimportuploadedthreads
+[moduleqcthreads] = $moduleqcthreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
@@ -293,6 +310,8 @@
 [groupanalysisdir] = $groupanalysisdir
 [archivedir] = $archivedir
 [backupdir] = $backupdir
+[deleteddir] = $deleteddir
+[downloaddir] = $downloaddir
 [ftpdir] = $ftpdir
 [importdir] = $importdir
 [incomingdir] = $incomingdir
@@ -304,12 +323,10 @@
 [qcmoduledir] = $qcmoduledir
 [problemdir] = $problemdir
 [scriptdir] = $scriptdir
+[tmpdir] = $tmpdir
+[uploadeddir] = $uploadeddir
 [webdir] = $webdir
 [webdownloaddir] = $webdownloaddir
-[downloaddir] = $downloaddir
-[uploadeddir] = $uploadeddir
-[tmpdir] = $tmpdir
-[deleteddir] = $deleteddir
 ";
 
 		$ret = file_put_contents($GLOBALS['cfg']['cfgpath'], $str);
@@ -408,7 +425,7 @@
 				<td class="variable">mysqlhost</td>
 				<td><input type="text" name="mysqlhost" value="<?=$GLOBALS['cfg']['mysqlhost']?>" size="45"></td>
 				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Database hostname (should be localhost or 127.0.0.1 unless the database is running a different server from the website)</td>
+				<td>Database hostname (should be localhost or 127.0.0.1 unless the database is running on a different server than the website)</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqluser</td>
@@ -452,9 +469,57 @@
 				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Development database (default is <tt>nidb</tt>)</td>
 			</tr>
+
+			<tr>
+				<td colspan="3" class="heading"><br>Modules</td>
+				<td valign="bottom"><br><br>Maximum number of threads allowed. Some modules cannot be multi-threaded</td>
+			</tr>
+			<tr>
+				<td class="variable">modulefileiothreads</td>
+				<td><input type="number" name="modulefileiothreads" value="<?=$GLOBALS['cfg']['modulefileiothreads']?>"></td>
+				<td></td>
+				<td><b>fileio</b> module. Recommended is 2</td>
+			</tr>
+			<tr>
+				<td class="variable">moduleexportthreads</td>
+				<td><input type="number" name="moduleexportthreads" value="<?=$GLOBALS['cfg']['moduleexportthreads']?>"></td>
+				<td></td>
+				<td><b>export</b> module. Recommended is 2</td>
+			</tr>
+			<tr>
+				<td class="variable">moduleparsedicomthreads</td>
+				<td><input type="number" name="moduleparsedicomthreads" value="1" disabled></td>
+				<td></td>
+				<td><b>parsedicom</b> module. Not multi-threaded.</td>
+			</tr>
+			<tr>
+				<td class="variable">modulemriqathreads</td>
+				<td><input type="number" name="modulemriqathreads" value="<?=$GLOBALS['cfg']['modulemriqathreads']?>"></td>
+				<td></td>
+				<td><b>mriqa</b> module. Recommended is 4</td>
+			</tr>
+			<tr>
+				<td class="variable">modulepipelinethreads</td>
+				<td><input type="number" name="modulepipelinethreads" value="<?=$GLOBALS['cfg']['modulepipelinethreads']?>"></td>
+				<td></td>
+				<td><b>pipeline</b> module. Recommended is 4</td>
+			</tr>
+			<tr>
+				<td class="variable">moduleimportuploadedthreads</td>
+				<td><input type="number" name="moduleimportuploadedthreads" value="1" disabled></td>
+				<td></td>
+				<td><b>importuploaded</b> module. Not multi-threaded.</td>
+			</tr>
+			<tr>
+				<td class="variable">moduleqcthreads</td>
+				<td><input type="number" name="moduleqcthreads" value="<?=$GLOBALS['cfg']['moduleqcthreads']?>"></td>
+				<td></td>
+				<td><b>qc</b> module. Recommended is 2</td>
+			</tr>
+
 			<tr>
 				<td class="heading"><br>Email</td>
-				<td colspan="3" valign="bottom" title="Send a test email to the admin email account"><br><a href="system.php?action=testemail">Send test email</a></td>
+				<td colspan="3" valign="bottom" title="Send a test email to the admin email account"><br><br><a href="system.php?action=testemail" style="background-color:yellow; padding: 2px 5px; border: 1px solid orange"> Send test email </a></td>
 			</tr>
 			<tr>
 				<td class="variable">emaillib</td>
@@ -482,7 +547,7 @@
 			</tr>
 			<tr>
 				<td class="variable">emailport</td>
-				<td><input type="text" name="emailport" value="<?=$GLOBALS['cfg']['emailport']?>" size="45"></td>
+				<td><input type="number" name="emailport" value="<?=$GLOBALS['cfg']['emailport']?>" size="45"></td>
 				<td></td>
 				<td>Email server port. For gmail, it should be <tt>587</tt></td>
 			</tr>
@@ -535,7 +600,7 @@
 				<td class="variable">ispublic</td>
 				<td><input type="checkbox" name="ispublic" value="1" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>></td>
 				<td></td>
-				<td>Set to 1 if this installation is on a public server and only has port 80 open</td>
+				<td>Selected if this installation is on a public server and only has port 80 open</td>
 			</tr>
 			<tr>
 				<td class="variable">sitetype</td>
@@ -643,7 +708,7 @@
 			</tr>
 			<tr>
 				<td class="variable">casport</td>
-				<td><input type="text" name="casport" value="<?=$GLOBALS['cfg']['casport']?>" size="45"></td>
+				<td><input type="number" name="casport" value="<?=$GLOBALS['cfg']['casport']?>" size="45"></td>
 				<td></td>
 				<td>CAS port, usually 443</td>
 			</tr>

@@ -24,6 +24,8 @@ public:
 	bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
 	bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
 	bool MoveStudyToSubject(int studyid, QString newuid, QString username, QString &msg);
+	QString GetIORequestStatus(int requestid);
+	bool SetIORequestStatus(int requestid, QString status, QString msg = "");
 
 private:
 	nidb *n;

@@ -51,21 +51,43 @@
 
 <!-- menu -->
 	<style>
-		#Bar1 a:link { background-color:#526FAA; color: white; padding:10px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:12pt; min-width: 70px; }
-		#Bar1 a:visited { background-color:#526FAA; color: white; padding:10px; text-align: center; text-decoration: none; display: inline-block; font-size:12pt; }
+		#Bar1 a:link { background-color:#526FAA; color: white; padding: 10px 10px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:11pt; min-width: 70px; }
+		#Bar1 a:visited { background-color:#526FAA; color: white; padding: 10px 10px; text-align: center; text-decoration: none; font-size:11pt; }
 		#Bar1 a:hover { background-color: #3B5998; }
 		#Bar1 a:active { background-color: #3B5998; }
 		
-		#Bar2 a:link{ background-color:#3B5998; color: white; padding:10px; text-align: center; text-decoration: none; display: inline-block; overflow: hidden; text-overflow: ellipsis; max-width: 300px; white-space: nowrap;font-size:11pt;}
-		#Bar2 a:visited { background-color:#3B5998; color: white; padding:10px; text-align: center; text-decoration: none; display: inline-block; font-size:11pt;}
+		#Bar2 a:link{ background-color:#3B5998; color: white; padding: 10px 15px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap;font-size:10pt;}
+		#Bar2 a:visited { background-color:#3B5998; color: white; padding:10px 15px; text-align: center; text-decoration: none; font-size:10pt;}
 		#Bar2 a:hover { background-color: #526FAA; }
 		#Bar2 a:active { background-color: #526FAA; }
 	</style>
 
 	<table width="100%" cellspacing="0" cellpadding="0" style="background-color:#526FAA; border-spacing: 0px; padding:0px; border-bottom: 2px solid #444">
 		<tr>
-			<td style="width: 150px; color: white; background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding: 0px 10px; font-size: 14pt; font-weight: bold; overflow: hidden; text-overflow: ellipsis; max-width: 300px; white-space:nowrap;">
-			<?=$GLOBALS['cfg']['sitename']?>
+			<td rowspan="2" align="center" style="width: 300px; color: white; background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding: 5px 15px; font-size: 16pt; overflow: hidden; text-overflow: ellipsis; max-width: 300px; white-space:nowrap;">
+			<b><?=$GLOBALS['cfg']['sitename']?></b><br>
+			
+			<form method="post" action="index.php" id="instanceform" style="margin:0px">
+			<input type="hidden" name="action" value="switchinstance">
+			<!--<span style="font-size:9pt;"><i>Project group</i></span><br>-->
+			
+			<span style="overflow: hidden; text-overflow: ellipsis; width: 250px; display: inline-block; font-size: 10pt; color: white; white-space: nowrap" title="<?=$_SESSION['instancename']?>"><?=$_SESSION['instancename']?></span>
+			<select name="instanceid" style="background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding:0;border: 0px solid #526FAA; width:20px; color: white" title="Switch instance" onChange="instanceform.submit()">
+				<option value="">Select Instance...</option>
+				<?
+					$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$instance_id = $row['instance_id'];
+						$instance_name = $row['instance_name'];
+						?>
+						<option value="<?=$instance_id?>"><?=$instance_name?></option>
+						<?
+					}
+				?>
+			</select>
+			</form>
+			
 			</td>
 			<td id="Bar1" style="background-color:#526FAA; padding: 0px" width="60%">
 			<?
@@ -85,7 +107,7 @@
 				?><a href="subjects.php" style="<?=$style?>"><b>Subjects</b></a><?
 				
 				/* projects */
-				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php") { $style = "background-color:#3B5998"; }
+				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="projects.php" style="<?=$style?>"><b>Projects</b></a><?
 				
@@ -110,7 +132,7 @@
 			<?
 				/* admin */
 				if ($GLOBALS['isadmin']) {
-					if ($page=="admin.php") { $style = "background-color:#3B5998"; }
+					if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) { $style = "background-color:#3B5998"; }
 					else { $style = ""; }
 					?><a href="admin.php" style="<?=$style?>"><b>Admin</b></a><?
 				}
@@ -120,73 +142,73 @@
 				else { $style = ""; }
 				?><a href="users.php" style="<?=$style?>"><b>My Account</b></a><?
 			?>
+				<a href="login.php?action=logout"></b>Logout<b></a>
 			</td>
 		</tr>
 		<tr>
-			<td align="left" style="color: white; width: 100px; padding: 4px 10px; background-color: #3B5998">
-				<form method="post" action="index.php" id="instanceform" style="margin:0px">
-				<input type="hidden" name="action" value="switchinstance">
-				<!--<span style="font-size:9pt;"><i>Project group</i></span><br>-->
-				
-				<span style="overflow: hidden; text-overflow: ellipsis; width: 170px; display: inline-block; font-size: 12pt; color: white; white-space: nowrap" title="<?=$_SESSION['instancename']?>"><?=$_SESSION['instancename']?></span>
-				<select name="instanceid" style="background-color: #526FAA; padding:0;border: 0px solid #526FAA; width:20px; color: white" title="Switch instance" onChange="instanceform.submit()">
-					<option value="">Select Instance...</option>
-					<?
-						$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$instance_id = $row['instance_id'];
-							$instance_name = $row['instance_name'];
-							?>
-							<option value="<?=$instance_id?>"><?=$instance_name?></option>
-							<?
-						}
-					?>
-				</select>
-				</form>
-			</td>
+			<!--<td align="left" style="color: white; width: 300px; padding: 4px 10px; background-color: #3B5998">
+			</td>-->
 			<td id="Bar2" style="background-color:#3B5998; padding:0px" width="60%">
 			<?
 				
 				/* home sub-menu */
 				if ($page=="index.php") {
-					$style = "background-color:darkred";
+					$style = "background-color:#273f70";
 					?><a href="index.php" style="<?=$style?>">Home</a><?
 				}
 				
 				/* search sub-menu */
 				elseif ($page=="search.php" || $page=="requeststatus.php") {
 					
-					if ($page=="search.php"){ $style = "background-color:darkred"; }
+					if ($page=="search.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="search.php" style="<?=$style?>">Search</a><?
 					
-					if ($page=="requeststatus.php"){ $style = "background-color:darkred"; }
+					if ($page=="requeststatus.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="requeststatus.php" style="<?=$style?>">Export Status</a><?
 				}
 				
 				/* subjects sub-menu */
 				elseif ($page=="subjects.php" || $page=="groups.php") {
-					if ($page=="subjects.php"){ $style = "background-color:darkred"; }
+					if ($page=="subjects.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="subjects.php" style="<?=$style?>">Subjects</a><?
 
-					if ($page=="groups.php"){ $style = "background-color:darkred"; }
+					if ($page=="groups.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="groups.php" style="<?=$style?>">Groups</a><?
 				}
 				
+				/* studies, which are displayed under the projects menu */
+				elseif ($page == "studies.php") {
+					$studyid = $_GET['id'];
+					if ($studyid == "") {
+						$studyid = $_GET['studyid'];
+					}
+					if ($studyid != "") {
+						list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+						?>
+						<a href="projects.php">Project List</a>
+						<b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>"><?=$projectname?></a></b>
+						<a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a>
+						<a href="studies.php?id=<?=$studyid?>" style="background-color:#273f70">Study <?=$studynum?></a>
+						<?
+					}
+				}
+				
 				/* projects sub-menu */
-				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php") {
+				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php") {
+					
 					if ($page=="projectchecklist.php" || $page=="projectassessments.php") {
 						$id=$_GET['projectid'];
 					}
 					else {
 						$id=$_GET['id'];
 					}
+					
 					if ($id=='') {
-						?><a href="projects.php" style="background-color:darkred">Project List</a><?
+						?><a href="projects.php" style="background-color:#273f70">Project List</a><?
 					} 
 					else {
 						$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
@@ -195,29 +217,29 @@
 						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$name = $row['project_name'];
 						
-						?><a href="projects.php" style="<?=$style?>">Project List</a><?
+						?><a href="projects.php" style="<?=$style?>">Project List</a> <?
 						
-						if (($page == "projects.php") && ($action == "displayprojectinfo")) { $style = "background-color:darkred"; }
+						if (($page == "projects.php") && ($action == "displayprojectinfo")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projects.php?action=displayprojectinfo&id=<?=$id?>" style="<?=$style?>"><?=$name?></a><?
+						?><b><a href="projects.php?action=displayprojectinfo&id=<?=$id?>" style="<?=$style?>"><?=$name?></a></b><?
 						
-						if ($page=="projectassessments.php"){ $style = "background-color:darkred"; }
+						if ($page=="projectassessments.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projectassessments.php?projectid=<?=$id?>" style="<?=$style?>">Assessments</a><?
 						
-						if (($page=="projects.php") && ($action == "editsubjects")) { $style = "background-color:darkred"; }
+						if (($page=="projects.php") && ($action == "editsubjects")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projects.php?action=editsubjects&id=<?=$id?>" style="<?=$style?>">Subjects</a><?
 						
-						if ($page=="projects.php"){ $style = "background-color:darkred"; }
+						if ($page=="projects.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projects.php?id=<?=$id?>" style="<?=$style?>">Studies</a><?
 						
-						if ($page=="projectchecklist.php"){ $style = "background-color:darkred"; }
+						if ($page=="projectchecklist.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projectchecklist.php?projectid=<?=$id?>" style="<?=$style?>">Checklist</a><?
 						
-						if ($page=="mrqcchecklist.php"){ $style = "background-color:darkred"; }
+						if ($page=="mrqcchecklist.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="<?=$style?>">MR Scan QC</a><?
 
@@ -228,7 +250,7 @@
 				elseif ($page=="pipelines.php" || $page=="analysis.php") {
 					$id=$_GET['id'];
 					if ($id=='') {
-						?><a href="pipelines.php" style="background-color: darkred">Pipeline List</a><?
+						?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
 					} 
 					else {
 						$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $id";
@@ -238,11 +260,11 @@
 
 						?><a href="pipelines.php" style="">Pipeline List</a><?
 						
-						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:darkred"; }
+						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="pipelines.php?action=editpipeline&id=<?=$id?>" style="<?=$style?>"><?=$name?></a><?
 
-						if ($page=="analysis.php"){ $style = "background-color:darkred"; }
+						if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="analysis.php?action=viewanalyses&id=<?=$id?>" style="<?=$style?>">Analysis</a><?
 					}
@@ -251,15 +273,19 @@
 				/* data sub-menu */
 				elseif ($page=="import.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
 					
-					if ($page=="import.php"){ $style = "background-color:darkred"; }
+					if (($page=="import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="import.php" style="<?=$style?>">Import</a><?
+					
+					if (($page=="import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="import.php?action=idmapper" style="<?=$style?>">ID mapper</a><?
 
-					if ($page=="publicdownloads.php"){ $style = "background-color:darkred"; }
+					if ($page=="publicdownloads.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="publicdownloads.php" style="<?=$style?>">Public Downloads</a><?
 
-					if ($page=="downloads.php"){ $style = "background-color:darkred"; }
+					if ($page=="downloads.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="downloads.php" style="<?=$style?>">Downloads</a><?
 					
@@ -267,35 +293,42 @@
 				
 				/* calendar sub-menu */
 				elseif ($page=="calendar.php" || $page=="calendar_calendars.php") {
-					if ($page=="calendar.php") { $style = "background-color:darkred"; }
+					if ($page=="calendar.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="calendar.php" style="<?=$style?>">Calendar</a><?
 					
 					if ($GLOBALS['isadmin']) {
-						if ($page=="calendar_calendars.php") { $style = "background-color:darkred"; }
+						if ($page=="calendar_calendars.php") { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="calendar_calendars.php" style="<?=$style?>">Manage</a><?
 					}
 				}
 				
-				/* admin sub-menu */
-				elseif ($page=="admin.php"){
-					?><a href="admin.php" style="background-color: darkred">Admin</a><?
+				/* admin sub-menu. any pages starting with 'admin' */
+				elseif ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) {
+					if ($page=="admin.php") { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="admin.php" style="<?=$style?>">Admin</a><?
+					
+					if ($page=="adminmodules.php") { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="adminmodules.php" style="<?=$style?>">Modules</a><?
+					
+					if ($page=="system.php") { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="system.php" style="<?=$style?>">Settings...</a><?
 				}
 				
 				/* user options sub-menu */
 				elseif ($page=="users.php" || $page=="remoteconnections.php") {
 					
-					if ($page=="users.php") { $style = "background-color:darkred"; }
+					if ($page=="users.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="users.php" style="<?=$style?>">My Account</a><?
 					
-					if ($page=="remoteconnections.php") { $style = "background-color:darkred"; }
+					if ($page=="remoteconnections.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
-					?><a href="remoteconnections.php" style="<?=$style?>">Remote Connections</a>
-					
-					<a href="login.php?action=logout">Logout</a>
-					<?
+					?><a href="remoteconnections.php" style="<?=$style?>">Remote Connections</a><?
 				}
 			?>
 			</td>

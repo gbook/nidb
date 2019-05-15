@@ -64,8 +64,8 @@ void subject::LoadSubjectInfo() {
 
 			QDir d(subjectpath);
 			if (!d.exists()) {
-				msgs << QString("Invalid subject path [%1]").arg(subjectpath);
-				isValid = false;
+				msgs << QString("Subject path does not exist [%1]").arg(subjectpath);
+				subjectpath = "";
 			}
 		}
 	}
