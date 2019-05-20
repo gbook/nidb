@@ -154,6 +154,35 @@ bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- SetExportSeriesStatus -------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::SetExportSeriesStatus(int exportseriesid, QString status, QString msg) {
+
+	if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (exportseriesid > 0)) {
+		if (msg.trimmed() == "") {
+			QSqlQuery q;
+			q.prepare("update exportseries set status = :status where exportseries_id = :id");
+			q.bindValue(":id", exportseriesid);
+			q.bindValue(":status", status);
+			n->SQLQuery(q, "SetExportSeriesStatus", true);
+		}
+		else {
+			QSqlQuery q;
+			q.prepare("update exportseries set status = :status, log = :msg where exportseries_id = :id");
+			q.bindValue(":id", exportseriesid);
+			q.bindValue(":msg", msg);
+			q.bindValue(":status", status);
+			n->SQLQuery(q, "SetExportSeriesStatus", true);
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetExportSeriesList ---------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleExport::GetExportSeriesList(int exportid) {
@@ -169,10 +198,9 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 			int exportseriesid = q.value("exportseries_id").toInt();
 			QString status = q.value("status").toString();
 
-
 			QSqlQuery q2;
 			q2.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, e.uid, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
-			q.bindValue(":seriesid",seriesid);
+			q2.bindValue(":seriesid",seriesid);
 			n->SQLQuery(q2,"GetExportSeriesList",true);
 
 			if (q2.size() > 0) {
@@ -294,7 +322,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString &status, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString &exportstatus, QString &msg) {
 
 	QStringList msgs;
 	if (!GetExportSeriesList(exportid)) {
@@ -304,7 +332,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 	QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
-	QString exportstatus = "complete";
+	exportstatus = "complete";
 	int laststudynum = 0;
 	QString newseriesnum = "1";
 
@@ -352,6 +380,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
 				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
+				/* format the subject/study part of the output directory path */
 				QString subjectdir;
 				if (dirformat == "shortid")
 					subjectdir = QString("%1%2").arg(uid).arg(studynum);
@@ -365,7 +394,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				else
 					subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
-				/* renumber series if necessary */
+				/* format the series number part of the output path */
 				switch (preserveseries) {
 				case 0:
 					    if (laststudynum != studynum)
@@ -382,8 +411,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 					newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
 				}
 
-				/* determine the base directory structure format */
-				n->WriteLog("Series number [$seriesnum] --> [$newseriesnum]");
+				/* format the base directory structure of the output path */
+				n->WriteLog(QString("Series number [%1] --> [%2]").arg(seriesnum).arg(newseriesnum));
 				msgs << QString("%1 - Series number [%2] --> [%3]").arg(subjectdir).arg(seriesnum).arg(newseriesnum);
 				QString rootoutdir;
 				if (exporttype == "nfs")
@@ -409,6 +438,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 					statusmessage = "Unable to create rootoutdir [" + rootoutdir + "]";
 				}
 
+				/* create the behavioral dir output path */
 				QString outdir = QString("%1/%2").arg(rootoutdir).arg(newseriesnum);
 				QString qcoutdir = QString("%1/qa").arg(outdir);
 				QString behoutdir;
@@ -423,8 +453,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				else
 					behoutdir = rootoutdir;
 
-				n->WriteLog("Destination is '$exporttype'. rootoutdir [$rootoutdir], outdir [$outdir], qcoutdir [$qcoutdir], behoutdir [$behoutdir]");
+				n->WriteLog(QString("Destination is '%1'. rootoutdir [%2], outdir [%3], qcoutdir [%4], behoutdir [%5]").arg(exporttype).arg(rootoutdir).arg(outdir).arg(qcoutdir).arg(behoutdir));
 
+				/* export the imaging data */
 				if (downloadimaging) {
 					if (numfiles > 0) {
 						if (datadirexists) {
@@ -472,6 +503,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 									QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 									QString m1;
 									if (n->MakePath(tmpdir, m1)) {
+										msgs << "Created tmpdir [" + tmpdir + "]";
 										QString m2;
 										int numfilesconv(0), numfilesrenamed(0);
 										if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, studynum, seriesnum, datatype, numfilesconv, numfilesrenamed, m2))
@@ -486,7 +518,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 										msgs << "Converted DICOM/parrec data into " + filetype + " using tmpdir [" + tmpdir + "]. Final directory [" + outdir + "]";
 									}
 									else
-										msgs << "Error [" + m1 + "] while creating path [" + tmpdir + "]";
+										msgs << "Error [" + m1 + "]. Unable to create path [" + tmpdir + "]";
 								}
 							}
 							else {
@@ -511,7 +543,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 					}
 				}
 
-				/* copy the beh data */
+				/* export the beh data */
 				if (downloadbeh) {
 					if (behdirexists) {
 						QString m;
@@ -520,7 +552,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 							n->WriteLog(n->SystemCommand(systemstring, true));
 							systemstring = "chmod -Rf 777 " + behoutdir;
 							n->WriteLog(n->SystemCommand(systemstring, true));
-							msgs << "Copying behavioral data from [$behindir] to [$behoutdir]\n";
+							msgs << "Copying behavioral data from [" + behindir + "] to [" + behoutdir + "]";
 						}
 						else
 							msgs << "Error [" + m + "] while creating path [" + behoutdir + "]";
@@ -544,7 +576,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 							n->WriteLog(n->SystemCommand(systemstring, true));
 							systemstring = "chmod -Rf 777 " + qcoutdir;
 							n->WriteLog(n->SystemCommand(systemstring, true));
-							msgs << "Copying QC data from [$qcindir] to [$qcoutdir]";
+							msgs << "Copying QC data from [" + qcindir + "] to [" + qcoutdir + "]";
 						}
 						else
 							msgs << "Error [" + m + "] while creating path [" + behoutdir + "]";
@@ -572,7 +604,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 					AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous");
 				}
 
-				SetExportStatus(exportseriesid,seriesstatus,statusmessage);
+				SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
 				msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
 				laststudynum = studynum;
@@ -692,13 +724,15 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 	msg = msgs.join("\n");
 
+	SetExportStatus(exportid,exportstatus,msg);
+
 	return 1;
 }
 
 
-/* ------------------------------------------------- */
-/* --------- AnonymizeDICOMFile -------------------- */
-/* ------------------------------------------------- */
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDICOMFile ----------------------------- */
+/* ---------------------------------------------------------- */
 /* borrowed in its entirety from gdcmanon.cxx        */
 bool moduleExport::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode)
 {
@@ -755,6 +789,152 @@ bool moduleExport::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filena
 		return false;
 	}
 	return success;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportNDAR ------------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg) {
+
+	n->WriteLog("Entering ExportNDAR($exportid, $csvonly)...");
+	exportstatus = "complete";
+
+	QStringList msgs;
+	if (!GetExportSeriesList(exportid)) {
+		msg = "Unable to get a series list";
+		return false;
+	}
+
+	QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + n->CreateLogDate();
+	QString headerfile = "$rootoutdir/ndar.csv";
+
+
+	QString m;
+	if (n->MakePath(rootoutdir, m)) {
+		n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
+	}
+	else {
+		exportstatus = "error";
+		n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+		msg = "Unable to create output directory [$rootoutdir]\n";
+		return false;
+	}
+
+	QString systemstring;
+	int laststudynum = 0;
+	int newseriesnum = 1;
+	/* iterate through the UIDs */
+	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+		QString uid = a.key();
+
+		/* iterate through the studynums */
+		for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+			int studynum = b.key();
+
+			/* iterate through the seriesnums */
+			for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+				int seriesnum = c.key();
+
+				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+				QSqlQuery q;
+				q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
+				q.bindValue(":exportseriesid",exportseriesid);
+				n->SQLQuery(q,"ExportLocal",true);
+
+				QString seriesstatus = "complete";
+				QString statusmessage;
+
+				int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+				QString altuids = s[uid][studynum][seriesnum]["altuids"];
+				int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				QString projectname = s[uid][studynum][seriesnum]["projectname"];
+				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				QString studytype = s[uid][studynum][seriesnum]["studytype"];
+				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+				QString modality = s[uid][studynum][seriesnum]["modality"];
+				int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
+				int numfilesbeh = s[uid][studynum][seriesnum]["numfilesbeh"].toInt();
+				QString datatype = s[uid][studynum][seriesnum]["datatype"];
+				QString indir = s[uid][studynum][seriesnum]["datadir"];
+				QString behindir = s[uid][studynum][seriesnum]["behdir"];
+				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
+				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
+				bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
+				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+				if (datadirexists) {
+					if (!QFile::exists(headerfile)) {
+						WriteNDARHeader(headerfile, modality);
+					}
+
+					QString behzipfile;
+					QString behdesc;
+					if (!csvonly) {
+						QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+						m = "";
+						if (n->MakePath(tmpdir, m)) {
+							QString systemstring;
+							if ((modality == "mr") && (datatype == "dicom")) {
+								systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
+								n->WriteLog(n->SystemCommand(systemstring, true));
+								AnonymizeDir(tmpdir,2,"","");
+							}
+							else if ((modality == "mr") && (datatype == "parrec")) {
+								systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
+								n->WriteLog(n->SystemCommand(systemstring, true));
+								systemstring = "find " + indir + " -iname '*.rec' -exec cp {} " + tmpdir + " \\;";
+								n->WriteLog(n->SystemCommand(systemstring, true));
+							}
+							else {
+								systemstring = "rsync " + indir + "/* " + tmpdir + "/";
+								n->WriteLog(n->SystemCommand(systemstring, true));
+							}
+
+							// zip the data to the out directory
+							QString zipfile = QString("%1/%2-%3-%4.zip").arg(rootoutdir).arg(uid).arg(studynum).arg(seriesnum);
+							systemstring = "zip -vjrq1 " + zipfile + " " + tmpdir;
+							n->WriteLog(n->SystemCommand(systemstring, true));
+							n->WriteLog("Done zipping image files...");
+							systemstring = "unzip -Z " + zipfile;
+							n->WriteLog(n->SystemCommand(systemstring, true));
+
+							if (numfilesbeh > 0) {
+								behzipfile = QString("%1-%2-%3-beh.zip").arg(uid).arg(studynum).arg(seriesnum);
+								systemstring = QString("zip -vjrq1 %1/%2 %3").arg(rootoutdir).arg(behzipfile).arg(behindir);
+								n->WriteLog(n->SystemCommand(systemstring, true));
+								n->WriteLog("Done zipping beh files...");
+								systemstring = "unzip -Z " + zipfile;
+								n->WriteLog(n->SystemCommand(systemstring, true));
+
+								behdesc = "Behavioral/design data file";
+							}
+							if (modality == "mr") {
+								n->RemoveDir(tmpdir,m);
+							}
+						}
+						else {
+							msgs << "Unable to create tmpdir [" + tmpdir + "]";
+						}
+					}
+					WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, QString("%1/%2").arg("$indir/$datatype"));
+
+					SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+				}
+				else {
+					msgs << "Unable to export [" + indir + "] Directory does not exist\n";
+				}
+			}
+		}
+	}
+
+	n->WriteLog("Leaving ExportNDAR()...");
+
+	return true;
 }
 
 
@@ -855,9 +1035,248 @@ bool moduleExport::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QSt
 		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
 	}
 
-	//# remove an txt files, which may contain PHI
+	//# remove any txt files, which may contain PHI
 	//if ($File::Find::name =~ /\.gif/) { unlink($File::Find::name); }
 	//if ($File::Find::name =~ /\.txt/) { unlink($File::Find::name); }
 
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteNDARHeader -------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::WriteNDARHeader(QString file, QString modality) {
+
+	QFile f(file);
+	if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
+		modality = modality.toLower();
+
+		QTextStream fs(&f);
+		if (modality.toLower() == "mr") {
+			fs << "image,3\n";
+			fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week,slice_timing,bvek_bval_files\n";
+		}
+		if (modality == "eeg") {
+			fs << "eeg_sub_files,1\n";
+			fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,capused,ofc,experiment_id,experiment_notes,experiment_terminated,experiment_validity,data_behavioralperformance_acc,data_behavioralperformance_rt,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type,data_includedtrials,data_validity\n";
+		}
+		if (modality == "et") {
+			fs << "et_subject_experiment,1\n";
+			fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n";
+		}
+
+		f.close();
+		return true;
+	}
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteNDARSeries -------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir) {
+
+	/* get the information on the subject and series */
+	QSqlQuery q;
+	q.prepare(QString("select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where %1series_id = :seriesid").arg(modality));
+	q.bindValue(":id", seriesid);
+	n->SQLQuery(q, "WriteNDARSeries", true);
+
+	if (q.size() > 0) {
+		while (q.next()) {
+			int subjectid = q.value("subject_id").toInt();
+			int enrollmentid = q.value("enrollment_id").toInt();
+			QString guid = q.value("guid").toString().trimmed();
+			QString seriesdatetime = q.value("series_datetime").toString().trimmed();
+			double seriestr = q.value("series_tr").toDouble();
+			double serieste = q.value("series_te").toDouble();
+			double seriesflip = q.value("series_flip").toDouble();
+			QString seriesprotocol = q.value("series_protocol").toString().trimmed();
+			QString seriessequence = q.value("series_sequencename").toString().trimmed();
+			QString seriesnotes = q.value("series_notes").toString().trimmed();
+			QString imagetype = q.value("image_type").toString().trimmed();
+			QString imagecomments = q.value("image_comments").toString().trimmed();
+			double seriesspacingx = q.value("series_spacingx").toDouble();
+			double seriesspacingy = q.value("series_spacingy").toDouble();
+			double seriesspacingz = q.value("series_spacingz").toDouble();
+			double seriesfieldstrength = q.value("series_fieldstrength").toDouble();
+			int imgrows = q.value("img_rows").toInt();
+			int imgcols = q.value("img_cols").toInt();
+			int imgslices = q.value("img_slices").toInt();
+			QString datatype = q.value("data_type").toString().trimmed().toUpper();
+			QString studydatetime = q.value("study_datetime").toString().trimmed();
+			QString birthdate = q.value("birthdate").toString().trimmed();
+			QString gender = q.value("gender").toString().trimmed();
+			QString uid = q.value("uid").toString().trimmed();
+			double ageatscan = q.value("ageatscan").toDouble();
+			double studyageatscan = q.value("study_ageatscan").toDouble();
+			QString seriesdesc = q.value("series_desc").toString().trimmed();
+			int boldreps = q.value("bold_reps").toInt();
+			//bool usecustomid = q.value("project_usecustomid").toBool();
+			int projectid = q.value("project_id").toInt();
+
+			/* skip this if the GUID is blank... we can't submit to NDAR/RDoC anyway if its blank */
+			if (guid == "") {
+				n->WriteLog("GUID was blank, skipping writing this row");
+				return false;
+			}
+
+			int numdim;
+			if (boldreps > 1)
+				numdim = 4;
+			else
+				numdim = 3;
+
+			if (modality == "mr")
+				modality = "mri";
+
+			modality = modality.toUpper();
+
+			if (imgrows < 1) imgrows = 1;
+			if (imgcols < 1) imgcols = 1;
+			if (imgslices < 1) imgslices = 1;
+
+			if ((studyageatscan > 0) && (studyageatscan < 120))
+				ageatscan = studyageatscan * 12.0;
+
+			QString srcsubjectid;
+			QString altuid = n->GetPrimaryAlternateUID(subjectid, enrollmentid);
+			if (altuid == "") {
+				srcsubjectid = uid;
+			}
+			else {
+				srcsubjectid = altuid;
+			}
+
+			/* get some DICOM specific tags from the first file in the series */
+			QString dcmfile = n->FindFirstFile(indir, "*.dcm");
+			gdcm::Reader r;
+			r.SetFileName(dcmfile.toStdString().c_str());
+			if (!r.CanRead()) {
+				/* could not read the first dicom file... */
+				return false;
+			}
+
+			r.Read();
+			gdcm::StringFilter sf;
+			sf = gdcm::StringFilter();
+			sf.SetFile(r.GetFile());
+
+			QString Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
+			QString ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
+			QString PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
+			QString PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
+			QString AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+			QString SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+			QString PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+			QString ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
+			QString TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
+			QString SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
+
+			/* clean up the tags */
+			if (Manufacturer == "") Manufacturer = "Unknown";
+			if (PatientPosition == "") PatientPosition = "Unknown";
+			if (SoftwareVersion == "") SoftwareVersion = "Unknown";
+			if (PhotometricInterpretation == "") PhotometricInterpretation = "RGB";
+			if (ManufacturersModelName == "") ManufacturersModelName = "Unknown";
+			if (TransmitCoilName == "") TransmitCoilName = "Unknown";
+
+			/* figure out the scan type (T1,T2,DTI,fMRI) */
+			QString scantype = "MR structural (T1)";
+			if ((boldreps > 1) || (seriessequence.contains("epfid2d1")))
+				scantype = "fMRI";
+			if (seriesdesc.contains("perfusion",Qt::CaseInsensitive) && seriessequence.contains("ep2d_perf_tra", Qt::CaseInsensitive))
+				scantype = "MR diffusion";
+
+			if (seriesdesc.contains("dti",Qt::CaseInsensitive) || seriesdesc.contains("dwi",Qt::CaseInsensitive))
+				scantype = "MR diffusion";
+			if (seriesdesc.contains("T2"))
+				scantype = "MR structural (T2)";
+
+			/* build the aquisition matrix */
+			if (AcquisitionMatrix.trimmed() == "") {
+				AcquisitionMatrix = "0 0 0 0";
+			}
+
+			QStringList AcqParts = AcquisitionMatrix.split(" ");
+			QString FOV = "0x0";
+			FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
+
+			QFile f(file);
+			if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
+				QTextStream fs(&f);
+				fs << "image,3\n";
+
+				if (modality == "MRI") {
+
+					QString str;
+					QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << ageatscan << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+
+					fs << str;
+				}
+				else if (modality == "EEG") {
+					int expid = 0;
+
+					QString sp = seriesprotocol.toLower();
+
+					if (seriesprotocol.contains("domino",Qt::CaseInsensitive)) expid = 115;
+					if (seriesprotocol.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
+					if (seriesprotocol.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
+					if (seriesprotocol.contains("HNumber",Qt::CaseInsensitive)) expid = 113;
+					if (seriesprotocol.contains("HPain", Qt::CaseInsensitive)) expid = 113;
+
+					if ((sp == "gating") || (sp == "gating2") || (sp == "gating3")) expid = 530;
+					if ((sp == "resteyesopen") || (sp == "rest") || (sp == "rest - eyes open")) expid = 528;
+					if ((sp == "resteyesclosed") || (sp == "rest - eyes closed")) expid = 556;
+					if ((sp == "oddball") || (sp == "oddball - beh data")) expid = 529;
+
+					/* PARDIP */
+					if ((projectid == 173) || (projectid == 174) || (projectid == 176)) {
+						if (sp == "auditory steady state") expid = 538;
+						else if (sp == "rmr") expid = 575;
+						else if (sp == "rest - eyes open") expid = 531;
+						else if (sp == "pro-saccade") expid = 566;
+						else if (sp == "anti-saccade") expid = 569;
+						else if (sp == "iaps") expid = 537;
+						else if (sp == "visual steady state") expid = 539;
+						else if (sp == "oddball") expid = 532;
+						else if (sp == "gating") expid = 536;
+					}
+
+					/* BSNIP2 */
+					if ((projectid == 185) || (projectid == 187) || (projectid == 191) || (projectid == 192) || (projectid == 194)) {
+						if (sp == "rest - eyes open") expid = 549;
+						else if (sp == "rmr") expid = 587;
+						else if (sp == "anti-saccade") expid = 559;
+						else if (sp == "pro-saccade") expid = 558;
+						else if (sp == "iaps") expid = 582;
+						else if (sp == "visual steady state") expid = 584;
+						else if (sp == "auditory steady state") expid = 583;
+						else if (sp == "oddball") expid = 550;
+						else if (sp == "gating") expid = 581;
+					}
+
+					QString str;
+					QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+				}
+				else if (modality == "ET") {
+					int expid = 0;
+					QString str;
+					QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+				}
+				f.close();
+			}
+			else {
+				n->WriteLog("Could not open output file");
+			}
+		}
+	}
+	else {
+		n->WriteLog("No rows found for this series... [$file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir] ");
+	}
 }

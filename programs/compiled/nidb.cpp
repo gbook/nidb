@@ -1,17 +1,40 @@
 #include "nidb.h"
 
+/* ---------------------------------------------------------- */
+/* --------- nidb ------------------------------------------- */
+/* ---------------------------------------------------------- */
 nidb::nidb()
 {
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- nidb ------------------------------------------- */
+/* ---------------------------------------------------------- */
 nidb::nidb(QString m)
 {
 	module = m;
 
-	qDebug() << "Build date: " << builtDate << " C++ version " << __cplusplus;
+	Print(QString("Build date [%1]    C++ version [%2]").arg(builtDate).arg(__cplusplus));
 
 	LoadConfig();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Print ------------------------------------------ */
+/* ---------------------------------------------------------- */
+void nidb::Print(QString s, bool n, bool pad) {
+	if (n)
+		if (pad)
+			printf("%-70s\n", s.toStdString().c_str());
+		else
+			printf("%s\n", s.toStdString().c_str());
+	else
+		if (pad)
+			printf("%-70s", s.toStdString().c_str());
+		else
+			printf("%s", s.toStdString().c_str());
 }
 
 
@@ -48,16 +71,16 @@ bool nidb::LoadConfig() {
 	}
 
 	if (!found) {
-        qDebug() << "Config file not found";
+		Print("Config file not found");
         return false;
     }
 
-    qDebug() << "Using config file [" << f.fileName() << "]";
+	Print("Loading config file " + f.fileName(), false, true);
 
-    /* open and read the config file */
+	/* open and read the config file */
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
 
-        QTextStream in(&f);
+		QTextStream in(&f);
         while (!in.atEnd()) {
             QString line = in.readLine();
             if ((line.trimmed().count() > 0) && (line.at(0) != '#')) {
@@ -73,10 +96,13 @@ bool nidb::LoadConfig() {
         }
         f.close();
 		configLoaded = true;
+
+		Print("[Ok]");
+
         return true;
     }
     else {
-        qDebug() << "Unable to open config file [" << f.fileName() << "]";
+		Print("[Error]");
         return false;
     }
 }
@@ -93,13 +119,13 @@ bool nidb::DatabaseConnect() {
     db.setUserName(cfg["mysqluser"]);
     db.setPassword(cfg["mysqlpassword"]);
 
-	qDebug() << "Attempting to connect to database [" << cfg["mysqldatabase"] << "] on host [" << cfg["mysqlhost"] << "]...";
+	Print("Connecting to database [" + cfg["mysqldatabase"] + "] on [" + cfg["mysqlhost"] + "]... ", false, true);
     if (db.open()) {
-		qDebug() << "Connected to database";
-        return true;
+		Print("[Ok]");
+		return true;
     }
     else {
-		QString err = "Unable to connect to database. Error message [" + db.lastError().text() + "]";
+		QString err = "[Error]\n\tUnable to connect to database. Error message [" + db.lastError().text() + "]";
 
         FatalError(err);
         return false;
@@ -111,7 +137,7 @@ bool nidb::DatabaseConnect() {
 /* --------- FatalError ------------------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::FatalError(QString err) {
-    qDebug() << err;
+	Print(err);
     exit(0);
 }
 
@@ -126,8 +152,8 @@ int nidb::GetNumThreads() {
 		else return cfg["modulefileiothreads"].toInt();
 	}
 	else if (module == "export") {
-		if (cfg["modulefileiothreads"] == "") return 1;
-		else return cfg["modulefileiothreads"].toInt();
+		if (cfg["moduleexportthreads"] == "") return 1;
+		else return cfg["moduleexportthreads"].toInt();
 	}
 	else if (module == "parsedicom") {
 		return 1;
@@ -165,15 +191,15 @@ int nidb::CheckNumLockFiles() {
     QStringList filters;
     filters << lockfileprefix;
 
-	qDebug() << "Checking for existing lock files [" << lockfileprefix << "]";
+	//Print("Checking for existing lock files [" + lockfileprefix + "]... ",0);
 
     QStringList files = dir.entryList(filters);
     int numlocks = files.count();
 
-	qDebug() << "Found [" << numlocks << "] existing lock files";
-    foreach (const QString &f, files) {
-        qDebug() << f;
-    }
+	//Print(QString("Found [%1] existing lock files").arg(numlocks));
+	//foreach (const QString &f, files) {
+	//	Print(f);
+	//}
 
     return numlocks;
 }
@@ -187,16 +213,19 @@ bool nidb::CreateLockFile() {
     pid = QCoreApplication::applicationPid();
     
 	lockFilepath = QString("%1/%2.%3").arg(cfg["lockdir"]).arg(module).arg(pid);
+
+	Print("Creating lock file [" + lockFilepath + "]",false, true);
 	QFile f(lockFilepath);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QString d = CreateCurrentDate();
         QTextStream fs(&f);
         fs << d;
         f.close();
+		Print("[Ok]");
         return 1;
     }
     else {
-		qDebug() << "Unable to create lock file [" << lockFilepath << "]";
+		Print("[Error]");
 		return 0;
     }
 }
@@ -209,12 +238,13 @@ bool nidb::CreateLogFile () {
 	logFilepath = QString("%1/%2%3.log").arg(cfg["logdir"]).arg(module).arg(CreateLogDate());
 	log.setFileName(logFilepath);
 
+	Print("Creating log file [" + logFilepath + "]",false, true);
 	if (log.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		WriteLog(QString("Created log file for the " + module + " module"));
+		Print("[Ok]");
 		return 1;
 	}
 	else {
-		qDebug() << "Unable to create log file [" << logFilepath << "]";
+		Print("[Error]");
 		return 0;
 	}
 }
@@ -224,11 +254,14 @@ bool nidb::CreateLogFile () {
 /* --------- DeleteLockFile --------------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::DeleteLockFile() {
+
+	Print("Deleting lock file [" + lockFilepath + "]",false, true);
+
 	QFile f(lockFilepath);
 	if (f.remove())
-		qDebug() << "Deleted lock file [" << lockFilepath << "]";
+		Print("[Ok]");
 	else
-		qDebug() << "Unable to delete lock file [" << lockFilepath << "]";
+		Print("[Error]");
 }
 
 
@@ -236,13 +269,17 @@ void nidb::DeleteLockFile() {
 /* --------- RemoveLogFile ---------------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::RemoveLogFile(bool keepLog) {
+
 	if (!keepLog) {
+		Print("Deleting log file [" + logFilepath + "]",false, true);
 		QFile f(lockFilepath);
 		if (f.remove())
-			qDebug() << "Deleted log file [" << logFilepath << "]";
+			Print("[Ok]");
 		else
-			qDebug() << "Unable to delete log file [" << logFilepath << "]";
+			Print("[Error]");
 	}
+	else
+		Print("Keeping log file [" + logFilepath + "]");
 }
 
 
@@ -289,7 +326,7 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
 
 	/* debugging */
 	if (cfg["debug"].toInt() || d) {
-		qDebug() << "Running SQL statement[" << sql <<"]";
+		Print("Running SQL statement[" + sql + "]");
 		WriteLog(sql);
 	}
 
@@ -329,12 +366,16 @@ bool nidb::ModuleCheckIfActive() {
 /* --------- ModuleDBCheckIn -------------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::ModuleDBCheckIn() {
+	Print("Checking module into database",false, true);
 	QSqlQuery q;
 	q.prepare("update modules set module_laststart = now(), module_status = 'running', module_numrunning = module_numrunning + 1 where module_name = :module");
 	q.bindValue(":module", module);
 	SQLQuery(q, "ModuleDBCheckIn");
 
-	qDebug() << "Module checked in to database";
+	if (q.numRowsAffected() > 0)
+		Print("[Ok]");
+	else
+		Print("[Error]");
 }
 
 
@@ -352,7 +393,7 @@ void nidb::ModuleDBCheckOut() {
 	q.bindValue(":pid", QCoreApplication::applicationPid());
 	SQLQuery(q, "ModuleDBCheckOut");
 
-	qDebug() << "Module checked out of database";
+	Print("Module checked out of database");
 }
 
 
@@ -433,12 +474,12 @@ QString nidb::WriteLog(QString msg) {
 	pid = QCoreApplication::applicationPid();
 
 	if (cfg["debug"].toInt()) {
-		qDebug() << msg;
+		Print(msg);
 	}
 	else {
 		if (msg.trimmed() != "") {
 			if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDate()).arg(pid).arg(msg).toLatin1()))
-				qDebug() << "Unable to write to log file!";
+				Print("Unable to write to log file!");
 		}
 	}
 
@@ -536,6 +577,26 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- FindFirstFile ---------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::FindFirstFile(QString dir, QString pattern, bool recursive) {
+	QString f;
+	if (recursive) {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
+		if (it.hasNext())
+			f = it.next();
+	}
+	else {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files);
+		if (it.hasNext())
+			f = it.next();
+	}
+
+	return f;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- MoveAllFiles ----------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg) {
@@ -594,22 +655,22 @@ bool nidb::SendEmail(QString to, QString subject, QString body) {
 
 	/* Now we can send the mail */
 	if (!smtp.connectToHost()) {
-		qDebug() << "Failed to connect to host [" << cfg["emailserver"] << "]";
+		Print("Failed to connect to host [" + cfg["emailserver"] + "]");
 		smtp.quit();
 		return false;
 	}
 	if (!smtp.login()) {
-		qDebug() << "Failed to login using username [" << cfg["emailusername"] << "] and password [" << cfg["emailpassword"] << "]";
+		Print("Failed to login using username [" + cfg["emailusername"] + "] and password [" + cfg["emailpassword"] + "]");
 		smtp.quit();
 		return false;
 	}
 	if (!smtp.sendMail(message)) {
-		qDebug() << "Failed to send [" << body << "]";
+		Print("Failed to send [" + body + "]");
 		smtp.quit();
 		return false;
 	}
 	else {
-		qDebug() << "Sent email successfuly";
+		Print("Sent email successfuly");
 	}
 	smtp.quit();
 
@@ -647,7 +708,7 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 
 	numfilesconv = 0; /* need to fix this to be correct at some point */
 
-	WriteLog("Working on [" + indir + "]");
+	WriteLog("Working on [" + indir + "] and filetype [" + filetype + "]");
 
 	/* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
 	QString fileext = "";
@@ -657,9 +718,9 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 	/* do the conversion */
 	QString systemstring;
 	QDir::setCurrent(indir);
-	if (filetype == "nifti4d")
+	if (filetype == "nifti4dme")
 		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir);
-	else if (filetype == "nifti4dme")
+	else if (filetype == "nifti4d")
 		systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
 	else if (filetype == "nifti3d")
 		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
@@ -678,8 +739,14 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 	/* delete any files that may already be in the output directory.. for example, an incomplete series was put in the output directory
 	 * remove any stuff and start from scratch to ensure proper file numbering */
 	if ((outdir != "") && (outdir != "/") ) {
-		systemstring = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
+		QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
+		WriteLog(SystemCommand(systemstring2, true));
+
+		/* execute the command created above */
 		WriteLog(SystemCommand(systemstring, true));
+	}
+	else {
+		return false;
 	}
 
 	/* conversion should be done, so check if it actually gzipped the file */
@@ -724,15 +791,42 @@ bool nidb::BatchRenameFiles(QString dir, int seriesnum, int studynum, QString ui
 			QString fname = it.next();
 			f.setFileName(fname);
 			QFileInfo fi(f);
-			QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i).arg(ext);
-			qDebug() << fname + " --> " + newName;
+			QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
+			WriteLog( fname + " --> " + newName);
 			if (f.rename(newName))
 				numfilesrenamed++;
 			else
-				qDebug() << "Error renaming file [" + fname + "] to [" + newName + "]";
+				WriteLog("Error renaming file [" + fname + "] to [" + newName + "]");
 			i++;
 		}
 	}
 
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetPrimaryAlternateUID ------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::GetPrimaryAlternateUID(int subjectid, int enrollmentid) {
+
+	if ((subjectid < 1) || (enrollmentid < 1))
+		return "";
+
+	QSqlQuery q;
+	q.prepare("select * from subject_altuid where subject_id = :subjectid and enrollment_id = :enrollmentid order by isprimary limit 1");
+	q.bindValue(":subjectid", subjectid);
+	q.bindValue(":enrollmentid", enrollmentid);
+	SQLQuery(q, "GetPrimaryAlternateUID");
+	if (q.size() > 0) {
+		q.first();
+		QString altuid = q.value("altuid").toString();
+		bool isprimary = q.value("isprimary").toBool();
+		if (isprimary) {
+			WriteLog("Found primary alternate ID [" + altuid + "]");
+			return altuid;
+		}
+	}
+
+	return "";
 }

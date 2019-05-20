@@ -46,7 +46,7 @@ HEADERS += \
 
 # Location of SMTP Library
 SMTP_LIBRARY_LOCATION = $$PWD/smtp
-win32:CONFIG(release, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/ -lSMTPEmail
+win32:CONFIG(release, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/../SMTPEmail/release -lSMTPEmail
 #else:win32:CONFIG(debug, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/debug/ -lSMTPEmail
 else:unix: LIBS += -L$$SMTP_LIBRARY_LOCATION/ -lSMTPEmail
 INCLUDEPATH += $$SMTP_LIBRARY_LOCATION
@@ -57,18 +57,19 @@ DEPENDPATH += $$SMTP_LIBRARY_LOCATION
 win32: {
     GDCMBIN = C:/gdcmbin
     GDCMSRC = C:/gdcm/Source
+    win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
 }
 unix: {
-    GDCMBIN = ~/gdcmbin
-    GDCMSRC = ~/gdcm/Source
+    GDCMBIN = /nidb/programs/gdcmbin
+    GDCMSRC = /nidb/programs/gdcm/Source
+    LIBS += -L$$GDCMBIN/bin/
 }
 
 #contains(QT_ARCH, i386) {
 #    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Release/
 #    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Debug/
 #} else {
-    win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
 #}
 
 INCLUDEPATH += $$GDCMSRC/Attribute

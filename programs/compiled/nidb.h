@@ -38,6 +38,7 @@ public:
 	void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
 
 	/* generic functions */
+	void Print(QString s, bool n=true, bool pad=false);
 	QString CreateCurrentDate();
 	QString CreateLogDate();
 	int SQLQuery(QSqlQuery &q, QString function, bool d=false);
@@ -48,11 +49,13 @@ public:
 	bool RemoveDir(QString p, QString &msg);
 	QString GenerateRandomString(int n);
 	QStringList FindAllFiles(QString dir, QString pattern);
+	QString FindFirstFile(QString dir, QString pattern, bool recursive=false);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	void GetDirSize(QString dir, double &bytes, int &filecount);
 	bool SendEmail(QString to, QString subject, QString body);
 	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, int studynum, int seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
 	bool BatchRenameFiles(QString dir, int seriesnum, int studynum, QString uid, int &numfilesrenamed, QString &msg);
+	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
 
 private:
     void FatalError(QString err);

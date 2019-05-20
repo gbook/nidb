@@ -17,22 +17,25 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[2], "debug"))
 			keepLog = true;
 
-	if (module.trimmed() == "") {
+	module = module.trimmed();
+	if ((module == "") || ((module != "export") && (module != "fileio") && (module != "mriqa") && (module != "export") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded"))) {
 		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules: export fileio mriqa modulemanager import pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
 		return 0;
 	}
 
-	qDebug() << "Initializating Neuroinformatics Database (NiDB) backend, with module [" << module << "]";
+	printf("-------------------------------------------------------------\n");
+	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
+	printf("-------------------------------------------------------------\n");
+
 	nidb *n = new nidb(module);
 
 	n->DatabaseConnect();
 
-	int numlock = n->CheckNumLockFiles();
-
-	if (numlock <= n->GetNumThreads()) {
-		if (n->CreateLockFile()) {
-			/* check if this module should be running now or not */
-			if (n->ModuleCheckIfActive()) {
+	/* check if this module should be running now or not */
+	if (n->ModuleCheckIfActive()) {
+		int numlock = n->CheckNumLockFiles();
+		if (numlock <= n->GetNumThreads()) {
+			if (n->CreateLockFile()) {
 
 				n->CreateLogFile();
 
@@ -56,7 +59,7 @@ int main(int argc, char *argv[])
 					delete m;
 				}
 				else {
-					qDebug() << "Unrecognized module [" << module << "]";
+					n->Print("Unrecognized module [" + module + "]");
 				}
 
 				n->RemoveLogFile(keepLog);
@@ -65,20 +68,25 @@ int main(int argc, char *argv[])
 				n->ModuleDBCheckOut();
 			}
 			else {
-				qDebug() << "This module is disabled and should not be running";
+				//n->Print("Unable to create lock file!");
 			}
 
 			/* delete the lock file */
 			n->DeleteLockFile();
 		}
+		else {
+			n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
+		}
     }
-    else {
-		qDebug() << "Too many instances [" << numlock << "] of this module [" << module << "] running already";
-    }
+	else {
+		n->Print("This module [" + module + "] is disabled or does not exist");
+	}
 
 	delete n;
 
-    qDebug() << "Terminating NiDB with the [" << module << "] module";
+	printf("-------------------------------------------------------------\n");
+	printf("----- Terminating (NiDB) backend ----------------------------\n");
+	printf("-------------------------------------------------------------\n");
 
 	/* exit the event loop */
 	a.exit();

@@ -18,13 +18,17 @@ public:
 
 	QString GetExportStatus(int exportid);
 	bool SetExportStatus(int exportid, QString status, QString msg = "");
+	bool SetExportSeriesStatus(int exportseriesid, QString status, QString msg = "");
 
 	bool GetExportSeriesList(int exportid);
 
 	bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString &status, QString &msg);
+	bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
 
-	bool AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString randstr2);
+	bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
 	bool AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode);
+	bool WriteNDARHeader(QString headerfile, QString modality);
+	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir);
 
 	/* create a multilevel hash s[uid][study][series]['attribute'] */
 	QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> s;
