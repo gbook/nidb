@@ -53,9 +53,10 @@ public:
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	void GetDirSize(QString dir, double &bytes, int &filecount);
 	bool SendEmail(QString to, QString subject, QString body);
-	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, int studynum, int seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
-	bool BatchRenameFiles(QString dir, int seriesnum, int studynum, QString uid, int &numfilesrenamed, QString &msg);
+	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+	bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
+	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
 
 private:
     void FatalError(QString err);

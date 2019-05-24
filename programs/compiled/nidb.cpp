@@ -696,7 +696,7 @@ void nidb::InsertSubjectChangeLog(QString username, QString uid, QString newuid,
 /* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, int studynum, int seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
 	QStringList msgs;
 
@@ -771,7 +771,7 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 /* ---------------------------------------------------------- */
 /* --------- BatchRenameFiles ------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::BatchRenameFiles(QString dir, int seriesnum, int studynum, QString uid, int &numfilesrenamed, QString &msg) {
+bool nidb::BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg) {
 
 	QDir d;
 	if (!d.exists(dir)) {
@@ -829,4 +829,19 @@ QString nidb::GetPrimaryAlternateUID(int subjectid, int enrollmentid) {
 	}
 
 	return "";
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetFileChecksum -------------------------------- */
+/* ---------------------------------------------------------- */
+QByteArray nidb::GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm) {
+	QFile f(fileName);
+	if (f.open(QFile::ReadOnly)) {
+		QCryptographicHash hash(hashAlgorithm);
+		if (hash.addData(&f)) {
+			return hash.result();
+		}
+	}
+	return QByteArray();
 }

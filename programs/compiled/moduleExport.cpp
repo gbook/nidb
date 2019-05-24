@@ -96,6 +96,24 @@ int moduleExport::Run() {
 			else if (exporttype == "localftp") {
 				found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, status, log);
 			}
+			else if (exporttype == "export") {
+				//found = ExportNiDB(exportid);
+			}
+			else if (exporttype == "ndar") {
+				found = ExportNDAR(exportid, 0, status, log);
+			}
+			else if (exporttype == "ndarcsv") {
+				found = ExportNDAR(exportid, 1, status, log);
+			}
+			else if (exporttype == "bids") {
+				found = ExportBIDS(exportid, bidsreadme, status, log);
+			}
+			else if (exporttype == "remotenidb") {
+				found = ExportToRemoteNiDB(exportid, conn, status, log);
+			}
+			else if (exporttype == "remoteftp") {
+				found = ExportToRemoteFTP(exportid, remoteftpusername, remoteftppassword, remoteftpserver, remoteftpport.toInt(), remoteftppath, status, log);
+			}
 			else {
 				n->WriteLog(QString("Unknown export type [%1]").arg(exporttype));
 			}
@@ -349,10 +367,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				int seriesnum = c.key();
 
 				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-				QSqlQuery q;
-				q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
-				q.bindValue(":exportseriesid",exportseriesid);
-				n->SQLQuery(q,"ExportLocal",true);
+				SetExportSeriesStatus(exportseriesid, "processing");
 
 				QString seriesstatus = "complete";
 				QString statusmessage;
@@ -377,8 +392,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
 				bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
 				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
-				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
 				/* format the subject/study part of the output directory path */
 				QString subjectdir;
@@ -506,7 +521,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 										msgs << "Created tmpdir [" + tmpdir + "]";
 										QString m2;
 										int numfilesconv(0), numfilesrenamed(0);
-										if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, studynum, seriesnum, datatype, numfilesconv, numfilesrenamed, m2))
+										if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
 											msgs << "Error converting files [" + m2 + "]";
 										n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
 										QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
@@ -797,7 +812,7 @@ bool moduleExport::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filena
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg) {
 
-	n->WriteLog("Entering ExportNDAR($exportid, $csvonly)...");
+	n->WriteLog("Entering ExportNDAR()...");
 	exportstatus = "complete";
 
 	QStringList msgs;
@@ -822,8 +837,8 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 	}
 
 	QString systemstring;
-	int laststudynum = 0;
-	int newseriesnum = 1;
+	//int laststudynum = 0;
+	//int newseriesnum = 1;
 	/* iterate through the UIDs */
 	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
 		QString uid = a.key();
@@ -837,10 +852,11 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 				int seriesnum = c.key();
 
 				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-				QSqlQuery q;
-				q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
-				q.bindValue(":exportseriesid",exportseriesid);
-				n->SQLQuery(q,"ExportLocal",true);
+				//QSqlQuery q;
+				//q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
+				//q.bindValue(":exportseriesid",exportseriesid);
+				//n->SQLQuery(q,"ExportLocal",true);
+				SetExportSeriesStatus(exportseriesid, "processing");
 
 				QString seriesstatus = "complete";
 				QString statusmessage;
@@ -848,24 +864,24 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 				int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
 				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
 				QString altuids = s[uid][studynum][seriesnum]["altuids"];
-				int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
 				QString projectname = s[uid][studynum][seriesnum]["projectname"];
-				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
 				QString studytype = s[uid][studynum][seriesnum]["studytype"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
 				QString modality = s[uid][studynum][seriesnum]["modality"];
-				int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
+				//int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
 				int numfilesbeh = s[uid][studynum][seriesnum]["numfilesbeh"].toInt();
 				QString datatype = s[uid][studynum][seriesnum]["datatype"];
 				QString indir = s[uid][studynum][seriesnum]["datadir"];
 				QString behindir = s[uid][studynum][seriesnum]["behdir"];
 				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
 				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
-				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
-				bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
-				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
-				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+				//bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
+				//bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+				//bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
+				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
 				if (datadirexists) {
 					if (!QFile::exists(headerfile)) {
@@ -918,7 +934,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 							}
 						}
 						else {
-							msgs << "Unable to create tmpdir [" + tmpdir + "]";
+							msgs << "Unable to create tmpdir [" + tmpdir + "] because [" + m + "]";
 						}
 					}
 					WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, QString("%1/%2").arg("$indir/$datatype"));
@@ -934,6 +950,422 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 
 	n->WriteLog("Leaving ExportNDAR()...");
 
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportBIDS ------------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &exportstatus, QString &msg) {
+	n->WriteLog("Entering ExportBIDS()...");
+
+	exportstatus = "complete";
+
+	QStringList msgs;
+	if (!GetExportSeriesList(exportid)) {
+		msg = "Unable to get a series list";
+		return false;
+	}
+
+	QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + n->CreateLogDate();
+
+	QString m;
+	if (n->MakePath(rootoutdir, m)) {
+		n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
+	}
+	else {
+		exportstatus = "error";
+		n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+		msg = "Unable to create output directory [$rootoutdir]\n";
+		return false;
+	}
+
+	int i = 1; /* the subject counter */
+	/* iterate through the UIDs */
+	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+		QString uid = a.key();
+		int j = 1; /* the session (study) counter */
+
+		/* iterate through the studynums */
+		for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+			int studynum = b.key();
+
+			/* iterate through the seriesnums */
+			for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+				int seriesnum = c.key();
+
+				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+				SetExportSeriesStatus(exportseriesid, "processing");
+
+				QString seriesstatus = "complete";
+				QString statusmessage;
+
+				//int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+				QString altuids = s[uid][studynum][seriesnum]["altuids"];
+				QString projectname = s[uid][studynum][seriesnum]["projectname"];
+				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				QString studytype = s[uid][studynum][seriesnum]["studytype"];
+				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+				QString modality = s[uid][studynum][seriesnum]["modality"];
+				//double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
+				QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
+				QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
+				QString datatype = s[uid][studynum][seriesnum]["datatype"];
+				QString indir = s[uid][studynum][seriesnum]["datadir"];
+				QString behindir = s[uid][studynum][seriesnum]["behdir"];
+				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
+				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
+				//bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
+				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+				/* create the subject identifier */
+				QString subjectdir = QString("subj%1").arg(i, 4, 10, QChar('0'));
+
+				/* create the session (study) identifier */
+				QString sessiondir = QString("sess%1").arg(j, 4, 10, QChar('0'));
+
+				/* determine the datatype (what BIDS calls the 'modality') */
+				QString seriesdir;
+				if (seriesaltdesc == "") {
+					seriesdir = seriesdesc;
+				}
+				else {
+					seriesdir = seriesaltdesc;
+				}
+				/* remove any non-alphanumeric characters */
+				seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
+
+				QString outdir = QString("%1/%2/%3/%4").arg(rootoutdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+
+				QString m;
+				if (n->MakePath(outdir, m)) {
+					n->WriteLog("Created outdir [" + outdir + "]");
+				}
+				else {
+					exportstatus = "error";
+					n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
+					msg = "Unable to create output directory [" + outdir + "]";
+					return false;
+				}
+
+				if (datadirexists) {
+					if (!datadirempty) {
+						QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+						QString m;
+						if (n->MakePath(tmpdir, m)) {
+
+							int numfilesconv(0), numfilesrenamed(0);
+							if (!n->ConvertDicom("bids", indir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+								msgs << "Error converting files [" + m + "]";
+
+							n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
+							QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
+							n->WriteLog(n->SystemCommand(systemstring, true));
+							n->WriteLog("Done copying files...");
+							n->RemoveDir(tmpdir,m);
+						}
+						else {
+							n->WriteLog("Unable to create directory");
+						}
+					}
+					else {
+						seriesstatus = "error";
+						exportstatus = "error";
+						n->WriteLog("ERROR [" + indir + "] is empty");
+						msgs << "Directory [" + indir + "] is empty";
+					}
+				}
+				else {
+					seriesstatus = "error";
+					exportstatus = "error";
+					n->WriteLog("ERROR indir [" + indir + "] does not exist");
+					msgs << "Directory [" + indir + "] does not exist";
+				}
+
+				/* copy the beh data */
+				if (behdirexists) {
+					QString systemstring;
+					systemstring = "cp -R " + behindir + "/* " + outdir;
+					n->WriteLog(n->SystemCommand(systemstring, true));
+					systemstring = "chmod -Rf 777 " + outdir;
+					n->WriteLog(n->SystemCommand(systemstring, true));
+				}
+
+				SetExportSeriesStatus(exportseriesid, seriesstatus);
+			}
+		}
+	}
+
+	/* write the readme file */
+	QString readmefilename = rootoutdir + "/README";
+	QFile f(readmefilename);
+	if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		QTextStream fs(&f);
+		fs << bidsreadme;
+		f.close();
+	}
+	else
+		msgs << "Unable to create BIDS README file [" + readmefilename + "]";
+
+	msg = msgs.join("\n");
+	n->WriteLog("Leaving ExportBIDS()...");
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportToRemoteNiDB ----------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, QString &exportstatus, QString &msg) {
+
+	/* check to see if the remote server is reachable ... */
+	QString systemstring = "curl -sSf $remotenidbserver > /dev/null";
+	QString serverResponse = n->SystemCommand(systemstring);
+	if (serverResponse != "") {
+		n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
+		msg = "Unable to access remote NiDB server [$remotenidbserver]. Received error [$serverResponse]";
+		return false;
+	}
+	/* ... and if our credentials work and we can start a transaction on it */
+	int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password);
+	if (transactionid < 1) {
+		msg = QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server);
+		n->WriteLog(msg);
+		return false;
+	}
+
+	/* update the exports table with the transaction ID */
+	QSqlQuery q;
+	q.prepare("update exports set remotenidb_transactionid = :transactionid where export_id = :exportid");
+	q.bindValue(":transactionid",transactionid);
+	q.bindValue(":exportid",exportid);
+	n->SQLQuery(q,"ExportToRemoteNiDB",true);
+
+	QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
+
+	QStringList msgs;
+	if (!GetExportSeriesList(exportid)) {
+		msg = "Unable to get a series list";
+		return false;
+	}
+
+	exportstatus = "complete";
+	int lastsid = 0;
+	int newseriesnum = 1;
+	/* iterate through the UIDs */
+	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+		QString uid = a.key();
+		/* iterate through the studynums */
+		for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+			int studynum = b.key();
+			/* iterate through the seriesnums */
+			for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+				int seriesnum = c.key();
+
+				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+				SetExportSeriesStatus(exportseriesid, "processing");
+
+				QString seriesstatus = "complete";
+				QString statusmessage;
+
+				int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+				int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+				QString altuids = s[uid][studynum][seriesnum]["altuids"];
+				QString projectname = s[uid][studynum][seriesnum]["projectname"];
+				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				QString studytype = s[uid][studynum][seriesnum]["studytype"];
+				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+				QString modality = s[uid][studynum][seriesnum]["modality"];
+				double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
+				QString seriesnotes = s[uid][studynum][seriesnum]["seriesnotes"];
+				QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
+				QString datatype = s[uid][studynum][seriesnum]["datatype"];
+				QString indir = s[uid][studynum][seriesnum]["datadir"];
+				QString behindir = s[uid][studynum][seriesnum]["behdir"];
+				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
+				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
+				bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
+				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+				// remove any non-alphanumeric characters
+				seriesnotes.replace(QRegExp("[^a-zA-Z0-9 _-]", Qt::CaseInsensitive), "");
+
+				msgs << QString("uid [%1] indir [%2] datadirexists [%3]").arg(uid).arg(indir).arg(datadirexists);
+				if (datadirexists) {
+					if (!datadirempty) {
+						// --------------- Send to remote NiDB site --------------------------
+						// for now, only DICOM data and beh can be sent to remote sites
+
+						int numfails = 0;
+						int error = 1;
+						QString results;
+						QString systemstring;
+
+						while ((error == 1) && (numfails < 5)) {
+							QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
+							QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
+							QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+							QString tmpzip = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(12) + ".tar.gz";
+							QString tmpzipdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(12);
+							QString m;
+							if (!n->MakePath(tmpdir, m)) { msgs << "ERROR in creating tmpdir [" + tmpdir + "]"; continue; }
+							if (!n->MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
+							systemstring = "rsync " + indir + "/* " + tmpdir + "/";
+							n->WriteLog(n->SystemCommand(systemstring));
+							AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
+
+							// get the list of DICOM files
+							QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
+							//opendir(DIR,$tmpdir) || Error("Cannot open directory [$tmpdir]\n");
+							//my @files = readdir(DIR);
+							//closedir(DIR);
+							//foreach my $f (@files) {
+							//	my $fulldir = "$tmpdir/$f";
+							//	WriteLog("Checking on [$fulldir]");
+							//	if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
+							//		push(@dcmfiles,$f);
+							//	}
+							//}
+							int numdcms = dcmfiles.size();
+							n->WriteLog(QString("Found [%1] dcmfiles").arg(numdcms));
+
+							if (numdcms < 1) {
+								n->WriteLog("************* ERROR - Didn't find any DICOM files!!!! *************");
+							}
+
+							QStringList behfiles;
+							// get the list of beh files
+							if (behdirexists) {
+								QStringList behfiles = n->FindAllFiles(behindir, "*");
+								//opendir(DIR,$behindir) || Error("Cannot open directory [$behindir]\n");
+								//my @bfiles = readdir(DIR);
+								//closedir(DIR);
+								//foreach my $f (@bfiles) {
+								//	my $fulldir = "$behindir/$f";
+								//	if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
+								//		push(@behfiles,$f);
+								//	}
+								//}
+							}
+
+							// build the cURL string to send the actual data
+							systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionID' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$datatype' -F 'modality=$modality' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$seriesnum' ";
+							int c = 0;
+							foreach (QString f, dcmfiles) {
+								c++;
+								QString systemstringA = QString("cp '%1/%2' %3/").arg(tmpdir).arg(f).arg(tmpzipdir);
+								QString res = n->SystemCommand(systemstring);
+								if (res != "") {
+									n->WriteLog(systemstringA + " (" + res + ")");
+								}
+
+							}
+
+							c = 0;
+							foreach(QString f, behfiles) {
+								c++;
+								QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
+								QString res = n->SystemCommand(systemstring);
+								if (res != "") {
+									n->WriteLog(systemstringA + " (" + res + ")");
+								}
+							}
+
+							// send the zip and send file
+							QString systemstringB = QString("cd %1;GZIP=-1; tar -czf %2 --warning=no-timestamp .; chmod 777 %2").arg(tmpzipdir).arg(tmpzip);
+							n->WriteLog(n->SystemCommand(systemstringB));
+							// get size before sending
+							QFile zf(tmpzip);
+							double zipsize = zf.size();
+							double starttime = QDateTime::currentMSecsSinceEpoch();
+
+							/* get file MD5 before sending */
+							QString zipmd5 = n->GetFileChecksum(tmpzip, QCryptographicHash::Md5).toHex();
+
+							systemstring += "-F 'files[]=\@" + tmpzip + "' ";
+							systemstring += conn.server + "/api.php";
+							QString results = n->SystemCommand(systemstring);
+							n->WriteLog(systemstring + " (" + results + ")");
+							double elapsedtime = QDateTime::currentMSecsSinceEpoch() - starttime + 0.0000001; // to avoid a divide by zero!
+							double MBps = zipsize/elapsedtime/1000.0/1000.0;
+							QString speedmsg = QString("%1 bytes transferred at %2 MB/s").arg(zipsize).arg(QString::number(MBps, 'g',2));
+							n->WriteLog(speedmsg);
+							msgs << speedmsg;
+
+							QStringList parts = results.split(",");
+							if (parts[0].trimmed() == "SUCCESS") {
+								/* a file was successfully received by api.php, now check the return md5 */
+								if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
+									seriesstatus = "complete";
+									n->WriteLog("Upload success: MD5 match");
+									msgs << "Successfully sent data to [" + conn.server + "]";
+									error = 0;
+								}
+								else {
+									seriesstatus = "error";
+									exportstatus = "error";
+									msgs << "Upload fail: MD5 non-match";
+									n->WriteLog("Upload fail: MD5 non-match");
+									error = 1;
+									numfails++;
+								}
+							}
+							else {
+								seriesstatus = "error";
+								exportstatus = "error";
+								msgs << QString("Upload fail: got message [" + results + "]");
+								n->WriteLog("Upload fail: got message [" + results + "]");
+								error = 1;
+								numfails++;
+							}
+						}
+					}
+					else {
+						seriesstatus = "error";
+						exportstatus = "error";
+						n->WriteLog("ERROR indir [" + indir + "] is empty");
+						msgs << "ERROR indir [" + indir + "] is empty";
+					}
+				}
+				else {
+					seriesstatus = "error";
+					exportstatus = "error";
+					n->WriteLog("ERROR indir [" + indir + "] does not exist");
+					msgs << "ERROR indir [" + indir + "] does not exist";
+				}
+				SetExportSeriesStatus(exportseriesid, seriesstatus);
+				//$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
+				//$result = SQLQuery($sqlstring, __FILE__, __LINE__);
+				msgs << "Series [$uid$studynum-$seriesnum ($seriesdesc)] complete\n";
+			}
+		}
+	}
+
+	EndRemoteNiDBTransaction(transactionid, conn.server, conn.username, conn.password);
+
+	SetExportStatus(exportid, exportstatus);
+
+	n->WriteLog("Leaving ExportToRemoteNiDB()...");
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportToRemoteFTP ------------------------------ */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg) {
+	/* not implemented */
 	return true;
 }
 
@@ -1224,6 +1656,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 
 					QString sp = seriesprotocol.toLower();
 
+					/* NDAR */
 					if (seriesprotocol.contains("domino",Qt::CaseInsensitive)) expid = 115;
 					if (seriesprotocol.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
 					if (seriesprotocol.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
@@ -1279,4 +1712,32 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 	else {
 		n->WriteLog("No rows found for this series... [$file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir] ");
 	}
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- StartRemoteNiDBTransaction --------------------- */
+/* ---------------------------------------------------------- */
+int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
+
+	/* build a cURL string to start the transaction */
+	QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+	QString str = n->SystemCommand(systemstring);
+	int t = str.toInt();
+	n->WriteLog(QString("Remote NiDB transactionID: [%1]").arg(t));
+
+	return t;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteNDARSeries -------------------------------- */
+/* ---------------------------------------------------------- */
+void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
+
+	/* build a cURL string to end the transaction */
+	QString systemstring = QString ("curl -gs -F 'action=endTransaction' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' %4/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(tid).arg(remotenidbserver);
+	n->WriteLog(n->SystemCommand(systemstring));
 }
