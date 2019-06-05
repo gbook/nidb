@@ -21,6 +21,7 @@ SOURCES += \
     main.cpp \
     moduleExport.cpp \
     moduleFileIO.cpp \
+    moduleImport.cpp \
     moduleManager.cpp \
     nidb.cpp \
     remotenidbconnection.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
     analysis.h \
     moduleExport.h \
     moduleFileIO.h \
+    moduleImport.h \
     moduleManager.h \
     nidb.h \
     remotenidbconnection.h \

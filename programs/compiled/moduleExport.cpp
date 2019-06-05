@@ -1156,8 +1156,8 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 	}
 
 	exportstatus = "complete";
-	int lastsid = 0;
-	int newseriesnum = 1;
+	//int lastsid = 0;
+	//int newseriesnum = 1;
 	/* iterate through the UIDs */
 	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
 		QString uid = a.key();
@@ -1174,16 +1174,16 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 				QString seriesstatus = "complete";
 				QString statusmessage;
 
-				int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
-				int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				//int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
 				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
 				QString altuids = s[uid][studynum][seriesnum]["altuids"];
 				QString projectname = s[uid][studynum][seriesnum]["projectname"];
-				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
 				QString studytype = s[uid][studynum][seriesnum]["studytype"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
 				QString modality = s[uid][studynum][seriesnum]["modality"];
-				double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
+				//double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
 				QString seriesnotes = s[uid][studynum][seriesnum]["seriesnotes"];
 				QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
 				QString datatype = s[uid][studynum][seriesnum]["datatype"];
@@ -1192,10 +1192,10 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
 				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
 				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
-				bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+				//bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
 				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
-				bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
 				// remove any non-alphanumeric characters
 				seriesnotes.replace(QRegExp("[^a-zA-Z0-9 _-]", Qt::CaseInsensitive), "");
@@ -1226,16 +1226,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 
 							// get the list of DICOM files
 							QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
-							//opendir(DIR,$tmpdir) || Error("Cannot open directory [$tmpdir]\n");
-							//my @files = readdir(DIR);
-							//closedir(DIR);
-							//foreach my $f (@files) {
-							//	my $fulldir = "$tmpdir/$f";
-							//	WriteLog("Checking on [$fulldir]");
-							//	if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
-							//		push(@dcmfiles,$f);
-							//	}
-							//}
 							int numdcms = dcmfiles.size();
 							n->WriteLog(QString("Found [%1] dcmfiles").arg(numdcms));
 
@@ -1247,15 +1237,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							// get the list of beh files
 							if (behdirexists) {
 								QStringList behfiles = n->FindAllFiles(behindir, "*");
-								//opendir(DIR,$behindir) || Error("Cannot open directory [$behindir]\n");
-								//my @bfiles = readdir(DIR);
-								//closedir(DIR);
-								//foreach my $f (@bfiles) {
-								//	my $fulldir = "$behindir/$f";
-								//	if ((-f $fulldir) && ($f ne '.') && ($f ne '..')) {
-								//		push(@behfiles,$f);
-								//	}
-								//}
 							}
 
 							// build the cURL string to send the actual data
@@ -1292,7 +1273,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							/* get file MD5 before sending */
 							QString zipmd5 = n->GetFileChecksum(tmpzip, QCryptographicHash::Md5).toHex();
 
-							systemstring += "-F 'files[]=\@" + tmpzip + "' ";
+							systemstring += "-F 'files[]=\\@" + tmpzip + "' ";
 							systemstring += conn.server + "/api.php";
 							QString results = n->SystemCommand(systemstring);
 							n->WriteLog(systemstring + " (" + results + ")");

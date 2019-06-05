@@ -302,9 +302,10 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	bool okToDeleteDBEntries = false;
 
 	if (QDir(a.analysispath).exists()) {
-		int c;
-		double b;
-		n->GetDirSize(a.analysispath, b, c);
+		uint c;
+		qint64 b;
+		b = n->GetDirByteSize(a.analysispath);
+		c = n->GetDirFileCount(a.analysispath);
 		n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
 		if (n->RemoveDir(a.analysispath, msg)) {
 			/* QDir.remove worked */

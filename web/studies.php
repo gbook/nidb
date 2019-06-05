@@ -85,6 +85,7 @@
 	$studyids = GetVariable("studyids");
 	$copy_date = GetVariable("copy_date");
 	$study_modality = GetVariable("study_modality");
+	
 	/* determine action */
 	switch($action) {
 		case 'editform':
@@ -159,11 +160,11 @@
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
-			DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, true);
+			DisplayStudy($studyid, true);
 			break;
 		case 'saveStSe':
-			 UpdateStSe($id, $studydatetime, $studytype,$copy_date, $study_modality);
-			 DisplayStudy($id, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
+			 UpdateStSe($studyid, $studydatetime, $studytype,$copy_date, $study_modality);
+			 DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
 		default:
 			DisplayStudy($studyid);
@@ -260,7 +261,7 @@
 		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
-		if (!ValidID($studyid,'Series ID')) { return; }
+		if (!ValidID($studyid,'Study ID')) { return; }
 
 		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -757,6 +758,8 @@
 	/* ------- DisplayStudyForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudyForm($studyid) {
+		PrintVariable($studyid);
+		
 		if (!ValidID($studyid,'Study ID')) { return; }
 
 		$sqlstring = "select a.*, c.uid, c.subject_id, d.project_id, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where study_id = $studyid";
@@ -922,8 +925,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStudy ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayStudy($studyid) {
-		
+	function DisplayStudy($studyid, $displayfiles=false) {
 		if (!ValidID($studyid,'Study ID')) { return; }
 	
 		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$studyid'";

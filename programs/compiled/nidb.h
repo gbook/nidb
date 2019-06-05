@@ -39,7 +39,7 @@ public:
 
 	/* generic functions */
 	void Print(QString s, bool n=true, bool pad=false);
-	QString CreateCurrentDate();
+	QString CreateCurrentDateTime(int format=1);
 	QString CreateLogDate();
 	int SQLQuery(QSqlQuery &q, QString function, bool d=false);
 	QString WriteLog(QString msg);
@@ -48,18 +48,27 @@ public:
 	bool MakePath(QString p, QString &msg);
 	bool RemoveDir(QString p, QString &msg);
 	QString GenerateRandomString(int n);
-	QStringList FindAllFiles(QString dir, QString pattern);
+	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
+	QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
 	QString FindFirstFile(QString dir, QString pattern, bool recursive=false);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
-	void GetDirSize(QString dir, double &bytes, int &filecount);
+	bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
+	bool MoveFile(QString f, QString dir);
+	uint GetDirFileCount(QString dir);
+	qint64 GetDirByteSize(QString dir);
 	bool SendEmail(QString to, QString subject, QString body);
 	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
 	bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
 	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
+	QString CreateUID(QString prefix, int numletters=3);
+	QString RemoveNonAlphaNumericChars(QString s);
+	void SortQStringListNaturally(QStringList &s);
 
 private:
     void FatalError(QString err);
+	qint64 pid = 0;
+	bool checkedin = false;
 
 	QString builtDate = QString::fromLocal8Bit(__DATE__); // set text for the label
 

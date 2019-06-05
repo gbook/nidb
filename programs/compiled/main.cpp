@@ -4,9 +4,14 @@
 #include "moduleFileIO.h"
 #include "moduleExport.h"
 #include "moduleManager.h"
+#include "moduleImport.h"
 #include <iostream>
 #include <smtp/SmtpMime>
 
+
+/* ---------------------------------------------------------- */
+/* --------- main ------------------------------------------- */
+/* ---------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
@@ -55,6 +60,11 @@ int main(int argc, char *argv[])
 				}
 				else if (module == "modulemanager") {
 					moduleManager *m = new moduleManager(n);
+					keepLog = m->Run();
+					delete m;
+				}
+				else if (module == "import") {
+					moduleImport *m = new moduleImport(n);
 					keepLog = m->Run();
 					delete m;
 				}

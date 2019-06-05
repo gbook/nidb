@@ -5,6 +5,7 @@
 /* ---------------------------------------------------------- */
 nidb::nidb()
 {
+	pid = QCoreApplication::applicationPid();
 }
 
 
@@ -14,6 +15,8 @@ nidb::nidb()
 nidb::nidb(QString m)
 {
 	module = m;
+
+	pid = QCoreApplication::applicationPid();
 
 	Print(QString("Build date [%1]    C++ version [%2]").arg(builtDate).arg(__cplusplus));
 
@@ -191,15 +194,8 @@ int nidb::CheckNumLockFiles() {
     QStringList filters;
     filters << lockfileprefix;
 
-	//Print("Checking for existing lock files [" + lockfileprefix + "]... ",0);
-
     QStringList files = dir.entryList(filters);
     int numlocks = files.count();
-
-	//Print(QString("Found [%1] existing lock files").arg(numlocks));
-	//foreach (const QString &f, files) {
-	//	Print(f);
-	//}
 
     return numlocks;
 }
@@ -217,7 +213,7 @@ bool nidb::CreateLockFile() {
 	Print("Creating lock file [" + lockFilepath + "]",false, true);
 	QFile f(lockFilepath);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QString d = CreateCurrentDate();
+		QString d = CreateCurrentDateTime();
         QTextStream fs(&f);
         fs << d;
         f.close();
@@ -239,7 +235,7 @@ bool nidb::CreateLogFile () {
 	log.setFileName(logFilepath);
 
 	Print("Creating log file [" + logFilepath + "]",false, true);
-	if (log.open(QIODevice::WriteOnly | QIODevice::Text)) {
+	if (log.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered)) {
 		Print("[Ok]");
 		return 1;
 	}
@@ -286,11 +282,24 @@ void nidb::RemoveLogFile(bool keepLog) {
 /* ---------------------------------------------------------- */
 /* --------- CreateCurrentDate ------------------------------ */
 /* ---------------------------------------------------------- */
-QString nidb::CreateCurrentDate() {
+QString nidb::CreateCurrentDateTime(int format) {
     QString date;
 
     QDateTime d = QDateTime::currentDateTime();
-	date = d.toString("yyyy/MM/dd HH:mm:ss");
+	switch (format) {
+	    case 1:
+		    date = d.toString("yyyy/MM/dd HH:mm:ss"); break;
+	    case 2:
+		    date = d.toString("yyyy-MM-dd HH:mm:ss"); break;
+	    case 3:
+		    date = d.toString("yyyy/MM/dd"); break;
+	    case 4:
+		    date = d.toString("yyyy-MM-dd"); break;
+	    case 5:
+		    date = d.toString("HH:mm:ss"); break;
+	    default:
+		    date = d.toString("yyyy/MM/dd HH:mm:ss");
+	}
 
     return date;
 }
@@ -390,7 +399,7 @@ void nidb::ModuleDBCheckOut() {
 
 	q.prepare("delete from module_procs where module_name = :module and process_id = :pid");
 	q.bindValue(":module", module);
-	q.bindValue(":pid", QCoreApplication::applicationPid());
+	q.bindValue(":pid", pid);
 	SQLQuery(q, "ModuleDBCheckOut");
 
 	Print("Module checked out of database");
@@ -405,15 +414,18 @@ void nidb::ModuleDBCheckOut() {
    be dead and is reset so it can start again */
 void nidb::ModuleRunningCheckIn() {
 	QSqlQuery q;
-	q.prepare("insert ignore into module_procs (module_name, process_id) values (:module, :pid)");
-	q.bindValue(":module", module);
-	q.bindValue(":pid", QCoreApplication::applicationPid());
-	SQLQuery(q, "ModuleRunningCheckIn");
+	if (!checkedin) {
+		q.prepare("insert ignore into module_procs (module_name, process_id) values (:module, :pid)");
+		q.bindValue(":module", module);
+		q.bindValue(":pid", pid);
+		SQLQuery(q, "ModuleRunningCheckIn");
+		checkedin = true;
+	}
 
 	/* update the checkin time */
 	q.prepare("update module_procs set last_checkin = now() where module_name = :module and process_id = :pid");
 	q.bindValue(":module", module);
-	q.bindValue(":pid", QCoreApplication::applicationPid());
+	q.bindValue(":pid", pid);
 	SQLQuery(q, "ModuleRunningCheckIn");
 }
 
@@ -470,17 +482,12 @@ QString nidb::SystemCommand(QString s, bool detail) {
 /* --------- WriteLog --------------------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::WriteLog(QString msg) {
-	qint64 pid = 0;
-	pid = QCoreApplication::applicationPid();
+	if (msg.trimmed() != "") {
+		if (cfg["debug"].toInt())
+			Print(msg);
 
-	if (cfg["debug"].toInt()) {
-		Print(msg);
-	}
-	else {
-		if (msg.trimmed() != "") {
-			if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDate()).arg(pid).arg(msg).toLatin1()))
-				Print("Unable to write to log file!");
-		}
+		if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
+			Print("Unable to write to log file!");
 	}
 
 	return msg;
@@ -505,18 +512,35 @@ bool nidb::MakePath(QString p, QString &msg) {
 		return false;
 	}
 
-	QDir path(p);
-	if (path.exists()) {
-		msg = QString("Path [" + p + "] exists");
-	}
-	else {
-		if (path.mkpath(p)) {
+	//QString p("/usr2/archive/S1234ABC/5/6");
+	QDir d(p);
+
+	if(!d.exists() && !d.mkpath(p))
+		WriteLog("MakePath() Error creating path [" + p + "]");
+	else
+		WriteLog("MakePath() Path already exists or was created successfuly [" + p + "]");
+
+	return true;
+
+	WriteLog("MakePath() called with path ["+p+"]");
+	QDir path;
+	//QString systemstring = "mkdir -pv --mode=0777 " + p;
+	//WriteLog(SystemCommand(systemstring));
+	if (path.mkpath(p)) {
+		WriteLog("MakePath() mkpath returned true [" + p + "]");
+		if (path.exists()) {
+			WriteLog("MakePath() Path exists [" + p + "]");
 			msg = QString("Destination path [" + p + "] created");
 		}
 		else {
-			msg = QString("Destination path [" + p + "] not created");
+			WriteLog("MakePath() Path does not exist [" + p + "]");
+			msg = QString("Unable to create destination path [" + p + "]");
 			return false;
 		}
+	}
+	else {
+		msg = QString("MakePath() mkpath returned false [" + p + "]");
+		return false;
 	}
 
 	return true;
@@ -564,13 +588,56 @@ QString nidb::GenerateRandomString(int n) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- MoveFile --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::MoveFile(QString f, QString dir) {
+
+	QFile file(f);
+	QDir d;
+	if (d.exists(dir))
+		file.rename(dir + "/" + QFileInfo(f).fileName());
+	else
+		return false;
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RenameFile ------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::RenameFile(QString filepathorig, QString filepathnew, bool force) {
+
+	QString systemstring = QString("mv %1 %2 %3").arg(force ? "-f" : "").arg(filepathorig).arg(filepathnew);
+	WriteLog(SystemCommand(systemstring, false));
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- FindAllFiles ----------------------------------- */
 /* ---------------------------------------------------------- */
-QStringList nidb::FindAllFiles(QString dir, QString pattern) {
+QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
+	if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
+
 	QStringList files;
-	QDirIterator it(dir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
-	while (it.hasNext())
-		files << it.next();
+	if (recursive) {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+		while (it.hasNext()) {
+			//WriteLog("Found file [" + it.filePath() + "]");
+			files << it.next();
+		}
+	}
+	else {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::NoIteratorFlags);
+		while (it.hasNext()) {
+			//WriteLog("Found file [" + it.filePath() + "]");
+			files << it.next();
+		}
+	}
+
+	if (cfg["debug"] == "1") WriteLog(QString("Finished searching for files. Found [%1] files").arg(files.size()));
 
 	return files;
 }
@@ -582,12 +649,12 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern) {
 QString nidb::FindFirstFile(QString dir, QString pattern, bool recursive) {
 	QString f;
 	if (recursive) {
-		QDirIterator it(dir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
 		if (it.hasNext())
 			f = it.next();
 	}
 	else {
-		QDirIterator it(dir, QStringList() << pattern, QDir::Files);
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
 		if (it.hasNext())
 			f = it.next();
 	}
@@ -602,7 +669,7 @@ QString nidb::FindFirstFile(QString dir, QString pattern, bool recursive) {
 bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg) {
 	QStringList msgs;
 	bool ret = true;
-	QDirIterator it(indir, QStringList() << pattern, QDir::Files, QDirIterator::Subdirectories);
+	QDirIterator it(indir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
 	while (it.hasNext()) {
 		QFile f(it.next());
 		QString newfile = QString("%1/%2.dcm").arg(outdir).arg(GenerateRandomString(20));
@@ -616,18 +683,79 @@ bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString 
 	return ret;
 }
 
+/* ---------------------------------------------------------- */
+/* --------- FindAllDirs ------------------------------------ */
+/* ---------------------------------------------------------- */
+QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool includepath) {
+
+	if (pattern.trimmed() == "")
+		dir = "*";
+
+	QStringList dirs;
+
+	if (recursive) {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+		while (it.hasNext()) {
+			if (includepath)
+				dirs << it.next();
+			else {
+				dirs << it.fileName();
+				it.next();
+			}
+		}
+	}
+	else {
+		QDirIterator it(dir, QStringList() << pattern, QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+		while (it.hasNext()) {
+			if (includepath)
+				dirs << it.next();
+			else {
+				dirs << it.fileName();
+				it.next();
+			}
+		}
+	}
+
+	return dirs;
+}
+
 
 /* ---------------------------------------------------------- */
-/* --------- GetDirSize ------------------------------------- */
+/* --------- GetDirFileCount -------------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::GetDirSize(QString dir, double &bytes, int &filecount) {
-	filecount = 0;
-	bytes = 0.0;
-	QDirIterator it(dir, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+uint nidb::GetDirFileCount(QString dir) {
+	uint c = 0;
+
+	QDirIterator it(dir);
 	while (it.hasNext()) {
-		filecount++;
+		c++;
 		it.next();
 	}
+
+	WriteLog(QString("GetDirFileCount() directory ["+dir+"] is [%1] files. QDirIterator says the path is [%2]").arg(c).arg(it.path()));
+
+	return c;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetDirByteSize --------------------------------- */
+/* ---------------------------------------------------------- */
+qint64 nidb::GetDirByteSize(QString dir) {
+	qint64 b = 0;
+
+	QDir d(dir);
+	if (d.exists()) {
+		QString systemstring = "du -sb " + dir;
+		QStringList ret = SystemCommand(systemstring,false).split(QRegExp("\\s+"));
+		b = ret[0].toULong();
+		WriteLog(QString("GetDirByteSize() ran command [%1] to determine that directory [%2] is [%3] bytes").arg(systemstring).arg(dir).arg(b));
+	}
+	else {
+		WriteLog("GetDirByteSize - directory ["+dir+"] does not exist");
+	}
+
+	return b;
 }
 
 
@@ -844,4 +972,64 @@ QByteArray nidb::GetFileChecksum(const QString &fileName, QCryptographicHash::Al
 		}
 	}
 	return QByteArray();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CreateUID -------------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::CreateUID(QString prefix, int numletters) {
+	QString newID;
+	QString letters("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	QString numbers("0123456789");
+	QString C1, C2, C3, C4, C5, C6, C7, C8;
+
+	/* seed the random number generator */
+	qsrand(QTime::currentTime().msec());
+
+	C1 = numbers.at( qrand() % numbers.length() );
+	C2 = numbers.at( qrand() % numbers.length() );
+	C3 = numbers.at( qrand() % numbers.length() );
+	C4 = numbers.at( qrand() % numbers.length() );
+
+	QStringList badarray;
+	badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk";
+	bool safe = false;
+
+	while (!safe) {
+		C5 = letters.at( qrand() % letters.length() );
+		C6 = letters.at( qrand() % letters.length() );
+		C7 = letters.at( qrand() % letters.length() );
+
+		if (numletters == 4)
+			C8 = letters.at( qrand() % letters.length() );
+
+		QString str;
+		str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
+		if (!badarray.contains(str)) {
+			safe = true;
+		}
+	}
+
+	//newID = QString("%1%2%3%4%5%6%7%8%9").arg(prefix).arg(C1).arg(C2).arg(C3).arg(C4).arg(C5).arg(C6).arg(C7).arg(C8);
+	newID = prefix+C1+C2+C3+C4+C5+C6+C7+C8;
+	return newID.trimmed();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RemoveNonAlphaNumericChars --------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::RemoveNonAlphaNumericChars(QString s) {
+	return s.remove(QRegExp("[^a-zA-Z\\d\\s]"));
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SortQStringListNaturally ----------------------- */
+/* ---------------------------------------------------------- */
+void nidb::SortQStringListNaturally(QStringList &s) {
+	QCollator coll;
+	coll.setNumericMode(true);
+	std::sort(s.begin(), s.end(), [&](const QString& s1, const QString& s2){ return coll.compare(s1, s2) < 0; });
 }

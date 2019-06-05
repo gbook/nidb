@@ -182,12 +182,12 @@
 				
 				/* studies, which are displayed under the projects menu */
 				elseif ($page == "studies.php") {
-					$studyid = $_GET['id'];
+					$studyid = GetVariable("id");
 					if ($studyid == "") {
-						$studyid = $_GET['studyid'];
+						$studyid = GetVariable("studyid");
 					}
 					if ($studyid != "") {
-						list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+						list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 						?>
 						<a href="projects.php">Project List</a>
 						<b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>"><?=$projectname?></a></b>
@@ -201,18 +201,18 @@
 				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php") {
 					
 					if ($page=="projectchecklist.php" || $page=="projectassessments.php") {
-						$id=$_GET['projectid'];
+						$projectid = GetVariable("projectid");
 					}
 					else {
-						$id=$_GET['id'];
+						$projectid = GetVariable("id");
 					}
 					
-					if ($id=='') {
+					if ($projectid == "") {
 						?><a href="projects.php" style="background-color:#273f70">Project List</a><?
 					} 
 					else {
-						$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-						$sqlstring = "select * from projects where project_id = $id";
+						$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+						$sqlstring = "select * from projects where project_id = $projectid";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$name = $row['project_name'];
@@ -221,39 +221,39 @@
 						
 						if (($page == "projects.php") && ($action == "displayprojectinfo")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><b><a href="projects.php?action=displayprojectinfo&id=<?=$id?>" style="<?=$style?>"><?=$name?></a></b><?
+						?><b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" style="<?=$style?>"><?=$name?></a></b><?
 						
 						if ($page=="projectassessments.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projectassessments.php?projectid=<?=$id?>" style="<?=$style?>">Assessments</a><?
+						?><a href="projectassessments.php?projectid=<?=$projectid?>" style="<?=$style?>">Assessments</a><?
 						
 						if (($page=="projects.php") && ($action == "editsubjects")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projects.php?action=editsubjects&id=<?=$id?>" style="<?=$style?>">Subjects</a><?
+						?><a href="projects.php?action=editsubjects&id=<?=$projectid?>" style="<?=$style?>">Subjects</a><?
 						
 						if ($page=="projects.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projects.php?id=<?=$id?>" style="<?=$style?>">Studies</a><?
+						?><a href="projects.php?id=<?=$projectid?>" style="<?=$style?>">Studies</a><?
 						
 						if ($page=="projectchecklist.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projectchecklist.php?projectid=<?=$id?>" style="<?=$style?>">Checklist</a><?
+						?><a href="projectchecklist.php?projectid=<?=$projectid?>" style="<?=$style?>">Checklist</a><?
 						
 						if ($page=="mrqcchecklist.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="<?=$style?>">MR Scan QC</a><?
+						?><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="<?=$style?>">MR Scan QC</a><?
 
 					}
 				}
 				
 				/* pipelines sub-menu */
 				elseif ($page=="pipelines.php" || $page=="analysis.php") {
-					$id=$_GET['id'];
-					if ($id=='') {
+					$pipelineid = GetVariable("id");
+					if ($pipelineid == "") {
 						?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
 					} 
 					else {
-						$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $id";
+						$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $pipelineid";
  	                    $result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
         	            $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
                 	    $name = $row['pipeline_name'];
@@ -262,11 +262,11 @@
 						
 						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="pipelines.php?action=editpipeline&id=<?=$id?>" style="<?=$style?>"><?=$name?></a><?
+						?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a><?
 
 						if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="analysis.php?action=viewanalyses&id=<?=$id?>" style="<?=$style?>">Analysis</a><?
+						?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" style="<?=$style?>">Analysis</a><?
 					}
 				}
 				
