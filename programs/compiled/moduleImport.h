@@ -6,6 +6,7 @@
 #include "gdcmAttribute.h"
 #include "gdcmStringFilter.h"
 #include "gdcmAnonymizer.h"
+#include "series.h"
 
 
 class moduleImport
@@ -21,7 +22,11 @@ public:
 	bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
 	bool ParseDICOMFile(QString file, QHash<QString, QString> &tags);
 	bool InsertDICOMSeries(int importid, QStringList files, QString &msg);
+	bool InsertParRec(int importid, QString file, QString &msg);
 	void CreateThumbnail(QString f, QString outdir);
+	QString GetCostCenter(QString studydesc);
+	QString CreateIDSearchList(QString PatientID, QString altuids);
+	bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, QString importUUID, QStringList &msgs, int &subjectRowID, QString &subjectRealUID);
 
 private:
 	nidb *n;

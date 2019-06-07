@@ -323,7 +323,7 @@ QString nidb::CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* QSqlQuery object must already be prepared and bound before */
 /* being passed in to this function                           */
-int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
+int nidb::SQLQuery(QSqlQuery &q, QString function, bool d, bool batch) {
 
 	/* get the SQL string that will be run */
 	QString sql = q.lastQuery();
@@ -335,22 +335,25 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d) {
 
 	/* debugging */
 	if (cfg["debug"].toInt() || d) {
-		Print("Running SQL statement[" + sql + "]");
+		//Print("Running SQL statement[" + sql + "]");
 		WriteLog(sql);
 	}
 
+
 	/* run the query */
-    if (q.exec()) {
+	if (batch)
+		if (q.execBatch(QSqlQuery::ValuesAsRows))
+			return q.size();
+	if (q.exec())
 		return q.size();
-    }
-    else {
-		QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error(DB) [%4] Error(driver) [%5]").arg(module).arg(function).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
-		SendEmail(cfg["adminemail"], "SQL error", err);
-		qDebug() << err;
-		qDebug() << q.lastError();
-		WriteLog(err);
-        return -1;
-    }
+
+	QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error(DB) [%4] Error(driver) [%5]").arg(module).arg(function).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+	SendEmail(cfg["adminemail"], "SQL error", err);
+	qDebug() << err;
+	qDebug() << q.lastError();
+	WriteLog(err);
+	WriteLog("SQL error, exiting program");
+	exit(0);
 }
 
 
@@ -512,36 +515,14 @@ bool nidb::MakePath(QString p, QString &msg) {
 		return false;
 	}
 
-	//QString p("/usr2/archive/S1234ABC/5/6");
 	QDir d(p);
 
-	if(!d.exists() && !d.mkpath(p))
-		WriteLog("MakePath() Error creating path [" + p + "]");
-	else
-		WriteLog("MakePath() Path already exists or was created successfuly [" + p + "]");
-
-	return true;
-
-	WriteLog("MakePath() called with path ["+p+"]");
-	QDir path;
-	//QString systemstring = "mkdir -pv --mode=0777 " + p;
-	//WriteLog(SystemCommand(systemstring));
-	if (path.mkpath(p)) {
-		WriteLog("MakePath() mkpath returned true [" + p + "]");
-		if (path.exists()) {
-			WriteLog("MakePath() Path exists [" + p + "]");
-			msg = QString("Destination path [" + p + "] created");
-		}
-		else {
-			WriteLog("MakePath() Path does not exist [" + p + "]");
-			msg = QString("Unable to create destination path [" + p + "]");
-			return false;
-		}
-	}
-	else {
-		msg = QString("MakePath() mkpath returned false [" + p + "]");
+	if(!d.exists() && !d.mkpath(p)) {
+		msg = "MakePath() Error creating path [" + p + "]";
 		return false;
 	}
+	else
+		msg = "MakePath() Path already exists or was created successfuly [" + p + "]";
 
 	return true;
 }

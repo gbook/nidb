@@ -41,7 +41,7 @@ public:
 	void Print(QString s, bool n=true, bool pad=false);
 	QString CreateCurrentDateTime(int format=1);
 	QString CreateLogDate();
-	int SQLQuery(QSqlQuery &q, QString function, bool d=false);
+	int SQLQuery(QSqlQuery &q, QString function, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
 	QString GetBuildDate();
