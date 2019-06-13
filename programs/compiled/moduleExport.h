@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB moduleExport.h
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #ifndef MODULEEXPORT_H
 #define MODULEEXPORT_H
 #include "nidb.h"
@@ -28,8 +50,6 @@ public:
 	bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, QString &exportstatus, QString &msg);
 	bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
 
-	bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
-	bool AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode);
 	bool WriteNDARHeader(QString headerfile, QString modality);
 	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir);
 

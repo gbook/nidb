@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB nidb.h
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #ifndef NIDB_H
 #define NIDB_H
 
@@ -9,6 +31,11 @@
 #include <QHostInfo>
 #include <QDirIterator>
 #include "smtp/SmtpMime"
+#include "gdcmReader.h"
+#include "gdcmWriter.h"
+#include "gdcmAttribute.h"
+#include "gdcmStringFilter.h"
+#include "gdcmAnonymizer.h"
 
 class nidb
 {
@@ -21,7 +48,7 @@ public:
     bool LoadConfig();
     bool DatabaseConnect();
 
-	/* module housekeeping */
+	/* module housekeeping functions */
 	int CheckNumLockFiles();
 	bool CreateLockFile();
 	bool CreateLogFile();
@@ -44,33 +71,39 @@ public:
 	int SQLQuery(QSqlQuery &q, QString function, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
-	QString GetBuildDate();
 	bool MakePath(QString p, QString &msg);
 	bool RemoveDir(QString p, QString &msg);
 	QString GenerateRandomString(int n);
+	QString CreateUID(QString prefix, int numletters=3);
+	void SortQStringListNaturally(QStringList &s);
+	bool SendEmail(QString to, QString subject, QString body);
+	QString RemoveNonAlphaNumericChars(QString s);
+	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
+
+	/* file and directory operations */
 	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 	QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
 	QString FindFirstFile(QString dir, QString pattern, bool recursive=false);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 	bool MoveFile(QString f, QString dir);
-	uint GetDirFileCount(QString dir);
-	qint64 GetDirByteSize(QString dir);
-	bool SendEmail(QString to, QString subject, QString body);
+	void GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse=false);
+	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
+
+	/* DICOM functions */
 	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
 	bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
-	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
-	QString CreateUID(QString prefix, int numletters=3);
-	QString RemoveNonAlphaNumericChars(QString s);
-	void SortQStringListNaturally(QStringList &s);
+	bool IsDICOMFile(QString f);
+	bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
+	bool AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode);
 
 private:
     void FatalError(QString err);
 	qint64 pid = 0;
 	bool checkedin = false;
 
-	QString builtDate = QString::fromLocal8Bit(__DATE__); // set text for the label
+	//QString buildDate = QString::fromLocal8Bit(__DATE__);
+	//QString buildTime = QString::fromLocal8Bit(__TIME__);
 
 	bool configLoaded = false;
 	QString module;

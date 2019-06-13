@@ -118,9 +118,9 @@
 	/* -------------------------------------------- */
 	function DisplayMenu() {
 	
-		$urllist['Home'] = "index.php";
-		$urllist['Import'] = "import.php";
-		NavigationBar("Import", $urllist);
+		//$urllist['Home'] = "index.php";
+		//$urllist['Import'] = "import.php";
+		//NavigationBar("Import", $urllist);
 		
 		?>
 		<ul>
@@ -138,10 +138,10 @@
 	/* -------------------------------------------- */
 	function DisplayIDMapperForm() {
 	
-		$urllist['Home'] = "index.php";
-		$urllist['Import'] = "import.php";
-		$urllist['ID mapper'] = "import.php?action=idmapper";
-		NavigationBar("ID Mapper", $urllist);
+		//$urllist['Home'] = "index.php";
+		//$urllist['Import'] = "import.php";
+		//$urllist['ID mapper'] = "import.php?action=idmapper";
+		//NavigationBar("ID Mapper", $urllist);
 		?>
 		<div align="center">
 		<form action="import.php" method="post">
@@ -197,10 +197,10 @@
 	/* -------------------------------------------- */
 	function MapIDs($idlist, $displayonlymatches, $searchthisinstance) {
 	
-		$urllist['Home'] = "index.php";
-		$urllist['Import'] = "import.php";
-		$urllist['ID mapper'] = "import.php?action=idmapper";
-		NavigationBar("Import", $urllist);
+		//$urllist['Home'] = "index.php";
+		//$urllist['Import'] = "import.php";
+		//$urllist['ID mapper'] = "import.php?action=idmapper";
+		//NavigationBar("Import", $urllist);
 
 		//$idlist = mysqli_real_escape_string($GLOBALS['linki'], $idlist);
 		$idlist = preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $idlist);
@@ -372,10 +372,10 @@
 	/* -------------------------------------------- */
 	function DisplayImportMenu() {
 	
-		$urllist['Home'] = "index.php";
-		$urllist['Import'] = "import.php";
-		$urllist['Import'] = "import.php?action=import";
-		NavigationBar("Import", $urllist);
+		//$urllist['Home'] = "index.php";
+		//$urllist['Import'] = "import.php";
+		//$urllist['Import'] = "import.php?action=import";
+		//NavigationBar("Import", $urllist);
 		?>
 		<style>
 			.gradientsummary {

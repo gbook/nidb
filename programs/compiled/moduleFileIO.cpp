@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB moduleFileIO.cpp
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #include "moduleFileIO.h"
 #include <QDebug>
 #include <QSqlQuery>
@@ -267,7 +289,7 @@ bool moduleFileIO::CopyAnalysis(int analysisid, QString destination, QString &ms
 
 	destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
 	if (n->MakePath(destination, msg)) {
-		QString systemstring = QString("cp -ruv %1 %2").arg(a.analysispath).arg(destination);
+		QString systemstring = QString("rsync -az %1/* %2").arg(a.analysispath).arg(destination);
 		n->WriteLog(n->SystemCommand(systemstring));
 		n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
 		return true;
@@ -302,10 +324,12 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	bool okToDeleteDBEntries = false;
 
 	if (QDir(a.analysispath).exists()) {
-		uint c;
+		int c;
 		qint64 b;
-		b = n->GetDirByteSize(a.analysispath);
-		c = n->GetDirFileCount(a.analysispath);
+		//b = n->GetDirByteSize(a.analysispath);
+		//c = n->GetDirFileCount(a.analysispath);
+		n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
+
 		n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
 		if (n->RemoveDir(a.analysispath, msg)) {
 			/* QDir.remove worked */

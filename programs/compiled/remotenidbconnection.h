@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB study.h
+  NIDB remotenidbconnection.h
   Copyright (C) 2004 - 2019
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,34 +20,33 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef STUDY_H
-#define STUDY_H
+#ifndef REMOTENIDBCONNECTION_H
+#define REMOTENIDBCONNECTION_H
 #include <QString>
 #include "nidb.h"
 
 
-class study
+class remoteNiDBConnection
 {
 public:
-	study();
-	study(int id, nidb *a);
+	remoteNiDBConnection();
+	remoteNiDBConnection(int id, nidb *a);
 	nidb *n;
 
-	void PrintStudyInfo();
-
-	int studynum;
-	QString uid;
-	int studyid;
-	int subjectid;
-	QString studypath;
-	int enrollmentid;
+	int connid;
+	void PrintConnectionInfo();
+	QString server;
+	QString username;
+	QString password;
+	int instanceid;
 	int projectid;
-	QDateTime studydatetime;
+	int siteid;
 
 	bool isValid = true;
 	QString msg;
+
 private:
-	void LoadStudyInfo();
+	void LoadConnection();
 };
 
-#endif // STUDY_H
+#endif // REMOTENIDBCONNECTION_H

@@ -85,8 +85,8 @@
 	/* -------------------------------------------- */
 	function DisplayDownloadList() {
 	
-		$urllist['Public Downloads'] = "publicdownloads.php";
-		NavigationBar("Export", $urllist);
+		//$urllist['Public Downloads'] = "publicdownloads.php";
+		//NavigationBar("Export", $urllist);
 		
 	?>
 

@@ -68,9 +68,9 @@
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayMenu() {
-		$urllist['Administration'] = "importlog.php";
-		$urllist['Import Log'] = "importlog.php";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "importlog.php";
+		//$urllist['Import Log'] = "importlog.php";
+		//NavigationBar("Admin", $urllist);
 		
 		?>
 		<a href="importlog.php?action=viewtransactions&useronly=1">My Uploads</a> | <a href="importlog.php?action=viewtransactions&useronly=0">All Uploads</a><br>

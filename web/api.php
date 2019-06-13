@@ -157,7 +157,7 @@
 	/* -------------------------------------------- */
 	/* ------- StartTransaction ------------------- */
 	/* -------------------------------------------- */
-	function StartTransaction($u, $source) {
+	function StartTransaction($u, $source="unknown") {
 		$sqlstring = "insert into import_transactions (transaction_startdate, transaction_source, transaction_status, transaction_username) values (now(), '$source', 'uploading', '$u')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$tid = mysqli_insert_id($GLOBALS['linki']);
@@ -351,7 +351,7 @@
 		
 		/* get the projectRowID */
 		$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-		//echo "[[$sqlstring]]\n";
+		echo "[[$sqlstring]]\n";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectRowID = $row['project_id'];

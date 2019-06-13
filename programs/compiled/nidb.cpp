@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB nidb.cpp
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #include "nidb.h"
 
 /* ---------------------------------------------------------- */
@@ -18,7 +40,7 @@ nidb::nidb(QString m)
 
 	pid = QCoreApplication::applicationPid();
 
-	Print(QString("Build date [%1]    C++ version [%2]").arg(builtDate).arg(__cplusplus));
+	Print(QString("Build date [%1 %2]    C++ version [%3]").arg(__DATE__).arg(__TIME__).arg(__cplusplus));
 
 	LoadConfig();
 }
@@ -30,12 +52,12 @@ nidb::nidb(QString m)
 void nidb::Print(QString s, bool n, bool pad) {
 	if (n)
 		if (pad)
-			printf("%-70s\n", s.toStdString().c_str());
+			printf("%-80s\n", s.toStdString().c_str());
 		else
 			printf("%s\n", s.toStdString().c_str());
 	else
 		if (pad)
-			printf("%-70s", s.toStdString().c_str());
+			printf("%-80s", s.toStdString().c_str());
 		else
 			printf("%s", s.toStdString().c_str());
 }
@@ -158,7 +180,7 @@ int nidb::GetNumThreads() {
 		if (cfg["moduleexportthreads"] == "") return 1;
 		else return cfg["moduleexportthreads"].toInt();
 	}
-	else if (module == "parsedicom") {
+	else if ((module == "parsedicom") || (module == "import")) {
 		return 1;
 	}
 	else if (module == "mriqa") {
@@ -268,7 +290,7 @@ void nidb::RemoveLogFile(bool keepLog) {
 
 	if (!keepLog) {
 		Print("Deleting log file [" + logFilepath + "]",false, true);
-		QFile f(lockFilepath);
+		QFile f(logFilepath);
 		if (f.remove())
 			Print("[Ok]");
 		else
@@ -338,7 +360,6 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d, bool batch) {
 		//Print("Running SQL statement[" + sql + "]");
 		WriteLog(sql);
 	}
-
 
 	/* run the query */
 	if (batch)
@@ -498,14 +519,6 @@ QString nidb::WriteLog(QString msg) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetBuildDate ----------------------------------- */
-/* ---------------------------------------------------------- */
-QString nidb::GetBuildDate() {
-	return builtDate;
-}
-
-
-/* ---------------------------------------------------------- */
 /* --------- MakePath --------------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::MakePath(QString p, QString &msg) {
@@ -589,10 +602,17 @@ bool nidb::MoveFile(QString f, QString dir) {
 /* ---------------------------------------------------------- */
 bool nidb::RenameFile(QString filepathorig, QString filepathnew, bool force) {
 
-	QString systemstring = QString("mv %1 %2 %3").arg(force ? "-f" : "").arg(filepathorig).arg(filepathnew);
-	WriteLog(SystemCommand(systemstring, false));
+	QString systemstring;
+	if (force)
+		systemstring = QString("mv -f %1 %2").arg(filepathorig).arg(filepathnew);
+	else
+		systemstring = QString("mv %1 %2").arg(filepathorig).arg(filepathnew);
 
-	return true;
+
+	if (SystemCommand(systemstring, false).trimmed() == "")
+		return true;
+	else
+		return false;
 }
 
 
@@ -605,17 +625,13 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
 	QStringList files;
 	if (recursive) {
 		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-		while (it.hasNext()) {
-			//WriteLog("Found file [" + it.filePath() + "]");
+		while (it.hasNext())
 			files << it.next();
-		}
 	}
 	else {
 		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::NoIteratorFlags);
-		while (it.hasNext()) {
-			//WriteLog("Found file [" + it.filePath() + "]");
+		while (it.hasNext())
 			files << it.next();
-		}
 	}
 
 	if (cfg["debug"] == "1") WriteLog(QString("Finished searching for files. Found [%1] files").arg(files.size()));
@@ -702,41 +718,34 @@ QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetDirFileCount -------------------------------- */
+/* --------- GetDirSizeAndFileCount ------------------------- */
 /* ---------------------------------------------------------- */
-uint nidb::GetDirFileCount(QString dir) {
-	uint c = 0;
+void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) {
+	c = 0;
+	b = 0;
 
-	QDirIterator it(dir);
-	while (it.hasNext()) {
-		c++;
-		it.next();
-	}
-
-	WriteLog(QString("GetDirFileCount() directory ["+dir+"] is [%1] files. QDirIterator says the path is [%2]").arg(c).arg(it.path()));
-
-	return c;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- GetDirByteSize --------------------------------- */
-/* ---------------------------------------------------------- */
-qint64 nidb::GetDirByteSize(QString dir) {
-	qint64 b = 0;
+	WriteLog("Entering GetDirSizeAndFileCount()");
 
 	QDir d(dir);
-	if (d.exists()) {
-		QString systemstring = "du -sb " + dir;
-		QStringList ret = SystemCommand(systemstring,false).split(QRegExp("\\s+"));
-		b = ret[0].toULong();
-		WriteLog(QString("GetDirByteSize() ran command [%1] to determine that directory [%2] is [%3] bytes").arg(systemstring).arg(dir).arg(b));
+	QFileInfoList fl = d.entryInfoList(QDir::NoDotAndDotDot | QDir::Files);
+	WriteLog("got QFileInfoList");
+	c = fl.size();
+	for (int i=0; i < fl.size(); i++) {
+		const QFileInfo finfo = fl.at(i);
+		b += finfo.size();
 	}
-	else {
-		WriteLog("GetDirByteSize - directory ["+dir+"] does not exist");
+	WriteLog("Finished getting file count and size");
+
+	if (recurse) {
+		QDirIterator it(dir, QStringList() << "*", QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+		while (it.hasNext()) {
+			it.next();
+			c++;
+			b += it.fileInfo().size();
+		}
 	}
 
-	return b;
+	WriteLog("Leaving GetDirSizeAndFileCount()");
 }
 
 
@@ -1013,4 +1022,181 @@ void nidb::SortQStringListNaturally(QStringList &s) {
 	QCollator coll;
 	coll.setNumericMode(true);
 	std::sort(s.begin(), s.end(), [&](const QString& s1, const QString& s2){ return coll.compare(s1, s2) < 0; });
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- IsDICOMFile ------------------------------------ */
+/* ---------------------------------------------------------- */
+bool nidb::IsDICOMFile(QString f) {
+	/* check if its really a dicom file... */
+	gdcm::Reader r;
+	r.SetFileName(f.toStdString().c_str());
+	if (r.CanRead())
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDICOMFile ----------------------------- */
+/* ---------------------------------------------------------- */
+/* borrowed in its entirety from gdcmanon.cxx                 */
+bool nidb::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode)
+{
+	gdcm::Reader reader;
+	reader.SetFileName( filename );
+	if( !reader.Read() ) {
+		std::cerr << "Could not read : " << filename << std::endl;
+		if( continuemode ) {
+			std::cerr << "Skipping from anonymization process (continue mode)." << std::endl;
+			return true;
+		}
+		else
+		{
+			std::cerr << "Check [--continue] option for skipping files." << std::endl;
+			return false;
+		}
+	}
+	gdcm::File &file = reader.GetFile();
+
+	anon.SetFile( file );
+
+	if( empty_tags.empty() && replace_tags.empty() && remove_tags.empty() ) {
+		std::cerr << "No operation to be done." << std::endl;
+		return false;
+	}
+
+	std::vector<gdcm::Tag>::const_iterator it = empty_tags.begin();
+	bool success = true;
+	for(; it != empty_tags.end(); ++it) {
+		success = success && anon.Empty( *it );
+	}
+	it = remove_tags.begin();
+	for(; it != remove_tags.end(); ++it) {
+		success = success && anon.Remove( *it );
+	}
+
+	std::vector< std::pair<gdcm::Tag, std::string> >::const_iterator it2 = replace_tags.begin();
+	for(; it2 != replace_tags.end(); ++it2) {
+		success = success && anon.Replace( it2->first, it2->second.c_str() );
+	}
+
+	gdcm::Writer writer;
+	writer.SetFileName( outfilename );
+	writer.SetFile( file );
+	if( !writer.Write() ) {
+		std::cerr << "Could not Write : " << outfilename << std::endl;
+		if( strcmp(filename,outfilename) != 0 ) {
+			gdcm::System::RemoveFile( outfilename );
+		}
+		else
+		{
+			std::cerr << "gdcmanon just corrupted: " << filename << " for you (data lost)." << std::endl;
+		}
+		return false;
+	}
+	return success;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDir ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString randstr2) {
+
+	std::vector<gdcm::Tag> empty_tags;
+	std::vector<gdcm::Tag> remove_tags;
+	std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
+
+	gdcm::Tag tag;
+
+	switch (anonlevel) {
+	    case 0:
+		    qDebug() << "No anonymization requested. Leaving files unchanged.";
+		    return 0;
+	    case 1:
+	    case 3:
+		    /* remove referring physician name */
+		    tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+			tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+			tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+			tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
+			tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
+		    break;
+	    case 2:
+		    /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
+		    tag.ReadFromCommaSeparatedString("0008,0012"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationDate
+			tag.ReadFromCommaSeparatedString("0008,0013"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationTime
+			tag.ReadFromCommaSeparatedString("0008,0020"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // StudyDate
+			tag.ReadFromCommaSeparatedString("0008,0021"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // SeriesDate
+			tag.ReadFromCommaSeparatedString("0008,0022"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // AcquisitionDate
+			tag.ReadFromCommaSeparatedString("0008,0023"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // ContentDate
+			tag.ReadFromCommaSeparatedString("0008,0030"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //StudyTime
+			tag.ReadFromCommaSeparatedString("0008,0031"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //SeriesTime
+			tag.ReadFromCommaSeparatedString("0008,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //AcquisitionTime
+			tag.ReadFromCommaSeparatedString("0008,0033"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //ContentTime
+			tag.ReadFromCommaSeparatedString("0008,0080"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionName
+			tag.ReadFromCommaSeparatedString("0008,0081"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionAddress
+			tag.ReadFromCommaSeparatedString("0008,0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianName
+			tag.ReadFromCommaSeparatedString("0008,0092"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianAddress
+			tag.ReadFromCommaSeparatedString("0008,0094"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianTelephoneNumber
+			tag.ReadFromCommaSeparatedString("0008,0096"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianIDSequence
+			tag.ReadFromCommaSeparatedString("0008,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StationName
+			tag.ReadFromCommaSeparatedString("0008,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StudyDescription
+			tag.ReadFromCommaSeparatedString("0008,103E"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // SeriesDescription
+			tag.ReadFromCommaSeparatedString("0008,1048"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PhysiciansOfRecord
+			tag.ReadFromCommaSeparatedString("0008,1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformingPhysicianName
+			tag.ReadFromCommaSeparatedString("0008,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // NameOfPhysicianReadingStudy
+			tag.ReadFromCommaSeparatedString("0008,1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OperatorsName
+
+			tag.ReadFromCommaSeparatedString("0010,0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientName
+			tag.ReadFromCommaSeparatedString("0010,0020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientID
+			tag.ReadFromCommaSeparatedString("0010,0021"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // IssuerOfPatientID
+			tag.ReadFromCommaSeparatedString("0010,0030"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PatientBirthDate
+			tag.ReadFromCommaSeparatedString("0010,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PatientBirthTime
+			tag.ReadFromCommaSeparatedString("0010,0050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientInsurancePlanCodeSequence
+			tag.ReadFromCommaSeparatedString("0010,1000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientIDs
+			tag.ReadFromCommaSeparatedString("0010,1001"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientNames
+			tag.ReadFromCommaSeparatedString("0010,1005"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientBirthName
+			tag.ReadFromCommaSeparatedString("0010,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAge
+			tag.ReadFromCommaSeparatedString("0010,1020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientSize
+			tag.ReadFromCommaSeparatedString("0010,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientWeight
+			tag.ReadFromCommaSeparatedString("0010,1040"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAddress
+			tag.ReadFromCommaSeparatedString("0010,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientMotherBirthName
+			tag.ReadFromCommaSeparatedString("0010,2154"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientTelephoneNumbers
+			tag.ReadFromCommaSeparatedString("0010,21B0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // AdditionalPatientHistory
+			tag.ReadFromCommaSeparatedString("0010,21F0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientReligiousPreference
+			tag.ReadFromCommaSeparatedString("0010,4000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientComments
+
+			tag.ReadFromCommaSeparatedString("0018,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ProtocolName
+
+			tag.ReadFromCommaSeparatedString("0032,1032"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestingPhysician
+			tag.ReadFromCommaSeparatedString("0032,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestedProcedureDescription
+
+			tag.ReadFromCommaSeparatedString("0040,0006"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ScheduledPerformingPhysiciansName
+			tag.ReadFromCommaSeparatedString("0040,0244"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PerformedProcedureStepStartDate
+			tag.ReadFromCommaSeparatedString("0040,0245"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PerformedProcedureStepStartTime
+			tag.ReadFromCommaSeparatedString("0040,0253"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepID
+			tag.ReadFromCommaSeparatedString("0040,0254"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepDescription
+			tag.ReadFromCommaSeparatedString("0040,4036"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerOrganization
+			tag.ReadFromCommaSeparatedString("0040,4037"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerName
+			tag.ReadFromCommaSeparatedString("0040,A123"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PersonName
+
+		    break;
+	    case 4:
+		    tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
+		    break;
+	}
+
+	/* recursively loop through the directory and anonymize the .dcm files */
+	gdcm::Anonymizer anon;
+	QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
+	while (it.hasNext()) {
+		const char *dcmfile = it.next().toStdString().c_str();
+		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
+	}
+
+	return true;
 }

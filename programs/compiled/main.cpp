@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB main.cpp
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #include <QCoreApplication>
 #include <QDebug>
 #include "nidb.h"
@@ -5,6 +27,7 @@
 #include "moduleExport.h"
 #include "moduleManager.h"
 #include "moduleImport.h"
+#include "moduleImportUploaded.h"
 #include <iostream>
 #include <smtp/SmtpMime>
 
@@ -23,8 +46,8 @@ int main(int argc, char *argv[])
 			keepLog = true;
 
 	module = module.trimmed();
-	if ((module == "") || ((module != "export") && (module != "fileio") && (module != "mriqa") && (module != "export") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded"))) {
-		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules: export fileio mriqa modulemanager import pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
+	if ((module != "export") && (module != "fileio") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded")) {
+		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules: import export fileio mriqa modulemanager importuploaded pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
 		return 0;
 	}
 
@@ -68,29 +91,28 @@ int main(int argc, char *argv[])
 					keepLog = m->Run();
 					delete m;
 				}
-				else {
-					n->Print("Unrecognized module [" + module + "]");
+				else if (module == "importuploaded") {
+					moduleImportUploaded *m = new moduleImportUploaded(n);
+					keepLog = m->Run();
+					delete m;
 				}
+				else
+					n->Print("Unrecognized module [" + module + "]");
 
 				n->RemoveLogFile(keepLog);
 
 				/* let the database know this module has stopped running */
 				n->ModuleDBCheckOut();
 			}
-			else {
-				//n->Print("Unable to create lock file!");
-			}
 
 			/* delete the lock file */
 			n->DeleteLockFile();
 		}
-		else {
+		else
 			n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
-		}
     }
-	else {
+	else
 		n->Print("This module [" + module + "] is disabled or does not exist");
-	}
 
 	delete n;
 

@@ -179,8 +179,8 @@
 	/* -------------------------------------------- */
 	function DisplaySearchForm($searchvars, $action) {
 	
-		$urllist['New Search'] = "search.php";
-		NavigationBar("Search", $urllist);
+		//$urllist['New Search'] = "search.php";
+		//NavigationBar("Search", $urllist);
 		
 		/* if using a previous search, load it up */
 		if (isInteger($searchvars['s_searchhistoryid'])) {
@@ -299,14 +299,21 @@
 		<tr>
 			<td>
 			<? DisplaySearchHistory(); ?>
-	<table cellspacing="0" cellpadding="3" style="border: 2px solid #444;">
+	<table cellspacing="0" cellpadding="0" style="border: 2px solid #444;">
 		<tr>
 			<td rowspan="9" id="searchtoggle" class="advancedhover" onMouseOver="this.classname='advancedhover';" onMouseOut="this.classname='advancednohover';">
 				<span style="display: block; -webkit-transform: rotate(-90deg); -moz-transform: rotate(-90deg); writing-mode: rl-bt;">Toggle&nbsp;advanced&nbsp;search</span>
 			</td>
 		</tr>
 		<tr>
-			<td class="toplabel" colspan="2">Search</td>
+			<td colspan="2">
+				<table width="100%" cellspacing="0" cellpadding="0">
+					<tr>
+						<td class="toplabel" width="80%" style="padding: 8px">Search</td>
+						<td style="background-color: #526FAA;" align="center"><a href="search.php" style="color: white; font-size: 12pt; text-decoration: underline">New search</a></td>
+					</tr>
+				</table>
+			</td>
 
 		</tr>
 		<tr>

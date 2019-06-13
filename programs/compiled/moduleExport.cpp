@@ -1,3 +1,25 @@
+/* ------------------------------------------------------------------------------
+  NIDB moduleExport.cpp
+  Copyright (C) 2004 - 2019
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
 #include "moduleExport.h"
 #include <QDebug>
 #include <QSqlQuery>
@@ -609,15 +631,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				if (exporttype == "nfs") {
 					QString systemstring = "chmod -Rf 777 " + outdir;
 					n->WriteLog(n->SystemCommand(systemstring, true));
-
-					// change the modification/access timestamp to the current date/time
-					//find sub { #print $File::Find::name;
-					//	utime(time,time,$File::Find::name) }, "$outdir";
 				}
 
-				if (filetype == "dicom") {
-					AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous");
-				}
+				if (filetype == "dicom")
+					n->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous");
 
 				SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
 				msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -746,68 +763,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 
 /* ---------------------------------------------------------- */
-/* --------- AnonymizeDICOMFile ----------------------------- */
-/* ---------------------------------------------------------- */
-/* borrowed in its entirety from gdcmanon.cxx        */
-bool moduleExport::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode)
-{
-	gdcm::Reader reader;
-	reader.SetFileName( filename );
-	if( !reader.Read() ) {
-		std::cerr << "Could not read : " << filename << std::endl;
-		if( continuemode ) {
-			std::cerr << "Skipping from anonymization process (continue mode)." << std::endl;
-			return true;
-		}
-		else
-		{
-			std::cerr << "Check [--continue] option for skipping files." << std::endl;
-			return false;
-		}
-	}
-	gdcm::File &file = reader.GetFile();
-
-	anon.SetFile( file );
-
-	if( empty_tags.empty() && replace_tags.empty() && remove_tags.empty() ) {
-		std::cerr << "No operation to be done." << std::endl;
-		return false;
-	}
-
-	std::vector<gdcm::Tag>::const_iterator it = empty_tags.begin();
-	bool success = true;
-	for(; it != empty_tags.end(); ++it) {
-		success = success && anon.Empty( *it );
-	}
-	it = remove_tags.begin();
-	for(; it != remove_tags.end(); ++it) {
-		success = success && anon.Remove( *it );
-	}
-
-	std::vector< std::pair<gdcm::Tag, std::string> >::const_iterator it2 = replace_tags.begin();
-	for(; it2 != replace_tags.end(); ++it2) {
-		success = success && anon.Replace( it2->first, it2->second.c_str() );
-	}
-
-	gdcm::Writer writer;
-	writer.SetFileName( outfilename );
-	writer.SetFile( file );
-	if( !writer.Write() ) {
-		std::cerr << "Could not Write : " << outfilename << std::endl;
-		if( strcmp(filename,outfilename) != 0 ) {
-			gdcm::System::RemoveFile( outfilename );
-		}
-		else
-		{
-			std::cerr << "gdcmanon just corrupted: " << filename << " for you (data lost)." << std::endl;
-		}
-		return false;
-	}
-	return success;
-}
-
-
-/* ---------------------------------------------------------- */
 /* --------- ExportNDAR ------------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg) {
@@ -822,7 +777,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 	}
 
 	QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + n->CreateLogDate();
-	QString headerfile = "$rootoutdir/ndar.csv";
+	QString headerfile = rootoutdir + "/ndar.csv";
 
 
 	QString m;
@@ -831,8 +786,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 	}
 	else {
 		exportstatus = "error";
-		n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
-		msg = "Unable to create output directory [$rootoutdir]\n";
+		msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
 		return false;
 	}
 
@@ -898,7 +852,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 							if ((modality == "mr") && (datatype == "dicom")) {
 								systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
 								n->WriteLog(n->SystemCommand(systemstring, true));
-								AnonymizeDir(tmpdir,2,"","");
+								n->AnonymizeDir(tmpdir,2,"","");
 							}
 							else if ((modality == "mr") && (datatype == "parrec")) {
 								systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
@@ -937,7 +891,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 							msgs << "Unable to create tmpdir [" + tmpdir + "] because [" + m + "]";
 						}
 					}
-					WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, QString("%1/%2").arg("$indir/$datatype"));
+					WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, QString("%1/%2").arg(indir).arg(datatype));
 
 					SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
 				}
@@ -976,8 +930,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &exports
 	}
 	else {
 		exportstatus = "error";
-		n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
-		msg = "Unable to create output directory [$rootoutdir]\n";
+		msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
 		return false;
 	}
 
@@ -1125,18 +1078,16 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &exports
 bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, QString &exportstatus, QString &msg) {
 
 	/* check to see if the remote server is reachable ... */
-	QString systemstring = "curl -sSf $remotenidbserver > /dev/null";
+	QString systemstring = "curl -sSf " + conn.server + "remotenidbserver > /dev/null";
 	QString serverResponse = n->SystemCommand(systemstring);
 	if (serverResponse != "") {
-		n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
-		msg = "Unable to access remote NiDB server [$remotenidbserver]. Received error [$serverResponse]";
+		msg = n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
 		return false;
 	}
 	/* ... and if our credentials work and we can start a transaction on it */
 	int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password);
 	if (transactionid < 1) {
-		msg = QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server);
-		n->WriteLog(msg);
+		msg = n->WriteLog(QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server));
 		return false;
 	}
 
@@ -1222,7 +1173,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							if (!n->MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
 							systemstring = "rsync " + indir + "/* " + tmpdir + "/";
 							n->WriteLog(n->SystemCommand(systemstring));
-							AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
+							n->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
 
 							// get the list of DICOM files
 							QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
@@ -1240,7 +1191,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							}
 
 							// build the cURL string to send the actual data
-							systemstring = "curl -gs -F 'action=UploadDICOM' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionID' -F 'instanceid=$remotenidbinstanceid' -F 'projectid=$remotenidbprojectid' -F 'siteid=$remotenidbsiteid' -F 'dataformat=$datatype' -F 'modality=$modality' -F 'seriesnotes=$seriesnotes' -F 'altuids=$altuids' -F 'seriesnum=$seriesnum' ";
+							systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
 							int c = 0;
 							foreach (QString f, dcmfiles) {
 								c++;
@@ -1293,41 +1244,31 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 									error = 0;
 								}
 								else {
-									seriesstatus = "error";
-									exportstatus = "error";
-									msgs << "Upload fail: MD5 non-match";
-									n->WriteLog("Upload fail: MD5 non-match");
+									seriesstatus = exportstatus = "error";
+									msgs << n->WriteLog("Upload fail: MD5 non-match");
 									error = 1;
 									numfails++;
 								}
 							}
 							else {
-								seriesstatus = "error";
-								exportstatus = "error";
-								msgs << QString("Upload fail: got message [" + results + "]");
-								n->WriteLog("Upload fail: got message [" + results + "]");
+								seriesstatus = exportstatus = "error";
+								msgs << n->WriteLog("Upload fail: got message [" + results + "]");
 								error = 1;
 								numfails++;
 							}
 						}
 					}
 					else {
-						seriesstatus = "error";
-						exportstatus = "error";
-						n->WriteLog("ERROR indir [" + indir + "] is empty");
-						msgs << "ERROR indir [" + indir + "] is empty";
+						seriesstatus = exportstatus = "error";
+						msgs << n->WriteLog("ERROR indir [" + indir + "] is empty");
 					}
 				}
 				else {
-					seriesstatus = "error";
-					exportstatus = "error";
-					n->WriteLog("ERROR indir [" + indir + "] does not exist");
-					msgs << "ERROR indir [" + indir + "] does not exist";
+					seriesstatus = exportstatus = "error";
+					msgs << n->WriteLog("ERROR indir [" + indir + "] does not exist");
 				}
 				SetExportSeriesStatus(exportseriesid, seriesstatus);
-				//$sqlstring = "update exportseries set status = '$seriesstatus' where exportseries_id = $exportseriesid";
-				//$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-				msgs << "Series [$uid$studynum-$seriesnum ($seriesdesc)] complete\n";
+				msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 			}
 		}
 	}
@@ -1347,111 +1288,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg) {
 	/* not implemented */
-	return true;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- AnonymizeDir ----------------------------------- */
-/* ---------------------------------------------------------- */
-bool moduleExport::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString randstr2) {
-
-	std::vector<gdcm::Tag> empty_tags;
-	std::vector<gdcm::Tag> remove_tags;
-	std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-
-	gdcm::Tag tag;
-
-	switch (anonlevel) {
-	    case 0:
-		    qDebug() << "No anonymization requested. Leaving files unchanged.";
-		    return 0;
-	    case 1:
-	    case 3:
-		    /* remove referring physician name */
-		    tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-			tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-			tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-			tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
-			tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
-		    break;
-	    case 2:
-		    /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
-		    tag.ReadFromCommaSeparatedString("0008,0012"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationDate
-			tag.ReadFromCommaSeparatedString("0008,0013"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationTime
-			tag.ReadFromCommaSeparatedString("0008,0020"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // StudyDate
-			tag.ReadFromCommaSeparatedString("0008,0021"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // SeriesDate
-			tag.ReadFromCommaSeparatedString("0008,0022"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // AcquisitionDate
-			tag.ReadFromCommaSeparatedString("0008,0023"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // ContentDate
-			tag.ReadFromCommaSeparatedString("0008,0030"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //StudyTime
-			tag.ReadFromCommaSeparatedString("0008,0031"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //SeriesTime
-			tag.ReadFromCommaSeparatedString("0008,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //AcquisitionTime
-			tag.ReadFromCommaSeparatedString("0008,0033"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //ContentTime
-			tag.ReadFromCommaSeparatedString("0008,0080"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionName
-			tag.ReadFromCommaSeparatedString("0008,0081"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionAddress
-			tag.ReadFromCommaSeparatedString("0008,0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianName
-			tag.ReadFromCommaSeparatedString("0008,0092"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianAddress
-			tag.ReadFromCommaSeparatedString("0008,0094"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianTelephoneNumber
-			tag.ReadFromCommaSeparatedString("0008,0096"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianIDSequence
-			tag.ReadFromCommaSeparatedString("0008,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StationName
-			tag.ReadFromCommaSeparatedString("0008,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StudyDescription
-			tag.ReadFromCommaSeparatedString("0008,103E"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // SeriesDescription
-			tag.ReadFromCommaSeparatedString("0008,1048"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PhysiciansOfRecord
-			tag.ReadFromCommaSeparatedString("0008,1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformingPhysicianName
-			tag.ReadFromCommaSeparatedString("0008,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // NameOfPhysicianReadingStudy
-			tag.ReadFromCommaSeparatedString("0008,1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OperatorsName
-
-			tag.ReadFromCommaSeparatedString("0010,0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientName
-			tag.ReadFromCommaSeparatedString("0010,0020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientID
-			tag.ReadFromCommaSeparatedString("0010,0021"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // IssuerOfPatientID
-			tag.ReadFromCommaSeparatedString("0010,0030"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PatientBirthDate
-			tag.ReadFromCommaSeparatedString("0010,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PatientBirthTime
-			tag.ReadFromCommaSeparatedString("0010,0050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientInsurancePlanCodeSequence
-			tag.ReadFromCommaSeparatedString("0010,1000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientIDs
-			tag.ReadFromCommaSeparatedString("0010,1001"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientNames
-			tag.ReadFromCommaSeparatedString("0010,1005"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientBirthName
-			tag.ReadFromCommaSeparatedString("0010,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAge
-			tag.ReadFromCommaSeparatedString("0010,1020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientSize
-			tag.ReadFromCommaSeparatedString("0010,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientWeight
-			tag.ReadFromCommaSeparatedString("0010,1040"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAddress
-			tag.ReadFromCommaSeparatedString("0010,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientMotherBirthName
-			tag.ReadFromCommaSeparatedString("0010,2154"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientTelephoneNumbers
-			tag.ReadFromCommaSeparatedString("0010,21B0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // AdditionalPatientHistory
-			tag.ReadFromCommaSeparatedString("0010,21F0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientReligiousPreference
-			tag.ReadFromCommaSeparatedString("0010,4000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientComments
-
-			tag.ReadFromCommaSeparatedString("0018,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ProtocolName
-
-			tag.ReadFromCommaSeparatedString("0032,1032"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestingPhysician
-			tag.ReadFromCommaSeparatedString("0032,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestedProcedureDescription
-
-			tag.ReadFromCommaSeparatedString("0040,0006"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ScheduledPerformingPhysiciansName
-			tag.ReadFromCommaSeparatedString("0040,0244"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PerformedProcedureStepStartDate
-			tag.ReadFromCommaSeparatedString("0040,0245"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PerformedProcedureStepStartTime
-			tag.ReadFromCommaSeparatedString("0040,0253"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepID
-			tag.ReadFromCommaSeparatedString("0040,0254"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepDescription
-			tag.ReadFromCommaSeparatedString("0040,4036"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerOrganization
-			tag.ReadFromCommaSeparatedString("0040,4037"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerName
-			tag.ReadFromCommaSeparatedString("0040,A123"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PersonName
-
-			break;
-	    case 4:
-		    tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
-		    break;
-	}
-
-	/* recursively loop through the directory and anonymize the .dcm files */
-	gdcm::Anonymizer anon;
-	QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
-	while (it.hasNext()) {
-		const char *dcmfile = it.next().toStdString().c_str();
-		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
-	}
-
-	//# remove any txt files, which may contain PHI
-	//if ($File::Find::name =~ /\.gif/) { unlink($File::Find::name); }
-	//if ($File::Find::name =~ /\.txt/) { unlink($File::Find::name); }
-
 	return true;
 }
 
@@ -1691,7 +1527,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 		}
 	}
 	else {
-		n->WriteLog("No rows found for this series... [$file, $imagefile, $behfile, $behdesc, $seriesid, $modality, $indir] ");
+		n->WriteLog(QString("No rows found for this series... [%1, %2, %3, %4, %5, %6, %7] ").arg(file).arg(imagefile).arg(behfile).arg(behdesc).arg(seriesid).arg(modality).arg(indir));
 	}
 
 	return true;

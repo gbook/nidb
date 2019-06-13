@@ -62,7 +62,7 @@
 
     $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
     $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
-    $c['moduleparsedicomthreads'] = GetVariable("moduleparsedicomthreads");
+    $c['moduleimportthreads'] = GetVariable("moduleimportthreads");
     $c['modulemriqathreads'] = GetVariable("modulemriqathreads");
     $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
     $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
@@ -96,6 +96,8 @@
     $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
     $c['displayrecentstudies'] = GetVariable("displayrecentstudies");
     $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
+
+    $c['importchunksize'] = GetVariable("importchunksize");
 
     $c['enablecas'] = GetVariable("enablecas");
     $c['casserver'] = GetVariable("casserver");
@@ -250,10 +252,10 @@
 [mysqldevuser] = $mysqldevuser
 [mysqldevpassword] = $mysqldevpassword
 
-# ----- Database -----
+# ----- modules -----
 [modulefileiothreads] = $modulefileiothreads
 [moduleexportthreads] = $moduleexportthreads
-[moduleparsedicomthreads] = $moduleparsedicomthreads
+[moduleimportthreads] = $moduleimportthreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
@@ -284,6 +286,9 @@
 [uploadsizelimit] = $uploadsizelimit
 [displayrecentstudies] = $displayrecentstudies
 [displayrecentstudydays] = $displayrecentstudydays
+
+# ----- import options -----
+[importchunksize] = $importchunksize
 
 # ----- cluster -----
 [usecluster] = $usecluster
@@ -487,10 +492,10 @@
 				<td><b>export</b> module. Recommended is 2</td>
 			</tr>
 			<tr>
-				<td class="variable">moduleparsedicomthreads</td>
-				<td><input type="number" name="moduleparsedicomthreads" value="1" disabled></td>
+				<td class="variable">moduleimportthreads</td>
+				<td><input type="number" name="moduleimportthreads" value="1" disabled></td>
 				<td></td>
-				<td><b>parsedicom</b> module. Not multi-threaded.</td>
+				<td><b>import</b> module. Not multi-threaded.</td>
 			</tr>
 			<tr>
 				<td class="variable">modulemriqathreads</td>
@@ -649,6 +654,16 @@
 				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>" size="45"></td>
 				<td></td>
 				<td>Number of days to display of recently collected studies on the Home page</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" class="heading"><br>Data Import</td>
+			</tr>
+			<tr>
+				<td class="variable">importchunksize</td>
+				<td><input type="number" name="importchunksize" value="<?=$GLOBALS['cfg']['importchunksize']?>" size="45"></td>
+				<td></td>
+				<td>Number of files checked by the import module before archiving begins. Default is 5000</td>
 			</tr>
 
 			<tr>

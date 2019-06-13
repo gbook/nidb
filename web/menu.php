@@ -51,13 +51,13 @@
 
 <!-- menu -->
 	<style>
-		#Bar1 a:link { background-color:#526FAA; color: white; padding: 10px 10px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:11pt; min-width: 70px; }
-		#Bar1 a:visited { background-color:#526FAA; color: white; padding: 10px 10px; text-align: center; text-decoration: none; font-size:11pt; }
+		#Bar1 a:link { background-color:#526FAA; color: white; padding: 12px 12px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:11pt; min-width: 70px; }
+		#Bar1 a:visited { background-color:#526FAA; color: white; padding: 12px 12px; text-align: center; text-decoration: none; font-size:11pt; }
 		#Bar1 a:hover { background-color: #3B5998; }
 		#Bar1 a:active { background-color: #3B5998; }
 		
-		#Bar2 a:link{ background-color:#3B5998; color: white; padding: 10px 15px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap;font-size:10pt;}
-		#Bar2 a:visited { background-color:#3B5998; color: white; padding:10px 15px; text-align: center; text-decoration: none; font-size:10pt;}
+		#Bar2 a:link{ background-color:#3B5998; color: white; padding: 12px 15px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap;font-size:11pt;}
+		#Bar2 a:visited { background-color:#3B5998; color: white; padding:12px 15px; text-align: center; text-decoration: none; font-size:11pt;}
 		#Bar2 a:hover { background-color: #526FAA; }
 		#Bar2 a:active { background-color: #526FAA; }
 	</style>
@@ -117,7 +117,7 @@
 				?><a href="pipelines.php" style="<?=$style?>"><b>Pipelines</b></a><?
 				
 				/* import */
-				if ($page=="import.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
+				if ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="import.php" style="<?=$style?>"><b>Data</b></a><?
 				
@@ -271,7 +271,7 @@
 				}
 				
 				/* data sub-menu */
-				elseif ($page=="import.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
+				elseif ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
 					
 					if (($page=="import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
 					else { $style = ""; }
@@ -280,6 +280,10 @@
 					if (($page=="import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="import.php?action=idmapper" style="<?=$style?>">ID mapper</a><?
+
+					if ($page=="importlog.php") { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="importlog.php" style="<?=$style?>">Import Log</a><?
 
 					if ($page=="publicdownloads.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
@@ -337,83 +341,8 @@
 		</tr>
 	</table>
 
-<!-- display system status -->
-<?
-	# get number of fileio operations pending
-	$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
-	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$numiopending = $row['numiopending'];
-	
-	# get number of directories in dicomincoming directory
-	//$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
-	$dirs = 0;
-	$numdicomdirs = count($dirs);
-	
-	# get number of files in dicomincoming directory
-	//$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
-	$files = 0;
-	$numdicomfiles = count($files) - $numdicomdirs;
-	
-	# get number of import requests
-	$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
-	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$numimportpending = $row['numimportpending'];
-	
-	# get number of directories in dicomincoming directory
-	$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
-	$dirs = 0;
-	$numimportdirs = count($dirs);
-	
-	/* get system load & number of cores */
-	$load = sys_getloadavg();
-	$cmd = "cat /proc/cpuinfo | grep processor | wc -l";
-	$cpuCoreNo = intval(trim(shell_exec($cmd)));
-	$percentLoad = number_format(($load[0]/$cpuCoreNo)*100.0,2);
-	
-	$sqlstring = "select * from modules order by module_name";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-		$name = $row['module_name'];
-		$moduleinfo[$name]['status'] = $row['module_status'];
-		$moduleinfo[$name]['numrunning'] = $row['module_numrunning'];
-		$moduleinfo[$name]['isactive'] = $row['module_isactive'];
-		
-		/* calculate the status color */
-		if (!$moduleinfo[$name]['isactive']) {
-			$moduleinfo[$name]['color'] = "#f00";
-			$moduleinfo[$name]['status'] = 'Disabled';
-		}
-		else {
-			if ($moduleinfo[$name]['status'] == "running") {
-				$moduleinfo[$name]['color'] = "#bcffc5";
-				$moduleinfo[$name]['status'] = 'Running';
-			}
-			if ($moduleinfo[$name]['status'] == "stopped") {
-				$moduleinfo[$name]['color'] = "#adc7ff";
-				$moduleinfo[$name]['status'] = 'Enabled';
-			}
-		}
-	}
-	
-?>
 <table width="100%" cellspacing="0" cellpadding="0">
 	<tr>
-		<td width="100%" style="font-size: 8pt; padding: 2px" valign="top">
-			<? if ($GLOBALS['issiteadmin']) { ?>
-			<a href="status.php">System status</a>:
-			<? } else { ?>
-			System status:
-			<? } ?>
-			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
-			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
-			<span style="background-color: <?=$moduleinfo['parsedicom']['color']?>" title="Status: <?=$moduleinfo['parsedicom']['status']?>">&nbsp;parsedicom&nbsp;</span> 
-			<span style="background-color: <?=$moduleinfo['fileio']['color']?>" title="Status: <?=$moduleinfo['fileio']['status']?>">&nbsp;fileio&nbsp;</span> 
-			<span style="background-color: <?=$moduleinfo['pipeline']['color']?>" title="Status: <?=$moduleinfo['pipeline']['status']?>">&nbsp;pipeline&nbsp;</span>
-			<span style="background-color: <?=$moduleinfo['datarequests']['color']?>" title="Status: <?=$moduleinfo['datarequests']['status']?>">&nbsp;datarequests&nbsp;</span>
-			<span style="background-color: <?=$moduleinfo['mriqa']['color']?>" title="Status: <?=$moduleinfo['mriqa']['status']?>">&nbsp;mriqa&nbsp;</span>
-		</td>
 		<td align="right" valign="top">
 			<form action="subjects.php" method="post" style="margin: 0px">
 			<input type="hidden" name="action" value="search">
