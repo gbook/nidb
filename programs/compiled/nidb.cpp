@@ -217,7 +217,7 @@ int nidb::CheckNumLockFiles() {
     filters << lockfileprefix;
 
     QStringList files = dir.entryList(filters);
-    int numlocks = files.count();
+	int numlocks = files.size();
 
     return numlocks;
 }
@@ -345,7 +345,7 @@ QString nidb::CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* QSqlQuery object must already be prepared and bound before */
 /* being passed in to this function                           */
-int nidb::SQLQuery(QSqlQuery &q, QString function, bool d, bool batch) {
+int nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
 
 	/* get the SQL string that will be run */
 	QString sql = q.lastQuery();
@@ -357,7 +357,6 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d, bool batch) {
 
 	/* debugging */
 	if (cfg["debug"].toInt() || d) {
-		//Print("Running SQL statement[" + sql + "]");
 		WriteLog(sql);
 	}
 
@@ -368,7 +367,7 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, bool d, bool batch) {
 	if (q.exec())
 		return q.size();
 
-	QString err = QString("SQL ERROR (Module: %1 Function: %2) SQL [%3] Error(DB) [%4] Error(driver) [%5]").arg(module).arg(function).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+	QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
 	SendEmail(cfg["adminemail"], "SQL error", err);
 	qDebug() << err;
 	qDebug() << q.lastError();
@@ -386,7 +385,7 @@ bool nidb::ModuleCheckIfActive() {
 	QSqlQuery q;
 	q.prepare("select * from modules where module_name = :module and module_isactive = 1");
 	q.bindValue(":module", module);
-	SQLQuery(q, "ModuleCheckIfActive");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     if (q.size() < 1)
 		return false;
@@ -403,7 +402,7 @@ void nidb::ModuleDBCheckIn() {
 	QSqlQuery q;
 	q.prepare("update modules set module_laststart = now(), module_status = 'running', module_numrunning = module_numrunning + 1 where module_name = :module");
 	q.bindValue(":module", module);
-	SQLQuery(q, "ModuleDBCheckIn");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.numRowsAffected() > 0)
 		Print("[Ok]");
@@ -419,12 +418,12 @@ void nidb::ModuleDBCheckOut() {
 	QSqlQuery q;
 	q.prepare("update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = :module");
 	q.bindValue(":module", module);
-	SQLQuery(q, "ModuleDBCheckOut");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from module_procs where module_name = :module and process_id = :pid");
 	q.bindValue(":module", module);
 	q.bindValue(":pid", pid);
-	SQLQuery(q, "ModuleDBCheckOut");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	Print("Module checked out of database");
 }
@@ -435,14 +434,18 @@ void nidb::ModuleDBCheckOut() {
 /* ---------------------------------------------------------- */
 /* this is a deadman's switch. if the module doesn't check in
    after a certain period of time, the module is assumed to
-   be dead and is reset so it can start again */
+   be dead and is reset so it can start again
+   ---------------------------------------------------------- */
 void nidb::ModuleRunningCheckIn() {
+
+	Print(".",false);
+
 	QSqlQuery q;
 	if (!checkedin) {
 		q.prepare("insert ignore into module_procs (module_name, process_id) values (:module, :pid)");
 		q.bindValue(":module", module);
 		q.bindValue(":pid", pid);
-		SQLQuery(q, "ModuleRunningCheckIn");
+		SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		checkedin = true;
 	}
 
@@ -450,7 +453,7 @@ void nidb::ModuleRunningCheckIn() {
 	q.prepare("update module_procs set last_checkin = now() where module_name = :module and process_id = :pid");
 	q.bindValue(":module", module);
 	q.bindValue(":pid", pid);
-	SQLQuery(q, "ModuleRunningCheckIn");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -468,7 +471,7 @@ void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversi
 	q.bindValue(":studyid", studyid);
 	q.bindValue(":event", event);
 	q.bindValue(":message", message);
-	SQLQuery(q, "ModuleRunningCheckIn");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -586,10 +589,14 @@ QString nidb::GenerateRandomString(int n) {
 /* ---------------------------------------------------------- */
 bool nidb::MoveFile(QString f, QString dir) {
 
-	QFile file(f);
 	QDir d;
-	if (d.exists(dir))
-		file.rename(dir + "/" + QFileInfo(f).fileName());
+	if (d.exists(dir)) {
+		QString systemstring;
+		systemstring = QString("mv %1 %2/").arg(f).arg(dir);
+
+		if (SystemCommand(systemstring, false).trimmed() != "")
+			return false;
+	}
 	else
 		return false;
 
@@ -686,7 +693,7 @@ bool nidb::MoveAllFiles(QString indir, QString pattern, QString outdir, QString 
 QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool includepath) {
 
 	if (pattern.trimmed() == "")
-		dir = "*";
+		pattern = "*";
 
 	QStringList dirs;
 
@@ -724,17 +731,13 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
 	c = 0;
 	b = 0;
 
-	WriteLog("Entering GetDirSizeAndFileCount()");
-
 	QDir d(dir);
 	QFileInfoList fl = d.entryInfoList(QDir::NoDotAndDotDot | QDir::Files);
-	WriteLog("got QFileInfoList");
 	c = fl.size();
 	for (int i=0; i < fl.size(); i++) {
 		const QFileInfo finfo = fl.at(i);
 		b += finfo.size();
 	}
-	WriteLog("Finished getting file count and size");
 
 	if (recurse) {
 		QDirIterator it(dir, QStringList() << "*", QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
@@ -744,8 +747,6 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
 			b += it.fileInfo().size();
 		}
 	}
-
-	WriteLog("Leaving GetDirSizeAndFileCount()");
 }
 
 
@@ -807,7 +808,7 @@ void nidb::InsertSubjectChangeLog(QString username, QString uid, QString newuid,
 	q.bindValue(":uid", uid);
 	q.bindValue(":newuid", newuid);
 	q.bindValue(":log", log);
-	SQLQuery(q, "InsertSubjectChangeLog");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -935,7 +936,7 @@ QString nidb::GetPrimaryAlternateUID(int subjectid, int enrollmentid) {
 	q.prepare("select * from subject_altuid where subject_id = :subjectid and enrollment_id = :enrollmentid order by isprimary limit 1");
 	q.bindValue(":subjectid", subjectid);
 	q.bindValue(":enrollmentid", enrollmentid);
-	SQLQuery(q, "GetPrimaryAlternateUID");
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		q.first();
 		QString altuid = q.value("altuid").toString();
@@ -969,40 +970,56 @@ QByteArray nidb::GetFileChecksum(const QString &fileName, QCryptographicHash::Al
 /* --------- CreateUID -------------------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::CreateUID(QString prefix, int numletters) {
+	//WriteLog("Entering CreateUID()");
+
 	QString newID;
 	QString letters("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	QString numbers("0123456789");
 	QString C1, C2, C3, C4, C5, C6, C7, C8;
 
-	/* seed the random number generator */
-	qsrand(QTime::currentTime().msec());
+	//WriteLog("About to seed the random number generator");
 
-	C1 = numbers.at( qrand() % numbers.length() );
-	C2 = numbers.at( qrand() % numbers.length() );
-	C3 = numbers.at( qrand() % numbers.length() );
-	C4 = numbers.at( qrand() % numbers.length() );
+	/* seed the random number generator */
+	//qsrand(QTime::currentTime().msec());
+
+	//WriteLog("Finished seeding");
+
+	C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
+	C2 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
+	C3 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
+	C4 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
+
+	//WriteLog(QString("Got numbers [%1] [%2] [%3] [%4]").arg(C1).arg(C2).arg(C3).arg(C4));
 
 	QStringList badarray;
-	badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk";
-	bool safe = false;
+	badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk" << "kkk";
+	bool done = false;
 
-	while (!safe) {
-		C5 = letters.at( qrand() % letters.length() );
-		C6 = letters.at( qrand() % letters.length() );
-		C7 = letters.at( qrand() % letters.length() );
+	do {
+		C5 = letters.at( QRandomGenerator::global()->bounded(letters.length()-1) );
+		C6 = letters.at( QRandomGenerator::global()->bounded(letters.length()-1) );
+		C7 = letters.at( QRandomGenerator::global()->bounded(letters.length()-1) );
 
 		if (numletters == 4)
-			C8 = letters.at( qrand() % letters.length() );
+			C8 = letters.at( QRandomGenerator::global()->bounded(letters.length()-1) );
+
+		//WriteLog(QString("Got letters [%1] [%2] [%3] [%4]").arg(C5).arg(C6).arg(C7).arg(C8));
 
 		QString str;
 		str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
-		if (!badarray.contains(str)) {
-			safe = true;
+		if (!badarray.contains(str,Qt::CaseInsensitive)) {
+			done = true;
+			//WriteLog("The badarray did not contain the string ["+str+"]");
 		}
+		//else {
+		    //WriteLog("badarray contained the string ["+str+"]");
+		//}
 	}
+	while (!done);
 
 	//newID = QString("%1%2%3%4%5%6%7%8%9").arg(prefix).arg(C1).arg(C2).arg(C3).arg(C4).arg(C5).arg(C6).arg(C7).arg(C8);
 	newID = prefix+C1+C2+C3+C4+C5+C6+C7+C8;
+	//WriteLog("Found unused UID ["+newID+"]");
 	return newID.trimmed();
 }
 
@@ -1019,6 +1036,10 @@ QString nidb::RemoveNonAlphaNumericChars(QString s) {
 /* --------- SortQStringListNaturally ----------------------- */
 /* ---------------------------------------------------------- */
 void nidb::SortQStringListNaturally(QStringList &s) {
+
+	if (s.size() < 2)
+		return;
+
 	QCollator coll;
 	coll.setNumericMode(true);
 	std::sort(s.begin(), s.end(), [&](const QString& s1, const QString& s2){ return coll.compare(s1, s2) < 0; });
@@ -1032,7 +1053,7 @@ bool nidb::IsDICOMFile(QString f) {
 	/* check if its really a dicom file... */
 	gdcm::Reader r;
 	r.SetFileName(f.toStdString().c_str());
-	if (r.CanRead())
+	if (r.Read())
 		return true;
 	else
 		return false;
@@ -1198,5 +1219,114 @@ bool nidb::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString ran
 		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
 	}
 
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseDate -------------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::ParseDate(QString s) {
+	QString d = "0000-01-01";
+	QDate date;
+
+	s.replace(":","-").replace(".","-").replace("/","-").replace("|","-").replace(",","-").replace("\\","-");
+
+	date = QDate::fromString(s, "yyyy-MM-dd");
+	if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+	date = QDate::fromString(s, "dd-MM-yy");
+	if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+	date = QDate::fromString(s, "MM-yyyy");
+	if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+	return d;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseTime -------------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::ParseTime(QString s) {
+	QString t = "00:00:00";
+	QTime time;
+
+	s.replace("-",":").replace("/",":").replace("|",":").replace(",",":").replace("\\",":");
+
+	time = QTime::fromString(s, "hh:mm:ss");
+	if (time.isValid()) return time.toString("hh:mm:ss");
+
+	time = QTime::fromString(s, "h:m:s"); /* unlikely */
+	if (time.isValid()) return time.toString("hh:mm:ss");
+
+	time = QTime::fromString(s, "hh:mm");
+	if (time.isValid()) return time.toString("hh:mm:ss");
+
+	time = QTime::fromString(s, "hh:mm:ss.zzz");
+	if (time.isValid()) return time.toString("hh:mm:ss");
+
+	time = QTime::fromString(s, "hh:mm:ss.z");
+	if (time.isValid()) return time.toString("hh:mm:ss");
+
+	return t;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ValidNiDBModality ------------------------------ */
+/* ---------------------------------------------------------- */
+bool nidb::ValidNiDBModality(QString m) {
+	QSqlQuery q;
+	QString sqlstring = QString("show tables like '%1_series'").arg(m.toLower());
+	q.prepare(sqlstring);
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0)
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ValidNiDBModality ------------------------------ */
+/* ---------------------------------------------------------- */
+bool nidb::chmod(QString f, QString perm) {
+	if (perm.size() != 3)
+		return false;
+
+	int owner = QString(perm[0]).toInt();
+	int group = QString(perm[1]).toInt();
+	int everyone = QString(perm[2]).toInt();
+
+	switch (owner) {
+	    case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOwner)) return false; break;
+	    case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOwner)) return false; break;
+	    case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner)) return false; break;
+	    case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOwner)) return false; break;
+	    case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::ReadOwner)) return false; break;
+	    case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) return false; break;
+	    case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner | QFileDevice::ReadOwner)) return false; break;
+	}
+
+	switch (group) {
+	    case 1: if (!QFile::setPermissions(f, QFileDevice::ExeGroup)) return false; break;
+	    case 2: if (!QFile::setPermissions(f, QFileDevice::WriteGroup)) return false; break;
+	    case 3: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup)) return false; break;
+	    case 4: if (!QFile::setPermissions(f, QFileDevice::ReadGroup)) return false; break;
+	    case 5: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::ReadGroup)) return false; break;
+	    case 6: if (!QFile::setPermissions(f, QFileDevice::ReadGroup | QFileDevice::WriteGroup)) return false; break;
+	    case 7: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup | QFileDevice::ReadGroup)) return false; break;
+	}
+
+	switch (everyone) {
+	    case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOther)) return false; break;
+	    case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOther)) return false; break;
+	    case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther)) return false; break;
+	    case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOther)) return false; break;
+	    case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::ReadOther)) return false; break;
+	    case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOther | QFileDevice::WriteOther)) return false; break;
+	    case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther)) return false; break;
+	}
 	return true;
 }

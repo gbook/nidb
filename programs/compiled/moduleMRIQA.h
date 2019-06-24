@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB analysis.h
+  NIDB moduleMRIQA.h
   Copyright (C) 2004 - 2019
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,41 +20,28 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
-#include <QString>
+#ifndef MODULEMRIQA_H
+#define MODULEMRIQA_H
 #include "nidb.h"
+#include "series.h"
 
-class analysis
+class moduleMRIQA
 {
 public:
-	analysis(int id, nidb *a);
-	nidb *n;
+	moduleMRIQA();
+	moduleMRIQA(nidb *n);
+	~moduleMRIQA();
 
-	void PrintAnalysisInfo();
-
-	QString analysispath;
-	int analysisid;
-
-	int studynum;
-	int studyid;
-	QString uid;
-	int subjectid;
-
-	QString pipelinename;
-	int pipelineversion;
-	int pipelineid;
-	int pipelinelevel;
-	QString pipelinedirectory;
-	QString pipelinedirstructure;
-	int jobid;
-	bool isValid = true;
-	bool flagRerunResults = false;
-	bool flagRunSupplement = false;
-	QString msg;
+	int Run();
+	bool QA(int seriesid);
+	bool GetQAStats(QString f, double &pvsnr, double &iosnr, QString &msg);
+	bool GetMovementStats(QString f, double &maxrx, double &maxry, double &maxrz, double &maxtx, double &maxty, double &maxtz, double &maxax, double &maxay, double &maxaz, double &minrx, double &minry, double &minrz, double &mintx, double &minty, double &mintz, double &minax, double &minay, double &minaz, QString &msg);
+	void GetMinMax(QVector<double> a, double &min, double &max);
+	QVector<double> Derivative(QVector<double> a);
+	void WriteQALog(QString dir, QString log);
 
 private:
-	void LoadAnalysisInfo();
+	nidb *n;
 };
 
-#endif // ANALYSIS_H
+#endif // MODULEMRIQA_H

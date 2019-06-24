@@ -30,7 +30,7 @@ int moduleImportUploaded::Run() {
 	/* get list of pending uploads */
 	QSqlQuery q;
 	q.prepare("select * from import_requests where import_status = 'pending'");
-	n->SQLQuery(q, "Run");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		while (q.next()) {
 			n->ModuleRunningCheckIn();
@@ -51,7 +51,7 @@ int moduleImportUploaded::Run() {
 			QSqlQuery q2;
 			q2.prepare("update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = :importrequestid");
 			q2.bindValue(":importrequestid",importrequestid);
-			n->SQLQuery(q2, "Run");
+			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
 			QString uploaddir = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(importrequestid);
 			QString outdir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(importrequestid);
@@ -183,6 +183,8 @@ int moduleImportUploaded::Run() {
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir, bool anonymize) {
 
+	n->WriteLog("PrepareAndMoveDICOM(" + filepath + "," + outdir + ")");
+
 	if (anonymize) {
 		gdcm::Anonymizer anon;
 		std::vector<gdcm::Tag> empty_tags;
@@ -205,7 +207,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 	QString newfilename = n->GenerateRandomString(15) + filename;
 
 	QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
-	n->SystemCommand(systemstring);
+	n->SystemCommand(systemstring, true);
 
 	return true;
 }
@@ -216,7 +218,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::PrepareAndMovePARREC(QString filepath, QString outdir) {
 
-	n->WriteLog("-----PAR file " + filepath + "-----");
+	n->WriteLog("PrepareAndMovePARREC(" + filepath + "," + outdir + ")");
 
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
@@ -226,8 +228,8 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString filepath, QString outdir
 	QString oldparfilepath = filepath;
 	QString oldrecfilepath = oldparfilepath.replace(".par", ".rec", Qt::CaseInsensitive);
 
-	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldparfilepath).arg(outdir).arg(newparfilename));
-	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldrecfilepath).arg(outdir).arg(newrecfilename));
+	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldparfilepath).arg(outdir).arg(newparfilename), true);
+	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldrecfilepath).arg(outdir).arg(newrecfilename), true);
 
 	return true;
 }
@@ -238,20 +240,22 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString filepath, QString outdir
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::SetImportRequestStatus(int importid, QString status, QString msg) {
 
-	if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (importid > 0)) {
+	n->WriteLog("Setting status to ["+status+"]");
+
+	if (((status == "pending") || (status == "deleting") || (status == "receiving")|| (status == "received") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (importid > 0)) {
 		QSqlQuery q;
 		if (msg.trimmed() == "") {
 			q.prepare("update import_requests set import_status = :status where importrequest_id = :importid");
-			q.bindValue(":id", importid);
+			q.bindValue(":importid", importid);
 			q.bindValue(":status", status);
 		}
 		else {
 			q.prepare("update import_requests set import_status = :status, import_message = :msg where importrequest_id = :importid");
-			q.bindValue(":id", importid);
+			q.bindValue(":importid", importid);
 			q.bindValue(":msg", msg);
 			q.bindValue(":status", status);
 		}
-		n->SQLQuery(q, "SetImportRequestStatus", true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		return true;
 	}
 	else

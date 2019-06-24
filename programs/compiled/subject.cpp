@@ -39,7 +39,7 @@ subject::subject(QString uid, nidb *a)
 	QSqlQuery q;
 	q.prepare("select subject_id from subjects where uid = :uid");
 	q.bindValue(":uid", uid);
-	n->SQLQuery(q, "subject->subject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1) {
 		msg = "UID [" + uid + "] could not be found";
 		isValid = false;
@@ -69,7 +69,7 @@ void subject::LoadSubjectInfo() {
 		QSqlQuery q;
 		q.prepare("select uid from subjects where subject_id = :subjectid");
 		q.bindValue(":subjectid", subjectid);
-		n->SQLQuery(q, "subject->LoadSubjectInfo");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid subject ID or recently deleted?";
 			isValid = false;

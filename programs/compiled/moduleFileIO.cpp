@@ -50,7 +50,7 @@ int moduleFileIO::Run() {
 
 	/* get list of things to delete */
 	QSqlQuery q("select * from fileio_requests where request_status = 'pending'");
-	n->SQLQuery(q, "Run", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
 		int i = 0;
@@ -153,6 +153,7 @@ int moduleFileIO::Run() {
 	}
 	else {
 		n->WriteLog("Nothing to do");
+		return 0;
 	}
 
     return 1;
@@ -166,7 +167,7 @@ QString moduleFileIO::GetIORequestStatus(int requestid) {
 	QSqlQuery q;
 	q.prepare("select request_status from fileio_requests where fileiorequest_id = :id");
 	q.bindValue(":id", requestid);
-	n->SQLQuery(q, "GetIORequestStatus", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.first();
 	QString status = q.value("request_status").toString();
 	return status;
@@ -184,7 +185,7 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
 			q.prepare("update fileio_requests set request_status = :status where fileiorequest_id = :id");
 			q.bindValue(":id", requestid);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetIORequestStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		else {
 			QSqlQuery q;
@@ -192,7 +193,7 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
 			q.bindValue(":id", requestid);
 			q.bindValue(":msg", msg);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetIORequestStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		return true;
 	}
@@ -216,7 +217,7 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 	QSqlQuery q;
 	q.prepare("select pipeline_completefiles from pipelines a left join analysis b on a.pipeline_id = b.pipeline_id where b.analysis_id = :analysisid");
 	q.bindValue(":analysisid", analysisid);
-	n->SQLQuery(q, "RecheckSuccess");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.first();
 	QString completefiles = q.value("uid").toString().trimmed();
 	QStringList filelist = completefiles.split(',');
@@ -236,7 +237,7 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 	q.prepare("update analysis set analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
 	q.bindValue(":iscomplete", iscomplete);
 	q.bindValue(":analysisid", analysisid);
-	n->SQLQuery(q, "Run");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisrecheck", "Analysis success recheck finished");
 
@@ -348,7 +349,7 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 				QSqlQuery q;
 				q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
 				q.bindValue(":analysisid", analysisid);
-				n->SQLQuery(q, "DeleteAnalysis");
+				n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 				n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
 				return false;
@@ -368,19 +369,19 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 		QSqlQuery q;
 		q.prepare("delete from analysis_data where analysis_id = :analysisid");
 		q.bindValue(":analysisid", analysisid);
-		n->SQLQuery(q, "DeleteAnalysis");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 		q.prepare("delete from analysis_results where analysis_id = :analysisid");
 		q.bindValue(":analysisid", analysisid);
-		n->SQLQuery(q, "DeleteAnalysis");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 		q.prepare("delete from analysis_history where analysis_id = :analysisid");
 		q.bindValue(":analysisid", analysisid);
-		n->SQLQuery(q, "DeleteAnalysis");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 		q.prepare("delete from analysis where analysis_id = :analysisid");
 		q.bindValue(":analysisid", analysisid);
-		n->SQLQuery(q, "DeleteAnalysis");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	}
 
 	return true;
@@ -397,7 +398,7 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 	QSqlQuery q;
 	q.prepare("select analysis_id from analysis where pipeline_id = :pipelineid");
 	q.bindValue(":pipelineid", pipelineid);
-	n->SQLQuery(q, "DeletePipeline");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
 		while (q.next()) {
@@ -415,7 +416,7 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 	/* delete the actual pipeline entry */
 	q.prepare("delete from pipelines where pipeline_id = :pipelineid");
 	q.bindValue(":pipelineid", pipelineid);
-	n->SQLQuery(q, "DeletePipeline");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	return 1;
 }
@@ -458,50 +459,50 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 	   TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
 	q.prepare("delete from mostrecent where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	//q.numRowsAffected();
 
 	q.prepare("delete from mostrecent where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from family_members where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from subject_altuid where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	// delete all series
 	q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	// delete all studies
 	q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	// delete all enrollments
 	q.prepare("delete from enrollment where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	// delete the subject
 	q.prepare("delete from subjects where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "DeleteSubject");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
 	return true;
@@ -527,12 +528,12 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
 		// delete all series
 		q.prepare("delete from mr_series where study_id = :studyid");
 		q.bindValue(":studyid", studyid);
-		n->SQLQuery(q, "DeleteStudy");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 		// delete all studies
 		q.prepare("delete from studies where study_id = :studyid");
 		q.bindValue(":studyid", studyid);
-		n->SQLQuery(q, "DeleteStudy");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	}
 	else {
 		msg = QString("Error in moving [%1] to [%2]").arg(s.studypath).arg(newpath);
@@ -562,7 +563,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
 		QString sqlstring = QString("delete from %1_series where %1series_id = :seriesid").arg(modality);
 		q.prepare(sqlstring);
 		q.bindValue(":seriesid", seriesid);
-		n->SQLQuery(q, "DeleteSeries", true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	}
 	else {
@@ -588,7 +589,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	/* get instanceid */
 	q.prepare("select instance_id from projects where project_id = :projectid");
 	q.bindValue(":projectid", s.projectid);
-	n->SQLQuery(q, "RearchiveStudy", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int instanceid;
 	if (q.size() > 0) {
 		q.first();
@@ -604,7 +605,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	q.bindValue(":projectid", s.projectid);
 	q.bindValue(":instanceid", instanceid);
 	q.bindValue(":matchidonly", matchidonly);
-	n->SQLQuery(q, "RearchiveStudy", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int uploadid = q.lastInsertId().toInt();
 
 	/* create an import request dir */
@@ -631,18 +632,18 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	/* update the import_requests table with the new uploadid */
 	q.prepare("update import_requests set import_status = 'pending' where importrequest_id = :uploadid");
 	q.bindValue(":uploadid", uploadid);
-	n->SQLQuery(q, "RearchiveStudy", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	/* remove any reference to this study from the (enrollment, study) tables
 	 * delete all series */
 	q.prepare("delete from mr_series where study_id = :studyid");
 	q.bindValue(":studyid", studyid);
-	n->SQLQuery(q, "RearchiveStudy", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	/* delete the study */
 	q.prepare("delete from studies where study_id = :studyid");
 	q.bindValue(":studyid", studyid);
-	n->SQLQuery(q, "RearchiveStudy", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	msg = msgs.join(" | ");
 	return true;
@@ -663,7 +664,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	/* get instanceid */
 	q.prepare("select instance_id from projects where project_id = :projectid");
 	q.bindValue(":projectid", projectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int instanceid;
 	if (q.size() > 0) {
 		q.first();
@@ -679,7 +680,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	q.bindValue(":projectid", projectid);
 	q.bindValue(":instanceid", instanceid);
 	q.bindValue(":matchidonly", matchidonly);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int uploadid = q.lastInsertId().toInt();
 
 	/* create an import request dir */
@@ -706,42 +707,42 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	/* update the import_requests table with the new uploadid */
 	q.prepare("update import_requests set import_status = 'pending' where importrequest_id = :uploadid");
 	q.bindValue(":uploadid", uploadid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	/* remove all database entries about this subject:
 	 * TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
 
 	q.prepare("delete from mostrecent where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from family_members where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from subject_altuid where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from enrollment where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	q.prepare("delete from subjects where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, "RearchiveSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	msg = msgs.join(" | ");
 	return true;
@@ -774,7 +775,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString usern
 	q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
 	q.bindValue(":subjectid", newsubject.subjectid);
 	q.bindValue(":projectid", thestudy.projectid);
-	n->SQLQuery(q, "MoveStudyToSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int newenrollmentid;
 	if (q.size() > 0) {
 		q.first();
@@ -784,14 +785,14 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString usern
 		q.prepare("insert into enrollment (subject_id, project_id, enroll_startdate) values (:subjectid, :projectid, now())");
 		q.bindValue(":subjectid", newsubject.subjectid);
 		q.bindValue(":projectid", thestudy.projectid);
-		n->SQLQuery(q, "MoveStudyToSubject", true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		newenrollmentid = q.lastInsertId().toInt();
 	}
 
 	/* get the next study number for the new subject */
 	q.prepare("select max(a.study_num) 'maxstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
 	q.bindValue(":subjectid", newsubject.subjectid);
-	n->SQLQuery(q, "MoveStudyToSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int newstudynum = 1;
 	if (q.size() > 0) {
 		q.first();
@@ -803,7 +804,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString usern
 	q.bindValue(":enrollmentid", newenrollmentid);
 	q.bindValue(":newstudynum", newstudynum);
 	q.bindValue(":studyid", studyid);
-	n->SQLQuery(q, "MoveStudyToSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	/* copy the data, don't move in case there is a problem */
 	QString oldpath = thestudy.studypath;
@@ -828,7 +829,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString usern
 	q.bindValue(":newenrollmentid", newenrollmentid);
 	q.bindValue(":studyid", studyid);
 	q.bindValue(":msg", msg);
-	n->SQLQuery(q, "MoveStudyToSubject", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	return true;
 }

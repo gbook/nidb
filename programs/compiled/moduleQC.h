@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB analysis.h
+  NIDB moduleQC.h
   Copyright (C) 2004 - 2019
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,41 +20,24 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
-#include <QString>
+#ifndef MODULEQC_H
+#define MODULEQC_H
 #include "nidb.h"
+#include "series.h"
 
-class analysis
+class moduleQC
 {
 public:
-	analysis(int id, nidb *a);
-	nidb *n;
+	moduleQC();
+	moduleQC(nidb *n);
+	~moduleQC();
 
-	void PrintAnalysisInfo();
-
-	QString analysispath;
-	int analysisid;
-
-	int studynum;
-	int studyid;
-	QString uid;
-	int subjectid;
-
-	QString pipelinename;
-	int pipelineversion;
-	int pipelineid;
-	int pipelinelevel;
-	QString pipelinedirectory;
-	QString pipelinedirstructure;
-	int jobid;
-	bool isValid = true;
-	bool flagRerunResults = false;
-	bool flagRunSupplement = false;
-	QString msg;
+	int Run();
+	bool QC(int moduleid, int seriesid, QString modality);
+	QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
 
 private:
-	void LoadAnalysisInfo();
+	nidb *n;
 };
 
-#endif // ANALYSIS_H
+#endif // MODULEQC_H

@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB analysis.h
+  NIDB pipeline.h
   Copyright (C) 2004 - 2019
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,41 +20,70 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
-#include <QString>
+#ifndef PIPELINE_H
+#define PIPELINE_H
 #include "nidb.h"
 
-class analysis
+
+class pipeline
 {
 public:
-	analysis(int id, nidb *a);
+	pipeline();
+	pipeline(int id, nidb *a);
 	nidb *n;
 
-	void PrintAnalysisInfo();
-
-	QString analysispath;
-	int analysisid;
-
-	int studynum;
-	int studyid;
-	QString uid;
-	int subjectid;
-
-	QString pipelinename;
-	int pipelineversion;
-	int pipelineid;
-	int pipelinelevel;
-	QString pipelinedirectory;
-	QString pipelinedirstructure;
-	int jobid;
-	bool isValid = true;
-	bool flagRerunResults = false;
-	bool flagRunSupplement = false;
+	/* object variables */
 	QString msg;
+	bool isValid;
+
+	/* pipeline variables */
+	QString name;
+	QString desc;
+	int ownerID;
+	QDateTime createDate;
+	int level;
+	QString group;
+	QString directory;
+	QString dirStructure;
+	QString pipelineRootDir;
+	bool useTmpDir;
+	QString tmpDir;
+	QVector<int> parentDependencyIDs;
+	QString depLevel;
+	QString depDir;
+	QString depLinkType;
+	QVector<int> groupIDs;
+	QString groupType;
+	bool groupBySubject;
+	int dynamicGroupID;
+	QString status;
+	QString statusMessage;
+	QDateTime lastStart;
+	QDateTime lastFinish;
+	QDateTime lastCheck;
+	QStringList completeFiles;
+	int numConcurrentAnalysis;
+	QString queue;
+	QString submitHost;
+	QString clusterType;
+	QString clusterUser;
+	int maxWallTime;
+	int submitDelay;
+	QString dataCopyMethod;
+	QString notes;
+	bool useProfile;
+	bool removeData;
+	QString resultScript;
+	bool enabled;
+	bool testing;
+	bool isPrivate;
+	bool isHidden;
+	int version;
 
 private:
-	void LoadAnalysisInfo();
+	void LoadPipelineInfo();
+
+	int pipelineid;
 };
 
-#endif // ANALYSIS_H
+#endif // PIPELINE_H

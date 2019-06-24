@@ -52,7 +52,7 @@ void study::LoadStudyInfo() {
 		QSqlQuery q;
 		q.prepare("select c.uid, a.study_num, b.project_id, b.enrollment_id, a.study_datetime from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
 		q.bindValue(":studyid", studyid);
-		n->SQLQuery(q, "study->LoadStudyInfo", true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid study ID or recently deleted?";
 			isValid = false;

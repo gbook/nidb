@@ -51,7 +51,7 @@ int moduleManager::Run() {
 	/* get list of modules with a last checkin older than 1 hours */
 	QSqlQuery q;
 	q.prepare("select * from module_procs where last_checkin < date_sub(now(), interval 1 hour) or last_checkin is null");
-	n->SQLQuery(q, "moduleManager->Run");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
 		while (q.next()) {
@@ -73,7 +73,7 @@ int moduleManager::Run() {
 			q2.prepare("delete from module_procs where module_name = :modulename and process_id = :pid");
 			q2.bindValue(":modulename", modulename);
 			q2.bindValue(":pid", pid);
-			n->SQLQuery(q2, "moduleManager->Run");
+			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 		}
 	}
 	else {

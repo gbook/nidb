@@ -28,6 +28,9 @@
 #include "moduleManager.h"
 #include "moduleImport.h"
 #include "moduleImportUploaded.h"
+#include "moduleMRIQA.h"
+#include "moduleQC.h"
+#include "modulePipeline.h"
 #include <iostream>
 #include <smtp/SmtpMime>
 
@@ -41,19 +44,24 @@ int main(int argc, char *argv[])
 
     QString module = argv[1];
 	bool keepLog = false;
+	bool debug = false;
 	if (argc == 3)
-		if (strcmp(argv[2], "debug"))
-			keepLog = true;
+		if (QString(argv[2]) == "debug")
+			debug = true;
 
 	module = module.trimmed();
-	if ((module != "export") && (module != "fileio") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded")) {
-		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules: import export fileio mriqa modulemanager importuploaded pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
+	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded")) {
+		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
 		return 0;
 	}
 
 	printf("-------------------------------------------------------------\n");
 	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
 	printf("-------------------------------------------------------------\n");
+
+	if (debug)
+		printf("------------------------- DEBUG MODE ------------------------\n");
+
 
 	nidb *n = new nidb(module);
 
@@ -62,7 +70,7 @@ int main(int argc, char *argv[])
 	/* check if this module should be running now or not */
 	if (n->ModuleCheckIfActive()) {
 		int numlock = n->CheckNumLockFiles();
-		if (numlock <= n->GetNumThreads()) {
+		if (numlock < n->GetNumThreads()) {
 			if (n->CreateLockFile()) {
 
 				n->CreateLogFile();
@@ -96,8 +104,26 @@ int main(int argc, char *argv[])
 					keepLog = m->Run();
 					delete m;
 				}
+				else if (module == "mriqa") {
+					moduleMRIQA *m = new moduleMRIQA(n);
+					keepLog = m->Run();
+					delete m;
+				}
+				else if (module == "qc") {
+					moduleQC *m = new moduleQC(n);
+					keepLog = m->Run();
+					delete m;
+				}
+				else if (module == "pipeline") {
+					modulePipeline *m = new modulePipeline(n);
+					keepLog = m->Run();
+					delete m;
+				}
 				else
 					n->Print("Unrecognized module [" + module + "]");
+
+				if (debug)
+					keepLog = true;
 
 				n->RemoveLogFile(keepLog);
 

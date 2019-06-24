@@ -23,8 +23,12 @@ SOURCES += \
     moduleFileIO.cpp \
     moduleImport.cpp \
     moduleImportUploaded.cpp \
+    moduleMRIQA.cpp \
     moduleManager.cpp \
+    modulePipeline.cpp \
+    moduleQC.cpp \
     nidb.cpp \
+    pipeline.cpp \
     remotenidbconnection.cpp \
     series.cpp \
     study.cpp \
@@ -41,8 +45,12 @@ HEADERS += \
     moduleFileIO.h \
     moduleImport.h \
     moduleImportUploaded.h \
+    moduleMRIQA.h \
     moduleManager.h \
+    modulePipeline.h \
+    moduleQC.h \
     nidb.h \
+    pipeline.h \
     remotenidbconnection.h \
     series.h \
     study.h \

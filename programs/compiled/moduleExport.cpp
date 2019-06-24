@@ -51,7 +51,7 @@ int moduleExport::Run() {
 
 	/* get list of things to delete */
 	QSqlQuery q("select * from exports where status = 'submitted'");
-	n->SQLQuery(q, "Run", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
 		int i = 0;
@@ -144,6 +144,7 @@ int moduleExport::Run() {
 	}
 	else {
 		n->WriteLog("Nothing to do");
+		return 0;
 	}
 
     return 1;
@@ -157,7 +158,7 @@ QString moduleExport::GetExportStatus(int exportid) {
 	QSqlQuery q;
 	q.prepare("select status from exports where export_id = :id");
 	q.bindValue(":id", exportid);
-	n->SQLQuery(q, "GetExportStatus", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.first();
 	QString status = q.value("status").toString();
 	return status;
@@ -175,7 +176,7 @@ bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 			q.prepare("update exports set status = :status where export_id = :id");
 			q.bindValue(":id", exportid);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetExportStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		else {
 			QSqlQuery q;
@@ -183,7 +184,7 @@ bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 			q.bindValue(":id", exportid);
 			q.bindValue(":msg", msg);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetExportStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		return true;
 	}
@@ -204,7 +205,7 @@ bool moduleExport::SetExportSeriesStatus(int exportseriesid, QString status, QSt
 			q.prepare("update exportseries set status = :status where exportseries_id = :id");
 			q.bindValue(":id", exportseriesid);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetExportSeriesStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		else {
 			QSqlQuery q;
@@ -212,7 +213,7 @@ bool moduleExport::SetExportSeriesStatus(int exportseriesid, QString status, QSt
 			q.bindValue(":id", exportseriesid);
 			q.bindValue(":msg", msg);
 			q.bindValue(":status", status);
-			n->SQLQuery(q, "SetExportSeriesStatus", true);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 		return true;
 	}
@@ -230,7 +231,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 	QSqlQuery q;
 	q.prepare("select * from exportseries where export_id = :exportid");
 	q.bindValue(":exportid",exportid);
-	n->SQLQuery(q,"GetExportSeriesList",true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		while (q.next()) {
 			QString modality = q.value("modality").toString().toLower();
@@ -241,7 +242,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 			QSqlQuery q2;
 			q2.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, e.uid, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
 			q2.bindValue(":seriesid",seriesid);
-			n->SQLQuery(q2,"GetExportSeriesList",true);
+			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
 			if (q2.size() > 0) {
 				while (q2.next()) {
@@ -333,7 +334,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 					q3.prepare("select altuid, isprimary from subject_altuid where enrollment_id = :enrollmentid and subject_id = :subjectid");
 					q3.bindValue(":enrollmentid",enrollmentid);
 					q3.bindValue(":subjectid",subjectid);
-					n->SQLQuery(q3,"GetExportSeriesList",true);
+					n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 					if (q3.size() > 0) {
 						while (q3.next()) {
 							if (q3.value("isprimary").toBool())
@@ -518,7 +519,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 										QSqlQuery q;
 										q.prepare("select * from mr_series where mrseries_id = :seriesid");
 										q.bindValue(":seriesid",seriesid);
-										n->SQLQuery(q,"ExportLocal",true);
+										n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 										if (q.size() > 0) {
 											QSqlRecord r(q.record());
 											QStringList fields;
@@ -692,7 +693,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 		QSqlQuery q;
 		q.prepare("select * from public_downloads where pd_id = :publicdownloadid");
 		q.bindValue(":publicdownloadid",publicdownloadid);
-		n->SQLQuery(q,"ExportLocal",true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() > 0) {
 			q.first();
 			int expiredays = q.value("pd_expiredays").toInt();
@@ -730,7 +731,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				q2.bindValue(":filename",filename);
 				q2.bindValue(":filecontents",filecontents);
 				q2.bindValue(":publicdownloadid",publicdownloadid);
-				n->SQLQuery(q2,"ExportLocal",true);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 			}
 			else {
 				exportstatus = "error";
@@ -809,7 +810,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 				//QSqlQuery q;
 				//q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
 				//q.bindValue(":exportseriesid",exportseriesid);
-				//n->SQLQuery(q,"ExportLocal",true);
+				//n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 				SetExportSeriesStatus(exportseriesid, "processing");
 
 				QString seriesstatus = "complete";
@@ -1096,7 +1097,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 	q.prepare("update exports set remotenidb_transactionid = :transactionid where export_id = :exportid");
 	q.bindValue(":transactionid",transactionid);
 	q.bindValue(":exportid",exportid);
-	n->SQLQuery(q,"ExportToRemoteNiDB",true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
@@ -1333,7 +1334,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 	QSqlQuery q;
 	q.prepare(QString("select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where %1series_id = :seriesid").arg(modality));
 	q.bindValue(":id", seriesid);
-	n->SQLQuery(q, "WriteNDARSeries", true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
 		while (q.next()) {
@@ -1405,7 +1406,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 			QString dcmfile = n->FindFirstFile(indir, "*.dcm");
 			gdcm::Reader r;
 			r.SetFileName(dcmfile.toStdString().c_str());
-			if (!r.CanRead()) {
+			if (!r.Read()) {
 				/* could not read the first dicom file... */
 				return false;
 			}

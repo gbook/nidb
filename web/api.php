@@ -25,6 +25,7 @@
 	A valid username and sha1(password) hash is required for every transaction */
 
 	$nologin = true;
+	//$debug = true;
 	
 	require "functions.php";
 	require "nidbapi.php";
@@ -264,9 +265,9 @@
 		//echo "$sqlstring";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$projectuid = $row['project_uid'];
+			$projectid = $row['project_id'];
 			$projectname = $row['project_name'];
-			$projects[] = "$projectuid|$projectname";
+			$projects[] = "$projectid|$projectname";
 		}
 		if (is_array($projects)) {
 			echo implode(',',$projects);
@@ -285,9 +286,9 @@
 		//echo "$sqlstring";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$siteuid = $row['site_uid'];
+			$siteid = $row['site_id'];
 			$sitename = $row['site_name'];
-			$sites[] = "$siteuid|$sitename";
+			$sites[] = "$siteid|$sitename";
 		}
 		if (is_array($sites)) {
 			echo implode(',',$sites);
@@ -321,14 +322,14 @@
 		//echo "\n";
 		
 		$uuid = mysqli_real_escape_string($GLOBALS['linki'], $uuid);
-		$anonymize = mysqli_real_escape_string($GLOBALS['linki'], $anonymize);
+		$anonymize = mysqli_real_escape_string($GLOBALS['linki'], $anonymize) + 0;
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 		$equipmentid = mysqli_real_escape_string($GLOBALS['linki'], $equipmentid);
 		$siteid = mysqli_real_escape_string($GLOBALS['linki'], $siteid);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$instanceid = mysqli_real_escape_string($GLOBALS['linki'], $instanceid);
-		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
+		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly) + 0;
 		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
 		$seriesnotes = mysqli_real_escape_string($GLOBALS['linki'], $seriesnotes);
 		$altuids = mysqli_real_escape_string($GLOBALS['linki'], $altuids);
@@ -339,8 +340,11 @@
 		$altuids = implode(',',$altuidlist);
 		
 		/* get the instanceRowID */
-		$sqlstring = "select instance_id from instance where instance_id = '$instanceid' or instance_uid = '$instanceid'";
-		//echo "[[$sqlstring]]\n";
+		if (isInteger($instanceid))
+			$sqlstring = "select instance_id from instance where instance_id = $instanceid or instance_uid = '$instanceid'";
+		else
+			$sqlstring = "select instance_id from instance where instance_uid = '$instanceid'";
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instanceRowID = $row['instance_id'];
@@ -350,8 +354,11 @@
 		}
 		
 		/* get the projectRowID */
-		$sqlstring = "select project_id from projects where project_id = '$projectid' or project_uid = '$projectid'";
-		echo "[[$sqlstring]]\n";
+		if (isInteger($projectid))
+			$sqlstring = "select project_id from projects where project_id = $projectid or project_uid = '$projectid'";
+		else
+			$sqlstring = "select project_id from projects where project_uid = '$projectid'";
+
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectRowID = $row['project_id'];
@@ -361,8 +368,11 @@
 		}
 		
 		/* get the siteRowID */
-		$sqlstring = "select site_id from nidb_sites where site_id = '$siteid' or site_uid = '$siteid'";
-		//echo "[[$sqlstring]]\n";
+		if (isInteger($siteid))
+			$sqlstring = "select site_id from nidb_sites where site_id = $siteid or site_uid = '$siteid'";
+		else
+			$sqlstring = "select site_id from nidb_sites where site_uid = '$siteid'";
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$siteRowID = $row['site_id'];
@@ -376,8 +386,7 @@
 			/* and check if we received at least 1 file */
 			if (count($_FILES['files']) > 0) {
 				/* get next import ID */
-				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize','$permanent','$matchidonly')";
-				//echo "[[$sqlstring]]\n";
+				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize', 0,'$matchidonly')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysqli_insert_id($GLOBALS['linki']);
 				

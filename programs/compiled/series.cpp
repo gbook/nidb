@@ -54,7 +54,7 @@ void series::LoadSeriesInfo() {
 		QString sqlstring = QString("select *, d.uid, d.subject_id, c.enrollment_id, b.study_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.%1series_id = :seriesid").arg(modality);
 		q.prepare(sqlstring);
 		q.bindValue(":seriesid", seriesid);
-		n->SQLQuery(q, "series->LoadSeriesInfo");
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid series ID or recently deleted?";
 			isValid = false;
@@ -68,7 +68,8 @@ void series::LoadSeriesInfo() {
 			studyid = q.value("study_id").toInt();
 			projectid = q.value("project_id").toInt();
 			enrollmentid = q.value("enrollment_id").toInt();
-			datatype = q.value("datatype").toString().trimmed();
+			datatype = q.value("data_type").toString().trimmed();
+			isderived = q.value("is_derived").toBool();
 
 			/* check to see if anything isn't valid or is blank */
 			if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
@@ -111,6 +112,7 @@ void series::PrintSeriesInfo() {
 	output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
 	output += QString("   datatype: [%1]\n").arg(datatype);
 	output += QString("   modality: [%1]\n").arg(modality);
+	output += QString("   isDerived: [%1]\n").arg(isderived);
 	output += QString("   isValid: [%1]\n").arg(isValid);
 	output += QString("   msg: [%1]\n").arg(msg);
 	output += QString("   seriespath: [%1]\n").arg(seriespath);

@@ -47,9 +47,9 @@ void analysis::LoadAnalysisInfo() {
 
 	/* get the path to the analysisroot */
 	QSqlQuery q;
-	q.prepare("select a.analysis_qsubid, d.uid, b.study_num, b.study_id, e.* from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = :analysisid");
+	q.prepare("select a.*, d.uid, b.study_num, b.study_id, e.* from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = :analysisid");
 	q.bindValue(":analysisid", analysisid);
-	n->SQLQuery(q, "Run");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1) { msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?"; isValid = false; }
 	q.first();
 	QString uid = q.value("uid").toString().trimmed();
@@ -62,6 +62,8 @@ void analysis::LoadAnalysisInfo() {
 	pipelineid = q.value("pipeline_id").toInt();
 	pipelineversion = q.value("pipeline_version").toInt();
 	pipelinedirstructure = q.value("pipeline_dirstructure").toString().trimmed();
+	flagRerunResults = q.value("analysis_rerunresults").toBool();
+	flagRunSupplement = q.value("analysis_runsupplement").toBool();
 
 	/* check to see if anything isn't valid or is blank */
 	if (n->cfg["analysisdir"] == "") { n->WriteLog("Something was wrong, cfg->analysisdir was not initialized"); msg = "cfg->analysisdir was not initialized"; isValid = false; }
@@ -104,6 +106,9 @@ void analysis::PrintAnalysisInfo() {
 	output += QString("   pipelinedirstructure: [%1]\n").arg(pipelinedirstructure);
 	output += QString("   jobid: [%1]\n").arg(jobid);
 	output += QString("   isValid: [%1]\n").arg(isValid);
+	output += QString("   jobid: [%1]\n").arg(jobid);
+	output += QString("   flagRerunResults: [%1]\n").arg(flagRerunResults);
+	output += QString("   flagRunSupplement: [%1]\n").arg(flagRunSupplement);
 	output += QString("   msg: [%1]\n").arg(msg);
 	output += QString("   analysispath: [%1]\n").arg(analysispath);
 

@@ -68,7 +68,7 @@ public:
 	void Print(QString s, bool n=true, bool pad=false);
 	QString CreateCurrentDateTime(int format=1);
 	QString CreateLogDate();
-	int SQLQuery(QSqlQuery &q, QString function, bool d=false, bool batch=false);
+	int SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
 	QString SystemCommand(QString s, bool detail=true);
 	bool MakePath(QString p, QString &msg);
@@ -79,6 +79,8 @@ public:
 	bool SendEmail(QString to, QString subject, QString body);
 	QString RemoveNonAlphaNumericChars(QString s);
 	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
+	QString ParseDate(QString s);
+	QString ParseTime(QString s);
 
 	/* file and directory operations */
 	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
@@ -89,6 +91,7 @@ public:
 	bool MoveFile(QString f, QString dir);
 	void GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse=false);
 	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
+	bool chmod(QString f, QString perm);
 
 	/* DICOM functions */
 	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
@@ -96,15 +99,12 @@ public:
 	bool IsDICOMFile(QString f);
 	bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
 	bool AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode);
+	bool ValidNiDBModality(QString m);
 
 private:
     void FatalError(QString err);
 	qint64 pid = 0;
 	bool checkedin = false;
-
-	//QString buildDate = QString::fromLocal8Bit(__DATE__);
-	//QString buildTime = QString::fromLocal8Bit(__TIME__);
-
 	bool configLoaded = false;
 	QString module;
 	QString logFilepath;

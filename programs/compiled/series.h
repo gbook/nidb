@@ -47,6 +47,7 @@ public:
 	QString datatype;
 	int enrollmentid;
 	int projectid;
+	bool isderived;
 
 	bool isValid = true;
 	QString msg;

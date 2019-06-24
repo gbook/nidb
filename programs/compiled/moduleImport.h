@@ -55,11 +55,10 @@ private:
 	nidb *n;
 
 	/* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
-	QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
+	//QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
 
 	/* create a regular associated hash for dicoms with a SeriesInstanceUID tag */
 	QMap<QString, QStringList> dcmseries;
-
 };
 
 #endif // MODULEIMPORT_H
