@@ -70,9 +70,8 @@ public:
 	QString CreateLogDate();
 	int SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
+	void AppendCustomLog(QString f, QString msg);
 	QString SystemCommand(QString s, bool detail=true);
-	bool MakePath(QString p, QString &msg);
-	bool RemoveDir(QString p, QString &msg);
 	QString GenerateRandomString(int n);
 	QString CreateUID(QString prefix, int numletters=3);
 	void SortQStringListNaturally(QStringList &s);
@@ -81,8 +80,14 @@ public:
 	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
 	QString ParseDate(QString s);
 	QString ParseTime(QString s);
+	QString JoinIntArray(QList<int> a, QString glue);
+	bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
+	bool GetSQLComparison(QString c, QString &comp, int &num);
+	QStringList ShellWords(QString s);
 
 	/* file and directory operations */
+	bool MakePath(QString p, QString &msg, bool perm777=true);
+	bool RemoveDir(QString p, QString &msg);
 	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 	QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
 	QString FindFirstFile(QString dir, QString pattern, bool recursive=false);

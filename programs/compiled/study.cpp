@@ -64,6 +64,8 @@ void study::LoadStudyInfo() {
 			projectid = q.value("project_id").toInt();
 			enrollmentid = q.value("enrollment_id").toInt();
 			studydatetime = q.value("study_datetime").toDateTime();
+			modality = q.value("study_modality").toString().trimmed();
+			studytype = q.value("study_type").toString().trimmed();
 
 			/* check to see if anything isn't valid or is blank */
 			if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
@@ -93,6 +95,8 @@ void study::PrintStudyInfo() {
 	output += QString("   subjectid: [%1]\n").arg(subjectid);
 	output += QString("   studyid: [%1]\n").arg(studyid);
 	output += QString("   studynum: [%1]\n").arg(studynum);
+	output += QString("   studytype: [%1]\n").arg(studytype);
+	output += QString("   modality: [%1]\n").arg(modality);
 	output += QString("   projectid: [%1]\n").arg(projectid);
 	output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
 	output += QString("   isValid: [%1]\n").arg(isValid);

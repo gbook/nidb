@@ -23,7 +23,10 @@
 #ifndef MODULEPIPELINE_H
 #define MODULEPIPELINE_H
 #include "nidb.h"
+#include "study.h"
 #include "series.h"
+#include "analysis.h"
+#include "pipeline.h"
 
 /* data structures used in this class */
 struct pipelineStep {
@@ -56,7 +59,7 @@ struct dataDefinitionStep {
 	QString behdir;
 	bool enabled;
 	bool optional;
-	int numboldreps;
+	QString numboldreps; /* this is stored as a comparison */
 	QString level;
 };
 
@@ -72,7 +75,7 @@ public:
 
 	int IsQueueFilled(int pid);
 	QStringList GetGroupList(int pid);
-	QVector<int> GetPipelineList();
+	QList<int> GetPipelineList();
 	QString CheckDependency(int sid, int pipelinedep);
 	bool IsPipelineEnabled(int pid);
 	void SetPipelineStopped(int pid);
@@ -85,6 +88,9 @@ public:
 	QList<dataDefinitionStep> GetPipelineDataDef(int pipelineid, int version);
 	QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, int analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);
 	bool CreateClusterJobFile(QString jobfilename, QString clustertype, int analysisid, bool isgroup, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime,  QList<pipelineStep> steps, bool runsupplement = false, bool pipelineuseprofile = false, bool removedata = false);
+	QList<int> GetStudyToDoList(int pipelineid, QString modality, QString depend, QString groupids);
+	bool GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineversion, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog, QString &datareport, QString &datatable);
+	QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);
 
 private:
 	nidb *n;

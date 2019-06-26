@@ -29,6 +29,7 @@ class analysis
 {
 public:
 	analysis(int id, nidb *a);
+	analysis(int pipelineid, int studyid, int version, nidb *a);
 	nidb *n;
 
 	void PrintAnalysisInfo();
@@ -38,6 +39,7 @@ public:
 
 	int studynum;
 	int studyid;
+	QString studyDateTime;
 	QString uid;
 	int subjectid;
 
@@ -49,8 +51,8 @@ public:
 	QString pipelinedirstructure;
 	int jobid;
 	bool isValid = true;
-	bool flagRerunResults = false;
-	bool flagRunSupplement = false;
+	bool rerunResults = false;
+	bool runSupplement = false;
 	QString msg;
 
 private:

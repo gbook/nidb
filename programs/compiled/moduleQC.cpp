@@ -97,7 +97,7 @@ int moduleQC::Run() {
 						if (numdone >= 100)
 							break;
 
-						QThread::sleep(1);
+						QThread::sleep(1); // sleep for 1 sec
 					}
 					else {
 						n->WriteLog(QString("Skipping this MR series [%1] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first").arg(seriesid));

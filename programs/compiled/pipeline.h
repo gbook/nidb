@@ -48,11 +48,11 @@ public:
 	QString pipelineRootDir;
 	bool useTmpDir;
 	QString tmpDir;
-	QVector<int> parentDependencyIDs;
+	QList<int> parentDependencyIDs;
 	QString depLevel;
 	QString depDir;
 	QString depLinkType;
-	QVector<int> groupIDs;
+	QList<int> groupIDs;
 	QString groupType;
 	bool groupBySubject;
 	int dynamicGroupID;

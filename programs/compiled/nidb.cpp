@@ -524,7 +524,7 @@ QString nidb::WriteLog(QString msg) {
 /* ---------------------------------------------------------- */
 /* --------- MakePath --------------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::MakePath(QString p, QString &msg) {
+bool nidb::MakePath(QString p, QString &msg, bool perm777) {
 
 	if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p == "/root") || (p == "/home")) {
 		msg = "Path is not valid [" + p + "]";
@@ -539,6 +539,9 @@ bool nidb::MakePath(QString p, QString &msg) {
 	}
 	else
 		msg = "MakePath() Path already exists or was created successfuly [" + p + "]";
+
+	if (perm777)
+		SystemCommand("chmod -R 777 " + p);
 
 	return true;
 }
@@ -970,26 +973,16 @@ QByteArray nidb::GetFileChecksum(const QString &fileName, QCryptographicHash::Al
 /* --------- CreateUID -------------------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::CreateUID(QString prefix, int numletters) {
-	//WriteLog("Entering CreateUID()");
 
 	QString newID;
 	QString letters("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	QString numbers("0123456789");
 	QString C1, C2, C3, C4, C5, C6, C7, C8;
 
-	//WriteLog("About to seed the random number generator");
-
-	/* seed the random number generator */
-	//qsrand(QTime::currentTime().msec());
-
-	//WriteLog("Finished seeding");
-
 	C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
 	C2 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
 	C3 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
 	C4 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
-
-	//WriteLog(QString("Got numbers [%1] [%2] [%3] [%4]").arg(C1).arg(C2).arg(C3).arg(C4));
 
 	QStringList badarray;
 	badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk" << "kkk";
@@ -1003,23 +996,14 @@ QString nidb::CreateUID(QString prefix, int numletters) {
 		if (numletters == 4)
 			C8 = letters.at( QRandomGenerator::global()->bounded(letters.length()-1) );
 
-		//WriteLog(QString("Got letters [%1] [%2] [%3] [%4]").arg(C5).arg(C6).arg(C7).arg(C8));
-
 		QString str;
 		str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
-		if (!badarray.contains(str,Qt::CaseInsensitive)) {
+		if (!badarray.contains(str,Qt::CaseInsensitive))
 			done = true;
-			//WriteLog("The badarray did not contain the string ["+str+"]");
-		}
-		//else {
-		    //WriteLog("badarray contained the string ["+str+"]");
-		//}
 	}
 	while (!done);
 
-	//newID = QString("%1%2%3%4%5%6%7%8%9").arg(prefix).arg(C1).arg(C2).arg(C3).arg(C4).arg(C5).arg(C6).arg(C7).arg(C8);
 	newID = prefix+C1+C2+C3+C4+C5+C6+C7+C8;
-	//WriteLog("Found unused UID ["+newID+"]");
 	return newID.trimmed();
 }
 
@@ -1289,7 +1273,7 @@ bool nidb::ValidNiDBModality(QString m) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- ValidNiDBModality ------------------------------ */
+/* --------- chmod ------------------------------------------ */
 /* ---------------------------------------------------------- */
 bool nidb::chmod(QString f, QString perm) {
 	if (perm.size() != 3)
@@ -1329,4 +1313,152 @@ bool nidb::chmod(QString f, QString perm) {
 	    case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther)) return false; break;
 	}
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- JoinIntArray ----------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::JoinIntArray(QList<int> a, QString glue) {
+	if (a.size() == 0)
+		return "";
+	else if (a.size() == 1)
+		return QString("%1").arg(a[0]);
+	else {
+		QStringList sa;
+		for (int i=0; i<a.size();i++)
+			sa << QString("%1").arg(a[i]);
+		return sa.join(glue);
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendCustomLog -------------------------------- */
+/* ---------------------------------------------------------- */
+void nidb::AppendCustomLog(QString file, QString msg) {
+	QFile f(file);
+	if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
+		QTextStream fs(&f);
+		fs << QString("[%1][%2] %3\n").arg(CreateCurrentDateTime()).arg(pid).arg(msg);
+		f.close();
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SubmitClusterJob ------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
+
+	/* submit the job to the cluster */
+	QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
+	result = SystemCommand(systemstring).trimmed();
+
+	QStringList parts = result.split(" ");
+	jobid = parts[2].toInt();
+
+	/* check the return message from qsub */
+	if (result.contains("invalid option")) {
+		msg = "Invalid qsub option";
+		return false;
+	}
+	else if (result.contains("directive error")) {
+		msg = "Invalid qsub directive";
+		return false;
+	}
+	else if (result.contains("cannot connect to server")) {
+		msg = "Invalid qsub hostname";
+		return false;
+	}
+	else if (result.contains("unknown queue")) {
+		msg = "Invalid queue";
+		return false;
+	}
+	else if (result.contains("queue is not enabled")) {
+		msg = "Queue is not enabled";
+		return false;
+	}
+	else if (result.contains("job exceeds queue resource limits")) {
+		msg = "Job exceeds resource limits";
+		return false;
+	}
+
+	msg = "Cluster job submitted successfully";
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SubmitClusterJob ------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
+
+	//WriteLog("Inside GetSQLComparison($c)");
+
+	c.remove(QRegularExpression("\\s*"));
+
+	/* check if there is anything to format */
+	if (c == "")
+		return false;
+
+	comp = "";
+	num = 0;
+	bool ok;
+	if (c.left(2) == "<=") {
+		comp = "<=";
+		num = c.mid(2).toInt(&ok);
+		if (!ok) return false;
+	}
+	else if (c.left(2) == ">=") {
+		comp = ">=";
+		num = c.mid(2).toInt(&ok);
+		if (!ok) return false;
+	}
+	else if (c.left(1) == "<") {
+		comp = "<";
+		num = c.mid(1).toInt(&ok);
+		if (!ok) return false;
+	}
+	else if (c.left(1) == ">") {
+		comp = ">";
+		num = c.mid(1).toInt(&ok);
+		if (!ok) return false;
+	}
+	else if (c.left(1) == "~") {
+		comp = "<>";
+		num = c.mid(1).toInt(&ok);
+		if (!ok) return false;
+	}
+	else {
+		num = c.toInt(&ok);
+		if (ok)
+			comp = "=";
+		else
+			return false;
+	}
+
+	//WriteLog("Inside GetSQLComparison($c) - [$comp] [$num]");
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ShellWords ------------------------------------- */
+/* ---------------------------------------------------------- */
+QStringList nidb::ShellWords(QString s) {
+
+	QStringList words;
+	QRegularExpression regex("\".+\"", QRegularExpression::CaseInsensitiveOption);
+	if (s.contains(regex)) {
+		QRegularExpressionMatchIterator iterator = regex.globalMatch(s);
+		while (iterator.hasNext()) {
+			QRegularExpressionMatch match = iterator.next();
+			QString matched = match.captured(0);
+			if(matched.length() > 0) words << matched;
+		}
+	}
+	return words;
 }

@@ -110,4 +110,6 @@ void pipeline::LoadPipelineInfo() {
 	else
 		pipelineRootDir = n->cfg["analysisdir"];
 
+	/* remove any whitespace from the queue... SGE hates whitespace */
+	queue.replace(QRegularExpression("\\s+"),"");
 }

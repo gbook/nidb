@@ -38,11 +38,13 @@ public:
 	int studynum;
 	QString uid;
 	int studyid;
+	QString studytype;
 	int subjectid;
 	QString studypath;
 	int enrollmentid;
 	int projectid;
 	QDateTime studydatetime;
+	QString modality;
 
 	bool isValid = true;
 	QString msg;
