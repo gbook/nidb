@@ -95,7 +95,7 @@ int modulePipeline::Run() {
 		else
 			analysisdir = n->cfg["analysisdir"];
 
-		n->WriteLog("Working on pipeline [$pid] - [$pipelinename] Submits to queue [$pipelinequeue] through host [$pipelinesubmithost]");
+		n->WriteLog(QString("Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4]").arg(pipelineid).arg(p.name).arg(p.queue).arg(p.submitHost));
 
 		SetPipelineProcessStatus("running",pipelineid,0);
 
@@ -116,7 +116,7 @@ int modulePipeline::Run() {
 
 		// check if the pipeline is running, if so, go on to the next one
 		QString status;
-		q2.prepare("select pipeline_status from pipelines where pipeline_id = :$pid");
+		q2.prepare("select pipeline_status from pipelines where pipeline_id = :pid");
 		q2.bindValue(":pid", pipelineid);
 		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 		if (q2.size() > 0) {
@@ -133,40 +133,35 @@ int modulePipeline::Run() {
 		SetPipelineStatusMessage(pipelineid, "Submitting jobs");
 		SetPipelineRunning(pipelineid);
 
-		n->WriteLog("Running pipeline $pid");
+		n->WriteLog(QString("Running pipeline id [%1] name [%2]").arg(pipelineid).arg(p.name));
 
 		QList<dataDefinitionStep> dataSteps;
-		//my @datadef = ();
 		if (p.level != 0) {
 			if ((p.level == 1) || ((p.level == 2) && (p.parentDependencyIDs.size() < 1))) {
 				dataSteps = GetPipelineDataDef(pipelineid, p.version);
 
 				// if there is no data definition and no dependency
 				if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
-					n->WriteLog("Pipeline [$pipelinename - $pid] has no data definition. Skipping.");
+					n->WriteLog(QString("Pipeline [%1 - %2] has no data definition. Skipping.").arg(p.name).arg(pipelineid));
 
 					/* update the statuses, and stop the modules */
 					SetPipelineStatusMessage(pipelineid, "Pipeline has no data definition. Skipping");
 					SetPipelineStopped(pipelineid);
 					continue;
 				}
-				//if (defined($dd)) {
-				//	@datadef = @$dd;
-				//}
 			}
 		}
 
-		// get the pipeline steps (the script)
+		/* get the pipeline steps (the script) */
 		QList<pipelineStep> steps = GetPipelineSteps(pipelineid, p.version);
 		if (steps.size() < 1) {
-			n->WriteLog("Pipeline [$pipelinename - $pid] has no steps. Skipping.");
+			n->WriteLog(QString("Pipeline [%1 - %2] has no steps. Skipping.").arg(p.name).arg(pipelineid));
 
 			// update the statuses and stop the modules
 			SetPipelineStatusMessage(pipelineid, "Pipeline has no steps. Skipping");
 			SetPipelineStopped(pipelineid);
 			continue;
 		}
-		//my @pipelinesteps = @$ps;
 
 		// determine which analysis level this is
 		/* ------------------------------ level 0 ----------------------------- */
@@ -191,22 +186,14 @@ int modulePipeline::Run() {
 			}
 			// create the analysis path
 			QString analysispath = "/mount"+p.directory+"/"+p.name;
-			n->WriteLog("Creating path [$analysispath/pipeline]");
+			n->WriteLog("Creating path [" + analysispath + "/pipeline]");
 			QString m;
 			if (!n->MakePath(analysispath + "/pipeline", m)) {
 				n->WriteLog("Error: unable to create directory ["+analysispath+"]");
 				continue;
 			}
-			//my $systemstring = "mkdir -p $analysispath/pipeline";
-			//WriteLog("[$systemstring]: " . `$systemstring 2>&1`);
-			//mkpath("$analysispath/pipeline", { verbose => 1, mode => 0777});
-			//chmod(0777,"$analysispath/pipeline");
 
-			//if (-d "$analysispath/pipeline") {
-			//    n->WriteLog("Directory [$analysispath/pipeline] exists!");
-			//}
-
-			// this file will record any events during setup
+			/* this file will record any events during setup */
 			QString setupLogFile = "/mount" + analysispath + "/pipeline/analysisSetup.log";
 			n->AppendCustomLog(setupLogFile, "Beginning recording");
 			n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
@@ -288,7 +275,7 @@ int modulePipeline::Run() {
 
 					numchecked++;
 
-					n->WriteLog("--------------------- Working on study [$sid] for [$pipelinename] --------------------");
+					n->WriteLog(QString("--------------------- Working on study [%1] for [%2] --------------------").arg(sid).arg(p.name));
 
 					/* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
 					n->WriteLog("Checking if we've reached the max number of concurrent analyses");
@@ -320,8 +307,7 @@ int modulePipeline::Run() {
 						}
 					} while (filled == 1);
 
-					// get the analysis info, if an analysis already exists for this study
-					//my ($analysisRowID, $rerunresults, $runsupplement, $msg) = GetAnalysisInfo(pipelineid,sid);
+					/* get the analysis info, if an analysis already exists for this study */
 					analysis a(pipelineid, sid, p.version, n);
 					if (!p.isValid) {
 						n->WriteLog("Pipeline was not valid: [" + p.msg + "]");
@@ -366,8 +352,7 @@ int modulePipeline::Run() {
 						bool submiterror = false;
 						QString errormsg;
 
-						n->WriteLog("StudyDateTime: [$studydatetime], Working on: [$uid$studynum]");
-						//print "StudyDateTime: $studydatetime\n";
+						n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
 
 						QString analysispath = "";
 						if (p.dirStructure == "b")
@@ -396,11 +381,9 @@ int modulePipeline::Run() {
 						if (pipelinedep > 0) {
 							if (p.depLevel == "subject") {
 								setuplog << n->WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
-								//$deppath = "$pipelinedirectory/$uid/$studynum_nearest";
 							}
 							else {
 								setuplog << n->WriteLog("Dependency is a study level (will match dep for same subject, same study)");
-								//$deppath = "$pipelinedirectory/$uid/$studynum";
 
 								// check the dependency and see if there's anything amiss about it
 								QString depstatus = CheckDependency(sid, pipelinedep);
@@ -417,11 +400,14 @@ int modulePipeline::Run() {
 								}
 							}
 						}
-						setuplog << n->WriteLog("Dependency path is [$deppath] and analysis path is [$analysispath]");
+						setuplog << n->WriteLog("Dependency path is [" + deppath + "] and analysis path is [" + analysispath + "]");
 
+						int numseriesdownloaded(0);
 						// get the data if we are not running a supplement, and not rerunning the results
 						if ((!a.runSupplement) && (!a.rerunResults)) {
-							//($numseries, $datalog, $datareport, $datatable) = GetData(sid, analysispath, s.uid, analysisRowID, p.version, pipelineid, pipelinedep, p.depLevel, @datadef);
+							if (!GetData(sid, analysispath, s.uid, analysisRowID, p.version, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog, datareport, datatable)) {
+								n->WriteLog("GetData() returned false");
+							}
 						}
 						QString datatable2 = datatable;
 						q2.prepare("update analysis set analysis_datatable = :datatable2 where analysis_id = :analysisid");
@@ -446,12 +432,12 @@ int modulePipeline::Run() {
 
 						// one of the above criteria has been satisfied, so its ok to run
 						if (okToRun) {
-							setuplog << n->WriteLog(" ----- Study [$sid] has [$numseries] matching series downloaded (or needs results rerun, or is a supplement, or is dependent on another pipeline). Beginning analysis ----- ");
+							setuplog << n->WriteLog(QString(" ----- Study [%1] has [%2] matching series downloaded (or needs results rerun, or is a supplement, or is dependent on another pipeline). Beginning analysis ----- ").arg(sid).arg(numseries));
 
 							QString dependencyname;
 							if ((!a.rerunResults) && (!a.runSupplement)) {
 								if (pipelinedep != 0) {
-									setuplog << n->WriteLog("There is a pipeline dependency [$pipelinedep]");
+									setuplog << n->WriteLog(QString("There is a pipeline dependency [%1]").arg(pipelinedep));
 									q2.prepare("select pipeline_name from pipelines where pipeline_id = :pipelinedep");
 									q2.bindValue(":pipelinedep", pipelinedep);
 									n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -461,8 +447,8 @@ int modulePipeline::Run() {
 										setuplog << n->WriteLog(QString("Found [%1] rows for pipeline dependency [%2]").arg(q2.size()).arg(dependencyname));
 									}
 									else {
-										setuplog << n->WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
-										SetPipelineStatusMessage(pipelineid, "Pipeline dependency ($pipelinedep) does not exist!");
+										setuplog << n->WriteLog(QString("Pipeline dependency (%1) does not exist!").arg(pipelinedep));
+										SetPipelineStatusMessage(pipelineid, QString("Pipeline dependency (%1) does not exist!").arg(pipelinedep));
 										SetPipelineStopped(pipelineid);
 										continue;
 									}
@@ -497,9 +483,9 @@ int modulePipeline::Run() {
 									QString fulldeppath = deppath + "/" + dependencyname;
 									QDir d(fulldeppath);
 									if (d.exists())
-										setuplog << n->WriteLog("Full dependency path ["+fulldeppath+"] exists");
+										setuplog << n->WriteLog("Full dependency path [" + fulldeppath + "] exists");
 									else
-										setuplog << n->WriteLog("Full dependency path ["+fulldeppath+"] does NOT exist");
+										setuplog << n->WriteLog("Full dependency path [" + fulldeppath + "] does NOT exist");
 
 									setuplog << n->WriteLog("This is a level [$pipelinelevel] pipeline. deplinktype [$deplinktype] depdir [$depdir]");
 
@@ -510,20 +496,22 @@ int modulePipeline::Run() {
 									if (p.depDir == "subdir") {
 										setuplog << n->WriteLog("Dependency will be copied to a subdir");
 										if (p.depLinkType == "hardlink")
-											systemstring = "cp -aul $deppath $analysispath/";
+											systemstring = "cp -aul ";
 										else if (p.depLinkType == "softlink")
-											systemstring = "cp -aus $deppath $analysispath/";
+											systemstring = "cp -aus ";
 										else if (p.depLinkType == "regularcopy")
-											systemstring = "cp -au $deppath $analysispath/";
+											systemstring = "cp -au ";
+										systemstring += deppath + " " + analysispath + "/";
 									}
 									else { // root dir
 										setuplog << n->WriteLog("Dependency will be copied to the root dir");
 										if (p.depLinkType == "hardlink")
-											systemstring = "cp -aul $deppath/* $analysispath/";
+											systemstring = "cp -aul ";
 										else if (p.depLinkType == "softlink")
-											systemstring = "cp -aus $deppath/* $analysispath/";
+											systemstring = "cp -aus ";
 										else if (p.depLinkType == "regularcopy")
-											systemstring = "cp -au $deppath/* $analysispath/";
+											systemstring = "cp -au ";
+										systemstring += deppath + "/* " + analysispath + "/";
 									}
 									setuplog << n->WriteLog(n->SystemCommand(systemstring));
 
@@ -554,23 +542,19 @@ int modulePipeline::Run() {
 							QString localanalysispath = analysispath;
 							localanalysispath.replace("/mount","");
 
-							// create the SGE job file
-							//my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 0, $uid, $studynum, localanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, pipelineid, $pipelineremovedata, $pipelineresultscript, $pipelinemaxwalltime, $runsupplement, steps);
-
-							//`chmod -Rf 777 $analysispath`;
-							// create the SGE job file
+							/* create the SGE job file */
 							QString sgefilename;
 							QString sgeshortfilename;
 							if (a.rerunResults) {
-								sgefilename = "$analysispath/sgererunresults.job";
+								sgefilename = analysispath + "/sgererunresults.job";
 								sgeshortfilename = "sgererunresults.job";
 							}
 							else if (a.runSupplement) {
-								sgefilename = "$analysispath/sge-supplement.job";
+								sgefilename = analysispath + "/sge-supplement.job";
 								sgeshortfilename = "sge-supplement.job";
 							}
 							else {
-								sgefilename = "$analysispath/sge.job";
+								sgefilename = analysispath + "/sge.job";
 								sgeshortfilename = "sge.job";
 							}
 
@@ -1346,7 +1330,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				if (imagetypes != "''")
 					sqlstringA += QString("and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
-				sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '$studydate' ) ) LIMIT 1").arg(modality);
+				sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"));
 				q2.prepare(sqlstringA);
 				q2.bindValue(":subjectid", s.subjectid);
 
@@ -1541,9 +1525,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
 					QString systemstring;
 					if (p.dataCopyMethod == "scp")
-						systemstring = "scp $tmpdir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+						systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
 					else
-						systemstring = "cp -v $tmpdir/* $newanalysispath";
+						systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
 					dlog << n->WriteLog(n->SystemCommand(systemstring));
 				}
 				else {
@@ -1561,9 +1545,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 					QString systemstring;
 					if (p.dataCopyMethod == "scp")
-						systemstring = "scp $tmpdir/* $cfg{'clusteruser'}\@$pipelinesubmithost:$newanalysispath";
+						systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
 					else
-						systemstring = "cp -v $tmpdir/* $newanalysispath";
+						systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
 					dlog << n->WriteLog(n->SystemCommand(systemstring));
 
 					n->WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [$output]");
@@ -1602,8 +1586,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		}
 	}
 	//my $datatable = generate_table(rows => $datarows, header_row => 1);
-	n->WriteLog("\n$datatable");
-	datalog += "\n$datatable\nLeaving GetData(). Copied [$numdownloaded] series\n";
+	//n->WriteLog("\n$datatable");
+	//datalog += "\n$datatable\nLeaving GetData(). Copied [$numdownloaded] series\n";
 	n->WriteLog("Leaving GetData() successfully => ret($numdownloaded, datalog)");
 	n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydataend", QString("Finished copying data [%1] series downloaded").arg(numdownloaded));
 
