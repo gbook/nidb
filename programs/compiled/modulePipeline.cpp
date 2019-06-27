@@ -50,7 +50,7 @@ modulePipeline::~modulePipeline()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int modulePipeline::Run() {
-	n->WriteLog("Entering the QC module");
+	n->WriteLog("Entering the pipeline module");
 
 	int numchecked = 0;
 	bool jobsWereSubmitted = false;
@@ -486,24 +486,15 @@ int modulePipeline::Run() {
 
 									/* copy any dependencies */
 									QString systemstring;
+									if (p.depLinkType == "hardlink") systemstring = "cp -aul ";
+									else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
+									else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
 									if (p.depDir == "subdir") {
 										setuplog << n->WriteLog("Dependency will be copied to a subdir");
-										if (p.depLinkType == "hardlink")
-											systemstring = "cp -aul ";
-										else if (p.depLinkType == "softlink")
-											systemstring = "cp -aus ";
-										else if (p.depLinkType == "regularcopy")
-											systemstring = "cp -au ";
 										systemstring += deppath + " " + analysispath + "/";
 									}
 									else { // root dir
 										setuplog << n->WriteLog("Dependency will be copied to the root dir");
-										if (p.depLinkType == "hardlink")
-											systemstring = "cp -aul ";
-										else if (p.depLinkType == "softlink")
-											systemstring = "cp -aus ";
-										else if (p.depLinkType == "regularcopy")
-											systemstring = "cp -au ";
 										systemstring += deppath + "/* " + analysispath + "/";
 									}
 									setuplog << n->WriteLog(n->SystemCommand(systemstring));
@@ -518,22 +509,22 @@ int modulePipeline::Run() {
 									setuplog << n->WriteLog(n->SystemCommand("chmod -R 777 " + analysispath));
 								}
 								else {
-									setuplog << n->WriteLog("Pipelinedep was 0 [$pipelinedep]");
+									setuplog << n->WriteLog("Pipelinedep was 0");
 									n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "No dependencies specified for this pipeline");
 								}
 
 								/* now safe to write out the setuplog */
 								n->AppendCustomLog(setupLogFile, setuplog.join("\n"));
 
-								// die here if we can't write the log... because if its not writeable, then something is wrong and we could submit a few hundred jobs that will fail
-								//open DATALOG, "> $analysispath/pipeline/data.log" or die("[Line: " . __LINE__ . "] Could not create $analysispath/pipeline/data.log");
-								//print DATALOG $datalog;
-								//close DATALOG;
-								//n->SystemCommand("chmod -R 777 " + analysispath + "/pipeline/data.log");
+								/* however, if the setupLogFile does not exist, something is not writeable, and that is not good */
+								if (!QFile::exists(setupLogFile)) {
+									setuplog << n->WriteLog("setupLogFile [" + setupLogFile + "] does not exist.");
+									return -1;
+								}
 							}
-							/* "realanalysispath" is now --> "localanalysispath" */
-							QString localanalysispath = analysispath;
-							localanalysispath.replace("/mount","");
+							/* "realanalysispath" is now --> "clusteranalysispath" */
+							QString clusteranalysispath = analysispath;
+							clusteranalysispath.replace("/mount","");
 
 							/* create the SGE job file */
 							QString sgefilename;
@@ -551,7 +542,7 @@ int modulePipeline::Run() {
 								sgeshortfilename = "sge.job";
 							}
 
-							if (CreateClusterJobFile(sgefilename, p.clusterType, analysisRowID, false, a.uid, a.studynum, localanalysispath, p.useTmpDir, p.tmpDir, a.studyDateTime, p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false, p.useProfile, p.removeData)) {
+							if (CreateClusterJobFile(sgefilename, p.clusterType, analysisRowID, false, a.uid, a.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, a.studyDateTime, p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false, p.useProfile, p.removeData)) {
 								n->WriteLog("Created sge job submit file ["+sgefilename+"]");
 							}
 							else {
@@ -587,7 +578,7 @@ int modulePipeline::Run() {
 							numsubmitted++;
 							jobsWereSubmitted = true;
 
-							SetPipelineStatusMessage(pipelineid, "Submitted $uid$studynum");
+							SetPipelineStatusMessage(pipelineid, QString("Submitted %1%2").arg(s.uid).arg(s.studynum));
 
 							// check if this module should be running now or not
 							if (!n->ModuleCheckIfActive()) {
@@ -609,7 +600,7 @@ int modulePipeline::Run() {
 							n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetuperror", "No data found, 0 series returned from search");
 						}
-						n->AppendCustomLog(setupLogFile, n->WriteLog("Submitted $numsubmitted jobs so far"));
+						n->AppendCustomLog(setupLogFile, n->WriteLog(QString("Submitted [%1] jobs so far").arg(numsubmitted)));
 
 						/* mark the study in the analysis table */
 						if ((numseries > 0) || ((pipelinedep != 0) && (p.depLevel == "study")) || (a.runSupplement) || (a.rerunResults)) {
@@ -649,236 +640,20 @@ int modulePipeline::Run() {
 					}
 
 					if ((numchecked%1000) == 0) {
-						n->WriteLog("$numchecked studies checked");
+						n->WriteLog(QString("[%1] studies checked").arg(numchecked));
 					}
 				}
 			}
 		}
-		// ======================= LEVEL 2 =======================
+		/* ======================= LEVEL 2 ======================= */
 		else if (p.level == 2) {
-			// --- process second level pipeline ---
-			n->WriteLog("Level 2");
-
-//			// only 1 analysis should ever be run with the second level, so if 1 already exists, regardless of state or pipeline version, then
-//			// leave this function without running the analysis
-//			my $sqlstring = "select * from analysis where pipeline_id = $pid";
-//			my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//			if ($result->numrows > 0) {
-//				WriteLog("An analysis already exists for this second level pipeline, exiting pipeline");
-//				SetPipelineStatusMessage(pipelineid, 'An analysis already exists for this second level pipeline. Delete the analysis if you want to re-run it');
-//				SetPipelineStopped(pipelineid);
-//				continue;
-//			}
-
-//            #my $analysispath;
-//			my $analysisRowID;
-//			my $groupanalysispath;
-//			my $realpipelinedirectory;
-
-//			if ($pipelinedependency == "") {
-//				$pipelinedependency = "0";
-//			}
-//			// if there are multiple dependencies, we'll need to loop through all of them separately
-//			my @deps = split(',', $pipelinedependency);
-//			foreach my $pipelinedep(@deps) {
-
-//				// get the dependency name
-//				my $dependencyname;
-//				my $dependencylevel;
-//				if ($pipelinedep != 0) {
-//					my $sqlstring = "select pipeline_name, pipeline_level from pipelines where pipeline_id = $pipelinedep";
-//					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//					if ($result->numrows > 0) {
-//						WriteLog("Found " . $result->numrows . " pipelines for second level pipeline");
-//						my %row = $result->fetchhash;
-//						$dependencyname = $row{'pipeline_name'};
-//						$dependencylevel = $row{'pipeline_level'};
-//					}
-//					else {
-//						WriteLog("Pipeline dependency ($pipelinedep) does not exist!");
-//						SetPipelineStopped(pipelineid);
-//						continue;
-//					}
-//				}
-
-//				// build the path
-//				if ($pipelinedirectory == "") {
-//					$pipelinedirectory = $cfg{'groupanalysisdir'};
-//					$realpipelinedirectory = $pipelinedirectory;
-//					$realpipelinedirectory =~ s/\/mount//;
-//					WriteLog("1 [$pipelinedirectory] --> [$realpipelinedirectory]");
-//				}
-//				else {
-//					$pipelinedirectory = $cfg{'mountdir'} . $pipelinedirectory;
-//					$realpipelinedirectory = $pipelinedirectory;
-//					WriteLog("2 [$pipelinedirectory] --> [$realpipelinedirectory]");
-//				}
-
-//				MakePath("$pipelinedirectory/$pipelinename/$dependencyname");
-//				$groupanalysispath = "$pipelinedirectory/$pipelinename";
-//				MakePath($groupanalysispath);
-//				chmod(0777,$groupanalysispath);
-
-//				MakePath("$groupanalysispath/pipeline");
-//				chmod(0777,"$groupanalysispath/pipeline");
-
-//				// check if the groupanalysis has an entry in the analysis_group table
-//				my $sqlstring = "select * from analysis where pipeline_id = $pid and pipeline_version = p.version";
-//				my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//				if ($result->numrows < 1) {
-//					// insert a temporary row, to be updated later, in the analysis_group table as a placeholder
-//					// so that no other processes end up running it
-//					$sqlstring = "insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, analysis_status, analysis_startdate) values ($pid,$pipelineversion,$pipelinedep,'processing',now())";
-//					my $result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//					$analysisRowID = $result->insertid;
-//				}
-//				else {
-//					my %row = $result->fetchhash;
-//					$analysisRowID = $row{'analysis_id'};
-//				}
-
-//				// loop through the groups
-//				if ($pipelinegroupids == "") {
-//					continue;
-//				}
-//				$sqlstring = "select * from groups where group_id in ($pipelinegroupids)";
-//				$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//				if ($result->numrows > 0) {
-//					while (my %row = $result->fetchhash) {
-//						my $groupname = $row{'group_name'};
-//						my $groupid = $row{'group_id'};
-//						// get a list of studies in the group that have the dependency
-//						my $sqlstringA = "select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id in (select study_id from analysis where pipeline_id in ($pipelinedependency) and analysis_status = 'complete' and analysis_isbad <> 1) and (a.study_datetime < date_sub(now(), interval $pipelinesubmitdelay hour)) and b.group_id in ($groupid) order by a.study_datetime desc";
-//						my $resultA = SQLQuery($sqlstringA, __FILE__, __LINE__);
-//						WriteLog($sqlstringA);
-//						my @studyids = ();
-//						if ($resultA->numrows > 0) {
-//							while (my %rowA = $resultA->fetchhash) {
-//								push(@studyids,$rowA{'study_id'});
-//								//WriteLog("Found study " . $rowA{'study_id'});
-//							}
-//						}
-//						else {
-//							WriteLog("No studies found [$sqlstringA]");
-//							SetPipelineStatusMessage(pipelineid, "No studies found (Maybe 1st/2nd level group mismatch?)");
-//							SetPipelineStopped(pipelineid);
-//							continue;
-//						}
-
-//						foreach my sid(@studyids) {
-//							// get information about the study
-//							my $sqlstringB = "select *, date_format(study_datetime,'%Y%m%d_%H%i%s') 'studydatetime' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $sid";
-//							//WriteLog($sqlstringB);
-//							my $resultB = SQLQuery($sqlstringB, __FILE__, __LINE__);
-//							my %rowB = $resultB->fetchhash;
-//							my $uid = $rowB{'uid'};
-//							my $studynum = $rowB{'study_num'};
-//							my $studydatetime = $rowB{'studydatetime'};
-//							my $numseries = 0;
-//							my $datalog;
-//							if (defined($uid)) {
-//								//WriteLog("StudyDateTime: $studydatetime");
-//								//print "StudyDateTime: $studydatetime\n";
-
-//								if ($pipelinedirectory == "") {
-//									$pipelinedirectory = $analysisdir;
-//								}
-
-//								WriteLog("StudyDateTime [$studydatetime]. This is a level [$pipelinelevel] pipeline. dependencylevel [$dependencylevel] deplinktype [$deplinktype] groupbysubject [$pipelinegroupbysubject]");
-//								my $studydir;
-//								if ($pipelinegroupbysubject) {
-//									$studydir = "$uid/$studydatetime";
-//									MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname/$uid");
-//								}
-//								else {
-//									$studydir = "$uid$studynum";
-//									MakePath("$pipelinedirectory/$pipelinename/$groupname/$dependencyname");
-//								}
-
-//								// create hard link in the analysis directory
-//								my $systemstring;
-//								if ($dependencylevel == 1) {
-//									switch ($deplinktype) {
-//									    case "hardlink" { $systemstring = "cp -auL $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									    case "softlink" { $systemstring = "cp -aus $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									    case "regularcopy" { $systemstring = "cp -au $analysisdir/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									}
-//									}
-//									else {
-//									switch ($deplinktype) {
-//									    case "hardlink" { $systemstring = "cp -aul $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									    case "softlink" { $systemstring = "cp -aus $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									    case "regularcopy" { $systemstring = "cp -au $cfg{'groupanalysisdir'}/$uid/$studynum/$dependencyname $pipelinedirectory/$pipelinename/$groupname/$dependencyname/$studydir"; }
-//									}
-//									}
-//									//WriteLog("Running copy command [$systemstring]");
-
-//									my $cpresults = `$systemstring 2>&1`;
-//									if (($cpresults =~ /cannot stat/) || ($cpresults =~ /No such file or/) || ($cpresults =~ /error/)) {
-//									WriteLog($cpresults);
-//									}
-//									WriteLog("pwd: [" . getcwd . "], [$systemstring] :" . $cpresults);
-//									}
-//									}
-//									}
-//									}
-//									}
-
-//			$sqlstring = "select date_format(now(),'%Y%m%d_%H%i%s') 'studydatetime'";
-//			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-//			%row = $result->fetchhash;
-//			my $studydatetime = $row{'studydatetime'};
-
-//			// create the SGE job file
-//			my $sgebatchfile = CreateClusterJobFile($clustertype, $analysisRowID, 1, "GROUPLEVEL", 0, $groupanalysispath, $usetmpdir, $tmpdir, $pipelineuseprofile, $studydatetime, $pipelinename, pipelineid, $pipelineremovedata, $pipelineresultscript, $pipelinemaxwalltime, 0, steps);
-
-//			`chmod -Rf 777 $groupanalysispath`;
-//			WriteLog($sgebatchfile);
-
-//			// submit the SGE job
-//			open SGEFILE, "> $pipelinedirectory/$pipelinename/pipeline/sge.job";
-//			print SGEFILE $sgebatchfile;
-//			close SGEFILE;
-//			chmod(0777,$sgebatchfile);
-//			chmod(0777,"$pipelinedirectory/$pipelinename");
-
-//			// submit the sucker to the cluster
-//			my $systemstring = "ssh $pipelinesubmithost qsub -u onrc -q $pipelinequeue \"$realpipelinedirectory/$pipelinename/pipeline/sge.job\"";
-//			//print "SGE submit string [$systemstring]\n";
-//			WriteLog("SGE submit string [$systemstring]");
-//			my $sgeresult = trim(`$systemstring 2>&1`);
-//			//print "SGE submit result [$sgeresult]\n";
-//			WriteLog("SGE submit result [$sgeresult]");
-//			my @parts = split(' ', $sgeresult);
-//			my $jobid = $parts[2];
-//			WriteLog(join('|',@parts));
-//			WriteLog("[$systemstring]: " . $sgeresult);
-
-//			if ($sgeresult =~ /error/) {
-//									$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'error', analysis_statusmessage = 'Error submitting to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
-//									}
-//			else {
-//									$sqlstring = "update analysis set analysis_qsubid = '$jobid', analysis_status = 'submitted', analysis_statusmessage = 'Submitted to $pipelinequeue', analysis_enddate = now() where analysis_id = $analysisRowID";
-//									}
-//			jobsWereSubmitted = true;
-//			$result = SQLQuery($sqlstring, __FILE__, __LINE__);
-
-//			// check if this module should be running now or not
-//			if (!ModuleCheckIfActive($scriptname, $db)) {
-//									WriteLog("Not supposed to be running right now");
-//									// update the stop time
-//									ModuleDBCheckOut($scriptname, $db);
-//									return 0;
-//									}
-
-//			// a second level pipeline should run once, so disable it after submitting
-//			SetPipelineDisabled(pipelineid);
+			n->WriteLog("Level 2 (group) pipelines are not yet implemented in the compiled version of NiDB");
 		}
 		else {
 			n->WriteLog("Pipeline level invalid");
 		}
 
-		n->WriteLog("Done with pipeline [$pid] - [$pipelinename]");
+		n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(pipelineid).arg(p.name));
 		n->WriteLog("Done");
 		SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
 		SetPipelineStopped(pipelineid);
@@ -900,10 +675,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	n->WriteLog("Inside GetData()");
 
 	numdownloaded = 0;
-	datalog = "";
 	QStringList dlog;
-	datatable = "Empty data table";
 	QStringList dtable;
+	datalog = "";
+	datatable = "";
 
 	/* get pipeline information, for data copying preferences */
 	pipeline p(pipelineid, n);
@@ -911,6 +686,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		n->WriteLog("Pipeline was not valid: [" + p.msg + "]");
 		return false;
 	}
+	QString submithost;
+	QString clusteruser;
+	if (p.submitHost == "") submithost = n->cfg["clustersubmithost"];
+	else submithost = p.submitHost;
+	if (p.clusterUser == "") clusteruser = n->cfg["clusteruser"];
+	else clusteruser = n->cfg["pipeline_clusteruser"];
 
 	/* get information about the study */
 	study s(studyid, n);
@@ -918,26 +699,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		n->WriteLog("Study was not valid: [" + s.msg + "]");
 		return false;
 	}
-
-	QString submithost;
-	if (p.submitHost == "")
-		submithost = n->cfg["clustersubmithost"];
-	else
-		submithost = p.submitHost;
-
-	QString clusteruser;
-	if (p.clusterUser == "")
-		clusteruser = n->cfg["clusteruser"];
-	else
-		clusteruser = n->cfg["pipeline_clusteruser"];
-
-	//InsertAnalysisEvent($analysisid, $pid, $pipelineversion, $studyid, 'analysiscopydata', 'Checking for data');
-
-	// get list of series for this study
 	QString modality = s.modality;
 	int studynum = s.studynum;
-	dlog << QString("===== Working on [%1%2] studyid [%3] =====").arg(uid).arg(studynum).arg(studyid);
 
+	dlog << QString("===== Working on [%1%2] studyid [%3] =====").arg(uid).arg(studynum).arg(studyid);
 	dlog << n->WriteLog("Study modality is ["+modality+"]");
 	dlog << "-----------------------------------------------";
 	dlog << "---------- Checking data steps ----------------";
@@ -1026,12 +791,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString studytype = s.studytype;
 		QString studydate = s.studydatetime.toString("yyyy-MM-dd hh:mm:ss");
 		if (level == "subject") {
-			dlog << "This data step is subject level [$protocol], association type [$assoctype]";
+			dlog << "This data step is subject level [" + protocol + "], association type [" + assoctype + "]";
 
 			QString sqlstring;
 			if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
 				/* find the data from the same subject and modality that has the nearest (in time) matching scan */
-				n->WriteLog("Searching for subject-level data nearest in time...");
+				dlog << n->WriteLog("Searching for subject-level data nearest in time...");
+				dtable << QString("Pre-checking step [%1] Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan").arg(i);
 
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
@@ -1040,9 +806,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				sqlstring += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(studydate);
 
-				dlog << "Searching for subject-level data nearest in time ["+sqlstring+"]";
-
-				dtable << QString("Pre-checking step [%1] Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan").arg(i);
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", subjectid);
 			}
@@ -1091,7 +854,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		/* otherwise, check the study for the protocol(s) */
 		else {
 			QString sqlstring;
-			dlog << "Checking the study [$studyid] for the protocol ($protocols)";
+			dlog << QString("Checking the study [%1] for the protocol (%2)").arg(studyid).arg(protocols);
 			/* get a list of series satisfying the search criteria, if it exists */
 			if (validComparisonStr) {
 				sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
@@ -1197,9 +960,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		else
 			imagetypes = "'" + imagetype + "'";
 
-
-		n->WriteLog("Working on step [$i] id [$id]");
-
 		/* SQL comparison string */
 		QString comparison;
 		int num(0);
@@ -1209,13 +969,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		else
 			validComparisonStr = true;
 
-		dlog << "Copying data for step [$i] id [$id]";
-		dlog << "bold reps comparison [$comparison] [$num]";
+		dlog << QString("Copying data for step [%1]").arg(i);
+		dlog << QString("bold reps comparison [%1] [%2]").arg(comparison).arg(num);
 
 		/* check to see if we should even run this step */
 		if (!enabled) {
-			n->WriteLog("Data step [$i] not enabled");
-			dlog << "This data item [" + protocol + "] is not enabled";
+			dlog << n->WriteLog("This data item [" + protocol + "] is not enabled");
 			continue;
 		}
 
@@ -1287,7 +1046,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					neareststudynum = q2.value("study_num").toInt();
 				}
 				else {
-					n->WriteLog("Could not find a matching row: [$sqlstring]");
 					// this data item is probably optional, so go to the next item
 					continue;
 				}
@@ -1295,7 +1053,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				dlog << n->WriteLog("Still within the subject-level data search:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetypes + "]");
 
 				/* base SQL string */
-				sqlstring = QString("select * from %1_series where study_id = $otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
+				sqlstring = QString("select * from %1_series where study_id = :otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 				if (imagetypes != "''")
 					sqlstring += " and image_type in (" + imagetypes + ")";
 
@@ -1315,6 +1073,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", s.subjectid);
+				q2.bindValue(":otherstudyid", otherstudyid);
 			}
 			else if (assoctype == "all") {
 				dlog << n->WriteLog("Searching for all subject-level data...");
@@ -1364,7 +1123,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			while (q.next()) {
 				numdownloaded++;
 				int localstudynum;
-				n->WriteLog("NumDownloaded: $numdownloaded");
+				n->WriteLog(QString("NumDownloaded [%1]").arg(numdownloaded));
 				//int seriesid = q.value(modality+"series_id").toInt();
 				int seriesnum = q.value("series_num").toInt();
 				QString seriesdesc = q.value("series_desc").toString();
@@ -1396,8 +1155,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					else
 						localstudynum = neareststudynum;
 				}
-				n->WriteLog("Processing $seriesdesc [$seriessize bytes] [$numfiles files]");
-				dlog << "Working on seriesdesc [$seriesdesc] seriesnum [$seriesnum] seriesdatetime [$seriesdatetime]...";
+
+				dlog << n->WriteLog(QString("Working on seriesdesc [%1] seriesnum [%2] seriesdatetime [%3]...").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime));
+
 				QString behoutdir;
 				QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
 				QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
@@ -1422,11 +1182,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
 				}
 
-				dlog << "behformat [$behformat] behoutdir [$behoutdir]";
+				dlog << n->WriteLog("behformat [" + behformat + "] behoutdir [" + behoutdir + "]");
 				if (usephasedir) {
-					QString phasedir = "unknownPE";
+					dlog << "PhasePlane [" + phaseplane + "] PhasePositive [" + phasepositive + "]";
 
-					dlog << "PhasePlane [$phaseplane] PhasePositive [$phasepositive]";
+					QString phasedir = "unknownPE";
 					if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
 					if ((phaseplane == "COL") && (phasepositive == 0)) phasedir = "PA";
 					if ((phaseplane == "COL") && (phasepositive == -1)) phasedir = "COL";
@@ -1437,10 +1197,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					newanalysispath += "/" + phasedir;
 				}
 
-				dlog << "Creating directory [$newanalysispath]";
 				QString m;
 				if (!n->MakePath(newanalysispath, m))
-					n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "]");
+					dlog << n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "]");
+				else
+					dlog << "Creating directory [$newanalysispath]";
 
 				n->SystemCommand("chmod -Rf 777 " + newanalysispath);
 
@@ -1457,11 +1218,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 					QString m;
 					if (!n->MakePath(tmpdir, m))
-						n->WriteLog("Error creating directory [" + tmpdir + "] message [" + m + "]");
-
-					dlog << "Created temp directory [$tmpdir]";
-					dlog << "Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)";
-					//n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, localstudynum, seriesnum, datatype);
+						dlog << n->WriteLog("Error creating directory [" + tmpdir + "] message [" + m + "]");
+					else
+						dlog << n->WriteLog("Created temp directory [" + tmpdir + "]");
 					int numfilesconv(0);
 					int numfilesrenamed(0);
 					n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, QString(localstudynum), QString(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
@@ -1862,9 +1621,9 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
 /* ---------------------------------------------------------- */
 QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, int analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description) {
 
-	        command.replace("{NOLOG}",""); // remove any {NOLOG} commands
-		command.replace("{NOCHECKIN}",""); // remove any {NOCHECKIN} commands
-		command.replace("x0D",""); // remove any ^M characters
+	    command.replace("{NOLOG}",""); /* remove any {NOLOG} commands */
+		command.replace("{NOCHECKIN}",""); /* remove any {NOCHECKIN} commands */
+		command.replace(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{007F}]")),""); /* remove any non-printable ASCII control characters */
 		command.replace("{analysisrootdir}", analysispath, Qt::CaseInsensitive);
 		command.replace("{analysisid}", QString("%1").arg(analysisid), Qt::CaseInsensitive);
 		command.replace("{subjectuid}", uid, Qt::CaseInsensitive);
@@ -1875,12 +1634,9 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 		command.replace("{workingdir}", workingdir, Qt::CaseInsensitive);
 		command.replace("{description}", description, Qt::CaseInsensitive);
 
-		// expand {groups}
+		/* expand {groups} */
 		QStringList groups = GetGroupList(pipelineid);
-		//#WriteLog("@groups");
 		QString grouplist = groups.join(" ");
-		//#WriteLog("Group list: $grouplist");
-		//#WriteLog("Replacing '{groups}' with '$grouplist'");
 		command.replace("{groups}", grouplist, Qt::CaseInsensitive);
 
 		QStringList alluidstudynums;
@@ -1890,64 +1646,31 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 			QStringList uidStudyNums = GetUIDStudyNumListByGroup(group);
 			alluidstudynums.append(uidStudyNums);
 			QString uidlist = uidStudyNums.join(" ");
-			//numuids = $#uidStudyNums+1;
-			//#WriteLog("Replacing '{uidstudynums_$group}' with '$uidlist'");
 			command.replace("{uidstudynums_"+group+"}", uidlist, Qt::CaseInsensitive);
-			//#WriteLog("Replacing '{numsubjects_$group}' with '$numuids'");
 			command.replace("{numsubjects_"+group+"}", QString("%1").arg(uidStudyNums.size()), Qt::CaseInsensitive);
 		}
 		QString alluidlist = alluidstudynums.join(" ");
-		//my $numsubjects = $#alluidstudynums+1;
-		//#WriteLog("Replacing '{uidstudynums}' with '$alluidlist'");
 		command.replace("{uidstudynums}", alluidlist, Qt::CaseInsensitive);
-		//#WriteLog("Replacing '{numsubjects}' with '$numsubjects'");
 		command.replace("{numsubjects}", QString("%1").arg(alluidstudynums.size()), Qt::CaseInsensitive);
 
 		/* not really sure of the utility of these commands... doing this from bash may be more straightforward */
-		//#WriteLog("Command (check0): [$command]");
 		QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
 		if (command.contains(regex)) {
-			//#WriteLog("Command (check1): [$command]");
 			QRegularExpressionMatch match = regex.match(command);
 			QString file = match.captured(0);
 			QString ext = match.captured(1);
 			QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
-			//WriteLog("Searchpath: [$searchpath]");
 			QStringList files = n->FindAllFiles(clusteranalysispath, searchpattern);
 			QString replacement = files[0];
 			replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
 			command.replace(regex, replacement);
 		}
-		//if ($command =~ m/\s+(\S*)\{first_(\d+)_(.*)_files\}/) {
-		//	//#WriteLog("Command (check2): [$command]");
-		//	my $path = $1;
-		//	my $numfiles = $2;
-		//	my $ext = $3;
-		//	my $searchpath = "$realanalysispath/$path*.$ext";
-		//	my @files = glob $searchpath;
-		//	my $replacement = "";
-		//	foreach my $j (0..$numfiles - 1) {
-		//		$replacement .= " ".$files[$j];
-		//	}
-		//	$command = s/\s+(\S*)\{first_(\d+)_(.*)_file\}/ $replacement/g;
-		//}
-		//if ($command =~ m/ (.*)\{last_(.*)_file\}/) {
-		    //#WriteLog("Command (check3): [$command]");
-		//	my $path = $1;
-		//	my $ext = $2;
-		//	my $searchpath = "$realanalysispath/$path*.$ext";
-		//	my @files = glob $searchpath;
-		//	my $replacement = $files[-1];
-		//	$command = s/\s+(\S*)\{last_(.*)_file\}/ $replacement/g;
-		//}
-		//#WriteLog("Command (check4): [$command]");
+		/* {first_n_ext_files} {last_ext_file} are not implemented in the compiled NiDB */
 		command.replace("{command}", command, Qt::CaseInsensitive);
-		//#WriteLog("Command (check5): [$command]");
 
-		// remove semi-colon from the end of the line in case its there (it will prevent logging)
+		/* if there is a semi-colon at the end of the line, remove it (it will prevent logging) */
 		if (command.right(1) == ";")
 			command.chop(1);
-		//#WriteLog("Command (check6): [$command]");
 
 		return command;
 }
