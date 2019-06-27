@@ -76,13 +76,11 @@ int modulePipeline::Run() {
 		return false;
 	}
 
-	// create a list of pipelines to be run
-	//int i = 0;
+	/* get the list of pipelines to be run */
 	while (q.next()) {
 		int pipelineid = q.value("pipeline_id").toInt();
 		n->ModuleRunningCheckIn();
 
-		//my %row = %{$pipelinerows[$i]};
 		pipeline p(pipelineid, n);
 		if (!p.isValid) {
 			n->WriteLog("Pipeline was not valid: [" + p.msg + "]");
@@ -99,7 +97,7 @@ int modulePipeline::Run() {
 
 		SetPipelineProcessStatus("running",pipelineid,0);
 
-		// mark the pipeline as having been checked
+		/* mark the pipeline as having been checked */
 		QSqlQuery q2;
 		q2.prepare("update pipelines set pipeline_lastcheck = now() where pipeline_id = :pid");
 		q2.bindValue(":pid", pipelineid);
@@ -112,9 +110,8 @@ int modulePipeline::Run() {
 			continue;
 		}
 		int analysisRowID(0);
-		//int analysisGroupRowID(0);
 
-		// check if the pipeline is running, if so, go on to the next one
+		/* check if the pipeline is running, if so, go on to the next one */
 		QString status;
 		q2.prepare("select pipeline_status from pipelines where pipeline_id = :pid");
 		q2.bindValue(":pid", pipelineid);
@@ -129,7 +126,7 @@ int modulePipeline::Run() {
 			continue;
 		}
 
-		// update the pipeline start time
+		/* update the pipeline status */
 		SetPipelineStatusMessage(pipelineid, "Submitting jobs");
 		SetPipelineRunning(pipelineid);
 
@@ -140,7 +137,7 @@ int modulePipeline::Run() {
 			if ((p.level == 1) || ((p.level == 2) && (p.parentDependencyIDs.size() < 1))) {
 				dataSteps = GetPipelineDataDef(pipelineid, p.version);
 
-				// if there is no data definition and no dependency
+				/* if there is no data definition and no dependency */
 				if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
 					n->WriteLog(QString("Pipeline [%1 - %2] has no data definition. Skipping.").arg(p.name).arg(pipelineid));
 
@@ -157,13 +154,12 @@ int modulePipeline::Run() {
 		if (steps.size() < 1) {
 			n->WriteLog(QString("Pipeline [%1 - %2] has no steps. Skipping.").arg(p.name).arg(pipelineid));
 
-			// update the statuses and stop the modules
+			/* update the statuses and stop the modules */
 			SetPipelineStatusMessage(pipelineid, "Pipeline has no steps. Skipping");
 			SetPipelineStopped(pipelineid);
 			continue;
 		}
 
-		// determine which analysis level this is
 		/* ------------------------------ level 0 ----------------------------- */
 		if (p.level == 0) {
 			/* check if this module should be running now or not */
@@ -173,8 +169,8 @@ int modulePipeline::Run() {
 				return 0;
 			}
 
-			// only 1 analysis should ever be run with the oneshot level, so if 1 already exists, regardless of state or pipeline version, then
-			// leave this function without running the analysis
+			/* only 1 analysis should ever be run with the oneshot level, so if 1 already exists, regardless of state or pipeline version, then
+			   leave this function without running the analysis */
 			q2.prepare("select * from analysis where pipeline_id = :pid");
 			q2.bindValue(":pid", pipelineid);
 			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -253,16 +249,14 @@ int modulePipeline::Run() {
 			else
 				pipelinedirectory = n->cfg["mountdir"] + pipelinedirectory;
 
-			// if there are multiple dependencies, we'll need to loop through all of them separately
+			/* if there are multiple dependencies, we'll need to loop through all of them separately */
 			for(int i=0; i<p.parentDependencyIDs.size(); i++) {
 
 				int pipelinedep = p.parentDependencyIDs[i];
 
 				QString modality;
 
-				//modality = $datadef[0]{'modality'};
-
-				// get the list of studies which meet the criteria for being processed through the pipeline
+				/* get the list of studies which meet the criteria for being processed through the pipeline */
 				QList<int> studyids = GetStudyToDoList(pipelineid, modality, QString(pipelinedep), n->JoinIntArray(p.groupIDs, ","));
 
 				int numsubmitted(0);
@@ -345,7 +339,6 @@ int modulePipeline::Run() {
 
 						int numseries(0);
 						QString datalog;
-						QString datareport;
 						QString datatable;
 
 						int dependencyanalysisid(0);
@@ -405,7 +398,7 @@ int modulePipeline::Run() {
 						int numseriesdownloaded(0);
 						// get the data if we are not running a supplement, and not rerunning the results
 						if ((!a.runSupplement) && (!a.rerunResults)) {
-							if (!GetData(sid, analysispath, s.uid, analysisRowID, p.version, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog, datareport, datatable)) {
+							if (!GetData(sid, analysispath, s.uid, analysisRowID, p.version, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog, datatable)) {
 								n->WriteLog("GetData() returned false");
 							}
 						}
@@ -558,7 +551,6 @@ int modulePipeline::Run() {
 								sgeshortfilename = "sge.job";
 							}
 
-
 							if (CreateClusterJobFile(sgefilename, p.clusterType, analysisRowID, false, a.uid, a.studynum, localanalysispath, p.useTmpDir, p.tmpDir, a.studyDateTime, p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false, p.useProfile, p.removeData)) {
 								n->WriteLog("Created sge job submit file ["+sgefilename+"]");
 							}
@@ -618,9 +610,8 @@ int modulePipeline::Run() {
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetuperror", "No data found, 0 series returned from search");
 						}
 						n->AppendCustomLog(setupLogFile, n->WriteLog("Submitted $numsubmitted jobs so far"));
-						//print "Submitted $numsubmitted jobs so far\n";
 
-						// mark the study in the analysis table
+						/* mark the study in the analysis table */
 						if ((numseries > 0) || ((pipelinedep != 0) && (p.depLevel == "study")) || (a.runSupplement) || (a.rerunResults)) {
 							QString sqlstring;
 							if (a.rerunResults || a.runSupplement) {
@@ -891,11 +882,6 @@ int modulePipeline::Run() {
 		n->WriteLog("Done");
 		SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
 		SetPipelineStopped(pipelineid);
-
-		//if (jobsWereSubmitted) {
-		//	SetPipelineProcessStatus("complete",0,0);
-		//	return 1;
-		//}
 	}
 
 	SetPipelineProcessStatus("complete",0,0);
@@ -910,15 +896,14 @@ int modulePipeline::Run() {
 /* ---------------------------------------------------------- */
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineversion, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog, QString &datareport, QString &datatable) {
+bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineversion, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog, QString &datatable) {
 	n->WriteLog("Inside GetData()");
 
-	bool ret(false);
 	numdownloaded = 0;
 	datalog = "";
 	QStringList dlog;
-	datareport = "";
 	datatable = "Empty data table";
+	QStringList dtable;
 
 	/* get pipeline information, for data copying preferences */
 	pipeline p(pipelineid, n);
@@ -958,21 +943,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	dlog << "---------- Checking data steps ----------------";
 	dlog << "-----------------------------------------------";
 
-	//my $datarows;
-	//$datarows->[0]->[0] = 'step';
-	//$datarows->[0]->[1] = 'enabled';
-	//$datarows->[0]->[2] = 'optional';
-	//$datarows->[0]->[3] = 'protocol';
-	//$datarows->[0]->[4] = 'modality';
-	//$datarows->[0]->[5] = 'imagetype';
-	//$datarows->[0]->[6] = 'type';
-	//$datarows->[0]->[7] = 'level';
-	//$datarows->[0]->[8] = 'assoctype';
-	//$datarows->[0]->[9] = 'numboldreps';
-	//$datarows->[0]->[10] = 'FOUND';
-	//$datarows->[0]->[11] = 'dir';
-	//$datarows->[0]->[12] = 'explanation';
-
 	// ------------------------------------------------------------------------
 	// check all of the steps to see if this data spec is valid
 	// ------------------------------------------------------------------------
@@ -996,33 +966,21 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		if (modality != "mr")
 			seriesdescfield = "series_protocol";
 
-		dlog += QString("Step [%1], CHECKING:  protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
+		dlog += n->WriteLog(QString("Step [%1], CHECKING:  protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps));
 
-		//$datarows->[$i+1]->[0] = $i;
-		//$datarows->[$i+1]->[1] = $enabled;
-		//$datarows->[$i+1]->[2] = $optional;
-		//$datarows->[$i+1]->[3] = $protocol;
-		//$datarows->[$i+1]->[4] = $modality;
-		//$datarows->[$i+1]->[5] = $imagetype;
-		//$datarows->[$i+1]->[6] = $type;
-		//$datarows->[$i+1]->[7] = $level;
-		//$datarows->[$i+1]->[8] = $assoctype;
-		//$datarows->[$i+1]->[9] = $numboldreps;
-		//$datarows->[$i+1]->[10] = "";
-		//$datarows->[$i+1]->[11] = "";
-		//$datarows->[$i+1]->[12] = "";
+		dtable << QString("Pre-checking step [%1]:  protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
 
 		/* check if the step is enabled */
 		if (!enabled) {
-			//$datarows->[$i+1]->[12] = "This step is not enabled, skipping";
-			dlog << QString("    Data specification step [%1] is NOT enabled. Skipping this download step").arg(i);
+			dtable << QString("Pre-checking step [%1]: step is not enabled. Skipping").arg(i);
+			dlog << QString("Data specification step [%1] is NOT enabled. Skipping this download step").arg(i);
 			continue;
 		}
 
 		/* check if the step is optional */
 		if (optional) {
-			//$datarows->[$i+1]->[12] = "This step is optional, skipping the checks";
-			dlog << QString("    Data step [%1] is OPTIONAL. Ignoring the checks").arg(i);
+			dtable << QString("Pre-checking step [%1]: step is optional. Skipping").arg(i);
+			dlog << QString("Data step [%1] is OPTIONAL. Ignoring the checks").arg(i);
 			continue;
 		}
 
@@ -1030,8 +988,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
-			dlog << "    ERROR: modality ["+modality+"] not found";
-			//$datarows->[$i+1]->[10] = "no";
+			dtable << QString("Step [%1] Modality [%2] is not valid").arg(i).arg(modality);
+			dlog << "ERROR: modality [" + modality + "] not found";
 			stepIsInvalid = true;
 			break;
 		}
@@ -1068,12 +1026,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString studytype = s.studytype;
 		QString studydate = s.studydatetime.toString("yyyy-MM-dd hh:mm:ss");
 		if (level == "subject") {
-			datalog += "    This data step is subject level [$protocol], association type [$assoctype]\n";
+			dlog << "This data step is subject level [$protocol], association type [$assoctype]";
 
 			QString sqlstring;
 			if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
 				/* find the data from the same subject and modality that has the nearest (in time) matching scan */
 				n->WriteLog("Searching for subject-level data nearest in time...");
+
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
 				if (imagetypes != "''")
@@ -1081,60 +1040,58 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				sqlstring += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(studydate);
 
-				dlog << "    Searching for subject-level data nearest in time ["+sqlstring+"]";
+				dlog << "Searching for subject-level data nearest in time ["+sqlstring+"]";
 
-				//$datarows->[$i+1]->[12] = "Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan";
+				dtable << QString("Pre-checking step [%1] Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan").arg(i);
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", subjectid);
 			}
 			else if (assoctype == "all") {
-				n->WriteLog("Searching for all subject-level data...");
+				dlog << n->WriteLog("Searching for all subject-level data...");
+				dtable << QString("Pre-checking step [%1]: Searching for ALL data from the same SUBJECT and modality").arg(i);
+
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
 				if (imagetypes != "''")
 					sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
-				dlog << "    Searching for all subject-level data ["+sqlstring+"]";
-
-				//$datarows->[$i+1]->[12] = "Searching for ALL data from the same SUBJECT and modality";
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", subjectid);
 			}
 			else {
 				/* find the data from the same subject and modality that has the same study_type */
-				n->WriteLog("Searching for subject-level data with same study type...");
+				dlog << n->WriteLog("Searching for subject-level data with same study type...");
+				dtable << QString("Pre-checking step [%1]: Searching for data from the same SUBJECT, Modality, and StudyType").arg(i);
+
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
 				if (imagetypes != "''")
 					sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
 				sqlstring += " and `studies`.study_type = :studytype";
-				dlog << "    Searching for subject-level data with same study type ["+sqlstring+"]";
 
-				//$datarows->[$i+1]->[12] = "Searching for data from the same SUBJECT and modality, with the same study type (visit)";
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", subjectid);
 				q.bindValue(":studytype", studytype);
 			}
 
-			n->WriteLog(sqlstring);
-			//int newseriesnum = 1;
+			dlog << n->WriteLog(sqlstring);
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 			if (q.size() > 0) {
 				dlog << QString("    Found [%1] matching subject-level series").arg(q.size());
-				//$datarows->[$i+1]->[10] = "yes (".$resultC->numrows.")";
+				dtable << QString("Pre-checking step [%1]: data FOUND for this step").arg(i);
 			}
 			else {
-				dlog << "    Found 0 rows matching the subject-level required protocol(s)";
+				dlog << "Found 0 rows matching the subject-level required protocol(s)";
 				stepIsInvalid = true;
-				//$datarows->[$i+1]->[10] = "no";
+				dtable << QString("Pre-checking step [%1]: data NOT found for this step").arg(i);
 				break;
 			}
 		}
 		/* otherwise, check the study for the protocol(s) */
 		else {
 			QString sqlstring;
-			datalog += "    Checking the study [$studyid] for the protocol ($protocols)\n";
+			dlog << "Checking the study [$studyid] for the protocol ($protocols)";
 			/* get a list of series satisfying the search criteria, if it exists */
 			if (validComparisonStr) {
 				sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
@@ -1152,7 +1109,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				sqlstring += QString(" and numfiles %1 %2").arg(comparison).arg(num);
 			}
 			n->WriteLog(sqlstring);
-			dlog << "    Checking if study contains data [" + sqlstring + "]";
+			dlog << "Checking if study contains data [" + sqlstring + "]";
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 			if (q.size() > 0) {
 				dlog << QString("    This study contained step [%1]").arg(i);
@@ -1168,11 +1125,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 	/* if it's a subject level dependency, but there is no data found, we don't want to copy any dependencies */
 	if ((stepIsInvalid) && (deplevel == "subject")) {
-		//my $datatable = generate_table(rows => $datarows, header_row => 1);
-
-		// bail out of this function, the data spec didn't work out for this subject
 		datalog = dlog.join("\n");
-		return false; //(0,$datalog, $datareport, $datatable);
+		datatable = dtable.join("\n");
+		return false;
 	}
 
 	/* if there is a dependency, don't worry about the previous checks */
@@ -1180,13 +1135,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		stepIsInvalid = false;
 	}
 
-	// check for any bad data items
+	/* any bad data items, then the data spec didn't work out for this subject */
 	if (stepIsInvalid) {
-		//my $datatable = generate_table(rows => $datarows, header_row => 1);
-
-		// bail out of this function, the data spec didn't work out for this subject
 		datalog = dlog.join("\n");
-		return false; //(0,$datalog, $datareport, $datatable);
+		datatable = dtable.join("\n");
+		return false;
 	}
 
 
@@ -1195,18 +1148,16 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	// so we can assume all of the data exists, and start copying it
 	// -------------------------------------------------------------------------
 
-	n->WriteLog("Modality: $modality");
-
 	n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydata", "Started copying data to [<tt>" + analysispath + "</tt>]");
 
-	datalog += "\n\n------------------------------------------------------------------------------\n";
-	datalog += "---------- Required data for this study exists, beginning data copy ----------\n";
-	datalog += "------------------------------------------------------------------------------\n";
+	dlog << "------------------------------------------------------------------------------";
+	dlog << "---------- Required data for this study exists, beginning data copy ----------";
+	dlog << "------------------------------------------------------------------------------";
 	/* go through list of data search criteria again to do the actual copying */
 	for (int i = 0; i < datadef.size(); i++) {
 
-		int id = datadef[i].id;
-		int order = datadef[i].order;
+		//int id = datadef[i].id;
+		//int order = datadef[i].order;
 		QString criteria = datadef[i].criteria;
 		QString type = datadef[i].type;
 		QString assoctype = datadef[i].assoctype;
@@ -1223,7 +1174,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString behdir = datadef[i].behdir;
 		bool enabled = datadef[i].enabled;
 		QString level = datadef[i].level;
-		bool optional = datadef[i].optional;
+		//bool optional = datadef[i].optional;
 		QString numboldreps = datadef[i].numboldreps;
 
 		QSqlQuery q;
@@ -1258,21 +1209,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		else
 			validComparisonStr = true;
 
-		datalog += "Copying data for step [$i] id [$id]\n";
-		//datalog += "    bold reps comparison [$comparison] [$num]\n";
+		dlog << "Copying data for step [$i] id [$id]";
+		dlog << "bold reps comparison [$comparison] [$num]";
 
 		/* check to see if we should even run this step */
 		if (!enabled) {
 			n->WriteLog("Data step [$i] not enabled");
-			dlog << "    This data item [" + protocol + "] is not enabled";
+			dlog << "This data item [" + protocol + "] is not enabled";
 			continue;
 		}
 
 
-		//WriteLog("---------- Checking for $protocol for $modality ----------");
-		//datalog += "---------- Checking for protocol [$protocol] modality [$modality] imagetype [$imagetype] ----------\n";
-		int neareststudynum(-1); // = "";
-		//$modality = lc($modality);
+		int neareststudynum(-1);
+
 		/* use the correct SQL schema column name for the series_desc... */
 		QString seriesdescfield = "series_desc";
 		if (modality != "mr")
@@ -1289,10 +1238,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString sqlstring;
 		/* get a list of series satisfying the search criteria, if it exists */
 		if (level == "study") {
-			//WriteLog("BOLD reps comparison [$comparison] [$num] inside StudyLevel");
-			//datalog += "    BOLD reps check: comparison [$comparison] num [$num] inside StudyLevel\n";
-
-			datalog += "    This data step is study-level\n        protocols [$protocols]\n        criteria [$criteria]\n        imagetype [$imagetype]\n";
+			dlog << n->WriteLog("This data step is STUDY-level:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]");
 
 			sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
 			if (imagetypes != "''")
@@ -1313,16 +1259,15 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 			q.prepare(sqlstring);
 			q.bindValue(":studyid", studyid);
-			dlog << "    ... at the end of the study level section, SQL [$sqlstring]\n";
 		}
 		else {
-			datalog += "    This data step is subject-level\n        protocols[$protocols]\n        association type [$assoctype]\n        imagetype [$imagetypes]\n";
+			dlog << n->WriteLog("This data step is SUBJECT-level:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]");
 
 			if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
-				// find the data from the same subject and modality that has the nearest (in time) matching scan
-				n->WriteLog("Searching for subject-level data nearest in time...");
-				datalog += "    Searching for subject-level data nearest in time\nSearching for nearest study first...";
-				// get the otherstudyid
+				/* find the data from the same subject and modality that has the nearest (in time) matching scan */
+				dlog << n->WriteLog("Searching for subject-level data nearest in time...");
+
+				/* get the otherstudyid */
 				QSqlQuery q2;
 				QString sqlstringA;
 				sqlstringA = QString("SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(modality).arg(seriesdescfield).arg(protocols);
@@ -1347,9 +1292,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					continue;
 				}
 
-				datalog += "    Still within the subject-level data search\n        protocols [$protocols]\n        criteria [$criteria]\n        imagetype [$imagetypes]\n";
+				dlog << n->WriteLog("Still within the subject-level data search:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetypes + "]");
 
-				// base SQL string
+				/* base SQL string */
 				sqlstring = QString("select * from %1_series where study_id = $otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 				if (imagetypes != "''")
 					sqlstring += " and image_type in (" + imagetypes + ")";
@@ -1370,12 +1315,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", s.subjectid);
-
-				datalog += "    ... now searching for the data IN the nearest study\n";
-
 			}
 			else if (assoctype == "all") {
-				n->WriteLog("Searching for all subject-level data...");
+				dlog << n->WriteLog("Searching for all subject-level data...");
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
 				if (imagetypes != "''")
@@ -1386,12 +1328,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", s.subjectid);
-
-				datalog += "    Searching for all subject-level data [$sqlstring]\n";
 			}
 			else {
-				// find the data from the same subject and modality that has the same study_type
-				n->WriteLog("Searching for subject-level data with same study type...");
+				/* find the data from the same subject and modality that has the same study_type */
+				dlog << n->WriteLog("Searching for subject-level data with same study type...");
+
 				sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
 				if (imagetypes != "''")
@@ -1405,24 +1346,18 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", s.subjectid);
 				q.bindValue(":studytype", s.studytype);
-
-				datalog += "    Searching for subject-level data with same study type [$sqlstring]\n";
 			}
 		}
-		n->WriteLog(sqlstring);
-		datalog += "    Resulting SQL string [$sqlstring]\n";
+		dlog << n->WriteLog("Resulting SQL string [" + sqlstring + "]");
 		int newseriesnum = 1;
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() > 0) {
 
-			//$datarows->[$i+1]->[10] = "yes";
-
 			dlog << n->WriteLog(QString("Found [%1] matching subject-level series").arg(q.size()));
-			//datalog += "    type [$type] data found [" . $resultC->numrows . "] rows, creating [$analysispath]\n";
-			// in theory, data for this analysis exists for this study, so lets now create the analysis directory
+			/* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
 			QString m;
 			if (!n->MakePath(analysispath, m)) {
-				n->WriteLog("Error: unable to create directory ["+analysispath+"]");
+				dlog << n->WriteLog("Error: unable to create directory [" + analysispath + "]");
 				continue;
 			}
 
@@ -1430,20 +1365,20 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				numdownloaded++;
 				int localstudynum;
 				n->WriteLog("NumDownloaded: $numdownloaded");
-				int seriesid = q.value(modality+"series_id").toInt();
+				//int seriesid = q.value(modality+"series_id").toInt();
 				int seriesnum = q.value("series_num").toInt();
 				QString seriesdesc = q.value("series_desc").toString();
 				QString seriesdatetime = q.value("series_datetime").toString();
 				QString datatype = q.value("data_type").toString();
-				qint64 seriessize = q.value("series_size").toLongLong();
-				int numfiles = q.value("numfiles").toInt();
+				//qint64 seriessize = q.value("series_size").toLongLong();
+				//int numfiles = q.value("numfiles").toInt();
 				QString phaseplane = q.value("phaseencodedir").toString();
-				double phaseangle = q.value("phaseencodeangle").toDouble();
+				//double phaseangle = q.value("phaseencodeangle").toDouble();
 				int phasepositive;
 				if (q.value("PhaseEncodingDirectionPositive").isNull())
 					phasepositive = -1;
 				else
-					q.value("PhaseEncodingDirectionPositive").toInt();
+					phasepositive = q.value("PhaseEncodingDirectionPositive").toInt();
 
 				if (datatype == "")
 					datatype = modality;
@@ -1462,7 +1397,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 						localstudynum = neareststudynum;
 				}
 				n->WriteLog("Processing $seriesdesc [$seriessize bytes] [$numfiles files]");
-				datalog += "    Working on seriesdesc [$seriesdesc] seriesnum [$seriesnum] seriesdatetime [$seriesdatetime]...\n";
+				dlog << "Working on seriesdesc [$seriesdesc] seriesnum [$seriesnum] seriesdatetime [$seriesdatetime]...";
 				QString behoutdir;
 				QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
 				QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
@@ -1472,38 +1407,26 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				/* check if the series numbers are used, and if so, are they preserved */
 				if (useseries) {
-					if (!preserveseries) {
-						// renumber the series
-						newanalysispath += QString("/%1").arg(newseriesnum);
-						behoutdir = GetBehPath(behformat, analysispath, location, behdir, newseriesnum);
-						//if ($behformat == "behroot") { $behoutdir = "$analysispath/$location"; }
-						//if ($behformat == "behrootdir") { $behoutdir = "$analysispath/$location/$behdir"; }
-						//if ($behformat == "behseries") { $behoutdir = "$analysispath/$location/$newseriesnum"; }
-						//if ($behformat == "behseriesdir") { $behoutdir = "$analysispath/$location/$newseriesnum/$behdir"; }
-						newseriesnum++;
-					}
-					else {
+					if (preserveseries) {
 						newanalysispath += QString("/%1").arg(seriesnum);
 						behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
-						//if ($behformat == "behroot") { $behoutdir = "$analysispath/$location"; }
-						//if ($behformat == "behrootdir") { $behoutdir = "$analysispath/$location/$behdir"; }
-						//if ($behformat == "behseries") { $behoutdir = "$analysispath/$location/$seriesnum"; }
-						//if ($behformat == "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
+					}
+					else {
+						/* renumber the series */
+						newanalysispath += QString("/%1").arg(newseriesnum);
+						behoutdir = GetBehPath(behformat, analysispath, location, behdir, newseriesnum);
+						newseriesnum++;
 					}
 				}
 				else {
 					behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
-					//if ($behformat == "behroot") { $behoutdir = "$analysispath/$location"; }
-					//if ($behformat == "behrootdir") { $behoutdir = "$analysispath/$location/$behdir"; }
-					//if ($behformat == "behseries") { $behoutdir = "$analysispath/$location/$seriesnum"; }
-					//if ($behformat == "behseriesdir") { $behoutdir = "$analysispath/$location/$seriesnum/$behdir"; }
 				}
 
-				datalog += "    behformat [$behformat] behoutdir [$behoutdir]\n";
+				dlog << "behformat [$behformat] behoutdir [$behoutdir]";
 				if (usephasedir) {
 					QString phasedir = "unknownPE";
 
-					datalog += "    PhasePlane [$phaseplane] PhasePositive [$phasepositive]\n";
+					dlog << "PhasePlane [$phaseplane] PhasePositive [$phasepositive]";
 					if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
 					if ((phaseplane == "COL") && (phasepositive == 0)) phasedir = "PA";
 					if ((phaseplane == "COL") && (phasepositive == -1)) phasedir = "COL";
@@ -1514,7 +1437,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					newanalysispath += "/" + phasedir;
 				}
 
-				datalog += "    Creating directory [$newanalysispath]\n";
+				dlog << "Creating directory [$newanalysispath]";
 				QString m;
 				if (!n->MakePath(newanalysispath, m))
 					n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "]");
@@ -1536,8 +1459,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					if (!n->MakePath(tmpdir, m))
 						n->WriteLog("Error creating directory [" + tmpdir + "] message [" + m + "]");
 
-					datalog += "    Created temp directory [$tmpdir]\n";
-					datalog += "    Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)\n";
+					dlog << "Created temp directory [$tmpdir]";
+					dlog << "Calling ConvertDicom($dataformat, $indir, $tmpdir, $gzip, $uid, $localstudynum, $seriesnum, $datatype)";
 					//n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, localstudynum, seriesnum, datatype);
 					int numfilesconv(0);
 					int numfilesrenamed(0);
@@ -1552,30 +1475,28 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 					n->WriteLog("Copying data using command (ConvertToNifti) [$systemstring] output [$output]");
 
-					n->WriteLog("Removing temp directory [$tmpdir]");
-					datalog += "    Removing temp directory [$tmpdir]\n";
+					dlog << n->WriteLog("Removing temp directory ["+tmpdir+"]");
 					if (!n->RemoveDir(tmpdir,m))
 						n->WriteLog("Unable to remove directory [" + tmpdir + "] error [" + m + "]");
 				}
 
-				//$datarows->[$i+1]->[11] = $newanalysispath;
+				dtable << QString("Data download step [%1]: data downloaded to [%2]").arg(i).arg(newanalysispath);
 
-				// copy the beh data
+				/* copy the beh data */
 				if (behformat != "behnone") {
-					datalog += "    Copying behavioral data\n";
-					datalog += "        - Creating directory [$behoutdir]\n";
+					dlog << "Copying behavioral data";
+					dlog << "Creating directory [$behoutdir]";
 					QString m;
 					if (!n->MakePath(behoutdir, m))
 						n->WriteLog("Error creating directory [" + behoutdir + "] message [" + m + "]");
-					//mkpath($behoutdir, {mode => 0777});
 					QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
 					dlog << n->WriteLog(n->SystemCommand("chmod -Rf 777 " + behoutdir));
 
 					n->SystemCommand("chmod -Rf 777 " + behoutdir);
-					datalog += "        Done copying behavioral data...\n";
+					dlog << "Done copying behavioral data...";
 				}
 
-				// give full read/write permissions to everyone
+				/* give full read/write permissions to everyone */
 				n->SystemCommand("chmod -Rf 777 " + newanalysispath);
 
 				dlog << n->WriteLog("Done writing data to " + newanalysispath);
@@ -1585,13 +1506,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			dlog << n->WriteLog("Found no matching subject-level [" + protocol + "] series. SQL: [" + sqlstring + "]");
 		}
 	}
-	//my $datatable = generate_table(rows => $datarows, header_row => 1);
-	//n->WriteLog("\n$datatable");
-	//datalog += "\n$datatable\nLeaving GetData(). Copied [$numdownloaded] series\n";
-	n->WriteLog("Leaving GetData() successfully => ret($numdownloaded, datalog)");
+	n->WriteLog("Leaving GetData() successfully");
 	n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydataend", QString("Finished copying data [%1] series downloaded").arg(numdownloaded));
 
-	return true; //($numdownloaded, $datalog, $datareport, $datatable);
+	datalog = dlog.join("\n");
+	datatable = dtable.join("\n");
+	return true;
 }
 
 
@@ -1668,15 +1588,15 @@ QStringList modulePipeline::GetGroupList(int pid) {
 		while (q.next()) {
 			int groupid = q.value("pipeline_groupid").toInt();
 			if (groupid != 0) {
-				                    QSqlQuery q2;
-									q2.prepare("select group_name from groups where group_id in (:groupid)");
-									q2.bindValue(":groupid",groupid);
-									n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-									if (q2.size() > 0) {
-										QString groupname = q2.value("group_name").toString();
-									grouplist.append(groupname);
-									}
-			                        }
+				QSqlQuery q2;
+				q2.prepare("select group_name from groups where group_id in (:groupid)");
+				q2.bindValue(":groupid",groupid);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					QString groupname = q2.value("group_name").toString();
+					grouplist.append(groupname);
+				}
+			}
 		}
 	}
 
@@ -1721,7 +1641,7 @@ QString modulePipeline::CheckDependency(int sid, int pipelinedep) {
 	q.bindValue(":pipelinedep", pipelinedep);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1)
-		return "NoMatchingStudyDependency";
+		status = "NoMatchingStudyDependency";
 
 	/* check if the dependency is complete */
 	q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and analysis_status = 'complete'");
@@ -1729,7 +1649,7 @@ QString modulePipeline::CheckDependency(int sid, int pipelinedep) {
 	q.bindValue(":pipelinedep", pipelinedep);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1)
-		return "IncompleteDependency";
+		status = "IncompleteDependency";
 
 	/* check if the dependency is marked as bad */
 	q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and analysis_isbad <> 1");
@@ -1737,9 +1657,9 @@ QString modulePipeline::CheckDependency(int sid, int pipelinedep) {
 	q.bindValue(":pipelinedep", pipelinedep);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1)
-		return "BadDependency";
+		status = "BadDependency";
 
-	return "";
+	return status;
 }
 
 
@@ -1928,7 +1848,7 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
 			rec.behdir = q.value("pdd_behdir").toString().trimmed();
 			rec.enabled = q.value("pdd_enabled").toBool();
 			rec.optional = q.value("pdd_optional").toBool();
-			rec.numboldreps = q.value("pdd_numboldreps").toInt();
+			rec.numboldreps = q.value("pdd_numboldreps").toString().trimmed();
 			rec.level = q.value("pdd_level").toString().trimmed();
 			datadef.append(rec);
 		}
@@ -2135,46 +2055,45 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			// n->WriteLog("PRE: runsupplement [$runsupplement] issupplement [$issupplement] - $command");
 
 			if (runsupplement && !issupplement)
-				                    continue;
+				continue;
 
 			if (!runsupplement && issupplement)
-				                    continue;
+				continue;
 			// n->WriteLog("POST: runsupplement [$runsupplement] issupplement [$issupplement] - $command");
 
 			if ((command.contains("{NOLOG}")) || (description.contains("{NOLOG}")))
-				                    logged = false;
+				logged = false;
 			if ((command.contains("{NOCHECKIN}")) || (description.contains("{NOCHECKIN}")))
-				                    checkedin = false;
+				checkedin = false;
 			if ((command.contains("{PROFILE}")) || (description.contains("{PROFILE}")))
-				                    profile = true;
+				profile = true;
 
 			// format the command (replace pipeline variables, etc)
 			if (usetmpdir)
-				                    command = FormatCommand(pipelineid, clusteranalysispath, command, workinganalysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
+				command = FormatCommand(pipelineid, clusteranalysispath, command, workinganalysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
 			else
-				                    command = FormatCommand(pipelineid, clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
+				command = FormatCommand(pipelineid, clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
 
 			if (checkedin) {
-				                    QString cleandesc = description;
-									cleandesc.replace("'","").replace("\"","");
-									jobfile += QString("\nperl /opt/pipeline/%1 %2 processing 'processing %3step %4 of %5' '%6'").arg(checkinscript).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
-
-									jobfile += "\n# " + description + "\necho Running " + command + "\n";
-			                        }
+				QString cleandesc = description;
+				cleandesc.replace("'","").replace("\"","");
+				jobfile += QString("\nperl /opt/pipeline/%1 %2 processing 'processing %3step %4 of %5' '%6'").arg(checkinscript).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
+				jobfile += "\n# " + description + "\necho Running " + command + "\n";
+			}
 
 			// prepend with 'time' if the neither NOLOG nor NOCHECKIN are specified
 			if (profile && logged && checkedin)
-				                    command = "/usr/bin/time -v " + command;
+				command = "/usr/bin/time -v " + command;
 
 			// write to a log file if logging is requested
 			if (logged)
-				                    command += QString(" >> " + analysispath + "/pipeline/" + supplement + "step%1.log 2>&1").arg(order);
+				command += QString(" >> " + analysispath + "/pipeline/" + supplement + "step%1.log 2>&1").arg(order);
 
 			if (workingdir != "")
-				                    jobfile += "cd " + workingdir + ";\n";
+				jobfile += "cd " + workingdir + ";\n";
 
 			if (!enabled)
-				                    jobfile += "# ";
+				jobfile += "# ";
 
 			jobfile += command + "\n";
 		}
@@ -2266,29 +2185,29 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, QS
 
 		/* step 2) then find all STUDIES that those subjects have completed */
 		if (groupids == "") {
-			// with no groupids
+			/* NO groupids */
 			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
 			n->WriteLog("GetStudyToDoList(): dependency and no groupids");
 		}
 		else {
-			// with groupids
+			/* with groupids */
 			q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
 			n->WriteLog("GetStudyToDoList(): dependency and groupids");
 		}
 	}
 	else {
-		// no dependency
+		/* NO dependency */
 		if (groupids == "") {
-			// with no groupids
+			/* NO groupids */
 			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (study_datetime < date_sub(now(), interval 6 hour)) and study_modality = :modality order by study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
 			n->WriteLog("GetStudyToDoList(): No dependency and no groupids");
 		}
 		else {
-			/* with groupids */
+			/* WITH groupids */
 			q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") ORDER BY a.study_datetime DESC");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
