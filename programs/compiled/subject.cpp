@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "subject.h"
-#include <QDebug>
 #include <QSqlQuery>
 
 subject::subject(int id, nidb *a)
@@ -90,6 +89,7 @@ void subject::LoadSubjectInfo() {
 				subjectpath = "";
 			}
 		}
+		isValid = true;
 	}
 	msg = msgs.join(" | ");
 }

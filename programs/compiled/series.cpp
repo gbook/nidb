@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "series.h"
-#include <QDebug>
 #include <QSqlQuery>
 
 
@@ -91,6 +90,7 @@ void series::LoadSeriesInfo() {
 				isValid = false;
 			}
 		}
+		isValid = true;
 	}
 	msg = msgs.join(" | ");
 }

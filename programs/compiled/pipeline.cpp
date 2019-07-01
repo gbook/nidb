@@ -42,13 +42,19 @@ void pipeline::LoadPipelineInfo() {
 	if (pipelineid < 1) {
 		msg = "Invalid pipeline ID";
 		isValid = false;
+		return;
 	}
 
 	/* get the path to the analysisroot */
 	QSqlQuery q;
-	q.prepare("select * from pipelines where pipeline_status <> 'running' and (pipeline_enabled = 1 or pipeline_testing = 1) order by pipeline_laststart asc");
+	q.prepare("select * from pipelines where pipeline_id = :pipelineid");
+	q.bindValue(":pipelineid", pipelineid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() < 1) { msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?"; isValid = false; }
+	if (q.size() < 1) {
+		msg = "Pipeline query returned no results. Possibly invalid pipeline ID or recently deleted?";
+		isValid = false;
+		return;
+	}
 	q.first();
 
 	name = q.value("pipeline_name").toString().trimmed();
@@ -61,14 +67,18 @@ void pipeline::LoadPipelineInfo() {
 	dirStructure = q.value("pipeline_dirstructure").toString().trimmed();
 	useTmpDir = q.value("pipeline_usetmpdir").toBool();
 	tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
-	foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(","))
+	foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", QString::SkipEmptyParts)) {
+		n->WriteLog(QString("Adding [%1] to the parentDependencyID list for pipeline [%2]").arg(did.toInt()).arg(name));
 		parentDependencyIDs.append(did.toInt());
+	}
 
 	depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
 	depDir = q.value("pipeline_dependencydir").toString().trimmed();
 	depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
-	foreach (QString gid, q.value("pipeline_name").toString().trimmed().split(","))
+	foreach (QString gid, q.value("pipeline_groupid").toString().trimmed().split(",", QString::SkipEmptyParts)) {
+		n->WriteLog(QString("Adding [%1] to the groupID list for pipeline [%2]").arg(gid.toInt()).arg(name));
 		groupIDs.append(gid.toInt());
+	}
 
 	groupType = q.value("pipeline_grouptype").toString().trimmed();
 	groupBySubject = q.value("pipeline_groupbysubject").toBool();
@@ -78,7 +88,7 @@ void pipeline::LoadPipelineInfo() {
 	lastStart = q.value("pipeline_laststart").toDateTime();
 	lastFinish = q.value("pipeline_lastfinish").toDateTime();
 	lastCheck = q.value("pipeline_lastcheck").toDateTime();
-	completeFiles = q.value("pipeline_desc").toString().trimmed().split(",");
+	completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", QString::SkipEmptyParts);
 	numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
 	queue = q.value("pipeline_queue").toString().trimmed();
 	submitHost = q.value("pipeline_submithost").toString().trimmed();
@@ -112,4 +122,7 @@ void pipeline::LoadPipelineInfo() {
 
 	/* remove any whitespace from the queue... SGE hates whitespace */
 	queue.replace(QRegularExpression("\\s+"),"");
+
+	isValid = true;
+	msg = "Loaded pipeline details";
 }

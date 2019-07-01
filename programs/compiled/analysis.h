@@ -35,21 +35,22 @@ public:
 	void PrintAnalysisInfo();
 
 	QString analysispath;
-	int analysisid;
+	int analysisid = -1;
 
-	int studynum;
-	int studyid;
+	int studynum = -1;
+	int studyid = -1;
 	QString studyDateTime;
 	QString uid;
-	int subjectid;
+	int subjectid = -1;
 
 	QString pipelinename;
-	int pipelineversion;
-	int pipelineid;
-	int pipelinelevel;
+	int pipelineversion = -1;
+	int pipelineid = -1;
+	int pipelinelevel = -1;
 	QString pipelinedirectory;
 	QString pipelinedirstructure;
-	int jobid;
+	int jobid = -1;
+	bool exists = true;
 	bool isValid = true;
 	bool rerunResults = false;
 	bool runSupplement = false;

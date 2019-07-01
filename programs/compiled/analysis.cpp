@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "analysis.h"
-#include <QDebug>
 #include <QSqlQuery>
 
 /* ---------------------------------------------------------- */
@@ -48,9 +47,17 @@ analysis::analysis(int pipelineid, int studyid, int version, nidb *a)
 	q.bindValue(":version", version);
 	q.bindValue(":studyid", studyid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() < 1) { msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?"; isValid = false; }
-	q.first();
-	analysisid = q.value("analysisid").toInt();
+	if (q.size() < 1) {
+		msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?";
+		isValid = false;
+		exists = false;
+		//PrintAnalysisInfo();
+		return;
+	}
+	else {
+		q.first();
+		analysisid = q.value("analysis_id").toInt();
+	}
 
 	LoadAnalysisInfo();
 }
@@ -61,9 +68,12 @@ analysis::analysis(int pipelineid, int studyid, int version, nidb *a)
 /* ---------------------------------------------------------- */
 void analysis::LoadAnalysisInfo() {
 
-	if (analysisid < 1) {
+	if (analysisid < 0) {
 		msg = "Invalid analysis ID";
 		isValid = false;
+		exists = false;
+		//PrintAnalysisInfo();
+		return;
 	}
 
 	/* get the path to the analysisroot */
@@ -71,7 +81,13 @@ void analysis::LoadAnalysisInfo() {
 	q.prepare("select a.*, d.uid, b.study_num, b.study_id, b.study_datetime, e.* from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = :analysisid");
 	q.bindValue(":analysisid", analysisid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() < 1) { msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?"; isValid = false; }
+	if (q.size() < 1) {
+		msg = "Analysis query returned no results. Possibly invalid analysis ID or recently deleted?";
+		isValid = false;
+		exists = false;
+		//PrintAnalysisInfo();
+		return;
+	}
 	q.first();
 	QString uid = q.value("uid").toString().trimmed();
 	studynum = q.value("study_num").toInt();
@@ -88,10 +104,10 @@ void analysis::LoadAnalysisInfo() {
 	runSupplement = q.value("analysis_runsupplement").toBool();
 
 	/* check to see if anything isn't valid or is blank */
-	if (n->cfg["analysisdir"] == "") { n->WriteLog("Something was wrong, cfg->analysisdir was not initialized"); msg = "cfg->analysisdir was not initialized"; isValid = false; }
-	if (uid == "") { n->WriteLog("Something was wrong, uid was blank"); msg = "uid was not initialized"; isValid = false; }
-	if (studynum == 0) { n->WriteLog("Something was wrong, studynum was blank"); msg = "studynum was not initialized"; isValid = false; }
-	if (pipelinename == "") { n->WriteLog("Something was wrong, pipelinename was blank"); msg = "pipelinename was not initialized"; isValid = false; }
+	if (n->cfg["analysisdir"] == "") { n->WriteLog("(analysis object) Something was wrong, cfg->analysisdir was not initialized"); msg = "cfg->analysisdir was not initialized"; isValid = false; }
+	if (uid == "") { n->WriteLog("(analysis object) Something was wrong, uid was blank"); msg = "uid was not initialized"; isValid = false; }
+	if (studynum == 0) { n->WriteLog("(analysis object) Something was wrong, studynum was blank"); msg = "studynum was not initialized"; isValid = false; }
+	if (pipelinename == "") { n->WriteLog("(analysis object) Something was wrong, pipelinename was blank"); msg = "pipelinename was not initialized"; isValid = false; }
 
 	if (pipelinelevel == 2) {
 		analysispath = QString("%1/%2/%3/%4").arg(n->cfg["groupanalysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
@@ -107,6 +123,11 @@ void analysis::LoadAnalysisInfo() {
 		msg = "Invalid data path";
 		isValid = false;
 	}
+
+	isValid = true;
+	exists = true;
+	msg = "Loaded analysis info";
+	//PrintAnalysisInfo();
 }
 
 
@@ -129,6 +150,7 @@ void analysis::PrintAnalysisInfo() {
 	output += QString("   pipelinedirstructure: [%1]\n").arg(pipelinedirstructure);
 	output += QString("   jobid: [%1]\n").arg(jobid);
 	output += QString("   isValid: [%1]\n").arg(isValid);
+	output += QString("   exists: [%1]\n").arg(exists);
 	output += QString("   jobid: [%1]\n").arg(jobid);
 	output += QString("   rerunResults: [%1]\n").arg(rerunResults);
 	output += QString("   runSupplement: [%1]\n").arg(runSupplement);

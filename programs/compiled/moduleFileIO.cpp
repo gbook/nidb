@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "moduleFileIO.h"
-#include <QDebug>
 #include <QSqlQuery>
 
 /* ---------------------------------------------------------- */
@@ -70,7 +69,6 @@ int moduleFileIO::Run() {
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
 
-			qDebug() << "requestid [" << requestid << "]";
 			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
 			QString status = GetIORequestStatus(requestid);
 			if (status == "pending") {
@@ -426,8 +424,6 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 /* --------- DeleteSubject ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) {
-	n->WriteLog("In DeleteSubject()");
-
 	QSqlQuery q;
 
 	subject s(subjectid, n); /* get the subject info */

@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "moduleManager.h"
-#include <QDebug>
 
 
 /* ---------------------------------------------------------- */
@@ -46,7 +45,7 @@ moduleManager::~moduleManager()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleManager::Run() {
-	qDebug() << "Entering the fileio module";
+	n->WriteLog("Entering the fileio module");
 
 	/* get list of modules with a last checkin older than 1 hours */
 	QSqlQuery q;
@@ -61,7 +60,7 @@ int moduleManager::Run() {
 
 			QString lockfile = QString("%1/lock/%2.%3").arg(n->cfg["scriptdir"]).arg(modulename).arg(pid);
 
-			qDebug() << "Deleting [" << lockfile << "] last checked in on [" << lastcheckin << "]";
+			n->WriteLog("Deleting [" + lockfile + "] last checked in on [" + lastcheckin + "]");
 
 			QFile f(lockfile);
 			if (f.remove())

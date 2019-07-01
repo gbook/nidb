@@ -34,7 +34,7 @@ public:
 
 	/* object variables */
 	QString msg;
-	bool isValid;
+	bool isValid = true;
 
 	/* pipeline variables */
 	QString name;

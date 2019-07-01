@@ -21,7 +21,6 @@
   ------------------------------------------------------------------------------ */
 
 #include "moduleExport.h"
-#include <QDebug>
 #include <QSqlQuery>
 
 
@@ -47,7 +46,7 @@ moduleExport::~moduleExport()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleExport::Run() {
-	qDebug() << "Entering the export module";
+	n->WriteLog("Entering the export module");
 
 	/* get list of things to delete */
 	QSqlQuery q("select * from exports where status = 'submitted'");

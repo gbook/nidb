@@ -43,11 +43,6 @@ int main(int argc, char *argv[])
 	QCoreApplication a(argc, argv);
 
     QString module = argv[1];
-	bool keepLog = false;
-	bool debug = false;
-	if (argc == 3)
-		if (QString(argv[2]) == "debug")
-			debug = true;
 
 	module = module.trimmed();
 	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded")) {
@@ -55,17 +50,20 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	/* load the config file and connect to the database */
+	nidb *n = new nidb(module);
+	n->DatabaseConnect();
+
+	bool keepLog = false;
+	if (argc == 3)
+		if (QString(argv[2]) == "debug")
+			n->cfg["debug"] = "1";
+
 	printf("-------------------------------------------------------------\n");
 	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
 	printf("-------------------------------------------------------------\n");
-
-	if (debug)
+	if (n->cfg["debug"].toInt())
 		printf("------------------------- DEBUG MODE ------------------------\n");
-
-
-	nidb *n = new nidb(module);
-
-	n->DatabaseConnect();
 
 	/* check if this module should be running now or not */
 	if (n->ModuleCheckIfActive()) {
@@ -122,10 +120,10 @@ int main(int argc, char *argv[])
 				else
 					n->Print("Unrecognized module [" + module + "]");
 
-				if (debug)
+				if ((n->cfg["debug"].toInt()) || (keepLog))
 					keepLog = true;
 
-				n->RemoveLogFile(keepLog);
+				//n->RemoveLogFile(keepLog);
 
 				/* let the database know this module has stopped running */
 				n->ModuleDBCheckOut();

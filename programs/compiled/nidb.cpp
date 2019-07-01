@@ -113,10 +113,8 @@ bool nidb::LoadConfig() {
                 QString var = parts[0].trimmed();
                 QString value = parts[1].trimmed();
                 var.remove('[').remove(']');
-                if (var != "") {
+				if (var != "")
                     cfg[var] = value;
-					//qDebug() << var << ": " << value;
-                }
             }
         }
         f.close();
@@ -510,9 +508,6 @@ QString nidb::SystemCommand(QString s, bool detail) {
 /* ---------------------------------------------------------- */
 QString nidb::WriteLog(QString msg) {
 	if (msg.trimmed() != "") {
-		if (cfg["debug"].toInt())
-			Print(msg);
-
 		if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
 			Print("Unable to write to log file!");
 	}
@@ -630,7 +625,7 @@ bool nidb::RenameFile(QString filepathorig, QString filepathnew, bool force) {
 /* --------- FindAllFiles ----------------------------------- */
 /* ---------------------------------------------------------- */
 QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
-	if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
+	//if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
 
 	QStringList files;
 	if (recursive) {
@@ -644,7 +639,7 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
 			files << it.next();
 	}
 
-	if (cfg["debug"] == "1") WriteLog(QString("Finished searching for files. Found [%1] files").arg(files.size()));
+	//if (cfg["debug"] == "1") WriteLog(QString("Finished searching for files. Found [%1] files").arg(files.size()));
 
 	return files;
 }
@@ -1119,7 +1114,7 @@ bool nidb::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString ran
 
 	switch (anonlevel) {
 	    case 0:
-		    qDebug() << "No anonymization requested. Leaving files unchanged.";
+		    WriteLog("No anonymization requested. Leaving files unchanged.");
 		    return 0;
 	    case 1:
 	    case 3:
@@ -1343,6 +1338,9 @@ void nidb::AppendCustomLog(QString file, QString msg) {
 		fs << QString("[%1][%2] %3\n").arg(CreateCurrentDateTime()).arg(pid).arg(msg);
 		f.close();
 	}
+	else {
+		WriteLog("Error writing to file ["+file+"]");
+	}
 }
 
 
@@ -1368,15 +1366,15 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 		return false;
 	}
 	else if (result.contains("cannot connect to server")) {
-		msg = "Invalid qsub hostname";
+		msg = "Invalid qsub hostname (" + submithost + ")";
 		return false;
 	}
 	else if (result.contains("unknown queue")) {
-		msg = "Invalid queue";
+		msg = "Invalid queue (" + queue + ")";
 		return false;
 	}
 	else if (result.contains("queue is not enabled")) {
-		msg = "Queue is not enabled";
+		msg = "Queue (" + queue + ") is not enabled";
 		return false;
 	}
 	else if (result.contains("job exceeds queue resource limits")) {
@@ -1451,12 +1449,14 @@ bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 QStringList nidb::ShellWords(QString s) {
 
 	QStringList words;
-	QRegularExpression regex("\".+\"", QRegularExpression::CaseInsensitiveOption);
+	QRegularExpression regex("\".*?\"", QRegularExpression::CaseInsensitiveOption);
 	if (s.contains(regex)) {
 		QRegularExpressionMatchIterator iterator = regex.globalMatch(s);
 		while (iterator.hasNext()) {
 			QRegularExpressionMatch match = iterator.next();
 			QString matched = match.captured(0);
+			matched.remove("\"");
+			WriteLog("Matched ["+matched+"]");
 			if(matched.length() > 0) words << matched;
 		}
 	}
