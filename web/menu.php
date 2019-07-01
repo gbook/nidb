@@ -247,10 +247,13 @@
 				}
 				
 				/* pipelines sub-menu */
-				elseif ($page=="pipelines.php" || $page=="analysis.php") {
+				elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
 					$pipelineid = GetVariable("id");
 					if ($pipelineid == "") {
 						?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
+						
+						if ($page == "cluster.php") { $style = "background-color:#273f70"; }
+						?><a href="cluster.php" style="<?=$style?>">Cluster</a><?
 					} 
 					else {
 						$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $pipelineid";
@@ -259,6 +262,7 @@
                 	    $name = $row['pipeline_name'];
 
 						?><a href="pipelines.php" style="">Pipeline List</a><?
+						?><a href="cluster.php" style="">Cluster</a><?
 						
 						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
@@ -273,23 +277,23 @@
 				/* data sub-menu */
 				elseif ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
 					
-					if (($page=="import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
+					if (($page == "import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="import.php" style="<?=$style?>">Import</a><?
 					
-					if (($page=="import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
+					if (($page == "import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="import.php?action=idmapper" style="<?=$style?>">ID mapper</a><?
 
-					if ($page=="importlog.php") { $style = "background-color:#273f70"; }
+					if ($page == "importlog.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="importlog.php" style="<?=$style?>">Import Log</a><?
 
-					if ($page=="publicdownloads.php"){ $style = "background-color:#273f70"; }
+					if ($page == "publicdownloads.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="publicdownloads.php" style="<?=$style?>">Public Downloads</a><?
 
-					if ($page=="downloads.php"){ $style = "background-color:#273f70"; }
+					if ($page == "downloads.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="downloads.php" style="<?=$style?>">Downloads</a><?
 					

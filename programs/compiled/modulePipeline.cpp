@@ -186,17 +186,19 @@ int modulePipeline::Run() {
 			n->WriteLog("Creating path [" + analysispath + "/pipeline]");
 			QString m;
 			if (!n->MakePath(analysispath + "/pipeline", m)) {
-				n->WriteLog("Error: unable to create directory ["+analysispath+"]");
+				n->WriteLog("Error: unable to create directory ["+analysispath+"] - A");
 				continue;
 			}
+			else
+				n->WriteLog("Created directory [" + analysispath + "/pipeline] - A");
 
 			/* this file will record any events during setup */
 			QString setupLogFile = "/mount" + analysispath + "/pipeline/analysisSetup.log";
 			n->AppendCustomLog(setupLogFile, "Beginning recording");
 			n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
 
-			// insert a temporary row, to be updated later, in the analysis table as a placeholder
-			// so that no other processes end up running it
+			/* insert a temporary row, to be updated later, in the analysis table as a placeholder
+			 * so that no other processes end up running it */
 			q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values (:pid, :version,'','','processing',now())");
 			q2.bindValue(":pid", pipelineid);
 			q2.bindValue(":version", p.version);
@@ -428,6 +430,8 @@ int modulePipeline::Run() {
 						setuplog << n->WriteLog(QString(" ----- Study [%1] has [%2] matching series downloaded (or needs results rerun, or is a supplement, or is dependent on another pipeline). Beginning analysis ----- ").arg(sid).arg(numseriesdownloaded));
 
 						QString dependencyname;
+						/* this analysis is new and has not been written to disk before, so
+						 * the directory should not yet exist */
 						if ((!a.rerunResults) && (!a.runSupplement)) {
 							if (pipelinedep != -1) {
 								setuplog << n->WriteLog(QString("There is a pipeline dependency [%1]").arg(pipelinedep));
@@ -454,14 +458,15 @@ int modulePipeline::Run() {
 							QString analysispath = p.pipelineRootDir + "/" + p.name;
 							QString m;
 							if (!n->MakePath(analysispath + "/pipeline", m)) {
-								n->WriteLog("Error: unable to create directory ["+analysispath+"/pipeline]");
+								n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - B");
 								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiserror", "Unable to create directory [" + analysispath + "/pipeline]");
-
 								UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true);
 								continue;
 							}
+							else
+								n->WriteLog("Created directory [" + analysispath + "/pipeline] - B");
 
-							n->SystemCommand("chmod -R 777 " + analysispath + "/pipeline");
+							n->WriteLog(n->SystemCommand("chmod -R 777 " + analysispath + "/pipeline"));
 							if (pipelinedep != -1) {
 								if (p.depLevel == "subject") {
 									if (p.dirStructure == "b")
@@ -522,7 +527,6 @@ int modulePipeline::Run() {
 							/* however, if the setupLogFile does not exist, something is not writeable, and that is not good */
 							if (!QFile::exists(setupLogFile)) {
 								setuplog << n->WriteLog("setupLogFile [" + setupLogFile + "] does not exist.");
-							//	return -1;
 							}
 						}
 						/* "realanalysispath" is now --> "clusteranalysispath" */
@@ -678,11 +682,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	QString modality = s.modality;
 	int studynum = s.studynum;
 
-	dlog << QString("===== Working on [%1%2] studyid [%3] =====").arg(uid).arg(studynum).arg(studyid);
+	dlog << QString("---------- Working on [%1%2] studyid [%3] ----------").arg(uid).arg(studynum).arg(studyid);
 	dlog << n->WriteLog("Study modality is ["+modality+"]");
-	dlog << "------------------------------------------------------------------------------";
 	dlog << "---------- Checking data steps -----------------------------------------------";
-	dlog << "------------------------------------------------------------------------------";
 
 	// ------------------------------------------------------------------------
 	// check all of the steps to see if this data spec is valid
@@ -842,19 +844,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				q.bindValue(":studyid", studyid);
 			}
 			n->WriteLog(sqlstring);
-			dlog << "Checking if study contains data [" + sqlstring + "]";
+			//dlog << "Checking if study contains data [" + sqlstring + "]";
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 			if (q.size() > 0) {
-				dlog << QString("Pre-checking step [%1]: data found").arg(i);
+				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found").arg(i).arg(protocol);
 			}
 			else {
-				dlog << QString("Pre-checking step [%1]: data NOT found").arg(i);
+				dlog << QString("Pre-checking step [%1]  protocol [%2]: data NOT found").arg(i).arg(protocol);
 				stepIsInvalid = true;
 				break;
 			}
 		}
 	}
-	dlog << QString("---------- Done checking data steps. stepIsInvalid [%1] ----------").arg(stepIsInvalid);
+	dlog << "Done checking data steps";
 
 	/* if it's a subject level dependency, but there is no data found, we don't want to copy any dependencies */
 	if ((stepIsInvalid) && (deplevel == "subject")) {
@@ -875,8 +877,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		return false;
 	}
 
-	dlog << QString("---------- stepIsInvalid [%1] ----------").arg(stepIsInvalid);
-
 	// ------ end checking the data steps --------------------------------------
 	// if we get to here, the data spec is valid for this study
 	// so we can assume all of the data exists, and start copying it
@@ -884,9 +884,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 	n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydata", "Started copying data to [<tt>" + analysispath + "</tt>]");
 
-	dlog << "------------------------------------------------------------------------------";
 	dlog << "---------- Required data for this study exists, beginning data copy ----------";
-	dlog << "------------------------------------------------------------------------------";
 	/* go through list of data search criteria again to do the actual copying */
 	for (int i = 0; i < datadef.size(); i++) {
 
@@ -941,7 +939,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			validComparisonStr = true;
 
 		dlog << QString("Copying data for step [%1]").arg(i);
-		dlog << QString("bold reps comparison [%1] [%2]").arg(comparison).arg(num);
+		//dlog << QString("bold reps comparison [%1] [%2]").arg(comparison).arg(num);
 
 		/* check to see if we should even run this step */
 		if (!enabled) {
@@ -1077,7 +1075,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				q.bindValue(":studytype", s.studytype);
 			}
 		}
-		dlog << n->WriteLog("Resulting SQL string [" + sqlstring + "]");
+		//dlog << n->WriteLog("Resulting SQL string [" + sqlstring + "]");
 		int newseriesnum = 1;
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() > 0) {
@@ -1085,12 +1083,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			dlog << n->WriteLog(QString("Found [%1] matching subject-level series").arg(q.size()));
 			/* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
 			QString m;
-			if (!n->MakePath(analysispath, m)) {
-				dlog << n->WriteLog("Error: unable to create directory [" + analysispath + "]");
-
+			if (!n->MakePath(analysispath + "/pipeline", m)) {
+				dlog << n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - C");
 				UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true);
 				continue;
 			}
+			else
+				dlog << n->WriteLog("Created directory [" + analysispath + "/pipeline] - C");
 
 			while (q.next()) {
 				int localstudynum;
@@ -1127,7 +1126,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 						localstudynum = neareststudynum;
 				}
 
-				dlog << n->WriteLog(QString("Working on seriesdesc [%1] seriesnum [%2] seriesdatetime [%3]...").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime));
+				dlog << n->WriteLog(QString("Working on copying:  protocol [%1]  seriesnum [%2]  seriesdatetime [%3]").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime));
 
 				QString behoutdir;
 				QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
@@ -1153,7 +1152,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
 				}
 
-				dlog << n->WriteLog("behformat [" + behformat + "] behoutdir [" + behoutdir + "]");
+				if (behformat != "behnone")
+					dlog << n->WriteLog("behformat [" + behformat + "] behoutdir [" + behoutdir + "]");
+
 				if (usephasedir) {
 					dlog << QString("PhasePlane [" + phaseplane + "] PhasePositive [%1]").arg(phasepositive);
 
@@ -1170,9 +1171,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				QString m;
 				if (!n->MakePath(newanalysispath, m))
-					dlog << n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "]");
+					dlog << n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "] - D");
 				else
-					dlog << n->WriteLog("Created directory [" + newanalysispath + "]");
+					dlog << n->WriteLog("Created directory [" + newanalysispath + "] - D");
 
 				n->SystemCommand("chmod -Rf 777 " + newanalysispath);
 
@@ -1189,12 +1190,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 					QString m;
 					if (!n->MakePath(tmpdir, m))
-						dlog << n->WriteLog("Error creating directory [" + tmpdir + "] message [" + m + "]");
+						dlog << n->WriteLog("Error creating directory [" + tmpdir + "] message [" + m + "] - E");
 					else
-						dlog << n->WriteLog("Created temp directory [" + tmpdir + "]");
+						dlog << n->WriteLog("Created temp directory [" + tmpdir + "] - E");
 					int numfilesconv(0);
 					int numfilesrenamed(0);
-					n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, QString(localstudynum), QString(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+					n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
 
 					QString systemstring;
 					if (p.dataCopyMethod == "scp")
@@ -1216,9 +1217,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 					dlog << "Copying behavioral data";
 					QString m;
 					if (!n->MakePath(behoutdir, m))
-						n->WriteLog("Error creating directory [" + behoutdir + "] message [" + m + "]");
+						n->WriteLog("Error creating directory [" + behoutdir + "] message [" + m + "] - F");
 					else
-						n->WriteLog("Created directory [" + behoutdir + "]");
+						n->WriteLog("Created directory [" + behoutdir + "] - F");
 					QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
 					dlog << n->WriteLog(n->SystemCommand("chmod -Rf 777 " + behoutdir));
 

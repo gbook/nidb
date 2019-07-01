@@ -457,38 +457,41 @@
 	/* -------------------------------------------- */
 	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $level, $groupbysubject) {
 		/* perform data checks */
-		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
-		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
-		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], $pipelinegroup);
-		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
-		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
-		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
-		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
-		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
-		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
-		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
-		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
-		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
-		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
-		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
-		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirstructure);
-		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
-		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
-		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
+		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
+		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
+		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinegroup));
+		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenumproc));
+		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclustertype));
+		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclusteruser));
+		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmithost));
+		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinemaxwalltime));
+		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmitdelay));
+		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedatacopymethod));
+		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinequeue));
+		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineremovedata));
+		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineresultsscript));
+		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedirectory));
+		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedirstructure));
+		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineusetmpdir));
+		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetmpdir));
+		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
+		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
 		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
-		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
-		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
-		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
+		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
+		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
+		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], trim($deplinktype));
 		if (is_array($dependency)) {
 			$dependencies = implode(",",$dependency);
 		}
 		if (is_array($groupid)) {
 			$groupids = implode2(",",$groupid);
 		}
-		//if (is_array($dynamicgroupids)) {
-		//	$dynamicgroupids = implode2(",",$dynamicgroupid);
-		//}
+		
+		
+		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
+		if ($pipelinesubmitdelay == "") $pipelinesubmitdelay = "null";
+		if ($pipelineremovedata == "") $pipelineremovedata = "null";
+		if ($pipelineusetmpdir == "") $pipelineusetmpdir = "null";
 		
 		/* get userid */
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -497,7 +500,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinemaxwalltime', '$pipelinesubmitdelay', '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', '$pipelineremovedata', '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$level', '$pipelinedirectory', '$pipelinedirstructure', '$pipelineusetmpdir', '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject)";
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 		

@@ -494,6 +494,7 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	process.waitForFinished();
 
 	output = output.trimmed();
+	output.replace("`", "'");
 	if (detail)
 		ret = QString("Running command [%1], Output [%2]").arg(s).arg(output);
 	else
