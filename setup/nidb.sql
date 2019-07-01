@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.8.0.1
+-- version 4.8.5
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 09, 2019 at 07:09 PM
--- Server version: 10.2.23-MariaDB
--- PHP Version: 7.2.17
+-- Generation Time: Jul 01, 2019 at 08:10 PM
+-- Server version: 10.3.15-MariaDB
+-- PHP Version: 7.2.18
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -35,7 +35,7 @@ CREATE TABLE `analysis` (
   `pipeline_dependency` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `analysis_qsubid` bigint(20) UNSIGNED DEFAULT NULL,
-  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries') DEFAULT NULL,
+  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysis_notes` text DEFAULT NULL,
@@ -633,6 +633,7 @@ CREATE TABLE `cr_series` (
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
+  `series_status` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -1107,7 +1108,7 @@ CREATE TABLE `fileio_requests` (
   `rearchiveprojectid` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
   `anonymize_fields` text DEFAULT NULL,
-  `request_status` enum('pending','deleting','complete','error') NOT NULL DEFAULT 'pending',
+  `request_status` enum('pending','complete','error','cancelled') NOT NULL DEFAULT 'pending',
   `request_message` varchar(255) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
   `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -1552,22 +1553,22 @@ CREATE TABLE `mr_qa` (
   `move_maxx` double DEFAULT NULL,
   `move_maxy` double DEFAULT NULL,
   `move_maxz` double DEFAULT NULL,
-  `acc_minx` double NOT NULL,
-  `acc_miny` double NOT NULL,
-  `acc_minz` double NOT NULL,
-  `acc_maxx` double NOT NULL,
-  `acc_maxy` double NOT NULL,
-  `acc_maxz` double NOT NULL,
+  `acc_minx` double DEFAULT NULL,
+  `acc_miny` double DEFAULT NULL,
+  `acc_minz` double DEFAULT NULL,
+  `acc_maxx` double DEFAULT NULL,
+  `acc_maxy` double DEFAULT NULL,
+  `acc_maxz` double DEFAULT NULL,
   `rot_minp` double DEFAULT NULL,
   `rot_minr` double DEFAULT NULL,
   `rot_miny` double DEFAULT NULL,
   `rot_maxp` double DEFAULT NULL,
   `rot_maxr` double DEFAULT NULL,
   `rot_maxy` double DEFAULT NULL,
-  `motion_rsq` double NOT NULL,
+  `motion_rsq` double DEFAULT NULL,
   `cputime` double DEFAULT NULL,
-  `status` varchar(25) NOT NULL,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `status` varchar(25) NOT NULL DEFAULT '',
+  `lastupdate` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1635,9 +1636,9 @@ CREATE TABLE `mr_series` (
   `study_id` int(11) NOT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
   `series_desc` varchar(255) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
-  `series_altdesc` varchar(255) NOT NULL DEFAULT '',
-  `series_protocol` varchar(255) NOT NULL DEFAULT '',
-  `series_sequencename` varchar(45) NOT NULL DEFAULT '' COMMENT 'epfid2d1_64, etc(0018,0024)',
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
   `series_te` double DEFAULT NULL COMMENT '(0018,0081)',
@@ -1645,14 +1646,14 @@ CREATE TABLE `mr_series` (
   `series_flip` double DEFAULT NULL COMMENT '(0018,1314)',
   `percent_sampling` double DEFAULT NULL,
   `percent_phaseFOV` double DEFAULT NULL,
-  `phaseencodedir` varchar(20) NOT NULL DEFAULT '' COMMENT 'either ROW or COL. when combined with phaseencodeangle, it will give the A>P, R>L etc',
+  `phaseencodedir` varchar(20) DEFAULT NULL COMMENT 'either ROW or COL. when combined with phaseencodeangle, it will give the A>P, R>L etc',
   `phaseencodeangle` double DEFAULT NULL COMMENT 'in radians',
   `PhaseEncodingDirectionPositive` tinyint(1) DEFAULT NULL,
   `series_spacingx` double DEFAULT NULL COMMENT '(0028,0030) field 1',
   `series_spacingy` double DEFAULT NULL COMMENT '(0028,0030) field 2',
   `series_spacingz` double DEFAULT NULL COMMENT '(0018,0050)',
   `series_fieldstrength` double DEFAULT NULL COMMENT '(0018,0087)',
-  `acq_matrix` varchar(20) NOT NULL DEFAULT '' COMMENT '(0018,1310)',
+  `acq_matrix` varchar(20) DEFAULT NULL COMMENT '(0018,1310)',
   `img_rows` int(11) DEFAULT NULL COMMENT '(0028,0010)',
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
@@ -1664,18 +1665,18 @@ CREATE TABLE `mr_series` (
   `dimZ` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim3',
   `dimT` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim4',
   `bandwidth` double NOT NULL DEFAULT 0,
-  `image_type` varchar(255) NOT NULL DEFAULT '',
-  `image_comments` varchar(255) NOT NULL DEFAULT '',
+  `image_type` varchar(255) DEFAULT NULL,
+  `image_comments` varchar(255) DEFAULT NULL,
   `bold_reps` int(11) NOT NULL DEFAULT 0,
   `numfiles` int(11) DEFAULT NULL,
   `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
-  `data_type` varchar(20) NOT NULL DEFAULT '',
+  `data_type` varchar(20) NOT NULL,
   `is_derived` tinyint(1) NOT NULL DEFAULT 0,
   `numfiles_beh` int(11) NOT NULL DEFAULT 0,
   `beh_size` double NOT NULL DEFAULT 0,
-  `series_notes` text NOT NULL DEFAULT '',
+  `series_notes` text DEFAULT NULL,
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
-  `series_createdby` varchar(50) NOT NULL DEFAULT '',
+  `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_createdate` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -1724,16 +1725,16 @@ CREATE TABLE `nidb_sites` (
 CREATE TABLE `nm_series` (
   `nmseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `series_num` int(11) DEFAULT 0,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1783,15 +1784,15 @@ CREATE TABLE `ot_series` (
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
   `numfiles` int(11) DEFAULT NULL,
-  `series_numfiles` int(11) NOT NULL,
-  `bold_reps` int(11) NOT NULL,
-  `modality` varchar(50) NOT NULL,
-  `data_type` varchar(255) NOT NULL,
-  `series_size` double NOT NULL COMMENT 'number of bytes',
+  `series_numfiles` int(11) NOT NULL DEFAULT 1,
+  `bold_reps` int(11) NOT NULL DEFAULT 0,
+  `modality` varchar(50) DEFAULT NULL,
+  `data_type` varchar(255) DEFAULT NULL,
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
-  `series_notes` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2684,7 +2685,7 @@ CREATE TABLE `task_series` (
 CREATE TABLE `users` (
   `user_id` int(11) NOT NULL,
   `username` varchar(45) NOT NULL,
-  `password` varchar(45) NOT NULL,
+  `password` varchar(45) DEFAULT NULL,
   `login_type` enum('NIS','Standard','Guest','Pending') DEFAULT NULL,
   `user_instanceid` int(11) DEFAULT 0,
   `user_fullname` varchar(150) DEFAULT NULL,
@@ -2760,8 +2761,8 @@ CREATE TABLE `user_instance` (
   `userinstance_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
-  `isdefaultinstance` tinyint(1) NOT NULL,
-  `instance_joinrequest` tinyint(1) NOT NULL
+  `isdefaultinstance` tinyint(1) DEFAULT NULL,
+  `instance_joinrequest` tinyint(1) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2774,11 +2775,11 @@ CREATE TABLE `user_project` (
   `userproject_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
-  `project_admin` tinyint(1) NOT NULL,
-  `view_data` tinyint(1) NOT NULL,
-  `view_phi` tinyint(1) NOT NULL,
-  `write_data` tinyint(1) NOT NULL,
-  `write_phi` tinyint(1) NOT NULL,
+  `project_admin` tinyint(1) NOT NULL DEFAULT 0,
+  `view_data` tinyint(1) NOT NULL DEFAULT 0,
+  `view_phi` tinyint(1) NOT NULL DEFAULT 0,
+  `write_data` tinyint(1) NOT NULL DEFAULT 0,
+  `write_phi` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2791,15 +2792,15 @@ CREATE TABLE `user_project` (
 CREATE TABLE `us_series` (
   `usseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT 0,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -2878,16 +2879,16 @@ CREATE TABLE `weather` (
 CREATE TABLE `xa_series` (
   `xaseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `series_num` int(11) DEFAULT 0,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
