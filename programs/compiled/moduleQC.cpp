@@ -191,15 +191,20 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 		/* submit this module to the cluster. first create the SGE job file */
 		n->WriteLog("About to create the SGE job file");
 		QString sgebatchfile = CreateSGEJobFile(modulename, qcmoduleseriesid, qcpath);
+		n->WriteLog("Created SGE job file");
 
 		/* submit the SGE job */
 		QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(n->cfg["clustersubmithost"]).arg(n->cfg["qsubpath"]).arg(n->cfg["queueuser"]).arg(n->cfg["queuename"]).arg(sgebatchfile);
+		n->WriteLog("About to submit SGE job file");
 		n->WriteLog(n->SystemCommand(systemstring));
+		n->WriteLog("Submitted SGE job file");
 	}
 	else {
+		n->WriteLog("About to run the QC module locally");
 		QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
 		QString systemstring = QString("%1/%2/./%2.sh %3").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
 		n->WriteLog(n->SystemCommand(systemstring));
+		n->WriteLog("Finished running the QC module locally");
 	}
 
 	/* calculate the total time running */
@@ -228,11 +233,16 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
 
 	QString jobfilename;
 
+	n->WriteLog("CreateSGEJobFile() - A");
+
 	/* check if any of the variables might be blank */
-	if ((modulename == "") || (qcmoduleseriesid < 1))
+	if ((modulename == "") || (qcmoduleseriesid < 1)) {
+		n->WriteLog("CreateSGEJobFile() - B");
 		return jobfilename;
+	}
 
 	QString jobfile;
+	n->WriteLog("CreateSGEJobFile() - C");
 
 	jobfile += "#!/bin/sh\n";
 	jobfile += QString("#$ -N NIDB-QC-%1\n").arg(modulename);
@@ -243,6 +253,7 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
 	jobfile += QString("#$ -u %1\n\n").arg(n->cfg["queueuser"]);
 	jobfile += QString("cd %1/%2\n").arg(n->cfg["qcmoduledir"]).arg(modulename);
 	jobfile += QString("%1/%2/./%2.sh %3\n").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
+	n->WriteLog("CreateSGEJobFile() - D");
 
 	jobfilename = QString("%1/sge-%2.job").arg(qcpath).arg(n->GenerateRandomString(10));
 	QFile f(jobfilename);
@@ -251,7 +262,9 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
 		fs << jobfile;
 		f.close();
 	}
+	n->WriteLog("CreateSGEJobFile() - E");
 	n->WriteLog(n->SystemCommand("chmod 777 " + jobfilename));
+	n->WriteLog("CreateSGEJobFile() - F");
 
 	return jobfilename;
 }

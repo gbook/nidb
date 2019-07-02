@@ -328,7 +328,7 @@
 				}
 				
 				/* user options sub-menu */
-				elseif ($page=="users.php" || $page=="remoteconnections.php") {
+				elseif ($page=="users.php" || $page=="remoteconnections.php" || $page == "filesio.php") {
 					
 					if ($page=="users.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
@@ -337,6 +337,10 @@
 					if ($page=="remoteconnections.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="remoteconnections.php" style="<?=$style?>">Remote Connections</a><?
+					
+					if ($page=="filesio.php") { $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="filesio.php" style="<?=$style?>">File IO</a><?
 				}
 			?>
 			</td>

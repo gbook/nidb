@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 		if (QString(argv[2]) == "debug")
 			n->cfg["debug"] = "1";
 
-	printf("-------------------------------------------------------------\n");
+	printf("\n\n-------------------------------------------------------------\n");
 	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
 	printf("-------------------------------------------------------------\n");
 	if (n->cfg["debug"].toInt())
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 				if ((n->cfg["debug"].toInt()) || (keepLog))
 					keepLog = true;
 
-				//n->RemoveLogFile(keepLog);
+				n->RemoveLogFile(keepLog);
 
 				/* let the database know this module has stopped running */
 				n->ModuleDBCheckOut();

@@ -85,6 +85,11 @@
 	$studyids = GetVariable("studyids");
 	$copy_date = GetVariable("copy_date");
 	$study_modality = GetVariable("study_modality");
+
+	$studytype = GetVariable("studytype");
+	$studydatetime = GetVariable("studydatetime");
+	$Sdate = GetVariable("Sdate");
+	$stmod = GetVariable("stmod");
 	
 	/* determine action */
 	switch($action) {
@@ -162,9 +167,9 @@
 		case 'displayfiles':
 			DisplayStudy($studyid, true);
 			break;
-		case 'saveStSe':
-			 UpdateStSe($studyid, $studydatetime, $studytype,$copy_date, $study_modality);
-			 DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
+		case 'saveme':
+			SaveSt($studyid, $studytype, $studydatetime, $Sdate, $stmod);
+			DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
 		default:
 			DisplayStudy($studyid);
@@ -173,6 +178,34 @@
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
+
+	 /* ------------------------------------ functions MAM------------------------------------ */
+
+
+    /* ----------------Update Studies---------------------------- */
+    /* -------------------------------------------- */
+	function SaveSt($studyid, $studytype, $studydatetime, $Sdate, $stmod) {
+		
+		/* perform data checks */
+		$studydatetime = str_ireplace("T", " ", $studydatetime) . ":00";
+		$stmod = strtolower($stmod);
+
+		/* update the user */
+
+		if ($Sdate != 'on') {
+			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $studyid";
+        	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}		
+		elseif ($Sdate == 'on') {
+			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $studyid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+			$sqlstring1 = "update $stmod"."_series set series_datetime = '$studydatetime' where study_id = $studyid";
+			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
+		}
+		?><div align="center"><span class="message">Study Saved</span></div><br><br><?
+	}	
+	
 	
 	/* -------------------------------------------- */
 	/* ------- AddRating -------------------------- */
@@ -1006,6 +1039,7 @@
 			}
 		}
 
+		$dbstudydatetime = strftime('%Y-%m-%dT%H:%M:%S', strtotime($study_datetime));
 		$study_datetime = date("F j, Y g:ia",strtotime($study_datetime));
 		$study_radreaddate = date("F j, Y g:ia",strtotime($study_radreaddate));
 
@@ -1071,9 +1105,26 @@
 							<td class="label">Modality</td>
 							<td class="<?=$class?>"><?=$study_modality?></td>
 						</tr>
+						<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post">
 						<tr>
 							<td class="label">Date/time</td>
-							<td class="value"><?=$study_datetime?></td>
+							<? if (strtoupper($study_modality) != "MR"){ ?>
+								<td>
+								 <input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime"  required >
+								 <input type="checkbox" name="Sdate" > Copy <b>Date/time</b> value to all series
+								 <input type="hidden" name="stmod" value="<?=$study_modality?>">
+								</td>
+							 <?}else {?>
+								<td class="value"><tt><?=strftime('%m/%d/%Y',strtotime($study_datetime))?></tt></td >	
+							<?}?>
+						</tr>
+						<tr>
+							<td class="label">Visit type</td>
+							<? if (strtoupper($study_modality) != "MR"){ ?>
+								<td><input type="text" name="studytype" value="<?=$study_type?>" size="30" ></td>
+							<?}else {?>
+								<td class="value"><?=$study_type?></td>
+							<?}?>
 						</tr>
 						<tr>
 							<td class="label">Age at scan</td>
@@ -1164,11 +1215,19 @@
 							<td class="value"><?=$study_experimenter?></td>
 						</tr>
 						<tr>
-							<td colspan="2" align="center">
+							<td colspan="1" align="left">
 								<br>
 								<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="linkbutton">Edit</a>
 							</td>
+							<? if (strtoupper($study_modality) != "MR"){ ?>
+							<td colspan="2" align="right">
+								<br>
+								<a name="subme" style="cursor: pointer;" class="linkbutton" onclick="document.getElementById('Sform').submit();">Save</a>
+							</td>
+							<?}?>
 						</tr>
+						<input type="hidden" name="subme">
+						</form>
 					</table>
 
 					<? if ($GLOBALS['isadmin']) { ?>
