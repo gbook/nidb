@@ -23,6 +23,8 @@
 #ifndef NIDB_H
 #define NIDB_H
 
+#define __BUILD__ "2019a"
+
 #include <QFile>
 #include <QString>
 #include <QHash>

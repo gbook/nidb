@@ -72,7 +72,7 @@ int moduleExport::Run() {
 			QString dirformat = q.value("dirformat").toString().trimmed();
 			int preserveseries = q.value("do_preserveseries").toInt();
 			bool gzip = q.value("do_gzip").toBool();
-			int anonymize = q.value("anonymize").toInt();
+			int anonymize = q.value("anonymization_level").toInt();
 			QString behformat = q.value("beh_format").toString().trimmed();
 			QString behdirrootname = q.value("beh_dirrootname").toString().trimmed();
 			QString behdirseriesname = q.value("beh_dirseriesname").toString().trimmed();
@@ -1287,7 +1287,11 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 /* --------- ExportToRemoteFTP ------------------------------ */
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg) {
+
 	/* not implemented */
+
+	n->WriteLog(QString("ExportToRemoteFTP(%1, %2, %3, %4, %5, %6, %7, %8) called").arg(exportid).arg(remoteftpusername).arg(remoteftppassword).arg(remoteftpserver).arg(remoteftpport).arg(remoteftppath).arg(exportstatus).arg(msg));
+
 	return true;
 }
 

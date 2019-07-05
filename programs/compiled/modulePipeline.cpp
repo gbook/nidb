@@ -207,7 +207,7 @@ int modulePipeline::Run() {
 
 			/* create the cluster job file */
 			QString sgefilepath = analysispath + "/sge.job";
-			if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, false, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false, p.useProfile, p.removeData)) {
+			if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
 				n->WriteLog("Created sge job submit file [" + sgefilepath + "]");
 			}
 			else {
@@ -401,7 +401,7 @@ int modulePipeline::Run() {
 					int numseriesdownloaded = 0;
 					/* get the data if we are not running a supplement, and not rerunning the results */
 					if ((!a.runSupplement) && (!a.rerunResults)) {
-						if (!GetData(sid, analysispath, s.uid, analysisRowID, p.version, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog)) {
+						if (!GetData(sid, analysispath, s.uid, analysisRowID, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog)) {
 							n->WriteLog("GetData() returned false");
 						}
 						else
@@ -544,7 +544,7 @@ int modulePipeline::Run() {
 							sgefilename = "sge.job";
 						sgefilepath = analysispath + "/" + sgefilename;
 
-						if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, false, s.uid, s.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false, p.useProfile, p.removeData)) {
+						if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, s.uid, s.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
 							n->WriteLog("Created sge job submit file [" + sgefilepath + "]");
 						}
 						else {
@@ -653,7 +653,7 @@ int modulePipeline::Run() {
 /* ---------------------------------------------------------- */
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineversion, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
+bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
 	n->WriteLog("Inside GetData()");
 
 	numdownloaded = 0;
@@ -1717,7 +1717,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 /* ---------------------------------------------------------- */
 /* --------- CreateClusterJobFile --------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, int analysisid, bool isgroup, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime,  QList<pipelineStep> steps, bool runsupplement, bool pipelineuseprofile, bool removedata) {
+bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, int analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime,  QList<pipelineStep> steps, bool runsupplement) {
 
 	bool rerunresults(false);
 

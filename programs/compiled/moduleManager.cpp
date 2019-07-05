@@ -77,6 +77,8 @@ int moduleManager::Run() {
 	}
 	else {
 		n->WriteLog("Found no lock files to delete");
+		return 0;
 	}
+
 	return 1;
 }

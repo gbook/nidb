@@ -98,6 +98,8 @@
     $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
 
     $c['importchunksize'] = GetVariable("importchunksize");
+    $c['enablenfs'] = GetVariable("enablenfs");
+    $c['enableftp'] = GetVariable("enableftp");
 
     $c['enablecas'] = GetVariable("enablecas");
     $c['casserver'] = GetVariable("casserver");
@@ -287,8 +289,10 @@
 [displayrecentstudies] = $displayrecentstudies
 [displayrecentstudydays] = $displayrecentstudydays
 
-# ----- import options -----
+# ----- import/export options -----
 [importchunksize] = $importchunksize
+[enablenfs] = $enablenfs
+[enableftp] = $enableftp
 
 # ----- cluster -----
 [usecluster] = $usecluster
@@ -620,12 +624,6 @@
 				<td>Checked to allow PHI (name, DOB) on server. Unchecked to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
 			</tr>
 			<tr>
-				<td class="variable">allowrawdicomexport</td>
-				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
-				<td></td>
-				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
-			</tr>
-			<tr>
 				<td class="variable">enableremoteconn</td>
 				<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
 				<td></td>
@@ -657,13 +655,31 @@
 			</tr>
 
 			<tr>
-				<td colspan="4" class="heading"><br>Data Import</td>
+				<td colspan="4" class="heading"><br>Data Import/Export</td>
 			</tr>
 			<tr>
 				<td class="variable">importchunksize</td>
 				<td><input type="number" name="importchunksize" value="<?=$GLOBALS['cfg']['importchunksize']?>" size="45"></td>
 				<td></td>
 				<td>Number of files checked by the import module before archiving begins. Default is 5000</td>
+			</tr>
+			<tr>
+				<td class="variable">enablenfs</td>
+				<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Display the NFS export options. Allow NiDB to write to NFS mount points</td>
+			</tr>
+			<tr>
+				<td class="variable">enableftp</td>
+				<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Display the FTP export options. Uncheck if this site does not have FTP, SCP, or other file transfer services enabled</td>
+			</tr>
+			<tr>
+				<td class="variable">allowrawdicomexport</td>
+				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
 			</tr>
 
 			<tr>

@@ -40,7 +40,7 @@ nidb::nidb(QString m)
 
 	pid = QCoreApplication::applicationPid();
 
-	Print(QString("Build date [%1 %2]    C++ version [%3]").arg(__DATE__).arg(__TIME__).arg(__cplusplus));
+	Print(QString("NiDB version %1   Build date [%2 %3]    C++ version [%4]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus));
 
 	LoadConfig();
 }
@@ -468,6 +468,7 @@ void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversi
 	q.bindValue(":pipelineversion", pipelineversion);
 	q.bindValue(":studyid", studyid);
 	q.bindValue(":event", event);
+	q.bindValue(":hostname", QHostInfo::localHostName());
 	q.bindValue(":message", message);
 	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
@@ -570,7 +571,7 @@ bool nidb::RemoveDir(QString p, QString &msg) {
 QString nidb::GenerateRandomString(int n) {
 
    const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-   qsrand(QTime::currentTime().msec());
+   qsrand(static_cast<unsigned int>(QTime::currentTime().msec()));
 
    QString randomString;
    for(int i=0; i<n; ++i)
