@@ -79,7 +79,6 @@ void study::LoadStudyInfo() {
 				isValid = false;
 			}
 		}
-		isValid = true;
 	}
 	msg = msgs.join(" | ");
 }

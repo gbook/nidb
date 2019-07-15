@@ -1458,8 +1458,9 @@ QStringList nidb::ShellWords(QString s) {
 			QRegularExpressionMatch match = iterator.next();
 			QString matched = match.captured(0);
 			matched.remove("\"");
-			WriteLog("Matched ["+matched+"]");
-			if(matched.length() > 0) words << matched;
+
+			if (matched.length() > 0)
+				words << matched;
 		}
 	}
 	return words;

@@ -280,7 +280,7 @@ int modulePipeline::Run() {
 				n->WriteLog(QString("--------------------- Working on study [%1%2] for pipeline [%3] --------------------").arg(s.uid).arg(s.studynum).arg(p.name));
 
 				/* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
-				n->WriteLog("Checking if we've reached the max number of concurrent analyses");
+				//n->WriteLog("Checking if we've reached the max number of concurrent analyses");
 				int filled;
 				do {
 					filled = IsQueueFilled(pipelineid);
@@ -290,6 +290,15 @@ int modulePipeline::Run() {
 						SetPipelineStatusMessage(pipelineid, "Pipeline disabled while running. Stopping at next iteration.");
 						SetPipelineStopped(pipelineid);
 						break;
+					}
+
+					/* check if this module is still enabled */
+					if (!n->ModuleCheckIfActive()) {
+						n->WriteLog("Module disabled. Exiting");
+						SetPipelineStatusMessage(pipelineid, "Pipeline module disabled while running. Stopping.");
+						SetPipelineStopped(pipelineid);
+						SetPipelineProcessStatus("complete",0,0);
+						return 1;
 					}
 
 					// otherwise check
@@ -318,11 +327,11 @@ int modulePipeline::Run() {
 				n->WriteLog(QString("Getting analysis info for pipelineID [%1] studyID [%2] pipelineVersion [%3]").arg(pipelineid).arg(sid).arg(p.version));
 				analysis a(pipelineid, sid, p.version, n);
 				if (a.exists) {
-					n->WriteLog("Analysis exists: [" + a.msg + "]");
+					//n->WriteLog("Analysis exists: [" + a.msg + "]");
 					analysisRowID = a.analysisid;
 				}
 				else {
-					n->WriteLog("Analysis does not exist: [" + a.msg + "]");
+					//n->WriteLog("Analysis does not exist: [" + a.msg + "]");
 					analysisRowID = -1;
 				}
 
@@ -334,7 +343,7 @@ int modulePipeline::Run() {
 				// b) OR there is an existing analysis and it needs the results rerun
 				// c) OR there is an existing analysis and it needs a supplement run
 				// ********************
-				n->WriteLog(QString("Checking if we need to submit this analysis to the cluster [%1] [%2] [%3]").arg(a.runSupplement).arg(a.rerunResults).arg(analysisRowID));
+				//n->WriteLog(QString("Checking if we need to submit this analysis to the cluster [%1] [%2] [%3]").arg(a.runSupplement).arg(a.rerunResults).arg(analysisRowID));
 				if ((a.runSupplement) || (a.rerunResults) || (analysisRowID == -1)) {
 					/* if the analysis doesn't yet exist, insert a temporary row, to be updated later, in the analysis table as a placeholder so that no other pipeline processes try to run it */
 					if (analysisRowID == -1) {
@@ -367,7 +376,7 @@ int modulePipeline::Run() {
 					QString setupLogFile = analysispath + "/pipeline/analysisSetup.log";
 					n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
 
-					// get the nearest study for this subject that has the dependency
+					/* get the nearest study for this subject that has the dependency */
 					int studyNumNearest(0);
 					q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, :studydatetime)) limit 1");
 					q2.bindValue(":subjectid", s.subjectid);
@@ -534,7 +543,8 @@ int modulePipeline::Run() {
 						clusteranalysispath.replace("/mount","");
 
 						/* create the SGE job file */
-						QString sgefilepath;
+						QString localsgefilepath;
+						QString clustersgefilepath;
 						QString sgefilename;
 						if (a.rerunResults)
 							sgefilename = "sgererunresults.job";
@@ -542,10 +552,11 @@ int modulePipeline::Run() {
 							sgefilename = "sge-supplement.job";
 						else
 							sgefilename = "sge.job";
-						sgefilepath = analysispath + "/" + sgefilename;
+						localsgefilepath = analysispath + "/" + sgefilename;
+						clustersgefilepath = clusteranalysispath + "/" + sgefilename;
 
-						if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, s.uid, s.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
-							n->WriteLog("Created sge job submit file [" + sgefilepath + "]");
+						if (CreateClusterJobFile(localsgefilepath, p.clusterType, analysisRowID, s.uid, s.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
+							n->WriteLog("Created (local) sge job submit file [" + localsgefilepath + "]");
 						}
 						else {
 							UpdateAnalysisStatus(analysisRowID, "error", "Error creating cluster job file", 0, -1, "", "", false, true);
@@ -557,11 +568,10 @@ int modulePipeline::Run() {
 						/* submit the cluster job file */
 						QString qm, qresult;
 						int jobid;
-						if (n->SubmitClusterJob(sgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
+						if (n->SubmitClusterJob(clustersgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
 							n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
 							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", -1, -1, "", "", false, true);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
-							//n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", "Analysis has been submitted to the cluster [" + p.queue + "] and is waiting to run");
 						}
 						else {
 							n->WriteLog("Error submitting job to cluster [" + qresult + "]");
@@ -585,12 +595,12 @@ int modulePipeline::Run() {
 						QThread::sleep(10);
 					}
 					else {
-						n->AppendCustomLog(setupLogFile, n->WriteLog("GetData() returned 0 series"));
+						n->WriteLog("Not Ok to submit job");
 						// update the analysis table with the datalog to people can check later on why something didn't process
 						UpdateAnalysisStatus(analysisRowID, "", "", -1, -1, datalog, datalog, false, false);
 						n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetuperror", "No data found, 0 series returned from search");
 					}
-					n->AppendCustomLog(setupLogFile, n->WriteLog(QString("Submitted [%1] jobs so far").arg(numsubmitted)));
+					n->WriteLog(QString("Submitted [%1] jobs so far").arg(numsubmitted));
 
 					/* mark the study in the analysis table */
 					n->WriteLog(QString("numseriesdownloaded [%1]  pipelinedep [%2]  deplevel [%3]  runSupplement [%4]  rerunResults [%5]").arg(numseriesdownloaded).arg(pipelinedep).arg(p.depLevel).arg(a.runSupplement).arg(a.rerunResults));
@@ -654,7 +664,7 @@ int modulePipeline::Run() {
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
 bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
-	n->WriteLog("Inside GetData()");
+	//n->WriteLog("Inside GetData()");
 
 	numdownloaded = 0;
 	QStringList dlog;
@@ -682,8 +692,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	QString modality = s.modality;
 	int studynum = s.studynum;
 
-	dlog << QString("---------- Working on [%1%2] studyid [%3] ----------").arg(uid).arg(studynum).arg(studyid);
-	dlog << n->WriteLog("Study modality is ["+modality+"]");
+	dlog << QString("---------- Working on [%1%2] studyid [%3]   modality [%4] ----------").arg(uid).arg(studynum).arg(studyid).arg(modality);
 	dlog << "---------- Checking data steps -----------------------------------------------";
 
 	// ------------------------------------------------------------------------
@@ -754,9 +763,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString comparison;
 		int num(0);
 		bool validComparisonStr = false;
-		if (!n->GetSQLComparison(numboldreps, comparison, num))
-			n->WriteLog("Invalid comparison for boldreps ["+numboldreps+"]. Ignoring BOLD rep comparison");
-		else
+		if (n->GetSQLComparison(numboldreps, comparison, num))
+		//	n->WriteLog("Invalid comparison for boldreps ["+numboldreps+"]. Ignoring BOLD rep comparison");
+		//else
 			validComparisonStr = true;
 
 		/* if its a subject level, check the subject for the protocol(s) */
@@ -843,9 +852,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				q.prepare(sqlstring);
 				q.bindValue(":studyid", studyid);
 			}
-			n->WriteLog(sqlstring);
+			//n->WriteLog(sqlstring);
 			//dlog << "Checking if study contains data [" + sqlstring + "]";
-			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 			if (q.size() > 0) {
 				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found").arg(i).arg(protocol);
 			}
@@ -933,9 +942,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		QString comparison;
 		int num = 0;
 		bool validComparisonStr = false;
-		if (!n->GetSQLComparison(numboldreps, comparison, num))
-			n->WriteLog("Invalid comparison for boldreps ["+numboldreps+"]. Ignoring BOLD rep comparison");
-		else
+		if (n->GetSQLComparison(numboldreps, comparison, num))
+		//	n->WriteLog("Invalid comparison for boldreps ["+numboldreps+"]. Ignoring BOLD rep comparison");
+		//else
 			validComparisonStr = true;
 
 		dlog << QString("Copying data for step [%1]").arg(i);
@@ -1738,7 +1747,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 	QString clusteranalysispath = analysispath;
 	QString workinganalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
 
-	n->WriteLog("Analysis path [" + analysispath + "]");
+	n->WriteLog("Cluster analysis path [" + analysispath + "]");
 	n->WriteLog("Working Analysis path (temp directory) [" + workinganalysispath + "]");
 
 	/* check if any of the variables might be blank */
@@ -1945,7 +1954,11 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
 	QSqlQuery q;
 
-	// get list of studies which do not have an entry in the analysis table for this pipeline
+	int numInitial(0);
+	int numRerun(0);
+	int numSupplement(0);
+
+	/* step 1 - get list of studies which do not have an entry in the analysis table for this pipeline */
 	if (depend >= 0) {
 		// there is a dependency
 		// need to check if ANY of the subject's studies have the dependency...
@@ -1955,12 +1968,13 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 		QSqlQuery q2;
 		q2.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and analysis_isbad <> 1) and a.isactive = 1)");
 		q2.bindValue(":depend", depend);
-		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
 		if (q2.size() > 0) {
 			while (q2.next())
 				list.append(q2.value("study_id").toInt());
 		}
 		QString studyidlist = n->JoinIntArray(list, ",");
+		//n->WriteLog(QString("Found studyid list [%1]").arg(studyidlist));
 
 		if (studyidlist == "")
 			studyidlist = "-1";
@@ -1983,14 +1997,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 		/* NO dependency */
 		if (groupids == "") {
 			/* NO groupids */
-			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (study_datetime < date_sub(now(), interval 6 hour)) and study_modality = :modality order by study_datetime desc");
+			q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
 			n->WriteLog(QString("GetStudyToDoList(): NO dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
 		}
 		else {
 			/* WITH groupids */
-			q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") ORDER BY a.study_datetime DESC");
+			q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") and d.isactive = 1 ORDER BY a.study_datetime DESC");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
 			n->WriteLog(QString("GetStudyToDoList(): NO dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
@@ -2017,9 +2031,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 			list.append(studyid);
 		}
 	}
-	n->WriteLog(QString("Found [%1] initial studies that met criteria.").arg(list.size()));
+	numInitial = list.size();
+	//n->WriteLog(QString("Found [%1] initial studies that met criteria.").arg(list.size()));
 
-	/* now get only the studies that need to have their results rerun */
+	/* step 2 - get only the studies that need to have their results rerun */
 	int addedStudies = 0;
 	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and analysis_isbad <> 1) order by study_datetime desc");
 	q.bindValue(":pipelineid", pipelineid);
@@ -2032,9 +2047,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 			addedStudies++;
 		}
 	}
-	n->WriteLog(QString("Found [%1] additional studies marked to be rerun.").arg(addedStudies));
+	//n->WriteLog(QString("Found [%1] additional studies marked to be rerun.").arg(addedStudies));
+	numRerun = addedStudies;
 
-	/* now get only the studies that need to have their supplements run */
+	/* step 3 - get only the studies that need to have their supplements run */
 	addedStudies = 0;
 	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and analysis_isbad <> 1) order by study_datetime desc");
 	q.bindValue(":pipelineid", pipelineid);
@@ -2047,10 +2063,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 			addedStudies++;
 		}
 	}
-	n->WriteLog(QString("Found [%1] additional studies marked for supplement run.").arg(addedStudies));
+	//n->WriteLog(QString("Found [%1] additional studies marked for supplement run.").arg(addedStudies));
+	numSupplement = addedStudies;
 
-	//n->WriteLog(QString("Found [%1] total studies that met criteria. list [%2]").arg(list.size()).arg(n->JoinIntArray(list, ",")));
-	n->WriteLog(QString("Found [%1] total studies that met criteria").arg(list.size()));
+	n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
 
 	return list;
 }

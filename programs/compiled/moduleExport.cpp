@@ -86,6 +86,8 @@ int moduleExport::Run() {
 			QString bidsreadme = q.value("bidsreadme").toString().trimmed();
 
 			remoteNiDBConnection conn(remotenidbconnid, n);
+			if (!conn.isValid)
+				n->WriteLog("Invalid remote connection [" + conn.msg + "]");
 
 			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
 			QString status = GetExportStatus(exportid);
@@ -1075,18 +1077,19 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &exports
 /* ---------------------------------------------------------- */
 /* --------- ExportToRemoteNiDB ----------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg) {
 
 	/* check to see if the remote server is reachable ... */
-	QString systemstring = "curl -sSf " + conn.server + "remotenidbserver > /dev/null";
-	QString serverResponse = n->SystemCommand(systemstring);
-	if (serverResponse != "") {
+	QString systemstring = "curl -sSf " + conn.server;
+	//n->WriteLog(n->SystemCommand(systemstring));
+	QString serverResponse = n->SystemCommand(systemstring, false);
+	if ((serverResponse == "") || (serverResponse.contains("Could not resolve host",Qt::CaseInsensitive))) {
 		msg = n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
 		return false;
 	}
 	/* ... and if our credentials work and we can start a transaction on it */
 	int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password);
-	if (transactionid < 1) {
+	if (transactionid < 0) {
 		msg = n->WriteLog(QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server));
 		return false;
 	}
@@ -1190,13 +1193,13 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 								QStringList behfiles = n->FindAllFiles(behindir, "*");
 							}
 
-							// build the cURL string to send the actual data
+							/* build the cURL string to send the actual data */
 							systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
 							int c = 0;
 							foreach (QString f, dcmfiles) {
 								c++;
-								QString systemstringA = QString("cp '%1/%2' %3/").arg(tmpdir).arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstring);
+								QString systemstringA = QString("cp '%1' %2/").arg(f).arg(tmpzipdir);
+								QString res = n->SystemCommand(systemstringA);
 								if (res != "") {
 									n->WriteLog(systemstringA + " (" + res + ")");
 								}
@@ -1207,7 +1210,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							foreach(QString f, behfiles) {
 								c++;
 								QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstring);
+								QString res = n->SystemCommand(systemstringA);
 								if (res != "") {
 									n->WriteLog(systemstringA + " (" + res + ")");
 								}
@@ -1224,9 +1227,9 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection conn, Q
 							/* get file MD5 before sending */
 							QString zipmd5 = n->GetFileChecksum(tmpzip, QCryptographicHash::Md5).toHex();
 
-							systemstring += "-F 'files[]=\\@" + tmpzip + "' ";
+							systemstring += "-F 'files[]=@" + tmpzip + "' ";
 							systemstring += conn.server + "/api.php";
-							QString results = n->SystemCommand(systemstring);
+							QString results = n->SystemCommand(systemstring, false);
 							n->WriteLog(systemstring + " (" + results + ")");
 							double elapsedtime = QDateTime::currentMSecsSinceEpoch() - starttime + 0.0000001; // to avoid a divide by zero!
 							double MBps = zipsize/elapsedtime/1000.0/1000.0;
@@ -1543,10 +1546,16 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 /* ---------------------------------------------------------- */
 int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
 
+	int ret = -1;
 	/* build a cURL string to start the transaction */
 	QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
 	QString str = n->SystemCommand(systemstring);
-	int t = str.toInt();
+
+	bool ok;
+	int t = str.toInt(&ok);
+	if (ok)
+		ret = t;
+
 	n->WriteLog(QString("Remote NiDB transactionID: [%1]").arg(t));
 
 	return t;
@@ -1554,7 +1563,7 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 
 
 /* ---------------------------------------------------------- */
-/* --------- WriteNDARSeries -------------------------------- */
+/* --------- EndRemoteNiDBTransaction ----------------------- */
 /* ---------------------------------------------------------- */
 void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
 

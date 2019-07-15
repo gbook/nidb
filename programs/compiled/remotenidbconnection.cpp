@@ -50,7 +50,7 @@ void remoteNiDBConnection::LoadConnection() {
 		QSqlQuery q;
 		q.prepare("select * from remote_connections where remoteconn_id = :connid");
 		q.bindValue(":connid", connid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid connection ID?";
 			isValid = false;
@@ -58,12 +58,12 @@ void remoteNiDBConnection::LoadConnection() {
 		else {
 			q.first();
 
-			QString server = q.value("remote_server").toString().trimmed();
-			QString username = q.value("remote_username").toString().trimmed();
-			QString password = q.value("remote_password").toString().trimmed();
-			int instanceid = q.value("remote_instanceid").toInt();
-			int projectid = q.value("remote_projectid").toInt();
-			int siteid = q.value("remote_siteid").toInt();
+			server = q.value("remote_server").toString().trimmed();
+			username = q.value("remote_username").toString().trimmed();
+			password = q.value("remote_password").toString().trimmed();
+			instanceid = q.value("remote_instanceid").toInt();
+			projectid = q.value("remote_projectid").toInt();
+			siteid = q.value("remote_siteid").toInt();
 
 			/* check to see if anything isn't valid or is blank */
 			if (server == "") { msgs << "server was blank"; isValid = false; }

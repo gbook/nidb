@@ -383,8 +383,6 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 /* ---------------------------------------------------------- */
 bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 
-	//n->WriteLog("Checkpoint D.a");
-
 	/* check if the file is readable */
 	gdcm::Reader r;
 	r.SetFileName(file.toStdString().c_str());
@@ -394,7 +392,6 @@ bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 	gdcm::StringFilter sf;
 	sf = gdcm::StringFilter();
 	sf.SetFile(r.GetFile());
-	//n->WriteLog("Checkpoint D.g");
 
 	/* get all of the DICOM tags... we're not using an iterator because we went to know exactly what tags we have */
 	tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
@@ -636,11 +633,15 @@ QString moduleImport::GetCostCenter(QString studydesc) {
 	/* extract the costcenter */
 	if (studydesc.contains("clinical",Qt::CaseInsensitive))
 		cc = "888888";
-	else if (studydesc.contains(QRegularExpression("(?<=\\()[^)]*(?=\\))"))) /* look for anything between parentheses */
+	else if ( (studydesc.contains("(")) && (studydesc.contains(")")) ) /* if it contains an opening and closing parentheses */
 	{
-		QRegularExpression regex("(?<=\\()[^)]*(?=\\))");
-		QRegularExpressionMatch match = regex.match(studydesc);
-		cc = match.captured(0);
+		//QRegularExpression regex("(?<=\\()[^)]*(?=\\))");
+		//QRegularExpression regex("\\((.*?)\\)");
+		//QRegularExpressionMatch match = regex.match(studydesc);
+		//cc = match.captured(0);
+		int idx1 = studydesc.indexOf("(");
+		int idx2 = studydesc.lastIndexOf(")");
+		cc = studydesc.mid(idx1+1, idx2-idx1);
 	}
 	else {
 		cc = studydesc;
