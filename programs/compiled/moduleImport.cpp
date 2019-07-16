@@ -639,9 +639,13 @@ QString moduleImport::GetCostCenter(QString studydesc) {
 		//QRegularExpression regex("\\((.*?)\\)");
 		//QRegularExpressionMatch match = regex.match(studydesc);
 		//cc = match.captured(0);
+		n->WriteLog("studydesc [" + studydesc + "]");
 		int idx1 = studydesc.indexOf("(");
+		n->WriteLog(QString("Position of ( [%1]").arg(idx1));
 		int idx2 = studydesc.lastIndexOf(")");
+		n->WriteLog(QString("Position of ( [%1]").arg(idx1));
 		cc = studydesc.mid(idx1+1, idx2-idx1);
+		n->WriteLog(QString("cc: mid of %1, %2 is [" + cc + "]").arg(idx1+1).arg(idx2-idx1));
 	}
 	else {
 		cc = studydesc;
@@ -737,6 +741,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		return false;
 	}
 
+	msgs << n->WriteLog("First file is [" + files[0] + "]");
 	n->SortQStringListNaturally(files);
 
 	/* import log variables */
@@ -864,7 +869,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 			QString line = in.readLine();
 			if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
 				/* make sure the line does not contain any non-printable ASCII control characters */
-				if (!line.contains(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{007F}]")))) {
+				if (!line.contains(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{001F}]")))) {
 					int idx = line.indexOf(".dInPlaneRot");
 					line = line.mid(idx,23);
 					QStringList vals = line.split(QRegExp("\\s+"));

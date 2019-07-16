@@ -256,6 +256,7 @@ bool nidb::CreateLogFile () {
 
 	Print("Creating log file [" + logFilepath + "]",false, true);
 	if (log.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered)) {
+		WriteLog(QString("NiDB version %1   Build date [%2 %3]    C++ version [%4]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus));
 		Print("[Ok]");
 		return 1;
 	}

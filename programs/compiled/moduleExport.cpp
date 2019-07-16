@@ -1232,8 +1232,8 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							QString results = n->SystemCommand(systemstring, false);
 							n->WriteLog(systemstring + " (" + results + ")");
 							double elapsedtime = QDateTime::currentMSecsSinceEpoch() - starttime + 0.0000001; // to avoid a divide by zero!
-							double MBps = zipsize/elapsedtime/1000.0/1000.0;
-							QString speedmsg = QString("%1 bytes transferred at %2 MB/s").arg(zipsize).arg(QString::number(MBps, 'g',2));
+							double MBps = zipsize/elapsedtime/1000.0;
+							QString speedmsg = QString("%1 bytes transferred in %2s - Speed: %3 MB/s").arg(zipsize).arg(elapsedtime*1000.0).arg(QString::number(MBps, 'g',2));
 							n->WriteLog(speedmsg);
 							msgs << speedmsg;
 
@@ -1549,10 +1549,11 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 	int ret = -1;
 	/* build a cURL string to start the transaction */
 	QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
-	QString str = n->SystemCommand(systemstring);
+	QString str = n->SystemCommand(systemstring, false).simplified();
+	//n->WriteLog(QString("Running systemstring [" + systemstring + "], got response [" + str + "] string length is [%1]").arg(str.size()));
 
 	bool ok;
-	int t = str.toInt(&ok);
+	int t = str.toLong(&ok);
 	if (ok)
 		ret = t;
 

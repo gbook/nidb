@@ -982,13 +982,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 			if (criteria == "first")
 				sqlstring += " order by series_num asc limit 1";
-			if (criteria == "last")
+			else if (criteria == "last")
 				sqlstring += " order by series_num desc limit 1";
-			if (criteria == "largestsize")
+			else if (criteria == "largestsize")
 				sqlstring += " order by series_size desc, numfiles desc, img_slices desc limit 1";
-			if (criteria == "smallestsize")
+			else if (criteria == "smallestsize")
 				sqlstring += " order by series_size asc, numfiles asc, img_slices asc limit 1";
-			if (criteria == "usesizecriteria")
+			else if (criteria == "usesizecriteria")
 				sqlstring += QString(" and numfiles %1 %2 order by series_num asc").arg(comparison).arg(num);
 			else
 				sqlstring += " order by series_num asc";
@@ -1037,13 +1037,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				/* determine the ORDERing and LIMITs */
 				if (criteria == "first")
 					sqlstring += " order by series_num asc limit 1";
-				if (criteria == "last")
+				else if (criteria == "last")
 					sqlstring += " order by series_num desc limit 1";
-				if (criteria == "largestsize")
+				else if (criteria == "largestsize")
 					sqlstring += " order by series_size desc, numfiles desc, img_slices desc limit 1";
-				if (criteria == "smallestsize")
+				else if (criteria == "smallestsize")
 					sqlstring += " order by series_size asc, numfiles asc, img_slices asc limit 1";
-				if (criteria == "usesizecriteria")
+				else if (criteria == "usesizecriteria")
 					sqlstring += QString(" and numfiles %1 %2 order by series_num asc").arg(comparison).arg(num);
 				else
 					sqlstring += " order by series_num asc";
@@ -1670,7 +1670,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 
 	    command.replace("{NOLOG}",""); /* remove any {NOLOG} commands */
 		command.replace("{NOCHECKIN}",""); /* remove any {NOCHECKIN} commands */
-		command.replace(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{007F}]")),""); /* remove any non-printable ASCII control characters */
+		command.replace(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{001F}]")),""); /* remove any non-printable ASCII control characters */
 		command.replace("{analysisrootdir}", analysispath, Qt::CaseInsensitive);
 		command.replace("{analysisid}", QString("%1").arg(analysisid), Qt::CaseInsensitive);
 		command.replace("{subjectuid}", uid, Qt::CaseInsensitive);

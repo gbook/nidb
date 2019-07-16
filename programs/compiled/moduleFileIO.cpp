@@ -256,7 +256,10 @@ bool moduleFileIO::CreateLinks(int analysisid, QString destination, QString &msg
 	}
 
 	analysis a(analysisid, n); /* get the analysis info */
-	if (!a.isValid) { msg = "analysis was not valid: [" + a.msg + "]"; return false; }
+	if (!a.isValid) {
+		msg = "analysis was not valid: [" + a.msg + "]";
+		return false;
+	}
 
 	if (n->MakePath(destination, msg)) {
 		QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
