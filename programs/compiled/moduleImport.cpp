@@ -643,9 +643,9 @@ QString moduleImport::GetCostCenter(QString studydesc) {
 		int idx1 = studydesc.indexOf("(");
 		n->WriteLog(QString("Position of ( [%1]").arg(idx1));
 		int idx2 = studydesc.lastIndexOf(")");
-		n->WriteLog(QString("Position of ( [%1]").arg(idx1));
-		cc = studydesc.mid(idx1+1, idx2-idx1);
-		n->WriteLog(QString("cc: mid of %1, %2 is [" + cc + "]").arg(idx1+1).arg(idx2-idx1));
+		n->WriteLog(QString("Position of ) [%1]").arg(idx2));
+		cc = studydesc.mid(idx1+1, idx2-idx1-1);
+		n->WriteLog(QString("cc: mid of %1, %2 is [" + cc + "]").arg(idx1+1).arg(idx2-idx1-1));
 	}
 	else {
 		cc = studydesc;
@@ -667,6 +667,7 @@ QString moduleImport::CreateIDSearchList(QString PatientID, QString altuids) {
 
 	idsearchlist.append(PatientID);
 	idsearchlist.append(altuidlist);
+	idsearchlist.removeDuplicates();
 
 	QString SQLIDs = "'" + PatientID + "'";
 	foreach (QString tmpID, idsearchlist) {
@@ -1090,7 +1091,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	if (q2.size() > 0) {
 		q2.first();
 		familyRowID = q2.value("family_id").toInt();
-		msgs << n->WriteLog(QString("This subject is part of a family [%1]").arg(familyRowID));
+		//msgs << n->WriteLog(QString("This subject is part of a family [%1]").arg(familyRowID));
 		IL_familycreated = 0;
 	}
 	else {
@@ -1589,7 +1590,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	/* create data directory if it doesn't already exist */
 	QString outdir = QString("%1/%2/%3/%4/dicom").arg(n->cfg["archivedir"]).arg(subjectRealUID).arg(studynum).arg(SeriesNumber);
 	QString thumbdir = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectRealUID).arg(studynum).arg(SeriesNumber);
-	msgs << n->WriteLog("outdir [" + outdir + "]");
+	//msgs << n->WriteLog("outdir [" + outdir + "]");
 	QString m;
 	if (!n->MakePath(outdir, m))
 		msgs << n->WriteLog("Unable to create output direcrory [" + outdir + "] because of error [" + m + "]");
@@ -1597,7 +1598,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		msgs << n->WriteLog("Created outdir ["+outdir+"]");
 
 	/* check if there are .dcm files already in the archive (outdir) */
-	msgs << n->WriteLog("Checking for existing files in the outputdir [" + outdir + "]");
+	msgs << n->WriteLog("Checking for existing files in outdir [" + outdir + "]");
 	QStringList existingdcms = n->FindAllFiles(outdir, "*.dcm");
 	int numexistingdcms = existingdcms.size();
 
@@ -1654,7 +1655,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	CreateThumbnail(files[files.size()/2], thumbdir);
 
 	/* renumber the **** NEWLY **** added files to make them unique */
-	msgs << n->WriteLog("Beginning renumbering of new files");
+	msgs << n->WriteLog("Renaming new files");
 	foreach (QString file, files) {
 		/* need to rename it, get the DICOM tags */
 		QHash<QString, QString> tags;
@@ -1768,34 +1769,34 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	QString inbehdir = QString("%1/%2/beh").arg(n->cfg["incomingdir"]).arg(importid);
 	QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectRealUID).arg(studynum).arg(SeriesNumber);
 
-	msgs << n->WriteLog("Checking for [" + inbehdir + "]");
-	QDir bd(inbehdir);
-	if (bd.exists()) {
-		QString m;
-		if (n->MakePath(outbehdir, m)) {
-			QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
-			msgs << n->WriteLog(n->SystemCommand(systemstring));
+	if (importid > 0) {
+		msgs << n->WriteLog("Checking for behavioral data in [" + inbehdir + "]");
+		QDir bd(inbehdir);
+		if (bd.exists()) {
+			QString m;
+			if (n->MakePath(outbehdir, m)) {
+				QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
+				msgs << n->WriteLog(n->SystemCommand(systemstring));
 
-			qint64 behdirsize(0);
-			int behnumfiles(0);
-			n->GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
-			QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
-			QSqlQuery q3;
-			q3.prepare(sqlstring);
-			q3.bindValue(":behdirsize", behdirsize);
-			q3.bindValue(":behnumfiles", behnumfiles);
-			q3.bindValue(":seriesRowID", seriesRowID);
-			n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+				qint64 behdirsize(0);
+				int behnumfiles(0);
+				n->GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
+				QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
+				QSqlQuery q3;
+				q3.prepare(sqlstring);
+				q3.bindValue(":behdirsize", behdirsize);
+				q3.bindValue(":behnumfiles", behnumfiles);
+				q3.bindValue(":seriesRowID", seriesRowID);
+				n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+			}
+			else
+				msgs << n->WriteLog("Unable to create outbehdir ["+outbehdir+"] because of error ["+m+"]");
 		}
-		else
-			msgs << n->WriteLog("Unable to create outbehdir ["+outbehdir+"] because of error ["+m+"]");
 	}
 
-	/* change the permissions to 777 so the webpage can read/write the directories */
-	msgs << n->WriteLog("About to change permissions on " + outdir);
+	/* change the permissions on the outdir to 777 so the webpage can read/write the directories */
 	systemstring = "chmod -Rf 777 " + outdir;
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
-	msgs << n->WriteLog("Finished changing permissions on " + outdir);
 
 	/* copy everything to the backup directory */
 	QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectRealUID).arg(studynum).arg(SeriesNumber);
@@ -1806,7 +1807,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		if (!n->MakePath(backdir, m))
 			msgs << n->WriteLog("Unable to create backdir [" + backdir + "] because of error [" + m + "]");
 	}
-	msgs << n->WriteLog("About to copy to the backup directory");
+	msgs << n->WriteLog("Starting copy to the backup directory");
 	systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 	msgs << n->WriteLog("Finished copying to the backup directory");
@@ -2107,7 +2108,7 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 			subjectRowID = q2.value("subject_id").toInt();
 			subjectRealUID = q2.value("uid").toString().toUpper().trimmed();
 
-			msgs << QString("Found subject [%1, " + subjectRealUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID);
+			msgs << QString("Found subject [subjectid %1, UID " + subjectRealUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID);
 		}
 		else {
 			msgs << "Could not the find this subject. Searched for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]";
@@ -2839,7 +2840,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		if (!n->MakePath(backdir, m))
 			msgs << "Unable to create backdir [" + backdir + "] because of error [" + m + "]";
 		else
-			msgs << "Finished creating ["+backdir+"]";
+			msgs << "Created backdir [" + backdir + "]";
 	}
 	msgs << "About to copy to the backup directory";
 	systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
@@ -2859,6 +2860,5 @@ void moduleImport::CreateThumbnail(QString f, QString outdir) {
 	QString outfile = outdir + "/thumb.png";
 
 	QString systemstring = "convert -normalize " + f + " " + outfile;
-	n->SystemCommand(systemstring);
-	n->WriteLog("Ran ["+systemstring+"]");
+	n->WriteLog(n->SystemCommand(systemstring));
 }

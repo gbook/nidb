@@ -77,7 +77,10 @@
     $c['adminemail'] = GetVariable("adminemail");
 	
     $c['siteurl'] = GetVariable("siteurl");
-    $c['usecluster'] = GetVariable("usecluster");
+    
+    $c['fslbinpath'] = GetVariable("fslbinpath");
+	
+	$c['usecluster'] = GetVariable("usecluster");
     $c['queuename'] = GetVariable("queuename");
     $c['queueuser'] = GetVariable("queueuser");
     $c['clustersubmithost'] = GetVariable("clustersubmithost");
@@ -293,6 +296,9 @@
 [importchunksize] = $importchunksize
 [enablenfs] = $enablenfs
 [enableftp] = $enableftp
+
+# ----- qc -----
+[fslbinpath] = $fslbinpath
 
 # ----- cluster -----
 [usecluster] = $usecluster
@@ -680,6 +686,16 @@
 				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
 				<td></td>
 				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" class="heading"><br>Quality Control</td>
+			</tr>
+			<tr>
+				<td class="variable">fslbinpath</td>
+				<td><input type="text" name="fslbinpath" value="<?=$GLOBALS['cfg']['fslbinpath']?>" size="45"></td>
+				<td></td>
+				<td>Path to FSL binaries. Example /opt/fsl/bin</td>
 			</tr>
 
 			<tr>

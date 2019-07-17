@@ -66,8 +66,10 @@ int moduleMRIQA::Run() {
 			/* only process 10 series before exiting the script. Since the script always starts with the newest when it first runs,
 			   this will allow newly collect studies a chance to be QA'd if there is a backlog of old studies */
 			numProcessed++;
-			if (numProcessed > 10)
-				continue;
+			if (numProcessed > 10) {
+				n->WriteLog("Processed 10 QC jobs, exiting");
+				break;
+			}
 		}
 		n->WriteLog("Finished MRI-QA");
 		ret = 1;
@@ -227,22 +229,22 @@ bool moduleMRIQA::QA(int seriesid) {
 	QString thumbfile = s.seriespath + "/thumb.png";
 	if (!QFile::exists(thumbfile)) {
 		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 1)");
-		systemstring = "slicer " + filepath4d + " -a " + thumbfile;
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + filepath4d + " -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	if (!QFile::exists(thumbfile)) {
 		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 2)");
-		systemstring = "slicer " + filepath4d + " -a " + thumbfile;
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + filepath4d + " -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	if (!QFile::exists(thumbfile)) {
 		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 3)");
-		systemstring = "slicer " + s.datapath + "/*.nii.gz -a " + thumbfile;
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii.gz -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	if (!QFile::exists(thumbfile)) {
 		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 4)");
-		systemstring = "slicer " + s.datapath + "/*.nii -a " + thumbfile;
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 
@@ -260,7 +262,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	if (QFile::exists(qapath + "/Tmean.nii.gz")) {
 		systemstring = QString("fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "slicer " + qapath + "/Tmean.nii.gz -a " + qapath + "/Tmean.png";
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tmean.nii.gz -a " + qapath + "/Tmean.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
@@ -269,7 +271,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	if (QFile::exists(qapath + "/Tsigma.nii.gz")) {
 		systemstring = QString("fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "slicer " + qapath + "/Tsigma.nii.gz -a " + qapath + "/Tsigma.png";
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tsigma.nii.gz -a " + qapath + "/Tsigma.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
@@ -278,7 +280,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	if (QFile::exists(qapath + "/Tvariance.nii.gz")) {
 		systemstring = QString("fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "slicer " + qapath + "/Tvariance.nii.gz -a " + qapath + "/Tvariance.png";
+		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tvariance.nii.gz -a " + qapath + "/Tvariance.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
@@ -457,14 +459,18 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
 		QTextStream in(&df);
 		while (!in.atEnd()) {
 			QString line = in.readLine().trimmed();
-			//msgs << n->WriteLog(line);
+			if (line.size() == 0)
+				continue;
+
 			QStringList p = line.split(QRegExp("\\s+"));
-			rotx.append(p[0].toDouble());
-			roty.append(p[1].toDouble());
-			rotz.append(p[2].toDouble());
-			trax.append(p[3].toDouble());
-			tray.append(p[4].toDouble());
-			traz.append(p[5].toDouble());
+			if (p.size() == 6) {
+				rotx.append(p[0].toDouble());
+				roty.append(p[1].toDouble());
+				rotz.append(p[2].toDouble());
+				trax.append(p[3].toDouble());
+				tray.append(p[4].toDouble());
+				traz.append(p[5].toDouble());
+			}
 		}
 		df.close();
 	}

@@ -109,10 +109,10 @@
 			<? } ?>
 			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
 			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
-			<span style="background-color: <?=$moduleinfo['parsedicom']['color']?>" title="Status: <?=$moduleinfo['parsedicom']['status']?>">&nbsp;parsedicom&nbsp;</span> 
+			<span style="background-color: <?=$moduleinfo['import']['color']?>" title="Status: <?=$moduleinfo['import']['status']?>">&nbsp;import&nbsp;</span> 
 			<span style="background-color: <?=$moduleinfo['fileio']['color']?>" title="Status: <?=$moduleinfo['fileio']['status']?>">&nbsp;fileio&nbsp;</span> 
 			<span style="background-color: <?=$moduleinfo['pipeline']['color']?>" title="Status: <?=$moduleinfo['pipeline']['status']?>">&nbsp;pipeline&nbsp;</span>
-			<span style="background-color: <?=$moduleinfo['datarequests']['color']?>" title="Status: <?=$moduleinfo['datarequests']['status']?>">&nbsp;datarequests&nbsp;</span>
+			<span style="background-color: <?=$moduleinfo['export']['color']?>" title="Status: <?=$moduleinfo['export']['status']?>">&nbsp;export&nbsp;</span>
 			<span style="background-color: <?=$moduleinfo['mriqa']['color']?>" title="Status: <?=$moduleinfo['mriqa']['status']?>">&nbsp;mriqa&nbsp;</span>
 		</td>
 		<td align="right" style="font-size:8pt; color: white">

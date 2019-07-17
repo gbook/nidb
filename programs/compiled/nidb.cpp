@@ -481,6 +481,8 @@ void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversi
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
 QString nidb::SystemCommand(QString s, bool detail) {
+
+	double starttime = QDateTime::currentMSecsSinceEpoch();
 	QString ret;
 	QString output;
 	QProcess process;
@@ -495,10 +497,12 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	}
 	process.waitForFinished();
 
+	double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+
 	output = output.trimmed();
 	output.replace("`", "'");
 	if (detail)
-		ret = QString("Running command [%1], Output [%2]").arg(s).arg(output);
+		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
 	else
 		ret = output;
 

@@ -50,6 +50,10 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	printf("\n\n-------------------------------------------------------------\n");
+	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
+	printf("-------------------------------------------------------------\n");
+
 	/* load the config file and connect to the database */
 	nidb *n = new nidb(module);
 	n->DatabaseConnect();
@@ -59,9 +63,6 @@ int main(int argc, char *argv[])
 		if (QString(argv[2]) == "debug")
 			n->cfg["debug"] = "1";
 
-	printf("\n\n-------------------------------------------------------------\n");
-	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
-	printf("-------------------------------------------------------------\n");
 	if (n->cfg["debug"].toInt())
 		printf("------------------------- DEBUG MODE ------------------------\n");
 

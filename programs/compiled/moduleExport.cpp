@@ -717,7 +717,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				n->WriteLog("Changing directory to [" + pwd + "]");
 				QDir::setCurrent(pwd);
 				systemstring = "unzip -vl " + zipfile;
-				QString filecontents = n->SystemCommand(systemstring, true);
+				QString filecontents = n->SystemCommand(systemstring, false);
 				QStringList lines = filecontents.split("\n");
 				QString lastline = lines.last().trimmed();
 				QStringList parts = lastline.split(QRegExp("\\s+"), QString::SkipEmptyParts); /* split on whitespace */
@@ -1199,7 +1199,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							foreach (QString f, dcmfiles) {
 								c++;
 								QString systemstringA = QString("cp '%1' %2/").arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstringA);
+								QString res = n->SystemCommand(systemstringA, false);
 								if (res != "") {
 									n->WriteLog(systemstringA + " (" + res + ")");
 								}
@@ -1210,7 +1210,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							foreach(QString f, behfiles) {
 								c++;
 								QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstringA);
+								QString res = n->SystemCommand(systemstringA, false);
 								if (res != "") {
 									n->WriteLog(systemstringA + " (" + res + ")");
 								}
