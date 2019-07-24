@@ -194,9 +194,9 @@
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$seriesid = $rowA[$modality."series_id"];
 				$seriesdate = $rowA['seriesdate'];
-				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+				list($path, $qadir, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 				
-				$qadir = "$path/qa";
+				//$qadir = "$path/qa";
 				//echo "$qadir: ";
 				
 				$sqlstringB = "select * from mr_qa where mrseries_id = $seriesid";

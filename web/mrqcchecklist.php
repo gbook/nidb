@@ -758,7 +758,7 @@
 							$dimt = number_format($rowA['dimT'],3,'.','');
 							$bandwidth = number_format($rowA['bandwidth'],3,'.','');
 							$numfiles = $rowA['numfiles'];
-							list($datapath, $junk1, $junk2, $junk3, $junk4) = GetDataPathFromSeriesID($seriesid, 'mr');
+							list($datapath, $junk0, $junk1, $junk2, $junk3, $junk4) = GetDataPathFromSeriesID($seriesid, 'mr');
 							
 							$p1 = $series_desc;
 							$protocol2 = $series_protocol;

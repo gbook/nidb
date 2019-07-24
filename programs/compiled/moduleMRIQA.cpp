@@ -45,7 +45,7 @@ moduleMRIQA::~moduleMRIQA()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleMRIQA::Run() {
-	n->WriteLog("Entering the import module");
+	n->WriteLog("Entering the mriqa module");
 
 	int ret(0);
 
@@ -194,7 +194,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	//QDir::setCurrent(indir);
 
 	/* create a 4D file to pass to the SNR program and run the SNR program on it */
-	systemstring = QString("%1/./nii_qa.sh -i "+filepath4d+" -o %3/qa.txt -v 2 -t %2").arg(n->cfg["scriptdir"]).arg(tmpdir).arg(qapath);
+	systemstring = QString("%1/./nii_qa.sh -i "+filepath4d+" -o %2/qa.txt -v 2 -t %3").arg(n->cfg["scriptdir"]).arg(qapath).arg(tmpdir);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	/* the nii_qa script may have generated a valid nii.gz file, so use that if the 4D.nii.gz doesn't exist */
@@ -208,7 +208,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	//}
 
 	/* move the realignment file(s) from the tmp to the archive directory */
-	systemstring = QString("mv -v %1/*.par %2").arg(tmpdir).arg(qapath);
+	systemstring = QString("mv -v %1/*.par %2/").arg(tmpdir).arg(qapath);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	/* rename the realignment file to something meaningful */
@@ -251,16 +251,31 @@ bool moduleMRIQA::QA(int seriesid) {
 	/* get image dimensions */
 	int dimN(0), dimX(0), dimY(0), dimZ(0), dimT(0);
 	if (filepath4d != "") {
-		dimN = n->SystemCommand("fslval " + filepath4d + " dim0", false).toInt();
-		dimX = n->SystemCommand("fslval " + filepath4d + " dim1", false).toInt();
-		dimY = n->SystemCommand("fslval " + filepath4d + " dim2", false).toInt();
-		dimZ = n->SystemCommand("fslval " + filepath4d + " dim3", false).toInt();
-		dimT = n->SystemCommand("fslval " + filepath4d + " dim4", false).toInt();
+		QString s;
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim0";
+		n->WriteLog(n->SystemCommand(s));
+		dimN = n->SystemCommand(s, false).toInt();
+
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim1";
+		n->WriteLog(n->SystemCommand(s));
+		dimX = n->SystemCommand(s, false).toInt();
+
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim2";
+		n->WriteLog(n->SystemCommand(s));
+		dimY = n->SystemCommand(s, false).toInt();
+
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim3";
+		n->WriteLog(n->SystemCommand(s));
+		dimZ = n->SystemCommand(s, false).toInt();
+
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim4";
+		n->WriteLog(n->SystemCommand(s));
+		dimT = n->SystemCommand(s, false).toInt();
 	}
 
 	/* get min/max intensity in the mean/variance/stdev volumes and create thumbnails of the mean, sigma, and varaiance images */
 	if (QFile::exists(qapath + "/Tmean.nii.gz")) {
-		systemstring = QString("fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
+		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tmean.nii.gz -a " + qapath + "/Tmean.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
@@ -269,7 +284,7 @@ bool moduleMRIQA::QA(int seriesid) {
 		msgs << n->WriteLog(qapath + "/Tmean.nii.gz does not exist");
 
 	if (QFile::exists(qapath + "/Tsigma.nii.gz")) {
-		systemstring = QString("fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
+		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tsigma.nii.gz -a " + qapath + "/Tsigma.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
@@ -278,7 +293,7 @@ bool moduleMRIQA::QA(int seriesid) {
 		msgs << n->WriteLog(qapath + "/Tsigma.nii.gz does not exist");
 
 	if (QFile::exists(qapath + "/Tvariance.nii.gz")) {
-		systemstring = QString("fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
+		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tvariance.nii.gz -a " + qapath + "/Tvariance.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
@@ -288,17 +303,17 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	if (QFile::exists(tmpdir + "/mc4D.nii.gz")) {
 		/* get mean/stdev in intensity over time */
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -m > " + qapath + "/meanIntensityOverTime.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -m > " + qapath + "/meanIntensityOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -s > " + qapath + "/stdevIntensityOverTime.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -s > " + qapath + "/stdevIntensityOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -e > " + qapath + "/entropyOverTime.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -e > " + qapath + "/entropyOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -c > " + qapath + "/centerOfGravityOverTimeMM.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -c > " + qapath + "/centerOfGravityOverTimeMM.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -C > " + qapath + "/centerOfGravityOverTimeVox.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -C > " + qapath + "/centerOfGravityOverTimeVox.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = "fslstats -t " + tmpdir + "/mc4D -h 100 > " + qapath + "/histogramOverTime.txt";
+		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -h 100 > " + qapath + "/histogramOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
@@ -529,7 +544,7 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
 void moduleMRIQA::GetMinMax(QVector<double> a, double &min, double &max) {
 	min = *std::min_element(a.begin(), a.end());
 	max = *std::max_element(a.begin(), a.end());
-	n->WriteLog(QString("Found min [%1] and max [%2]").arg(min).arg(max));
+//	n->WriteLog(QString("Found min [%1] and max [%2]").arg(min).arg(max));
 }
 
 

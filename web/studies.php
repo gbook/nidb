@@ -385,7 +385,7 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$seriesid = $row[$modality."series_id"];
 				
-					list($seriespath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+					list($seriespath, $qpath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $seriespath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
 					echo "<li>Moving data [<tt style='color:darkred'>$systemstring</tt>]";
 					echo "<pre>" . shell_exec($systemstring) . "</pre>";

@@ -3313,7 +3313,7 @@
 			$qc[$seriesdesc][$studydate]['data'][$variable] = trim($value);
 			
 			if ($qc[$seriesdesc][$studydate]['studyid'] == "") {
-				list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'MR');
+				list($path, $qpath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'MR');
 				$qc[$seriesdesc][$studydate]['studyid'] = $studyid;
 				$qc[$seriesdesc][$studydate]['studynum'] = "$uid$studynum";
 			}

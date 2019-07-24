@@ -109,7 +109,7 @@
 		NavigationBar("Admin", $urllist);
 		
 		chdir($GLOBALS['cfg']['logdir']);
-		$files = glob("$modulename*.log");
+		$files = glob("$modulename"."2*.log");
 		usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
 		foreach ($files as $filename) {
 			$filesize = filesize($filename);

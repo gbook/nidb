@@ -500,7 +500,8 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
 	output = output.trimmed();
-	output.replace("`", "'");
+	output.replace("’", "'");
+	output.replace("‘", "'");
 	if (detail)
 		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
 	else
@@ -575,14 +576,16 @@ bool nidb::RemoveDir(QString p, QString &msg) {
 /* ---------------------------------------------------------- */
 QString nidb::GenerateRandomString(int n) {
 
-   const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-   qsrand(static_cast<unsigned int>(QTime::currentTime().msec()));
+   const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+   //qsrand(static_cast<unsigned int>(QTime::currentTime().msec()));
+
+   //C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
 
    QString randomString;
    for(int i=0; i<n; ++i)
    {
-	   int index = qrand() % possibleCharacters.length();
-	   QChar nextChar = possibleCharacters.at(index);
+	   //int index = qrand() % possibleCharacters.length();
+	   QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
 	   randomString.append(nextChar);
    }
    return randomString;
@@ -1050,28 +1053,30 @@ bool nidb::IsDICOMFile(QString f) {
 /* --------- AnonymizeDICOMFile ----------------------------- */
 /* ---------------------------------------------------------- */
 /* borrowed in its entirety from gdcmanon.cxx                 */
-bool nidb::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode)
+bool nidb::AnonymizeDICOMFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags)
 {
+	WriteLog(QString("AnonymizeDICOMFile(infile [%1]   outfile [%2])").arg(infile).arg(outfile));
+
 	gdcm::Reader reader;
-	reader.SetFileName( filename );
+	reader.SetFileName( infile.toStdString().c_str() );
 	if( !reader.Read() ) {
-		std::cerr << "Could not read : " << filename << std::endl;
-		if( continuemode ) {
-			std::cerr << "Skipping from anonymization process (continue mode)." << std::endl;
-			return true;
-		}
-		else
-		{
-			std::cerr << "Check [--continue] option for skipping files." << std::endl;
-			return false;
-		}
+		WriteLog(QString("Could not read [%1]").arg(infile));
+		//if( continuemode ) {
+		//	WriteLog("Skipping from anonymization process (continue mode).");
+		//	return true;
+		//}
+		//else
+		//{
+		//	WriteLog("Check [--continue] option for skipping files.");
+		//	return false;
+		//}
 	}
 	gdcm::File &file = reader.GetFile();
 
 	anon.SetFile( file );
 
 	if( empty_tags.empty() && replace_tags.empty() && remove_tags.empty() ) {
-		std::cerr << "No operation to be done." << std::endl;
+		WriteLog("AnonymizeDICOMFile() empty tags. No operation to be done.");
 		return false;
 	}
 
@@ -1091,16 +1096,16 @@ bool nidb::AnonymizeDICOMFile(gdcm::Anonymizer &anon, const char *filename, cons
 	}
 
 	gdcm::Writer writer;
-	writer.SetFileName( outfilename );
+	writer.SetFileName( outfile.toStdString().c_str() );
 	writer.SetFile( file );
 	if( !writer.Write() ) {
-		std::cerr << "Could not Write : " << outfilename << std::endl;
-		if( strcmp(filename,outfilename) != 0 ) {
-			gdcm::System::RemoveFile( outfilename );
+		WriteLog(QString("Could not write [%1]").arg(outfile));
+		if ((infile != infile) && (infile != "")) {
+			gdcm::System::RemoveFile( infile.toStdString().c_str() );
 		}
 		else
 		{
-			std::cerr << "gdcmanon just corrupted: " << filename << " for you (data lost)." << std::endl;
+			WriteLog(QString("gdcmanon just corrupted [%1] for you (data lost).").arg(infile));
 		}
 		return false;
 	}
@@ -1201,8 +1206,8 @@ bool nidb::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString ran
 	gdcm::Anonymizer anon;
 	QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
 	while (it.hasNext()) {
-		const char *dcmfile = it.next().toStdString().c_str();
-		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
+		QString dcmfile = it.next();
+		AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags);
 	}
 
 	return true;

@@ -51,13 +51,13 @@
 
 <!-- menu -->
 	<style>
-		#Bar1 a:link { background-color:#526FAA; color: white; padding: 12px 12px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:11pt; min-width: 70px; }
-		#Bar1 a:visited { background-color:#526FAA; color: white; padding: 12px 12px; text-align: center; text-decoration: none; font-size:11pt; }
+		#Bar1 a:link { background-color:#526FAA; color: white; padding: 10px 12px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap; font-size:11pt; min-width: 70px; }
+		#Bar1 a:visited { background-color:#526FAA; color: white; padding: 10px 12px; text-align: center; text-decoration: none; font-size:11pt; }
 		#Bar1 a:hover { background-color: #3B5998; }
 		#Bar1 a:active { background-color: #3B5998; }
 		
-		#Bar2 a:link{ background-color:#3B5998; color: white; padding: 12px 15px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap;font-size:11pt;}
-		#Bar2 a:visited { background-color:#3B5998; color: white; padding:12px 15px; text-align: center; text-decoration: none; font-size:11pt;}
+		#Bar2 a:link{ background-color:#3B5998; color: white; padding: 10px 15px; text-align: center; text-decoration: none; display: inline-block; white-space: nowrap;font-size:11pt;}
+		#Bar2 a:visited { background-color:#3B5998; color: white; padding:10px 15px; text-align: center; text-decoration: none; font-size:11pt;}
 		#Bar2 a:hover { background-color: #526FAA; }
 		#Bar2 a:active { background-color: #526FAA; }
 	</style>
@@ -72,8 +72,8 @@
 			<!--<span style="font-size:9pt;"><i>Project group</i></span><br>-->
 			
 			<span style="overflow: hidden; text-overflow: ellipsis; width: 250px; display: inline-block; font-size: 10pt; color: white; white-space: nowrap" title="<?=$_SESSION['instancename']?>"><?=$_SESSION['instancename']?></span>
-			<select name="instanceid" style="background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding:0;border: 0px solid #526FAA; width:20px; color: white" title="Switch instance" onChange="instanceform.submit()">
-				<option value="">Select Instance...</option>
+			<select name="instanceid" style="background-color: <?=$GLOBALS['cfg']['sitecolor']?>; padding:0;border: 0px solid #526FAA; width:20px; color: white" title="Switch instance (project group)" onChange="instanceform.submit()">
+				<option value="">Select Project Group...</option>
 				<?
 					$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

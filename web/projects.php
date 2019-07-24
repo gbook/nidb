@@ -822,9 +822,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('studies', $id);
 		
@@ -965,11 +965,11 @@
 		$name = $row['project_name'];
 	#	$desc = $row['form_desc'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name]="projects.php";
-		$urllist['Assessments'] = "adminassessmentforms.php";
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name]="projects.php";
+		//$urllist['Assessments'] = "adminassessmentforms.php";
 #		$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		NavigationBar("Project Assessments", $urllist);
+		//NavigationBar("Project Assessments", $urllist);
 	
 		DisplayProjectsMenu('assessments', $id);
 	
@@ -1081,9 +1081,9 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?actimn=displayFormList&id=$id";
-		$urllist['Add Form'] = "projectassessments.php?action=addform";
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?actimn=displayFormList&id=$id";
+		//$urllist['Add Form'] = "projectassessments.php?action=addform";
 #		NavigationBar("Admin", $urllist);
 		
 	?>
@@ -1145,10 +1145,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
+		//$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
+		//NavigationBar("$name", $urllist);
 		
 		?>
 		<table class="graydisplaytable">
@@ -1211,10 +1211,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
+		//$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
+		//NavigationBar("$name", $urllist);
 		
 		if (($templateid == "") || ($templateid == 0)) {
 			$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
@@ -1341,9 +1341,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		?>
 		<script type='text/javascript' src='scripts/x/x.js'></script>
@@ -1686,9 +1686,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//NavigationBar("$name", $urllist);
 
 		?>
 		<form method="post" action="projects.php">
@@ -1751,9 +1751,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//NavigationBar("$name", $urllist);
 
 		//PrintVariable($locallist);
 		$localseries = explode("\n",$locallist);
@@ -1856,10 +1856,10 @@
 		$name = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		# get the autocomplete list for the enrollgroup
 		$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
@@ -2064,10 +2064,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		?>
 		<? DisplayProjectsMenu("subjects", $id); ?>
@@ -2193,10 +2193,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['Edit Group Protocols'] = "projects.php?action=editbidsdatatypes&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['Edit Group Protocols'] = "projects.php?action=editbidsdatatypes&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $id";
@@ -2282,10 +2282,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['Series Summary'] = "projects.php?action=editbidsdatatypes&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['Series Summary'] = "projects.php?action=editbidsdatatypes&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
@@ -2380,9 +2380,9 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//NavigationBar("$name", $urllist);
 		
 		/* get studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
@@ -2499,8 +2499,8 @@
 	function DisplayInstanceSummary($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
-		$urllist['Projects'] = "projects.php";
-		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid, a.project_name FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id and d.isactive = 1 order by a.project_name, e.altuid";
@@ -2649,8 +2649,8 @@
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
 		
-		$urllist['Projects'] = "projects.php";
-		NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		if ($_SESSION['instanceid'] == "") {
 			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top right corner of the page.</div><?

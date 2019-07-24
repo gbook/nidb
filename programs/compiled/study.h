@@ -41,6 +41,7 @@ public:
 	QString studytype;
 	int subjectid;
 	QString studypath;
+	bool studyPathExists;
 	int enrollmentid;
 	int projectid;
 	QDateTime studydatetime;
@@ -48,6 +49,7 @@ public:
 
 	bool isValid = true;
 	QString msg;
+
 private:
 	void LoadStudyInfo();
 };

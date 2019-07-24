@@ -543,7 +543,8 @@
 		}
 		
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
-		return array($path, $uid, $studynum, $studyid, $subjectid);
+		$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/qa";
+		return array($path, $qapath, $uid, $studynum, $studyid, $subjectid);
 	}
 
 
@@ -803,9 +804,9 @@
 						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 						
 						/* delete the qa directory */
-						list($path, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
+						list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						
-						$qapath = "$path/qa";
+						//$qapath = "$path/qa";
 						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
 							echo "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]<br>";
 						}

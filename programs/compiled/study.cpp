@@ -74,9 +74,13 @@ void study::LoadStudyInfo() {
 			studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(uid).arg(studynum);
 
 			QDir d(studypath);
-			if (!d.exists()) {
-				msgs << QString("Invalid study path [%1]").arg(studypath);
-				isValid = false;
+			if (d.exists()) {
+				msgs << QString("Study path [%1] exists").arg(studypath);
+				studyPathExists = true;
+			}
+			else {
+				msgs << QString("Study path [%1] does not exist").arg(studypath);
+				studyPathExists = false;
 			}
 		}
 	}

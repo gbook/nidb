@@ -82,6 +82,8 @@ if ($email == "") {
 <div style="background-color: #e45a48; color: white; padding:10px">Your email address is currently blank. Please <a href="users.php">update</a> your email address. Thank you!
 </div><br>
 <? } ?>
+
+<!--
 <details <? if (($logincount < 10) && ($logincount > 0) && ($logincount != '')) { echo "open"; }?>>
 <summary style="font-size:9pt" title="Click here to view things to do on NiDB">Welcome!</summary>
 <div style="background-color: #ffe7ce; color: black; padding:0px; border: 1px solid #E45A48; border-radius: 3px">
@@ -97,7 +99,7 @@ if ($email == "") {
 </div>
 </details>
 <br>
-
+-->
 <table width="100%">
 	<tr>
 		<td valign="top" width="50%">

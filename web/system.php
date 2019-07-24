@@ -101,6 +101,7 @@
     $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
 
     $c['importchunksize'] = GetVariable("importchunksize");
+    $c['numretry'] = GetVariable("numretry");
     $c['enablenfs'] = GetVariable("enablenfs");
     $c['enableftp'] = GetVariable("enableftp");
 
@@ -294,6 +295,7 @@
 
 # ----- import/export options -----
 [importchunksize] = $importchunksize
+[numretry] = $numretry
 [enablenfs] = $enablenfs
 [enableftp] = $enableftp
 
@@ -668,6 +670,12 @@
 				<td><input type="number" name="importchunksize" value="<?=$GLOBALS['cfg']['importchunksize']?>" size="45"></td>
 				<td></td>
 				<td>Number of files checked by the import module before archiving begins. Default is 5000</td>
+			</tr>
+			<tr>
+				<td class="variable">numretry</td>
+				<td><input type="number" name="numretry" value="<?=$GLOBALS['cfg']['numretry']?>" size="45"></td>
+				<td></td>
+				<td>Number of times to retry a failed network operation. Default is 5</td>
 			</tr>
 			<tr>
 				<td class="variable">enablenfs</td>

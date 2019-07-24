@@ -97,13 +97,12 @@ int moduleImportUploaded::Run() {
 
 						QString tmppath = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 						QString systemstring;
-						if (file.endsWith(".tar.gz")) systemstring = "tar -xzf '" + file + "' --warning=no-timestamp -C "+tmppath;
-						else if (file.endsWith(".gz")) systemstring = "gunzip -c '" + file + "' -C "+tmppath;
-						else if (file.endsWith(".z")) systemstring = "gunzip -c '" + file + "' -C "+tmppath;
-						else if (file.endsWith(".Z")) systemstring = "gunzip -c '" + file + "' -C "+tmppath;
-						else if (file.endsWith(".zip")) systemstring = "unzip '" + file + "' -d "+tmppath;
-						else if (file.endsWith(".tar.bz2")) systemstring = "tar -xjf '" + file + "' --warning=no-timestamp -C "+tmppath;
-						else if (file.endsWith(".tar")) systemstring = "tar -xf '" + file + "' -C "+tmppath;
+						if (file.endsWith(".tar.gz", Qt::CaseInsensitive)) systemstring = "tar -xzf '" + file + "' --warning=no-timestamp -C " + tmppath;
+						else if (file.endsWith(".gz", Qt::CaseInsensitive)) systemstring = "gunzip -c '" + file + "' -C " + tmppath;
+						else if (file.endsWith(".z", Qt::CaseInsensitive)) systemstring = "gunzip -c '" + file + "' -C " + tmppath;
+						else if (file.endsWith(".zip", Qt::CaseInsensitive)) systemstring = "unzip '" + file + "' -d " + tmppath;
+						else if (file.endsWith(".tar.bz2", Qt::CaseInsensitive)) systemstring = "tar -xjf '" + file + "' --warning=no-timestamp -C " + tmppath;
+						else if (file.endsWith(".tar", Qt::CaseInsensitive)) systemstring = "tar -xf '" + file + "' -C " + tmppath;
 
 						if (systemstring == "") {
 							n->WriteLog("Did not know how to handle this file [" + file + "]");
@@ -111,9 +110,11 @@ int moduleImportUploaded::Run() {
 						else {
 							QString m;
 							if (!n->MakePath(tmppath, m)) {
-								n->WriteLog("Unable to create tmpdir ["+tmppath+"] because of error ["+m+"]");
+								n->WriteLog("Unable to create tmpdir [" + tmppath + "] because of error [" + m + "]");
 								continue;
 							}
+
+							n->WriteLog(n->SystemCommand(systemstring));
 
 							/* find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming) */
 							QStringList tmpfiles = n->FindAllFiles(tmppath, "*", true);
@@ -124,7 +125,7 @@ int moduleImportUploaded::Run() {
 
 							/* delete the tmp directory */
 							if (!n->RemoveDir(tmppath,m))
-								n->WriteLog("Unable to remove tmpdir ["+tmppath+"] because of error ["+m+"]");
+								n->WriteLog("Unable to remove tmpdir [" + tmppath + "] because of error [" + m + "]");
 						}
 					}
 				}
@@ -138,32 +139,42 @@ int moduleImportUploaded::Run() {
 				}
 			}
 			else if ((datatype == "eeg") || (datatype == "et")) {
-				n->WriteLog("Encountered "+datatype+" import");
-				/* ----- get list of files in directory ----- */
+				n->WriteLog("Encountered [" + datatype + "] import");
 
-				n->WriteLog("Should see me...");
 				/* unzip anything in the directory before parsing it */
-				QString systemstringbase = "cd " + uploaddir + "; ";
-				n->SystemCommand(systemstringbase + "unzip *.zip; rm *.zip");
-				n->SystemCommand(systemstringbase + "tar -xzf *.tar.gz --warning=no-timestamp; rm *.tar.gz");
-				n->SystemCommand(systemstringbase + "gunzip *.gz; rm *.gz");
-				n->SystemCommand(systemstringbase + "bunzip2 *.bz2; rm *.bz2");
-
-				/* go through the files */
 				foreach (QString file, files) {
-					QString systemstring = QString("touch %1; mv %1 %2/%3/%4").arg(file).arg(n->cfg["incomingdir"]).arg(importrequestid).arg(file);
-					n->SystemCommand(systemstring);
+					QString systemstring;
+					if (file.endsWith(".tar.gz", Qt::CaseInsensitive)) systemstring = "tar -xzf '" + file + "' --warning=no-timestamp -C " + uploaddir + "/";
+					else if (file.endsWith(".gz", Qt::CaseInsensitive)) systemstring = "gunzip -c '" + file + "' -C " + uploaddir + "/";
+					else if (file.endsWith(".z", Qt::CaseInsensitive)) systemstring = "gunzip -c '" + file + "' -C " + uploaddir + "/";
+					else if (file.endsWith(".zip", Qt::CaseInsensitive)) systemstring = "unzip '" + file + "' -d " + uploaddir + "/";
+					else if (file.endsWith(".tar.bz2", Qt::CaseInsensitive)) systemstring = "tar -xjf '" + file + "' --warning=no-timestamp -C " + uploaddir + "/";
+					else if (file.endsWith(".tar", Qt::CaseInsensitive)) systemstring = "tar -xf '" + file + "' -C " + uploaddir + "/";
+					if (systemstring == "")
+						n->WriteLog("Did not know how to unzip this file [" + file + "]");
+					else {
+						n->WriteLog(n->SystemCommand(systemstring));
+
+						/* remove the zip file */
+						systemstring = "rm -v " + file;
+						n->WriteLog(n->SystemCommand(systemstring));
+					}
 				}
-				n->WriteLog("Finished iterating through the files");
+
+				/* move the unzipped files */
+				QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(uploaddir).arg(outdir);
+				n->WriteLog(n->SystemCommand(systemstring));
+
+				n->WriteLog("Finished moving the files");
 			}
 			else {
-				n->WriteLog("Datatype not recognized ["+datatype+"]");
+				n->WriteLog("Datatype not recognized [" + datatype + "]");
 			}
 
 			SetImportRequestStatus(importrequestid, "received");
 
 			/* delete the uploaded directory */
-			n->WriteLog("Attempting to remove ["+uploaddir+"]");
+			n->WriteLog("Attempting to remove [" + uploaddir + "]");
 			if (!n->RemoveDir(uploaddir, m))
 				n->WriteLog("Unable to remove directory [" + uploaddir + "] because error [" + m + "]");
 		}
@@ -183,7 +194,7 @@ int moduleImportUploaded::Run() {
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir, bool anonymize) {
 
-	n->WriteLog("PrepareAndMoveDICOM(" + filepath + "," + outdir + ")");
+	//n->WriteLog("PrepareAndMoveDICOM(" + filepath + "," + outdir + ")");
 
 	if (anonymize) {
 		gdcm::Anonymizer anon;
@@ -199,15 +210,15 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 		tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
 		tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
 
-		n->AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, false);
+		n->AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags);
 	}
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
 	QString filename = QFileInfo(filepath).fileName();
-	QString newfilename = n->GenerateRandomString(15) + filename;
+	QString newfilename = QFileInfo(filepath).baseName() + n->GenerateRandomString(15) + QFileInfo(filepath).completeSuffix();
 
 	QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
-	n->SystemCommand(systemstring, true);
+	n->SystemCommand(systemstring, false);
 
 	return true;
 }

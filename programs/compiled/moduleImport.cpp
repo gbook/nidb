@@ -53,14 +53,14 @@ int moduleImport::Run() {
 	QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 4 day)");
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	// ----- Step 1 - archive all files in the main directory -----
-	if (ParseDirectory(n->cfg["incomingdir"], 0)) {
+	/* ----- Step 1 - archive all files in the main directory ----- */
+	if (ParseDirectory(n->cfg["incomingdir"], 0))
 		ret = 1;
-	}
 
-	// ----- parse the sub directories -----
-	// if there's a sub directory, the directory name is a rowID from the import table,
-	// which contains additional information about the files being imported, such as project and site
+	/* ----- Step 2 - parse the sub directories -----
+	 * if there's a sub directory, the directory name is a rowID from the import table,
+	 * which contains additional information about the files being imported, such as project and site
+	*/
 	QStringList dirs = n->FindAllDirs(n->cfg["incomingdir"],"",false, false);
 	n->WriteLog(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
 	foreach (QString dir, dirs) {
@@ -74,7 +74,8 @@ int moduleImport::Run() {
 					n->WriteLog("Removed directory [" + fulldir + "]");
 				else
 					n->WriteLog("Error removing directory [" + fulldir + "] [" + m + "]");
-				ret = 1;
+
+				ret = ret | 1;
 			}
 		}
 		else
@@ -83,7 +84,7 @@ int moduleImport::Run() {
 		n->ModuleRunningCheckIn();
 		if (!n->ModuleCheckIfActive()) {
 			n->WriteLog("Module is now inactive, stopping the module");
-			return 0;
+			return ret;
 		}
 	}
 
@@ -156,6 +157,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	n->WriteLog(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
 	n->ModuleRunningCheckIn();
 
+	dcmseries.clear();
 	QString archivereport;
 	QString importStatus;
 	QString importModality;
@@ -189,11 +191,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	int ret(0);
 	int i(0);
 	bool iscomplete = false;
+	bool okToDeleteDir = true;
 
 	/* ----- parse all files in /incoming ----- */
 	QStringList files = n->FindAllFiles(dir, "*");
 	int numfiles = files.size();
-	n->WriteLog(QString("Found %1 files in %2").arg(numfiles).arg(dir));
+	n->WriteLog(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
 	int processedFileCount(0);
 	foreach (QString file, files) {
 
@@ -211,8 +214,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 		 * if so, the file may still be being copied, so skip it */
 		QDateTime now = QDateTime::currentDateTime();
 		qint64 fileAgeInSec = now.secsTo(QFileInfo(file).lastModified());
-		if (fileAgeInSec > -120)
+		if (fileAgeInSec > -120) {
+			n->WriteLog(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+			okToDeleteDir = false;
 			continue;
+		}
 
 		/* display how many files have been checked so far, and start archiving them if we've reached the chunk size */
 		processedFileCount++;
@@ -222,6 +228,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 			n->ModuleRunningCheckIn();
 			if (!n->ModuleCheckIfActive()) {
 				n->WriteLog("Module is now inactive, stopping the module");
+				okToDeleteDir = false;
 				return 1;
 			}
 		}
@@ -274,7 +281,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 				QString report;
 				QString m;
 
-				if (!InsertParRec(importid, file, archivereport)) {
+				if (!InsertEEG(importid, file, archivereport)) {
 					n->WriteLog(QString("InsertEEG(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
 					QSqlQuery q;
 					q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, :datatype, :importid, now(), :msg)");
@@ -327,11 +334,13 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 		}
 	}
 
+	n->WriteLog(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
 	/* done reading all of the files in the directory (more may show up, but we'll get to those later)
 	 * now archive them */
 	for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
 		QString seriesuid = a.key();
 
+		n->WriteLog(QString("Getting list of files for seriesuid ["+seriesuid+"] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
 		QStringList files = dcmseries[seriesuid];
 
 		if (InsertDICOMSeries(importid, files, archivereport))
@@ -353,7 +362,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 		}
 	}
 
-	if (importid > 0 && iscomplete) {
+	if (importid > 0 && iscomplete && okToDeleteDir) {
 		QDir d(dir);
 		if (d.exists()) {
 			/* delete the uploaded directory */
@@ -364,6 +373,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 		}
 		SetImportStatus(importid, "archived", "DICOM successfully archived", archivereport, true);
 	}
+	else
+		SetImportStatus(importid, "checked", "Files less than 2 minutes old in directory", "", false);
 
 	if (i > 0) {
 		n->WriteLog("Finished archiving data for [" + dir + "]");
@@ -383,6 +394,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 /* ---------------------------------------------------------- */
 bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 
+	if (!QFile::exists(file)) {
+		n->WriteLog(QString("File [%1] does not exist - check C!").arg(file));
+		return false;
+	}
+
 	/* check if the file is readable */
 	gdcm::Reader r;
 	r.SetFileName(file.toStdString().c_str());
@@ -393,7 +409,9 @@ bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 	sf = gdcm::StringFilter();
 	sf.SetFile(r.GetFile());
 
-	/* get all of the DICOM tags... we're not using an iterator because we went to know exactly what tags we have */
+	/* get all of the DICOM tags...
+	 * we're not using an iterator because we want to know exactly what tags we have and dont have */
+
 	tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
 	tags["FileMetaInformationVersion"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0001)).c_str()).trimmed(); /* FileMetaInformationVersion */
 	tags["MediaStorageSOPClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0002)).c_str()).trimmed(); /* MediaStorageSOPClassUID */
@@ -620,6 +638,10 @@ bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 		tags["SeriesNumber"] = timestamp;
 	}
 
+	QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
+	tags["UniqueSeriesString"] = uniqueseries;
+	//n->WriteLog("File ["+file+"]  SeriesInstanceUID ["+tags["SeriesInstanceUID"]+"]");
+	//n->WriteLog("File ["+file+"]  UniqueSeriesString ["+tags["UniqueSeriesString"]+"]");
 	return true;
 }
 
@@ -635,17 +657,9 @@ QString moduleImport::GetCostCenter(QString studydesc) {
 		cc = "888888";
 	else if ( (studydesc.contains("(")) && (studydesc.contains(")")) ) /* if it contains an opening and closing parentheses */
 	{
-		//QRegularExpression regex("(?<=\\()[^)]*(?=\\))");
-		//QRegularExpression regex("\\((.*?)\\)");
-		//QRegularExpressionMatch match = regex.match(studydesc);
-		//cc = match.captured(0);
-		n->WriteLog("studydesc [" + studydesc + "]");
 		int idx1 = studydesc.indexOf("(");
-		n->WriteLog(QString("Position of ( [%1]").arg(idx1));
 		int idx2 = studydesc.lastIndexOf(")");
-		n->WriteLog(QString("Position of ) [%1]").arg(idx2));
 		cc = studydesc.mid(idx1+1, idx2-idx1-1);
-		n->WriteLog(QString("cc: mid of %1, %2 is [" + cc + "]").arg(idx1+1).arg(idx2-idx1-1));
 	}
 	else {
 		cc = studydesc;
@@ -669,7 +683,8 @@ QString moduleImport::CreateIDSearchList(QString PatientID, QString altuids) {
 	idsearchlist.append(altuidlist);
 	idsearchlist.removeDuplicates();
 
-	QString SQLIDs = "'" + PatientID + "'";
+	QString SQLIDs = "'" + idsearchlist.first() + "'";
+	idsearchlist.removeFirst();
 	foreach (QString tmpID, idsearchlist) {
 		if ((tmpID != "") && (tmpID != "none") && (tmpID.toLower() != "na") && (tmpID != "0") && (tmpID.toLower() != "null"))
 			SQLIDs += ",'" + tmpID + "'";
@@ -737,13 +752,26 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	msgs << n->WriteLog(QString("----- Inside InsertDICOMSeries(%1, <array of size[%2]>) with [%2] files -----").arg(importid).arg(files.size()));
 
 	if (files.size() < 1) {
-		msgs << n->WriteLog("Trying to insert a DICOM series with no files");
+		msgs << n->WriteLog("This DICOM series has no files");
 		msg += msgs.join("\n");
 		return false;
 	}
 
-	msgs << n->WriteLog("First file is [" + files[0] + "]");
+	if (!QFile::exists(files[0])) {
+		msgs << n->WriteLog(QString("File [%1] does not exist - check 0!").arg(files[0]));
+		msg += msgs.join("\n");
+		return 0;
+	}
+
+	//msgs << n->WriteLog(QString("First file (before sorting) is [" + files[0] + "]  array size [%1]").arg(files.size()));
 	n->SortQStringListNaturally(files);
+	//msgs << n->WriteLog(QString("First file (after sorting) is [" + files[0] + "] array size [%1]").arg(files.size()));
+
+	if (!QFile::exists(files[0])) {
+		msgs << n->WriteLog(QString("File [%1] does not exist - check 1!").arg(files[0]));
+		msg += msgs.join("\n");
+		return 0;
+	}
 
 	/* import log variables */
 	QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
@@ -801,9 +829,15 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	QString filetype;
 	QString f = files[0];
 
+	if (!QFile::exists(f)) {
+		msgs << n->WriteLog(QString("File [%1] does not exist - check A!").arg(f));
+		msg += msgs.join("\n");
+		return 0;
+	}
+
 	if (ParseDICOMFile(f, tags)) {
 		if (!QFile::exists(f)) {
-			msgs << n->WriteLog(QString("File [%1] does not exist!").arg(f));
+			msgs << n->WriteLog(QString("File [%1] does not exist - check B!").arg(f));
 			msg += msgs.join("\n");
 			return 0;
 		}
@@ -870,7 +904,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 			QString line = in.readLine();
 			if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
 				/* make sure the line does not contain any non-printable ASCII control characters */
-				if (!line.contains(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{001F}]")))) {
+				if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
 					int idx = line.indexOf(".dInPlaneRot");
 					line = line.mid(idx,23);
 					QStringList vals = line.split(QRegExp("\\s+"));
@@ -962,12 +996,14 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		PatientAge = dob.daysTo(studydate)/365.25;
 	}
 
-	/* normalize the strings to remove non-ascii or non-printable characters */
-	PatientName = PatientName.normalized(QString::NormalizationForm_C).trimmed();
-	PatientSex = PatientSex.normalized(QString::NormalizationForm_C).trimmed();
+	/* remove any non-printable ASCII control characters */
+	PatientName.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
+	PatientSex.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
 
-	if (PatientID == "")
+	if (PatientID == "") {
 		PatientID = "(empty)";
+		n->WriteLog(n->SystemCommand("exiftool " + f));
+	}
 
 	if (PatientName == "")
 		PatientName = "(empty)";
@@ -1012,6 +1048,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	QSqlQuery q;
 	q.prepare(sqlstring);
 	q.bindValue(":patientid", PatientID);
+	q.bindValue(":costcenter", costcenter);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		q.first();
@@ -1198,20 +1235,20 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		while (q2.next()) {
 			int study_id = q2.value("study_id").toInt();
 			studynum = q2.value("study_num").toInt();
-			int foundInstanceRowID = -1;
+			//int foundInstanceRowID = -1;
 
 			/* check which instance this study is enrolled in */
-			QSqlQuery q3;
-			q3.prepare("select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = :studyid))");
-			q3.bindValue(":studyid",study_id);
-			n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-			if (q3.size() > 0) {
-				q3.first();
-				foundInstanceRowID = q3.value("instance_id").toInt();
-				msgs << n->WriteLog(QString("Found instance ID [%1] comparing to import instance ID [%2]").arg(foundInstanceRowID).arg(importInstanceID));
+			//QSqlQuery q3;
+			//q3.prepare("select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = :studyid))");
+			//q3.bindValue(":studyid",study_id);
+			//n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+			//if (q3.size() > 0) {
+			//	q3.first();
+			    //foundInstanceRowID = q3.value("instance_id").toInt();
+			    //msgs << n->WriteLog(QString("Found instance ID [%1] comparing to import instance ID [%2]").arg(foundInstanceRowID).arg(importInstanceID));
 
 				/* if the study already exists within the instance specified in the project, then update the existing study, otherwise create a new one */
-				if (importInstanceID == 0) {
+			    //if (importInstanceID == 0) {
 					studyFound = true;
 					studyRowID = study_id;
 
@@ -1233,8 +1270,8 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 
 					IL_studycreated = 0;
 					break;
-				}
-			}
+				//}
+			//}
 		}
 	}
 	if (!studyFound) {
@@ -2248,20 +2285,20 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 		while (q2.next()) {
 			int study_id = q2.value("study_id").toInt();
 			studynum = q2.value("study_num").toInt();
-			int foundInstanceRowID = -1;
+			//int foundInstanceRowID = -1;
 
 			/* check which instance this study is enrolled in */
-			QSqlQuery q3;
-			q3.prepare("select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = :studyid))");
-			q3.bindValue(":studyid",study_id);
-			n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-			if (q3.size() > 0) {
-				q3.first();
-				foundInstanceRowID = q3.value("instance_id").toInt();
-				msgs << QString("Found instance ID [%1] comparing to import instance ID [%2]").arg(foundInstanceRowID).arg(importInstanceID);
+			//QSqlQuery q3;
+			//q3.prepare("select instance_id from projects where project_id = (select project_id from enrollment where enrollment_id = (select enrollment_id from studies where study_id = :studyid))");
+			//q3.bindValue(":studyid",study_id);
+			//n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+			//if (q3.size() > 0) {
+			//	q3.first();
+			    //foundInstanceRowID = q3.value("instance_id").toInt();
+			    //msgs << QString("Found instance ID [%1] comparing to import instance ID [%2]").arg(foundInstanceRowID).arg(importInstanceID);
 
 				/* if the study already exists within the instance specified in the project, then update the existing study, otherwise create a new one */
-				if (importInstanceID == 0) {
+			    //if (importInstanceID == 0) {
 					studyFound = true;
 					studyRowID = study_id;
 
@@ -2283,8 +2320,8 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 
 					IL_studycreated = 0;
 					break;
-				}
-			}
+				//}
+			//}
 		}
 	}
 	if (!studyFound) {
@@ -2637,8 +2674,10 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	/* get the ID search string */
 	QString SQLIDs = CreateIDSearchList(PatientID, importAltUIDs);
 	QStringList altuidlist;
-	if (importAltUIDs != "")
+	if (importAltUIDs != "") {
 		altuidlist = importAltUIDs.split(",");
+		altuidlist.removeDuplicates();
+	}
 
 	// check if the project and subject exist
 	msgs << "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]";

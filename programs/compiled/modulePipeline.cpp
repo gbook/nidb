@@ -244,7 +244,8 @@ int modulePipeline::Run() {
 			else
 				pipelinedirectory = n->cfg["mountdir"] + pipelinedirectory;
 
-			/* if there are multiple dependencies, we'll need to loop through all of them separately - NOPE... no multiple dependencies */
+			/* if there are multiple dependencies, we'll need to loop through all of them separately
+			 * NOPE... we don't allow multiple dependencies. Yet. */
 			//for(int i=0; i<p.parentDependencyIDs.size(); i++) {
 
 			int pipelinedep = -1;
@@ -570,7 +571,7 @@ int modulePipeline::Run() {
 						int jobid;
 						if (n->SubmitClusterJob(clustersgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
 							n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
-							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", -1, -1, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", -1, numseriesdownloaded, "", "", false, true);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
 						}
 						else {
@@ -664,7 +665,6 @@ int modulePipeline::Run() {
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
 bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
-	//n->WriteLog("Inside GetData()");
 
 	numdownloaded = 0;
 	QStringList dlog;
@@ -764,8 +764,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		int num(0);
 		bool validComparisonStr = false;
 		if (n->GetSQLComparison(numboldreps, comparison, num))
-		//	n->WriteLog("Invalid comparison for boldreps ["+numboldreps+"]. Ignoring BOLD rep comparison");
-		//else
 			validComparisonStr = true;
 
 		/* if its a subject level, check the subject for the protocol(s) */
@@ -852,8 +850,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				q.prepare(sqlstring);
 				q.bindValue(":studyid", studyid);
 			}
-			//n->WriteLog(sqlstring);
-			//dlog << "Checking if study contains data [" + sqlstring + "]";
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 			if (q.size() > 0) {
 				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found").arg(i).arg(protocol);
@@ -1668,58 +1664,59 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
 /* ---------------------------------------------------------- */
 QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, int analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description) {
 
-	    command.replace("{NOLOG}",""); /* remove any {NOLOG} commands */
-		command.replace("{NOCHECKIN}",""); /* remove any {NOCHECKIN} commands */
-		command.replace(QRegularExpression(QStringLiteral("[^\\x{0000}-\\x{001F}]")),""); /* remove any non-printable ASCII control characters */
-		command.replace("{analysisrootdir}", analysispath, Qt::CaseInsensitive);
-		command.replace("{analysisid}", QString("%1").arg(analysisid), Qt::CaseInsensitive);
-		command.replace("{subjectuid}", uid, Qt::CaseInsensitive);
-		command.replace("{studynum}", QString("%1").arg(studynum), Qt::CaseInsensitive);
-		command.replace("{uidstudynum}", QString("%1%2").arg(uid).arg(studynum), Qt::CaseInsensitive);
-		command.replace("{studydatetime}", studydatetime, Qt::CaseInsensitive);
-		command.replace("{pipelinename}", pipelinename, Qt::CaseInsensitive);
-		command.replace("{workingdir}", workingdir, Qt::CaseInsensitive);
-		command.replace("{description}", description, Qt::CaseInsensitive);
+	if (command.trimmed() == "")
+		return "";
 
-		/* expand {groups} */
-		QStringList groups = GetGroupList(pipelineid);
-		QString grouplist = groups.join(" ");
-		command.replace("{groups}", grouplist, Qt::CaseInsensitive);
+	command.replace("{NOLOG}",""); /* remove any {NOLOG} commands */
+	command.replace("{NOCHECKIN}",""); /* remove any {NOCHECKIN} commands */
+	command.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),""); /* remove any non-printable ASCII control characters */
+	command.replace("{analysisrootdir}", analysispath, Qt::CaseInsensitive);
+	command.replace("{analysisid}", QString("%1").arg(analysisid), Qt::CaseInsensitive);
+	command.replace("{subjectuid}", uid, Qt::CaseInsensitive);
+	command.replace("{studynum}", QString("%1").arg(studynum), Qt::CaseInsensitive);
+	command.replace("{uidstudynum}", QString("%1%2").arg(uid).arg(studynum), Qt::CaseInsensitive);
+	command.replace("{studydatetime}", studydatetime, Qt::CaseInsensitive);
+	command.replace("{pipelinename}", pipelinename, Qt::CaseInsensitive);
+	command.replace("{workingdir}", workingdir, Qt::CaseInsensitive);
+	command.replace("{description}", description, Qt::CaseInsensitive);
 
-		QStringList alluidstudynums;
-		foreach (QString group, groups) {
-			// {numsubjects_groupname}
-			// {uidstudynums_groupname}
-			QStringList uidStudyNums = GetUIDStudyNumListByGroup(group);
-			alluidstudynums.append(uidStudyNums);
-			QString uidlist = uidStudyNums.join(" ");
-			command.replace("{uidstudynums_"+group+"}", uidlist, Qt::CaseInsensitive);
-			command.replace("{numsubjects_"+group+"}", QString("%1").arg(uidStudyNums.size()), Qt::CaseInsensitive);
-		}
-		QString alluidlist = alluidstudynums.join(" ");
-		command.replace("{uidstudynums}", alluidlist, Qt::CaseInsensitive);
-		command.replace("{numsubjects}", QString("%1").arg(alluidstudynums.size()), Qt::CaseInsensitive);
+	/* expand {groups} */
+	QStringList groups = GetGroupList(pipelineid);
+	QString grouplist = groups.join(" ");
+	command.replace("{groups}", grouplist, Qt::CaseInsensitive);
 
-		/* not really sure of the utility of these commands... doing this from bash may be more straightforward */
-		QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
-		if (command.contains(regex)) {
-			QRegularExpressionMatch match = regex.match(command);
-			QString file = match.captured(0);
-			QString ext = match.captured(1);
-			QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
-			QStringList files = n->FindAllFiles(clusteranalysispath, searchpattern);
-			QString replacement = files[0];
-			replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
-			command.replace(regex, replacement);
-		}
-		/* {first_n_ext_files} {last_ext_file} are not implemented in the compiled NiDB */
-		command.replace("{command}", command, Qt::CaseInsensitive);
+	QStringList alluidstudynums;
+	foreach (QString group, groups) {
+		QStringList uidStudyNums = GetUIDStudyNumListByGroup(group);
+		alluidstudynums.append(uidStudyNums);
+		QString uidlist = uidStudyNums.join(" ");
+		command.replace("{uidstudynums_"+group+"}", uidlist, Qt::CaseInsensitive);
+		command.replace("{numsubjects_"+group+"}", QString("%1").arg(uidStudyNums.size()), Qt::CaseInsensitive);
+	}
+	QString alluidlist = alluidstudynums.join(" ");
+	command.replace("{uidstudynums}", alluidlist, Qt::CaseInsensitive);
+	command.replace("{numsubjects}", QString("%1").arg(alluidstudynums.size()), Qt::CaseInsensitive);
 
-		/* if there is a semi-colon at the end of the line, remove it (it will prevent logging) */
-		if (command.right(1) == ";")
-			command.chop(1);
+	/* not really sure of the utility of these commands... doing this from bash may be more straightforward */
+	QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
+	if (command.contains(regex)) {
+		QRegularExpressionMatch match = regex.match(command);
+		QString file = match.captured(0);
+		QString ext = match.captured(1);
+		QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
+		QStringList files = n->FindAllFiles(clusteranalysispath, searchpattern);
+		QString replacement = files[0];
+		replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
+		command.replace(regex, replacement);
+	}
+	/* {first_n_ext_files} {last_ext_file} are not implemented in the compiled NiDB */
+	command.replace("{command}", command, Qt::CaseInsensitive);
 
-		return command;
+	/* if there is a semi-colon at the end of the line, remove it (it will prevent logging) */
+	if (command.right(1) == ";")
+		command.chop(1);
+
+	return command;
 }
 
 
@@ -1804,7 +1801,10 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			int hours = int(floor(maxwalltime/60));
 			int min = maxwalltime % 60;
 
-			jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours, 'f', 2).arg(min, 'f', 2);
+			if (min < 10)
+				jobfile += QString("#$ -l h_rt=%1:0%2:00\n").arg(hours).arg(min);
+			else
+				jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours).arg(min);
 		}
 	}
 
@@ -2026,7 +2026,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 				q2.first();
 				QString uidstudynum;
 				uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
-				n->WriteLog(QString("Found study [%1] [%2]").arg(studyid).arg(uidstudynum));
+				n->WriteLog(QString("Found study id [%1]  UIDStudyNum [%2]").arg(studyid).arg(uidstudynum));
 			}
 			list.append(studyid);
 		}

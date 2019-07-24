@@ -261,7 +261,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 					QString studyaltid = q2.value("study_alternateid").toString();
 					QString studytype = q2.value("study_type").toString();
 					QString datatype = q2.value("data_type").toString();
-					if (datatype == "") // if datatype (dicom, nifti, parrec) is blank because its not MR, then the datatype is the modality
+					if (datatype == "") /* datatype (dicom, nifti, parrec) will be blank if modality is not MR. So the datatype becomes the modality */
 						datatype = modality;
 					int numfiles = q2.value("numfiles").toInt();
 					if (modality != "mr")
@@ -327,7 +327,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 					else
 						s[uid][studynum][seriesnum]["qcdirexists"] = "0";
 
-					// get any alternate IDs
+					/* get any alternate IDs */
 					QStringList altuids;
 					QString primaryaltuid;
 
@@ -338,10 +338,9 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 					n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 					if (q3.size() > 0) {
 						while (q3.next()) {
+							altuids << q3.value("altuid").toString();
 							if (q3.value("isprimary").toBool())
 								primaryaltuid = q3.value("altuid").toString();
-
-							altuids << q3.value("altuid").toString();
 						}
 						s[uid][studynum][seriesnum]["primaryaltuid"] = primaryaltuid;
 						s[uid][studynum][seriesnum]["altuids"] = altuids.join(",");
@@ -503,13 +502,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 								if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
 									// use rsync instead of cp because of the number of files limit
 									QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
-									n->WriteLog(n->SystemCommand(systemstring, true));
+									n->WriteLog(n->SystemCommand(systemstring));
 									msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
 								}
 								else if (filetype == "qc") {
 									/* copy only the qc data */
 									QString systemstring = QString("cp -R %1/qa %2").arg(indir).arg(qcoutdir);
-									n->WriteLog(n->SystemCommand(systemstring, true));
+									n->WriteLog(n->SystemCommand(systemstring));
 									msgs << "Copying QC data from [" + indir + "/qa] to [" + qcoutdir + "]";
 
 									/* write the series info to a text file */
@@ -549,7 +548,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 											msgs << "Error converting files [" + m2 + "]";
 										n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
 										QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
-										n->WriteLog(n->SystemCommand(systemstring, true));
+										n->WriteLog(n->SystemCommand(systemstring));
 										n->WriteLog("Done copying files...");
 										QString m3;
 										if (!n->RemoveDir(tmpdir, m3))
@@ -1021,7 +1020,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &exports
 
 							n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
 							QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
-							n->WriteLog(n->SystemCommand(systemstring, true));
+							n->WriteLog(n->SystemCommand(systemstring));
 							n->WriteLog("Done copying files...");
 							n->RemoveDir(tmpdir,m);
 						}
@@ -1165,7 +1164,11 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 						QString results;
 						QString systemstring;
 
-						while ((error == 1) && (numfails < 5)) {
+						int numretry = 5;
+						if (n->cfg["numretry"].toInt() > 0)
+							numretry = n->cfg["numretry"].toInt();
+
+						while ((error == 1) && (numfails < numretry)) {
 							QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
 							QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
 							QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
@@ -1178,32 +1181,26 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							n->WriteLog(n->SystemCommand(systemstring));
 							n->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
 
-							// get the list of DICOM files
+							/* get the list of DICOM files */
 							QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
 							int numdcms = dcmfiles.size();
 							n->WriteLog(QString("Found [%1] dcmfiles").arg(numdcms));
 
-							if (numdcms < 1) {
+							if (numdcms < 1)
 								n->WriteLog("************* ERROR - Didn't find any DICOM files!!!! *************");
-							}
 
+							/* get the list of beh files */
 							QStringList behfiles;
-							// get the list of beh files
-							if (behdirexists) {
+							if (behdirexists)
 								QStringList behfiles = n->FindAllFiles(behindir, "*");
-							}
 
 							/* build the cURL string to send the actual data */
 							systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
 							int c = 0;
 							foreach (QString f, dcmfiles) {
 								c++;
-								QString systemstringA = QString("cp '%1' %2/").arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstringA, false);
-								if (res != "") {
-									n->WriteLog(systemstringA + " (" + res + ")");
-								}
-
+								QString systemstringA = QString("cp -v '%1' %2/").arg(f).arg(tmpzipdir);
+								n->WriteLog(n->SystemCommand(systemstringA));
 							}
 
 							c = 0;
@@ -1216,10 +1213,11 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 								}
 							}
 
-							// send the zip and send file
-							QString systemstringB = QString("cd %1;GZIP=-1; tar -czf %2 --warning=no-timestamp .; chmod 777 %2").arg(tmpzipdir).arg(tmpzip);
+							/* send the zip and send file */
+							QString systemstringB = QString("GZIP=-1; tar -czvf %2 --warning=no-timestamp -C %1 .; chmod -v 777 %2").arg(tmpzipdir).arg(tmpzip);
 							n->WriteLog(n->SystemCommand(systemstringB));
-							// get size before sending
+
+							/* get size before sending */
 							QFile zf(tmpzip);
 							double zipsize = zf.size();
 							double starttime = QDateTime::currentMSecsSinceEpoch();
@@ -1230,16 +1228,16 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							systemstring += "-F 'files[]=@" + tmpzip + "' ";
 							systemstring += conn.server + "/api.php";
 							QString results = n->SystemCommand(systemstring, false);
-							n->WriteLog(systemstring + " (" + results + ")");
+							n->WriteLog("Ran [" + systemstring + "] output (" + results + ")");
 							double elapsedtime = QDateTime::currentMSecsSinceEpoch() - starttime + 0.0000001; // to avoid a divide by zero!
 							double MBps = zipsize/elapsedtime/1000.0;
-							QString speedmsg = QString("%1 bytes transferred in %2s - Speed: %3 MB/s").arg(zipsize).arg(elapsedtime*1000.0).arg(QString::number(MBps, 'g',2));
+							QString speedmsg = QString("%1 bytes transferred in %2s - Speed: %3 MB/s").arg(zipsize).arg(elapsedtime*1000.0).arg(QString::number(MBps, 'g', 2));
 							n->WriteLog(speedmsg);
 							msgs << speedmsg;
 
 							QStringList parts = results.split(",");
 							if (parts[0].trimmed() == "SUCCESS") {
-								/* a file was successfully received by api.php, now check the return md5 */
+								/* a file was received by the remote NiDB server, now check the return md5 */
 								if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
 									seriesstatus = "complete";
 									n->WriteLog("Upload success: MD5 match");
@@ -1291,7 +1289,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg) {
 
-	/* not implemented */
+	/* was once implemented in Perl version, but was never used. Now not implemented */
 
 	n->WriteLog(QString("ExportToRemoteFTP(%1, %2, %3, %4, %5, %6, %7, %8) called").arg(exportid).arg(remoteftpusername).arg(remoteftppassword).arg(remoteftpserver).arg(remoteftpport).arg(remoteftppath).arg(exportstatus).arg(msg));
 
