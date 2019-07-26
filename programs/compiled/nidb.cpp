@@ -711,8 +711,8 @@ QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool
 			if (includepath)
 				dirs << it.next();
 			else {
-				dirs << it.fileName();
 				it.next();
+				dirs << it.fileName();
 			}
 		}
 	}
@@ -722,8 +722,8 @@ QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool
 			if (includepath)
 				dirs << it.next();
 			else {
-				dirs << it.fileName();
 				it.next();
+				dirs << it.fileName();
 			}
 		}
 	}

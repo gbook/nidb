@@ -1147,17 +1147,16 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 				bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
 				//bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
 				bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+				bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
 				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
-				// remove any non-alphanumeric characters
+				/* remove any non-alphanumeric characters */
 				seriesnotes.replace(QRegExp("[^a-zA-Z0-9 _-]", Qt::CaseInsensitive), "");
 
 				msgs << QString("uid [%1] indir [%2] datadirexists [%3]").arg(uid).arg(indir).arg(datadirexists);
 				if (datadirexists) {
 					if (!datadirempty) {
 						// --------------- Send to remote NiDB site --------------------------
-						// for now, only DICOM data and beh can be sent to remote sites
 
 						int numfails = 0;
 						int error = 1;
@@ -1177,9 +1176,12 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							QString m;
 							if (!n->MakePath(tmpdir, m)) { msgs << "ERROR in creating tmpdir [" + tmpdir + "]"; continue; }
 							if (!n->MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
+
+							/* copy all the files from the data directory into a tmp directory */
 							systemstring = "rsync " + indir + "/* " + tmpdir + "/";
 							n->WriteLog(n->SystemCommand(systemstring));
-							n->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
+							if (datatype == "dicom")
+								n->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
 
 							/* get the list of DICOM files */
 							QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
@@ -1191,7 +1193,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
 							/* get the list of beh files */
 							QStringList behfiles;
-							if (behdirexists)
+							if (behdirexists && !behdirempty)
 								QStringList behfiles = n->FindAllFiles(behindir, "*");
 
 							/* build the cURL string to send the actual data */
@@ -1203,13 +1205,15 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 								n->WriteLog(n->SystemCommand(systemstringA));
 							}
 
-							c = 0;
-							foreach(QString f, behfiles) {
-								c++;
-								QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
-								QString res = n->SystemCommand(systemstringA, false);
-								if (res != "") {
-									n->WriteLog(systemstringA + " (" + res + ")");
+							if (behdirexists && !behdirempty) {
+								c = 0;
+								foreach(QString f, behfiles) {
+									c++;
+									QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
+									QString res = n->SystemCommand(systemstringA, false);
+									if (res != "") {
+										n->WriteLog(systemstringA + " (" + res + ")");
+									}
 								}
 							}
 

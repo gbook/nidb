@@ -150,10 +150,9 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		NavigationBar("$projectname Checklist", $urllist);
-		
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//NavigationBar("$projectname Checklist", $urllist);
 		
 		/* get the main checklist items */
 		$i = 0;
@@ -611,10 +610,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
+		//NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('mrqc', $id);
 		
@@ -1076,10 +1075,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		$urllist['Edit MR Scan Parameters'] = "mrqcchecklist.php?action=editmrparams&id=$projectid";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
+		//$urllist['Edit MR Scan Parameters'] = "mrqcchecklist.php?action=editmrparams&id=$projectid";
+		//NavigationBar("$name", $urllist);
 		
 		DisplayProjectsMenu('mrqc', $projectid);
 		
@@ -1133,10 +1132,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
+		//$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
+		//NavigationBar("$name", $urllist);
 
 		DisplayProjectsMenu('mrqc', $id);
 		
@@ -1383,10 +1382,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		$urllist['Projects'] = "projects.php";
-		$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$projectid";
-		NavigationBar("$name", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
+		//$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$projectid";
+		//NavigationBar("$name", $urllist);
 		
 		DisplayProjectsMenu('mrqc', $projectid);
 		

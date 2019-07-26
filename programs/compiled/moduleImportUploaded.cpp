@@ -215,7 +215,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
 	QString filename = QFileInfo(filepath).fileName();
-	QString newfilename = QFileInfo(filepath).baseName() + n->GenerateRandomString(15) + QFileInfo(filepath).completeSuffix();
+	QString newfilename = QFileInfo(filepath).baseName() + n->GenerateRandomString(15) + "." + QFileInfo(filepath).completeSuffix();
 
 	QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
 	n->SystemCommand(systemstring, false);
@@ -227,20 +227,31 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 /* ---------------------------------------------------------- */
 /* --------- PrepareAndMovePARREC --------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleImportUploaded::PrepareAndMovePARREC(QString filepath, QString outdir) {
+bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString outdir) {
 
-	n->WriteLog("PrepareAndMovePARREC(" + filepath + "," + outdir + ")");
+	n->WriteLog("PrepareAndMovePARREC(" + parfilepath + "," + outdir + ")");
 
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
-	QString filename = QFileInfo(filepath).fileName();
-	QString newparfilename = n->GenerateRandomString(15) + filename;
-	QString newrecfilename = newparfilename.replace(".par", ".rec", Qt::CaseInsensitive);;
-	QString oldparfilepath = filepath;
-	QString oldrecfilepath = oldparfilepath.replace(".par", ".rec", Qt::CaseInsensitive);
 
-	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldparfilepath).arg(outdir).arg(newparfilename), true);
-	n->SystemCommand(QString("touch %1; mv %1 %2/%3").arg(oldrecfilepath).arg(outdir).arg(newrecfilename), true);
+	QString padding = n->GenerateRandomString(15);
+	QString oldpath = QFileInfo(parfilepath).path();
+	QString parfilename = QFileInfo(parfilepath).fileName();
+	QString newparfilename = padding + parfilename;
+	QString newparfilepath = outdir + "/" + newparfilename;
+
+	n->WriteLog(QString("A) Size of file [%1] is [%2]").arg(parfilepath).arg(QFileInfo(parfilepath).size()));
+	n->WriteLog(n->SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
+	n->WriteLog(QString("B) Size of file [%1] is [%2]").arg(newparfilepath).arg(QFileInfo(newparfilepath).size()));
+
+	QString recfilename = parfilename.replace(".par", ".rec", Qt::CaseInsensitive);
+	QString newrecfilename = newparfilename.replace(".par", ".rec", Qt::CaseInsensitive);
+	QString recfilepath = oldpath + "/" + recfilename;
+	QString newrecfilepath = outdir + "/" + newrecfilename;
+
+	n->WriteLog(QString("C) Size of file [%1] is [%2]").arg(recfilepath).arg(QFileInfo(recfilepath).size()));
+	n->WriteLog(n->SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
+	n->WriteLog(QString("D) Size of file [%1] is [%2]").arg(newrecfilepath).arg(QFileInfo(newrecfilepath).size()));
 
 	return true;
 }

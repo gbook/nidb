@@ -4833,18 +4833,6 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- MakeSQLList ------------------------ */
-	/* -------------------------------------------- */
-	function MakeSQLList($str) {
-		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
-		foreach ($parts as $part) {
-			$newparts[] = "'" . trim($part) . "'";
-		}
-		return implode2(",", $newparts);
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- DelimitedListToArray --------------- */
 	/* -------------------------------------------- */
 	function DelimitedListToArray($str) {

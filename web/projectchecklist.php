@@ -54,6 +54,15 @@
 	$reason = GetVariable("reason");
 	$missingdataid = GetVariable("missingdataid");
 	
+	$a['mr_protocols'] = GetVariable("mr_protocols");
+    $a['eeg_protocols'] = GetVariable("eeg_protocols");
+    $a['et_protocols'] = GetVariable("et_protocols");
+    $a['showprotocolparms'] = GetVariable("showprotocolparms");
+    $a['includeallmeasures'] = GetVariable("includeallmeasures");
+    $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
+    $a['collapsesubjects'] = GetVariable("collapsesubjects");
+    $a['collapsestudies'] = GetVariable("collapsestudies");
+	
 	/* determine action */
 	switch ($action) {
 		case 'updateprojectchecklist':
@@ -73,6 +82,9 @@
 			break;
 		case 'editchecklist':
 			DisplayEditChecklist($projectid);
+			break;
+		case 'viewanalysissummary':
+			DisplayAnalysisSummaryBuilder($projectid, $a);
 			break;
 		default:
 			DisplayProjectChecklist($projectid);
@@ -229,9 +241,9 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectname = $row['project_name'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		NavigationBar("Edit $projectname Checklist", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//NavigationBar("Edit $projectname Checklist", $urllist);
 		
 		$neworder = 1;
 
@@ -340,9 +352,9 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		NavigationBar("$projectname Checklist", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//NavigationBar("$projectname Checklist", $urllist);
 		
 		
 		/* get the main checklist items */
@@ -584,6 +596,315 @@
 		</div>
 		<?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayAnalysisSummaryBuilder ------ */
+	/* -------------------------------------------- */
+	function DisplayAnalysisSummaryBuilder($projectid, $a) {
+		
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+	
+		if (($projectid == '') || ($projectid == 0)) {
+			?><div class="staticmessage">Project ID blank</div><?
+			return;
+		}
+		
+		?>
+		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
+		
+		<table width="100%">
+			<tr>
+				<td width="20%" valign="top">
+					<form method="post" action="projectchecklist.php">
+					<input type="hidden" name="action" value="viewanalysissummary">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<table width="100%">
+						<tr>
+							<td style="background-color: #ddd; padding: 5px" align="center">
+								Protocols
+							</td>
+						</tr>
+						<tr>
+							<td style="padding-left: 15px">
+								<b>MR</b><br>
+								<select name="mr_protocols[]" multiple style="width: 450px" size="8">
+									<option value="" <? if ($a['mr_protocols'] == "") echo "selected"; ?>>(None)
+									<option value="ALLPROTOCOLS" <? if ($a['mr_protocols'] == "ALLPROTOCOLS") echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of MR protocols from this project */
+									$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = trim($row['series_desc']);
+										
+										if (in_array($seriesdesc, $a['mr_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+								<input type="checkbox" name="showprotocolparms" value="1">Include protocol parameters
+								<br><br>
+								<b>EEG</b><br>
+								<select name="eeg_protocols[]" multiple style="width: 450px" size="8">
+									<option value="" <? if ($a['eeg_protocols'] == "") echo "selected"; ?>>(None)
+									<option value="ALLPROTOCOLS" <? if ($a['eeg_protocols'] == "ALLPROTOCOLS") echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of EEG protocols from this project */
+									$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = $row['series_desc'];
+										
+										if (in_array($seriesdesc, $a['eeg_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+								<b>ET</b><br>
+								<select name="et_protocols[]" multiple style="width: 450px" size="8">
+									<option value="" <? if ($a['et_protocols'] == "") echo "selected"; ?>>(None)
+									<option value="ALLPROTOCOLS" <? if ($a['et_protocols'] == "ALLPROTOCOLS") echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of ET protocols from this project */
+									$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = $row['series_desc'];
+										
+										if (in_array($seriesdesc, $a['et_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td style="background-color: #ddd; padding: 5px" align="center">
+								Measures (key/value pairs)
+							</td>
+						</tr>
+						<tr>
+							<td style="padding-left: 15px">
+								<input type="checkbox" name="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?>>Include all measures<br>
+							</td>
+						</tr>
+						<tr>
+							<td style="background-color: #ddd; padding: 5px" align="center">
+								Options
+							</td>
+						</tr>
+						<tr>
+							<td style="padding-left: 15px">
+								<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data<br>
+								<input type="checkbox" name="collapsesubjects" value="1" <? if ($a['collapsesubjects']) echo "checked"; ?>>Collapse by subject<br>
+								<input type="checkbox" name="collapsestudies" value="1" <? if ($a['collapsestudies']) echo "checked"; ?>>Collapse by study
+							</td>
+						</tr>
+					</table>
+					<input type="submit" value="Update Summary">
+					</form>
+				</td>
+				<td style="overflow: auto" valign="top">
+					<?=DisplayAnalysisTable($projectid, $a)?>
+				</td>
+			</tr>
+		</table>
+		<?
+	}
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayAnalysisTable --------------- */
+	/* -------------------------------------------- */
+	function DisplayAnalysisTable($projectid, $a) {
+		
+		/* create the table */
+		$t;
+		//if ($a['collapsesubjects']) {
+			$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid limit 50";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = $row['enrollment_id'];
+				$uid = $row['uid'];
+				$subjectid = $row['subject_id'];
+				$t[$uid]['IDs']['UID'] = $uid;
+				$t[$uid]['Demographics']['DOB'] = $row['birthdate'];
+				$t[$uid]['Demographics']['Sex'] = $row['gender'];
+				$subjectheight = $row['height'];
+				$subjectweight = $row['weight'];
+				$t[$uid]['Demographics']['Group'] = $row['enroll_subgroup'];
+				
+				$altuids = GetAlternateUIDs($subjectid, $enrollmentid);
+				$t[$uid]['IDs']['AltUIDs'] = implode2(",", $altuids);
+				
+				if (count($a['mr_protocols'] > 0)) {
+					
+					if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
+						$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
+					}
+					else {
+						PrintVariable($a);
+						$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
+						PrintVariable($mrprotocollist);
+						$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
+					}
+				
+					/* add in the protocols */
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						$seriesdesc = $rowA['series_desc'];
+						
+						$pixdimX = $rowA['series_spacingx'];
+						$pixdimY = $rowA['series_spacingy'];
+						$pixdimZ = $rowA['series_spacingz'];
+						$dimX = $rowA['dimX'];
+						$dimY = $rowA['dimY'];
+						$dimZ = $rowA['dimZ'];
+						$dimT = $rowA['dimT'];
+						$tr = $rowA['series_tr'];
+						$te = $rowA['series_te'];
+						$ti = $rowA['series_ti'];
+						$flip = $rowA['series_flip'];
+						$seriesnum = $rowA['series_num'];
+						$studynum = $rowA['study_num'];
+						$numseries = $rowA['seriescount'];
+						$studyheight = $rowA['study_height'];
+						$studyweight = $rowA['study_weight'];
+						$studydatetime = $rowA['study_datetime'];
+						$studyage = $rowA['study_ageatscan'];
+						$studynotes = $rowA['study_notes'];
+						
+						if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
+							$age = strtotime($studydate) - strtotime($t[$uid]['Demographics']['DOB']);
+						else
+							$age = $studyage;
+						
+						if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
+							$height = $subjectheight;
+						else
+							$height = $studyheight;
+						
+						if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0))
+							$weight = $subjectweight;
+						else
+							$weight = $studyweight;
+						
+						$t[$uid][$seriesdesc]['SeriesNum'] = $seriesnum;
+						$t[$uid][$seriesdesc]['StudyNum'] = $studynum;
+						$t[$uid][$seriesdesc]['NumSeries'] = $numseries;
+						$t[$uid][$seriesdesc]['AgeAtScan'] = $age;
+						$t[$uid][$seriesdesc]['Height'] = $height;
+						$t[$uid][$seriesdesc]['Weight'] = $weight;
+						$t[$uid][$seriesdesc]['Notes'] = $studynotes;
+						$t[$uid][$seriesdesc]['voxX'] = $pixdimX;
+						$t[$uid][$seriesdesc]['voxY'] = $pixdimY;
+						$t[$uid][$seriesdesc]['voxZ'] = $pixdimZ;
+						$t[$uid][$seriesdesc]['dimX'] = $dimX;
+						$t[$uid][$seriesdesc]['dimY'] = $dimY;
+						$t[$uid][$seriesdesc]['dimZ'] = $dimZ;
+						$t[$uid][$seriesdesc]['dimT'] = $dimT;
+						$t[$uid][$seriesdesc]['TR'] = $tr;
+						$t[$uid][$seriesdesc]['TE'] = $te;
+						$t[$uid][$seriesdesc]['TI'] = $ti;
+						$t[$uid][$seriesdesc]['flip'] = $flip;
+					}
+				}
+				
+				/* add measures (key/value) if necessary */
+				if ($a['includeallmeasures']) {
+					$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						$measurename = $rowA['measure_name'];
+						if ($rowA['measure_valuetype'] == "n")
+							$value = $rowA['measure_valuenum'];
+						else
+							$value = $rowA['measure_valuestring'];
+						
+						$t[$uid]['Measures'][$measurename] = $value;
+					}
+				}
+				
+			}
+		//}
+		
+
+		PrintVariable($t);
+		/* create table header */
+		foreach ($t as $uid => $subject) {
+			$h['IDs']['UID'] = "";
+			$h['IDs']['AltUIDs'] = "";
+			
+			foreach ($subject as $header => $section) {
+				foreach ($section as $col => $vals) {
+					$h[$header][$col] = "";
+				}
+			}
+		}
+		?>
+		<table style="border: 1px solid #888; border-collapse: collapse; font-size: 9pt">
+			<thead>
+				<tr>
+				<?
+				foreach ($h as $header => $section) {
+					$ncols = count($section);
+					?>
+					<th  style="border: 1px solid #888" colspan="<?=$ncols?>"><?=$header?></th>
+					<?
+				}
+				?>
+				</tr>
+				<tr>
+				<?
+				foreach ($h as $header => $section) {
+					foreach ($section as $col => $vals) {
+						?><th style="border: 1px solid #888"><?=$col?></th><?
+					}
+				}
+				?>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+				foreach ($t as $uid => $subject) {
+					?>
+					<tr>
+					<?
+					foreach ($h as $header => $section) {
+						foreach ($section as $col => $vals) {
+							if (is_numeric($t[$uid][$header][$col]) && (strpos($t[$uid][$header][$col], '.') !== false))
+								$disp = number_format($t[$uid][$header][$col], 3);
+							else
+								$disp = $t[$uid][$header][$col];
+							?><td style="border: 1px solid #ccc"><?=$disp?></td><?
+						}
+					}
+					?>
+					</tr>
+				<? } ?>
+			</tbody>
+		</table>
+		<?
+	}
+	
 ?>
 
 

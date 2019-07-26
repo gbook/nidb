@@ -243,6 +243,8 @@
 	function PrintVariable($v, $vname = 'Var') {
 		echo "<pre>";
 		echo "<b><u>$vname</u></b><br>";
+		$v = str_replace("<", "&lt;", $v);
+		$v = str_replace(">", "&gt;", $v);
 		print_r($v);
 		echo "</pre>";
 	}
@@ -366,6 +368,29 @@
 		}
 
 		return $time;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MakeSQLList ------------------------ */
+	/* -------------------------------------------- */
+	function MakeSQLList($str) {
+		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
+		foreach ($parts as $part) {
+			$newparts[] = "'" . trim($part) . "'";
+		}
+		return implode2(",", $newparts);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MakeSQLListFromArray --------------- */
+	/* -------------------------------------------- */
+	function MakeSQLListFromArray($parts) {
+		foreach ($parts as $part) {
+			$newparts[] = "'" . trim($part) . "'";
+		}
+		return implode2(",", $newparts);
 	}
 
 	
@@ -1614,119 +1639,34 @@
 	function DisplayProjectsMenu($menuitem, $id) {
 		switch ($menuitem) {
 			case "assessments":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheaderactive"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
 				break;
 			case "info":
-				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheaderactive"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
-				<?
 				break;
 			case "subjects":
 				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheaderactive">
-							<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br>
-							<a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View table</a>
-						</td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
+				<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
 				<?
 				break;
 			case "studies":
 				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheaderactive"><a href="projects.php?id=<?=$id?>">Studies</a><br>
-							<a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Study templates</a>
-						</td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
+				<b>Options:</b> <a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>" style="font-weight: normal">Study templates</a>
 				<?
 				break;
 			case "checklist":
 				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheaderactive">
-							<a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br>
-							<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-size: 10pt; font-weight: normal">Edit checklist</a>
-						</td>
-						<td class="menuheader"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR Scan QC</a></td>
-					</tr>
-				</table>
-				</div>
+				<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a> | 
+				<a href="projectchecklist.php?action=viewanalysissummary&projectid=<?=$id?>" style="font-weight: normal">Analysis summary</a>
 				<?
 				break;
 			case "mrqc":
 				?>
-				<div align="center">
-				<table width="50%">
-					<tr>
-						<td class="menuheader"><a href="projects.php?action=displayprojectinfo&id=<?=$id?>">Project Info</a></td>
-						<td class="menuheader"><a href="projectassessments.php?projectid=<?=$id?>">Assessments</a></td>
-						<td class="menuheader"><a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a></td>
-						<td class="menuheader"><a href="projects.php?id=<?=$id?>">Studies</a></td>
-						<td class="menuheader"><a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a></td>
-						<td class="menuheaderactive" style="font-size:10pt; font-weight: normal">
-							<!--<a href="mrqcchecklist.php?action=viewmrparams&id=<?=$id?>">View MR Scan Params checklist</a> (<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a>)<br>-->
-							<br>
-							<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><b>View MR QC checklist</b></a><br>
-								<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit scan criteria</a><br>
-								<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit QC criteria</a><br>
-							<br>
-							<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>" style="font-size:10pt; font-weight: normal">View BIDS datatypes</a><br>
-							<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>" style="font-size:10pt; font-weight: normal">Edit BIDS datatypes</a><br>
-							<? if ($GLOBALS['isadmin']) { ?>
-								<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-size:10pt; font-weight:normal">Reset MRI QA</a>
-							<? } ?>
-						</td>
-					</tr>
-				</table>
-				</div>
+				<b>Options:</b> <a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-weight: normal">Edit scan criteria</a> | 
+				<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-weight: normal">Edit QC criteria</a> | 
+				<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>" style="font-weight: normal">View BIDS datatypes</a> | 
+				<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>" style="font-weight: normal">Edit BIDS datatypes</a> 
+				<? if ($GLOBALS['isadmin']) { ?>
+					 | <a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a>
+				<? } ?>
 				<?
 				break;
 		}

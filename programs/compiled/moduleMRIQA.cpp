@@ -63,6 +63,7 @@ int moduleMRIQA::Run() {
 			n->ModuleRunningCheckIn();
 			int mrseriesid = q.value("mrseries_id").toInt();
 			QA(mrseriesid);
+
 			/* only process 10 series before exiting the script. Since the script always starts with the newest when it first runs,
 			   this will allow newly collect studies a chance to be QA'd if there is a backlog of old studies */
 			numProcessed++;
@@ -70,8 +71,15 @@ int moduleMRIQA::Run() {
 				n->WriteLog("Processed 10 QC jobs, exiting");
 				break;
 			}
+
+			/* check if this module should be running now or not */
+			if (!n->ModuleCheckIfActive()) {
+				n->WriteLog("Not supposed to be running right now. Exiting module");
+				break;
+			}
+
 		}
-		n->WriteLog("Finished MRI-QA");
+		n->WriteLog(QString("Finished MRI-QA [%1] of [%2]").arg(numProcessed).arg(numToDo));
 		ret = 1;
 	}
 	else {
@@ -189,23 +197,12 @@ bool moduleMRIQA::QA(int seriesid) {
 	else if (QFile::exists(tmpdir + "/4D.nii.gz"))
 		filepath4d = tmpdir + "/4D.nii.gz";
 
-	msgs << n->WriteLog("4D file path ["+filepath4d+"]");
+	msgs << n->WriteLog("4D file path [" + filepath4d + "]");
 
-	//QDir::setCurrent(indir);
-
+	n->WriteLog("Starting the nii_qa script. Will return to logging after the script is finished");
 	/* create a 4D file to pass to the SNR program and run the SNR program on it */
 	systemstring = QString("%1/./nii_qa.sh -i "+filepath4d+" -o %2/qa.txt -v 2 -t %3").arg(n->cfg["scriptdir"]).arg(qapath).arg(tmpdir);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
-
-	/* the nii_qa script may have generated a valid nii.gz file, so use that if the 4D.nii.gz doesn't exist */
-	//if (QFile::exists(tmpdir + "/4D.nii.gz")) {
-	//	systemstring = QString("cp -v %1/s*.nii.gz %1/4D.nii.gz").arg(tmpdir);
-	//	msgs << n->WriteLog(n->SystemCommand(systemstring));
-	//}
-	//if (QFile::exists(tmpdir + "/4D.nii")) {
-	//	systemstring = QString("cp -v %1/s*.nii %1/4D.nii").arg(tmpdir);
-	//	msgs << n->WriteLog(n->SystemCommand(systemstring));
-	//}
 
 	/* move the realignment file(s) from the tmp to the archive directory */
 	systemstring = QString("mv -v %1/*.par %2/").arg(tmpdir).arg(qapath);
@@ -250,27 +247,37 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	/* get image dimensions */
 	int dimN(0), dimX(0), dimY(0), dimZ(0), dimT(0);
+	double voxX(0.0), voxY(0.0), voxZ(0.0);
 	if (filepath4d != "") {
 		QString s;
 		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim0";
+
 		n->WriteLog(n->SystemCommand(s));
-		dimN = n->SystemCommand(s, false).toInt();
+		dimN = n->SystemCommand(s, false).trimmed().toInt();
 
 		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim1";
 		n->WriteLog(n->SystemCommand(s));
-		dimX = n->SystemCommand(s, false).toInt();
+		dimX = n->SystemCommand(s, false).trimmed().toInt();
 
 		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim2";
 		n->WriteLog(n->SystemCommand(s));
-		dimY = n->SystemCommand(s, false).toInt();
+		dimY = n->SystemCommand(s, false).trimmed().toInt();
 
 		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim3";
 		n->WriteLog(n->SystemCommand(s));
-		dimZ = n->SystemCommand(s, false).toInt();
+		dimZ = n->SystemCommand(s, false).trimmed().toInt();
 
 		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim4";
 		n->WriteLog(n->SystemCommand(s));
-		dimT = n->SystemCommand(s, false).toInt();
+		dimT = n->SystemCommand(s, false).trimmed().toInt();
+
+		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d;
+		n->WriteLog(n->SystemCommand(s + " pixdim1"));
+		voxX = n->SystemCommand(s + " pixdim1", false).trimmed().toDouble();
+		n->WriteLog(n->SystemCommand(s + " pixdim2"));
+		voxY = n->SystemCommand(s + " pixdim2", false).trimmed().toDouble();
+		n->WriteLog(n->SystemCommand(s + " pixdim3"));
+		voxZ = n->SystemCommand(s + " pixdim3", false).trimmed().toDouble();
 	}
 
 	/* get min/max intensity in the mean/variance/stdev volumes and create thumbnails of the mean, sigma, and varaiance images */
@@ -393,13 +400,17 @@ bool moduleMRIQA::QA(int seriesid) {
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 
 	/* update the mr_series table with the image dimensions */
-	q.prepare("update mr_series set dimN = :n, dimX = :x, dimY = :y, dimZ = :z, dimT = :t, bold_reps = :t where mrseries_id = :seriesid");
+	q.prepare("update mr_series set dimN = :n, dimX = :x, dimY = :y, dimZ = :z, dimT = :t, series_spacingx = :voxX, series_spacingy = :voxY, series_spacingz = :voxZ, bold_reps = :t where mrseries_id = :seriesid");
 	q.bindValue(":seriesid",seriesid);
 	q.bindValue(":n", dimN);
 	q.bindValue(":x", dimX);
 	q.bindValue(":y", dimY);
 	q.bindValue(":z", dimZ);
 	q.bindValue(":t", dimT);
+
+	q.bindValue(":voxX", voxX);
+	q.bindValue(":voxY", voxY);
+	q.bindValue(":voxZ", voxZ);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
 	msgs << n->WriteLog("======================== Finished [" + indir + "] ========================");

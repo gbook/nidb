@@ -2418,7 +2418,7 @@
 		/* get list of site IDs */
 		$siteids = array_unique($siteids);
 		
-		DisplayProjectsMenu("info", $id);
+		//DisplayProjectsMenu("info", $id);
 		?>
 		<div align="center">
 		<br><br>

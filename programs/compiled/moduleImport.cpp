@@ -63,6 +63,7 @@ int moduleImport::Run() {
 	*/
 	QStringList dirs = n->FindAllDirs(n->cfg["incomingdir"],"",false, false);
 	n->WriteLog(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
+	n->WriteLog("Directories found: " + dirs.join("|"));
 	foreach (QString dir, dirs) {
 		n->WriteLog("Found dir ["+dir+"]");
 		QString fulldir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(dir);
@@ -200,13 +201,20 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	int processedFileCount(0);
 	foreach (QString file, files) {
 
-		/* check the file size */
-		qint64 fsize = QFileInfo(file).size();
-		if (fsize < 1) {
-			n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
-			SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
-			if (!n->MoveFile(file, n->cfg["problemdir"]))
-				n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+		/* check if the file exists. par/rec files may be moved from previous steps, so check if they still exist */
+		if (QFile::exists(file)) {
+			/* check the file size */
+			qint64 fsize = QFileInfo(file).size();
+			if (fsize < 1) {
+				n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
+				SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
+				if (!n->MoveFile(file, n->cfg["problemdir"]))
+					n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+				continue;
+			}
+		}
+		else {
+			n->WriteLog("File [" + file + "] no longer exists");
 			continue;
 		}
 
@@ -293,7 +301,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 					if (!n->MoveFile(file, n->cfg["problemdir"]))
 						n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
 
-					SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + ": " + m, archivereport, true);
+					SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
 				}
 				else {
 					iscomplete = true;
@@ -310,6 +318,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 					dcmseries[tags["SeriesInstanceUID"]].append(file);
 				}
 				else {
+					qint64 fsize = QFileInfo(file).size();
 					n->WriteLog(QString("File [%1] - size [%2] is not a dicom file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
 
 					QSqlQuery q;
@@ -371,7 +380,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 			if (!n->RemoveDir(dir, m))
 				n->WriteLog("Unable to delete directory [" + dir + "] because of error [" + m + "]");
 		}
-		SetImportStatus(importid, "archived", "DICOM successfully archived", archivereport, true);
+		SetImportStatus(importid, "archived", importDatatype.toUpper() + " successfully archived", archivereport, true);
 	}
 	else
 		SetImportStatus(importid, "checked", "Files less than 2 minutes old in directory", "", false);
@@ -1289,12 +1298,12 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 			studynum = 1;
 
 		QSqlQuery q4;
-		q4.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, :studydatetime, :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
+		q4.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '" + StudyDateTime + "', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
 		q4.bindValue(":enrollmentid", enrollmentRowID);
 		q4.bindValue(":studynum", studynum);
 		q4.bindValue(":patientid", PatientID);
 		q4.bindValue(":modality", Modality);
-		q4.bindValue(":studydatetime", StudyDateTime);
+		//q4.bindValue(":studydatetime", StudyDateTime);
 		q4.bindValue(":patientage", PatientAge);
 		q4.bindValue(":height", PatientSize);
 		q4.bindValue(":weight", PatientWeight);
@@ -1953,30 +1962,30 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 			if (line.contains("Patient name")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1) {
-					PatientName = p[1];
+					PatientName = p[1].trimmed();
 					PatientID = PatientName;
 				}
 			}
 			if (line.contains("Examination name")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1)
-					StudyDescription = p[1];
+					StudyDescription = p[1].trimmed();
 			}
 			if (line.contains("Protocol name")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1) {
-					ProtocolName = p[1];
+					ProtocolName = p[1].trimmed();
 					SeriesDescription = ProtocolName;
 				}
 			}
 			if (line.contains("Examination date/time")) {
 				QString datetime = line;
-				datetime.replace(QRegExp("\\s+Examination date/time\\s+:"),"");
+				datetime.replace(QRegExp("\\.\\s+Examination date/time\\s+:"),"");
 				QStringList p = datetime.split("/");
 				if (p.size() > 1) {
-					QString date = p[0];
-					QString time = p[1];
-					date.replace(".","-");
+					QString date = p[0].trimmed();
+					QString time = p[1].trimmed();
+					date = date.replace(".","-");
 					StudyDateTime = date + " " + time;
 					SeriesDateTime = date + " " + time;
 				}
@@ -1984,66 +1993,78 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 			if (line.contains("Series Type")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1) {
-					Modality = p[1];
-					Modality.replace("Image", "");
-					Modality.replace("series", "", Qt::CaseInsensitive);
-					Modality.toUpper();
+					Modality = p[1].trimmed();
+					Modality = Modality.replace("Image", "");
+					Modality = Modality.replace("series", "", Qt::CaseInsensitive);
+					Modality = Modality.trimmed().toUpper();
 				}
 			}
 			if (line.contains("Acquisition nr")) {
 				QStringList p = line.split(":");
-				if (p.size() > 1)
+				//n->WriteLog(line);
+				if (p.size() > 1) {
+					//n->WriteLog(p[0]);
+					//n->WriteLog(p[1]);
+					p[1] = p[1].trimmed();
+					//n->WriteLog(p[1]);
 					SeriesNumber = p[1].toInt();
+					//n->WriteLog(QString("SeriesNumber [%1]").arg(SeriesNumber));
+				}
 			}
 			if (line.contains("Max. number of slices/locations")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1)
-					zsize = p[1].toInt();
+					zsize = p[1].trimmed().toInt();
 			}
 			if (line.contains("Max. number of dynamics")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1)
-					boldreps = p[1].toInt();
+					boldreps = p[1].trimmed().toInt();
 			}
 			if (line.contains("Technique")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1)
-					SequenceName = p[1];
+					SequenceName = p[1].trimmed();
 			}
 			if (line.contains("Scan resolution")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1) {
-					QString resolution = p[1];
+					QString resolution = p[1].trimmed();
 					QStringList p2 = resolution.split(QRegExp("\\s+"));
 					if (p.size() > 1) {
-						Columns = p2[0].toInt();
-						Rows = p2[1].toInt();
+						Columns = p2[0].trimmed().toInt();
+						Rows = p2[1].trimmed().toInt();
 					}
 				}
 			}
 			if (line.contains("Repetition time")) {
 				QStringList p = line.split(":");
 				if (p.size() > 1)
-					RepetitionTime = p[1].toInt();
+					RepetitionTime = p[1].trimmed().toInt();
 			}
 			/* get the first line of the image list... it should contain the flip angle */
 			if (!line.startsWith(".") && !line.startsWith("#") && (line != "")) {
 				QStringList p = line.split(QRegExp("\\s+"));
 
-				if (p.size() > 9) pixelX = p[9].toInt(); /* 10 - xsize */
-				if (p.size() > 10) pixelY = p[10].toInt(); /* 11 - ysize */
-				if (p.size() > 22) SliceThickness = p[22].toDouble(); /* 23 - slice thickness */
-				if (p.size() > 28) xspacing = p[28].toDouble(); /* 29 - xspacing */
-				if (p.size() > 29) yspacing = p[29].toDouble(); /* 30 - yspacing */
-				if (p.size() > 30) EchoTime = p[30].toDouble(); /* 31 - TE */
-				if (p.size() > 35) FlipAngle = p[35].toInt(); /* 36 - flip */
+				if (p.size() > 9) pixelX = p[9].trimmed().toInt(); /* 10 - xsize */
+				if (p.size() > 10) pixelY = p[10].trimmed().toInt(); /* 11 - ysize */
+				if (p.size() > 22) SliceThickness = p[22].trimmed().toDouble(); /* 23 - slice thickness */
+				if (p.size() > 28) xspacing = p[28].trimmed().toDouble(); /* 29 - xspacing */
+				if (p.size() > 29) yspacing = p[29].trimmed().toDouble(); /* 30 - yspacing */
+				if (p.size() > 30) EchoTime = p[30].trimmed().toDouble(); /* 31 - TE */
+				if (p.size() > 35) FlipAngle = p[35].trimmed().toInt(); /* 36 - flip */
 
 				break;
 			}
 		}
 	}
+	else {
+		msgs << "Unable to read file [" + file + "]";
+		msg += msgs.join("\n");
+		return 0;
+	}
 
-	    /* check if anything is funny, and not compatible with archiving this data */
+	/* check if anything is funny, and not compatible with archiving this data */
 	if (SeriesNumber == 0) {
 		msgs << "Series number is 0";
 		msg += msgs.join("\n");
@@ -2339,12 +2360,12 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 			studynum = 1;
 
 		QSqlQuery q4;
-		q4.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, :studydatetime, :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
+		q4.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '"+StudyDateTime+"', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
 		q4.bindValue(":enrollmentid", enrollmentRowID);
 		q4.bindValue(":studynum", studynum);
 		q4.bindValue(":patientid", PatientID);
 		q4.bindValue(":modality", Modality);
-		q4.bindValue(":studydatetime", StudyDateTime);
+		//q4.bindValue(":studydatetime", StudyDateTime);
 		q4.bindValue(":patientage", PatientAge);
 		q4.bindValue(":height", PatientSize);
 		q4.bindValue(":weight", PatientWeight);
@@ -2402,6 +2423,7 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 		q3.bindValue(":SeriesDateTime",SeriesDateTime);
 		q3.bindValue(":ProtocolName",ProtocolName);
 		q3.bindValue(":SequenceName",SequenceName);
+		q3.bindValue(":SeriesNumber",SeriesNumber);
 		q3.bindValue(":RepetitionTime",RepetitionTime);
 		q3.bindValue(":EchoTime",EchoTime);
 		q3.bindValue(":FlipAngle",FlipAngle);
@@ -2420,9 +2442,9 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	}
 
 	/* get the series info */
-	series s(seriesRowID, "mr", n);
+	//series s(seriesRowID, "mr", n);
 
-	msgs << n->WriteLog(QString("Values from GetDataPathFromSeriesID(%1, 'mr'): Path [%2] UID [%3] StudyNum [%4] SeriesNum [%5] StudyID [%6] SubjectID [%7]").arg(seriesRowID).arg(s.datapath).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.studyid).arg(s.subjectid));
+	//msgs << n->WriteLog(QString("Values from GetDataPathFromSeriesID(%1, 'mr'): Path [%2] UID [%3] StudyNum [%4] SeriesNum [%5] StudyID [%6] SubjectID [%7]").arg(seriesRowID).arg(s.datapath).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.studyid).arg(s.subjectid));
 
 	/* copy the file to the archive, update db info */
 	msgs << n->WriteLog(QString("seriesRowID [%1]").arg(seriesRowID));
@@ -2578,8 +2600,8 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	QString StudyDateTime;
 	QString SeriesDateTime;
 	QString Modality = "EEG";
-	int SeriesNumber;
-	int FileNumber;
+	int SeriesNumber(0);
+	int FileNumber(0);
 	int numfiles = 1;
 
 	int importInstanceID(0);
@@ -2619,31 +2641,44 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	msgs << n->WriteLog(file);
 	/* split the filename into the appropriate fields */
 	/* AltUID_Date_task_operator_series.* */
-	QString FileName = file;
-	FileName.replace(QRegExp("\\..*+$",Qt::CaseInsensitive),""); // remove everything after the first dot
+	QString FileName = QFileInfo(file).baseName();
+	//FileName.replace(QRegExp("\\..*+$",Qt::CaseInsensitive),""); // remove everything after the first dot
 	QStringList parts = FileName.split("_");
-	PatientID = parts[0].trimmed();
-	if (parts[1].size() == 6) {
-		StudyDateTime = SeriesDateTime = parts[1].mid(4,2) + "-" + parts[1].mid(0,2) + "-" + parts[1].mid(2,2) + " 00:00:00";
-	}
-	else if (parts[1].size() == 8) {
-		StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " 00:00:00";
-	}
-	else if (parts[1].size() == 12) {
-		StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " " + parts[1].mid(8,2) + ":" + parts[1].mid(10,2) + ":00";
-	}
-	else if (parts[1].size() == 14) {
-		StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " " + parts[1].mid(8,2) + ":" + parts[1].mid(10,2) + ":" + parts[1].mid(12,2);
+
+	/* get the values as they should be ... */
+	if (parts.size() > 0)
+		PatientID = parts[0].trimmed();
+
+	if (parts.size() > 1) {
+		if (parts[1].size() == 6) {
+			StudyDateTime = SeriesDateTime = parts[1].mid(4,2) + "-" + parts[1].mid(0,2) + "-" + parts[1].mid(2,2) + " 00:00:00";
+		}
+		else if (parts[1].size() == 8) {
+			StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " 00:00:00";
+		}
+		else if (parts[1].size() == 12) {
+			StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " " + parts[1].mid(8,2) + ":" + parts[1].mid(10,2) + ":00";
+		}
+		else if (parts[1].size() >= 14) {
+			StudyDateTime = SeriesDateTime = parts[1].mid(0,4) + "-" + parts[1].mid(4,2) + "-" + parts[1].mid(6,2) + " " + parts[1].mid(8,2) + ":" + parts[1].mid(10,2) + ":" + parts[1].mid(12,2);
+		}
 	}
 
-	SeriesDescription = ProtocolName = parts[2].trimmed();
-	OperatorsName = parts[3].trimmed();
-	SeriesNumber = parts[4].trimmed().toInt();
-	FileNumber = parts[5].trimmed().toInt();
+	if (parts.size() > 2)
+		SeriesDescription = ProtocolName = parts[2].trimmed();
+
+	if (parts.size() > 3)
+		OperatorsName = parts[3].trimmed();
+
+	if (parts.size() > 4)
+		SeriesNumber = parts[4].trimmed().toInt();
+
+	if (parts.size() > 5)
+		FileNumber = parts[5].trimmed().toInt();
 
 	msgs << n->WriteLog(QString("Before fixing: PatientID [%1], StudyDateTime [%2], SeriesDateTime [%3], SeriesDescription [%4], OperatorsName [%5], SeriesNumber [%6], FileNumber [%7]").arg(PatientID).arg(StudyDateTime).arg(SeriesDateTime).arg(SeriesDescription).arg(OperatorsName).arg(SeriesNumber).arg(FileNumber));
 
-	/* check if anything is funny */
+	/* check if anything is still funny */
 	if (StudyDateTime == "") StudyDateTime = "0000-00-00 00:00:00";
 	if (SeriesDateTime == "") SeriesDateTime = "0000-00-00 00:00:00";
 	if (SeriesDescription == "") SeriesDescription = "Unknown";
@@ -2752,9 +2787,9 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	// now determine if this study exists or not...
 	// basically check for a unique studydatetime, modality, and site (StationName), because we already know this subject/project/etc is unique
 	// also checks the accession number against the study_num to see if this study was pre-registered
-	q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentRowID and (study_datetime = :StudyDateTime and study_modality = :Modality and study_site = StationName)");
+	q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentRowID and (study_datetime = '" + StudyDateTime + "' and study_modality = :Modality and study_site = :StationName)");
 	q2.bindValue(":enrollmentRowID", enrollmentRowID);
-	q2.bindValue(":StudyDateTime", StudyDateTime);
+	//q2.bindValue(":StudyDateTime", StudyDateTime);
 	q2.bindValue(":Modality", Modality);
 	q2.bindValue(":StationName", StationName);
 	n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -2764,9 +2799,9 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		studynum =  q2.value("study_num").toInt();
 
 		QSqlQuery q3;
-		q3.prepare("update studies set study_modality = :Modality, study_datetime = :StudyDateTime, study_desc = :StudyDescription, study_operator = :OperatorsName, study_performingphysician = :PerformingPhysiciansName, study_site = :StationName, study_institution = :Institution, study_status = 'complete' where study_id = :studyRowID");
+		q3.prepare("update studies set study_modality = :Modality, study_datetime = '" + StudyDateTime + "', study_desc = :StudyDescription, study_operator = :OperatorsName, study_performingphysician = :PerformingPhysiciansName, study_site = :StationName, study_institution = :Institution, study_status = 'complete' where study_id = :studyRowID");
 		q3.bindValue(":Modality", Modality);
-		q3.bindValue(":StudyDateTime", StudyDateTime);
+		//q3.bindValue(":StudyDateTime", StudyDateTime);
 		q3.bindValue(":StudyDescription", StudyDescription);
 		q3.bindValue(":OperatorsName", OperatorsName);
 		q3.bindValue(":PerformingPhysiciansName", PerformingPhysiciansName);
@@ -2787,12 +2822,12 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 			studynum = q3.value("study_num").toInt() + 1;
 		}
 
-		q3.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentRowID, :studynum, :PatientID, :Modality, :StudyDateTime, :StudyDescription, :OperatorsName, :PerformingPhysiciansName, :StationName, :Institution, 'complete', 'import', now())");
+		q3.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentRowID, :studynum, :PatientID, :Modality, '"+StudyDateTime+"', :StudyDescription, :OperatorsName, :PerformingPhysiciansName, :StationName, :Institution, 'complete', 'import', now())");
 		q3.bindValue(":enrollmentRowID", enrollmentRowID);
 		q3.bindValue(":studynum", studynum);
 		q3.bindValue(":PatientID", PatientID);
 		q3.bindValue(":Modality", Modality);
-		q3.bindValue(":StudyDateTime", StudyDateTime);
+		//q3.bindValue(":StudyDateTime", StudyDateTime);
 		q3.bindValue(":StudyDescription", StudyDescription);
 		q3.bindValue(":OperatorsName", OperatorsName);
 		q3.bindValue(":PerformingPhysiciansName", PerformingPhysiciansName);

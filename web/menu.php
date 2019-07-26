@@ -102,7 +102,7 @@
 				?><a href="search.php" style="<?=$style?>"><b>Search</b></a><?
 				
 				/* subjects */
-				if ($page=="subjects.php" || $page=="groups.php") { $style = "background-color:#3B5998"; }
+				if ($page=="subjects.php" || $page=="groups.php" || $page=="measures.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="subjects.php" style="<?=$style?>"><b>Subjects</b></a><?
 				
@@ -170,7 +170,7 @@
 				}
 				
 				/* subjects sub-menu */
-				elseif ($page=="subjects.php" || $page=="groups.php") {
+				elseif ($page=="subjects.php" || $page=="groups.php" || $page=="measures.php") {
 					if ($page=="subjects.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="subjects.php" style="<?=$style?>">Subjects</a><?
@@ -178,6 +178,10 @@
 					if ($page=="groups.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="groups.php" style="<?=$style?>">Groups</a><?
+					
+					if ($page=="measures.php"){ $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="measures.php" style="<?=$style?>">Measures</a><?
 				}
 				
 				/* studies, which are displayed under the projects menu */
@@ -231,7 +235,7 @@
 						else { $style = ""; }
 						?><a href="projects.php?action=editsubjects&id=<?=$projectid?>" style="<?=$style?>">Subjects</a><?
 						
-						if ($page=="projects.php"){ $style = "background-color:#273f70"; }
+						if (($page=="projects.php") && ($action == "")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projects.php?id=<?=$projectid?>" style="<?=$style?>">Studies</a><?
 						

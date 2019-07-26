@@ -530,13 +530,11 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-
-
-		NavigationBar("$projectname Assessment Forms", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//NavigationBar("$projectname Assessment Forms", $urllist);
 	
-		DisplayProjectsMenu('assessments', $projectid);	
+		//DisplayProjectsMenu('assessments', $projectid);	
 
 
 		/* get the main checklist items */
