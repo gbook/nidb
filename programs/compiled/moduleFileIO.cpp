@@ -112,7 +112,7 @@ int moduleFileIO::Run() {
 			else if (fileio_operation == "detach") {
 			}
 			else if (fileio_operation == "move") {
-				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, username, msg); }
+				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
 				//found = AnonymizeSeries(requestid, data_id, modality, dicomtags);
@@ -751,7 +751,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 /* ---------------------------------------------------------- */
 /* --------- MoveStudyToSubject ----------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString username, QString &msg) {
+bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString &msg) {
 	QStringList msgs;
 
 	study thestudy(studyid, n); /* get the original study info */
@@ -817,7 +817,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString usern
 
 	n->WriteLog("Moving data within archive directory");
 	QString systemstring = QString("rsync -rtuv %1/* %2 2>&1").arg(oldpath).arg(newpath);
-	msgs << n->SystemCommand(systemstring);
+	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	msg = msgs.join(" | ");
 	q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");

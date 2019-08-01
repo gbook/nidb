@@ -52,6 +52,14 @@
 			EnableModule($id);
 			DisplayModuleList();
 			break;
+		case 'debug':
+			DebugModule($id);
+			DisplayModuleList();
+			break;
+		case 'nodebug':
+			NoDebugModule($id);
+			DisplayModuleList();
+			break;
 		case 'reset':
 			ResetModule($id);
 			DisplayModuleList();
@@ -135,6 +143,24 @@
 		}
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- DebugModule ------------------------ */
+	/* -------------------------------------------- */
+	function DebugModule($id) {
+		$sqlstring = "update modules set module_debug = 1 where module_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NoDebugModule ---------------------- */
+	/* -------------------------------------------- */
+	function NoDebugModule($id) {
+		$sqlstring = "update modules set module_debug = 0 where module_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- EnableModule ----------------------- */
@@ -211,7 +237,8 @@
 				<th>Instances</th>
 				<th>Last finish</th>
 				<th>Run time</th>
-				<th>Enable/Disable</th>
+				<th>Enabled</th>
+				<th title="Enable debugging will always save the log file, and will output all SQL statements to the log file" style="text-decoration: underline; text-decoration-style: dotted">Debug</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -226,6 +253,7 @@
 					$module_laststart = $row['module_laststart'];
 					$module_laststop = $row['module_laststop'];
 					$module_isactive = $row['module_isactive'];
+					$module_debug = $row['module_debug'];
 					
 					/* calculate the status color */
 					if (!$module_isactive) { $color = "gray"; }
@@ -256,7 +284,7 @@
 			?>
 			<tr>
 				<td><b><?=$module_name?></b></td>
-				<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a></td>
+				<td>[<a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a>]</td>
 				<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>
 				<td><?=$module_numrunning?></td>
 				<td><?=$module_laststop?></td>
@@ -268,6 +296,16 @@
 						}
 						else {
 							?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+						}
+					?>
+				</td>
+				<td>
+					<?
+						if ($module_debug) {
+							?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+						}
+						else {
+							?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
 						}
 					?>
 				</td>

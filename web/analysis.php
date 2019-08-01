@@ -540,6 +540,7 @@
 					<th align="left">Logs</th>
 					<th align="left">History</th>
 					<th align="left">Files</th>
+					<th align="left">Download</th>
 					<th align="left">Results</th>
 					<th align="left">Graph</th>
 					<th align="left">Notes</th>
@@ -585,6 +586,7 @@
 							<option value="1" <? if ($searchsuccess == "1") { echo "selected"; } ?>>Successful
 							<option value="2" <? if ($searchsuccess == "2") { echo "selected"; } ?>>Not Successful
 						</select>
+					<th></th>
 					<th></th>
 					<th></th>
 					<th></th>
@@ -806,13 +808,32 @@
 							if ($analysis_rerunresults) { ?> <span class="tiny">rerun results</span><? }
 						?>
 					</td>
-					<td style="font-weight: bold; color: green"><? if ($analysis_iscomplete) { echo "&#x2713;"; } ?></td>
+					<td style="font-weight: bold; color: green">
+						<? if ($analysis_iscomplete) { echo "&#x2713;"; } ?>
+					</td>
 					<? if ($analysis_status != "") { ?>
-					<td align="center"><a href="viewanalysis.php?action=viewlogs&analysisid=<?=$analysis_id?>" target="_viewlogs" title="View log files"><img src="images/log16.png"></a></td>
-					<td align="center"><a href="viewanalysis.php?action=viewhistory&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewhistory" title="View analysis history"><img src="images/history16.png"></a></td>
-					<td align="center"><a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><img src="images/folder16.png"></a></td>
-					<td align="center"><a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><img src="images/chart16.png"></a></td>
-					<td align="center"><a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><img src="images/graph16.png"></a></td>
+					<td align="center">
+						<a href="viewanalysis.php?action=viewlogs&analysisid=<?=$analysis_id?>" target="_viewlogs" title="View log files"><img src="images/log16.png"></a>
+					</td>
+					<td align="center">
+						<a href="viewanalysis.php?action=viewhistory&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewhistory" title="View analysis history"><img src="images/history16.png"></a>
+					</td>
+					<td align="center">
+						<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><img src="images/folder16.png"></a>
+					</td>
+					<td align="center">
+						<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+						<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
+						<? } else { ?>
+						
+						<? } ?>
+					</td>
+					<td align="center">
+						<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><img src="images/chart16.png"></a>
+					</td>
+					<td align="center">
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><img src="images/graph16.png"></a>
+					</td>
 					<? } else { ?>
 					<td></td>
 					<td></td>

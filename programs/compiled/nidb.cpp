@@ -344,7 +344,7 @@ QString nidb::CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* QSqlQuery object must already be prepared and bound before */
 /* being passed in to this function                           */
-int nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
+QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
 
 	/* get the SQL string that will be run */
 	QString sql = q.lastQuery();
@@ -362,9 +362,9 @@ int nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool 
 	/* run the query */
 	if (batch)
 		if (q.execBatch(QSqlQuery::ValuesAsRows))
-			return q.size();
+			return sql;
 	if (q.exec())
-		return q.size();
+		return sql;
 
 	QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
 	SendEmail(cfg["adminemail"], "SQL error", err);
@@ -407,6 +407,17 @@ void nidb::ModuleDBCheckIn() {
 		Print("[Ok]");
 	else
 		Print("[Error]");
+
+	/* check if the module should be in a debug state */
+	q.prepare("select module_debug from modules where module_name = :module");
+	q.bindValue(":module", module);
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		q.first();
+		if (q.value("module_debug").toBool())
+			cfg["debug"] = "1";
+	}
+
 }
 
 
@@ -577,14 +588,9 @@ bool nidb::RemoveDir(QString p, QString &msg) {
 QString nidb::GenerateRandomString(int n) {
 
    const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-   //qsrand(static_cast<unsigned int>(QTime::currentTime().msec()));
-
-   //C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()-1) );
-
    QString randomString;
    for(int i=0; i<n; ++i)
    {
-	   //int index = qrand() % possibleCharacters.length();
 	   QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
 	   randomString.append(nextChar);
    }
@@ -648,8 +654,6 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
 		while (it.hasNext())
 			files << it.next();
 	}
-
-	//if (cfg["debug"] == "1") WriteLog(QString("Finished searching for files. Found [%1] files").arg(files.size()));
 
 	return files;
 }

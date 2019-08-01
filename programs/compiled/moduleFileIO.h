@@ -45,7 +45,7 @@ public:
 	bool DeleteSeries(int seriesid, QString modality, QString &msg);
 	bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
 	bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
-	bool MoveStudyToSubject(int studyid, QString newuid, QString username, QString &msg);
+	bool MoveStudyToSubject(int studyid, QString newuid, QString &msg);
 	QString GetIORequestStatus(int requestid);
 	bool SetIORequestStatus(int requestid, QString status, QString msg = "");
 

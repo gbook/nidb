@@ -244,6 +244,7 @@
 					
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$subjectid = $row['subject_id'];
+						
 						$uid = $row['uid'];
 						$altuid = $row['altuid'];
 						$isactive = $row['isactive'];
@@ -256,22 +257,33 @@
 						if ($newid) { $style = "border-top: solid 1pt #444;"; }
 						else { $style = ""; }
 
-						$sqlstringA = "select b.project_name from enrollment a left join projects b on a.project_id = b.project_id where subject_id = $subjectid order by b.project_name";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						$enrollcount = mysqli_num_rows($resultA);
-						$enrolltitle = "<ul>";
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$enrolltitle .= "<li>" . $rowA['project_name'];
+						if ($subjectid == "") {
+							?>
+							<tr>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
+								<td colspan="2" style="<?=$style?>; background-color: <?=$bgcolor?>">Subject ID was blank [<?=$subjectid?>]</td>
+							</tr>
+							<?
 						}
-						$enrolltitle .= "</ul>";
-						?>
-						<tr>
-							<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
-							<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
-							<td style="<?=$style?>; background-color: <?=$bgcolor?>"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-							<td style="<?=$style?>; background-color: <?=$bgcolor?>" title="<?=$enrolltitle?>"><?=$enrollcount?></td>
-						</tr>
-						<?
+						else {
+							$sqlstringA = "select b.project_name from enrollment a left join projects b on a.project_id = b.project_id where subject_id = '$subjectid' order by b.project_name";
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							$enrollcount = mysqli_num_rows($resultA);
+							$enrolltitle = "<ul>";
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								$enrolltitle .= "<li>" . $rowA['project_name'];
+							}
+							$enrolltitle .= "</ul>";
+							?>
+							<tr>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>" title="<?=$enrolltitle?>"><?=$enrollcount?></td>
+							</tr>
+							<?
+						}
 						$newid = 0;
 					}
 				}

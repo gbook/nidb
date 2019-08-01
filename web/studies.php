@@ -683,7 +683,7 @@
 		if ($newuid == "") { return; }
 		
 		/* insert row into fileio_requests */
-		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, requestdate) values ('move','study','$studyid','$newuid', now())";
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('move','study','$studyid','$newuid', '" . $GLOBALS['username'] . "', now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 		?><div align="center"><span class="message">Study queued for move</span></div><?
@@ -1115,7 +1115,7 @@
 								 <input type="hidden" name="stmod" value="<?=$study_modality?>">
 								</td>
 							 <?}else {?>
-								<td class="value"><tt><?=strftime('%m/%d/%Y',strtotime($study_datetime))?></tt></td >	
+								<td class="value"><?=$study_datetime?></td >	
 							<?}?>
 						</tr>
 						<tr>

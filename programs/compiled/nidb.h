@@ -70,7 +70,7 @@ public:
 	void Print(QString s, bool n=true, bool pad=false);
 	QString CreateCurrentDateTime(int format=1);
 	QString CreateLogDate();
-	int SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
+	QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
 	void AppendCustomLog(QString f, QString msg);
 	QString SystemCommand(QString s, bool detail=true);

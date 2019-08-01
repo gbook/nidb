@@ -240,18 +240,18 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString out
 	QString newparfilename = padding + parfilename;
 	QString newparfilepath = outdir + "/" + newparfilename;
 
-	n->WriteLog(QString("A) Size of file [%1] is [%2]").arg(parfilepath).arg(QFileInfo(parfilepath).size()));
+	//n->WriteLog(QString("A) Size of file [%1] is [%2]").arg(parfilepath).arg(QFileInfo(parfilepath).size()));
 	n->WriteLog(n->SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
-	n->WriteLog(QString("B) Size of file [%1] is [%2]").arg(newparfilepath).arg(QFileInfo(newparfilepath).size()));
+	//n->WriteLog(QString("B) Size of file [%1] is [%2]").arg(newparfilepath).arg(QFileInfo(newparfilepath).size()));
 
 	QString recfilename = parfilename.replace(".par", ".rec", Qt::CaseInsensitive);
 	QString newrecfilename = newparfilename.replace(".par", ".rec", Qt::CaseInsensitive);
 	QString recfilepath = oldpath + "/" + recfilename;
 	QString newrecfilepath = outdir + "/" + newrecfilename;
 
-	n->WriteLog(QString("C) Size of file [%1] is [%2]").arg(recfilepath).arg(QFileInfo(recfilepath).size()));
+	//n->WriteLog(QString("C) Size of file [%1] is [%2]").arg(recfilepath).arg(QFileInfo(recfilepath).size()));
 	n->WriteLog(n->SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
-	n->WriteLog(QString("D) Size of file [%1] is [%2]").arg(newrecfilepath).arg(QFileInfo(newrecfilepath).size()));
+	//n->WriteLog(QString("D) Size of file [%1] is [%2]").arg(newrecfilepath).arg(QFileInfo(newrecfilepath).size()));
 
 	return true;
 }

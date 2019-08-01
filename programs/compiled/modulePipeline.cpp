@@ -831,15 +831,16 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			QString sqlstring;
 			dlog << QString("Checking the study [%1] for the protocol (%2)").arg(studyid).arg(protocols);
 			/* get a list of series satisfying the search criteria, if it exists */
-			if (validComparisonStr) {
-				sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
-				if (imagetypes == "''")
-					sqlstring += " and image_type in ("+imagetypes+")";
+			//if (validComparisonStr) {
 
-				q.prepare(sqlstring);
-				q.bindValue(":subjectid", subjectid);
-			}
-			else {
+			//	sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
+			//	if (imagetypes == "''")
+			//		sqlstring += " and image_type in (" + imagetypes + ")";
+
+			//	q.prepare(sqlstring);
+			//	q.bindValue(":subjectid", subjectid);
+			//}
+			//else {
 				sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
 				if (imagetypes != "''") {
 					sqlstring += " and image_type in (" + imagetypes + ")";
@@ -849,8 +850,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 				q.prepare(sqlstring);
 				q.bindValue(":studyid", studyid);
-			}
-			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+				dlog << n->WriteLog(sqlstring);
+			//}
+			dlog << n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
 			if (q.size() > 0) {
 				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found").arg(i).arg(protocol);
 			}

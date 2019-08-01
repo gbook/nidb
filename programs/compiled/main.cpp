@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
 				n->CreateLogFile();
 
-				/* let the database know this module is running */
+				/* let the database know this module is running, and if the DB says it should be in debug mode */
 				n->ModuleDBCheckIn();
 
 				/* run the module */
