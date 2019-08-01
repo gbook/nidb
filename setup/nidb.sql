@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 01, 2019 at 08:10 PM
+-- Generation Time: Aug 01, 2019 at 08:14 PM
 -- Server version: 10.3.15-MariaDB
 -- PHP Version: 7.2.18
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `analysis` (
-  `analysis_id` bigint(11) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) DEFAULT 0,
   `pipeline_dependency` int(11) DEFAULT NULL,
@@ -40,9 +40,9 @@ CREATE TABLE `analysis` (
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysis_notes` text DEFAULT NULL,
   `analysis_iscomplete` tinyint(1) DEFAULT NULL,
-  `analysis_isbad` tinyint(1) DEFAULT 0,
+  `analysis_isbad` tinyint(1) DEFAULT NULL,
   `analysis_datalog` mediumtext DEFAULT NULL,
-  `analysis_datatable` text DEFAULT '',
+  `analysis_datatable` text DEFAULT NULL,
   `analysis_rerunresults` tinyint(1) DEFAULT NULL,
   `analysis_runsupplement` tinyint(1) DEFAULT NULL,
   `analysis_result` varchar(50) DEFAULT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE `analysis` (
   `analysis_numseries` int(11) DEFAULT NULL,
   `analysis_swversion` varchar(255) DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
-  `analysis_disksize` double DEFAULT 0,
+  `analysis_disksize` double DEFAULT NULL,
   `analysis_numfiles` int(11) DEFAULT NULL,
   `analysis_startdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
@@ -1425,10 +1425,10 @@ CREATE TABLE `measureinstruments` (
 
 CREATE TABLE `measurenames` (
   `measurename_id` int(11) NOT NULL,
-  `measure_name` varchar(255) NOT NULL,
-  `measure_group` varchar(255) NOT NULL,
-  `measure_multiple` tinyint(1) NOT NULL COMMENT 'Indicates if a measure can have more than one entry',
-  `measure_notes` text NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
+  `measure_name` varchar(255) DEFAULT NULL,
+  `measure_group` varchar(255) DEFAULT NULL,
+  `measure_multiple` tinyint(1) DEFAULT NULL COMMENT 'Indicates if a measure can have more than one entry',
+  `measure_notes` text DEFAULT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1440,20 +1440,17 @@ CREATE TABLE `measurenames` (
 CREATE TABLE `measures` (
   `measure_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `measure_dateentered` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `measure_dateentered2` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `instrumentname_id` int(11) NOT NULL,
-  `measurename_id` int(11) NOT NULL,
-  `measure_type` enum('s','n') NOT NULL,
-  `measure_valuestring` varchar(255) NOT NULL,
-  `measure_valuenum` double NOT NULL,
-  `measure_notes` text NOT NULL,
-  `measure_instrument` varchar(255) NOT NULL,
-  `measure_rater` varchar(50) NOT NULL,
-  `measure_rater2` varchar(50) NOT NULL,
-  `measure_isdoubleentered` tinyint(1) NOT NULL,
-  `measure_datecomplete` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `measure_dateentered` timestamp NULL DEFAULT NULL,
+  `instrumentname_id` int(11) DEFAULT NULL,
+  `measurename_id` int(11) DEFAULT NULL,
+  `measure_type` enum('s','n') DEFAULT NULL,
+  `measure_valuestring` varchar(255) DEFAULT NULL,
+  `measure_valuenum` double DEFAULT NULL,
+  `measure_notes` text DEFAULT NULL,
+  `measure_instrument` varchar(255) DEFAULT NULL,
+  `measure_rater` varchar(50) DEFAULT NULL,
+  `measure_datecomplete` timestamp NULL DEFAULT NULL,
+  `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1493,7 +1490,8 @@ CREATE TABLE `modules` (
   `module_numrunning` int(11) NOT NULL DEFAULT 0,
   `module_laststart` datetime NOT NULL,
   `module_laststop` datetime NOT NULL,
-  `module_isactive` tinyint(1) NOT NULL
+  `module_isactive` tinyint(1) NOT NULL,
+  `module_debug` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2584,7 +2582,7 @@ CREATE TABLE `subjects` (
 CREATE TABLE `subject_altuid` (
   `subjectaltuid_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
-  `altuid` varchar(50) NOT NULL,
+  `altuid` varchar(255) NOT NULL,
   `isprimary` tinyint(1) NOT NULL,
   `enrollment_id` int(11) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -3345,7 +3343,7 @@ ALTER TABLE `measurenames`
 --
 ALTER TABLE `measures`
   ADD PRIMARY KEY (`measure_id`),
-  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_type`,`measure_valuestring`,`measure_valuenum`,`measure_isdoubleentered`);
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_type`,`measure_valuestring`,`measure_valuenum`) USING BTREE;
 
 --
 -- Indexes for table `modalities`
@@ -3841,7 +3839,7 @@ ALTER TABLE `xa_series`
 -- AUTO_INCREMENT for table `analysis`
 --
 ALTER TABLE `analysis`
-  MODIFY `analysis_id` bigint(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `analysis_data`
