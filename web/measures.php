@@ -36,7 +36,7 @@
 	require "includes.php";
 	require "menu.php";
 	
-	PrintVariable($_POST,'POST');
+	//PrintVariable($_POST,'POST');
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -128,6 +128,12 @@
 	/* ------- DisplayMeasureList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayMeasureList($enrollmentid) {
+		
+		if ((trim($enrollmentid) == "") || ($enrollment_id < 0)) {
+			?>Invalid or blank enrollment ID [<?=$enrollment_id?>]<?
+			return;
+		}
+		
 		/* get subject's info for the breadcrumb list */
 		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

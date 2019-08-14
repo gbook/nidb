@@ -644,8 +644,8 @@
 		}
 		$grouplist = implode2("<br>", $groupnames);
 		if ($grouplist == "") { $grouplist = "None"; }
-		
-		$datasearchtable = "<table class='smalldisplaytable'>
+
+		$datasearchtable = "<table class='smallgridtable'>
 			<thead>
 			<tr>
 				<th></th>
@@ -693,6 +693,13 @@
 			$pdd_optional = $row['pdd_optional'];
 			$pdd_numboldreps = $row['pdd_numboldreps'];
 			
+			if ($pdd_enabled) $pdd_enabled = "&#10004;";
+			if ($pdd_optional) $pdd_optional = "&#10004;";
+			if ($pdd_gzip) $pdd_gzip = "&#10004;";
+			if ($pdd_useseries) $pdd_useseries = "&#10004;";
+			if ($pdd_preserveseries) $pdd_preserveseries = "&#10004;";
+			if ($pdd_usephasedir) $pdd_usephasedir = "&#10004;";
+			
 			$datasearchtable .= "<tr>
 								<td>$pdd_order</td>
 								<td>$pdd_enabled</td>
@@ -730,10 +737,24 @@
 			<tr>
 				<td></td>
 				<td></td>
-				<td class="step">Data search</td>
-				<td class="stepdetail">
-					<details><summary>Data search criteria</summary>
-					<?=$datasearchtable?>
+				<td class="step">Data</td>
+				<td class="stepdetail" width="1200px">
+					<details><summary>Search criteria</summary>
+					<div style="height: 400px; width:1200px; overflow:auto">
+						<?=$datasearchtable?>
+					</div>
+					</details>
+					
+					<details><summary>Download summary</summary>
+					<div style="height: 400px; width:1200px; overflow:auto">
+						<?=DataDownloadTable($studyid, strtolower($pdd_modality), $analysisid); ?>
+					</div>
+					</details>
+					
+					<details><summary>Detailed log</summary>
+					<div style="height: 400px; width:1200px; overflow:auto">
+						<?=$datatable?>
+					</div>
 					</details>
 				</td>
 			</tr>
@@ -765,75 +786,71 @@
 			<tr>
 				<td></td>
 				<td></td>
-				<td class="step">Data</td>
-				<td class="stepdetail"><?=$datatable?></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="arrow">&darr;</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
 				<td class="step">Cluster</td>
 				<td class="stepdetail">
-					<details><summary>Cluster/processing history</summary>
-					<table class="smalldisplaytable">
-						<thead>
-							<tr>
-								<th>Cumulative time</th>
-								<th>Date/time</th>
-								<th>Pipeline version</th>
-								<th>Hostname</th>
-								<th>Event</th>
-								<th>Message</th>
-							</tr>
-						</thead>
-					<?
-					$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					/* get the first event to get the starting time */
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$pipeline_version = $row['pipeline_version'];
-					$analysis_event = $row['analysis_event'];
-					$analysis_hostname = $row['analysis_hostname'];
-					$event_message = $row['event_message'];
-					$startdatetime = $row['event_datetime'];
-					$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
-					?>
-					<tr>
-						<td>0</td>
-						<td nowrap><?=$event_datetime?></td>
-						<td><?=$pipeline_version?></td>
-						<td><?=$analysis_hostname?></td>
-						<td><?=$analysis_event?></td>
-						<td><?=$event_message?></td>
-					</tr>
-					<?
-					/* continue on with the rest of the events */
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					<details><summary>History</summary>
+					<div style="height: 400px; width:1200px; overflow:auto">
+						<table class="smallgridtable">
+							<thead>
+								<tr>
+									<th>Cumulative time</th>
+									<th>Date/time</th>
+									<th>Pipeline version</th>
+									<th>Hostname</th>
+									<th>Event</th>
+									<th>Message</th>
+								</tr>
+							</thead>
+						<?
+						$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						/* get the first event to get the starting time */
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 						$pipeline_version = $row['pipeline_version'];
 						$analysis_event = $row['analysis_event'];
 						$analysis_hostname = $row['analysis_hostname'];
 						$event_message = $row['event_message'];
-						$event_datetime = $row['event_datetime'];
-						$cumtime = FormatCountdown($event_datetime - $startdatetime);
-						
+						$startdatetime = $row['event_datetime'];
+						$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
 						?>
 						<tr>
-							<td><?=$cumtime?></td>
-							<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+							<td>0</td>
+							<td nowrap><?=$event_datetime?></td>
 							<td><?=$pipeline_version?></td>
 							<td><?=$analysis_hostname?></td>
 							<td><?=$analysis_event?></td>
 							<td><?=$event_message?></td>
 						</tr>
 						<?
-					}
-					?>
-					</table>
+						/* continue on with the rest of the events */
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$pipeline_version = $row['pipeline_version'];
+							$analysis_event = $row['analysis_event'];
+							$analysis_hostname = $row['analysis_hostname'];
+							$event_message = $row['event_message'];
+							$event_datetime = $row['event_datetime'];
+							$cumtime = FormatCountdown($event_datetime - $startdatetime);
+							
+							?>
+							<tr>
+								<td><?=$cumtime?></td>
+								<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+								<td><?=$pipeline_version?></td>
+								<td><?=$analysis_hostname?></td>
+								<td><?=$analysis_event?></td>
+								<td><?=$event_message?></td>
+							</tr>
+							<?
+						}
+						?>
+						</table>
+					</div>
+					</details>
+					
+					<details><summary style="background-color: #fcf76a; padding: 4px; border: 1px solid #ffc700">Log files</summary>
+					<div style="height: 400px; width:1200px; overflow:auto">
+						<? DisplayLogs($analysisid); ?>
+					</div>
 					</details>
 				</td>
 			</tr>
@@ -999,6 +1016,93 @@
 		$pipelineversion = $row['pipeline_version'];
 
 		return array($uid, $studynum, $pipelinename, $pipelineversion);
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DataDownloadTable ------------------ */
+	/* -------------------------------------------- */
+	function DataDownloadTable($studyid, $modality, $analysisid) {
+		
+		/* get the information about what data was found for this analysis */
+		$sqlstring = "select * from pipeline_data where analysis_id = $analysisid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$order = $row['pd_step'];
+			$dd[$order]['checked'] = $row['pd_checked'];
+			$dd[$order]['found'] = $row['pd_found'];
+			$dd[$order]['seriesid'] = $row['pd_seriesid'];
+			$dd[$order]['downloadpath'] = $row['pd_downloadpath'];
+			$dd[$order]['msg'] = $row['pd_msg'];
+		}
+
+		?>
+		<table class="smallgridtable">
+			<thead>
+				<tr>
+					<th>Series</th>
+					<th>Protocol</th>
+					<th>Image type</th>
+					<th>BOLD reps</th>
+					<th>Checked?</th>
+					<th>Found?</th>
+					<th>Download path</th>
+					<th>Message</th>
+				</tr>
+			</thead>
+		<?
+		/* get all series in the study */
+		$sqlstring = "select * from $modality"."_series where study_id = $studyid order by series_num asc";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			
+			if ($modality == "mr") {
+				$seriesid = $row['mrseries_id'];
+				$protocol = $row['series_desc'];
+				$seriesnum = $row['series_num'];
+				$imagetype = $row['image_type'];
+				$boldreps = $row['bold_reps'];
+			}
+			else {
+				$protocol = $row['series_protocol'];
+				$seriesnum = $row['series_num'];
+			}
+			
+			?>
+			<tr>
+				<td><?=$seriesnum?></td>
+				<td><?=$protocol?></td>
+				<td><?=$imagetype?></td>
+				<td><?=$boldreps?></td>
+			<?
+			$displayed = false;
+			foreach ($dd as $order => $val) {
+				$dseriesid = $val['seriesid'];
+				$found = $val['found'];
+				$checked = $val['checked'];
+				$path = $val['downloadpath'];
+				$msg = $val['msg'];
+				if ($dseriesid == $seriesid) {
+					?>
+					<td><? if ($checked) echo "&#10004;"; ?></td>
+					<td><? if ($found) echo "&#10004;"; ?></td>
+					<td><?=$path?></td>
+					<td><?=$msg?></td>
+					<?
+					$displayed = true;
+				}
+			}
+			if (!$displayed) {
+				?>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<?
+			}
+			?></tr><?
+		}
+		?></table><?
 	}
 	
 ?>

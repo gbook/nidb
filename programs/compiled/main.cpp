@@ -31,6 +31,7 @@
 #include "moduleMRIQA.h"
 #include "moduleQC.h"
 #include "modulePipeline.h"
+#include "moduleCluster.h"
 #include <iostream>
 #include <smtp/SmtpMime>
 
@@ -45,8 +46,8 @@ int main(int argc, char *argv[])
     QString module = argv[1];
 
 	module = module.trimmed();
-	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded")) {
-		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
+	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded") && (module != "resultinsert") && (module != "pipelinecheckin")) {
+		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline resultinsert pipelinecheckin\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
 		return 0;
 	}
 
@@ -56,88 +57,129 @@ int main(int argc, char *argv[])
 
 	/* load the config file and connect to the database */
 	nidb *n = new nidb(module);
-	n->DatabaseConnect();
 
-	bool keepLog = false;
-	if (argc == 3)
-		if (QString(argv[2]) == "debug")
-			n->cfg["debug"] = "1";
+	/* check if this is being run by the cluster or locally */
+	if ((module == "resultinsert") || (module == "pipelinecheckin")) {
+		n->DatabaseConnect(true);
 
-	if (n->cfg["debug"].toInt())
-		printf("------------------------- DEBUG MODE ------------------------\n");
-
-	/* check if this module should be running now or not */
-	if (n->ModuleCheckIfActive()) {
-		int numlock = n->CheckNumLockFiles();
-		if (numlock < n->GetNumThreads()) {
-			if (n->CreateLockFile()) {
-
-				n->CreateLogFile();
-
-				/* let the database know this module is running, and if the DB says it should be in debug mode */
-				n->ModuleDBCheckIn();
-
-				/* run the module */
-				if (module == "fileio") {
-					moduleFileIO *m = new moduleFileIO(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "export") {
-					moduleExport *m = new moduleExport(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "modulemanager") {
-					moduleManager *m = new moduleManager(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "import") {
-					moduleImport *m = new moduleImport(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "importuploaded") {
-					moduleImportUploaded *m = new moduleImportUploaded(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "mriqa") {
-					moduleMRIQA *m = new moduleMRIQA(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "qc") {
-					moduleQC *m = new moduleQC(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else if (module == "pipeline") {
-					modulePipeline *m = new modulePipeline(n);
-					keepLog = m->Run();
-					delete m;
-				}
-				else
-					n->Print("Unrecognized module [" + module + "]");
-
-				if ((n->cfg["debug"].toInt()) || (keepLog))
-					keepLog = true;
-
-				n->RemoveLogFile(keepLog);
-
-				/* let the database know this module has stopped running */
-				n->ModuleDBCheckOut();
+		if (module == "pipelinecheckin") {
+			n->DatabaseConnect(true);
+			if (argc == 6) {
+				int analysisid = QString(argv[2]).toInt();
+				QString status = argv[3];
+				QString message = argv[4];
+				QString command = argv[5];
+				moduleCluster *m = new moduleCluster(n);
+				m->PipelineCheckin(analysisid, status, message, command);
+				delete m;
 			}
+			else {
+				printf("pipelinecheckin - incorrect number of parameters after 'pipelinecheckin'");
+				printf("\n\nUsage:\n  nidb pipelinecheckin <analysisid> <status> <message> <command>\n\n");
+			}
+		}
+		else if (module == "resultinsert") {
+			n->DatabaseConnect(true);
+			if (argc == 6) {
+				int analysisid = QString(argv[2]).toInt();
+				QString status = argv[3];
+				QString message = argv[4];
+				QString command = argv[5];
+				moduleCluster *m = new moduleCluster(n);
+				m->PipelineCheckin(analysisid, status, message, command);
+				delete m;
+			}
+			else {
+				printf("pipelinecheckin - incorrect number of parameters after 'pipelinecheckin'");
+				printf("\n\nUsage:\n  nidb pipelinecheckin <analysisid> <status> <message> <command>\n\n");
+			}
+		}
+	}
+	else {
+		/* a regular module is being called */
+		n->DatabaseConnect();
 
-			/* delete the lock file */
-			n->DeleteLockFile();
+		bool keepLog = false;
+		if (argc == 3)
+			if (QString(argv[2]) == "debug")
+				n->cfg["debug"] = "1";
+
+		if (n->cfg["debug"].toInt())
+			printf("------------------------- DEBUG MODE ------------------------\n");
+
+		/* check if this module should be running now or not */
+		if (n->ModuleCheckIfActive()) {
+			int numlock = n->CheckNumLockFiles();
+			if (numlock < n->GetNumThreads()) {
+				if (n->CreateLockFile()) {
+
+					n->CreateLogFile();
+
+					/* let the database know this module is running, and if the DB says it should be in debug mode */
+					n->ModuleDBCheckIn();
+
+					/* run the module */
+					if (module == "fileio") {
+						moduleFileIO *m = new moduleFileIO(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "export") {
+						moduleExport *m = new moduleExport(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "modulemanager") {
+						moduleManager *m = new moduleManager(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "import") {
+						moduleImport *m = new moduleImport(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "importuploaded") {
+						moduleImportUploaded *m = new moduleImportUploaded(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "mriqa") {
+						moduleMRIQA *m = new moduleMRIQA(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "qc") {
+						moduleQC *m = new moduleQC(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "pipeline") {
+						modulePipeline *m = new modulePipeline(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else
+						n->Print("Unrecognized module [" + module + "]");
+
+					if ((n->cfg["debug"].toInt()) || (keepLog))
+						keepLog = true;
+
+					n->RemoveLogFile(keepLog);
+
+					/* let the database know this module has stopped running */
+					n->ModuleDBCheckOut();
+				}
+
+				/* delete the lock file */
+				n->DeleteLockFile();
+			}
+			else
+				n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
 		}
 		else
-			n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
-    }
-	else
-		n->Print("This module [" + module + "] is disabled or does not exist");
+			n->Print("This module [" + module + "] is disabled or does not exist");
+	}
 
 	delete n;
 

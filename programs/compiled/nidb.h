@@ -48,7 +48,7 @@ public:
 	nidb();
 	nidb(QString m);
     bool LoadConfig();
-    bool DatabaseConnect();
+	bool DatabaseConnect(bool cluster=false);
 
 	/* module housekeeping functions */
 	int CheckNumLockFiles();
@@ -73,7 +73,7 @@ public:
 	QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
 	QString WriteLog(QString msg);
 	void AppendCustomLog(QString f, QString msg);
-	QString SystemCommand(QString s, bool detail=true);
+	QString SystemCommand(QString s, bool detail=true, bool truncate=false);
 	QString GenerateRandomString(int n);
 	QString CreateUID(QString prefix, int numletters=3);
 	void SortQStringListNaturally(QStringList &s);

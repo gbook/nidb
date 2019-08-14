@@ -51,6 +51,7 @@
 	$viewstatus = GetVariable("viewstatus");
 	$viewenabled = GetVariable("viewenabled");
 	$viewall = GetVariable("viewall");
+	$viewuserid = GetVariable("viewuserid");
 	
 	$pipelinetitle = GetVariable("pipelinetitle");
 	$pipelinedesc = GetVariable("pipelinedesc");
@@ -128,28 +129,28 @@
 			break;
 		case 'changeowner':
 			ChangeOwner($id,$newuserid);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'delete':
 			DeletePipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'copy':
 			CopyPipeline($id, $newname);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'reset':
 			ResetPipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'resetanalyses':
 			ResetAnalyses($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'disable':
 			DisablePipeline($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			}
 			else {
 				DisplayPipelineForm("edit", $id);
@@ -158,18 +159,18 @@
 		case 'enable':
 			EnablePipeline($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			}
 			else {
 				DisplayPipelineForm("edit", $id);
 			}
 			break;
 		case 'viewpipelinelist':
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
 		case 'viewusage': DisplayPipelineUsage();
 			break;
-		default: DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall);
+		default: DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
@@ -2476,7 +2477,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineTree ---------------- */
 	/* -------------------------------------------- */
-	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall) {
+	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid) {
 	
 		MarkTime("DisplayPipelineTree()");
 	
@@ -2485,6 +2486,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 		NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
+		
+		if (($viewuserid == "") || ($viewuserid < 0)) {
+			$viewuserid = $GLOBALS['userid'];
+		}
 		
 		/* get list of userids and usernames */
 		$userids[$GLOBALS['userid']] = $GLOBALS['username'];
@@ -2518,13 +2523,22 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<b># complete</b> <?=$myusage['totalcomplete']?><br>
 	</span>
 	<br>
+	<span style="font-size:10pt">View: <a href="pipelines.php?viewuserid=<?=$GLOBALS['userid']?>"><b>My pipelines</b></a>
+	<?
+		foreach ($userids as $userid => $username) {
+			?> | <a href="pipelines.php?viewuserid=<?=$userid?>"><?=$username?></a><?
+		}
+	?>
+	</span>
+	<br>
 	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
 	<br>
 	<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
 	<br>
 	<?	
-		foreach ($userids as $userid => $username) {
-			$pipelinetree = GetPipelineTree($viewall, $userid);
+		//foreach ($userids as $userid => $username) {
+			$username = $userids[$viewuserid];
+			$pipelinetree = GetPipelineTree($viewall, $viewuserid);
 			if (trim($username) == "") { $username = "(unknown)"; }
 			?>
 			<br><br>
@@ -2574,7 +2588,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				</tbody>
 			</table>
 			<?
-		}
+		//}
 	?>
 	<br><br><br><br><br>
 	<?

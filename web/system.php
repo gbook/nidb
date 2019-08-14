@@ -59,6 +59,8 @@
     $c['mysqldevuser'] = GetVariable("mysqldevuser");
     $c['mysqldevpassword'] = GetVariable("mysqldevpassword");
     $c['mysqldevdatabase'] = GetVariable("mysqldevdatabase");
+    $c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
+    $c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
 
     $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
     $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
@@ -257,6 +259,8 @@
 [mysqldevdatabase] = $mysqldevdatabase
 [mysqldevuser] = $mysqldevuser
 [mysqldevpassword] = $mysqldevpassword
+[mysqlclusteruser] = $mysqlclusteruser
+[mysqlclusterpassword] = $mysqlclusterpassword
 
 # ----- modules -----
 [modulefileiothreads] = $modulefileiothreads
@@ -485,6 +489,18 @@
 				<td><input type="text" name="mysqldevdatabase" value="<?=$GLOBALS['cfg']['mysqldevdatabase']?>"></td>
 				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Development database (default is <tt>nidb</tt>)</td>
+			</tr>
+			<tr>
+				<td class="variable">mysqlclusteruser</td>
+				<td><input type="text" name="mysqlclusteruser" value="<?=$GLOBALS['cfg']['mysqlclusteruser']?>"></td>
+				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Cluster database username -  this user has insert-only permissions to insert into certain pipeline tables</td>
+			</tr>
+			<tr>
+				<td class="variable">mysqlclusterpassword</td>
+				<td><input type="password" name="mysqlclusterpassword" value="<?=$GLOBALS['cfg']['mysqlclusterpassword']?>"></td>
+				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Cluster database password</td>
 			</tr>
 
 			<tr>

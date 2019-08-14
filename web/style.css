@@ -170,9 +170,15 @@ table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-radius:5p
 .smalldisplaytable tr:first-child > th:first-child { border-top-left-radius: 5px; }
 .smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; }
 
+/* small grid table */
+table.smallgridtable { padding: 0px; border: 1px solid #666; border-spacing: 0px; border-collapse: collapse; }
+.smallgridtable th { font-weight: bold; font-size: 9pt; border: 1px solid #666; padding: 2px 6px; background-color: #EEE; }
+.smallgridtable td { border: 1px solid #ccc; font-size: 9pt; padding: 1px 6px; }
+.smallgridtable tbody tr:hover { background-color: #BBC8E6; }
+
 /* gray display table (multiple rows) */
-table.graydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px; border-radius:4px;}
-.graydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px; border-radius: 4px;}
+table.graydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px; }
+.graydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px; }
 .graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; }
 .graydisplaytable td { border-top: 1px solid #DDD; font-size: 11pt; padding: 2px 4px; vertical-align: top }
 .graydisplaytable td.child { font-size: 11pt; padding: 2px 4px; }
@@ -249,6 +255,11 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .enrolltable td.cell { border: 1px solid #ccc; padding: 5px; }
 .enrolltable td.headercell { border-top: 2px solid #444; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; border-right: 1px solid #ccc; padding: 5px; background-color: #ddd; font-weight: bold }
 
+/* analysis summary table */
+.summarytable { border: 2px solid #444; border-collapse: collapse; font-size: 10pt }
+.summarytable th { border: 1px solid #ccc; background-color: #ddd; font-weight: bold; }
+.summarytable td { border: 1px solid #ccc; }
+
 /* 2 column table (small table with 2 columns: variable, value)*/
 .multicoltable { border-spacing: 0px; padding: 0px; border: 1px solid #AAA; border-collapse:collapse; }
 .multicoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; border-right: 1px solid #AAA }
@@ -308,6 +319,9 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 
 .adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; }
 .adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
+
+.adminbutton2 { background-color: darkred; font-weight: bold; color: #fff !important; text-align: center; padding: 7px; text-decoration: none; border: 1px solid #444; }
+.adminbutton2:hover {background-color: #e57272; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
 
 /* for links appearing as buttons */
 .linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
@@ -434,7 +448,6 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 	-webkit-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
 	-moz-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
 	box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
-	border-radius: 5px;
 	border: 1px solid #aaa !important;
 }
 /* for the menu on the project page */

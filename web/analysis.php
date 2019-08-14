@@ -112,6 +112,10 @@
 			MarkComplete($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
+		case 'marksuccessful':
+			MarkSuccessful($analysisids);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			break;
 		case 'rechecksuccess':
 			RecheckSuccess($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
@@ -301,6 +305,23 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MarkSuccessful --------------------- */
+	/* -------------------------------------------- */
+	function MarkSuccessful($analysisids) {
+		
+		foreach ($analysisids as $analysisid) {
+
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
+			$sqlstring = "update analysis set analysis_iscomplete = 1 where analysis_id = $analysisid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as successful</span><br><?
 		}
 	}
 	
@@ -538,11 +559,9 @@
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=successful&sortorder=<?=$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
 					</th>
 					<th align="left">Logs</th>
-					<th align="left">History</th>
 					<th align="left">Files</th>
 					<th align="left">Download</th>
 					<th align="left">Results</th>
-					<th align="left">Graph</th>
 					<th align="left">Notes</th>
 					<th align="left" <? if ($sortby == "message") { echo "style='background-color: #fff'"; } ?>>
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
@@ -586,8 +605,6 @@
 							<option value="1" <? if ($searchsuccess == "1") { echo "selected"; } ?>>Successful
 							<option value="2" <? if ($searchsuccess == "2") { echo "selected"; } ?>>Not Successful
 						</select>
-					<th></th>
-					<th></th>
 					<th></th>
 					<th></th>
 					<th></th>
@@ -813,26 +830,20 @@
 					</td>
 					<? if ($analysis_status != "") { ?>
 					<td align="center">
-						<a href="viewanalysis.php?action=viewlogs&analysisid=<?=$analysis_id?>" target="_viewlogs" title="View log files"><img src="images/log16.png"></a>
-					</td>
-					<td align="center">
-						<a href="viewanalysis.php?action=viewhistory&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewhistory" title="View analysis history"><img src="images/history16.png"></a>
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><img src="images/log16.png"></a>
 					</td>
 					<td align="center">
 						<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><img src="images/folder16.png"></a>
 					</td>
 					<td align="center">
 						<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-						<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
+						<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
 						<? } else { ?>
 						
 						<? } ?>
 					</td>
 					<td align="center">
 						<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><img src="images/chart16.png"></a>
-					</td>
-					<td align="center">
-						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><img src="images/graph16.png"></a>
 					</td>
 					<? } else { ?>
 					<td></td>
@@ -941,7 +952,9 @@
 					<br>
 					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
 					<br>
-					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">&nbsp;
+					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">
+					<br>
+					<input type="button" name="marksuccessful" value="Mark successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">&nbsp;
 					</td>
 				</tr>
 				</tfoot>
@@ -1074,22 +1087,9 @@
 					<? } ?>
 					<td><?=$analysis_status;?></td>
 					<td>
-						<? if (trim($analysis_datalog) != "") { ?>
-						<a href="#" id="viewlog<?=$analysis_id?>">view log</a>
-						<div id="datalog<?=$analysis_id?>" title="Data log" style="display:none;">
-						<pre style="font-size:9pt; border: 1px solid gray; padding: 5px"><?=$analysis_datalog?></pre>
-						</div>
-						<script>
-							$(document).ready(function() {
-								$("a#viewlog<?=$analysis_id?>").click(function(e) {
-									e.preventDefault();
-									$("#datalog<?=$analysis_id?>").dialog({height:500, width:800});
-								});
-							});
-						</script>
-						<? } ?>
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph">View log</a>
 					</td>
-					<td class="allanalyses" ><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+					<td class="allanalyses" align="right"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
 				</tr>
 				<? 
 					}

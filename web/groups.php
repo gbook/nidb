@@ -274,15 +274,20 @@ session_start();
 
 			$sqlstring = "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$uid' AND b.study_num='$studynum'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$studyid = $row['study_id'];
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$studyid = trim($row['study_id']);
 
-			//echo "[$study] --> [$studyid]<br>";
+				//echo "[$study] --> [$studyid]<br>";
 			
-			/* insert the studyids */
-			$sqlstring = "insert into group_data (group_id, data_id) values ($id, $studyid)";
-			//echo "$sqlstring<br>";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* insert the studyids */
+				$sqlstring = "insert into group_data (group_id, data_id) values ($id, $studyid)";
+				//echo "$sqlstring<br>";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			else {
+				echo "Study [$study] not found. Possibly invaliud studynum?<br>";
+			}
 		}
 
 		/* commit the transaction */

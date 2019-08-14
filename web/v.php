@@ -96,7 +96,10 @@
 			$userpendingid = $row['user_id'];
 			$username = $row['username'];
 			$password = $row['password'];
-			$fullname = $row['user_fullname'];
+			$fullname = trim($row['user_fullname']);
+			if ($fullname == "") {
+				$fullname = $row['user_firstname'] . " " . $row['user_midname'] . " " . $row['user_lastname'];
+			}
 			$institution = $row['user_institution'];
 			$country = $row['user_country'];
 			$email = $row['user_email'];

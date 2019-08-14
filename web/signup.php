@@ -143,27 +143,29 @@
 			return "Email address already registered";
 		}
 		
+		$userpendingid = -1;
+		
 		/* check if the username or email address is already in the users_pending table */
-		$sqlstring = "select count(*) 'count' from users_pending where username = '$email' or user_email = '$email'";
+		$sqlstring = "select user_id from users_pending where username = '$email' or user_email = '$email'";
 		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$count = $row['count'];
-		//echo "Count [$count]<br>";
-		if ($count > 0) {
-			return "Email address already registered, but not activated";
+		if (mysqli_num_rows($result)) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$userpendingid = $row['user_id'];
+			echo "Email address already registered, but not activated. Sending verification email again.";
+		}
+		else {
+			/* if no errors were found so far, insert the row, with the user disabled */
+			/* insert a temp account into the DB */
+			//$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$email',sha1('$password'),'Standard','$instance','$name','$institution','$country','$email',0)";
+			$sqlstring = "insert into users_pending (username, password, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values ('$email',sha1('$password'),'$firstname','$midname','$lastname','$institution','$country','$email',sha1(now()), now())";
+			//echo "$sqlstring<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$userpendingid = mysqli_insert_id($GLOBALS['linki']);
 		}
 
-		/* if no errors were found so far, insert the row, with the user disabled */
-		/* insert a temp account into the DB */
-		//$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$email',sha1('$password'),'Standard','$instance','$name','$institution','$country','$email',0)";
-		$sqlstring = "insert into users_pending (username, password, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values ('$email',sha1('$password'),'$firstname','$midname','$lastname','$institution','$country','$email',sha1(now()), now())";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$rowid = mysqli_insert_id($GLOBALS['linki']);
-		
 		/* get the generated SHA1 hash */
-		$sqlstring = "select emailkey from users_pending where user_id = $rowid";
+		$sqlstring = "select emailkey from users_pending where user_id = $userpendingid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$emailkey = $row['emailkey'];
@@ -172,7 +174,7 @@
 		/* send the email */
 		if (!SendGmail($email,'Acitvate your NiDB account',$body, 0)) {
 			return "System error. Unable to send email!";
-			$sqlstring = "delete from users_pending where user_id = $rowid";
+			$sqlstring = "delete from users_pending where user_id = $userpendingid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {

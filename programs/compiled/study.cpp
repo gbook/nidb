@@ -49,7 +49,7 @@ void study::LoadStudyInfo() {
 	}
 	else {
 		QSqlQuery q;
-		q.prepare("select c.uid, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
+		q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
 		q.bindValue(":studyid", studyid);
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
@@ -61,6 +61,7 @@ void study::LoadStudyInfo() {
 			uid = q.value("uid").toString().trimmed();
 			studynum = q.value("study_num").toInt();
 			projectid = q.value("project_id").toInt();
+			subjectid = q.value("subject_id").toInt();
 			enrollmentid = q.value("enrollment_id").toInt();
 			studydatetime = q.value("study_datetime").toDateTime();
 			modality = q.value("study_modality").toString().trimmed();

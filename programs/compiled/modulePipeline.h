@@ -61,8 +61,8 @@ struct dataDefinitionStep {
 	bool optional;
 	QString numboldreps; /* this is stored as a comparison */
 	QString level;
+	qint64 datadownloadid;
 };
-
 
 class modulePipeline
 {
@@ -92,6 +92,7 @@ public:
 	bool GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
 	QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);
 	bool UpdateAnalysisStatus(int analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate);
+	qint64 RecordDataDownload(qint64 id, qint64 analysisid, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
 
 private:
 	nidb *n;

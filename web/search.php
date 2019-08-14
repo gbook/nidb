@@ -3691,6 +3691,90 @@
 				});
 			</script>
 			
+			<table style="border: 2px solid #444" cellpadding="0" cellspacing="0">
+				<tr>
+					<td style="background-color: #444; color: #fff; padding: 5px">
+						<b>Add to Group</b>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td>
+									Subject
+								</td>
+								<td>
+									<?
+										$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+										$userid = $row['user_id'];
+									?>
+									<select name="subjectgroupid" style="width:150px">
+										<?
+											$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$groupid = $row['group_id'];
+												$groupname = $row['group_name'];
+												?>
+												<option value="<?=$groupid?>"><?=$groupname?>
+												<?
+											}
+										?>
+									</select>
+									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
+									<br>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Study
+								</td>
+								<td>
+									<select name="studygroupid" style="width:150px">
+										<?
+											$sqlstring = "select * from groups where group_type = 'study' order by group_name";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$groupid = $row['group_id'];
+												$groupname = $row['group_name'];
+												?>
+												<option value="<?=$groupid?>"><?=$groupname?>
+												<?
+											}
+										?>
+									</select>
+									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup'">
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Series
+								</td>
+								<td>
+									<select name="seriesgroupid" style="width:150px">
+										<?
+											$sqlstring = "select * from groups where group_type = 'series' order by group_name";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$groupid = $row['group_id'];
+												$groupname = $row['group_name'];
+												?>
+												<option value="<?=$groupid?>"><?=$groupname?>
+												<?
+											}
+										?>
+									</select>
+									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup'">
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			
 			<br><br>
 			
 			<table style="border: 2px solid #444" cellpadding="0" cellspacing="0">

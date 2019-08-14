@@ -134,15 +134,20 @@ bool nidb::LoadConfig() {
 /* ---------------------------------------------------------- */
 /* --------- DatabaseConnect -------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::DatabaseConnect() {
+bool nidb::DatabaseConnect(bool cluster) {
 
     db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(cfg["mysqlhost"]);
     db.setDatabaseName(cfg["mysqldatabase"]);
-    db.setUserName(cfg["mysqluser"]);
-    db.setPassword(cfg["mysqlpassword"]);
+	if (cluster) {
+		db.setUserName(cfg["mysqlclusteruser"]);
+		db.setPassword(cfg["mysqlclusterpassword"]);
+	}
+	else {
+		db.setUserName(cfg["mysqluser"]);
+		db.setPassword(cfg["mysqlpassword"]);
+	}
 
-	Print("Connecting to database [" + cfg["mysqldatabase"] + "] on [" + cfg["mysqlhost"] + "]... ", false, true);
     if (db.open()) {
 		Print("[Ok]");
 		return true;
@@ -491,7 +496,7 @@ void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversi
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SystemCommand(QString s, bool detail) {
+QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 
 	double starttime = QDateTime::currentMSecsSinceEpoch();
 	QString ret;
@@ -513,6 +518,11 @@ QString nidb::SystemCommand(QString s, bool detail) {
 	output = output.trimmed();
 	output.replace("’", "'");
 	output.replace("‘", "'");
+
+	if (truncate)
+		if (output.size() > 20000)
+			output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first 10,000 characters and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
+
 	if (detail)
 		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
 	else
@@ -1367,7 +1377,7 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 
 	/* submit the job to the cluster */
 	QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
-	result = SystemCommand(systemstring).trimmed();
+	result = SystemCommand(systemstring,false).trimmed();
 
 	QStringList parts = result.split(" ");
 	jobid = parts[2].toInt();
