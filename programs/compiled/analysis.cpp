@@ -37,14 +37,13 @@ analysis::analysis(int id, nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
-analysis::analysis(int pipelineid, int studyid, int version, nidb *a)
+analysis::analysis(int pipelineid, int studyid, nidb *a)
 {
 	n = a;
 
 	QSqlQuery q;
-	q.prepare("select analysis_id from analysis where pipeline_id = :pid and pipeline_version = :version and study_id = :studyid");
+	q.prepare("select analysis_id from analysis where pipeline_id = :pid and study_id = :studyid");
 	q.bindValue(":pid", pipelineid);
-	q.bindValue(":version", version);
 	q.bindValue(":studyid", studyid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() < 1) {

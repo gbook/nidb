@@ -29,7 +29,7 @@ class analysis
 {
 public:
 	analysis(int id, nidb *a);
-	analysis(int pipelineid, int studyid, int version, nidb *a);
+	analysis(int pipelineid, int studyid, nidb *a);
 	nidb *n;
 
 	void PrintAnalysisInfo();

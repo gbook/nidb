@@ -225,7 +225,10 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 		QString filepath = a.analysispath + "/" + filelist[i];
 		n->WriteLog(QString("Checking for [" + filepath + "]"));
 		QFile f(filepath);
-		if (!f.exists()) {
+		if (f.exists()) {
+			n->WriteLog(QString("File [" + filepath + "] exists"));
+		}
+		else {
 			n->WriteLog(QString("File [" + filepath + "] does not exist"));
 			iscomplete = 0;
 			break;
@@ -328,8 +331,6 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 	if (QDir(a.analysispath).exists()) {
 		int c;
 		qint64 b;
-		//b = n->GetDirByteSize(a.analysispath);
-		//c = n->GetDirFileCount(a.analysispath);
 		n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
 		n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));

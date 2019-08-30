@@ -109,7 +109,7 @@ QString moduleImport::GetImportStatus(int importid) {
 		status = q.value("import_status").toString();
 	}
 
-	n->WriteLog("Got import status of ["+status+"]");
+	n->WriteLog("Got import status of [" + status + "]");
 
 	return status;
 }
@@ -2670,7 +2670,6 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	IL_protocolname_orig = ProtocolName;
 	IL_patientage_orig = 0;
 
-	// ----- check if this subject/study/series/etc exists -----
 	msgs << n->WriteLog(PatientID + " - " + StudyDescription);
 
 	/* get the ID search string */
@@ -2756,7 +2755,6 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	// also checks the accession number against the study_num to see if this study was pre-registered
 	q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentRowID and (study_datetime = '" + StudyDateTime + "' and study_modality = :Modality and study_site = :StationName)");
 	q2.bindValue(":enrollmentRowID", enrollmentRowID);
-	//q2.bindValue(":StudyDateTime", StudyDateTime);
 	q2.bindValue(":Modality", Modality);
 	q2.bindValue(":StationName", StationName);
 	n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -2768,7 +2766,6 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		QSqlQuery q3;
 		q3.prepare("update studies set study_modality = :Modality, study_datetime = '" + StudyDateTime + "', study_desc = :StudyDescription, study_operator = :OperatorsName, study_performingphysician = :PerformingPhysiciansName, study_site = :StationName, study_institution = :Institution, study_status = 'complete' where study_id = :studyRowID");
 		q3.bindValue(":Modality", Modality);
-		//q3.bindValue(":StudyDateTime", StudyDateTime);
 		q3.bindValue(":StudyDescription", StudyDescription);
 		q3.bindValue(":OperatorsName", OperatorsName);
 		q3.bindValue(":PerformingPhysiciansName", PerformingPhysiciansName);
@@ -2794,7 +2791,6 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":studynum", studynum);
 		q3.bindValue(":PatientID", PatientID);
 		q3.bindValue(":Modality", Modality);
-		//q3.bindValue(":StudyDateTime", StudyDateTime);
 		q3.bindValue(":StudyDescription", StudyDescription);
 		q3.bindValue(":OperatorsName", OperatorsName);
 		q3.bindValue(":PerformingPhysiciansName", PerformingPhysiciansName);
@@ -2805,7 +2801,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		IL_studycreated = 1;
 	}
 
-	// ----- insert or update the series -----
+	/* ----- insert or update the series ----- */
 	q2.prepare(QString("select %1series_id from %1_series where study_id = :studyRowID and series_num = :SeriesNumber").arg(Modality.toLower()));
 	q2.bindValue(":studyRowID", studyRowID);
 	q2.bindValue(":SeriesNumber", SeriesNumber);
@@ -2825,7 +2821,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		IL_seriescreated = 0;
 	}
 	else {
-		// create seriesRowID if it doesn't exist
+		/* create seriesRowID if it doesn't exist */
 		QSqlQuery q3;
 		q3.prepare(QString("insert into %1_series (study_id, series_datetime, series_desc, series_protocol, series_num, series_numfiles, series_notes, series_createdby) values (:studyRowID, :SeriesDateTime, :ProtocolName, :ProtocolName, :SeriesNumber, :numfiles, :importSeriesNotes, 'import')").arg(Modality.toLower()));
 		q3.bindValue(":studyRowID", studyRowID);
@@ -2835,7 +2831,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":numfiles", numfiles);
 		q3.bindValue(":importSeriesNotes", importSeriesNotes);
 		n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-		studyRowID = q3.lastInsertId().toInt();
+		seriesRowID = q3.lastInsertId().toInt();
 		IL_seriescreated = 1;
 	}
 

@@ -116,6 +116,10 @@
 			MarkSuccessful($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
+		case 'markunsuccessful':
+			MarkUnsuccessful($analysisids);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			break;
 		case 'rechecksuccess':
 			RecheckSuccess($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
@@ -322,6 +326,23 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as successful</span><br><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MarkUnsuccessful ------------------- */
+	/* -------------------------------------------- */
+	function MarkUnsuccessful($analysisids) {
+		
+		foreach ($analysisids as $analysisid) {
+
+			if (!ValidID($analysisid,'Analysis ID')) { return; }
+			
+			$sqlstring = "update analysis set analysis_iscomplete = 0 where analysis_id = $analysisid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as unsuccessful</span><br><?
 		}
 	}
 	
@@ -954,7 +975,9 @@
 					<br>
 					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">
 					<br>
-					<input type="button" name="marksuccessful" value="Mark successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">&nbsp;
+					<input type="button" name="marksuccessful" value="Mark successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">
+					<br>
+					<input type="button" name="markunsuccessful" value="Mark unsuccessful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">&nbsp;
 					</td>
 				</tr>
 				</tfoot>

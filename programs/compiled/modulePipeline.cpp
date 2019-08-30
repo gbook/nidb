@@ -323,7 +323,7 @@ int modulePipeline::Run() {
 
 				/* get the analysis info, if an analysis already exists for this study */
 				n->WriteLog(QString("Getting analysis info for pipelineID [%1] studyID [%2] pipelineVersion [%3]").arg(pipelineid).arg(sid).arg(p.version));
-				analysis a(pipelineid, sid, p.version, n);
+				analysis a(pipelineid, sid, n);
 				if (a.exists)
 					analysisRowID = a.analysisid;
 				else
@@ -341,13 +341,25 @@ int modulePipeline::Run() {
 				if ((a.runSupplement) || (a.rerunResults) || (analysisRowID == -1)) {
 					/* if the analysis doesn't yet exist, insert a temporary row, to be updated later, in the analysis table as a placeholder so that no other pipeline processes try to run it */
 					if (analysisRowID == -1) {
-						q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values (:pipelineid, :version, :pipelinedep, :studyid,'processing',now())");
+						/* check if this analysis already exists (probably created by another instance of this program ) */
+						q2.prepare("select analysis_id from analysis where pipeline_id = :pipelineid and pipeline_version = :version and study_id = :studyid");
 						q2.bindValue(":pipelineid",pipelineid);
 						q2.bindValue(":version",p.version);
-						q2.bindValue(":pipelinedep",pipelinedep);
 						q2.bindValue(":studyid",sid);
 						n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-						analysisRowID = q2.lastInsertId().toInt();
+						if (q2.size() > 0) {
+							q2.first();
+							analysisRowID = q2.value("analysis_id").toInt();
+						}
+						else {
+							q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values (:pipelineid, :version, :pipelinedep, :studyid,'processing',now())");
+							q2.bindValue(":pipelineid",pipelineid);
+							q2.bindValue(":version",p.version);
+							q2.bindValue(":pipelinedep",pipelinedep);
+							q2.bindValue(":studyid",sid);
+							n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+							analysisRowID = q2.lastInsertId().toInt();
+						}
 
 						n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiscreated", "Analysis created");
 					}
@@ -410,7 +422,7 @@ int modulePipeline::Run() {
 						else
 							n->WriteLog(QString("GetData() downloaded [%1] series").arg(numseriesdownloaded));
 					}
-					UpdateAnalysisStatus(analysisRowID, "", "", -1, -1, "", datalog, false, false);
+					UpdateAnalysisStatus(analysisRowID, "", "", -1, numseriesdownloaded, "", datalog, false, false);
 
 					// again check if there are any series to actually run the pipeline on...
 					// ... but its ok to run if any of the following are true
@@ -522,7 +534,7 @@ int modulePipeline::Run() {
 								setuplog << n->WriteLog(n->SystemCommand("chmod -R 777 " + analysispath, true, true));
 							}
 							else {
-								setuplog << n->WriteLog("Pipelinedep was -1");
+								setuplog << n->WriteLog("This pipeline is not dependent on another pipeline");
 								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "This pipeline does not depend on other pipelines");
 							}
 
@@ -552,7 +564,7 @@ int modulePipeline::Run() {
 						clustersgefilepath = clusteranalysispath + "/" + sgefilename;
 
 						if (CreateClusterJobFile(localsgefilepath, p.clusterType, analysisRowID, s.uid, s.studynum, clusteranalysispath, p.useTmpDir, p.tmpDir, s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
-							n->WriteLog("Created (local) sge job submit file [" + localsgefilepath + "]");
+							n->WriteLog("Created (local path) sge job submit file [" + localsgefilepath + "]");
 						}
 						else {
 							UpdateAnalysisStatus(analysisRowID, "error", "Error creating cluster job file", 0, -1, "", "", false, true);
@@ -566,12 +578,12 @@ int modulePipeline::Run() {
 						int jobid;
 						if (n->SubmitClusterJob(clustersgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
 							n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
-							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", -1, numseriesdownloaded, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, numseriesdownloaded, "", "", false, true);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
 						}
 						else {
 							n->WriteLog("Error submitting job to cluster [" + qresult + "]");
-							UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, -1, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, numseriesdownloaded, "", "", false, true);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmiterror", "Analysis submitted to cluster, but was rejected with errors [" + qm + "]");
 							submiterror = true;
 						}
@@ -662,8 +674,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 	QStringList dlog;
 	datalog = "";
 
-	//TextTable t;
-
 	/* get pipeline information, for data copying preferences */
 	pipeline p(pipelineid, n);
 	if (!p.isValid) {
@@ -704,7 +714,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 		bool optional = datadef[i].optional;
 		QString numboldreps = datadef[i].numboldreps;
 
-		/* not efficient to do an insert and then a series of updates, but it doesn't need to be very efficient, and it's much easier to program */
+		/* its not efficient to do an insert and then a series of updates. But it doesn't need to be very efficient, and it's much easier to program */
 		datadef[i].datadownloadid = RecordDataDownload(-1, analysisid, modality, 0, 0, -1, "", i, "");
 		qint64 datadownloadid = datadef[i].datadownloadid;
 
@@ -842,7 +852,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 			q.prepare(sqlstring);
 			q.bindValue(":studyid", studyid);
-			dlog << n->WriteLog(sqlstring);
 			dlog << n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
 			if (q.size() > 0) {
 				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found (study level)").arg(i).arg(protocol);
@@ -1281,7 +1290,7 @@ bool modulePipeline::UpdateAnalysisStatus(int analysisid, QString status, QStrin
 		return false;
 	}
 	else {
-		n->WriteLog("Updating analysis status to [" + status + "]");
+		n->WriteLog("Updating analysis [" + varsToSet.join(" | ") + "]");
 	}
 
 	sqlstring += varsToSet.join(", ") + " where analysis_id = :analysisid";
@@ -1303,7 +1312,7 @@ bool modulePipeline::UpdateAnalysisStatus(int analysisid, QString status, QStrin
 
 	q.bindValue(":analysisid", analysisid);
 
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true));
 
 	return true;
 }
@@ -1823,7 +1832,6 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 	if (!rerunresults) {
 		/* go through list of data search criteria */
 		for (int i=0; i<steps.size(); i++) {
-			//int id = steps[i].id;
 			int order = steps[i].order;
 			bool issupplement = steps[i].supplement;
 			QString command = steps[i].command;
@@ -1839,8 +1847,10 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 				supplement = "supplement-";
 
 			/* only run supplement commands if we are running a supplement, and vice-versa */
-			if ((runsupplement && !issupplement) || (!runsupplement && issupplement))
+			if ((runsupplement && !issupplement) || (!runsupplement && issupplement)) {
+				n->WriteLog(QString("runsupplement [%1]  issupplement [%2]").arg(runsupplement).arg(issupplement));
 				continue;
+			}
 
 			/* check for flags */
 			if ((command.contains("{NOLOG}")) || (description.contains("{NOLOG}")))
@@ -2118,7 +2128,7 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
 
 		q.bindValue(":pipelinedataid",id);
 
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		return id;
 	}
 

@@ -488,6 +488,9 @@
 			$groupids = implode2(",",$groupid);
 		}
 		
+		if (!ctype_alnum($pipelinetitle)) {
+			?><div align="center"><span class="staticmessage">Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters</span></div><?
+		}
 		
 		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
 		if ($pipelinesubmitdelay == "") $pipelinesubmitdelay = "null";
@@ -521,9 +524,14 @@
 		$newname = mysqli_real_escape_string($GLOBALS['linki'], trim($newname));
 
 		if ($newname == "") {
-			echo "New pipeline name is blank";
+			echo "New pipeline name is blank. Please fix and try again";
 			return;
 		}
+		if (!ctype_alnum($newname)) {
+			echo "New pipeline name contains non-alphanumeric characters. Please fix and try again";
+			return;
+		}
+		
 		/* check if the new pipeline name already exists */
 		$sqlstring = "select * from pipelines where pipeline_name = '$newname'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1490,7 +1498,8 @@
 								<td valign="top">
 									<input type="radio" name="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
 									<input type="radio" name="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
-									<input type="radio" name="deplevel" value="studyfirst" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
+									<!--
+									<input type="radio" name="deplevel" value="studyfirst" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>-->
 								</td>
 							</tr>
 							<tr>
@@ -2487,16 +2496,16 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		$username = $GLOBALS['username'];
 		
-		if (($viewuserid == "") || ($viewuserid < 0)) {
-			$viewuserid = $GLOBALS['userid'];
+		if ($viewuserid != "all") {
+			if (($viewuserid == "") || ($viewuserid < 0)) {
+				$viewuserid = $GLOBALS['userid'];
+			}
 		}
 		
 		/* get list of userids and usernames */
 		$userids[$GLOBALS['userid']] = $GLOBALS['username'];
 		$sqlstring = "select b.username, a.pipeline_admin 'userid' from pipelines a left join users b on a.pipeline_admin = b.user_id group by a.pipeline_admin order by b.username";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//PrintSQLTable($result,'','','',false);
-		//PrintVariable(PrintSQLTable($result,'','','', true));
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			if ($row['username'] != "")
 				$userids[$row['userid']] = $row['username'];
@@ -2523,7 +2532,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<b># complete</b> <?=$myusage['totalcomplete']?><br>
 	</span>
 	<br>
-	<span style="font-size:10pt">View: <a href="pipelines.php?viewuserid=<?=$GLOBALS['userid']?>"><b>My pipelines</b></a>
+	<span style="font-size:10pt">View: <a href="pipelines.php?viewuserid=all"><b>All pipelines</b></a> &nbsp; Only pipelines owned by
 	<?
 		foreach ($userids as $userid => $username) {
 			?> | <a href="pipelines.php?viewuserid=<?=$userid?>"><?=$username?></a><?
@@ -2531,15 +2540,23 @@ echo "#$ps_command     $logged $ps_desc\n";
 	?>
 	</span>
 	<br>
-	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
-	<br>
+<!--	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
+	<br> -->
 	<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
 	<br>
 	<?	
-		//foreach ($userids as $userid => $username) {
-			$username = $userids[$viewuserid];
-			$pipelinetree = GetPipelineTree($viewall, $viewuserid);
-			if (trim($username) == "") { $username = "(unknown)"; }
+		if ($viewuserid == "all") {
+			foreach ($userids as $userid => $username)
+				$useridlist[] = $userid;
+		}
+		else {
+			$useridlist[] = $viewuserid;
+		}
+		
+		foreach ($useridlist as $userid) {
+			$username = $userids[$userid];
+			$pipelinetree = GetPipelineTree($viewall, $userid);
+			if (trim($username) == "") { $username = "(blank)"; }
 			?>
 			<br><br>
 			<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
@@ -2588,7 +2605,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				</tbody>
 			</table>
 			<?
-		//}
+		}
 	?>
 	<br><br><br><br><br>
 	<?

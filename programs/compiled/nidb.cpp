@@ -261,7 +261,12 @@ bool nidb::CreateLogFile () {
 
 	Print("Creating log file [" + logFilepath + "]",false, true);
 	if (log.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered)) {
-		WriteLog(QString("NiDB version %1   Build date [%2 %3]    C++ version [%4]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus));
+		QString padding = "";
+		if (pid < 100) padding = "   ";
+		else if (pid < 1000) padding = "  ";
+		else if (pid < 10000) padding = " ";
+		else padding = "";
+		log.write(QString("[ Message date/time ][pid%1] NiDB version %2   Build date [%3 %4]    C++ version [%5]").arg(padding).arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus).toLatin1());
 		Print("[Ok]");
 		return 1;
 	}
@@ -862,7 +867,7 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 	if (filetype == "nifti4dme")
 		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir);
 	else if (filetype == "nifti4d")
-		systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
 	else if (filetype == "nifti3d")
 		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
 	else if (filetype == "bids")
@@ -1383,28 +1388,32 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 	jobid = parts[2].toInt();
 
 	/* check the return message from qsub */
-	if (result.contains("invalid option")) {
+	if (result.contains("invalid option", Qt::CaseInsensitive)) {
 		msg = "Invalid qsub option";
 		return false;
 	}
-	else if (result.contains("directive error")) {
+	else if (result.contains("directive error", Qt::CaseInsensitive)) {
 		msg = "Invalid qsub directive";
 		return false;
 	}
-	else if (result.contains("cannot connect to server")) {
+	else if (result.contains("cannot connect to server", Qt::CaseInsensitive)) {
 		msg = "Invalid qsub hostname (" + submithost + ")";
 		return false;
 	}
-	else if (result.contains("unknown queue")) {
+	else if (result.contains("unknown queue", Qt::CaseInsensitive)) {
 		msg = "Invalid queue (" + queue + ")";
 		return false;
 	}
-	else if (result.contains("queue is not enabled")) {
+	else if (result.contains("queue is not enabled", Qt::CaseInsensitive)) {
 		msg = "Queue (" + queue + ") is not enabled";
 		return false;
 	}
-	else if (result.contains("job exceeds queue resource limits")) {
+	else if (result.contains("job exceeds queue resource limits", Qt::CaseInsensitive)) {
 		msg = "Job exceeds resource limits";
+		return false;
+	}
+	else if (result.contains("unable to read script file", Qt::CaseInsensitive)) {
+		msg = "Error reading job submission file";
 		return false;
 	}
 
