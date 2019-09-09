@@ -85,6 +85,10 @@ int moduleExport::Run() {
 			int publicdownloadid = q.value("publicdownloadid").toInt();
 			QString bidsreadme = q.value("bidsreadme").toString().trimmed();
 
+			/* remove a trailing slash if it exists */
+			if (nfsdir.right(1) == "/")
+				nfsdir.chop(1);
+
 			remoteNiDBConnection conn(remotenidbconnid, n);
 			if (!conn.isValid)
 				n->WriteLog("Invalid remote connection [" + conn.msg + "]");
@@ -210,7 +214,7 @@ bool moduleExport::SetExportSeriesStatus(int exportseriesid, QString status, QSt
 		}
 		else {
 			QSqlQuery q;
-			q.prepare("update exportseries set status = :status, log = :msg where exportseries_id = :id");
+			q.prepare("update exportseries set status = :status, statusmessage = :msg where exportseries_id = :id");
 			q.bindValue(":id", exportseriesid);
 			q.bindValue(":msg", msg);
 			q.bindValue(":status", status);
@@ -630,7 +634,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 				/* give full permissions to the files that were downloaded */
 				if (exporttype == "nfs") {
-					QString systemstring = "chmod -Rf 777 " + outdir;
+					QString systemstring = "chmod -Rf 777 " + rootoutdir;
 					n->WriteLog(n->SystemCommand(systemstring, true));
 				}
 

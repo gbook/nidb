@@ -28,14 +28,14 @@
 class analysis
 {
 public:
-	analysis(int id, nidb *a);
+	analysis(qint64 id, nidb *a);
 	analysis(int pipelineid, int studyid, nidb *a);
 	nidb *n;
 
 	void PrintAnalysisInfo();
 
 	QString analysispath;
-	int analysisid = -1;
+	qint64 analysisid = -1;
 
 	int studynum = -1;
 	int studyid = -1;

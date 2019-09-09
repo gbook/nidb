@@ -46,9 +46,10 @@ public:
     QSqlDatabase db;
 
 	nidb();
-	nidb(QString m);
+	nidb(QString m, bool c=false);
     bool LoadConfig();
 	bool DatabaseConnect(bool cluster=false);
+	QString GetBuildString();
 
 	/* module housekeeping functions */
 	int CheckNumLockFiles();
@@ -61,9 +62,10 @@ public:
 	void ModuleDBCheckOut();
 	void ModuleRunningCheckIn();
 	int GetNumThreads();
+	bool IsRunningFromCluster();
 
 	/* logging */
-	void InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
+	void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
 	void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
 
 	/* generic functions */
@@ -86,6 +88,8 @@ public:
 	bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
 	bool GetSQLComparison(QString c, QString &comp, int &num);
 	QStringList ShellWords(QString s);
+	bool IsInt(QString s);
+	bool IsDouble(QString s);
 
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);
@@ -117,6 +121,7 @@ private:
 	QString logFilepath;
 	QString lockFilepath;
 	QFile log;
+	bool runningFromCluster;
 };
 
 #endif // NIDB_H

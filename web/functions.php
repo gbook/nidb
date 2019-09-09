@@ -173,6 +173,10 @@
 			exit(0);
 		}
 		$cfg['cfgpath'] = $file;
+
+		if (file_exists('nidb-cluster.cfg')) {
+			$cfg['clustercfgpath'] = 'nidb-cluster.cfg';
+		}
 		
 		$lines = file($file);
 		foreach ($lines as $line) {

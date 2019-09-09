@@ -34,15 +34,22 @@ nidb::nidb()
 /* ---------------------------------------------------------- */
 /* --------- nidb ------------------------------------------- */
 /* ---------------------------------------------------------- */
-nidb::nidb(QString m)
+nidb::nidb(QString m, bool c)
 {
 	module = m;
+	runningFromCluster = c;
 
 	pid = QCoreApplication::applicationPid();
 
-	Print(QString("NiDB version %1   Build date [%2 %3]    C++ version [%4]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus));
-
 	LoadConfig();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetBuildString --------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::GetBuildString() {
+	return QString("NiDB version %1   Build date [%2 %3]   C++ [%4]   Qt compiled [%5]   Qt runtime [%6]   Build system [%7]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
 }
 
 
@@ -70,19 +77,24 @@ bool nidb::LoadConfig() {
 
 	if (configLoaded) return 1;
 
+	/* get the directory in which this application binary lives */
+	QString binpath = QCoreApplication::applicationDirPath();
+
 	/* list of possible locations for the config file */
 	QStringList files;
-	files << "nidb.cfg"
-	      << "../nidb.cfg"
-	      << "../../nidb.cfg"
-	      << "../../../nidb.cfg"
-	      << "../../prod/programs/nidb.cfg"
-	      << "../../../../prod/programs/nidb.cfg"
-	      << "../programs/nidb.cfg"
-	      << "/home/nidb/programs/nidb.cfg"
-	      << "/nidb/programs/nidb.cfg"
-	      << "M:/programs/nidb.cfg"
-	         ;
+	if (runningFromCluster)
+		files << binpath + "/nidb-cluster.cfg";
+	else
+		files << binpath + "/nidb.cfg"
+		    << binpath + "/../nidb.cfg"
+		    << binpath + "/../../nidb.cfg"
+		    << binpath + "/../../../nidb.cfg"
+		    << binpath + "/../../prod/programs/nidb.cfg"
+		    << binpath + "/../../../../prod/programs/nidb.cfg"
+		    << binpath + "/../programs/nidb.cfg"
+		    << "/home/nidb/programs/nidb.cfg"
+		    << "/nidb/programs/nidb.cfg"
+		    << "M:/programs/nidb.cfg";
 
 	QFile f;
 	bool found = false;
@@ -100,7 +112,8 @@ bool nidb::LoadConfig() {
         return false;
     }
 
-	Print("Loading config file " + f.fileName(), false, true);
+	if (!runningFromCluster)
+		Print("Loading config file " + f.fileName(), false, true);
 
 	/* open and read the config file */
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -120,7 +133,8 @@ bool nidb::LoadConfig() {
         f.close();
 		configLoaded = true;
 
-		Print("[Ok]");
+		if (!runningFromCluster)
+			Print("[Ok]");
 
         return true;
     }
@@ -136,7 +150,8 @@ bool nidb::LoadConfig() {
 /* ---------------------------------------------------------- */
 bool nidb::DatabaseConnect(bool cluster) {
 
-    db = QSqlDatabase::addDatabase("QMYSQL");
+	if (!cluster) Print("Connecting to database", false, true);
+	db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(cfg["mysqlhost"]);
     db.setDatabaseName(cfg["mysqldatabase"]);
 	if (cluster) {
@@ -149,7 +164,7 @@ bool nidb::DatabaseConnect(bool cluster) {
 	}
 
     if (db.open()) {
-		Print("[Ok]");
+		if (!cluster) Print("[Ok]");
 		return true;
     }
     else {
@@ -262,11 +277,10 @@ bool nidb::CreateLogFile () {
 	Print("Creating log file [" + logFilepath + "]",false, true);
 	if (log.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered)) {
 		QString padding = "";
-		if (pid < 100) padding = "   ";
-		else if (pid < 1000) padding = "  ";
+		if (pid < 1000) padding = "";
 		else if (pid < 10000) padding = " ";
-		else padding = "";
-		log.write(QString("[ Message date/time ][pid%1] NiDB version %2   Build date [%3 %4]    C++ version [%5]").arg(padding).arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus).toLatin1());
+		else padding = "  ";
+		log.write(GetBuildString().toLatin1());
 		Print("[Ok]");
 		return 1;
 	}
@@ -480,7 +494,7 @@ void nidb::ModuleRunningCheckIn() {
 /* ---------------------------------------------------------- */
 /* --------- InsertAnalysisEvent ---------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::InsertAnalysisEvent(int analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
+void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
 	QString hostname = QHostInfo::localHostName();
 
 	QSqlQuery q;
@@ -526,7 +540,7 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 
 	if (truncate)
 		if (output.size() > 20000)
-			output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first 10,000 characters and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
+			output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
 
 	if (detail)
 		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
@@ -1428,8 +1442,7 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 /* ---------------------------------------------------------- */
 bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 
-	//WriteLog("Inside GetSQLComparison($c)");
-
+	/* remove whitespace */
 	c.remove(QRegularExpression("\\s*"));
 
 	/* check if there is anything to format */
@@ -1472,8 +1485,6 @@ bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 			return false;
 	}
 
-	//WriteLog("Inside GetSQLComparison($c) - [$comp] [$num]");
-
 	return true;
 }
 
@@ -1497,4 +1508,42 @@ QStringList nidb::ShellWords(QString s) {
 		}
 	}
 	return words;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- IsInt ------------------------------------------ */
+/* ---------------------------------------------------------- */
+bool nidb::IsInt(QString s) {
+	bool is = false;
+
+	s.toInt(&is);
+
+	if (is)
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- IsDouble --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::IsDouble(QString s) {
+	bool is = false;
+
+	s.toDouble(&is);
+
+	if (is)
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- IsRunningFromCluster --------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::IsRunningFromCluster() {
+	return runningFromCluster;
 }

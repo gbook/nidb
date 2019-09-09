@@ -352,6 +352,7 @@
 				});
 				</script>
 			<? if ($type == "edit") { ?>
+			<!--
 			<tr>
 				<td class="label" valign="top">User access</td>
 				<td>
@@ -415,6 +416,7 @@
 					<input type="submit" value="<?=$submitbuttonlabel?>">
 				</td>
 			</tr>
+			-->
 			</form>
 		</table>
 		<br><br><br>

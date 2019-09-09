@@ -34,11 +34,11 @@ public:
 	moduleFileIO(nidb *n);
     ~moduleFileIO();
 	int Run();
-	bool RecheckSuccess(int analysisid, QString &msg);
-	bool CreateLinks(int analysisid, QString destination, QString &msg);
-	QString GetAnalyisRootPath(int analysisid, QString &msg);
-	bool CopyAnalysis(int analysisid, QString destination, QString &msg);
-	bool DeleteAnalysis(int analysisid, QString &msg);
+	bool RecheckSuccess(qint64 analysisid, QString &msg);
+	bool CreateLinks(qint64 analysisid, QString destination, QString &msg);
+	QString GetAnalyisRootPath(qint64 analysisid, QString &msg);
+	bool CopyAnalysis(qint64 analysisid, QString destination, QString &msg);
+	bool DeleteAnalysis(qint64 analysisid, QString &msg);
 	bool DeletePipeline(int pipelineid, QString &msg);
 	bool DeleteSubject(int subjectid, QString username, QString &msg);
 	bool DeleteStudy(int subjectid, QString &msg);

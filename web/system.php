@@ -88,6 +88,8 @@
     $c['clustersubmithost'] = GetVariable("clustersubmithost");
     $c['qsubpath'] = GetVariable("qsubpath");
     $c['clusteruser'] = GetVariable("clusteruser");
+    $c['clusternidbpath'] = GetVariable("clusternidbpath");
+
     $c['version'] = GetVariable("version");
     $c['sitename'] = GetVariable("sitename");
     $c['sitenamedev'] = GetVariable("sitenamedev");
@@ -118,6 +120,8 @@
 	
 	$c['analysisdir'] = GetVariable("analysisdir");
 	$c['analysisdirb'] = GetVariable("analysisdirb");
+	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
+	$c['clusteranalysisdirb'] = GetVariable("clusteranalysisdirb");
     $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
     $c['archivedir'] = GetVariable("archivedir");
     $c['backupdir'] = GetVariable("backupdir");
@@ -313,6 +317,7 @@
 [clustersubmithost] = $clustersubmithost
 [qsubpath] = $qsubpath
 [clusteruser] = $clusteruser
+[clusternidbpath] = $clusternidbpath
 
 # ----- CAS authentication -----
 [enablecas] = $enablecas
@@ -328,6 +333,8 @@
 # ----- Directories (alphabetical list) -----
 [analysisdir] = $analysisdir
 [analysisdirb] = $analysisdirb
+[clusteranalysisdir] = $clusteranalysisdir
+[clusteranalysisdirb] = $clusteranalysisdirb
 [groupanalysisdir] = $groupanalysisdir
 [archivedir] = $archivedir
 [backupdir] = $backupdir
@@ -357,6 +364,55 @@
 		else {
 			?><div class="staticmessage">Config file has been written to <?=$GLOBALS['cfg']['cfgpath']?></div><?
 		}
+
+		/* write a cconfig file for when NiDB is run from a cluster. this only contains basic info, separate DB login, and no paths */
+		$str = "# NiDB cluster configuration file (for nidb running on the cluster)
+# ------------------------------------------------------------------------------
+# NIDB nidb.cfg
+# Copyright (C) 2004-$year
+# Gregory A Book (gregory.book@hhchealth.org) (gregory.a.book@gmail.com)
+# Olin Neuropsychiatry Research Center, Hartford Hospital
+# ------------------------------------------------------------------------------
+# GPLv3 License:
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see http://www.gnu.org/licenses/.
+# ------------------------------------------------------------------------------
+
+# ----- Database -----
+[mysqlhost] = $mysqlhost
+[mysqldatabase] = $mysqldatabase
+[mysqlclusteruser] = $mysqlclusteruser
+[mysqlclusterpassword] = $mysqlclusterpassword
+
+# ----- Site/server options -----
+[version] = $version
+[sitename] = $sitename
+[clusteranalysisdir] = $clusteranalysisdir
+[clusteranalysisdirb] = $clusteranalysisdirb
+
+# ----- qc -----
+[fslclusterbinpath] = $fslclusterbinpath
+";
+		$clustercfgfile = dirname($GLOBALS['cfg']['cfgpath']) . "/nidb-cluster.cfg";
+		$ret = file_put_contents($clustercfgfile, $str);
+		if (($ret === false) || ($ret === false) || ($ret == 0)) {
+			?><div class="staticmessage">Problem writing [<?=$clustercfgfile?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
+		}
+		else {
+			?><div class="staticmessage">Cluster config file has been written to <?=$clustercfgfile?></div><?
+		}
+		
 	
 	}
 	
@@ -494,7 +550,7 @@
 				<td class="variable">mysqlclusteruser</td>
 				<td><input type="text" name="mysqlclusteruser" value="<?=$GLOBALS['cfg']['mysqlclusteruser']?>"></td>
 				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Cluster database username -  this user has insert-only permissions to insert into certain pipeline tables</td>
+				<td>Cluster database username -  this user has insert-only permissions for certain pipeline tables</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqlclusterpassword</td>
@@ -759,7 +815,13 @@
 				<td class="variable">clusteruser</td>
 				<td><input type="text" name="clusteruser" value="<?=$GLOBALS['cfg']['clusteruser']?>" size="45"></td>
 				<td></td>
-				<td>username under which jobs will be submitted to the cluster for the pipeline system</td>
+				<td>Username under which jobs will be submitted to the cluster for the pipeline system</td>
+			</tr>
+			<tr>
+				<td class="variable">clusternidbpath</td>
+				<td><input type="text" name="clusternidbpath" value="<?=$GLOBALS['cfg']['clusternidbpath']?>" size="45"></td>
+				<td></td>
+				<td>Path to the directory comtaining the <i>nidb</i> executable (relative to the cluster itself) on the cluster</td>
 			</tr>
 
 			<tr>
@@ -838,6 +900,18 @@
 				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
+			</tr>
+			<tr>
+				<td class="variable">clusteranalysisdir</td>
+				<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
+			</tr>
+			<tr>
+				<td class="variable">clusteranalysisdirb</td>
+				<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">groupanalysisdir</td>

@@ -111,3 +111,5 @@ LIBS += -lgdcmMSFF \
     -lgdcmopenjp2 \
     -lgdcmzlib \
     -lsocketxx
+
+DISTFILES +=

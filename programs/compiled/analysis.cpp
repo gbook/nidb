@@ -26,7 +26,7 @@
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
-analysis::analysis(int id, nidb *a)
+analysis::analysis(qint64 id, nidb *a)
 {
 	n = a;
 	analysisid = id;
@@ -55,7 +55,7 @@ analysis::analysis(int pipelineid, int studyid, nidb *a)
 	}
 	else {
 		q.first();
-		analysisid = q.value("analysis_id").toInt();
+		analysisid = q.value("analysis_id").toLongLong();
 	}
 
 	LoadAnalysisInfo();
@@ -113,9 +113,15 @@ void analysis::LoadAnalysisInfo() {
 	}
 	else {
 		if (pipelinedirstructure == "b")
-			analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
+			if (n->IsRunningFromCluster())
+				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["clusteranalysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
+			else
+				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
 		else
-			analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
+			if (n->IsRunningFromCluster())
+				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["clusteranalysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
+			else
+				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
 	}
 
 	if ((analysispath == "") || (analysispath == ".") || (analysispath == "..") || (analysispath == "/") || analysispath.contains("//") || (analysispath == "/home") || (analysispath == "/root")) {
@@ -126,7 +132,6 @@ void analysis::LoadAnalysisInfo() {
 	isValid = true;
 	exists = true;
 	msg = "Loaded analysis info";
-	//PrintAnalysisInfo();
 }
 
 

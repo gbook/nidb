@@ -59,6 +59,7 @@ int modulePipeline::Run() {
 
 	int numchecked = 0;
 	bool jobsWereSubmitted = false;
+	int totalSubmitted = 0;
 	QSqlQuery q;
 
 	/* update the start time */
@@ -128,7 +129,7 @@ int modulePipeline::Run() {
 		SetPipelineStatusMessage(pipelineid, "Submitting jobs");
 		SetPipelineRunning(pipelineid);
 
-		n->WriteLog(QString("Running pipeline id [%1] name [%2]").arg(pipelineid).arg(p.name));
+		//n->WriteLog(QString("Running pipeline id [%1] name [%2]").arg(pipelineid).arg(p.name));
 
 		QList<dataDefinitionStep> dataSteps;
 		if (p.level != 0) {
@@ -203,7 +204,7 @@ int modulePipeline::Run() {
 			q2.bindValue(":pid", pipelineid);
 			q2.bindValue(":version", p.version);
 			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-			int analysisRowID = q2.lastInsertId().toInt();
+			qint64 analysisRowID = q2.lastInsertId().toLongLong();
 
 			/* create the cluster job file */
 			QString sgefilepath = analysispath + "/sge.job";
@@ -222,11 +223,11 @@ int modulePipeline::Run() {
 			int jobid;
 			if (n->SubmitClusterJob(sgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
 				n->WriteLog("Successfully submitted job to cluster [" + qresult + "]");
-				UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, -1, "", "", true, false);
+				UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, -1, "", "", true, false, 0, 0);
 			}
 			else {
 				n->WriteLog("Error submitting job to cluster [" + qresult + "]");
-				UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, -1, "", "", false, true);
+				UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, -1, "", "", false, true, 0, 0);
 			}
 			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
@@ -261,7 +262,7 @@ int modulePipeline::Run() {
 			int numsubmitted = 0;
 			foreach (int sid, studyids) {
 
-				int analysisRowID = -1;
+				qint64 analysisRowID = -1;
 				QStringList setuplog;
 				QString setupLogFile;
 
@@ -369,7 +370,7 @@ int modulePipeline::Run() {
 					int dependencyanalysisid(0);
 					bool submiterror = false;
 
-					n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
+					//n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
 
 					QString analysispath = "";
 					if (p.dirStructure == "b")
@@ -406,7 +407,7 @@ int modulePipeline::Run() {
 							/* check the dependency and see if there's anything amiss about it */
 							QString depstatus = CheckDependency(sid, pipelinedep);
 							if (depstatus != "") {
-								UpdateAnalysisStatus(analysisRowID, "OddDependencyStatus", depstatus, -1, -1, setuplog.join("\n"), setuplog.join("\n"), false, false);
+								UpdateAnalysisStatus(analysisRowID, "OddDependencyStatus", depstatus, -1, -1, setuplog.join("\n"), setuplog.join("\n"), false, false, -1, -1);
 								continue;
 							}
 						}
@@ -422,7 +423,7 @@ int modulePipeline::Run() {
 						else
 							n->WriteLog(QString("GetData() downloaded [%1] series").arg(numseriesdownloaded));
 					}
-					UpdateAnalysisStatus(analysisRowID, "", "", -1, numseriesdownloaded, "", datalog, false, false);
+					UpdateAnalysisStatus(analysisRowID, "", "", -1, numseriesdownloaded, "", datalog, false, false, -1, -1);
 
 					// again check if there are any series to actually run the pipeline on...
 					// ... but its ok to run if any of the following are true
@@ -475,7 +476,7 @@ int modulePipeline::Run() {
 							if (!n->MakePath(analysispath + "/pipeline", m)) {
 								n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - B");
 								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiserror", "Unable to create directory [" + analysispath + "/pipeline]");
-								UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true);
+								UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
 								continue;
 							}
 							else
@@ -567,7 +568,7 @@ int modulePipeline::Run() {
 							n->WriteLog("Created (local path) sge job submit file [" + localsgefilepath + "]");
 						}
 						else {
-							UpdateAnalysisStatus(analysisRowID, "error", "Error creating cluster job file", 0, -1, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "error", "Error creating cluster job file", 0, -1, "", "", false, true, -1, -1);
 							continue;
 						}
 
@@ -578,17 +579,18 @@ int modulePipeline::Run() {
 						int jobid;
 						if (n->SubmitClusterJob(clustersgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
 							n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
-							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, numseriesdownloaded, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, numseriesdownloaded, "", "", false, true, 0, 0);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
 						}
 						else {
 							n->WriteLog("Error submitting job to cluster [" + qresult + "]");
-							UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, numseriesdownloaded, "", "", false, true);
+							UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, numseriesdownloaded, "", "", false, true, 0, 0);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmiterror", "Analysis submitted to cluster, but was rejected with errors [" + qm + "]");
 							submiterror = true;
 						}
 
 						numsubmitted++;
+						totalSubmitted++;
 						jobsWereSubmitted = true;
 
 						SetPipelineStatusMessage(pipelineid, QString("Submitted %1%2").arg(s.uid).arg(s.studynum));
@@ -607,7 +609,7 @@ int modulePipeline::Run() {
 					else {
 						n->WriteLog("Not Ok to submit job");
 						/* update the analysis table with the datalog so people can check later on why something didn't process */
-						UpdateAnalysisStatus(analysisRowID, "", "", -1, -1, datalog, datalog, false, false);
+						UpdateAnalysisStatus(analysisRowID, "", "", -1, -1, datalog, datalog, false, false, -1, -1);
 						n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetuperror", "No data found, 0 series returned from search");
 					}
 					n->WriteLog(QString("Submitted [%1] jobs so far").arg(numsubmitted));
@@ -620,7 +622,7 @@ int modulePipeline::Run() {
 						}
 						else {
 							// save some database space, since most entries will be blank
-							UpdateAnalysisStatus(analysisRowID, "NoMatchingSeries", "", -1, -1, "", "", false, false);
+							UpdateAnalysisStatus(analysisRowID, "NoMatchingSeries", "", -1, -1, "", "", false, false, -1, -1);
 							n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "This study did not have any matching data");
 						}
 					}
@@ -658,8 +660,10 @@ int modulePipeline::Run() {
 
 	SetPipelineProcessStatus("complete",0,0);
 
-	if (jobsWereSubmitted)
+	if (jobsWereSubmitted) {
+		n->WriteLog(QString("Done with pipeline module. [%1] total jobs were submitted. jobsWereSubmitted [%2]").arg(totalSubmitted).arg(jobsWereSubmitted));
 		return true;
+	}
 	else
 		return false;
 }
@@ -668,7 +672,7 @@ int modulePipeline::Run() {
 /* ---------------------------------------------------------- */
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
+bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
 
 	numdownloaded = 0;
 	QStringList dlog;
@@ -852,7 +856,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 
 			q.prepare(sqlstring);
 			q.bindValue(":studyid", studyid);
-			dlog << n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 			if (q.size() > 0) {
 				dlog << QString("Pre-checking step [%1]  protocol [%2]: data found (study level)").arg(i).arg(protocol);
 				RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, -1, "", i, "Data found for this step (study level)");
@@ -1091,11 +1095,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 			QString m;
 			if (!n->MakePath(analysispath + "/pipeline", m)) {
 				dlog << n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - C");
-				UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true);
+				UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true, 0, 0);
 				continue;
 			}
-			else
-				dlog << n->WriteLog("Created directory [" + analysispath + "/pipeline] - C");
+			//else
+			//	dlog << n->WriteLog("Created directory [" + analysispath + "/pipeline] - C");
 
 			while (q.next()) {
 				int localstudynum;
@@ -1178,8 +1182,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 				QString m;
 				if (!n->MakePath(newanalysispath, m))
 					dlog << n->WriteLog("Error creating directory [" + newanalysispath + "] message [" + m + "] - D");
-				else
-					dlog << n->WriteLog("Created directory [" + newanalysispath + "] - D");
+				//else
+				//	dlog << n->WriteLog("Created directory [" + newanalysispath + "] - D");
 
 				n->SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
@@ -1255,7 +1259,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, int
 /* ---------------------------------------------------------- */
 /* --------- UpdateAnalysisStatus --------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::UpdateAnalysisStatus(int analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate) {
+bool modulePipeline::UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag) {
 	QSqlQuery q;
 	QString sqlstring;
 	QStringList varsToSet;
@@ -1281,12 +1285,16 @@ bool modulePipeline::UpdateAnalysisStatus(int analysisid, QString status, QStrin
 		varsToSet << "analysis_enddate = now()";
 	if (jobid >= 0)
 		varsToSet << "analysis_qsubid = :jobid";
+	if (supplementFlag >= 0)
+		varsToSet << "analysis_runsupplement = :supplementflag";
+	if (rerunFlag >= 0)
+		varsToSet << "analysis_rerunresults = :rerunflag";
 	if (numseries >= 0)
-		varsToSet << "analysis_numfiles = :numseries";
+		varsToSet << "analysis_numseries = :numseries";
 
 	/* return false if there were no variables to update */
 	if (varsToSet.size() < 1) {
-		n->WriteLog("Unable to update analysis status");
+		n->WriteLog("Unable to update analysis status. No variables set to update");
 		return false;
 	}
 	else {
@@ -1309,10 +1317,14 @@ bool modulePipeline::UpdateAnalysisStatus(int analysisid, QString status, QStrin
 		q.bindValue(":jobid", jobid);
 	if (numseries >= 0)
 		q.bindValue(":numseries", numseries);
+	if (supplementFlag >= 0)
+		q.bindValue(":supplementflag", supplementFlag);
+	if (rerunFlag >= 0)
+		q.bindValue(":rerunflag", rerunFlag);
 
 	q.bindValue(":analysisid", analysisid);
 
-	n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true));
+	n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
 
 	return true;
 }
@@ -1665,7 +1677,7 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
 /* ---------------------------------------------------------- */
 /* --------- FormatCommand ---------------------------------- */
 /* ---------------------------------------------------------- */
-QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, int analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description) {
+QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description) {
 
 	if (command.trimmed() == "")
 		return "";
@@ -1726,7 +1738,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 /* ---------------------------------------------------------- */
 /* --------- CreateClusterJobFile --------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, int analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime,  QList<pipelineStep> steps, bool runsupplement) {
+bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime,  QList<pipelineStep> steps, bool runsupplement) {
 
 	bool rerunresults(false);
 
@@ -1742,7 +1754,6 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
 	n->WriteLog(QString("ReRunResults: [%1]").arg(rerunresults));
 
-	QString checkinscript = "analysischeckin.pl";
 	QString jobfile;
 	QString clusteranalysispath = analysispath;
 	QString workinganalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
@@ -1811,21 +1822,24 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 		}
 	}
 
+
+	jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
+
 	jobfile += "echo Hostname: `hostname`\n";
-	jobfile += "echo Hostname: `whoami`\n\n";
+	jobfile += "echo Username: `whoami`\n\n";
 	if ((resultscript != "") && (rerunresults))
-		jobfile += QString("perl /opt/pipeline/%1 %2 startedrerun 'Cluster processing started'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s startedrerun -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 	else if (runsupplement)
-		jobfile += QString("perl /opt/pipeline/%1 %2 startedsupplement 'Supplement processing started'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s startedsupplement -m 'Supplement processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 	else
-		jobfile += QString("perl /opt/pipeline/%1 %2 started 'Cluster processing started'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s started -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 
 	jobfile += "cd "+analysispath+";\n";
 	if (usetmpdir) {
-		jobfile += QString("perl /opt/pipeline/%1 %2 started 'Beginning data copy to /tmp'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s started -m 'Beginning data copy to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		jobfile += "mkdir -pv " + workinganalysispath + "\n";
 		jobfile += "cp -Rv " + analysispath + "/* " + workinganalysispath + "/\n";
-		jobfile += QString("perl /opt/pipeline/%1 %2 started 'Done copying data to /tmp'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s started -m 'Done copying data to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 	}
 
 	QDir::setCurrent(clusteranalysispath);
@@ -1870,7 +1884,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			if (checkedin) {
 				QString cleandesc = description;
 				cleandesc.replace("'","").replace("\"","");
-				jobfile += QString("\nperl /opt/pipeline/%1 %2 processing 'processing %3step %4 of %5' '%6'").arg(checkinscript).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
+				jobfile += QString("\n%1/nidb pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5' '%6'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
 				jobfile += "\n# " + description + "\necho Running " + command + "\n";
 			}
 
@@ -1893,44 +1907,44 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 		}
 	}
 	if (usetmpdir) {
-		jobfile += QString("perl /opt/pipeline/%1 %2 started 'Copying data from temp dir'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s started -m 'Copying data from temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		jobfile += "cp -Ruv " + workinganalysispath + "/* " + analysispath + "/\n";
-		jobfile += QString("perl /opt/pipeline/%1 %2 started 'Deleting temp dir'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s started -m 'Deleting temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		jobfile += "rm --preserve-root -rv " + workinganalysispath + "\n";
 	}
 
 	if ((resultscript != "") && (rerunresults)) {
 		/* add on the result script command */
 		QString resultcommand = FormatCommand(pipelineid, clusteranalysispath, resultscript, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, "", "");
-		resultcommand += " > " + analysispath + "/pipeline/stepResultScript.log 2>&1";
-		jobfile += QString("\nperl /opt/pipeline/%1 %2 processing 'Processing result script'\n# Running result script\necho Running %3\n").arg(checkinscript).arg(analysisid).arg(resultcommand);
+		resultcommand += " > " + analysispath + "/pipeline/stepResults.log 2>&1";
+		jobfile += QString("\n%1/nidb pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(resultcommand);
 		jobfile += resultcommand + "\n";
 
-		jobfile += QString("perl /opt/pipeline/%1 %2 completererun 'Results re-run complete'\n").arg(checkinscript).arg(analysisid);
+		jobfile += QString("%1/nidb pipelinecheckin -a %2 -s completererun -m 'Results re-run complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		jobfile += "chmod -Rf 777 " + analysispath;
 	}
 	else {
 		// run the results import script
 		QString resultcommand = FormatCommand(pipelineid, clusteranalysispath, resultscript, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, "", "");
-		resultcommand += " > " + analysispath + "/pipeline/stepResultScript.log 2>&1";
-		jobfile += QString("\nperl /opt/pipeline/%1 %2 processing 'Processing result script'\n# Running result script\necho Running %3\n").arg(checkinscript).arg(analysisid).arg(resultcommand);
+		resultcommand += " > " + analysispath + "/pipeline/stepResults.log 2>&1";
+		jobfile += QString("\n%1/nidb pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(resultcommand);
 		jobfile += resultcommand + "\n";
 
 		/* clean up and log everything */
 		jobfile += "chmod -Rf 777 " + analysispath + "\n";
 		if (runsupplement) {
-			jobfile += QString("perl /opt/pipeline/%1 %2 processing 'Updating analysis files'\n").arg(checkinscript).arg(analysisid);
-			jobfile += QString("perl /opt/pipeline/UpdateAnalysisFiles.pl -a %1 -d %2\n").arg(analysisid).arg(analysispath);
-			jobfile += QString("perl /opt/pipeline/%1 %2 processing 'Checking for completed files'\n").arg(checkinscript).arg(analysisid);
-			jobfile += QString("perl /opt/pipeline/CheckCompleteResults.pl -a %1 -d %2\n").arg(analysisid).arg(analysispath);
-			jobfile += QString("perl /opt/pipeline/%1 %2 completesupplement 'Supplement processing complete'\n").arg(checkinscript).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s completesupplement -m 'Supplement processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		}
 		else {
-			jobfile += QString("perl /opt/pipeline/%1 %2 processing 'Updating analysis files'\n").arg(checkinscript).arg(analysisid);;
-			jobfile += QString("perl /opt/pipeline/UpdateAnalysisFiles.pl -a %1 -d %2\n").arg(analysisid).arg(analysispath);
-			jobfile += QString("perl /opt/pipeline/%1 %2 processing 'Checking for completed files'\n").arg(checkinscript).arg(analysisid);
-			jobfile += QString("perl /opt/pipeline/CheckCompleteResults.pl -a %1 -d %2\n").arg(analysisid).arg(analysispath);
-			jobfile += QString("perl /opt/pipeline/%1 %2 complete 'Cluster processing complete'\n").arg(checkinscript).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+			jobfile += QString("%1/nidb pipelinecheckin -a %2 -s complete -m 'Cluster processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 		}
 		jobfile += "chmod -Rf 777 " + analysispath;
 	}
@@ -1964,37 +1978,35 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
 	/* step 1 - get list of studies which do not have an entry in the analysis table for this pipeline */
 	if (depend >= 0) {
-		// there is a dependency
-		// need to check if ANY of the subject's studies have the dependency...
+		/* there is a dependency. need to check if ANY of the subject's studies have the dependency... */
 
-		/* step 1) get list of SUBJECTs who have completed the dependency */
+		/* step 1a) get list of SUBJECTs who have completed the dependency */
 		QList<int> list;
 		QSqlQuery q2;
 		q2.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and analysis_isbad <> 1) and a.isactive = 1)");
 		q2.bindValue(":depend", depend);
-		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 		if (q2.size() > 0) {
 			while (q2.next())
 				list.append(q2.value("study_id").toInt());
 		}
 		QString studyidlist = n->JoinIntArray(list, ",");
-		//n->WriteLog(QString("Found studyid list [%1]").arg(studyidlist));
 
 		if (studyidlist == "")
 			studyidlist = "-1";
 
-		/* step 2) then find all STUDIES that those subjects have completed */
+		/* step 1b) then find all STUDIES that those subjects have completed */
 		if (groupids == "") {
 			/* NO groupids */
 			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
-			n->WriteLog(QString("GetStudyToDoList(): HAS dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
 		}
 		else {
 			/* with groupids */
 			q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
-			n->WriteLog(QString("GetStudyToDoList(): HAS dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
 		}
 	}
 	else {
@@ -2004,14 +2016,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 			q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
-			n->WriteLog(QString("GetStudyToDoList(): NO dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis NO dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
 		}
 		else {
 			/* WITH groupids */
 			q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") and d.isactive = 1 ORDER BY a.study_datetime DESC");
 			q.bindValue(":pipelineid", pipelineid);
 			q.bindValue(":modality", modality);
-			n->WriteLog(QString("GetStudyToDoList(): NO dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis NO dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
 		}
 	}
 
@@ -2030,13 +2042,11 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 				q2.first();
 				QString uidstudynum;
 				uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
-				//n->WriteLog(QString("Found study id [%1]  UIDStudyNum [%2]").arg(studyid).arg(uidstudynum));
 			}
 			list.append(studyid);
 		}
 	}
 	numInitial = list.size();
-	//n->WriteLog(QString("Found [%1] initial studies that met criteria.").arg(list.size()));
 
 	/* step 2 - get only the studies that need to have their results rerun */
 	int addedStudies = 0;
@@ -2051,7 +2061,6 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 			addedStudies++;
 		}
 	}
-	//n->WriteLog(QString("Found [%1] additional studies marked to be rerun.").arg(addedStudies));
 	numRerun = addedStudies;
 
 	/* step 3 - get only the studies that need to have their supplements run */

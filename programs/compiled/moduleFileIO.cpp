@@ -204,7 +204,7 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
 /* ---------------------------------------------------------- */
 /* --------- RecheckSuccess --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
+bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
 	n->WriteLog(QString("In RecheckSuccess(%1)").arg(analysisid));
 
 	analysis a(analysisid, n); /* get the analysis info */
@@ -217,7 +217,7 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 	q.bindValue(":analysisid", analysisid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	q.first();
-	QString completefiles = q.value("uid").toString().trimmed();
+	QString completefiles = q.value("pipeline_completefiles").toString().trimmed();
 	QStringList filelist = completefiles.split(',');
 
 	int iscomplete = 1;
@@ -249,7 +249,7 @@ bool moduleFileIO::RecheckSuccess(int analysisid, QString &msg) {
 /* ---------------------------------------------------------- */
 /* --------- CreateLinks ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::CreateLinks(int analysisid, QString destination, QString &msg) {
+bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &msg) {
 	n->WriteLog(QString("In CreateLinks(%1, %2)").arg(analysisid).arg(destination));
 
 	/* check if destination is somewhat valid */
@@ -280,7 +280,7 @@ bool moduleFileIO::CreateLinks(int analysisid, QString destination, QString &msg
 /* ---------------------------------------------------------- */
 /* --------- CopyAnalysis ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::CopyAnalysis(int analysisid, QString destination, QString &msg) {
+bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString &msg) {
 	n->WriteLog(QString("In CopyAnalysis(%1, %2)").arg(analysisid).arg(destination));
 
 	/* check if destination is somewhat valid */
@@ -309,7 +309,7 @@ bool moduleFileIO::CopyAnalysis(int analysisid, QString destination, QString &ms
 /* ---------------------------------------------------------- */
 /* --------- DeleteAnalysis --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
+bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 	n->WriteLog("In DeleteAnalysis()");
 
 	analysis a(analysisid, n); /* get the analysis info */
@@ -341,7 +341,7 @@ bool moduleFileIO::DeleteAnalysis(int analysisid, QString &msg) {
 		}
 		else {
 			QString systemstring = QString("sudo rm -rfv %1").arg(a.analysispath);
-			n->WriteLog("Running " + systemstring);
+			n->WriteLog("Not all files deleted. Deleting remaining files using sudo.");
 			n->WriteLog(n->SystemCommand(systemstring));
 
 			QDir d(a.analysispath);

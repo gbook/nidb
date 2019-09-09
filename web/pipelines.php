@@ -1263,7 +1263,7 @@
 													<td><b>Count</b></td>
 												</tr>
 											<?
-												$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and analysis_iscomplete = 1 group by analysis_hostname order by analysis_hostname";
+												$sqlstring = "SELECT avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', count(analysis_hostname) 'count', analysis_hostname FROM `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete') group by analysis_hostname order by analysis_hostname";
 												$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 													$cpuhrs = number_format(($row['avgcpu']/60/60),2);

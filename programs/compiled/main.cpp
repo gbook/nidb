@@ -43,69 +43,119 @@ int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
 
-    QString module = argv[1];
+	/* this whole section reads the command line parameters */
+	a.setApplicationVersion(__BUILD__);
+	a.setApplicationName("Neuroinformatics Database (NiDB)");
 
-	module = module.trimmed();
-	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded") && (module != "resultinsert") && (module != "pipelinecheckin")) {
-		printf("Module parameter missing or incorrect\n\nUsage:\n  nidb <module> <debug>\n\nAvailable modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline resultinsert pipelinecheckin\nAdd second parameter of 'debug' to display verbose information and retain the log file\n\n");
+	/* setup the command line parser */
+	QCommandLineParser p;
+	p.setApplicationDescription("Neuroinformatics Database (NiDB)");
+	p.setSingleDashWordOptionMode(QCommandLineParser::ParseAsCompactedShortOptions);
+	p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
+	p.addHelpOption();
+	p.addVersionOption();
+	p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline  resultinsert  pipelinecheckin  updateanalysis  checkcompleteanalysis");
+
+	/* command line flag options */
+	QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
+	QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
+	p.addOption(optDebug);
+	p.addOption(optQuiet);
+
+	/* command line options that take values */
+	QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin modules only", "analysisid");
+	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin modules only", "status");
+	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin module only", "message");
+	QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin module only", "command");
+	QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert module)", "text");
+	QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert module)", "number");
+	QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert module)", "fullfilepath");
+	QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert module)", "desc");
+	p.addOption(optAnalysisID);
+	p.addOption(optStatus);
+	p.addOption(optMessage);
+	p.addOption(optCommand);
+	p.addOption(optResultText);
+	p.addOption(optResultNumber);
+	p.addOption(optResultFile);
+	p.addOption(optResultDesc);
+
+	/* Process the actual command line arguments given by the user */
+	p.process(a);
+
+	QString module;
+	bool debug, quiet;
+
+	const QStringList args = p.positionalArguments();
+	if (args.size() > 0)
+		module = args.at(0).trimmed();
+
+	debug = p.isSet(optDebug);
+	quiet = p.isSet(optQuiet);
+	QString paramAnalysisID = p.value(optAnalysisID).trimmed();
+	QString paramStatus = p.value(optStatus).trimmed();
+	QString paramMessage = p.value(optMessage).trimmed();
+	QString paramCommand = p.value(optCommand).trimmed();
+	QString paramResultText = p.value(optResultText).trimmed();
+	QString paramResultNumber = p.value(optResultNumber).trimmed();
+	QString paramResultFile = p.value(optResultFile).trimmed();
+	QString paramResultDesc = p.value(optResultDesc).trimmed();
+
+
+	/* now check the parameters passed in, to see if they are calling a valid module */
+	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded") && (module != "resultinsert") && (module != "pipelinecheckin") && (module != "updateanalysis") && (module != "checkcompleteanalysis")) {
+		std::cout << p.helpText().toStdString().c_str();
 		return 0;
 	}
 
-	printf("\n\n-------------------------------------------------------------\n");
-	printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
-	printf("-------------------------------------------------------------\n");
+	nidb *n;
 
-	/* load the config file and connect to the database */
-	nidb *n = new nidb(module);
-
-	/* check if this is being run by the cluster or locally */
-	if ((module == "resultinsert") || (module == "pipelinecheckin")) {
+	/* check if this is being run from the cluster or locally */
+	if ((module == "resultinsert") || (module == "pipelinecheckin") || (module == "updateanalysis") || (module == "checkcompleteanalysis")) {
+		/* load the config file and connect to the database */
+		n = new nidb(module, true);
 		n->DatabaseConnect(true);
+		moduleCluster *m = new moduleCluster(n);
 
-		if (module == "pipelinecheckin") {
-			n->DatabaseConnect(true);
-			if (argc == 6) {
-				int analysisid = QString(argv[2]).toInt();
-				QString status = argv[3];
-				QString message = argv[4];
-				QString command = argv[5];
-				moduleCluster *m = new moduleCluster(n);
-				m->PipelineCheckin(analysisid, status, message, command);
-				delete m;
-			}
-			else {
-				printf("pipelinecheckin - incorrect number of parameters after 'pipelinecheckin'");
-				printf("\n\nUsage:\n  nidb pipelinecheckin <analysisid> <status> <message> <command>\n\n");
-			}
-		}
-		else if (module == "resultinsert") {
-			n->DatabaseConnect(true);
-			if (argc == 6) {
-				int analysisid = QString(argv[2]).toInt();
-				QString status = argv[3];
-				QString message = argv[4];
-				QString command = argv[5];
-				moduleCluster *m = new moduleCluster(n);
-				m->PipelineCheckin(analysisid, status, message, command);
-				delete m;
-			}
-			else {
-				printf("pipelinecheckin - incorrect number of parameters after 'pipelinecheckin'");
-				printf("\n\nUsage:\n  nidb pipelinecheckin <analysisid> <status> <message> <command>\n\n");
-			}
-		}
+		bool ret = false;
+		QString msg;
+		if (module == "pipelinecheckin")
+			ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramMessage, paramCommand, msg);
+		else if (module == "resultinsert")
+			ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, msg);
+		else if (module == "updateanalysis")
+			ret = m->UpdateAnalysis(paramAnalysisID, msg);
+		else if (module == "checkcompleteanalysis")
+			ret = m->CheckCompleteAnalysis(paramAnalysisID, msg);
+
+		/* if the operation failed, let the user know */
+		if (!ret)
+			std::cout << "Error: " << msg.toStdString().c_str() << std::endl;
+
+		delete m;
 	}
 	else {
 		/* a regular module is being called */
+		if (!quiet) {
+			printf("\n\n-------------------------------------------------------------\n");
+			printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
+			printf("-------------------------------------------------------------\n");
+		}
+
+		/* load the config file and connect to the database */
+		n = new nidb(module);
 		n->DatabaseConnect();
 
 		bool keepLog = false;
-		if (argc == 3)
-			if (QString(argv[2]) == "debug")
-				n->cfg["debug"] = "1";
+		if (debug)
+			n->cfg["debug"] = "1";
 
 		if (n->cfg["debug"].toInt())
-			printf("------------------------- DEBUG MODE ------------------------\n");
+			if (!quiet)
+				printf("------------------------- DEBUG MODE ------------------------\n");
+
+		if (!quiet)
+			n->Print(QString(n->GetBuildString()));
 
 		/* check if this module should be running now or not */
 		if (n->ModuleCheckIfActive()) {
@@ -179,13 +229,15 @@ int main(int argc, char *argv[])
 		}
 		else
 			n->Print("This module [" + module + "] is disabled or does not exist");
+
+		if (!quiet) {
+			printf("-------------------------------------------------------------\n");
+			printf("----- Terminating (NiDB) backend ----------------------------\n");
+			printf("-------------------------------------------------------------\n");
+		}
 	}
 
 	delete n;
-
-	printf("-------------------------------------------------------------\n");
-	printf("----- Terminating (NiDB) backend ----------------------------\n");
-	printf("-------------------------------------------------------------\n");
 
 	/* exit the event loop */
 	a.exit();
