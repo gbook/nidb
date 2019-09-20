@@ -49,7 +49,7 @@ nidb::nidb(QString m, bool c)
 /* --------- GetBuildString --------------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::GetBuildString() {
-	return QString("NiDB version %1   Build date [%2 %3]   C++ [%4]   Qt compiled [%5]   Qt runtime [%6]   Build system [%7]").arg(__BUILD__).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
+	return QString("NiDB version %1.%2.%3   Build date [%4 %5]   C++ [%6]   Qt compiled [%7]   Qt runtime [%8]   Build system [%9]").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
 }
 
 
@@ -900,10 +900,10 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 	 * remove any stuff and start from scratch to ensure proper file numbering */
 	if ((outdir != "") && (outdir != "/") ) {
 		QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
-		WriteLog(SystemCommand(systemstring2, true));
+		WriteLog(SystemCommand(systemstring2, true, true));
 
 		/* execute the command created above */
-		WriteLog(SystemCommand(systemstring, true));
+		WriteLog(SystemCommand(systemstring, true, true));
 	}
 	else {
 		return false;
@@ -1088,7 +1088,7 @@ bool nidb::IsDICOMFile(QString f) {
 /* borrowed in its entirety from gdcmanon.cxx                 */
 bool nidb::AnonymizeDICOMFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags)
 {
-	WriteLog(QString("AnonymizeDICOMFile(infile [%1]   outfile [%2])").arg(infile).arg(outfile));
+	//WriteLog(QString("AnonymizeDICOMFile(infile [%1]   outfile [%2])").arg(infile).arg(outfile));
 
 	gdcm::Reader reader;
 	reader.SetFileName( infile.toStdString().c_str() );
@@ -1370,6 +1370,20 @@ QString nidb::JoinIntArray(QList<int> a, QString glue) {
 			sa << QString("%1").arg(a[i]);
 		return sa.join(glue);
 	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SplitStringArrayToInt -------------------------- */
+/* ---------------------------------------------------------- */
+QList<int> SplitStringArrayToInt(QStringList a) {
+	QList<int> i;
+
+	if (a.size() > 0)
+		foreach (QString v, a)
+			i.append(v.trimmed().toInt());
+
+	return i;
 }
 
 

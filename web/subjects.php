@@ -80,7 +80,6 @@
 	$uid2 = GetVariable("uid2");
 	$relation = GetVariable("relation");
 	$makesymmetric = GetVariable("makesymmetric");
-	//$mergeuids = GetVariable("uids");
 	$ids = GetVariable("ids");
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
@@ -137,12 +136,6 @@
 			Obliterate($ids);
 			DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			break;
-		//case 'merge':
-		//	DisplayMergeSubjects($mergeuids, $returnpage);
-		//	break;
-		//case 'mergesubjects':
-		//	DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuids, $guid, $cancontact, $tags, $enrollgroup, $returnpage);
-		//	break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
 			DisplaySubject($id);
@@ -307,7 +300,7 @@
 		}
 
 		
-		?><div align="center"><span style="background-color: darkred; color: white"><?=$subjectname?> added <span class="uid"><?=$uid?></span></span></div><br><br><?
+		?><div align="center"><span style="background-color: darkred; color: white"><?=$subjectname?> added <?=$uid?></span></div><br><br><?
 		
 		return $SubjectRowID;
 	}
@@ -491,452 +484,7 @@
 		}
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- DoMergeSubjects -------------------- */
-	/* -------------------------------------------- */
-	function DoMergeSubjects($selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone1, $email, $maritalstatus, $smokingstatus, $altuid, $guid, $cancontact, $tags, $enrollgroup, $returnpage) {
 
-		?>
-		<span class="tiny">
-		<ol>
-		<?
-		
-		/* get list of subjectids that were not selected and will therefor be deleted*/
-		foreach ($name as $key => $value) {
-			if ($key != $selectedid) {
-				$extrasubjectids[] = $key;
-			}
-		}
-		
-		/* update the primary subject with the info */
-		/* perform data checks */
-		$name = mysqli_real_escape_string($GLOBALS['linki'], $name[$selectedid]);
-		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob[$selectedid]);
-		$gender = mysqli_real_escape_string($GLOBALS['linki'], $gender[$selectedid]);
-		$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity1[$selectedid]);
-		$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity2[$selectedid]);
-		$handedness = mysqli_real_escape_string($GLOBALS['linki'], $handedness[$selectedid]);
-		$education = mysqli_real_escape_string($GLOBALS['linki'], $education[$selectedid]);
-		$phone1 = mysqli_real_escape_string($GLOBALS['linki'], $phone1[$selectedid]);
-		$email = mysqli_real_escape_string($GLOBALS['linki'], $email[$selectedid]);
-		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus[$selectedid]);
-		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus[$selectedid]);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact[$selectedid]);
-		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags[$selectedid]);
-		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid[$selectedid]);
-		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
-		$altuids = explode(',',$altuid);
-
-		//PrintVariable($enrollgroup);
-		
-		$sqlstring = "start transaction";
-		echo "<li><b>Starting transaction</b> [$sqlstring]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* move all of the studies from the other subjects to the primary subject */
-		$sqlstring = "select uid from subjects where subject_id = $selectedid";
-		echo "<li>Getting selected UID [$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newuid = $row['uid'];
-		
-		echo "<li>Getting study lists<ol>";
-		foreach ($extrasubjectids as $oldid) {
-			/* get list of studies associated with the oldsubjectid */
-			$sqlstring = "select b.study_id from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where a.subject_id = $oldid and b.study_id is not null";
-			echo "<li>Get study list for [$oldid] [$sqlstring]";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			echo "<ol>";
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				echo "<li>Running MoveStudyToSubject($studyid, $newuid)";
-				MoveStudyToSubject($studyid, $newuid);
-			}
-			echo "</ol>";
-			
-			/* delete the old subject after everything has been merged */
-			$sqlstring = "update subjects set isactive = 0 where subject_id = $oldid";
-			echo "<li>Deleting old subject [$oldid] [$sqlstring]";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		echo "</ol>";
-		
-		/* make sure the data directories for all studies exist that are supposed to exist */
-		$sqlstring = "select b.study_id, b.study_num from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where a.subject_id = $selectedid and b.study_id is not null";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		echo "<li>Making sure all study directories exist";
-		echo "<ol>";
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$studydir = $GLOBALS['cfg']['archivedir'] . "/$newuid/$studynum";
-			if (!file_exists($studydir)) {
-				$systemstring = "mkdir -pv $studydir";
-				$output = shell_exec($systemstring);
-				echo "<li>Creating study directory [$studydir] [$output]";
-				if ($output != "") { echo "<b style='color: red'>I had to create this directory [$studydir] which should have already existed... so something was wrong. You will need to manually find and copy data into this directory</b>"; }
-			}
-			else {
-				echo "<li>Study directory [$studydir] already exists. No need to create it";
-			}
-		}
-		echo "</ol>";
-		
-		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone1', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $selectedid";
-		echo "<li>Updating subject [$sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* update the enrollment group */
-		foreach ($enrollgroup as $enrollid => $value) {
-			if (trim($value) != '') {
-				$value = mysqli_real_escape_string($GLOBALS['linki'], $value);
-				$sqlstring = "update enrollment set enroll_subgroup = '$value' where subject_id = $selectedid and enrollment_id = $enrollid";
-				echo "<li>Updating enrollment group [$sqlstring]";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-		
-		//echo "<ol>";
-		/* ... and insert the new rows into the altuids table */
-		foreach ($altuids as $altuid) {
-			$altuid = trim($altuid);
-			if ($altuid != '') {
-				if (strpos($altuid, '*') !== FALSE) {
-					$altuid = str_replace('*','',$altuid);
-					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',1)";
-				}
-				else {
-					$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary) values ($selectedid, '$altuid',0)";
-				}
-				echo "<li>Inserting new alternate UIDs [$sqlstring]";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-		
-		/* ------ all done ------ */
-		$sqlstring = "commit";
-		//PrintSQL("$sqlstring");
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		echo "<li><b>Commit the transaction</b> [$sqlstring]";
-		
-		?></ol>
-		</ol>
-		
-		</span><div align="center"><span class="message"><span class="uid"><?=$uid?></span> updated</span></div><br><br>
-		<b>Merge complete. Go <a href="<?=$returnpage?>"><u>back</u></a> to original page</b><br>
-		<?
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayMergeSubjects --------------- */
-	/* -------------------------------------------- */
-	function DisplayMergeSubjects($mergeuids, $returnpage) {
-
-		$i = 0;
-		foreach ($mergeuids as $uid) {
-			/* gather info for this uid and put into an array */
-			$sqlstring = "select * from subjects where uid = '$uid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$subjects[$i]['id'] = $row['subject_id'];
-			$subjects[$i]['name'] = $row['name'];
-			$subjects[$i]['dob'] = $row['birthdate'];
-			$subjects[$i]['gender'] = $row['gender'];
-			$subjects[$i]['ethnicity1'] = $row['ethnicity1'];
-			$subjects[$i]['ethnicity2'] = $row['ethnicity2'];
-			$subjects[$i]['handedness'] = $row['handedness'];
-			$subjects[$i]['education'] = $row['education'];
-			$subjects[$i]['phone1'] = $row['phone1'];
-			$subjects[$i]['email'] = $row['email'];
-			$subjects[$i]['maritalstatus'] = $row['maritalstatus'];
-			$subjects[$i]['smokingstatus'] = $row['smokingstatus'];
-			$subjects[$i]['uid'] = $row['uid'];
-			$subjects[$i]['guid'] = $row['guid'];
-			$subjects[$i]['cancontact'] = $row['cancontact'];
-			$subjects[$i]['tags'] = $row['tags'];
-			
-			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($row['subject_id'],0);
-			$subjects[$i]['altuid'] = implode2(', ',$altuids);
-			
-			$i++;
-		}
-		
-		/* display one column for each subject with a radio button to "merge all studies into this subject" */
-		?>
-		<div style="border: 2px solid #870000; background-color: #FFFFBF; border-radius: 6px; padding: 5px; margin: 5px">
-		<b>Leftmost UID is selected by default</b><bR>Select the UID you want to merge into and edit information in that column. Only the information in the selected column will be saved, and all other projects will be merged into that UID. All other UIDs will be deleted.
-		</div>
-		<br>
-		<form action="subjects.php" method="post">
-		<input type="hidden" name="action" value="mergesubjects">
-		<input type="hidden" name="returnpage" value="<?=$returnpage?>">
-		<table cellspacing="0" cellpadding="1">
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px black">UID</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						?>
-							<td align="center" style="color: white; background-color: #0F4D92; font-weight: bold; border-right: 1px solid black"><input type="radio" name="selectedid" value="<?=$subjects[$i]['id']?>" <? if ($i == 0) { echo "checked"; } ?>>&nbsp;<?=$subjects[$i]['uid']?></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Name</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['name'] != $subjects[0]['name']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="name[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['name']?>" required="required"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">DOB</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['dob'] != $subjects[0]['dob']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="dob[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['dob'];?>" required="required"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Sex</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['gender'] != $subjects[0]['gender']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="gender[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['gender'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Ethnicity 1</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['ethnicity1'] != $subjects[0]['ethnicity1']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="ethnicity1[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity1'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Ethnicity 2</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['ethnicity2'] != $subjects[0]['ethnicity2']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="ethnicity2[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity2'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Handedness</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['handedness'] != $subjects[0]['handedness']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="handedness[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['handedness'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Education</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['education'] != $subjects[0]['education']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="education[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['education'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Phone</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['phone1'] != $subjects[0]['phone1']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="phone1[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['phone1'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Email</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['email'] != $subjects[0]['email']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="email[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['email'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Marital Status</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['maritalstatus'] != $subjects[0]['maritalstatus']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="maritalstatus[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['maritalstatus'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Smoking Status</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['smokingstatus'] != $subjects[0]['smokingstatus']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="smokingstatus[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['smokingstatus'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">GUID</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['guid'] != $subjects[0]['guid']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="guid[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['guid'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray; white-space:nowrap;">Global alternate subject ID</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['altuid'] != $subjects[0]['altuid']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="altuids[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Can contact?</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['cancontact'] != $subjects[0]['cancontact']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="cancontact[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['cancontact'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td style="text-align: right; font-weight: bold; border-right: solid 2px gray">Tags</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-						if ($subjects[$i]['tags'] != $subjects[0]['tags']) { $bgcolor = "#FFFFBF"; } else { $bgcolor = ""; }
-						?>
-							<td bgcolor="<?=$bgcolor?>" style="border-right: 1px solid gray"><input type="text" name="tags[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['tags'];?>"></td>
-						<?
-					}
-				?>
-			</tr>
-			
-				<td style="text-align: right; vertical-align: top; font-weight: bold; border-right: solid 2px gray">Studies (with enrollment group)</td>
-				<?
-					for ($i=0;$i<count($subjects);$i++) {
-					?>
-						<td valign="top" style="border-right: 1px solid gray">
-							<table cellspacing="0" cellpadding="0">
-								<?
-									$sqlstring = "select a.*, b.*, date(enroll_startdate) 'enroll_startdate', date(enroll_enddate) 'enroll_enddate' from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = " . $subjects[$i]['id'];
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$enrollmentid = $row['enrollment_id'];
-										$enrollgroup = $row['enroll_subgroup'];
-										$project_name = $row['project_name'];
-										$costcenter = $row['project_costcenter'];
-										
-										if ($row['irb_consent'] != "") { $irb = "Y"; }
-										else { $irb = "N"; }
-										
-										$altuids = GetAlternateUIDs($subjects[$i]['id'], $enrollmentid);
-										$altuidlist = implode2(', ',$altuids);
-										
-								?>
-								<tr>
-									<td colspan="4" style="font-size:9pt; background-color:#0F4D92; padding: 4px">
-										<table cellpadding="0" cellspacing="0" width="100%">
-											<tr>
-												<td style="color: white"><b><?=$project_name?></b> (<?=$costcenter?>)</td>
-												<td align="right"><input type="text" name="enrollgroup[<?=$enrollmentid?>]" value="<?=$enrollgroup?>" placeholder="Enrollment group"></td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-									<?
-									$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
-									$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									if (mysqli_num_rows($result2) > 0) {
-										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-											$study_id = $row2['study_id'];
-											$study_num = $row2['study_num'];
-											$study_modality = $row2['study_modality'];
-											$study_datetime = $row2['study_datetime'];
-											$study_operator = $row2['study_operator'];
-											$study_performingphysician = $row2['study_performingphysician'];
-											$study_site = $row2['study_site'];
-											$study_status = $row2['study_status'];
-											
-											?>
-											<tr style="font-size: 8pt">
-												<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_num?></td>
-												<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_modality?></td>
-												<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_datetime?></td>
-												<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_site?></td>
-											</tr>
-											<?
-										}
-									}
-									else {
-										?>
-										<tr>
-											<td align="center">
-												None
-											</td>
-										</tr>
-										<?
-									}
-								}
-								?>
-							</table>
-						</td>
-					<?
-					}
-				?>
-			</tr>
-			<tr>
-				<td colspan="<?=count($subjects)+1?>" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray">
-					<br>
-					<input type="submit" value="Merge" disabled>
-					<br><br>
-				</td>
-			</tr>
-		</table>
-		</form>
-		<?
-	}
-	
-	
 	/* -------------------------------------------- */
 	/* ------- ChangeProject ---------------------- */
 	/* -------------------------------------------- */
@@ -1284,7 +832,7 @@
 		}
 
 		if ($type == "update") { ?>
-		<span class="uid"><?=$uid?></span><br><br>
+		<?=$uid?><br><br>
 		<? } ?>
 		
 		
@@ -1556,26 +1104,6 @@
 								<div align="left" style="padding: 5px">
 								
 								<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
-								<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
-								<details>
-									<summary class="tiny" style="color:darkred">Edit or delete</summary>
-									<div style="padding:5px; font-size:11pt">
-									<a href="subjects.php?action=editform&id=<?=$id?>" class="linkbutton">Edit Demographics</a>
-									<br><br><br>
-									<?
-										if ($GLOBALS['isadmin']) {
-											if ($isactive) {
-											?>
-												<a href="subjects.php?action=deleteconfirm&id=<?=$id?>" class="redlinkbutton">Delete</a>
-											<? } else { ?>
-												<a href="subjects.php?action=undelete&id=<?=$id?>" class="redlinkbutton">Undelete</a>
-											<?
-											}
-										}
-									?>
-									</div>
-								</details>
-								<? } ?>
 								
 								<br>
 								<table class="reviewtable">
@@ -1725,7 +1253,27 @@
 									</tr>
 								</table>
 								<br>
-								<?
+								<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
+									<details>
+										<summary class="tiny" style="color:darkred">Admin functions</summary>
+										<div style="padding:5px; font-size:11pt">
+										<a href="subjects.php?action=editform&id=<?=$id?>" class="linkbutton" style="width: 70px; text-align: center">Edit</a> demographics<br>
+										<a href="merge.php?action=mergesubjectform&subjectuid=<?=$uid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with existing subject
+										<br><br><br>
+										<?
+											if ($GLOBALS['isadmin']) {
+												if ($isactive) {
+												?>
+													<a href="subjects.php?action=deleteconfirm&id=<?=$id?>" class="redlinkbutton" style="width: 70px; text-align: center">Delete</a>
+												<? } else { ?>
+													<a href="subjects.php?action=undelete&id=<?=$id?>" class="redlinkbutton" style="width: 70px; text-align: center">Undelete</a>
+												<?
+												}
+											}
+										?>
+										</div>
+									</details>
+								<? }
 								}
 								else {
 									echo "No permissions to view PHI";
@@ -1969,9 +1517,6 @@
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
-												<!--<form action="studies.php" method="post">
-												<input type="hidden" name="subjectid" value="<?=$id?>">
-												<input type="hidden" name="action" value="mergestudies">-->
 												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
 													<thead>
 														<th>#</th>
@@ -1985,12 +1530,10 @@
 														<th>Study ID</th>
 														<th>Visit</th>
 														<th>Rad Read</th>
-														<!--<? if ($projectadmin) { ?><th><span class="tiny">Merge</span></th><? } ?>-->
 													</thead>
 													<tbody>
 													<?
 													while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-														//PrintVariable($row2);
 														
 														$study_id = $row2['study_id'];
 														$study_num = $row2['study_num'];
@@ -2046,13 +1589,6 @@
 														<?
 													}
 													?>
-													<!--
-													<? if ($projectadmin) { ?>
-													<tr>
-														<td colspan="11" align="right"><input type="submit" value="Merge" style="font-size:9pt"></td>
-													</tr>
-													<? } ?>
-													-->
 												</table>
 												</form>
 												<?
@@ -2843,20 +2379,14 @@
 				<td align="left"><input type="checkbox" name="searchactive" <? if ($searchactive == '1') { echo "checked"; } ?> value="1"></td>
 				<td> - </td>
 				<td align="left"><input type="submit" value="Search"></td>
-				<!--<? if ($GLOBALS['isadmin']) { ?>
-				<td><input type="checkbox" id="rightcheckall"></td>
-				<? } ?>-->
 			</tr>
 			</form>
 			
-			<!--<form method="post" name="subjectlist" action="subjects.php">
-			<input type="hidden" name="action" value="merge">-->
 			<?
 				$subjectsfound = 0;
 				/* if all the fields are blank, only display the most recent subjects */
 				if ( ($searchuid == "") && ($searchaltuid == "") && ($searchname == "") && ($searchgender == "") && ($searchdob == "") ) {
 					$sqlstring = "select a.* from subjects a left join enrollment b on a.subject_id = b.subject_id left join user_project c on b.project_id = c.project_id left join projects d on c.project_id = d.project_id where a.isactive = 1 group by a.uid order by a.lastupdate desc limit 0,25";
-					//PrintSQL($sqlstring);
 					?>
 						<tr>
 							<td colspan="11" align="center" style="color: #555555; padding:8px; font-size:10pt">
@@ -2970,11 +2500,6 @@
 				?>
 				<tr>
 					<td colspan="8">
-						<!--
-						<? if ($GLOBALS['issiteadmin']) {?>
-						<input type="submit" name="merge" value="Merge selected subjects" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='merge'" title="Merges all studies from the selected subjects">
-						<? } ?>
-						-->
 						<br><br>
 						<select name="subjectgroupid">
 							<?

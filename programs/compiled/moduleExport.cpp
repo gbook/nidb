@@ -89,10 +89,6 @@ int moduleExport::Run() {
 			if (nfsdir.right(1) == "/")
 				nfsdir.chop(1);
 
-			remoteNiDBConnection conn(remotenidbconnid, n);
-			if (!conn.isValid)
-				n->WriteLog("Invalid remote connection [" + conn.msg + "]");
-
 			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
 			QString status = GetExportStatus(exportid);
 			if (status == "submitted") {
@@ -136,7 +132,11 @@ int moduleExport::Run() {
 				found = ExportBIDS(exportid, bidsreadme, status, log);
 			}
 			else if (exporttype == "remotenidb") {
-				found = ExportToRemoteNiDB(exportid, conn, status, log);
+				remoteNiDBConnection conn(remotenidbconnid, n);
+				if (conn.isValid)
+					found = ExportToRemoteNiDB(exportid, conn, status, log);
+				else
+					n->WriteLog("Invalid remote connection [" + conn.msg + "]");
 			}
 			else if (exporttype == "remoteftp") {
 				found = ExportToRemoteFTP(exportid, remoteftpusername, remoteftppassword, remoteftpserver, remoteftpport.toInt(), remoteftppath, status, log);
@@ -723,12 +723,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				QString filecontents = n->SystemCommand(systemstring, false);
 				QStringList lines = filecontents.split("\n");
 				QString lastline = lines.last().trimmed();
+				n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
 				QStringList parts = lastline.split(QRegExp("\\s+"), QString::SkipEmptyParts); /* split on whitespace */
 				int unzippedsize = parts[0].toInt();
 				int zippedsize = parts[1].toInt();
 
 				QSqlQuery q2;
-				q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = ':zippedsize', pd_unzippedsize = ':unzippedsize', pd_filename = ':filename', pd_filecontents = ':filecontents', pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = :publicdownloadid");
+				q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = :publicdownloadid");
 				q2.bindValue(":expiredays",expiredays);
 				q2.bindValue(":zippedsize",zippedsize);
 				q2.bindValue(":unzippedsize",unzippedsize);
@@ -1084,7 +1085,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
 	/* check to see if the remote server is reachable ... */
 	QString systemstring = "curl -sSf " + conn.server;
-	//n->WriteLog(n->SystemCommand(systemstring));
 	QString serverResponse = n->SystemCommand(systemstring, false);
 	if ((serverResponse == "") || (serverResponse.contains("Could not resolve host",Qt::CaseInsensitive))) {
 		msg = n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
@@ -1556,7 +1556,6 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 	/* build a cURL string to start the transaction */
 	QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
 	QString str = n->SystemCommand(systemstring, false).simplified();
-	//n->WriteLog(QString("Running systemstring [" + systemstring + "], got response [" + str + "] string length is [%1]").arg(str.size()));
 
 	bool ok;
 	int t = str.toLong(&ok);

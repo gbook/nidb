@@ -757,9 +757,13 @@
 	/* special implode which checks for empty array */
 	function implode2($chr, $arr) {
 		if (count($arr) > 1) {
+			//echo "Count is greater than 1<br>";
+			//PrintVariable($arr);
 			return implode($chr,$arr);
 		}
 		elseif (count($arr) == 1) {
+			//echo "count is 1<br>";
+			//PrintVariable($arr);
 			return $arr[0];
 		}
 		else {

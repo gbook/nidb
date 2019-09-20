@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	QCoreApplication a(argc, argv);
 
 	/* this whole section reads the command line parameters */
-	a.setApplicationVersion(__BUILD__);
+	a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));
 	a.setApplicationName("Neuroinformatics Database (NiDB)");
 
 	/* setup the command line parser */
@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 	p.addOption(optQuiet);
 
 	/* command line options that take values */
+	QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Possible submodules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
 	QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin modules only", "analysisid");
 	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin modules only", "status");
 	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin module only", "message");
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
 	QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert module)", "number");
 	QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert module)", "fullfilepath");
 	QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert module)", "desc");
+	p.addOption(optSubModule);
 	p.addOption(optAnalysisID);
 	p.addOption(optStatus);
 	p.addOption(optMessage);
@@ -92,6 +94,7 @@ int main(int argc, char *argv[])
 
 	debug = p.isSet(optDebug);
 	quiet = p.isSet(optQuiet);
+	QString paramSubModule = p.value(optSubModule).trimmed();
 	QString paramAnalysisID = p.value(optAnalysisID).trimmed();
 	QString paramStatus = p.value(optStatus).trimmed();
 	QString paramMessage = p.value(optMessage).trimmed();
@@ -102,8 +105,10 @@ int main(int argc, char *argv[])
 	QString paramResultDesc = p.value(optResultDesc).trimmed();
 
 
-	/* now check the parameters passed in, to see if they are calling a valid module */
-	if ((module != "export") && (module != "fileio") && (module != "qc") && (module != "mriqa") && (module != "modulemanager") && (module != "import") && (module != "pipeline") && (module != "importuploaded") && (module != "resultinsert") && (module != "pipelinecheckin") && (module != "updateanalysis") && (module != "checkcompleteanalysis")) {
+	QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "cluster" };
+
+	/* now check the command line parameters passed in, to see if they are calling a valid module */
+	if (!modules.contains(module)) {
 		std::cout << p.helpText().toStdString().c_str();
 		return 0;
 	}
@@ -111,7 +116,7 @@ int main(int argc, char *argv[])
 	nidb *n;
 
 	/* check if this is being run from the cluster or locally */
-	if ((module == "resultinsert") || (module == "pipelinecheckin") || (module == "updateanalysis") || (module == "checkcompleteanalysis")) {
+	if (module == "cluster") {
 		/* load the config file and connect to the database */
 		n = new nidb(module, true);
 		n->DatabaseConnect(true);
@@ -119,13 +124,13 @@ int main(int argc, char *argv[])
 
 		bool ret = false;
 		QString msg;
-		if (module == "pipelinecheckin")
+		if (paramSubModule == "pipelinecheckin")
 			ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramMessage, paramCommand, msg);
-		else if (module == "resultinsert")
+		else if (paramSubModule == "resultinsert")
 			ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, msg);
-		else if (module == "updateanalysis")
+		else if (paramSubModule == "updateanalysis")
 			ret = m->UpdateAnalysis(paramAnalysisID, msg);
-		else if (module == "checkcompleteanalysis")
+		else if (paramSubModule == "checkcompleteanalysis")
 			ret = m->CheckCompleteAnalysis(paramAnalysisID, msg);
 
 		/* if the operation failed, let the user know */

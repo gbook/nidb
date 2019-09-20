@@ -527,7 +527,14 @@
 			echo "New pipeline name is blank. Please fix and try again";
 			return;
 		}
-		if (!ctype_alnum($newname)) {
+		
+		//if (!ctype_alnum($newname)) {
+		//	echo "New pipeline name contains non-alphanumeric characters. Please fix and try again";
+		//	return;
+		//}
+		
+		// Validate alphanumeric
+		if (preg_match('/[^a-z_\-0-9]/i', $newname)) {
 			echo "New pipeline name contains non-alphanumeric characters. Please fix and try again";
 			return;
 		}
@@ -599,7 +606,7 @@
 		$history .= "4) Getting pipeline version [$version] [$sqlstring]\n";
 
 		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = '', pipeline_lastfinish = '', pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
+		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = null, pipeline_lastfinish = null, pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
 		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
 		$history .= "5) Making changes to new pipeline in temp table [$sqlstring]\n";
 		//PrintSQL("$sqlstring");
@@ -638,7 +645,7 @@
 		$history .= "Temp TABLE [tmp_dataspec$id] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
 		
 		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = ''";
+		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = null";
 		//PrintSQL("$sqlstring");
 		echo "<li>Make changes to temp table [$sqlstring]\n";
 		$history .= "9) Make changes to temp table [$sqlstring]\n";
@@ -1680,7 +1687,7 @@
 						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
 							<tr>
 								<td class="label">Image type</td>
-								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
+								<td title="Comma separated list of image types"><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
 							</tr>
 							<tr>
 								<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>

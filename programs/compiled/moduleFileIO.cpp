@@ -68,6 +68,14 @@ int moduleFileIO::Run() {
 			int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
+			QString merge_ids = q.value("merge_ids").toString().trimmed();
+			QString merge_name = q.value("merge_name").toString().trimmed();
+			QString merge_dob = q.value("merge_dob").toString().trimmed();
+			QString merge_sex = q.value("merge_sex").toString().trimmed();
+			QString merge_ethnicity1 = q.value("merge_ethnicity1").toString().trimmed();
+			QString merge_ethnicity2 = q.value("merge_ethnicity2").toString().trimmed();
+			QString merge_guid = q.value("merge_guid").toString().trimmed();
+			QString merge_altuids = q.value("merge_altuids").toString().trimmed();
 
 			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
 			QString status = GetIORequestStatus(requestid);
@@ -112,7 +120,10 @@ int moduleFileIO::Run() {
 			else if (fileio_operation == "detach") {
 			}
 			else if (fileio_operation == "move") {
-				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, msg); }
+				if (data_type == "study") { found = MoveStudyToSubject(data_id, data_destination, -1, msg); }
+			}
+			else if (fileio_operation == "merge") {
+				if (data_type == "subject") { found = MergeSubjects(data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_altuids, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
 				//found = AnonymizeSeries(requestid, data_id, modality, dicomtags);
@@ -258,7 +269,7 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
 		return false;
 	}
 
-	analysis a(analysisid, n); /* get the analysis info */
+	analysis a(analysisid, n, true); /* get the analysis info */
 	if (!a.isValid) {
 		msg = "analysis was not valid: [" + a.msg + "]";
 		return false;
@@ -752,51 +763,80 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 /* ---------------------------------------------------------- */
 /* --------- MoveStudyToSubject ----------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString &msg) {
+bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjectid, QString &msg) {
 	QStringList msgs;
 
 	study thestudy(studyid, n); /* get the original study info */
-	if (!thestudy.isValid) { msg = "Original study was not valid: [" + thestudy.msg + "]"; return false; }
+	if (!thestudy.isValid) {
+		msg = n->WriteLog("Original study was not valid: [" + thestudy.msg + "]");
+		return false;
+	}
 
 	subject origsubject(thestudy.subjectid, n); /* get the original subject info */
-	if (!origsubject.isValid) { msg = "Original subject was not valid: [" + origsubject.msg + "]"; return false; }
+	if (!origsubject.isValid) {
+		msg = n->WriteLog("Original subject was not valid: [" + origsubject.msg + "]");
+		return false;
+	}
 
-	subject newsubject(newuid, n); /* get the new subject info */
-	if (!newsubject.isValid) { msg = "New subject was not valid: [" + newsubject.msg + "]"; return false; }
+	/* check if this is looking for a UID or rowID */
+	subject *newsubject;
+	if ((newuid == "") && (newsubjectid > -1)) {
+		newsubject = new subject(newsubjectid, n); /* get the new subject info */
+		if (!newsubject->isValid) {
+			msg = n->WriteLog("New subject was not valid: [" + newsubject->msg + "]");
+			delete newsubject;
+			return false;
+		}
+	}
+	else {
+		newsubject = new subject(newuid, n); /* get the new subject info */
+		if (!newsubject->isValid) {
+			msg = n->WriteLog("New subject was not valid: [" + newsubject->msg + "]");
+			delete newsubject;
+			return false;
+		}
+	}
 
 	QDateTime now = QDateTime::currentDateTime();
 	if (now < thestudy.studydatetime.addDays(1)) {
-		msg = "This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time";
+		msg = n->WriteLog("This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time");
+		delete newsubject;
 		return false;
 	}
+
+	/* all of the checks are ok, so lets do the move */
+	n->WriteLog(QString("Moving study [%1%2] to subject [%3]").arg(thestudy.uid).arg(thestudy.studynum).arg(newuid));
 
 	/* check if the new subject is enrolled in the old project, if not, enroll them */
 	QSqlQuery q;
 	q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
-	q.bindValue(":subjectid", newsubject.subjectid);
+	q.bindValue(":subjectid", newsubject->subjectid);
 	q.bindValue(":projectid", thestudy.projectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int newenrollmentid;
 	if (q.size() > 0) {
 		q.first();
-		newenrollmentid = q.value("anlaysis_id").toInt();
+		newenrollmentid = q.value("enrollment_id").toInt();
+		n->WriteLog("Subject already enrolled in project");
 	}
 	else {
 		q.prepare("insert into enrollment (subject_id, project_id, enroll_startdate) values (:subjectid, :projectid, now())");
-		q.bindValue(":subjectid", newsubject.subjectid);
+		q.bindValue(":subjectid", newsubject->subjectid);
 		q.bindValue(":projectid", thestudy.projectid);
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		newenrollmentid = q.lastInsertId().toInt();
+		n->WriteLog(QString("Subject now enrolled in project. enrollmentid [%1]").arg(newenrollmentid));
 	}
 
 	/* get the next study number for the new subject */
 	q.prepare("select max(a.study_num) 'maxstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
-	q.bindValue(":subjectid", newsubject.subjectid);
+	q.bindValue(":subjectid", newsubject->subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	int newstudynum = 1;
 	if (q.size() > 0) {
 		q.first();
 		newstudynum = q.value("maxstudynum").toInt() + 1;
+		n->WriteLog(QString("Highest studynum for subject [%1], New studynum [%2]").arg(q.value("maxstudynum").toInt()).arg(newstudynum));
 	}
 
 	/* change the enrollment_id associated with the studyid */
@@ -808,7 +848,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString &msg)
 
 	/* copy the data, don't move in case there is a problem */
 	QString oldpath = thestudy.studypath;
-	QString newpath = QString("%1/%2").arg(newsubject.subjectpath).arg(newstudynum);
+	QString newpath = QString("%1/%2").arg(newsubject->subjectpath).arg(newstudynum);
 
 	QDir d;
 	d.mkpath(newpath);
@@ -817,19 +857,100 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, QString &msg)
 	if (!d.exists(oldpath)) msgs << "Error creating oldpath [" + oldpath + "]";
 
 	n->WriteLog("Moving data within archive directory");
-	QString systemstring = QString("rsync -rtuv %1/* %2 2>&1").arg(oldpath).arg(newpath);
+	QString systemstring = QString("rsync -rtu %1/* %2 2>&1").arg(oldpath).arg(newpath);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	msg = msgs.join(" | ");
 	q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");
 	q.bindValue(":oldprojectid", thestudy.projectid);
 	q.bindValue(":oldsubjectid", origsubject.subjectid);
-	q.bindValue(":newsubjectid", newsubject.subjectid);
+	q.bindValue(":newsubjectid", newsubject->subjectid);
 	q.bindValue(":oldenrollmentid", thestudy.enrollmentid);
 	q.bindValue(":newenrollmentid", newenrollmentid);
 	q.bindValue(":studyid", studyid);
 	q.bindValue(":msg", msg);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+	delete newsubject;
+
+	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- MergeSubjects ---------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeName, QString mergeDOB, QString mergeSex, QString mergeEthnicity1, QString mergeEthnicity2, QString mergeGUID, QString mergeAltUIDs, QString &msg) {
+
+	QSqlQuery q;
+	msg = "";
+
+	QStringList ids = mergeIDs.split(",");
+	/* moving all studies from each existing subject to the new subject */
+	foreach (QString id, ids) {
+
+		/* make sure the target subjectid is not in the list of merge ids */
+		if (id == subjectid)
+			continue;
+
+		/* get list of studies for this subject */
+		q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
+		q.bindValue(":subjectid", id.toInt());
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+		if (q.size() > 0) {
+			n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
+			while (q.next()) {
+				int studyid = q.value("study_id").toInt();
+				QString m;
+				if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
+					n->WriteLog("Error moving study to subject [" + m + "]");
+					return false;
+				}
+			}
+		}
+		n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
+
+		/* delete the subject that has just been merged */
+		q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
+		q.bindValue(":subjectid", id.toInt());
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+	}
+
+	/* update the final subject with the info */
+	q.prepare("update subjects set name = :name, birthdate = :dob, gender = :sex, ethnicity1 = :ethnicity1, ethnicity2 = :ethnicity2, guid = :guid where subject_id = :subjectid");
+	q.bindValue(":name", mergeName);
+	q.bindValue(":dob", mergeDOB);
+	q.bindValue(":sex", mergeSex);
+	q.bindValue(":ethnicity1", mergeEthnicity1);
+	q.bindValue(":ethnicity2", mergeEthnicity2);
+	q.bindValue(":guid", mergeGUID);
+	q.bindValue(":subjectid", subjectid);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+	/* update the Global (subject level) alternate UIDs */
+
+	/* delete entries for this subject from the altuid table ... */
+	q.prepare("delete from subject_altuid where subject_id = :subjectid");
+	q.bindValue(":subjectid",subjectid);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+	/* ... and insert the new rows into the altuids table */
+	QStringList altuids = mergeAltUIDs.split(",");
+	foreach (QString altuid, altuids) {
+		altuid = altuid.trimmed();
+		if (altuid != "") {
+			if (altuid.contains("*")) {
+				altuid.replace("*","");
+				q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 1, -1)");
+			}
+			else {
+				q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 0, -1)");
+			}
+			q.bindValue(":subjectid", subjectid);
+			q.bindValue(":altuid", altuid);
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		}
+	}
 
 	return true;
 }

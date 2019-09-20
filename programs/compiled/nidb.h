@@ -23,7 +23,8 @@
 #ifndef NIDB_H
 #define NIDB_H
 
-#define __BUILD__ "2019a"
+#define VERSION_MAJ "2019"
+#define VERSION_MIN "1"
 
 #include <QFile>
 #include <QString>
@@ -85,6 +86,7 @@ public:
 	QString ParseDate(QString s);
 	QString ParseTime(QString s);
 	QString JoinIntArray(QList<int> a, QString glue);
+	QList<int> SplitStringArrayToInt(QStringList a);
 	bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
 	bool GetSQLComparison(QString c, QString &comp, int &num);
 	QStringList ShellWords(QString s);

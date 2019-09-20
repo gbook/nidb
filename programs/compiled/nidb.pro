@@ -35,6 +35,14 @@ SOURCES += \
     study.cpp \
     subject.cpp
 
+unix: {
+    BUILDNO = $$system(./build.sh)
+    DEFINES += BUILD_NUM=$${BUILDNO}
+}
+else {
+    DEFINES += BUILD_NUM=0
+}
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
@@ -112,4 +120,5 @@ LIBS += -lgdcmMSFF \
     -lgdcmzlib \
     -lsocketxx
 
-DISTFILES +=
+DISTFILES += \
+    build.sh

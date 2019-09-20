@@ -28,8 +28,8 @@
 class analysis
 {
 public:
-	analysis(qint64 id, nidb *a);
-	analysis(int pipelineid, int studyid, nidb *a);
+	analysis(qint64 id, nidb *a, bool c=false);
+	analysis(int pipelineid, int studyid, nidb *a, bool c=false);
 	nidb *n;
 
 	void PrintAnalysisInfo();
@@ -58,6 +58,7 @@ public:
 
 private:
 	void LoadAnalysisInfo();
+	bool useClusterPaths;
 };
 
 #endif // ANALYSIS_H

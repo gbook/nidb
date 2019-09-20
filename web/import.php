@@ -40,6 +40,7 @@
 	$idlist = GetVariable("idlist");
 	$displayonlymatches = GetVariable("displayonlymatches");
 	$searchthisinstance = GetVariable("searchthisinstance");
+	$ignoredeleted = GetVariable("ignoredeleted");
 	
 	/* check for API actions that don't require the HTML page output as a response */
 	if (trim($apiaction) != '') {
@@ -103,7 +104,7 @@
 			DisplayImportMenu();
 			break;
 		case 'mapids':
-			MapIDs($idlist, $displayonlymatches, $searchthisinstance);
+			MapIDs($idlist, $projectid, $displayonlymatches, $searchthisinstance, $ignoredeleted);
 			break;
 		default:
 			DisplayMenu();
@@ -118,10 +119,6 @@
 	/* -------------------------------------------- */
 	function DisplayMenu() {
 	
-		//$urllist['Home'] = "index.php";
-		//$urllist['Import'] = "import.php";
-		//NavigationBar("Import", $urllist);
-		
 		?>
 		<ul>
 		<li><a href="import.php?action=idmapper" title="Matches a list of alternate IDs to the NiDB ID">ID mapper</a>
@@ -138,10 +135,6 @@
 	/* -------------------------------------------- */
 	function DisplayIDMapperForm() {
 	
-		//$urllist['Home'] = "index.php";
-		//$urllist['Import'] = "import.php";
-		//$urllist['ID mapper'] = "import.php?action=idmapper";
-		//NavigationBar("ID Mapper", $urllist);
 		?>
 		<div align="center">
 		<form action="import.php" method="post">
@@ -155,11 +148,10 @@
 					<textarea cols="100" rows="25" name="idlist"></textarea>
 				</td>
 			</tr>
-			<!--
 			<tr>
 				<td>
-					<span style="font-weight: bold; color: #444">Search only these projects</span><br>
-					<select name="s_projectid" class="importantfield">
+					<span style="font-weight: bold; color: #444">Search only this project</span><br>
+					<select name="projectid">
 						<option value="all">All Projects</option>
 						<?
 							$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
@@ -177,11 +169,11 @@
 					</select>
 				</td>
 			</tr>
-			-->
 			<tr>
 				<td>
 					<input type="checkbox" value="1" name="searchthisinstance">Search only this instance (<?=$_SESSION['instancename']?>)<br>
-					<input type="checkbox" value="1" name="displayonlymatches">Display only matches
+					<input type="checkbox" value="1" name="displayonlymatches">Show only matches<br>
+					<input type="checkbox" value="1" name="ignoredeleted">Do not show deleted subjects
 					<br><br>
 					<input type="submit" value="Map IDs">
 				</td>
@@ -195,14 +187,8 @@
 	/* -------------------------------------------- */
 	/* ------- MapIDs ----------------------------- */
 	/* -------------------------------------------- */
-	function MapIDs($idlist, $displayonlymatches, $searchthisinstance) {
-	
-		//$urllist['Home'] = "index.php";
-		//$urllist['Import'] = "import.php";
-		//$urllist['ID mapper'] = "import.php?action=idmapper";
-		//NavigationBar("Import", $urllist);
+	function MapIDs($idlist, $projectid, $displayonlymatches, $searchthisinstance, $ignoredeleted) {
 
-		//$idlist = mysqli_real_escape_string($GLOBALS['linki'], $idlist);
 		$idlist = preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $idlist);
 		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $idlist);
 		foreach ($parts as $part) {
@@ -217,10 +203,16 @@
 		<br><br>
 		<table class="graydisplaytable">
 			<thead>
-				<th>Foreign ID</th>
-				<th>Local alternate UID</th>
-				<th>Local UID</th>
-				<th title="Enrollments">E</th>
+				<th style="border-right: solid 1px #888"></th>
+				<th colspan="5">Local</th>
+			</thead>
+			<thead>
+				<th style="border-right: solid 1px #888">Foreign ID</th>
+				<th>Deleted?</th>
+				<th>Alt Subject ID</th>
+				<th>Alt Study ID</th>
+				<th>UID</th>
+				<th>Enrollment</th>
 			</thead>
 		<?
 		$numFound = 0;
@@ -228,12 +220,14 @@
 		foreach ($ids as $altid) {
 			$newid = 1;
 			if ($altid != "") {
-				if ($searchthisinstance) {
-					$sqlstring = "select * from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id left join projects d on c.project_id = d.project_id where (a.altuid = '$altid' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid'))) and d.instance_id = $instanceid";
-				}
-				else {
-					$sqlstring = "select * from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid = '$altid' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid'))";
-				}
+				$sqlstring = "select b.subject_id, b.uid, b.isactive, a.altuid,d.project_name from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id left join projects d on c.project_id = d.project_id where (a.altuid = '$altid' or a.altuid = sha1('$altid') or a.altuid = sha1('$altid ') or a.altuid = sha1(' $altid') or a.altuid = sha1(' $altid ') or a.altuid = sha1(upper('$altid')) or a.altuid = sha1(lower('$altid')))";
+				if ($searchthisinstance)
+					$sqlstring .= " and d.instance_id = $instanceid";
+				if (($projectid != "all") && ($projectid != ""))
+					$sqlstring .= " and c.project_id = $projectid";
+				if ($ignoredeleted)
+					$sqlstring .= " and b.isactive = 1";
+				$sqlstring .= " group by c.enrollment_id";
 				
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -244,43 +238,39 @@
 					
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$subjectid = $row['subject_id'];
-						
+						$projectname = $row['project_name'];
 						$uid = $row['uid'];
 						$altuid = $row['altuid'];
 						$isactive = $row['isactive'];
 						if (!$isactive) {
-							$deleted = " (deleted)";
+							$deleted = "&#10004;";
 						}
 						else {
 							$deleted = "";
 						}
-						if ($newid) { $style = "border-top: solid 1pt #444;"; }
+						if ($newid) { $style = "border-top: solid 1pt #888;"; }
 						else { $style = ""; }
 
 						if ($subjectid == "") {
 							?>
 							<tr>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
-								<td colspan="2" style="<?=$style?>; background-color: <?=$bgcolor?>">Subject ID was blank [<?=$subjectid?>]</td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td colspan="2" style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888">Subject ID was blank [<?=$subjectid?>]</td>
 							</tr>
 							<?
 						}
 						else {
-							$sqlstringA = "select b.project_name from enrollment a left join projects b on a.project_id = b.project_id where subject_id = '$subjectid' order by b.project_name";
-							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-							$enrollcount = mysqli_num_rows($resultA);
-							$enrolltitle = "<ul>";
-							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-								$enrolltitle .= "<li>" . $rowA['project_name'];
-							}
-							$enrolltitle .= "</ul>";
 							?>
 							<tr>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>" title="<?=$enrolltitle?>"><?=$enrollcount?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$projectname?></td>
 							</tr>
 							<?
 						}
@@ -288,7 +278,7 @@
 					}
 				}
 				else {
-					$sqlstring = "select c.subject_id, c.isactive, c.uid, a.study_alternateid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_alternateid = '$altid' or a.study_alternateid = sha1('$altid') or a.study_alternateid = sha1('$altid ') or a.study_alternateid = sha1(' $altid') or a.study_alternateid = sha1(' $altid ') or a.study_alternateid = sha1(upper('$altid')) or a.study_alternateid = sha1(lower('$altid'))";
+					$sqlstring = "select a.study_id, c.subject_id, c.isactive, c.uid, a.study_alternateid, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on d.project_id = b.project_id where a.study_alternateid = '$altid' or a.study_alternateid = sha1('$altid') or a.study_alternateid = sha1('$altid ') or a.study_alternateid = sha1(' $altid') or a.study_alternateid = sha1(' $altid ') or a.study_alternateid = sha1(upper('$altid')) or a.study_alternateid = sha1(lower('$altid'))";
 					
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					if (mysqli_num_rows($result) > 0) {
@@ -299,27 +289,28 @@
 						
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$subjectid = $row['subject_id'];
+							$studyid = $row['study_id'];
+							$projectname = $row['project_name'];
 							$uid = $row['uid'];
 							$altuid = $row['study_alternateid'];
 							$isactive = $row['isactive'];
 							if (!$isactive) {
-								$deleted = " (deleted)";
+								$deleted = "&#10004;";
 							}
 							else {
 								$deleted = "";
 							}
-							if ($newid) { $style = "border-top: solid 1pt #444;"; }
+							if ($newid) { $style = "border-top: solid 1pt #888;"; }
 							else { $style = ""; }
 							
-							$sqlstringA = "select enrollment_id from enrollment where subject_id = $subjectid";
-							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-							$enrollcount = mysqli_num_rows($resultA);
 							?>
 							<tr>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$altid?> <?=$deleted?></td>
-								<td style="color:red; <?=$style?>; background-color: <?=$bgcolor?>"><?=$altuid?></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$enrollcount?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td style="color:red; <?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$projectname?></td>
 							</tr>
 							<?
 							$newid = 0;
@@ -337,7 +328,7 @@
 							$uid = $rowA['uid'];
 							$isactive = $rowA['isactive'];
 							if (!$isactive) {
-								$deleted = " (deleted)";
+								$deleted = "&#10004;";
 							}
 							else {
 								$deleted = "";
@@ -349,10 +340,12 @@
 							
 							?>
 							<tr>
-								<td style="border-top: solid 1pt #444;"><?=$altid?> <?=$deleted?></td>
-								<td style="color:green; border-top: solid 1pt #444;"><?=$altid?></td>
-								<td style="border-top: solid 1pt #444;"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-								<td style="<?=$style?>; background-color: <?=$bgcolor?>"><?=$enrollcount?></td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="color:green; border-top: solid 1pt #888; border-right: solid 1px #888"> </td>
+								<td style="color:green; border-top: solid 1pt #888; border-right: solid 1px #888"> </td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$enrollcount?></td>
 							</tr>
 							<?
 						}
@@ -361,8 +354,8 @@
 							if (!$displayonlymatches) {
 								?>
 								<tr>
-									<td style="border-top: solid 1pt #444;"><?=$altid?></td>
-									<td style="border-top: solid 1pt #444;" colspan="3" align="center">Not found</td>
+									<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$altid?></td>
+									<td style="border-top: solid 1pt #888; border-right: solid 1px #888" colspan="5" align="center"> </td>
 								</tr>
 								<?
 							}
@@ -384,10 +377,6 @@
 	/* -------------------------------------------- */
 	function DisplayImportMenu() {
 	
-		//$urllist['Home'] = "index.php";
-		//$urllist['Import'] = "import.php";
-		//$urllist['Import'] = "import.php?action=import";
-		//NavigationBar("Import", $urllist);
 		?>
 		<style>
 			.gradientsummary {

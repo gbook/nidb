@@ -258,7 +258,7 @@
 					<td>
 						<? if ($exportstatus == "error") { ?>
 						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series">Retry</a>
-						<? } elseif ($exportstatus == "complete") { ?>
+						<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
 						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series">Resend</a>
 						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
 						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series">Cancel</a>

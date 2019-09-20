@@ -26,10 +26,11 @@
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
-analysis::analysis(qint64 id, nidb *a)
+analysis::analysis(qint64 id, nidb *a, bool c)
 {
 	n = a;
 	analysisid = id;
+	useClusterPaths = c;
 	LoadAnalysisInfo();
 }
 
@@ -37,9 +38,10 @@ analysis::analysis(qint64 id, nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
-analysis::analysis(int pipelineid, int studyid, nidb *a)
+analysis::analysis(int pipelineid, int studyid, nidb *a, bool c)
 {
 	n = a;
+	useClusterPaths = c;
 
 	QSqlQuery q;
 	q.prepare("select analysis_id from analysis where pipeline_id = :pid and study_id = :studyid");
@@ -113,12 +115,12 @@ void analysis::LoadAnalysisInfo() {
 	}
 	else {
 		if (pipelinedirstructure == "b")
-			if (n->IsRunningFromCluster())
+			if (n->IsRunningFromCluster() || useClusterPaths)
 				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["clusteranalysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
 			else
 				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdirb"]).arg(pipelinename).arg(uid).arg(studynum);
 		else
-			if (n->IsRunningFromCluster())
+			if (n->IsRunningFromCluster() || useClusterPaths)
 				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["clusteranalysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
 			else
 				analysispath = QString("%1/%2/%3/%4").arg(n->cfg["analysisdir"]).arg(uid).arg(studynum).arg(pipelinename);

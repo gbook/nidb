@@ -170,6 +170,15 @@ table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-radius:5p
 .smalldisplaytable tr:first-child > th:first-child { border-top-left-radius: 5px; }
 .smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; }
 
+/* merge table */
+table.merge { padding: 0px; border-collapse: collapse; }
+.merge td { padding: 3px 7px; }
+.merge td.label { text-align: right; font-weight: bold; border-right: solid 1px black; white-space: nowrap; padding: 3px 7px; }
+.merge td.uid { font-weight: bold; font-size: 14pt; background-color: #eee; padding: 5px; border: 1px solid black; }
+.merge td.bodynormal { border-right: 1px solid #ccc; padding: 2px 8px; border-bottom: 1px solid #ccc; }
+.merge td.bodyhighlighted { background-color: #FFFFBF; border-right: 1px solid #ccc; padding: 5px 8px; border-bottom: 1px solid #ccc; }
+.merge td.selected { background-color: yellow; }
+
 /* small grid table */
 table.smallgridtable { padding: 0px; border: 1px solid #666; border-spacing: 0px; border-collapse: collapse; }
 .smallgridtable th { font-weight: bold; font-size: 9pt; border: 1px solid #666; padding: 2px 6px; background-color: #EEE; }
@@ -285,9 +294,6 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }
 .subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
 .error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
-
-/* any time the UID is shown */
-.uid { border: 1px black solid; text-align: center; font-weight: bold; letter-spacing: 0.5pt; color: white; background-color: darkblue; border-radius: 5px; padding: 2px 10px 2px 10px; }
 
 /* search result tables */
 .searchresultstudy { border-spacing: 0px; padding: 2px; border-top: solid 2px gray; background-color: beige; }
