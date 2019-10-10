@@ -20,9 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
-	require_once "Mail.php";
-	require_once "Mail/mime.php";
 
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -35,12 +35,21 @@
 <body>
 	<div id="wrapper">
 <?
+	/* check if the .cfg file exists */
+	if ( (!file_exists('nidb.cfg')) && (!file_exists('../nidb.cfg')) && (!file_exists('../programs/nidb.cfg')) && (!file_exists('/home/nidb/programs/nidb.cfg')) && (!file_exists('/nidb/programs/nidb.cfg')) ) {
+		$setup = true;
+		$nologin = true;
+	}
+	
 	require "functions.php";
-	require "includes.php";
-	require "menu.php";
+	require "includes_php.php";
+	require "includes_html.php";
+	if (!$setup) {
+		require "menu.php";
+	}
 
-	/* kick them out if they are not a site admin */
-	if (!$GLOBALS['issiteadmin']) {
+	/* kick them out if they are not a site admin, unless  */
+	if (!$GLOBALS['issiteadmin'] && !$setup) {
 		?><div width="100%">You are not a site admin, so cannot view this page</div><?
 		exit(0);
 	}

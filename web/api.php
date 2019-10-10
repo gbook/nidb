@@ -23,13 +23,14 @@
 
  /* This page is the public API for interaction with NiDB
 	A valid username and sha1(password) hash is required for every transaction */
+	declare(strict_types = 1);
 
 	$nologin = true;
 	//$debug = true;
 	
 	require "functions.php";
 	require "nidbapi.php";
-	
+
 	/* ----- setup variables ----- */
 	$u = GetVariable("u");
 	$p = GetVariable("p");
@@ -51,6 +52,9 @@
 	$instanceid = GetVariable("instanceid");
 	$transactionid = GetVariable("transactionid");
 	$altuid = GetVariable("altuid");
+	$dob = GetVariable("dob"); /* format YYYY-MM-DD */
+	$age = GetVariable("age"); /* double */
+	$sex = GetVariable("sex"); /* single character */
 	$instance = GetVariable("instance");
 	$dataformat = GetVariable("dataformat");
 	$modality = GetVariable("modality");
@@ -67,7 +71,7 @@
 	}
 	
 	switch($action) {
-		case 'UploadDICOM': UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
+		case 'UploadDICOM': UploadDICOM($uuid, $dob, $age, $sex, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid); break;
 		case 'getUID': GetUIDFromAltUID($altuid); break;
 		case 'getInstanceList': GetInstanceList($u); break;
 		case 'getProjectList': GetProjectList($u, $instance); break;
@@ -84,18 +88,30 @@
 	/* ------- Authenticate ----------------------- */
 	/* -------------------------------------------- */
 	function Authenticate($username, $password) {
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
+		if ((is_null($username)) || (is_null($password)))
+			return false;
+		
+		$username = trim($username);
+		$password = trim($password);
 
-		//echo "Not a UNIX account, trying standard account";
+		if (($username == "") || (password == "")) {
+			return false;
+		}
+		
+		/* only authenticate standard accounts */
+		
 		if (AuthenticateStandardUser($username, $password)) {
-			$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'success')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$q = mysqli_stmt_init($GLOBALS['linki']);
+			mysqli_stmt_prepare($q, "insert into remote_logins (username, ip, login_date, login_result) values (?, ?, now(), 'success')");
+			mysqli_stmt_bind_param($q, 'ss', $username, $_SERVER['REMOTE_ADDR']);
+			MySQLiBoundQuery($q, __FILE__, __LINE__);
 			return true;
 		}
 		else {
-			$sqlstring = "insert into remote_logins (username, ip, login_date, login_result) values ('$username', '" . $_SERVER['REMOTE_ADDR'] . "', now(), 'failure')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$q = mysqli_stmt_init($GLOBALS['linki']);
+			mysqli_stmt_prepare($q, "insert into remote_logins (username, ip, login_date, login_result) values (?, ?, now(), 'failure')");
+			mysqli_stmt_bind_param($q, 'ss', $username, $_SERVER['REMOTE_ADDR']);
+			MySQLiBoundQuery($q, __FILE__, __LINE__);
 			return false;
 		}
 	}
@@ -106,15 +122,25 @@
 	/* -------------------------------------------- */
 	function AuthenticateStandardUser($username, $password) {
 		/* attempt to authenticate a standard user */
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		
-		if ((trim($username) == "") || (trim($password) == ""))
+		if ((is_null($username)) || (is_null($password)))
 			return false;
-			
-		$sqlstring = "select user_id from users where (username = '$username' or username = sha1('$username')) and (password = sha1('$password') or password = '$password') and user_enabled = 1";
+		
+		$username = trim($username);
+		$password = trim($password);
+
+		if (($username == "") || (password == "")) {
+			return false;
+		}
+		
+		//$sqlstring = "select user_id from users where (username = '$username' or username = sha1('$username')) and (password = sha1('$password') or password = '$password') and user_enabled = 1";
+
+		$q = mysqli_stmt_init($GLOBALS['linki']);
+		mysqli_stmt_prepare($q, "select user_id from users where (username = ? or username = sha1(?)) and (password = sha1(?) or password = ?) and user_enabled = 1");
+		mysqli_stmt_bind_param($q, 'ssss', $username, $username, $password, $password);
+		$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
+		
 		//echo "[SQL: $sqlstring]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$GLOBALS['userid'] = $row['user_id'];
@@ -259,7 +285,9 @@
 	/* -------------------------------------------- */
 	function GetProjectList($u, $instance) {
 		$u = mysqli_real_escape_string($GLOBALS['linki'], $u);
-		$instance = mysqli_real_escape_string($GLOBALS['linki'], $instance);
+		
+		if (!is_null($instance))
+			$instance = mysqli_real_escape_string($GLOBALS['linki'], $instance);
 		
 		$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id left join users c on b.user_id = c.user_id where c.username = '$u' and a.instance_id = (select instance_id from instance where instance_uid = '$instance') and (b.view_data = 1 or b.view_phi = 1 or b.write_data = 1 or b.write_phi = 1) order by a.project_name";
 		//echo "$sqlstring";
@@ -316,12 +344,15 @@
 	/* -------------------------------------------- */
 	/* ------- UploadDICOM ------------------------ */
 	/* -------------------------------------------- */
-	function UploadDICOM($uuid, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
+	function UploadDICOM($uuid, $dob, $age, $sex, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
 		//print_r($_POST);
 		//echo "\n";
 		
 		$uuid = mysqli_real_escape_string($GLOBALS['linki'], $uuid);
+		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob);
+		$age = mysqli_real_escape_string($GLOBALS['linki'], $age);
+		$sex = mysqli_real_escape_string($GLOBALS['linki'], $sex);
 		$anonymize = mysqli_real_escape_string($GLOBALS['linki'], $anonymize) + 0;
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
@@ -386,7 +417,7 @@
 			/* and check if we received at least 1 file */
 			if (count($_FILES['files']) > 0) {
 				/* get next import ID */
-				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_permanent, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID', '$instanceRowID', '$uuid','$seriesnotes','$altuids','$anonymize', 0,'$matchidonly')";
+				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_dob, import_sex, import_age, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID','$instanceRowID','$dob','$sex','$age', '$uuid','$seriesnotes','$altuids','$anonymize', '$matchidonly')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$uploadID = mysqli_insert_id($GLOBALS['linki']);
 				

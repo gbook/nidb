@@ -21,6 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -34,7 +36,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "nidbapi.php";
 	require "menu.php";
 

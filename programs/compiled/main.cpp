@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
 	p.addHelpOption();
 	p.addVersionOption();
-	p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline  resultinsert  pipelinecheckin  updateanalysis  checkcompleteanalysis");
+	p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline  cluster");
 
 	/* command line flag options */
 	QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -63,15 +63,17 @@ int main(int argc, char *argv[])
 	p.addOption(optQuiet);
 
 	/* command line options that take values */
-	QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Possible submodules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
-	QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin modules only", "analysisid");
-	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin modules only", "status");
-	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin module only", "message");
-	QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin module only", "command");
-	QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert module)", "text");
-	QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert module)", "number");
-	QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert module)", "fullfilepath");
-	QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert module)", "desc");
+	QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
+	QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin submodules only", "analysisid");
+	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodules only", "status");
+	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule only", "message");
+	QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin submodule only", "command");
+	QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
+	QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
+	QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert submodule)", "filepath");
+	QCommandLineOption optResultImage(QStringList() << "i" << "image", "Insert image result (resultinsert submodule)", "imagepath");
+	QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert submodule)", "desc");
+	QCommandLineOption optResultUnit(QStringList() << "unit", "Result unit (resultinsert submodule)", "unit");
 	p.addOption(optSubModule);
 	p.addOption(optAnalysisID);
 	p.addOption(optStatus);
@@ -80,7 +82,9 @@ int main(int argc, char *argv[])
 	p.addOption(optResultText);
 	p.addOption(optResultNumber);
 	p.addOption(optResultFile);
+	p.addOption(optResultImage);
 	p.addOption(optResultDesc);
+	p.addOption(optResultUnit);
 
 	/* Process the actual command line arguments given by the user */
 	p.process(a);
@@ -102,15 +106,26 @@ int main(int argc, char *argv[])
 	QString paramResultText = p.value(optResultText).trimmed();
 	QString paramResultNumber = p.value(optResultNumber).trimmed();
 	QString paramResultFile = p.value(optResultFile).trimmed();
+	QString paramResultImage = p.value(optResultImage).trimmed();
 	QString paramResultDesc = p.value(optResultDesc).trimmed();
+	QString paramResultUnit = p.value(optResultUnit).trimmed();
 
 
 	QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "cluster" };
+	QStringList submodules = { "pipelinecheckin", "resultinsert", "updateanalysis", "checkcompleteanalysis"};
 
 	/* now check the command line parameters passed in, to see if they are calling a valid module */
 	if (!modules.contains(module)) {
+		std::cout << QString("Error: unrecognized module [%1]").arg(module).toStdString().c_str();
 		std::cout << p.helpText().toStdString().c_str();
 		return 0;
+	}
+	if (module == "cluster") {
+		if (!submodules.contains(paramSubModule)) {
+			std::cout << QString("Error: unrecognized cluster module [%1]").arg(paramSubModule).toStdString().c_str();
+			std::cout << p.helpText().toStdString().c_str();
+			return 0;
+		}
 	}
 
 	nidb *n;
@@ -127,7 +142,7 @@ int main(int argc, char *argv[])
 		if (paramSubModule == "pipelinecheckin")
 			ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramMessage, paramCommand, msg);
 		else if (paramSubModule == "resultinsert")
-			ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, msg);
+			ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, paramResultImage, paramResultDesc, paramResultUnit, msg);
 		else if (paramSubModule == "updateanalysis")
 			ret = m->UpdateAnalysis(paramAnalysisID, msg);
 		else if (paramSubModule == "checkcompleteanalysis")

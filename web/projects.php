@@ -21,6 +21,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -34,7 +37,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 
 	//PrintVariable($_POST);
@@ -1341,10 +1345,6 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//NavigationBar("$name", $urllist);
-		
 		?>
 		<script type='text/javascript' src='scripts/x/x.js'></script>
 		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
@@ -1530,12 +1530,12 @@
 					<td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td>
 					<td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td>
 					<td style="<?=$rowstyle?>">
-						<a href="subjects.php?id=<?=$subjectid?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?></span></a>
+						<a href="subjects.php?id=<?=$subjectid?>"><span style="color: darkblue; text-decoration:underline" class="tt"><?=$uid;?></span></a>
 					</td>
 					<td style="<?=$rowstyle?> background-color: lightyellow; border: 1px solid skyblue"><?=$sex?></td>
-					<td style="<?=$rowstyle?> font-family: courier; background-color: lightyellow; border: 1px solid skyblue"><?=$altuidlist?></td>
+					<td style="<?=$rowstyle?> background-color: lightyellow; border: 1px solid skyblue" class="tt"><?=$altuidlist?></td>
 					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td><td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td><? } ?>
-					<td style="<?=$rowstyle?>">
+					<td style="<?=$rowstyle?>" class="tt">
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
 					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_visit?></td>
@@ -1544,7 +1544,7 @@
 					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=number_format($ageatscan,1)?></td>
 					<td style="<?=$rowstyle?>"><?=$modality?></td>
 					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
-					<td style="<?=$rowstyle?>"><?=$study_altid?></td>
+					<td style="<?=$rowstyle?>" class="tt"><?=$study_altid?></td>
 					<? if ($GLOBALS['issiteadmin']) { ?>
 					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <?=$rowstyle?>><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
 					<? } ?>
@@ -2063,11 +2063,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['View Demographics'] = "projects.php?action=displaysubjects&id=$id";
-		//NavigationBar("$name", $urllist);
 		
 		?>
 		<? DisplayProjectsMenu("subjects", $id); ?>

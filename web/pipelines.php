@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -35,7 +38,8 @@
 	$timestart = microtime(true);
 
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 
 	//PrintVariable($_POST, "POST");
@@ -2013,7 +2017,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<tr>
 				<td colspan="6" align="left">
 					<?
-						$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement = 1 order by ps_order + 0";
+						$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
 						$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
 						if (mysqli_num_rows($result2) > 0) {
 							$open = "open";

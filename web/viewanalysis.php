@@ -20,10 +20,14 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 	
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -1023,6 +1027,11 @@
 	/* ------- DataDownloadTable ------------------ */
 	/* -------------------------------------------- */
 	function DataDownloadTable($studyid, $modality, $analysisid) {
+		
+		if (trim($modality) == "") {
+			echo "Blank modality<br>";
+			return 0;
+		}
 		
 		/* get the information about what data was found for this analysis */
 		$sqlstring = "select * from pipeline_data where analysis_id = $analysisid";

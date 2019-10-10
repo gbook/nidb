@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+ 
+	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
+	
 ?>
 
 <!-- all of the javascripts and style include files -->
@@ -37,6 +40,7 @@
 <script type="text/javascript" src="scripts/stupidtable.min.js"></script>
 
 <link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">
+<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
 
 <!-- menu drop box -->
 <script language="javascript" type="text/javascript" src="scripts/jquery.dropmenu.js"></script>

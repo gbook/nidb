@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -33,7 +36,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 	require 'kashi.php';
 
@@ -1627,7 +1631,7 @@
 				$altuidlist = implode2(",",$altuids);
 			}
 			else {
-				$altuidlist = array();
+				$altuidlist = "(none)";
 			}
 			
 			/* calculate the BMI */
@@ -1864,8 +1868,8 @@
 							<table width="100%" class="searchresultstudy">
 								<tr>
 									<td class="header1"><?=$name?></td>
-									<td class="header1"><a href="subjects.php?id=<?=$subject_id?>" class="header1" style="color: <?=$displayidcolor?>;"><?=$displayid?></a></td>
-									<td class="header3">
+									<td class="header1 tt"><a href="subjects.php?id=<?=$subject_id?>" class="header1" style="color: <?=$displayidcolor?>;"><?=$displayid?></a></td>
+									<td class="header3 tt">
 										<?
 										if (strlen($altuidlist) > 60) {
 											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,60)?>...</span><?
@@ -1880,7 +1884,7 @@
 									<td class="header3"><?=$enrollsubgroup?></td>
 									<td class="header3"><?=number_format($ageatscan,1)?>Y</td>
 									<td class="header3"><?=$gender?></td>
-									<td class="header3"><?=$study_alternateid?></td>
+									<td class="header3 tt"><?=$study_alternateid?></td>
 									<td class="header3"><?=$study_type?></td>
 									<td class="header3"><?=$study_site?></td>
 								</tr>

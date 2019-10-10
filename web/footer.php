@@ -21,6 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
+
 	$time = microtime();
 	$time = explode(' ', $time);
 	$time = $time[1] + $time[0];

@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 
 	/* to allow files created on a MAC to be read */
@@ -64,7 +67,8 @@
 <body>
 	<div id="wrapper">
 <?
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 	require "nidbapi.php";
 

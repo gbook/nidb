@@ -21,8 +21,7 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-	require_once "Mail.php";
-	require_once "Mail/mime.php";
+	define("LEGIT_REQUEST", true);
 	
 	/* required for CAPTCHA */
 	session_start();

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>Core</DisplayName>
+	<Description>Install NiDB backend components and data directory structure</Description>
+	<Version>2019.1.40</Version>
+	<ReleaseDate>2019-10-02</ReleaseDate>
+    <Default>true</Default>
+	<Script>installscript.js</Script>
+    <Licenses>
+	    <License name="GPLv3 License" file="license.txt" />
+    </Licenses>
+	<SortingPriority>90</SortingPriority>
+</Package>

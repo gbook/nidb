@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -33,7 +36,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 	
 	//PrintVariable($_POST);
@@ -466,8 +470,8 @@
 			?>
 			<tr>
 				<!--<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>-->
-				<td style="<?=$customidstyle?>"><?=$customidtext?></td>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
+				<td style="<?=$customidstyle?>" class="tt"><?=$customidtext?></td>
+				<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
 				<td><?=$guid?></td>
 				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
 				<td><?=count($studyids)?></td>

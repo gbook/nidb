@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -33,7 +36,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 
 	//PrintVariable($_POST);
@@ -41,22 +45,26 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$enrollmentid = GetVariable("enrollmentid");
 	$completed = GetVariable("completed");
 	$enrollgroup = GetVariable("enrollgroup");
 	$enrollstatus = GetVariable("enrollstatus");
 	$tags = GetVariable("tags");
 
+	if (trim($enrollmentid) == "")
+		$enrollmentid = $id;
+	
 	/* determine action */
 	switch ($action) {
 		case 'update':
-			UpdateEnrollment($id, $completed, $enrollgroup, $enrollstatus, $tags);
-			DisplayEnrollment($id);
+			UpdateEnrollment($enrollmentid, $completed, $enrollgroup, $enrollstatus, $tags);
+			DisplayEnrollment($enrollmentid);
 			break;
 		case 'displayenrollment':
-			DisplayEnrollment($id);
+			DisplayEnrollment($enrollmentid);
 			break;
 		default:
-			DisplayEnrollment($id);
+			DisplayEnrollment($enrollmentid);
 	}
 	
 	
@@ -189,8 +197,8 @@
 						<tr>
 							<td style="font-size:16pt; padding: 15px; vertical-align: top; font-weight: bold"><a href="projects.php?id=<?=$projectid?>"><?=$projectname?> (<?=$projectnumber?>)</a></td>
 							<td style="width:200px; background-color: #444; color: #fff; padding: 15px;">
-								<span style="font-size: 22pt; font-weight: bold;"><?=$uid?></span><br><br>
-								<span style="font-size: 12pt; font-weight: bold"><?=implode2('<br>', $altuids)?></span>
+								<span style="font-size: 22pt; font-weight: bold;" class="tt"><?=$uid?></span><br><br>
+								<span style="font-size: 12pt; font-weight: bold" class="tt"><?=implode2('<br>', $altuids)?></span>
 							</td>
 						</tr>
 					</table>

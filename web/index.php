@@ -21,6 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 
@@ -34,7 +36,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	
 	/* ----- setup variables ----- */
 	$vars['action'] = GetVariable("action");
@@ -83,23 +86,6 @@ if ($email == "") {
 </div><br>
 <? } ?>
 
-<!--
-<details <? if (($logincount < 10) && ($logincount > 0) && ($logincount != '')) { echo "open"; }?>>
-<summary style="font-size:9pt" title="Click here to view things to do on NiDB">Welcome!</summary>
-<div style="background-color: #ffe7ce; color: black; padding:0px; border: 1px solid #E45A48; border-radius: 3px">
-<div align="center" style="background-color: #E45A48; color: white; font-size:14pt; padding:5px">Thank you for joining <b><?=$GLOBALS['cfg']['sitename']?></b></div>
-<div style="padding:15px; column-width: 200px; column-count: 3;">
-<a href="users.php">Join</a> an instance<br>
-<a href="import.php?action=import">Import</a> data via the website<br>
-<a href="import.php?action=downloads">Download</a> the uploader<br>
-<a href="import.php?action=idmapper">Map</a> foreign IDs to NiDB UIDs<br>
-<a href="search.php">Search</a> for data<br>
-<a href="projects.php">Browse</a> data by project<br>
-</div>
-</div>
-</details>
-<br>
--->
 <table width="100%">
 	<tr>
 		<td valign="top" width="50%">
@@ -151,8 +137,8 @@ if ($email == "") {
 						$seriescount = $rowA['seriescount'];
 						?>
 						<tr>
-							<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
-							<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td class="tt"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td class="tt"><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
 							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
 							<td style="font-size:8pt"><?=$modality?></td>
 							<td style="font-size:8pt"><?=$study_site?></td>
@@ -164,8 +150,8 @@ if ($email == "") {
 					else {
 						?>
 						<tr>
-							<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
-							<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td class="tt"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td class="tt"><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
 							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
 							<td style="font-size:8pt"><?=$modality?></td>
 							<td style="font-size:8pt"><?=$study_site?></td>
@@ -203,7 +189,7 @@ if ($email == "") {
 						$sex = $row['gender'];
 						?>
 						<tr>
-							<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+							<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 							<td><?=$sex?></td>
 							<td><?=$dob?></td>
 							<td><span class="tiny"><?=$date?></span></td>
@@ -240,7 +226,7 @@ if ($email == "") {
 						$site = $row['study_site'];
 						?>
 						<tr>
-							<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+							<td class="tt"><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 							<td><?=$studydate?></td>
 							<td><?=$modality?></td>
 							<td><?=$site?></td>

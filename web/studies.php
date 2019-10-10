@@ -21,6 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 ?>
 <html>
@@ -33,7 +35,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "menu.php";
 	require "nanodicom.php";
 
@@ -826,9 +829,9 @@
 		$projectname = $row['project_name'];
 
 		$perms = GetCurrentUserProjectPermissions(array($projectid));
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		$urllist[$uid] = "subjects.php?id=$subjectid";
-		$urllist[$study_num] = "studies.php?studyid=$studyid";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//$urllist[$uid] = "subjects.php?id=$subjectid";
+		//$urllist[$study_num] = "studies.php?studyid=$studyid";
 		NavigationBar("$uid$study_num", $urllist, $perms);
 		
 		$formaction = "update";
@@ -2207,7 +2210,7 @@
 		<table class="smalldisplaytable">
 			<thead>
 				<tr>
-					<th>Series #</th>
+					<th>Series</th>
 					<th>Protocol</th>
 					<th>Date</th>
 					<th>Notes</th>
@@ -2252,8 +2255,8 @@
 									});
 								});
 							</script>
-							<tr>
-								<td><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>"><?=$series_num?></a></td>
+							<tr onMouseOver="this.style.backgroundColor='#9EBDFF';" onMouseOut="this.style.backgroundColor='';">
+								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $protocol; ?></span></td>
 								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $notes; ?></span></td>

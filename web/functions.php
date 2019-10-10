@@ -21,113 +21,13 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-	/* this file includes the database connection, cookies, global functions, and loads the configuration file */
+	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
+	
 	require_once "Mail.php";
 	require_once "Mail/mime.php";
-	
-	/* global variables */
-	$username = "";
-	$userid = "";
-	$instanceid = "";
-	$instancename = "";
 
-	/* load the configuration info [[these two lines should be the only config variables specific to the website]] */
- 	$cfg = LoadConfig();
-	date_default_timezone_set("America/New_York");
-
-	/* check if this server is supposed to be up or not */
-	if ($cfg['offline'] == 1) {
-		?>
-		<table style="width: 100%; height: 100%;">
-			<tr>
-				<td style="height: 40%"></td>
-				<td></td>
-				<td></td>
-			</tr>
-			<tr>
-				<td style="width: 30%"></td>
-				<td style="text-align: center; vertical: align: middle; border: 4px solid orange; padding: 25px; font-family: arial, helvetica, sans serif; font-size: 14pt">
-					<img align="right" src="images/squirrel.png" height="30%">NiDB is temporarily offline due to maintenance<br><br>Please contact the administrator with any questions.
-				</td>
-				<td style="width: 30%"></td>
-			</tr>
-			<tr>
-				<td style="height: 40%"></td>
-				<td></td>
-				<td></td>
-			</tr>
-		</table>
-		<?
-		exit(0);
-	}
+	/* this file includes the global functions */
 	
-	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
-	else { $isdevserver = false; }
-
- 	/* this is the first include file loaded by all pages, so... we'll put the page load start time in here */
-	$time = microtime();
-	$time = explode(' ', $time);
-	$time = $time[1] + $time[0];
-	$pagestart = $time;
-	
-	/* database connection */
-	if ($isdevserver) {
-		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
-		
-		$sitename = $cfg['sitenamedev'];
-	}
-	else {
-		/* php-mysqli */
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
-		
-		$sitename = $cfg['sitename'];
-	}
-
-	/* disable the login checking, if its the signup page or if authentication is done in the page (such as api.php) */
-	//if (defined('nologin') && !$nologin) {
-	if (!$nologin) {
-		/* cookie info */
-		$username = $_SESSION['username'];
-		if (($_SESSION['validlogin'] != "true") || ($_SESSION['userid'] == '') ) {
-			header("Location: login.php");
-		}
-		if (trim($username) == "") {
-			?>
-			<span class="staticmessage">username is blank. Contact NiDB administrator</span>
-			<?
-			exit(0);
-		}
-	}
-	else {
-		/* no login checking */
-	}
-	
-	$instanceid = $_SESSION['instanceid'];
-	
-	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
-	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta, user_id from users where username = '$username'";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$userid = $row['user_id'];
-	$isadmin = $row['user_isadmin'];
-	$issiteadmin = $row['user_issiteadmin'];
-	$enablebeta = $row['user_enablebeta'];
-	$_SESSION['enablebeta'] = $enablebeta;
-	if (strtolower($row['login_type']) == "guest") {
-		$isguest = 1;
-	}
-	else {
-		$isguest = 0;
-	}
-	
-	/* each user can only be associated with 1 instance, so display that instance name at the top of the page */
-	$sqlstring = "select instance_name from instance where instance_id in (select instance_id from users where username = '$username')";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$instancename = $row['instance_name'];
-	
-
 	/* -------------------------------------------- */
 	/* ------- LoadConfig ------------------------- */
 	/* -------------------------------------------- */
@@ -141,12 +41,6 @@
 		}
 		elseif (file_exists('../nidb.cfg')) {
 			$file = '../nidb.cfg';
-		}
-		elseif (file_exists('../../prod/programs/nidb.cfg')) {
-			$file = '../../prod/programs/nidb.cfg';
-		}
-		elseif (file_exists('../../../../prod/programs/nidb.cfg')) {
-			$file = '../../../../prod/programs/nidb.cfg';
 		}
 		elseif (file_exists('../programs/nidb.cfg')) {
 			$file = '../programs/nidb.cfg';
@@ -492,7 +386,7 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- MySQLiQuery ------------------------- */
+	/* ------- MySQLiQuery ------------------------ */
 	/* -------------------------------------------- */
 	function MySQLiQuery($sqlstring,$file,$line,$error="") {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
@@ -523,6 +417,42 @@
 		}
 		else {
 			return $result;
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MySQLiBoundQuery ------------------- */
+	/* -------------------------------------------- */
+	function MySQLiBoundQuery($q,$file,$line,$error="") {
+		Debug($file, $line,"Running MySQL Query [$sqlstring]");
+		
+		if (!mysqli_stmt_execute($q)) {
+			$datetime = date('r');
+			$username = $GLOBALS['username'];
+			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
+			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
+			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
+			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
+			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
+			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
+			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
+			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			
+			if ($GLOBALS['cfg']['hideerrors']) {
+				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
+			}
+			else {
+				?>
+				<div style="border: 2px solid orange" width="100%">
+					<h2>SQL error occured</h2>
+					<?=$body?>
+				</div>
+				<?
+			}
+		}
+		else {
+			return mysqli_stmt_get_result($q);
 		}
 	}
 	
@@ -757,13 +687,9 @@
 	/* special implode which checks for empty array */
 	function implode2($chr, $arr) {
 		if (count($arr) > 1) {
-			//echo "Count is greater than 1<br>";
-			//PrintVariable($arr);
 			return implode($chr,$arr);
 		}
 		elseif (count($arr) == 1) {
-			//echo "count is 1<br>";
-			//PrintVariable($arr);
 			return $arr[0];
 		}
 		else {
@@ -2150,5 +2076,34 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		return $ret;
 	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- array_msort ------------------------ */
+	/* -------------------------------------------- */
+	function array_msort($array, $cols)
+	{
+		$colarr = array();
+		foreach ($cols as $col => $order) {
+			$colarr[$col] = array();
+			foreach ($array as $k => $row) { $colarr[$col]['_'.$k] = strtolower($row[$col]); }
+		}
+		$eval = 'array_multisort(';
+		foreach ($cols as $col => $order) {
+			$eval .= '$colarr[\''.$col.'\'],'.$order.',';
+		}
+		$eval = substr($eval,0,-1).');';
+		eval($eval);
+		$ret = array();
+		foreach ($colarr as $col => $arr) {
+			foreach ($arr as $k => $v) {
+				$k = substr($k,1);
+				if (!isset($ret[$k])) $ret[$k] = $array[$k];
+				$ret[$k][$col] = $array[$k][$col];
+			}
+		}
+		return $ret;
+
+	}	
 
 ?>

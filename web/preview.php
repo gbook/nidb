@@ -1,4 +1,7 @@
 <?
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 
 if ($_POST["image"] == "") { $image = $_GET["image"]; } else { $image = $_POST["image"]; }

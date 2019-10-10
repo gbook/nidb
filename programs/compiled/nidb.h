@@ -92,6 +92,7 @@ public:
 	QStringList ShellWords(QString s);
 	bool IsInt(QString s);
 	bool IsDouble(QString s);
+	bool IsNumber(QString s);
 
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);

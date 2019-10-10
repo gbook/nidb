@@ -1,5 +1,5 @@
 INSERT IGNORE INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `instance_ownerid`, `instance_default`) VALUES
-(1, 'I1234ABC', 'NiDB Main Instance', 1, 1);
+(1, 'I1234ABC', 'NiDB', 1, 1);
 
 INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`) VALUES
 (1, 'MR', 'MRI - Magnetic Resonance Imaging', 1),
@@ -23,20 +23,18 @@ INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`
 (19, 'TASK', 'Task', 1);
 
 INSERT IGNORE INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numrunning`, `module_laststart`, `module_laststop`, `module_isactive`) VALUES
-(1, 'parsedicom', 'stopped', 0, now(), now(), 1),
-(2, 'datarequests', 'stopped', 0, now(), now(), 1),
-(3, 'mriqa', 'stopped', 0, now(), now(), 1),
-(4, 'pipeline', 'stopped', 0, now(), now(), 0),
-(5, 'dailyreport', 'stopped', 0, now(), now(), 0),
-(6, 'dailybackup', 'stopped', 0, now(), now(), 0),
-(7, 'import', 'stopped', 0, now(), now(), 0),
-(8, 'qc', 'stopped', 0, now(), now(), 0),
-(9, 'fileio', 'stopped', 0, now(), now(), 1),
-(10, 'importuploaded', 'stopped', 0, now(), now(), 1),
-(11, 'usage', 'stopped', 0, now(), now(), 0),
-(12, 'audit', 'stopped', 0, now(), now(), 0),
-(13, 'notifications', 'stopped', 0, now(), now(), 0),
-(14, 'modulemanager', 'stopped', 0, now(), now(), 1);
+(1, 'audit', 'stopped', 0, now(), now(), 0),
+(2, 'dailybackup', 'stopped', 0, now(), now(), 0),
+(3, 'export', 'stopped', 0, now(), now(), 1),
+(4, 'fileio', 'stopped', 0, now(), now(), 1),
+(5, 'import', 'stopped', 0, now(), now(), 1),
+(6, 'importuploaded', 'stopped', 0, now(), now(), 1),
+(7, 'modulemanager', 'stopped', 0, now(), now(), 1),
+(8, 'mriqa', 'stopped', 0, now(), now(), 1),
+(9, 'notifications', 'stopped', 0, now(), now(), 0),
+(10, 'pipeline', 'stopped', 0, now(), now(), 1),
+(11, 'qc', 'stopped', 0, now(), now(), 1),
+(12, 'usage', 'stopped', 0, now(), now(), 0);
 
 INSERT IGNORE INTO `nidb_sites` (`site_id`, `site_uid`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
 (1, 0, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');

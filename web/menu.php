@@ -20,6 +20,8 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+ 
+	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
 
 	$page=basename($_SERVER['PHP_SELF']);
 	$action = GetVariable("action");

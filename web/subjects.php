@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+	
 	session_start();
 	
 	$debug = false;
@@ -35,7 +38,8 @@
 	<div id="wrapper">
 <?
 	require "functions.php";
-	require "includes.php";
+	require "includes_php.php";
+	require "includes_html.php";
 	require "nidbapi.php";
 	require "menu.php";
 
@@ -987,8 +991,7 @@
 
 		/* update the mostrecent table */
 		UpdateMostRecent($userid, $id,'');
-		
-		
+
 		/* check if they have enrollments for a valid project */
 		$sqlstring = "select a.* from enrollment a right join projects b on a.project_id = b.project_id where a.subject_id = $id";
 		//PrintSQL($sqlstring);
@@ -1085,7 +1088,7 @@
 		?>
 
 		<div align="center">
-			<span align="center" style="padding: 8pt; font-size: 18pt; font-weight: bold; background-color: #ffff87"><?=$uid?></span>
+			<span align="center" style="padding: 8pt; font-size: 18pt; font-weight: bold; background-color: #ffff87" class="tt"><?=$uid?></span>
 		</div>
 		
 		<br>
@@ -1121,7 +1124,7 @@
 									</tr>
 									<tr>
 										<td class="label" style="white-space:nowrap;">Alternate UIDs</td>
-										<td class="value">
+										<td class="value tt">
 										<?
 											foreach ($altuids as $altid) {
 												if (strlen($altid) > 20) {
@@ -1358,7 +1361,7 @@
 								$(".edit_inline<? echo $enrollmentid; ?>").editInPlace({
 									url: "group_inlineupdate.php",
 									params: "action=editinplace&id=<? echo $enrollmentid; ?>",
-									default_text: "<i style='color:#AAAAAA'>Click to add group name...</i>",
+									default_text: "<i style='color:#AAAAAA'>Edit group name...</i>",
 									bg_over: "white",
 									bg_out: "lightyellow",
 								});
@@ -1371,86 +1374,101 @@
 									<tr>
 										<td style="width: 250px; text-align: left; vertical-align: top; background-color: #fff;">
 											<div style="background-color: #444; padding: 8px"><a href="projects.php?id=<?=$projectid?>" style="font-size: 12pt; font-weight: bold; color: #fff"><?=$project_name?> (<?=$costcenter?>)</a></div>
-											<?
-											if ($viewphi) {
-												if (($enrolled) && ($projectadmin)) { ?>
-											<form action="subjects.php" method="post" style="margin:0px; padding:0px; display:inline;">
-											<input type="hidden" name="id" value="<?=$id?>">
-											<input type="hidden" name="action" value="changeproject">
-											<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 											<br>
-											<details>
-											<summary class="tiny" style="color:darkred; font-weight:normal">Enroll in different project</summary>
-											<span style="font-size: 10pt; font-weight: normal;">Un-enroll subject from this project and enroll in this project, moving all imaging, assessments, and measures:</span>
-											<select name="newprojectid">
-											<?
-												$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
-												$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$pid = $row['project_id'];
-													$project_name = $row['project_name'];
-													$project_costcenter = $row['project_costcenter'];
-													$project_enddate = $row['project_enddate'];
-													$user_fullname = $row['user_fullname'];
-
-													$perms = GetCurrentUserProjectPermissions(array($pid));
-													if (GetPerm($perms, 'modifyphi', $pid)) { $disabled = ""; } else { $disabled = "disabled"; }
-													
-													?>
-													<option value="<?=$pid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
-													<?
-												}
-											?>
-											</select>
-											<input type="submit" value="Move">
-											</form>
-											</details>
-											<?
-												} /* end if project admin */
-											} /* end if viewphi */
-											?>											
-											<table border="0" style="width: 100%; padding: 5px; font-size: 10pt">
-												<tr>
-													<td>ID</td>
-													<td><b style="background-color: #ffff87; padding: 5px"><?=$subjectaltids?></b></td>
-												</tr>
-												<tr>
-													<td>Group</td>
-													<? if ($modifyphi) { ?>
-													<td><span id="enroll_subgroup" title="Click to edit in place" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; border: 1px solid skyblue; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
-													<? } elseif ($viewphi) { ?>
-													<td><span style="font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+											<div style="padding: 10px;">
+												<table class="reviewtable">
+													<tr>
+														<td class="label">ID(s)</td>
+														<td class="value"><b style="background-color: #ffff87; padding: 5px"><?=$subjectaltids?></b></td>
+													</tr>
+													<tr>
+														<td class="label">Group</td>
+														<? if ($modifyphi) { ?>
+														<td class="value"><span id="enroll_subgroup" title="Click to edit in place" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; border: 1px solid skyblue; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+														<? } elseif ($viewphi) { ?>
+														<td class="value"><span style="font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+														<? } ?>
+													</tr>
+													<tr>
+														<td class="label">Enroll date</td>
+														<td class="value"><?=$enrolldate?></td>
+													</tr>
+													<tr>
+														<td class="label">Tags</td>
+														<td class="value"><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
+													</tr>
+													<? if (($enroll_enddate != "0000-00-00 00:00:00") && ($enroll_enddate != "")) { ?>
+													<tr>
+														<td class="label" style="color: darkred">Un-enroll date</td>
+														<td class="value" style="color: darkred"><?=$enroll_enddate?></td>
+													</tr>
 													<? } ?>
-												</tr>
-												<tr>
-													<td>Enrolled</td>
-													<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
-												</tr>
-												<tr>
-													<td>Tags</td>
-													<td><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
-												</tr>
-												<? if ($enroll_enddate != "0000-00-00 00:00:00") { ?>
-												<tr>
-													<td style="color: darkred">Un-enroll date</td>
-													<td style="color: darkred"><?=$enroll_enddate?></td>
-												</tr>
-												<? } ?>
-											</table>
+												</table>
+												
+												<br><br>
+												<b style="color: #666;">Views for this enrollment</b><br>
+												<div style="padding: 5px">
+												<a href="enrollment.php?enrollmentid=<?=$enrollmentid?>">Enrollment sheet</a><br>
+												<a href="timeline.php?enrollmentid=<?=$enrollmentid?>">Timeline</a><br>
+												<a href="subjects.php?action=print&id=<?=$id?>&enrollmentid=<?=$enrollmentid?>">Imaging summary</a><br>
+												</div>
+												<br><br>
+												
+												<?
+												if ($viewphi) {
+													if (($enrolled) && ($projectadmin)) { ?>
+												<br><br>
+												<form action="subjects.php" method="post" style="margin:0px; padding:0px; display:inline;">
+												<input type="hidden" name="id" value="<?=$id?>">
+												<input type="hidden" name="action" value="changeproject">
+												<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+												<br>
+												<details>
+												<summary class="tiny" style="color:darkred; font-weight:normal">Enroll in different project</summary>
+												<span style="font-size: 10pt; font-weight: normal;">Un-enroll subject from this project and enroll in this project, moving all imaging, assessments, and measures:</span>
+												<select name="newprojectid">
+												<?
+													$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
+													$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+													while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+														$pid = $row['project_id'];
+														$project_name = $row['project_name'];
+														$project_costcenter = $row['project_costcenter'];
+														$project_enddate = $row['project_enddate'];
+														$user_fullname = $row['user_fullname'];
+
+														$perms = GetCurrentUserProjectPermissions(array($pid));
+														if (GetPerm($perms, 'modifyphi', $pid)) { $disabled = ""; } else { $disabled = "disabled"; }
+														
+														?>
+														<option value="<?=$pid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+														<?
+													}
+												?>
+												</select>
+												<input type="submit" value="Move">
+												</form>
+												</details>
+												<?
+													} /* end if project admin */
+												} /* end if viewphi */
+												?>
+											</div>
 										</td>
-										<td style="padding: 6px">
+										<td style="padding: 10px">
 											<?
 												if (!$viewdata) {
 													echo "No data access privileges to this project";
 												}
 												else {
 											?>
+
+											<!-- ******************** Imaging ******************** -->
+											
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><b>Imaging studies</b>
-													<br><br>
-													<a href="subjects.php?action=print&id=<?=$id?>&enrollmentid=<?=$enrollmentid?>" style="font-size: 9pt">Print detailed data</a>
-													</td>
+													<td valign="top" style="padding-bottom: 8px"><b>Imaging studies</b></td>
 													<td align="right">
 														<? if (!$enrolled) { ?>
 														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
@@ -1517,13 +1535,13 @@
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
-												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
+												<table width="100%" class="smalldisplaytable" style="border: 0px; width: 100%; padding:5px; border-radius: 0px;">
 													<thead>
-														<th>#</th>
+														<th style="background-color: #273F70; color: #fff">Study</th>
 														<th>Modality</th>
 														<th>Date</th>
 														<th># series</th>
-														<th>Age<span class="tiny">&nbsp;y</span></th>
+														<th>Age</th>
 														<th>Physician</th>
 														<th>Operator</th>
 														<th>Site</th>
@@ -1569,22 +1587,22 @@
 															}
 														}
 														?>
-														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'" onMouseOut="this.style.backgroundColor=''">
-															<td><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
+														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'; this.style.cursor='pointer';" onMouseOut="this.style.backgroundColor=''; this.style.cursor='auto';" onClick="window.location='studies.php?id=<?=$study_id?>'">
+															<td style="text-align: center;"><a href="studies.php?id=<?=$study_id?>" style="font-size: larger; font-weight: bold"><?=$study_num?></a></td>
 															<td><?
 															 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
 															 else { echo $study_modality; }
 															?></td>
 															<td><?=$study_datetime?></td>
 															<td><?=$seriescount?></td>
-															<td><?=number_format($age,1)?></td>
+															<td><?=number_format($age,1)?> <span class="tiny">&nbsp;y</span></td>
 															<td><?=$study_performingphysician?></td>
 															<td><?=$study_operator?></td>
 															<td><?=$study_site?></td>
 															<td><tt><?=$uid?><?=$study_num?></tt></td>
 															<td><?=$study_type?></td>
 															<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
-															<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>
+															<!--<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>-->
 														</tr>
 														<?
 													}
@@ -1595,16 +1613,18 @@
 												}
 												else {
 													?>
-													<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No imaging studies</div>
+													No imaging studies
 													<?
 												}
 												?>
+											</div>
+											<br>
+											<!-- ******************** Assessments ******************** -->
 											
-											<? if ($_SESSION['enablebeta']) { ?>
-											<!-- instruments table -->
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><b>Assessments</b> <?=PrintBeta();?></td>
+													<td><b>Assessments</b></td>
 													<form action="assessments.php" method="post">
 													<td align="right">
 														<? if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
@@ -1616,7 +1636,6 @@
 															<option value="">(Select assessment)</option>
 														<?
 															$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
-															//$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 															$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 															while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 																$form_id = $rowB['form_id'];
@@ -1636,7 +1655,6 @@
 											</table>
 												<?
 												$sqlstring3 = "select a.*, b.form_title from assessments a left join assessment_forms b on a.form_id = b.form_id where a.enrollment_id = $enrollmentid and b.project_id = $projectid";
-												//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 												$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 												if (mysqli_num_rows($result3) > 0) {
 												?>
@@ -1680,13 +1698,16 @@
 												}
 												else {
 													?>
-													<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">No assessments</div>
+													No assessments
 													<?
 												}
 												?>
-											<? } ?>
+											</div>
 											<br>
-											<!-- phenotypic measures table -->
+											
+											<!-- ******************** Phenotypes ******************** -->
+											
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td><b>Phenotypic </b><a href="measures.php?enrollmentid=<?=$enrollmentid?>">measures</a></td>
@@ -1730,16 +1751,19 @@
 												}
 												else {
 													?>
-													<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No measures</div>
+													No measures
 													<?
 												}
 											?>
-											<? if ($_SESSION['enablebeta']) { ?>
+											</div>
 											<br>
-											<!-- drugs table -->
+
+											<!-- ******************** Drugs ******************** -->
+
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><a href="drugs.php?enrollmentid=<?=$enrollmentid?>">Drugs</a> <span class="tiny">medications/treatments/substance use</span> <?=PrintBeta();?></td>
+													<td><a href="drugs.php?enrollmentid=<?=$enrollmentid?>">Drugs/Dosing</a> <span class="tiny">medications/treatments/substance use</span></td>
 												</tr>
 											</table>
 											<?
@@ -1789,15 +1813,18 @@
 												}
 												else {
 													?>
-													<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No drugs</div>
+													No drugs
 													<?
 												}
 											?>
+											</div>
 											<br>
-											<!-- vitalss table -->
+
+											<!-- ******************** Vitals ******************** -->
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><a href="vitals.php?enrollmentid=<?=$enrollmentid?>">Vitals</a> <span class="tiny"></span> <?=PrintBeta();?></td>
+													<td><a href="vitals.php?enrollmentid=<?=$enrollmentid?>">Vitals</a> <span class="tiny"></span></td>
 												</tr>
 											</table>
 												<?
@@ -1843,10 +1870,11 @@
 												}
 												else {
 													?>
-													<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No drugs</div>
+													No vitals
 													<?
 												}
-											} // end if beta ?>
+											?>
+											</div>
 										</td>
 										<? } ?>
 									</tr>
