@@ -93,6 +93,8 @@ public:
 	bool IsInt(QString s);
 	bool IsDouble(QString s);
 	bool IsNumber(QString s);
+	QString GetGroupListing(int groupid);
+	QString WrapText(QString s, int col);
 
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);

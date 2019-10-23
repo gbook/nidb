@@ -58,7 +58,7 @@
 	/* ------- DisplayLogs ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayLogs($analysisid) {
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - DisplayLogs()')) { return; }
 
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		//echo $sqlstring;
@@ -171,7 +171,7 @@
 	/* ------- DisplayFiles ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayFiles($analysisid, $fileviewtype) {
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - DisplayFiles()')) { return; }
 	
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
 		//echo $sqlstring;
@@ -459,7 +459,7 @@
 	/* ------- DisplayResults --------------------- */
 	/* -------------------------------------------- */
 	function DisplayResults($analysisid, $studyid) {
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - DisplayResults(a)')) { return; }
 		
 		?>
 		Results for this analysis<br><br>
@@ -469,7 +469,7 @@
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
 			}
 			else {
-				if (!ValidID($studyid,'Study ID')) { return; }
+				if (!ValidID($studyid,'Study ID - DisplayResults(b)')) { return; }
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysisid order by d.result_name";
 			}
 			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
@@ -536,7 +536,7 @@
 	/* ------- DisplayHistory --------------------- */
 	/* -------------------------------------------- */
 	function DisplayHistory($analysisid) {
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - DisplayHistory()')) { return; }
 		
 		?>
 		<table class="smalldisplaytable">
@@ -600,7 +600,7 @@
 	/* ------- DisplayGraph ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayGraph($analysisid) {
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - DisplayGraph()')) { return; }
 		
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
 		$sqlstring = "select * from analysis where analysis_id = $analysisid";
@@ -1008,7 +1008,7 @@
 	function GetInfoFromAnalysisID($analysisid) {
 		
 		/* check for valid analysis ID */
-		if (!ValidID($analysisid,'Analysis ID')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - GetInfoFromAnalysisID()')) { return; }
 		
 		$sqlstring = "select a.pipeline_version, d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 		//echo "[$sqlstring]";

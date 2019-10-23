@@ -396,6 +396,14 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 	qDebug() << q.lastError();
 	WriteLog(err);
 	WriteLog("SQL error, exiting program");
+
+	/* record error in error_log */
+	QSqlQuery q2;
+	q2.prepare("insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'backend', :module, now(), :msg)");
+	q2.bindValue(":module", file);
+	q2.bindValue(":msg", err);
+	q2.exec();
+
 	exit(0);
 }
 
@@ -556,6 +564,7 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 /* ---------------------------------------------------------- */
 QString nidb::WriteLog(QString msg) {
 	if (msg.trimmed() != "") {
+		msg = WrapText(msg, 200);
 		if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
 			Print("Unable to write to log file!");
 	}
@@ -1452,7 +1461,7 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 
 
 /* ---------------------------------------------------------- */
-/* --------- SubmitClusterJob ------------------------------- */
+/* --------- GetSQLComparison ------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 
@@ -1570,4 +1579,67 @@ bool nidb::IsNumber(QString s) {
 /* ---------------------------------------------------------- */
 bool nidb::IsRunningFromCluster() {
 	return runningFromCluster;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetGroupListing -------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::GetGroupListing(int groupid) {
+	QString s;
+
+	QSqlQuery q;
+	QString groupType;
+	QString groupName;
+	q.prepare("select * from groups where group_id = :groupid");
+	q.bindValue(":groupid", groupid);
+	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		q.first();
+		groupType = q.value("group_type").toString();
+		groupName = q.value("group_name").toString();
+	}
+
+	s = "Group [" + groupName + "]  type [" + groupType + "] contains [";
+
+	if (groupType == "subject") {
+		q.prepare("select b.uid, b.subject_id from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = :groupid");
+		q.bindValue(":groupid", groupid);
+		SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		if (q.size() > 0) {
+			while (q.next()) {
+				int subjectid = q.value("subject_id").toInt();
+				QString uid = q.value("uid").toString();
+				s += QString("%1, ").arg(uid).arg(subjectid);
+			}
+		}
+	}
+
+	if (groupType == "study") {
+		q.prepare("select b.study_id, b.study_num, d.uid, d.subject_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = :groupid group by d.uid order by d.uid,b.study_num");
+		q.bindValue(":groupid", groupid);
+		SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		if (q.size() > 0) {
+			while (q.next()) {
+				int subjectid = q.value("subject_id").toInt();
+				int studyid = q.value("study_id").toInt();
+				int studynum = q.value("study_num").toInt();
+				QString uid = q.value("uid").toString();
+				s += QString("%1%2, ").arg(uid).arg(studynum);
+			}
+		}
+	}
+
+	return s;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WrapText --------------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::WrapText(QString s, int col) {
+	for (int i = col; i <= s.size(); i+=col+1)
+		s.insert(i, "\n");
+
+	return s;
 }

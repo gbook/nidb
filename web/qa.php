@@ -27,6 +27,7 @@
 	session_start();
 
 	require "functions.php";
+	require "includes_php.php";
 
 	$id = GetVariable("id");
 

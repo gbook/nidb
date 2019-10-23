@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 01, 2019 at 08:14 PM
+-- Generation Time: Oct 18, 2019 at 02:11 PM
 -- Server version: 10.3.15-MariaDB
 -- PHP Version: 7.2.18
 
@@ -55,7 +55,8 @@ CREATE TABLE `analysis` (
   `analysis_startdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
-  `analysis_enddate` timestamp NULL DEFAULT NULL
+  `analysis_enddate` timestamp NULL DEFAULT NULL,
+  `analysis_disksize2` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -267,7 +268,8 @@ CREATE TABLE `assessment_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -290,7 +292,8 @@ CREATE TABLE `audio_series` (
   `audio_cputime` double DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -409,7 +412,8 @@ CREATE TABLE `binary_series` (
   `series_description` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -585,7 +589,8 @@ CREATE TABLE `consent_series` (
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `ishidden` tinyint(1) DEFAULT NULL
+  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -635,7 +640,8 @@ CREATE TABLE `cr_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -801,7 +807,8 @@ CREATE TABLE `ct_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -878,11 +885,16 @@ CREATE TABLE `drugs` (
   `enrollment_id` int(11) NOT NULL,
   `drug_startdate` datetime NOT NULL,
   `drug_enddate` varchar(20) DEFAULT NULL,
-  `drug_doseamount` varchar(20) DEFAULT NULL,
-  `drug_dosefrequency` varchar(255) DEFAULT NULL,
+  `drug_doseamount` double DEFAULT NULL,
+  `drug_doseunit` varchar(255) DEFAULT NULL COMMENT 'mg, ml, vials, puffs, tablets, mg, ml, etc...',
+  `drug_frequencymodifier` enum('every','times') DEFAULT NULL COMMENT 'every XXX hours... or XXX times daily',
+  `drug_frequencyvalue` double DEFAULT NULL,
+  `drug_frequencyunit` enum('bolus','dose','second','minute','hour','day','week','month','year') DEFAULT NULL COMMENT 'how often was this drug taken/administered',
   `drug_route` varchar(255) DEFAULT NULL COMMENT 'oral, iv, suppository, etc',
   `drugname_id` int(11) NOT NULL,
-  `drug_type` varchar(255) NOT NULL
+  `drug_type` varchar(255) NOT NULL COMMENT 'generic drug type: sedative, antibiotic, etc',
+  `drug_createdate` datetime DEFAULT NULL COMMENT 'date this RECORD was created',
+  `drug_modifydate` datetime DEFAULT NULL COMMENT 'date this RECORD was modified/updated'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -904,7 +916,8 @@ CREATE TABLE `ecg_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(255) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -927,7 +940,8 @@ CREATE TABLE `eeg_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(255) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -996,7 +1010,8 @@ CREATE TABLE `et_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1113,7 +1128,16 @@ CREATE TABLE `fileio_requests` (
   `username` varchar(50) DEFAULT NULL,
   `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+  `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `merge_ids` varchar(255) DEFAULT NULL,
+  `merge_name` varchar(255) DEFAULT NULL,
+  `merge_dob` date DEFAULT NULL,
+  `merge_sex` char(1) DEFAULT NULL,
+  `merge_ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
+  `merge_ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
+  `merge_guid` varchar(50) DEFAULT NULL,
+  `merge_enrollgroup` text DEFAULT NULL,
+  `merge_altuids` text DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1162,7 +1186,8 @@ CREATE TABLE `gsr_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1282,7 +1307,10 @@ CREATE TABLE `import_requests` (
   `numbehsuccess` int(11) DEFAULT NULL,
   `numbehfail` int(11) DEFAULT NULL,
   `uploadreport` mediumtext DEFAULT NULL,
-  `archivereport` mediumtext DEFAULT NULL
+  `archivereport` mediumtext DEFAULT NULL,
+  `import_dob` date DEFAULT NULL,
+  `import_sex` char(1) DEFAULT NULL,
+  `import_age` double DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1440,7 +1468,6 @@ CREATE TABLE `measurenames` (
 CREATE TABLE `measures` (
   `measure_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `measure_dateentered` timestamp NULL DEFAULT NULL,
   `instrumentname_id` int(11) DEFAULT NULL,
   `measurename_id` int(11) DEFAULT NULL,
   `measure_type` enum('s','n') DEFAULT NULL,
@@ -1449,8 +1476,12 @@ CREATE TABLE `measures` (
   `measure_notes` text DEFAULT NULL,
   `measure_instrument` varchar(255) DEFAULT NULL,
   `measure_rater` varchar(50) DEFAULT NULL,
-  `measure_datecomplete` timestamp NULL DEFAULT NULL,
-  `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
+  `measure_startdate` datetime DEFAULT NULL COMMENT 'date the measure was started (aka, the experiment date)',
+  `measure_enddate` datetime DEFAULT NULL COMMENT 'date the measure was completed/finished',
+  `measure_duration` int(11) DEFAULT NULL COMMENT 'duration in seconds',
+  `measure_entrydate` datetime DEFAULT NULL COMMENT 'date the measure was entered into the database',
+  `measure_createdate` datetime DEFAULT NULL COMMENT 'date this RECORD was created (may be different from the data entry date)',
+  `measure_modifydate` datetime DEFAULT NULL COMMENT 'date this RECORD was modified'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1677,7 +1708,8 @@ CREATE TABLE `mr_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_createdate` datetime DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 PACK_KEYS=0;
 
 -- --------------------------------------------------------
@@ -1732,7 +1764,8 @@ CREATE TABLE `nm_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1791,7 +1824,8 @@ CREATE TABLE `ot_series` (
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -1845,6 +1879,24 @@ CREATE TABLE `pipelines` (
   `pipeline_version` int(11) DEFAULT 1,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pipeline_data`
+--
+
+CREATE TABLE `pipeline_data` (
+  `pipelinedata_id` bigint(20) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
+  `pd_modality` varchar(255) DEFAULT NULL,
+  `pd_checked` tinyint(1) DEFAULT NULL,
+  `pd_found` tinyint(1) DEFAULT NULL,
+  `pd_seriesid` int(11) DEFAULT NULL,
+  `pd_downloadpath` text DEFAULT NULL,
+  `pd_step` int(11) DEFAULT NULL,
+  `pd_msg` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2053,7 +2105,8 @@ CREATE TABLE `ppi_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2187,7 +2240,8 @@ CREATE TABLE `pr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2471,7 +2525,8 @@ CREATE TABLE `sr_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2618,7 +2673,8 @@ CREATE TABLE `surgery_series` (
   `series_notes` text NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2671,7 +2727,8 @@ CREATE TABLE `task_series` (
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `ishidden` tinyint(1) NOT NULL
+  `ishidden` tinyint(1) NOT NULL,
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2799,7 +2856,8 @@ CREATE TABLE `us_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2822,7 +2880,8 @@ CREATE TABLE `video_series` (
   `video_cputime` double NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2846,11 +2905,13 @@ CREATE TABLE `vitalnames` (
 CREATE TABLE `vitals` (
   `vital_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `vital_date` datetime NOT NULL,
+  `vital_date` datetime NOT NULL COMMENT 'date the vital was collected',
   `vital_value` varchar(20) NOT NULL,
   `vital_notes` varchar(255) DEFAULT NULL,
   `vitalname_id` int(11) NOT NULL,
-  `vital_type` varchar(255) NOT NULL
+  `vital_type` varchar(255) NOT NULL,
+  `vital_createdate` datetime DEFAULT NULL COMMENT 'date this RECORD was created',
+  `vital_modifydate` datetime DEFAULT NULL COMMENT 'date this RECORD was modified/updated'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2886,7 +2947,8 @@ CREATE TABLE `xa_series` (
   `series_notes` text DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
@@ -3470,6 +3532,13 @@ ALTER TABLE `pipelines`
   ADD UNIQUE KEY `pipeline_name` (`pipeline_name`,`pipeline_version`);
 
 --
+-- Indexes for table `pipeline_data`
+--
+ALTER TABLE `pipeline_data`
+  ADD PRIMARY KEY (`pipelinedata_id`),
+  ADD KEY `analysis_id` (`analysis_id`,`pd_modality`,`pd_seriesid`);
+
+--
 -- Indexes for table `pipeline_data_def`
 --
 ALTER TABLE `pipeline_data_def`
@@ -3481,12 +3550,6 @@ ALTER TABLE `pipeline_data_def`
 ALTER TABLE `pipeline_dependencies`
   ADD PRIMARY KEY (`pipelinedep_id`),
   ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`parent_id`);
-
---
--- Indexes for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  ADD PRIMARY KEY (`pipelinedownload_id`);
 
 --
 -- Indexes for table `pipeline_groups`
@@ -3836,772 +3899,10 @@ ALTER TABLE `xa_series`
 --
 
 --
--- AUTO_INCREMENT for table `analysis`
+-- AUTO_INCREMENT for table `pipeline_data`
 --
-ALTER TABLE `analysis`
-  MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_data`
---
-ALTER TABLE `analysis_data`
-  MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_group`
---
-ALTER TABLE `analysis_group`
-  MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_history`
---
-ALTER TABLE `analysis_history`
-  MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_resultnames`
---
-ALTER TABLE `analysis_resultnames`
-  MODIFY `resultname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_results`
---
-ALTER TABLE `analysis_results`
-  MODIFY `analysisresults_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_resultunit`
---
-ALTER TABLE `analysis_resultunit`
-  MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessments`
---
-ALTER TABLE `assessments`
-  MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_data`
---
-ALTER TABLE `assessment_data`
-  MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_formfields`
---
-ALTER TABLE `assessment_formfields`
-  MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_forms`
---
-ALTER TABLE `assessment_forms`
-  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_series`
---
-ALTER TABLE `assessment_series`
-  MODIFY `assessmentseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audio_series`
---
-ALTER TABLE `audio_series`
-  MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_enrollment`
---
-ALTER TABLE `audit_enrollment`
-  MODIFY `auditenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_results`
---
-ALTER TABLE `audit_results`
-  MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_series`
---
-ALTER TABLE `audit_series`
-  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_study`
---
-ALTER TABLE `audit_study`
-  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_subject`
---
-ALTER TABLE `audit_subject`
-  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `binary_series`
---
-ALTER TABLE `binary_series`
-  MODIFY `binaryseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendars`
---
-ALTER TABLE `calendars`
-  MODIFY `calendar_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendar_allocations`
---
-ALTER TABLE `calendar_allocations`
-  MODIFY `alloc_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendar_appointments`
---
-ALTER TABLE `calendar_appointments`
-  MODIFY `appt_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendar_notifications`
---
-ALTER TABLE `calendar_notifications`
-  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendar_projectnotifications`
---
-ALTER TABLE `calendar_projectnotifications`
-  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `calendar_projects`
---
-ALTER TABLE `calendar_projects`
-  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `changelog`
---
-ALTER TABLE `changelog`
-  MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `changelog_subject`
---
-ALTER TABLE `changelog_subject`
-  MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `common`
---
-ALTER TABLE `common`
-  MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `consent_series`
---
-ALTER TABLE `consent_series`
-  MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `contacts`
---
-ALTER TABLE `contacts`
-  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `cr_series`
---
-ALTER TABLE `cr_series`
-  MODIFY `crseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `cs_prefs`
---
-ALTER TABLE `cs_prefs`
-  MODIFY `csprefs_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `ct_series`
---
-ALTER TABLE `ct_series`
-  MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `data_requests`
---
-ALTER TABLE `data_requests`
-  MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `drugnames`
---
-ALTER TABLE `drugnames`
-  MODIFY `drugname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `drugs`
---
-ALTER TABLE `drugs`
-  MODIFY `drug_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `ecg_series`
---
-ALTER TABLE `ecg_series`
-  MODIFY `ecgseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `eeg_series`
---
-ALTER TABLE `eeg_series`
-  MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `enrollment`
---
-ALTER TABLE `enrollment`
-  MODIFY `enrollment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `enrollment_checklist`
---
-ALTER TABLE `enrollment_checklist`
-  MODIFY `enrollmentchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `enrollment_missingdata`
---
-ALTER TABLE `enrollment_missingdata`
-  MODIFY `missingdata_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `et_series`
---
-ALTER TABLE `et_series`
-  MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `exports`
---
-ALTER TABLE `exports`
-  MODIFY `export_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `exportseries`
---
-ALTER TABLE `exportseries`
-  MODIFY `exportseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `families`
---
-ALTER TABLE `families`
-  MODIFY `family_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `family_members`
---
-ALTER TABLE `family_members`
-  MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `fileio_requests`
---
-ALTER TABLE `fileio_requests`
-  MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `groups`
---
-ALTER TABLE `groups`
-  MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `group_data`
---
-ALTER TABLE `group_data`
-  MODIFY `subjectgroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `gsr_series`
---
-ALTER TABLE `gsr_series`
-  MODIFY `gsrseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `importlogs`
---
-ALTER TABLE `importlogs`
-  MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `import_requests`
---
-ALTER TABLE `import_requests`
-  MODIFY `importrequest_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `import_transactions`
---
-ALTER TABLE `import_transactions`
-  MODIFY `importtrans_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance`
---
-ALTER TABLE `instance`
-  MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_billing`
---
-ALTER TABLE `instance_billing`
-  MODIFY `billingitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_contact`
---
-ALTER TABLE `instance_contact`
-  MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_invoice`
---
-ALTER TABLE `instance_invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_pricing`
---
-ALTER TABLE `instance_pricing`
-  MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_usage`
---
-ALTER TABLE `instance_usage`
-  MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `manual_qa`
---
-ALTER TABLE `manual_qa`
-  MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measureinstruments`
---
-ALTER TABLE `measureinstruments`
-  MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measurenames`
---
-ALTER TABLE `measurenames`
-  MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measures`
---
-ALTER TABLE `measures`
-  MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `modalities`
---
-ALTER TABLE `modalities`
-  MODIFY `mod_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `modules`
---
-ALTER TABLE `modules`
-  MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `module_prefs`
---
-ALTER TABLE `module_prefs`
-  MODIFY `mp_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `module_procs`
---
-ALTER TABLE `module_procs`
-  MODIFY `moduleproc_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mostrecent`
---
-ALTER TABLE `mostrecent`
-  MODIFY `mostrecent_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mr_qa`
---
-ALTER TABLE `mr_qa`
-  MODIFY `mrqa_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mr_qcparams`
---
-ALTER TABLE `mr_qcparams`
-  MODIFY `mrqcparam_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mr_scanparams`
---
-ALTER TABLE `mr_scanparams`
-  MODIFY `mrscanparam_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mr_series`
---
-ALTER TABLE `mr_series`
-  MODIFY `mrseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `mr_studyqa`
---
-ALTER TABLE `mr_studyqa`
-  MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `nidb_sites`
---
-ALTER TABLE `nidb_sites`
-  MODIFY `site_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `nm_series`
---
-ALTER TABLE `nm_series`
-  MODIFY `nmseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `notification_user`
---
-ALTER TABLE `notification_user`
-  MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `ot_series`
---
-ALTER TABLE `ot_series`
-  MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipelines`
---
-ALTER TABLE `pipelines`
-  MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_data_def`
---
-ALTER TABLE `pipeline_data_def`
-  MODIFY `pipelinedatadef_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_dependencies`
---
-ALTER TABLE `pipeline_dependencies`
-  MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_groups`
---
-ALTER TABLE `pipeline_groups`
-  MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_history`
---
-ALTER TABLE `pipeline_history`
-  MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_options`
---
-ALTER TABLE `pipeline_options`
-  MODIFY `pipelineoptions_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_status`
---
-ALTER TABLE `pipeline_status`
-  MODIFY `pipelinestatus_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_steps`
---
-ALTER TABLE `pipeline_steps`
-  MODIFY `pipelinestep_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_version`
---
-ALTER TABLE `pipeline_version`
-  MODIFY `pipelineversion_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `ppi_series`
---
-ALTER TABLE `ppi_series`
-  MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `prescriptionnames`
---
-ALTER TABLE `prescriptionnames`
-  MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `projects`
---
-ALTER TABLE `projects`
-  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `project_checklist`
---
-ALTER TABLE `project_checklist`
-  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `project_protocol`
---
-ALTER TABLE `project_protocol`
-  MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `protocolgroup_items`
---
-ALTER TABLE `protocolgroup_items`
-  MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `protocol_group`
---
-ALTER TABLE `protocol_group`
-  MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pr_series`
---
-ALTER TABLE `pr_series`
-  MODIFY `prseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `public_downloads`
---
-ALTER TABLE `public_downloads`
-  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `qc_modules`
---
-ALTER TABLE `qc_modules`
-  MODIFY `qcmodule_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `qc_moduleseries`
---
-ALTER TABLE `qc_moduleseries`
-  MODIFY `qcmoduleseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `qc_resultnames`
---
-ALTER TABLE `qc_resultnames`
-  MODIFY `qcresultname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `qc_results`
---
-ALTER TABLE `qc_results`
-  MODIFY `qcresults_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `ratings`
---
-ALTER TABLE `ratings`
-  MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `remote_connections`
---
-ALTER TABLE `remote_connections`
-  MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `remote_logins`
---
-ALTER TABLE `remote_logins`
-  MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `search_history`
---
-ALTER TABLE `search_history`
-  MODIFY `searchhistory_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `snps`
---
-ALTER TABLE `snps`
-  MODIFY `snp_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `snp_alleles`
---
-ALTER TABLE `snp_alleles`
-  MODIFY `snpallele_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `snp_series`
---
-ALTER TABLE `snp_series`
-  MODIFY `snpseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `sr_series`
---
-ALTER TABLE `sr_series`
-  MODIFY `srseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `studies`
---
-ALTER TABLE `studies`
-  MODIFY `study_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `study_template`
---
-ALTER TABLE `study_template`
-  MODIFY `studytemplate_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `study_templateitems`
---
-ALTER TABLE `study_templateitems`
-  MODIFY `studytemplateitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `subjects`
---
-ALTER TABLE `subjects`
-  MODIFY `subject_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `subject_altuid`
---
-ALTER TABLE `subject_altuid`
-  MODIFY `subjectaltuid_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `subject_relation`
---
-ALTER TABLE `subject_relation`
-  MODIFY `subjectrelation_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `surgery_series`
---
-ALTER TABLE `surgery_series`
-  MODIFY `surgeryseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `system_messages`
---
-ALTER TABLE `system_messages`
-  MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tags`
---
-ALTER TABLE `tags`
-  MODIFY `tag_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `task_series`
---
-ALTER TABLE `task_series`
-  MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `users_pending`
---
-ALTER TABLE `users_pending`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `user_instance`
---
-ALTER TABLE `user_instance`
-  MODIFY `userinstance_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `user_project`
---
-ALTER TABLE `user_project`
-  MODIFY `userproject_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `us_series`
---
-ALTER TABLE `us_series`
-  MODIFY `usseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `video_series`
---
-ALTER TABLE `video_series`
-  MODIFY `videoseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `vitalnames`
---
-ALTER TABLE `vitalnames`
-  MODIFY `vitalname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `vitals`
---
-ALTER TABLE `vitals`
-  MODIFY `vital_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `weather`
---
-ALTER TABLE `weather`
-  MODIFY `observation_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `xa_series`
---
-ALTER TABLE `xa_series`
-  MODIFY `xaseries_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `pipeline_data`
+  MODIFY `pipelinedata_id` bigint(20) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

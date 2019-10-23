@@ -29,7 +29,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Drugs</title>
+		<title>NiDB - Vitals</title>
 	</head>
 
 <body>
@@ -39,7 +39,6 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -54,15 +53,15 @@
 	/* determine action */
 	switch ($action) {
 		case 'addvital':
-			AddDrug($enrollmentid, $vitalname, $vitalvalue, $vitalnotes, $vitaldate, $vitaltype);
-			DisplayDrugList($enrollmentid);
+			AddVital($enrollmentid, $vitalname, $vitalvalue, $vitalnotes, $vitaldate, $vitaltype);
+			DisplayVitalList($enrollmentid);
 			break;
 		case 'deletevital':
-			DeleteDrug($vitalid);
-			DisplayDrugList($enrollmentid);
+			DeleteVital($vitalid);
+			DisplayVitalList($enrollmentid);
 			break;
 		default:
-			DisplayDrugList($enrollmentid);
+			DisplayVitalList($enrollmentid);
 	}
 	
 	
@@ -70,9 +69,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- AddDrug ------------------------- */
+	/* ------- Add Vital ------------------------- */
 	/* -------------------------------------------- */
-	function AddDrug($enrollmentid, $vitalname, $vitalvalue, $vitalnotes, $vitaldate, $vitaltype) {
+	function AddVital($enrollmentid, $vitalname, $vitalvalue, $vitalnotes, $vitaldate, $vitaltype) {
 		$vitalname = mysqli_real_escape_string($GLOBALS['linki'], $vitalname);
 		$vitalvalue = mysqli_real_escape_string($GLOBALS['linki'], $vitalvalue);
 		$vitalnotes = mysqli_real_escape_string($GLOBALS['linki'], $vitalnotes);
@@ -101,21 +100,21 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DeleteDrug ----------------- */
+	/* ------- Delete Vital ----------------- */
 	/* -------------------------------------------- */
-	function DeleteDrug($id) {
+	function DeleteVital($id) {
 		$sqlstring = "delete from vitals where vital_id = $id";
 		//echo "[$sqlstring]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message">Drug deleted</span></div><br><br><?
+		?><div align="center"><span class="message">Vital deleted</span></div><br><br><?
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayDrugList ------------ */
+	/* ------- DisplayVitalList ------------ */
 	/* -------------------------------------------- */
-	function DisplayDrugList($enrollmentid) {
+	function DisplayVitalList($enrollmentid) {
 		/* get subject's info for the breadcrumb list */
 		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

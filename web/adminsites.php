@@ -48,8 +48,6 @@
 	$siteaddress = GetVariable("siteaddress");
 	$sitecontact = GetVariable("sitecontact");
 	
-	//print_r($_POST);
-	
 	/* determine action */
 	if ($action == "editform") {
 		DisplaySiteForm("edit", $id);

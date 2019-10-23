@@ -35,7 +35,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
@@ -48,8 +47,6 @@
 	$thegroup = GetVariable("thegroup");
 	$modality = GetVariable("modality");
 	$pgitemid = GetVariable("pgitemid");
-	
-	//PrintVariable($_POST,'POST');
 	
 	/* determine action */
 	switch ($action) {

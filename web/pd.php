@@ -26,8 +26,8 @@
 	session_start();
 	$nologin = true;
  	require "functions.php";
+	require "includes_php.php";
 	
-	//print_r($_SESSION);
 ?>
 
 <html>

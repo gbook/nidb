@@ -26,6 +26,7 @@
 	session_start();
 
 	require "functions.php";
+	require "includes_php.php";
 	
 	if (isset($_POST['element_id'])) {
 		/* database connection */

@@ -1471,6 +1471,7 @@
 							$series_num = $row['series_num'];
 							$series_tr = $row['series_tr'];
 							$series_te = $row['series_te'];
+							$series_ti = $row['series_ti'];
 							$series_flip = $row['series_flip'];
 							$phasedir = $row['phaseencodedir'];
 							$phaseangle = $row['phaseencodeangle'];
@@ -1560,7 +1561,12 @@
 								$scanlengthsec = ($series_tr * max($bold_reps, $dimT))/1000.0;
 							}
 							else {
-								$scanlengthsec = ($series_tr * $numfiles)/1000.0;
+								if ($series_ti > 0) {
+									$scanlengthsec = ($series_ti*$numfiles)/1000.0;
+								}
+								else {
+									$scanlengthsec = ($series_tr * $numfiles)/1000.0;
+								}
 							}
 							if (floor($scanlengthsec/60.0) > 0) {
 								$scanlength = floor($scanlengthsec/60.0) . "m " . sprintf("%02d",round(fmod($scanlengthsec,60.0))) . "s";

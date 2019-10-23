@@ -35,7 +35,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
@@ -46,10 +45,6 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 
-	//echo "<pre>";
-	//print_r($GLOBALS['cfg']);
-	//echo "<pre>";
-	
 	/* determine action */
 	if ($action == "") {
 		DisplayStats();

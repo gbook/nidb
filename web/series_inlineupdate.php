@@ -26,13 +26,22 @@
 	session_start();
 	
 	require "functions.php";
+	require "includes_php.php";
 	
 	if (isset($_POST['element_id'])) {
 		$id = $_POST['id'];
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];
 		$value = mysqli_real_escape_string($GLOBALS['linki'], $_POST['update_value']);
-		$sqlstring = "update $modality" . "_series set $field = '$value' where $modality" . "series_id = $id";
+		
+		if (trim($value) == "") {
+			//$sqlstring = "update subjects set $field = null where subject_id = $id";
+			$sqlstring = "update $modality" . "_series set $field = null where $modality" . "series_id = $id";
+		}
+		else {
+			$sqlstring = "update $modality" . "_series set $field = '$value' where $modality" . "series_id = $id";
+		}
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($_POST['update_value'] == "") { $dispvalue = " "; } else { $dispvalue = $_POST['update_value']; }
 		echo str_replace('\n',"<br>",$dispvalue);

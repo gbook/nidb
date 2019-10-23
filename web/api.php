@@ -23,12 +23,14 @@
 
  /* This page is the public API for interaction with NiDB
 	A valid username and sha1(password) hash is required for every transaction */
-	declare(strict_types = 1);
+	//declare(strict_types = 1);
+	define("LEGIT_REQUEST", true);
 
 	$nologin = true;
 	//$debug = true;
 	
 	require "functions.php";
+	require "includes_php.php";
 	require "nidbapi.php";
 
 	/* ----- setup variables ----- */

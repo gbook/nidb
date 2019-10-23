@@ -29,6 +29,7 @@
 
 <?
 	require "functions.php";
+	require "includes_php.php";
 
 /**
  * Handle file uploads via XMLHttpRequest
@@ -149,7 +150,7 @@ class qqFileUploader {
     function handleUpload($uploadDirectory, $replaceOldFile = FALSE){
 		//return array('error'=>'made it to checkpoint 0');
         if (!is_writable($uploadDirectory)){
-            return array('error' => "Server error. Upload directory isn't writable.");
+            return array('error' => "Server error. Upload directory [$uploadDirectory] isn't writable.");
         }
 		//return array('error'=>'made it to checkpoint 1');
         if (!$this->file){
@@ -216,7 +217,7 @@ if ($modality == "mr") {
 	$uploadpath = $GLOBALS['dicomincomingpath'] . '/';
 }
 elseif ($modality == "mrbeh") {
-	$sqlstring = "select a.series_num, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.mrseries_id = $seriesid";
+	$sqlstring = "select a.series_num, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.mrseries_id = '$seriesid'";
 	
 	$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
@@ -309,30 +310,30 @@ echo htmlspecialchars(json_encode($result), ENT_NOQUOTES);
 /* functions must be at the end of the script, classes at the beginning, eh? */
 function GetDirectorySize($dirname) {
 
-        // open the directory, if the script cannot open the directory then return folderSize = 0
-        $dir_handle = opendir($dirname);
-        if (!$dir_handle) return 0;
+	// open the directory, if the script cannot open the directory then return folderSize = 0
+	$dir_handle = opendir($dirname);
+	if (!$dir_handle) return 0;
 
-        // traversal for every entry in the directory
-        while ($file = readdir($dir_handle)){
+	// traversal for every entry in the directory
+	while ($file = readdir($dir_handle)){
 
-            // ignore '.' and '..' directory
-            if  ($file  !=  "."  &&  $file  !=  "..")  {
+		// ignore '.' and '..' directory
+		if  ($file  !=  "."  &&  $file  !=  "..")  {
 
-                // if entry is directory then go recursive !
-                if  (is_dir($dirname."/".$file)){
-                          $folderSize += GetFolderSize($dirname.'/'.$file);
+			// if entry is directory then go recursive !
+			if  (is_dir($dirname."/".$file)){
+					  $folderSize += GetFolderSize($dirname.'/'.$file);
 
-                // if file then accumulate the size
-                } else {
-                      $folderSize += filesize($dirname."/".$file);
-                }
-            }
-        }
-        // chose the directory
-        closedir($dir_handle);
+			// if file then accumulate the size
+			} else {
+				  $folderSize += filesize($dirname."/".$file);
+			}
+		}
+	}
+	// chose the directory
+	closedir($dir_handle);
 
-        // return $dirname folder size
-        return $folderSize ;
+	// return $dirname folder size
+	return $folderSize;
 }
 ?>

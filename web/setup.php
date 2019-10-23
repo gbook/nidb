@@ -31,6 +31,17 @@
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB - Setup</title>
 	</head>
+	
+	<style>
+		.t td { vertical-align: top; padding: 7px;}
+		.t td:first-child { text-align: right; color: #444; font-weight: bold; }
+		.t td:last-child { text-align: left; color: darkblue; }
+		.e { font-weight: bold; color: #444; }
+		.good:before { content: '\2714'; font-weight: bold; color: green; display: inline-block; }
+		.bad:before { content: '\2718'; font-weight: bold; color: red; display: inline-block; }
+		input:invalid { background: #ffdbc9; border: 2px solid orange !important; }
+		/* input:required { border: 1px solid orange !important; } */
+	</style>
 
 <body>
 	<div id="wrapper">
@@ -43,7 +54,6 @@
 	$setup = true;
 	
 	require "functions.php";
-	require "includes_php.php";
 	require "includes_html.php";
 	
 	//PrintVariable($_POST);
@@ -73,7 +83,7 @@
     $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
     $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
 	
-    $c['emaillib'] = GetVariable("emaillib");
+    //$c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
     $c['emailpassword'] = GetVariable("emailpassword");
     $c['emailserver'] = GetVariable("emailserver");
@@ -270,8 +280,8 @@
 [moduleqcthreads] = $moduleqcthreads
 
 # ----- E-mail -----
-# emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
-[emaillib] = $emaillib
+//# emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
+//[emaillib] = $emaillib
 [emailusername] = $emailusername
 [emailpassword] = $emailpassword
 [emailserver] = $emailserver
@@ -457,25 +467,42 @@
 					
 					$cores = (int)shell_exec("cat /proc/cpuinfo | grep processor | wc -l");
 
+					/* check the MariaDB version */
 					$mariadb = shell_exec("mysql --version");
 					if (is_null($mariadb))
 						$mariadbver = "<span style='color:red'>Not Installed</span>";
 					else
 						$mariadbver = str_replace("-MariaDB,", "", preg_split('/\s+/', $mariadb)[4]);
 					
-					$httpd = shell_exec("httpd -v");
+					$mvers = explode(".",$mariadbver);
+					if ($mvers[0] < 10) {
+						$mariadbver = "<span style='color:red'>$mariadbver (must be version 10.0+)</span>";
+					}
+					
+					/* check the httpd version */
+					$httpd = apache_get_version();
 					if (is_null($httpd))
 						$httpdver = "<span style='color:red'>Not Installed</span> ... how are you viewing this?";
 					else
 						$httpdver = str_replace("Apache/", "", preg_split('/\s+/', $httpd)[2]);
 					
+					/* check the image magick version */
 					$imagemagick = shell_exec("convert -version");
 					if (is_null($imagemagick))
 						$imagemagickver = "<span style='color:red'>Not Installed</span>";
 					else
 						$imagemagickver = preg_split('/\s+/', $imagemagick)[2];
+
+					/* check the PHP version */
+					$phpversion = phpversion();
+					$mvers = explode(".", $phpversion);
+					if ($mvers[0] < 7) {
+						$phpver = "<span style='color:red'>$phpversion (must be version 7.0+)</span>";
+					}
+					else
+						$phpver = $phpversion;
+
 					?>
-					
 					<table cellpadding="5">
 						<tr>
 							<td align="right">OS</td>
@@ -499,7 +526,7 @@
 						</tr>
 						<tr>
 							<td align="right">PHP</td>
-							<td><b><?=phpversion();?></b></td>
+							<td><b><?=$phpver?></b></td>
 						</tr>
 						<tr>
 							<td align="right">ImageMagick</td>
@@ -527,12 +554,15 @@
 	/* -------------------------------------------- */
 	function DisplayDatabase1Page() {
 		
+		$cfg = LoadConfig();
+		
+		if (!is_null($cfg)) {
+			$mysqlhost = $cfg['mysqlhost'];
+			$mysqldatabase = $cfg['mysqldatabase'];
+			$mysqluser = $cfg['mysqluser'];
+			$mysqlpassword = $cfg['mysqlpassword'];
+		}
 		?>
-		<style>
-			.t td { vertical-align: top; padding: 7px;}
-			.t td:first-child { text-align: right; color: #444; font-weight: bold; }
-			.t td:last-child { text-align: left; color: darkblue; }
-		</style>
 		<br><br>
 		<div align="center" valign="middle">
 		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
@@ -548,27 +578,57 @@
 					<table class="t">
 						<tr>
 							<td>MySQL server</td>
-							<td>localhost:3306</td>
+							<td>
+								<? if ($mysqlhost == "") { ?>
+								localhost
+								<? } else { ?>
+								<span style="color: darkred; font-weight: bold"><?=$mysqlhost?></span><br>
+								<span class="tiny">Loaded from config file</span>
+								<? }?>
+							</td>
 						</tr>
 						<tr>
 							<td>Database name</td>
-							<td>nidb</td>
+							<td>
+								<? if ($mysqldatabase == "") { ?>
+								nidb
+								<? } else { ?>
+								<span style="color: darkred; font-weight: bold"><?=$mysqldatabase?></span><br>
+								<span class="tiny">Loaded from config file</span>
+								<? }?>
+							</td>
 						</tr>
 						<tr>
 							<td>MySQL root password</td>
 							<td>
-								<input type="password" name="rootpassword"><br><span class="tiny">Should already be <tt>password</tt>, setup the initial NiDB installation</span>
+								<input type="password" name="rootpassword"><br><span class="tiny">Should be <tt>password</tt> if this is the <u>first</u> NiDB installation</span>
 							</td>
 						</tr>
 						<tr>
 							<td>MySQL username</td>
-							<td>nidb</td>
+							<td>
+								<? if ($mysqluser == "") { ?>
+								nidb
+								<? } else { ?>
+								<span style="color: darkred; font-weight: bold"><?=$mysqluser?></span><br>
+								<span class="tiny">Loaded from config file</span>
+								<? }?>
+							</td>
 						</tr>
 						<tr>
 							<td>MySQL user password</td>
 							<td>
-								<input type="password" name="nidbpassword"><br>
-								<input type="password" name="nidbpassword2">
+								<?
+									if ($mysqlpassword != "")
+										$cfgpassword = $mysqlpassword;
+									else 
+										$cfgpassword = "";
+								?>
+								<input type="password" name="nidbpassword" value="<?=$cfgpassword?>"><br>
+								<input type="password" name="nidbpassword2" value="<?=$cfgpassword?>">
+								<? if ($mysqlpassword != "") { ?>
+								<br><span class="tiny">Password loaded from config file. Change here if needed</span>
+								<? } ?>
 							</td>
 						</tr>
 					</table>
@@ -590,7 +650,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDatabase2Page --------------- */
 	/* -------------------------------------------- */
-	function DisplayDatabase2Page() {
+	function DisplayDatabase2Page($rootpassword, $userpassword, $userpassword2) {
 		
 		?>
 		<br><br>
@@ -598,8 +658,85 @@
 		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
-				<td valign="top" height="90%">
+				<td valign="top" height="90%" width="100%">
+					<div style="width: 800px; height: 100%; overflow: auto; overflow-x:auto">
 					Database setup
+					<ol>
+					<?
+					
+					$GLOBALS['linki'] = mysqli_connect('localhost', 'root', $rootpassword);
+					
+					if (!$GLOBALS['linki']) {
+						?>
+						<li><span class="bad"></span> Unable to connect to database:<br>
+						Error number: <?=mysqli_connect_errno()?><br>
+						Error message: <?=mysqli_connect_error()?>
+						<?
+					}
+					else {
+						?><li><span class="good"></span> Successfully connected to the database server<?
+						
+						/* check if the database itself exists */
+						$sqlstring = "show databases like 'nidb'";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							?><li><span class="good"></span> Database 'nidb' exists<?
+							
+							/* check if there are any tables */
+							$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = 'nidb'";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							if (mysqli_num_rows($result) > 0) {
+								?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
+								UpgradeDatabase($GLOBALS['linki'], 'nidb', "/nidb/nidb.sql");
+							}
+							else {
+								?><li>No tables found in 'nidb' database. Running full SQL script<?
+								/* load the sql file(s) */
+								if (file_exists("/nidb/nidb.sql")) {
+									$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
+									shell_exec($systemstring);
+									
+									if (file_exists("/nidb/nidb-data.sql")) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+										shell_exec($systemstring);
+									}
+									else {
+										?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+									}
+								}
+								else {
+									?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
+								}
+
+							}
+						}
+						else {
+							$sqlstring = "create database 'nidb'";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							?><li>Created database 'nidb'<?
+							
+							/* load the sql file(s) */
+							if (file_exists("/nidb/nidb.sql")) {
+								$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
+								shell_exec($systemstring);
+								
+								if (file_exists("/nidb/nidb-data.sql")) {
+									$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+									shell_exec($systemstring);
+								}
+								else {
+									?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+								}
+							}
+							else {
+								?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
+							}
+						}
+					}
+					
+					?>
+					</ol>
+					</div>
 				</td>
 			</tr>
 			<tr>
@@ -622,7 +759,7 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("config")?></td>
 				<td valign="top" height="90%">
@@ -630,8 +767,8 @@
 				</td>
 			</tr>
 			<tr>
-				<td></td>
-				<td align="right">
+				<td><? DisplayConfig(); ?></td>
+				<td align="right" valign="bottom">
 					<a href="setup.php?step=setupcomplete">Next</a>
 				</td>
 			</tr>
@@ -686,58 +823,237 @@
 		</table>
 		<?
 	}
-	
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- UpgradeDatabase -------------------- */
+	/* -------------------------------------------- */
+	function UpgradeDatabase($linki, $database, $sqlfile) {
+		
+		if (!file_exists($sqlfile)) {
+			echo "[$sqlfile] not found<br>";
+			return false;
+		}
+		
+		if (!mysqli_select_db($linki, $database)) {
+			echo "Unable to select database [$database]<br>";
+			return false;
+		}
+		
+		/* disable strict mode to prevent truncation errors */
+		$sqlstring = "SET @@global.sql_mode= ''";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* load the file, loop through the lines */
+		$lines = file($sqlfile);
+		$table = "";
+		$lastcolumn = "";
+		$tableexists = false;
+		$indextable = "";
+		$createindex = "";
+		$lastline = false;
+		foreach ($lines as $line) {
+			
+			/* ignore any blank lines, comments, or anything **after** COMMIT; */
+			$line = trim($line);
+			if ((substr($line,0,2) == "--") || ($line == "") || ($lastline)) {
+				continue;
+			}
+			
+			/* check if it's the last line */
+			if ($line == "COMMIT;") {
+				$lastline = true;
+			}
+			
+			/* create table section */
+			if (substr($line,0,12) == "CREATE TABLE") {
+				$table = str_replace("`", "", preg_split('/\s+/', $line)[2]);
+				echo "<br>Table <span class='e'>$table</span><br>";
+				
+				/* check if this table exists */
+				$sqlstring = "show tables like '$table'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					$tableexists = true;
+				}
+				else {
+					$tableexists = false;
+					/* start putting together the create table statement */
+					$createtable = $line;
+				}
+				$createindex = "";
+			}
+			
+			/* table doesn't exist, so build the create table statement */
+			if (($createtable != "") && ($createtable != $line)) {
+				$createtable .= "$line\n";
+
+				$createindex = "";
+			}
+			
+			/* end of a create table */
+			if (substr($line,0,9) == ") ENGINE=") {
+				echo "</ul>";
+				//echo "Done examining [$table]<br>";
+				
+				if ($createtable != "") {
+					echo "Table <tt class='e'>$table</tt> did not exist, creating";
+					echo "<tt><pre>$createtable</pre></tt>";
+					
+					/* create the table */
+					$sqlstring = $createtable;
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+				
+				$table = "";
+				$previouscol = "";
+				$tableexists = false;
+				$createtable = "";
+				$createindex = "";
+			}
+			
+			/* regular column to be added/updated for the current table */
+			if (($table != "") && ($createtable == "") && (substr($line,0,1) == "`")) {
+				$parts = preg_split('/`/', $line);
+				$column = trim($parts[1]);
+				$properties = trim($parts[2]);
+				$properties = rtrim($properties,",");
+
+				/* change the column if it already exists */
+				$sqlstring = "alter ignore table `$table` change column if exists `$column` `$column` $properties";
+				if ($previouscol != "") {
+					$sqlstring .= " after `$previouscol`";
+				}
+				/* if there is an issue with this column, it will be an error, so no need to check warnings */
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				
+				/* add the column if it does not exist */
+				$sqlstring = "alter table `$table` add column if not exists `$column` $properties";
+				if ($previouscol != "") {
+					$sqlstring .= " after `$previouscol`";
+				}
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+				echo "<tt style='font-size: smaller;'><span class='good'></span> $column</tt><br>";
+				
+				$previouscol = $column;
+				$createindex = "";
+			}
+			
+			/* create index section */
+			if (substr($line,0,11) == "ALTER TABLE") {
+				
+				/* if we're here, we may be finishing an index and starting a new one, so create the previous index if there is one */
+				if ($createindex != "") {
+					
+					$createindex = str_replace("ALTER TABLE", "ALTER IGNORE TABLE", $createindex);
+					$createindex = str_replace("ADD UNIQUE KEY", "ADD UNIQUE KEY IF NOT EXISTS", $createindex);
+					$createindex = str_replace("ADD PRIMARY KEY", "ADD PRIMARY KEY IF NOT EXISTS", $createindex);
+					$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
+					
+					/* run the create index */
+					echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+				
+				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
+				echo "<br>Alter Table for <span class='e'>$indextable</span><br>";
+				$createindex = "$line\n";
+			}
+			else {
+				/* build the create index statement */
+				if (($createindex != "") && (!$lastline)) {
+					$createindex .= "$line\n";
+				}
+			}
+			
+			/* this is the end of the file. If there are any tables to create, create them now */
+			if (($lastline) && ($createtable != "")) {
+				echo "Table [$table] did not exist, creating";
+				echo "<tt span style='font-size: smaller;'><pre>$createtable</pre></tt>";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			
+			/* this is the end of the file. If there are any indexes/autoincrements to create, create them now */
+			if (($lastline) && ($createindex != "")) {
+				$createindex = str_replace("ALTER TABLE", "ALTER IGNORE TABLE", $createindex);
+				$createindex = str_replace("ADD UNIQUE KEY", "ADD UNIQUE KEY IF NOT EXISTS", $createindex);
+				$createindex = str_replace("ADD PRIMARY KEY", "ADD PRIMARY KEY IF NOT EXISTS", $createindex);
+				$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
+				
+				echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+		
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayConfig ---------------------- */
 	/* -------------------------------------------- */
 	function DisplayConfig() {
 
 		/* load the actual .cfg file */
-		$GLOBALS['cfg'] = LoadConfig();
+		$GLOBALS['cfg'] = LoadConfig(true);
 	
-		$urllist['System Settings'] = "system.php";
-		NavigationBar("System Settings", $urllist);
-
-		$dbconnect = true;
-		$devdbconnect = true;
-		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
-		$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'],$GLOBALS['cfg']['mysqldevuser'],$GLOBALS['cfg']['mysqldevpassword'],$GLOBALS['cfg']['mysqldevdatabase']) or $devdbconnect = false;
+		if (!is_null($GLOBALS['cfg'])) {
+			$dbconnect = true;
+			$devdbconnect = true;
+			$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
+			$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'],$GLOBALS['cfg']['mysqldevuser'],$GLOBALS['cfg']['mysqldevpassword'],$GLOBALS['cfg']['mysqldevdatabase']) or $devdbconnect = false;
+		}
 		
-		?>
-		
-		<style>
-			legend { font-weight: bold; padding: 8px; background-color: #444; color: #fff; border: 2px solid #444; font-size: 14pt }
-			fieldset { background-color: #eee; border: 2px solid #444; }
-		</style>
-
-		<fieldset>
-			<legend>System message</legend>
+		if (!is_null($GLOBALS['cfg']) && file_exists($GLOBALS['cfg']['cfgpath'])) {
+			?><div align="center">Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></div><?
+		}
+		else {
+			?><div align="center">Config file not found. Will be creating a new file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;/nidb/nidb.cfg&nbsp;</code></div><?
+			$GLOBALS['cfg']['mysqlhost'] = "localhost";
+			$GLOBALS['cfg']['mysqluser'] = "nidb";
+			$GLOBALS['cfg']['mysqldatabase'] = "nidb";
 			
-			Current messages:<br>
-		<?
-			$sqlstring = "select * from system_messages where message_status = 'active'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$messageid = $row['message_id'];
-				$messagedate = $row['message_date'];
-				$message = $row['message'];
-				?><?=$messagedate?> - <b><?=$message?></b> <a href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" class="adminbutton">Delete</a><br><?
-			}
+			$GLOBALS['cfg']['modulefileiothreads'] = 2;
+			$GLOBALS['cfg']['moduleexportthreads'] = 2;
+			$GLOBALS['cfg']['moduleimportthreads'] = 1;
+			$GLOBALS['cfg']['modulemriqathreads'] = 4;
+			$GLOBALS['cfg']['modulepipelinethreads'] = 4;
+			$GLOBALS['cfg']['moduleimportuploadedthreads'] = 1;
+			$GLOBALS['cfg']['moduleqcthreads'] = 2;
+			
+			$GLOBALS['cfg']['emailserver'] = "tls://smtp.gmail.com";
+			$GLOBALS['cfg']['emailport'] = 587;
+			
+			$GLOBALS['cfg']['uploadsizelimit'] = 1000;
+			$GLOBALS['cfg']['displayrecentstudydays'] = 5;
+			$GLOBALS['cfg']['siteurl'] = $_SERVER['SERVER_NAME'];
+			$GLOBALS['cfg']['sitename'] = gethostname();
+			$GLOBALS['cfg']['sitetype'] = 'local';
+			
+			$GLOBALS['cfg']['analysisdir'] = "/nidb/data/pipeline";
+			$GLOBALS['cfg']['analysisdirb'] = "/nidb/data/pipelineb";
+			$GLOBALS['cfg']['clusteranalysisdir'] = "/nidb/data/pipeline";
+			$GLOBALS['cfg']['clusteranalysisdirb'] = "/nidb/data/pipelineb";
+			$GLOBALS['cfg']['groupanalysisdir'] = "/nidb/data/pipelinegroup";
+			$GLOBALS['cfg']['archivedir'] = "/nidb/data/archive";
+			$GLOBALS['cfg']['backupdir'] = "/nidb/data/backup";
+			$GLOBALS['cfg']['ftpdir'] = "/nidb/data/ftp";
+			$GLOBALS['cfg']['importdir'] = "/nidb/data/import";
+			$GLOBALS['cfg']['incomingdir'] = "/nidb/data/dicomincoming";
+			$GLOBALS['cfg']['lockdir'] = "/nidb/programs/lock";
+			$GLOBALS['cfg']['logdir'] = "/nidb/programs/logs";
+			$GLOBALS['cfg']['mountdir'] = "/mount";
+			$GLOBALS['cfg']['qcmoduledir'] = "/nidb/programs/qcmodules";
+			$GLOBALS['cfg']['problemdir'] = "/nidb/data/problem";
+			$GLOBALS['cfg']['scriptdir'] = "/nidb/programs";
+			$GLOBALS['cfg']['webdir'] = "/var/www/html";
+			$GLOBALS['cfg']['webdownloaddir'] = "/var/www/html/download";
+			$GLOBALS['cfg']['downloaddir'] = "/nidb/data/download";
+			$GLOBALS['cfg']['uploadeddir'] = "/nidb/data/upload";
+			$GLOBALS['cfg']['tmpdir'] = "/nidb/data/tmp";
+			$GLOBALS['cfg']['deleteddir'] = "/nidb/data/deleted";
+		}
 		?>
-			<br>
-			<form method="post" action="system.php">
-			<input type="hidden" name="action" value="setsystemmessage">
-			<textarea name="systemmessage"></textarea>
-			<input type="submit" value="Set message">
-			</form>
-		</fieldset>
-		
-		<br><br>
-		
-		<fieldset>
-		<legend>NiDB Settings</legend>
-		<div align="center">Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></div>
 		<br><br>
 		<form name="configform" method="post" action="system.php">
 		<input type="hidden" name="action" value="updateconfig">
@@ -746,7 +1062,6 @@
 				<tr>
 					<th>Variable</th>
 					<th>Value</th>
-					<th>Valid?</th>
 					<th>Description</th>
 				</tr>
 			</thead>
@@ -756,13 +1071,11 @@
 			<tr>
 				<td class="variable">debug</td>
 				<td><input type="checkbox" name="debug" value="1" <? if ($GLOBALS['cfg']['debug']) { echo "checked"; } ?>></td>
-				<td></td>
 				<td>Enable debugging for the PHP pages. Will display all SQL statements.</td>
 			</tr>
 			<tr>
 				<td class="variable">hideerrors</td>
 				<td><input type="checkbox" name="hideerrors" value="1" <? if ($GLOBALS['cfg']['hideerrors']) { echo "checked"; } ?>></td>
-				<td></td>
 				<td>Hide a SQL error if it occurs. Emails are always sent. Always leave checked on production systems for security purposes!</td>
 			</tr>
 			
@@ -771,150 +1084,108 @@
 			</tr>
 			<tr>
 				<td class="variable">mysqlhost</td>
-				<td><input type="text" name="mysqlhost" value="<?=$GLOBALS['cfg']['mysqlhost']?>" size="45"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="mysqlhost" required value="<?=$GLOBALS['cfg']['mysqlhost']?>"size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Database hostname (should be localhost or 127.0.0.1 unless the database is running on a different server than the website)</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqluser</td>
-				<td><input type="text" name="mysqluser" value="<?=$GLOBALS['cfg']['mysqluser']?>" size="45"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="mysqluser" required value="<?=$GLOBALS['cfg']['mysqluser']?>"size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Database username</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqlpassword</td>
-				<td><input type="password" name="mysqlpassword" value="<?=$GLOBALS['cfg']['mysqlpassword']?>" size="45"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="password" name="mysqlpassword" required value="<?=$GLOBALS['cfg']['mysqlpassword']?>"size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Database password</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqldatabase</td>
-				<td><input type="text" name="mysqldatabase" value="<?=$GLOBALS['cfg']['mysqldatabase']?>" size="45"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="mysqldatabase" required value="<?=$GLOBALS['cfg']['mysqldatabase']?>" size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Database (default is <tt>nidb</tt>)</td>
 			</tr>
 			<tr>
-				<td class="variable">mysqldevhost</td>
-				<td><input type="text" name="mysqldevhost" value="<?=$GLOBALS['cfg']['mysqldevhost']?>"></td>
-				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Development database hostname. This database will only be used if the website is accessed from port 8080 instead of 80 (example: http://localhost:8080)</td>
-			</tr>
-			<tr>
-				<td class="variable">mysqldevuser</td>
-				<td><input type="text" name="mysqldevuser" value="<?=$GLOBALS['cfg']['mysqldevuser']?>"></td>
-				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Development database username</td>
-			</tr>
-			<tr>
-				<td class="variable">mysqldevpassword</td>
-				<td><input type="password" name="mysqldevpassword" value="<?=$GLOBALS['cfg']['mysqldevpassword']?>"></td>
-				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Development database password</td>
-			</tr>
-			<tr>
-				<td class="variable">mysqldevdatabase</td>
-				<td><input type="text" name="mysqldevdatabase" value="<?=$GLOBALS['cfg']['mysqldevdatabase']?>"></td>
-				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Development database (default is <tt>nidb</tt>)</td>
-			</tr>
-			<tr>
 				<td class="variable">mysqlclusteruser</td>
-				<td><input type="text" name="mysqlclusteruser" value="<?=$GLOBALS['cfg']['mysqlclusteruser']?>"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="mysqlclusteruser" value="<?=$GLOBALS['cfg']['mysqlclusteruser']?>" size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Cluster database username -  this user has insert-only permissions for certain pipeline tables</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqlclusterpassword</td>
-				<td><input type="password" name="mysqlclusterpassword" value="<?=$GLOBALS['cfg']['mysqlclusterpassword']?>"></td>
-				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="password" name="mysqlclusterpassword" value="<?=$GLOBALS['cfg']['mysqlclusterpassword']?>" size="30"></td>
+				<!-- <td><? if ($dbconnect) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Cluster database password</td>
 			</tr>
 
 			<tr>
-				<td colspan="3" class="heading"><br>Modules</td>
+				<td colspan="2" class="heading"><br>Modules</td>
 				<td valign="bottom"><br><br>Maximum number of threads allowed. Some modules cannot be multi-threaded</td>
 			</tr>
 			<tr>
 				<td class="variable">modulefileiothreads</td>
 				<td><input type="number" name="modulefileiothreads" value="<?=$GLOBALS['cfg']['modulefileiothreads']?>"></td>
-				<td></td>
 				<td><b>fileio</b> module. Recommended is 2</td>
 			</tr>
 			<tr>
 				<td class="variable">moduleexportthreads</td>
 				<td><input type="number" name="moduleexportthreads" value="<?=$GLOBALS['cfg']['moduleexportthreads']?>"></td>
-				<td></td>
 				<td><b>export</b> module. Recommended is 2</td>
 			</tr>
 			<tr>
 				<td class="variable">moduleimportthreads</td>
 				<td><input type="number" name="moduleimportthreads" value="1" disabled></td>
-				<td></td>
 				<td><b>import</b> module. Not multi-threaded.</td>
 			</tr>
 			<tr>
 				<td class="variable">modulemriqathreads</td>
 				<td><input type="number" name="modulemriqathreads" value="<?=$GLOBALS['cfg']['modulemriqathreads']?>"></td>
-				<td></td>
 				<td><b>mriqa</b> module. Recommended is 4</td>
 			</tr>
 			<tr>
 				<td class="variable">modulepipelinethreads</td>
 				<td><input type="number" name="modulepipelinethreads" value="<?=$GLOBALS['cfg']['modulepipelinethreads']?>"></td>
-				<td></td>
 				<td><b>pipeline</b> module. Recommended is 4</td>
 			</tr>
 			<tr>
 				<td class="variable">moduleimportuploadedthreads</td>
 				<td><input type="number" name="moduleimportuploadedthreads" value="1" disabled></td>
-				<td></td>
 				<td><b>importuploaded</b> module. Not multi-threaded.</td>
 			</tr>
 			<tr>
 				<td class="variable">moduleqcthreads</td>
 				<td><input type="number" name="moduleqcthreads" value="<?=$GLOBALS['cfg']['moduleqcthreads']?>"></td>
-				<td></td>
 				<td><b>qc</b> module. Recommended is 2</td>
 			</tr>
 
 			<tr>
 				<td class="heading"><br>Email</td>
-				<td colspan="3" valign="bottom" title="Send a test email to the admin email account"><br><br><a href="system.php?action=testemail" style="background-color:yellow; padding: 2px 5px; border: 1px solid orange"> Send test email </a></td>
-			</tr>
-			<tr>
-				<td class="variable">emaillib</td>
-				<td><input type="text" name="emaillib" value="<?=$GLOBALS['cfg']['emaillib']?>" size="45"></td>
-				<td></td>
-				<td>Net-SMTP-TLS or Email-Send-SMTP-Gmail</td>
+				<td colspan="2" valign="bottom"</td>
 			</tr>
 			<tr>
 				<td class="variable">emailusername</td>
-				<td><input type="text" name="emailusername" value="<?=$GLOBALS['cfg']['emailusername']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="emailusername" required value="<?=$GLOBALS['cfg']['emailusername']?>" size="30"></td>
 				<td>Username to login to the gmail account. Used for sending emails only</td>
 			</tr>
 			<tr>
 				<td class="variable">emailpassword</td>
-				<td><input type="password" name="emailpassword" value="<?=$GLOBALS['cfg']['emailpassword']?>" size="45"></td>
-				<td></td>
+				<td><input type="password" name="emailpassword" required value="<?=$GLOBALS['cfg']['emailpassword']?>" size="30"></td>
 				<td>email account password</td>
 			</tr>
 			<tr>
 				<td class="variable">emailserver</td>
-				<td><input type="text" name="emailserver" value="<?=$GLOBALS['cfg']['emailserver']?>" size="45"></td>
-				<td></td>
-				<td>Email server for sending email. For gmail, it should be <tt>tls://smtp.gmail.com</tt></td>
+				<td><input type="text" name="emailserver" required value="<?=$GLOBALS['cfg']['emailserver']?>" size="30"></td>
+				<td>Email server for sending email. For gmail, this should be <tt>tls://smtp.gmail.com</tt></td>
 			</tr>
 			<tr>
 				<td class="variable">emailport</td>
-				<td><input type="number" name="emailport" value="<?=$GLOBALS['cfg']['emailport']?>" size="45"></td>
-				<td></td>
+				<td><input type="number" name="emailport" required value="<?=$GLOBALS['cfg']['emailport']?>" size="30"></td>
 				<td>Email server port. For gmail, it should be <tt>587</tt></td>
 			</tr>
 			<tr>
 				<td class="variable">emailfrom</td>
-				<td><input type="email" name="emailfrom" value="<?=$GLOBALS['cfg']['emailfrom']?>" size="45"></td>
-				<td></td>
+				<td><input type="email" name="emailfrom" required value="<?=$GLOBALS['cfg']['emailfrom']?>"size="30"></td>
 				<td>Email return address</td>
 			</tr>
 			<tr>
@@ -922,86 +1193,67 @@
 			</tr>
 			<tr>
 				<td class="variable">adminemail</td>
-				<td><input type="text" name="adminemail" value="<?=$GLOBALS['cfg']['adminemail']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="adminemail" required value="<?=$GLOBALS['cfg']['adminemail']?>"size="30"></td>
 				<td>Administrator's email. Displayed for error messages and other system activities</td>
 			</tr>
 			<tr>
 				<td class="variable">siteurl</td>
-				<td><input type="text" name="siteurl" value="<?=$GLOBALS['cfg']['siteurl']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="siteurl" required value="<?=$GLOBALS['cfg']['siteurl']?>"size="30"></td>
 				<td>Full URL of the NiDB website</td>
 			</tr>
 			<tr>
 				<td class="variable">version</td>
-				<td><input type="text" name="version" value="<?=$GLOBALS['cfg']['version']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="version" disabled value="<?=$GLOBALS['cfg']['version']?>"size="30"></td>
 				<td>NiDB version. No need to change this</td>
 			</tr>
 			<tr>
 				<td class="variable">sitename</td>
-				<td><input type="text" name="sitename" value="<?=$GLOBALS['cfg']['sitename']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="sitename" required value="<?=$GLOBALS['cfg']['sitename']?>"size="30"></td>
 				<td>Displayed on NiDB main page and some email notifications</td>
 			</tr>
 			<tr>
-				<td class="variable">sitenamedev</td>
-				<td><input type="text" name="sitenamedev" value="<?=$GLOBALS['cfg']['sitenamedev']?>" size="45"></td>
-				<td></td>
-				<td>Development site name</td>
-			</tr>
-			<tr>
 				<td class="variable">sitecolor</td>
-				<td><input type="color" name="sitecolor" value="<?=$GLOBALS['cfg']['sitecolor']?>" size="45"></td>
-				<td></td>
+				<td><input type="color" name="sitecolor" value="<?=$GLOBALS['cfg']['sitecolor']?>"size="30"></td>
 				<td>Hex code for color in the upper left of the menu</td>
 			</tr>
 			<tr>
 				<td class="variable">ispublic</td>
-				<td><input type="checkbox" name="ispublic" value="1" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="ispublic" value="1" <? if (!is_null($GLOBALS['cfg']['ispublic']) && $GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>></td>
 				<td>Selected if this installation is on a public server and only has port 80 open</td>
 			</tr>
 			<tr>
 				<td class="variable">sitetype</td>
-				<td><input type="text" name="sitetype" value="<?=$GLOBALS['cfg']['sitetype']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="sitetype" value="<?=$GLOBALS['cfg']['sitetype']?>"size="30"></td>
 				<td>Options are local, public, or commercial</td>
 			</tr>
 			<tr>
 				<td class="variable">allowphi</td>
-				<td><input type="checkbox" name="allowphi" value="1" <? if ($GLOBALS['cfg']['allowphi']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="allowphi" value="1" <? if (!is_null($GLOBALS['cfg']['allowphi']) && $GLOBALS['cfg']['allowphi']) { echo "checked"; } ?>></td>
 				<td>Checked to allow PHI (name, DOB) on server. Unchecked to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
 			</tr>
 			<tr>
 				<td class="variable">enableremoteconn</td>
-				<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="enableremoteconn" value="1" <? if (!is_null($GLOBALS['cfg']['enableremoteconn']) && $GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
 				<td>Allow this server to send data to remote NiDB servers</td>
 			</tr>
 			<tr>
 				<td class="variable">enablecalendar</td>
-				<td><input type="checkbox" name="enablecalendar" value="1" <? if ($GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="enablecalendar" value="1" <? if (!is_null($GLOBALS['cfg']['enablecalendar']) && $GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
 				<td>Enable the calendar</td>
 			</tr>
 			<tr>
 				<td class="variable">uploadsizelimit</td>
-				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>"size="30"></td>
 				<td>Upload size limit in megabytes (MB). Current PHP upload filesize limit [upload_max_filesize] is <?=get_cfg_var('upload_max_filesize')?> and max POST size [post_max_size] is <?=get_cfg_var('post_max_size')?></td>
 			</tr>
 			<tr>
 				<td class="variable">displayrecentstudies</td>
-				<td><input type="checkbox" name="displayrecentstudies" value="1" <? if ($GLOBALS['cfg']['displayrecentstudies']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="displayrecentstudies" value="1" <? if (!is_null($GLOBALS['cfg']['displayrecentstudies']) && $GLOBALS['cfg']['displayrecentstudies']) { echo "checked"; } ?>></td>
 				<td>Display recently collected studies on the Home page</td>
 			</tr>
 			<tr>
 				<td class="variable">displayrecentstudydays</td>
-				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>"size="30"></td>
 				<td>Number of days to display of recently collected studies on the Home page</td>
 			</tr>
 
@@ -1010,32 +1262,27 @@
 			</tr>
 			<tr>
 				<td class="variable">importchunksize</td>
-				<td><input type="number" name="importchunksize" value="<?=$GLOBALS['cfg']['importchunksize']?>" size="45"></td>
-				<td></td>
+				<td><input type="number" name="importchunksize" value="<?=$GLOBALS['cfg']['importchunksize']?>"size="30"></td>
 				<td>Number of files checked by the import module before archiving begins. Default is 5000</td>
 			</tr>
 			<tr>
 				<td class="variable">numretry</td>
-				<td><input type="number" name="numretry" value="<?=$GLOBALS['cfg']['numretry']?>" size="45"></td>
-				<td></td>
+				<td><input type="number" name="numretry" value="<?=$GLOBALS['cfg']['numretry']?>"size="30"></td>
 				<td>Number of times to retry a failed network operation. Default is 5</td>
 			</tr>
 			<tr>
 				<td class="variable">enablenfs</td>
-				<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="enablenfs" value="1" <? if (!is_null($GLOBALS['cfg']['enablenfs']) && $GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
 				<td>Display the NFS export options. Allow NiDB to write to NFS mount points</td>
 			</tr>
 			<tr>
 				<td class="variable">enableftp</td>
-				<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="enablenfs" value="1" <? if (!is_null($GLOBALS['cfg']['enablenfs']) && $GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
 				<td>Display the FTP export options. Uncheck if this site does not have FTP, SCP, or other file transfer services enabled</td>
 			</tr>
 			<tr>
 				<td class="variable">allowrawdicomexport</td>
-				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if (!is_null($GLOBALS['cfg']['allowrawdicomexport']) && $GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
 				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
 			</tr>
 
@@ -1044,8 +1291,7 @@
 			</tr>
 			<tr>
 				<td class="variable">fslbinpath</td>
-				<td><input type="text" name="fslbinpath" value="<?=$GLOBALS['cfg']['fslbinpath']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="fslbinpath" required value="<?=$GLOBALS['cfg']['fslbinpath']?>"size="30"></td>
 				<td>Path to FSL binaries. Example /opt/fsl/bin</td>
 			</tr>
 
@@ -1054,44 +1300,37 @@
 			</tr>
 			<tr>
 				<td class="variable">usecluster</td>
-				<td><input type="checkbox" name="usecluster" value="1" <? if ($GLOBALS['cfg']['usecluster']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="usecluster" value="1" <? if (!is_null($GLOBALS['cfg']['usecluster']) && $GLOBALS['cfg']['usecluster']) { echo "checked"; } ?>></td>
 				<td>Use a cluster to perform QC</td>
 			</tr>
 			<tr>
 				<td class="variable">queuename</td>
-				<td><input type="text" name="queuename" value="<?=$GLOBALS['cfg']['queuename']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="queuename" value="<?=$GLOBALS['cfg']['queuename']?>"size="30"></td>
 				<td>Cluster queue name</td>
 			</tr>
 			<tr>
 				<td class="variable">queueuser</td>
-				<td><input type="text" name="queueuser" value="<?=$GLOBALS['cfg']['queueuser']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="queueuser" value="<?=$GLOBALS['cfg']['queueuser']?>"size="30"></td>
 				<td>Linux username under which the QC cluster jobs are submitted</td>
 			</tr>
 			<tr>
 				<td class="variable">clustersubmithost</td>
-				<td><input type="text" name="clustersubmithost" value="<?=$GLOBALS['cfg']['clustersubmithost']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="clustersubmithost" value="<?=$GLOBALS['cfg']['clustersubmithost']?>"size="30"></td>
 				<td>Hostname which QC jobs are submitted</td>
 			</tr>
 			<tr>
 				<td class="variable">qsubpath</td>
-				<td><input type="text" name="qsubpath" value="<?=$GLOBALS['cfg']['qsubpath']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="qsubpath" value="<?=$GLOBALS['cfg']['qsubpath']?>"size="30"></td>
 				<td>Path to the qsub program. Use a full path to the executable, or just qsub if its already in the PATH environment variable</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteruser</td>
-				<td><input type="text" name="clusteruser" value="<?=$GLOBALS['cfg']['clusteruser']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="clusteruser" value="<?=$GLOBALS['cfg']['clusteruser']?>"size="30"></td>
 				<td>Username under which jobs will be submitted to the cluster for the pipeline system</td>
 			</tr>
 			<tr>
 				<td class="variable">clusternidbpath</td>
-				<td><input type="text" name="clusternidbpath" value="<?=$GLOBALS['cfg']['clusternidbpath']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="clusternidbpath" value="<?=$GLOBALS['cfg']['clusternidbpath']?>"size="30"></td>
 				<td>Path to the directory comtaining the <i>nidb</i> executable (relative to the cluster itself) on the cluster</td>
 			</tr>
 
@@ -1100,26 +1339,22 @@
 			</tr>
 			<tr>
 				<td class="variable">enablecas</td>
-				<td><input type="checkbox" name="enablecas" value="1" <? if ($GLOBALS['cfg']['enablecas']) { echo "checked"; } ?>></td>
-				<td></td>
+				<td><input type="checkbox" name="enablecas" value="1" <? if (!is_null($GLOBALS['cfg']['enablecas']) && $GLOBALS['cfg']['enablecas']) { echo "checked"; } ?>></td>
 				<td>Uses CAS authentication instead of locally stored usernames</td>
 			</tr>
 			<tr>
 				<td class="variable">casserver</td>
-				<td><input type="text" name="casserver" value="<?=$GLOBALS['cfg']['casserver']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="casserver" value="<?=$GLOBALS['cfg']['casserver']?>"size="30"></td>
 				<td>CAS server</td>
 			</tr>
 			<tr>
 				<td class="variable">casport</td>
-				<td><input type="number" name="casport" value="<?=$GLOBALS['cfg']['casport']?>" size="45"></td>
-				<td></td>
+				<td><input type="number" name="casport" value="<?=$GLOBALS['cfg']['casport']?>"size="30"></td>
 				<td>CAS port, usually 443</td>
 			</tr>
 			<tr>
 				<td class="variable">cascontext</td>
-				<td><input type="text" name="cascontext" value="<?=$GLOBALS['cfg']['cascontext']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="cascontext" value="<?=$GLOBALS['cfg']['cascontext']?>"size="30"></td>
 				<td>CAS context</td>
 			</tr>
 			
@@ -1128,20 +1363,17 @@
 			</tr>
 			<tr>
 				<td class="variable">localftphostname</td>
-				<td><input type="text" name="localftphostname" value="<?=$GLOBALS['cfg']['localftphostname']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="localftphostname" value="<?=$GLOBALS['cfg']['localftphostname']?>"size="30"></td>
 				<td>If you allow data to be sent to the local FTP and have configured the FTP site, this will be the information displayed to users on how to access the FTP site.</td>
 			</tr>
 			<tr>
 				<td class="variable">localftpusername</td>
-				<td><input type="text" name="localftpusername" value="<?=$GLOBALS['cfg']['localftpusername']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="localftpusername" value="<?=$GLOBALS['cfg']['localftpusername']?>"size="30"></td>
 				<td>Username for the locall access FTP account</td>
 			</tr>
 			<tr>
 				<td class="variable">localftppassword</td>
-				<td><input type="text" name="localftppassword" value="<?=$GLOBALS['cfg']['localftppassword']?>" size="45"></td>
-				<td></td>
+				<td><input type="text" name="localftppassword" value="<?=$GLOBALS['cfg']['localftppassword']?>"size="30"></td>
 				<td>Password for local access FTP account. This is displayed to the users in clear text.</td>
 			</tr>
 
@@ -1150,195 +1382,151 @@
 			</tr>
 			<tr>
 				<td class="variable"><b>scriptdir</b></td>
-				<td><input type="text" name="scriptdir" value="<?=$GLOBALS['cfg']['scriptdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td><b>Directory for Perl programs, scripts, and settings file (Backend)</b></td>
+				<td><input type="text" name="scriptdir" required value="<?=$GLOBALS['cfg']['scriptdir']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['scriptdir']) && file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
+				<td><b>Directory for programs and settings file (Backend)</b></td>
 			</tr>
 			<tr>
 				<td class="variable"><b>webdir</b></td>
-				<td><input type="text" name="webdir" value="<?=$GLOBALS['cfg']['webdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['webdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="webdir" required value="<?=$GLOBALS['cfg']['webdir']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['webdir']) && file_exists($GLOBALS['cfg']['webdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
 				<td><b>Root of the website directory (Frontend)</b></td>
 			</tr>
 			<tr>
 				<td class="variable">analysisdir</td>
-				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="analysisdir" required value="<?=$GLOBALS['cfg']['analysisdir']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['analysisdir']) && file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
 				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">analysisdirb</td>
-				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="analysisdirb" required value="<?=$GLOBALS['cfg']['analysisdirb']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['analysisdirb']) && file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
 				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteranalysisdir</td>
-				<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="clusteranalysisdir" required value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['clusteranalysisdir']) && file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
 				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteranalysisdirb</td>
-				<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="clusteranalysisdirb" required value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['clusteranalysisdirb']) && file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">groupanalysisdir</td>
-				<td><input type="text" name="groupanalysisdir" value="<?=$GLOBALS['cfg']['groupanalysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="groupanalysisdir" required value="<?=$GLOBALS['cfg']['groupanalysisdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['groupanalysisdir']) && file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
 			</tr>
 			<tr>
 				<td class="variable">archivedir</td>
-				<td><input type="text" name="archivedir" value="<?=$GLOBALS['cfg']['archivedir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['archivedir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="archivedir" required value="<?=$GLOBALS['cfg']['archivedir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['archivedir']) && file_exists($GLOBALS['cfg']['archivedir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory for archived data. All binary data is stored in this directory.</td>
 			</tr>
 			<tr>
 				<td class="variable">backupdir</td>
-				<td><input type="text" name="backupdir" value="<?=$GLOBALS['cfg']['backupdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['backupdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="backupdir" required value="<?=$GLOBALS['cfg']['backupdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['backupdir']) && file_exists($GLOBALS['cfg']['backupdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>All data is copied to this directory at the same time it is added to the archive directory. This can be useful if you want to use a tape backup and only copy out newer files from this directory to fill up a tape.</td>
 			</tr>
 			<tr>
 				<td class="variable">ftpdir</td>
-				<td><input type="text" name="ftpdir" value="<?=$GLOBALS['cfg']['ftpdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['ftpdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="ftpdir" required value="<?=$GLOBALS['cfg']['ftpdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['ftpdir']) && file_exists($GLOBALS['cfg']['ftpdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Downloaded data to be retreived by FTP is stored here</td>
 			</tr>
 			<tr>
-				<td class="variable">importdir</td>
-				<td><input type="text" name="importdir" value="<?=$GLOBALS['cfg']['importdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['importdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Old method of importing data. Unused</td>
-			</tr>
-			<tr>
 				<td class="variable">incomingdir</td>
-				<td><input type="text" name="incomingdir" value="<?=$GLOBALS['cfg']['incomingdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['incomingdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="incomingdir" required value="<?=$GLOBALS['cfg']['incomingdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['incomingdir']) && file_exists($GLOBALS['cfg']['incomingdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>All data received from the DICOM receiver is placed in the root of this directory. All non-DICOM data is stored in numbered sub-directories of this directory.</td>
 			</tr>
 			<tr>
-				<td class="variable">incoming2dir</td>
-				<td><input type="text" name="incoming2dir" value="<?=$GLOBALS['cfg']['incoming2dir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['incoming2dir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Unused</td>
-			</tr>
-			<tr>
 				<td class="variable">lockdir</td>
-				<td><input type="text" name="lockdir" value="<?=$GLOBALS['cfg']['lockdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['lockdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="lockdir" required value="<?=$GLOBALS['cfg']['lockdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['lockdir']) && file_exists($GLOBALS['cfg']['lockdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Lock directory for the programs</td>
 			</tr>
 			<tr>
 				<td class="variable">logdir</td>
-				<td><input type="text" name="logdir" value="<?=$GLOBALS['cfg']['logdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['logdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="logdir" required value="<?=$GLOBALS['cfg']['logdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['logdir']) && file_exists($GLOBALS['cfg']['logdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Log directory for the programs</td>
 			</tr>
 			<tr>
 				<td class="variable">mountdir</td>
-				<td><input type="text" name="mountdir" value="<?=$GLOBALS['cfg']['mountdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="mountdir" required value="<?=$GLOBALS['cfg']['mountdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['mountdir']) && file_exists($GLOBALS['cfg']['mountdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters [/home/user1/data/testing] the mountdir will be prepended to point to the real mount point of [/mount/home/user1/data/testing]. This prevents users from writing data to the OS directories.</td>
 			</tr>
 			<tr>
-				<td class="variable">packageimportdir</td>
-				<td><input type="text" name="packageimportdir" value="<?=$GLOBALS['cfg']['packageimportdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['packageimportdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>If using the data package export/import feature, packages to be imported should be placed here</td>
-			</tr>
-			<tr>
 				<td class="variable">qcmoduledir</td>
-				<td><input type="text" name="qcmoduledir" value="<?=$GLOBALS['cfg']['qcmoduledir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="qcmoduledir" required value="<?=$GLOBALS['cfg']['qcmoduledir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['qcmoduledir']) && file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory containing QC modules. Usually a subdirectory of the programs directory</td>
 			</tr>
 			<tr>
 				<td class="variable">problemdir</td>
-				<td><input type="text" name="problemdir" value="<?=$GLOBALS['cfg']['problemdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['problemdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="problemdir" required value="<?=$GLOBALS['cfg']['problemdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['problemdir']) && file_exists($GLOBALS['cfg']['problemdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Files which encounter problems during import/archiving are placed here</td>
 			</tr>
 			<tr>
 				<td class="variable">webdownloaddir</td>
-				<td><input type="text" name="webdownloaddir" value="<?=$GLOBALS['cfg']['webdownloaddir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="webdownloaddir" required value="<?=$GLOBALS['cfg']['webdownloaddir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['webdownloaddir']) && file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default /var/www/html directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 			</tr>
 			<tr>
 				<td class="variable">downloaddir</td>
-				<td><input type="text" name="downloaddir" value="<?=$GLOBALS['cfg']['downloaddir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="downloaddir" required value="<?=$GLOBALS['cfg']['downloaddir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['downloaddir']) && file_exists($GLOBALS['cfg']['downloaddir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory which stores downloads available from the website</td>
 			</tr>
 			<tr>
 				<td class="variable">uploadeddir</td>
-				<td><input type="text" name="uploadeddir" value="<?=$GLOBALS['cfg']['uploadeddir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['uploadeddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="uploadeddir" required value="<?=$GLOBALS['cfg']['uploadeddir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['uploadeddir']) && file_exists($GLOBALS['cfg']['uploadeddir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Data received from the api.php and import pages is placed here</td>
 			</tr>
 			<tr>
 				<td class="variable">tmpdir</td>
-				<td><input type="text" name="tmpdir" value="<?=$GLOBALS['cfg']['tmpdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['tmpdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="tmpdir" required value="<?=$GLOBALS['cfg']['tmpdir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['tmpdir']) && file_exists($GLOBALS['cfg']['tmpdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Directory used for temporary operations. Depending upon data sizes requested or processed, this directory may get very large, and may need to be outside of the OS drive.</td>
 			</tr>
 			<tr>
 				<td class="variable">deleteddir</td>
-				<td><input type="text" name="deleteddir" value="<?=$GLOBALS['cfg']['deleteddir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['deleteddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><input type="text" name="deleteddir" required value="<?=$GLOBALS['cfg']['deleteddir']?>"size="30"></td>
+				<!-- <td><? if (!is_null($GLOBALS['cfg']['deleteddir']) && file_exists($GLOBALS['cfg']['deleteddir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Data is not usually deleted. It may be removed from the database and not appear on the website, but the data will end up in this directory.</td>
 			</tr>
 			
 			
-			<tr>
-				<td colspan="3">
-					<input type="submit" value="Update nidb.cfg">
-				</td>
-			</tr>
+												<script>
+													function CheckNFSPath() {
+														var xhttp = new XMLHttpRequest();
+														xhttp.onreadystatechange = function() {
+															if (this.readyState == 4 && this.status == 200) {
+																document.getElementById("pathcheckresult").innerHTML = this.responseText;
+															}
+														};
+														var nfsdir = document.getElementById("nfsdir").value;
+														//alert(nfsdir);
+														xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
+														xhttp.send();
+													}
+												</script>
+												<!--<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>-->
+			
+			
 		</table>
 		</form>
-		</fieldset>
-		
-		<br><br>
-		
-		<fieldset>
-		<legend>PHP Variables</legend>
-		<table class="twocoltable">
-			<thead>
-				<tr>
-					<th>PHP variable</th>
-					<th>Current value</th>
-				</tr>
-			</thead>
-			<tr>
-				<td>max_input_vars</td>
-				<td><?=get_cfg_var('max_input_vars')?></td>
-			</tr>
-			<tr>
-				<td>post_max_size</td>
-				<td><?=get_cfg_var('post_max_size')?></td>
-			</tr>
-			<tr>
-				<td>upload_max_filesize</td>
-				<td><?=get_cfg_var('upload_max_filesize')?></td>
-			</tr>
-			<tr>
-				<td>max_file_uploads</td>
-				<td><?=get_cfg_var('max_file_uploads')?></td>
-			</tr>
-		</table>
-		</fieldset>
-		<br><br>
-		
-		<fieldset>
-		<legend>Cron</legend>
-		Crontab for <?=system("whoami"); ?><br>
-		<pre><?=system("crontab -l"); ?></pre>
-		</fieldset>
 		<?
 	}
 ?>

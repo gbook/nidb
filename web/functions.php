@@ -33,38 +33,68 @@
 	/* -------------------------------------------- */
 	// this function loads the config file into a GLOBAL variable called $cfg
 	// ----------------------------------------------------------
-	function LoadConfig() {
+	function LoadConfig(bool $quiet=false) {
 		$file = "";
+		$possiblefiles = array('nidb.cfg', '../nidb.cfg', '../programs/nidb.cfg', '../bin/nidb.cfg', '/home/nidb/programs/nidb.cfg', '/nidb/programs/nidb.cfg', '/nidb/nidb.cfg', '/nidb/bin/nidb.cfg');
+		
+		$found = false;
+		foreach ($possiblefiles as $f) {
+			if (file_exists($f)) {
+				$found = true;
+				$file = $f;
+				break;
+			}
+		}
+		
 		/* check some possible config file locations */
-		if (file_exists('nidb.cfg')) {
+		/* if (file_exists('nidb.cfg')) {
 			$file = 'nidb.cfg';
+			$fileschecked[] = $file;
 		}
 		elseif (file_exists('../nidb.cfg')) {
 			$file = '../nidb.cfg';
+			$fileschecked[] = $file;
 		}
 		elseif (file_exists('../programs/nidb.cfg')) {
 			$file = '../programs/nidb.cfg';
+			$fileschecked[] = $file;
+		}
+		elseif (file_exists('../bin/nidb.cfg')) {
+			$file = '../bin/nidb.cfg';
+			$fileschecked[] = $file;
 		}
 		elseif (file_exists('/home/nidb/programs/nidb.cfg')) {
 			$file = '/home/nidb/programs/nidb.cfg';
+			$fileschecked[] = $file;
 		}
 		elseif (file_exists('/nidb/programs/nidb.cfg')) {
 			$file = '/nidb/programs/nidb.cfg';
+			$fileschecked[] = $file;
 		}
-		else {
-			?><tt>nidb.cfg</tt> not found in the usual places.<br>
-			Perhaps you need to edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>? Make sure <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
-			<ul>
-				<li><?=getcwd()?>/nidb.cfg
-				<li><?=getcwd()?>/../nidb.cfg
-				<li><?=getcwd()?>/../../prod/programs/nidb.cfg
-				<li><?=getcwd()?>/../../../../prod/programs/nidb.cfg
-				<li><?=getcwd()?>/../programs/nidb.cfg
-				<li>/home/nidb/programs/nidb.cfg
-				<li>/nidb/programs/nidb.cfg
-			</ul>
-			<?
-			exit(0);
+		elseif (file_exists('/nidb/nidb.cfg')) {
+			$file = '/nidb/nidb.cfg';
+			$fileschecked[] = $file;
+		}
+		elseif (file_exists('/nidb/bin/nidb.cfg')) {
+			$file = '/nidb/bin/nidb.cfg';
+			$fileschecked[] = $file;
+		} */
+		if (!$found) {
+			
+			if (!$quiet) {
+				?><tt>nidb.cfg</tt> not found in the usual places.<br>
+				Perhaps you need to edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>? Make sure <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
+				<ul>
+				<?
+					foreach ($fileschecked as $file) {
+						echo "<li>$file\n";
+					}
+				?>
+				</ul>
+				<?
+			}
+			
+			return null;
 		}
 		$cfg['cfgpath'] = $file;
 
@@ -72,6 +102,7 @@
 			$cfg['clustercfgpath'] = 'nidb-cluster.cfg';
 		}
 		
+		/* if the config file exists, parse it into an array */
 		$lines = file($file);
 		foreach ($lines as $line) {
 			if ((substr($line,0,1) != '#') && (trim($line) != "")) {
@@ -389,19 +420,37 @@
 	/* ------- MySQLiQuery ------------------------ */
 	/* -------------------------------------------- */
 	function MySQLiQuery($sqlstring,$file,$line,$error="") {
+
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 		$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 		if ($result == false) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
-			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
-			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
-			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
-			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
-			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
-			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
-			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
-			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			if ($GLOBALS['linki']) {
+				$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
+				<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
+				<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
+				<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
+				<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
+				<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
+				<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
+			}
+			else {
+				$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
+				<b>Error:</b> <span style='font-size: 18pt'>NOT CONNECTED TO DATABASE</span><br>
+				<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
+				<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
+				<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
+				<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
+				<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
+			}
+			$gm = SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			
+			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
+			$msg = mysqli_real_escape_string($GLOBALS['linki'], $body);
+			
+			$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
+			$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 			
 			if ($GLOBALS['cfg']['hideerrors']) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
@@ -982,7 +1031,7 @@
 		}
 		else {
 			if (trim($varname) != "") {
-				?><div class="error"><b>Error</b> - ID [<?=$varname?>] was not valid</div><?
+				?><div class="error"><b>Error</b> - ID [<?=$var?>] named [<?=$varname?>] was not valid</div><?
 			}
 			return 0;
 		}

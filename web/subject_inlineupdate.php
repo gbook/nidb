@@ -26,6 +26,7 @@
 	session_start();
 
 	require "functions.php";
+	require "includes_php.php";
 	
 	if (isset($_POST['element_id'])) {
 		/* database connection */
@@ -35,7 +36,12 @@
 		$modality = strtolower($_POST['modality']);
 		$field = $_POST['element_id'];
 		$value = mysqli_real_escape_string($GLOBALS['linki'], $_POST['update_value']);
-		$sqlstring = "update subjects set $field = '$value' where subject_id = $id";
+		if (trim($value) == "") {
+			$sqlstring = "update subjects set $field = null where subject_id = $id";
+		}
+		else {
+			$sqlstring = "update subjects set $field = '$value' where subject_id = $id";
+		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($_POST['update_value'] == "") { $dispvalue = " "; } else { $dispvalue = $_POST['update_value']; }
 		echo str_replace('\n',"<br>",$dispvalue);

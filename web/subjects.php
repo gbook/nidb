@@ -1211,15 +1211,6 @@
 											<?
 										}
 									?>
-										<script>
-										$(function() {
-											$( "#uid2" ).autocomplete({
-												source: "autocomplete_uid.php",
-												minLength: 2,
-												autoFocus: true
-											});
-										});
-										</script>
 										<tr>
 											<form action="subjects.php" method="post">
 											<input type="hidden" name="id" value="<?=$id?>">
@@ -2356,16 +2347,7 @@
 		</tbody>
 	</table>
 
-	<br><bR>
-	<script>
-	$(function() {
-		$( "#searchuid" ).autocomplete({
-			source: "autocomplete_uid.php",
-			minLength: 2,
-			autoFocus: true
-		});
-	});
-	</script>
+	<br><br>
 	
 	<table class="graydisplaytable" width="100%">
 		<thead>

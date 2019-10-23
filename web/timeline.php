@@ -21,9 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-	define("LEGIT_REQUEST", true);
-	
 	declare(strict_types = 1);
+	define("LEGIT_REQUEST", true);
 	session_start();
 ?>
 
@@ -41,7 +40,7 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -173,6 +172,11 @@
 							}
 							$seriesdatetime = $row3['series_datetime'];
 							$seriesnum = $row3['series_num'];
+							$seriestr = $row3['series_tr'];
+							$boldreps = $row3['bold_reps'];
+							$dimT = $row3['dimT'];
+							$numfiles = $row3['numfiles'];
+							$seriesduration = $row3['series_duration'];
 							
 							if (is_null($mindate))
 								$mindate = $seriesdatetime;
@@ -188,6 +192,19 @@
 									$maxdate = $seriesdatetime;
 							}
 
+							/* calculate scan/experiment duration */
+							if ($seriesduration == "") {
+								if (($boldreps > 1) || ($dimT > 1)) {
+									$duration = ($seriestr * max($boldreps, $dimT))/1000.0;
+								}
+								else {
+									$duration = ($seriestr * $numfiles)/1000.0;
+								}
+							}
+							else {
+								$duration = $seriesduration;
+							}
+							
 							/* check if all modalities should be displayed, or only the selected modalities */
 							if (($all) || (in_array($modality, $selectedModalities))) {
 								/* check if all protocols for this modality should be displayed, or only the selected */
@@ -195,7 +212,7 @@
 									/* check if the series datetime is within range */
 									if ( (is_null($startdatetime) || is_null($enddatetime)) || (($seriesdatetime > $startdatetime) && ($seriesdatetime < $enddatetime)) ) {
 										$series[$i]['studynum'] = $study_num;
-										$series[$i]['seriesnum'] = $series_num;
+										$series[$i]['seriesnum'] = $seriesnum;
 										$series[$i]['modality'] = $modality;
 										$series[$i]['studydate'] = $study_datetime;
 										$series[$i]['seriesdate'] = $seriesdatetime;
@@ -203,6 +220,7 @@
 										$series[$i]['age'] = $age;
 										$series[$i]['studysite'] = $study_site;
 										$series[$i]['studytype'] = $study_type;
+										$series[$i]['duration'] = $duration;
 									}
 								}
 							}
@@ -228,7 +246,7 @@
 			
 			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $startdatetime, $enddatetime, $mindate, $maxdate);
 			
-			$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'modality'=>SORT_DESC));
+			$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'seriesnum'=>SORT_ASC, 'modality'=>SORT_DESC));
 			?>
 			
 			<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -246,20 +264,22 @@
 					dataTable.addRows([<?
 						foreach ($series as $key => $v) {
 							$sdate = str_replace(" ", "T", $v['seriesdate']);
-							$edate = date_format(date_add(date_create($sdate), date_interval_create_from_date_string("5 minutes")), "Y-m-d H:i:s");
+							//$edate = date_format(date_add(date_create($sdate), date_interval_create_from_date_string("$v['duration'] seconds")), "Y-m-d H:i:s");
+							$edateinsec = (int)(strtotime($sdate) + $v['duration']);
+							$edate = date('Y-m-d H:i:s', $edateinsec);
 							$desc = $v['protocol'];
 							$datarows[] = "[ '$desc', new Date('$sdate'), new Date('$edate') ]";
 						}
 						echo implode2("\n,", $datarows);
 						?>]);
-					var options = { avoidOverlappingGridLines: false, height: 400, timeline: { barLabelStyle: {fontName: "arial", fontSize: "8" }} };
+					var options = { avoidOverlappingGridLines: false, height: 800, timeline: { barLabelStyle: {fontName: "arial", fontSize: "8" }} };
 					chart.draw(dataTable, options);
 				}
 			</script>
 
-			<div id="timeline" style="height: 400px;"></div>
+			<div id="timeline" style="height: 800px;"></div>
   
-			<table border="1">
+			<table class="smalldisplaytable">
 				<thead>
 					<th>Study</th>
 					<th>Series</th>
@@ -270,6 +290,7 @@
 					<th>Age<span class="tiny">&nbsp;y</span></th>
 					<th>Site</th>
 					<th>Visit</th>
+					<th>Duration</th>
 				</thead>
 				<tbody>
 				<?
@@ -288,6 +309,7 @@
 							<td><?=number_format($tr['age'],1)?></td>
 							<td><?=$tr['studysite']?></td>
 							<td><?=$tr['studytype']?></td>
+							<td><?=$tr['duration']?></td>
 						</tr>
 						<?
 					}

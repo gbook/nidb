@@ -384,7 +384,7 @@ int modulePipeline::Run() {
 
 					/* get the nearest study for this subject that has the dependency */
 					int studyNumNearest(0);
-					q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and a.analysis_isbad <> 1 order by abs(datediff(b.study_datetime, :studydatetime)) limit 1");
+					q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(datediff(b.study_datetime, :studydatetime)) limit 1");
 					q2.bindValue(":subjectid", s.subjectid);
 					q2.bindValue(":pipelinedep", pipelinedep);
 					q2.bindValue(":studydatetime", s.studydatetime.toString("yyyy-MM-dd hh:mm:ss"));
@@ -532,7 +532,7 @@ int modulePipeline::Run() {
 								setuplog << n->WriteLog(n->SystemCommand(systemstring));
 
 								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "Parent pipeline copied by running [" + systemstring + "]");
-								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", QString(dependencyanalysisid));
+								n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", QString("%1").arg(dependencyanalysisid));
 
 								/* delete any log files and SGE files that came with the dependency */
 								setuplog << n->WriteLog(n->SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job").arg(analysispath)));
@@ -1476,7 +1476,7 @@ QString modulePipeline::CheckDependency(int sid, int pipelinedep) {
 		status = "IncompleteDependency";
 
 	/* check if the dependency is marked as bad */
-	q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and analysis_isbad <> 1");
+	q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and (analysis_isbad <> 1 or analysis_isbad is null)");
 	q.bindValue(":sid", sid);
 	q.bindValue(":pipelinedep", pipelinedep);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1988,34 +1988,46 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 	/* step 1 - get list of studies which do not have an entry in the analysis table for this pipeline */
 	if (depend >= 0) {
 		/* there is a dependency. need to check if ANY of the subject's studies have the dependency... */
+		n->WriteLog(QString("This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend));
 
-		/* step 1a) get list of SUBJECTs who have completed the dependency */
+		/* step 1a) get list of studies that have completed the dependency */
 		QList<int> list;
+		QStringList studylist;
 		QSqlQuery q2;
-		q2.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and analysis_isbad <> 1) and a.isactive = 1)");
+		q2.prepare("select a.study_id, c.uid, a.study_num from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) and (a.isactive = 1 or a.isactive is null))");
 		q2.bindValue(":depend", depend);
 		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 		if (q2.size() > 0) {
-			while (q2.next())
+			while (q2.next()) {
 				list.append(q2.value("study_id").toInt());
+				studylist << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
+			}
 		}
-		QString studyidlist = n->JoinIntArray(list, ",");
+		QString studyidlist = n->JoinIntArray(list, ", ");
+		QString studyliststr = studylist.join(", ");
 
 		if (studyidlist == "")
 			studyidlist = "-1";
 
-		/* step 1b) then find all STUDIES that those subjects have completed */
+		if (groupids != "") {
+			QStringList gids = groupids.split(",");
+			foreach (QString gid, gids) {
+				n->WriteLog(n->GetGroupListing(gid.toInt()));
+			}
+		}
+
+		/* step 1b) then find all studies that have completed and have not already been processed by this pipeline */
 		if (groupids == "") {
 			/* NO groupids */
 			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
-			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. NO groupids [%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(studyliststr));
 		}
 		else {
 			/* with groupids */
 			q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
 			q.bindValue(":pipelineid", pipelineid);
-			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
+			n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. HAS groupids [%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(studyliststr));
 		}
 	}
 	else {
@@ -2059,7 +2071,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
 	/* step 2 - get only the studies that need to have their results rerun */
 	int addedStudies = 0;
-	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and analysis_isbad <> 1) order by study_datetime desc");
+	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
 	q.bindValue(":pipelineid", pipelineid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
@@ -2074,7 +2086,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
 	/* step 3 - get only the studies that need to have their supplements run */
 	addedStudies = 0;
-	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and analysis_isbad <> 1) order by study_datetime desc");
+	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
 	q.bindValue(":pipelineid", pipelineid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {

@@ -40,10 +40,6 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	//echo "<pre>";
-	//print_r($_POST);
-	//echo "</pre>";
-
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$groupid = GetVariable("groupid");

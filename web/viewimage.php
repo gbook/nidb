@@ -34,13 +34,10 @@
 
 <body style="height:100%">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-
-	//PrintVariable($_POST, "POST");
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");

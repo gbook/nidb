@@ -266,14 +266,6 @@
 		});
 	</script>
 	<script>
-		$(function() {
-			$( "#s_studyinstitution" ).autocomplete({
-				source: "autocomplete_institution.php",
-				minLength: 1,
-				autoFocus: true
-			});
-		});
-		
 		$(document).ready(function(){
 			$('#pageloading').hide();
 		});
@@ -751,7 +743,7 @@
 																			if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
 																				event.preventDefault();
 																			}
-																	})											.autocomplete({
+																	}).autocomplete({
 																		minLength: 0,
 																		source: function( request, response ) {
 																			// delegate back to autocomplete, but extract the last term

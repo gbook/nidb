@@ -40,8 +40,6 @@
 	require "includes_html.php";
 	require "menu.php";
 	
-	//PrintVariable($_POST);
-
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
@@ -65,6 +63,8 @@
     $a['includeprotocolparms'] = GetVariable("includeprotocolparms");
     $a['includemrqa'] = GetVariable("includemrqa");
     $a['includeallmeasures'] = GetVariable("includeallmeasures");
+    $a['includeallvitals'] = GetVariable("includeallvitals");
+    $a['includealldrugs'] = GetVariable("includealldrugs");
     $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
     $a['grouprowsby'] = GetVariable("grouprowsby");
 	
@@ -618,7 +618,7 @@
 								<input type="checkbox" name="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1">Include protocol parameters<br>
 								<input type="checkbox" name="includemrqa" <? if ($a['includerqa']) { echo "checked"; } ?> value="1">Include QA
 								<br>
-								<select name="mr_protocols[]" multiple style="width: 450px" size="8">
+								<select name="mr_protocols[]" multiple style="width: 450px" size="6">
 									<option value="NONE" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>(None)
 									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
 									<?
@@ -641,7 +641,7 @@
 								</select>
 								<br><br>
 								<b>EEG</b><br>
-								<select name="eeg_protocols[]" multiple style="width: 450px" size="8">
+								<select name="eeg_protocols[]" multiple style="width: 450px" size="6">
 									<option value="NONE" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>(None)
 									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
 									<?
@@ -663,7 +663,7 @@
 									?>
 								</select>
 								<b>ET</b><br>
-								<select name="et_protocols[]" multiple style="width: 450px" size="8">
+								<select name="et_protocols[]" multiple style="width: 450px" size="6">
 									<option value="NONE" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>(None)
 									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 									<?
@@ -694,6 +694,26 @@
 						<tr>
 							<td style="padding-left: 15px">
 								<input type="checkbox" name="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?>>Include all measures<br>
+							</td>
+						</tr>
+						<tr>
+							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
+								Vitals
+							</td>
+						</tr>
+						<tr>
+							<td style="padding-left: 15px">
+								<input type="checkbox" name="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?>>Include all vitals<br>
+							</td>
+						</tr>
+						<tr>
+							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
+								Drugs/dosing
+							</td>
+						</tr>
+						<tr>
+							<td style="padding-left: 15px">
+								<input type="checkbox" name="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drugs/dosing<br>
 							</td>
 						</tr>
 						<tr>
@@ -777,6 +797,18 @@
 						$value = $rowA['measure_valuestring'];
 					
 					$t[$id]['Measures'][$measurename] = $value;
+				}
+			}
+			
+			/* add vitals if necessary */
+			if ($a['includeallmeasures']) {
+				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$vitalname = $rowA['vital_name'];
+					$value = $rowA['vital_value'];
+					
+					$t[$id]['Vitals'][$vitalname] = $value;
 				}
 			}
 			

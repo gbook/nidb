@@ -40,8 +40,6 @@
 	require "includes_html.php";
 	require "menu.php";
 	
-	//PrintVariable($_POST,'POST');
-	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$measureid = GetVariable("measureid");

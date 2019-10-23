@@ -22,6 +22,7 @@
  // ------------------------------------------------------------------------------
 
 	require "functions.php";
+	require "includes_php.php";
 	require 'nanodicom.php';
 
 	//header("Content-Type: text/plain");

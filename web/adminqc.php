@@ -35,7 +35,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";

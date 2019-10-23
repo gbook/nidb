@@ -39,8 +39,6 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	
-	//PrintVariable($_POST);
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");

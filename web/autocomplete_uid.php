@@ -21,8 +21,8 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-	//require "config.php";
 	require "functions.php";
+	require "includes_php.php";
 
 	$term = GetVariable("term");
 

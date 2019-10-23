@@ -35,7 +35,6 @@
 <body>
 	<div id="wrapper">
 <?
-	//require "config.php";
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
@@ -68,7 +67,7 @@
 		?>
 		<p><i>Neuroinformatics Database</i> (NiDB) was developed at the Olin Neuropsychiatry Research Center at Hartford Hospital. This system is open source, released under the <a href="http://www.gnu.org/copyleft/gpl.html">GPLv3</a> license.</p>
 		
-		<p>Visit the NiDB website at <a href="http://nidb.sourceforge.net">http://nidb.sourceforge.net</a></p>
+		<p>Visit the NiDB website at <a href="http://github.com/gbook/nidb">http://github.com/gbook/nidb</a></p>
 		
 		<p>Problems, compliments, or suggestions should be directed to <a href="mailto:gregory.book@hhchealth.org">gregory.book@hhchealth.org</a></p>
 		<?
