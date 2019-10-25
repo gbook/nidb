@@ -7,4 +7,7 @@
     <Default>true</Default>
 	<Script>installscript.js</Script>
 	<SortingPriority>70</SortingPriority>
+	<UserInterfaces>
+	    <UserInterface>finalform.ui</UserInterface>
+	</UserInterfaces>
 </Package>

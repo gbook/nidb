@@ -17,6 +17,10 @@ QMAKE_EXTRA_COMPILERS += example
 
 OTHER_FILES = README
 
+unix: {
+    UPDATELOG = $$system(./updatefiles.sh)
+}
+
 DISTFILES += \
     nidb.png \
     packages/nidb.config/meta/installscript.js \
@@ -27,6 +31,8 @@ DISTFILES += \
     packages/nidb.programs/meta/package.xml \
     packages/nidb.web/meta/installscript.js \
     packages/nidb.web/meta/package.xml \
-    squirrel.png
+    squirrel.png \
+    updatefiles.sh
 
-FORMS +=
+FORMS += \
+    packages/nidb.config/meta/finalform.ui

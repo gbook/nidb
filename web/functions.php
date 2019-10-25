@@ -46,47 +46,16 @@
 			}
 		}
 		
-		/* check some possible config file locations */
-		/* if (file_exists('nidb.cfg')) {
-			$file = 'nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('../nidb.cfg')) {
-			$file = '../nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('../programs/nidb.cfg')) {
-			$file = '../programs/nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('../bin/nidb.cfg')) {
-			$file = '../bin/nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('/home/nidb/programs/nidb.cfg')) {
-			$file = '/home/nidb/programs/nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('/nidb/programs/nidb.cfg')) {
-			$file = '/nidb/programs/nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('/nidb/nidb.cfg')) {
-			$file = '/nidb/nidb.cfg';
-			$fileschecked[] = $file;
-		}
-		elseif (file_exists('/nidb/bin/nidb.cfg')) {
-			$file = '/nidb/bin/nidb.cfg';
-			$fileschecked[] = $file;
-		} */
 		if (!$found) {
 			
 			if (!$quiet) {
-				?><tt>nidb.cfg</tt> not found in the usual places.<br>
-				Perhaps you need to edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>? Make sure <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
+				?><b><tt>nidb.cfg</tt> not found</b><br>
+				Perhaps you need to run the <a href="setup.php">setup</a>?
+				Or - edit the <tt>nidb.cfg.sample</tt> file and rename it to <tt>nidb.cfg</tt>?<br>
+				Or - check if <tt>nidb.cfg</tt> exists and is in one of the following locations<br>
 				<ul>
 				<?
-					foreach ($fileschecked as $file) {
+					foreach ($possiblefiles as $file) {
 						echo "<li>$file\n";
 					}
 				?>

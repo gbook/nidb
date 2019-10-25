@@ -74,7 +74,7 @@ public:
 	QString CreateCurrentDateTime(int format=1);
 	QString CreateLogDate();
 	QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
-	QString WriteLog(QString msg);
+	QString WriteLog(QString msg, int wrap=0);
 	void AppendCustomLog(QString f, QString msg);
 	QString SystemCommand(QString s, bool detail=true, bool truncate=false);
 	QString GenerateRandomString(int n);

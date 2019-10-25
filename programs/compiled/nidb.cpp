@@ -562,9 +562,10 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 /* ---------------------------------------------------------- */
 /* --------- WriteLog --------------------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::WriteLog(QString msg) {
+QString nidb::WriteLog(QString msg, int wrap) {
 	if (msg.trimmed() != "") {
-		msg = WrapText(msg, 200);
+		if (wrap > 0)
+			msg = WrapText(msg, wrap);
 		if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
 			Print("Unable to write to log file!");
 	}
@@ -1621,8 +1622,6 @@ QString nidb::GetGroupListing(int groupid) {
 		SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() > 0) {
 			while (q.next()) {
-				int subjectid = q.value("subject_id").toInt();
-				int studyid = q.value("study_id").toInt();
 				int studynum = q.value("study_num").toInt();
 				QString uid = q.value("uid").toString();
 				s += QString("%1%2, ").arg(uid).arg(studynum);

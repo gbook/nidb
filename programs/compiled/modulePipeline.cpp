@@ -2012,7 +2012,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 		if (groupids != "") {
 			QStringList gids = groupids.split(",");
 			foreach (QString gid, gids) {
-				n->WriteLog(n->GetGroupListing(gid.toInt()));
+				n->WriteLog(n->GetGroupListing(gid.toInt()), 250);
 			}
 		}
 

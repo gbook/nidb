@@ -28,6 +28,8 @@
 
 function Component()
 {
+    installer.installationFinished.connect(this, Component.prototype.installationFinishedPageIsShown);
+    installer.finishButtonClicked.connect(this, Component.prototype.installationFinished);
 }
 
 Component.prototype.createOperations = function()
@@ -41,8 +43,10 @@ Component.prototype.createOperations = function()
     component.addElevatedOperation("Execute", "{0}", "crontab", "-u", "nidb", "/nidb/crontab.txt");
 
     /* database stuff */
-    component.addElevatedOperation("Execute", "{0}", "mysqladmin", "-u", "root", "password", "password");
-    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "-e", "create database if not exists nidb; grant all on *.* to 'root'@'localhost' identified by 'password'; flush privileges;");
+    if (component.addElevatedOperation("Execute", "{0}", "mysqladmin", "-u", "root", "password", "password")) {
+        var result = QMessageBox.question("dbpassword.notice", "Installer", "MariaDB appears to already have the root password set, skipping creation of root account", QMessageBox.Ok);
+    }
+    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "-e", "CREATE DATABASE IF NOT EXISTS nidb; GRANT ALL ON *.* TO 'root'@'localhost' IDENTIFIED BY 'password'; FLUSH PRIVILEGES;");
 
     /* secure the installation */
     //mysql -u root -p"$DATABASE_PASS" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
@@ -50,23 +54,48 @@ Component.prototype.createOperations = function()
     //mysql -u root -p"$DATABASE_PASS" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'"
     //mysql -u root -p"$DATABASE_PASS" -e "FLUSH PRIVILEGES"
 
-    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "nidb", "<", "/nidb/nidb.sql");
-    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "nidb", "<", "/nidb/nidb-data.sql");
-    //component.addOperation("AppendFile", "/nidb/tempsql.txt", "CREATE USER 'nidb'\@'%' identified by 'password';\nGRANT ALL PRIVILEGES on *.* to 'nidb'\@'%';\n");
-    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "-e", "CREATE USER 'nidb'\@'%' identified by 'password';\nGRANT ALL PRIVILEGES on *.* to 'nidb'\@'%';");
-    //component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "<", "/nidb/tempsql.txt");
+    //component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "nidb", "<", "/nidb/nidb.sql");
+    //component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "nidb", "<", "/nidb/nidb-data.sql");
+    component.addElevatedOperation("Execute", "{0}", "mysql", "-uroot", "-ppassword", "-e", "CREATE USER IF NOT EXISTS 'nidb'@'%' IDENTIFIED BY 'password';GRANT ALL PRIVILEGES ON *.* TO 'nidb'@'%';");
 
     /* add dcmrcv service at boot */
-    component.addElevatedOperation("Execute", "cp", "/nidb/dcmrcv", "/etc/init.d");
-    component.addElevatedOperation("Execute", "chmod", "755", "/etc/init.d/dcmrcv");
-    component.addElevatedOperation("Execute", "chkconfig", "--add", "dcmrcv");
+    component.addElevatedOperation("Execute", "{0}", "cp", "/nidb/dcmrcv", "/etc/init.d");
+    component.addElevatedOperation("Execute", "{0}", "chmod", "755", "/etc/init.d/dcmrcv");
+    component.addElevatedOperation("Execute", "{0}", "chkconfig", "--add", "dcmrcv");
 
     /* make Apache run as the 'nidb' user */
-    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/User apache/User nidb/", "/etc/httpd/conf/httpd.conf");
-    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/Group apache/Group nidb/", "/etc/httpd/conf/httpd.conf");
+    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/User apache.*/User nidb/", "/etc/httpd/conf/httpd.conf");
+    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/Group apache.*/Group nidb/", "/etc/httpd/conf/httpd.conf");
+    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/user = .*/user = nidb/", "/etc/php-fpm.d/www.conf");
+    component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/group = .*/group = nidb/", "/etc/php-fpm.d/www.conf");
     component.addElevatedOperation("Execute", "{0}", "chown", "-R", "nidb:nidb", "/var/lib/php/session");
     component.addElevatedOperation("Execute", "{0}", "chmod", "777", "/var/lib/php/session");
     component.addElevatedOperation("Execute", "{0}", "chown", "nidb:nidb", "/run/php-fpm/www.sock");
     component.addElevatedOperation("Execute", "{0}", "systemctl", "restart", "httpd.service");
+    component.addElevatedOperation("Execute", "{0}", "systemctl", "restart", "php-fpm.service");
+}
 
+Component.prototype.installationFinishedPageIsShown = function()
+{
+    try {
+        //if (installer.isInstaller() && installer.status == QInstaller.Success) {
+            installer.addWizardPageItem( component, "FinishCheckBoxForm", QInstaller.InstallationFinished );
+        //}
+    } catch(e) {
+        console.log(e);
+    }
+}
+
+Component.prototype.installationFinished = function()
+{
+    try {
+        //if (installer.isInstaller() && installer.status == QInstaller.Success) {
+            var isFinishCheckBoxChecked = component.userInterface( "FinishCheckBoxForm" ).finishCheckBox.checked;
+            if (isFinishCheckBoxChecked) {
+                QDesktopServices.openUrl("http://localhost/setup.php");
+            }
+        //}
+    } catch(e) {
+        console.log(e);
+    }
 }

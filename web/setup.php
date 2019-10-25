@@ -159,14 +159,11 @@
 	$messageid = GetVariable("messageid");
 
 	$rootpassword = GetVariable("rootpassword");
-	$userpassword = GetVariable("userpassword");
-	$userpassword2 = GetVariable("userpassword2");
+	//$userpassword = GetVariable("userpassword");
+	//$userpassword2 = GetVariable("userpassword2");
 	
 	/* determine the setup step */
 	switch ($step) {
-		case 'updateconfig':
-			WriteConfig($c);
-			break;
 		case 'testemail':
 			TestEmail();
 			break;
@@ -180,10 +177,14 @@
 			DisplayDatabase1Page();
 			break;
 		case 'database2':
-			DisplayDatabase2Page($rootpassword, $userpassword, $userpassword2);
+			DisplayDatabase2Page($rootpassword); //, $userpassword, $userpassword2);
 			break;
 		case 'config':
 			DisplayConfigPage();
+			break;
+		case 'updateconfig':
+			WriteConfig($c);
+			DisplaySetupCompletePage();
 			break;
 		case 'setupcomplete':
 			DisplaySetupCompletePage();
@@ -215,6 +216,10 @@
 	/* ------- WriteConfig ------------------------ */
 	/* -------------------------------------------- */
 	function WriteConfig($c) {
+		
+		if (is_null($GLOBALS['cfg']['cfgpath'])) {
+			$GLOBALS['cfg']['cfgpath'] = "/nidb/nidb.cfg";
+		}
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($c as $key => $value) {
@@ -433,7 +438,7 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("welcome")?></td>
 				<td valign="top" height="90%">
-					The following pages will guide you through the NiDB setup process
+					<h2>The following pages will guide you through the NiDB setup process</h2>
 				</td>
 			</tr>
 			<tr>
@@ -460,7 +465,7 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("systemcheck")?></td>
 				<td valign="top" height="90%">
-					Required Linux packages<br><br>
+					<h2>Linux pre-requistites</h2><br>
 					
 					<?
 					$memory = preg_split('/\s+/', shell_exec("free -g"))[8];
@@ -480,11 +485,11 @@
 					}
 					
 					/* check the httpd version */
-					$httpd = apache_get_version();
+					$httpd = $_SERVER['SERVER_SOFTWARE'];
 					if (is_null($httpd))
 						$httpdver = "<span style='color:red'>Not Installed</span> ... how are you viewing this?";
 					else
-						$httpdver = str_replace("Apache/", "", preg_split('/\s+/', $httpd)[2]);
+						$httpdver = str_replace("Apache/", "", preg_split('/\s+/', $httpd)[0]);
 					
 					/* check the image magick version */
 					$imagemagick = shell_exec("convert -version");
@@ -534,7 +539,7 @@
 						</tr>
 					</table>
 					<br><br>
-					If any packages are not found or are not the right version, install them using yum or other methods. Then come back and refresh this page.
+					If any packages are missing or the incorrect version, install them using yum or other methods. Then come back and refresh this page.
 				</td>
 			</tr>
 			<tr>
@@ -554,7 +559,7 @@
 	/* -------------------------------------------- */
 	function DisplayDatabase1Page() {
 		
-		$cfg = LoadConfig();
+		$cfg = LoadConfig(true);
 		
 		if (!is_null($cfg)) {
 			$mysqlhost = $cfg['mysqlhost'];
@@ -569,15 +574,15 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%">
-					<br>
-					Enter the MySQL database connection parameters
+					<h2>Database connection parameters</h2>
+					<i><b>NOTE</b> MySQL and MariaDB are synonymous within NiDB.</i>
 					<br>
 					<br>
 					<form method="post" action="setup.php" name="theform">
 					<input type="hidden" name="step" value="database2">
 					<table class="t">
 						<tr>
-							<td>MySQL server</td>
+							<td>MariaDB server</td>
 							<td>
 								<? if ($mysqlhost == "") { ?>
 								localhost
@@ -599,13 +604,13 @@
 							</td>
 						</tr>
 						<tr>
-							<td>MySQL root password</td>
+							<td>MariaDB root password<br><span class="tiny" style="font-weight: normal">root access to DB required to setup tables</span></td>
 							<td>
-								<input type="password" name="rootpassword"><br><span class="tiny">Should be <tt>password</tt> if this is the <u>first</u> NiDB installation</span>
+								<input type="password" required name="rootpassword"><br><span class="tiny">Should be <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
 							</td>
 						</tr>
 						<tr>
-							<td>MySQL username</td>
+							<td>MariaDB username<br><span class="tiny" style="font-weight: normal">NiDB will run as this user</span></td>
 							<td>
 								<? if ($mysqluser == "") { ?>
 								nidb
@@ -615,22 +620,18 @@
 								<? }?>
 							</td>
 						</tr>
+						<!--
 						<tr>
 							<td>MySQL user password</td>
 							<td>
-								<?
-									if ($mysqlpassword != "")
-										$cfgpassword = $mysqlpassword;
-									else 
-										$cfgpassword = "";
-								?>
+								<? if ($mysqlpassword == "") { ?>
 								<input type="password" name="nidbpassword" value="<?=$cfgpassword?>"><br>
 								<input type="password" name="nidbpassword2" value="<?=$cfgpassword?>">
-								<? if ($mysqlpassword != "") { ?>
-								<br><span class="tiny">Password loaded from config file. Change here if needed</span>
+								<? } else { ?>
+								********<br><span class="tiny">Password loaded from config file</span>
 								<? } ?>
 							</td>
-						</tr>
+						</tr>-->
 					</table>
 					</form>
 				</td>
@@ -638,7 +639,7 @@
 			<tr>
 				<td></td>
 				<td align="right">
-					<a onClick="document.theform.submit()" style="cursor: hand">Next</a>
+					<a href="setup.php?step=systemcheck">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a onClick="document.theform.submit()" style="cursor: hand; font-weight: bold">Next</a>
 				</td>
 			</tr>
 		</table>
@@ -650,7 +651,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDatabase2Page --------------- */
 	/* -------------------------------------------- */
-	function DisplayDatabase2Page($rootpassword, $userpassword, $userpassword2) {
+	function DisplayDatabase2Page($rootpassword) {
 		
 		?>
 		<br><br>
@@ -660,37 +661,68 @@
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%" width="100%">
 					<div style="width: 800px; height: 100%; overflow: auto; overflow-x:auto">
-					Database setup
+					<h2>Performing database setup...</h2>
 					<ol>
 					<?
 					
-					$GLOBALS['linki'] = mysqli_connect('localhost', 'root', $rootpassword);
-					
-					if (!$GLOBALS['linki']) {
+					if (is_null($rootpassword)) {
 						?>
-						<li><span class="bad"></span> Unable to connect to database:<br>
-						Error number: <?=mysqli_connect_errno()?><br>
-						Error message: <?=mysqli_connect_error()?>
+						<li><span class="bad"></span> Unable to connect to database. root MySQL password was blank.
 						<?
 					}
 					else {
-						?><li><span class="good"></span> Successfully connected to the database server<?
 						
-						/* check if the database itself exists */
-						$sqlstring = "show databases like 'nidb'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						if (mysqli_num_rows($result) > 0) {
-							?><li><span class="good"></span> Database 'nidb' exists<?
+						$GLOBALS['linki'] = mysqli_connect('localhost', 'root', $rootpassword);
+						
+						if (!$GLOBALS['linki']) {
+							?>
+							<li><span class="bad"></span> Unable to connect to database:<br>
+							Error number: <?=mysqli_connect_errno()?><br>
+							Error message: <?=mysqli_connect_error()?>
+							<?
+						}
+						else {
+							?><li><span class="good"></span> Successfully connected to the database server<?
 							
-							/* check if there are any tables */
-							$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = 'nidb'";
+							/* check if the database itself exists */
+							$sqlstring = "show databases like 'nidb'";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							if (mysqli_num_rows($result) > 0) {
-								?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
-								UpgradeDatabase($GLOBALS['linki'], 'nidb', "/nidb/nidb.sql");
+								?><li><span class="good"></span> Database 'nidb' exists<?
+								
+								/* check if there are any tables */
+								$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = 'nidb'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								if (mysqli_num_rows($result) > 0) {
+									?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
+									UpgradeDatabase($GLOBALS['linki'], 'nidb', "/nidb/nidb.sql");
+								}
+								else {
+									?><li>No tables found in 'nidb' database. Running full SQL script<?
+									/* load the sql file(s) */
+									if (file_exists("/nidb/nidb.sql")) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
+										shell_exec($systemstring);
+										
+										if (file_exists("/nidb/nidb-data.sql")) {
+											$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+											shell_exec($systemstring);
+										}
+										else {
+											?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+										}
+									}
+									else {
+										?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
+									}
+
+								}
 							}
 							else {
-								?><li>No tables found in 'nidb' database. Running full SQL script<?
+								$sqlstring = "create database 'nidb'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								?><li>Created database 'nidb'<?
+								
 								/* load the sql file(s) */
 								if (file_exists("/nidb/nidb.sql")) {
 									$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
@@ -707,33 +739,9 @@
 								else {
 									?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
 								}
-
-							}
-						}
-						else {
-							$sqlstring = "create database 'nidb'";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							?><li>Created database 'nidb'<?
-							
-							/* load the sql file(s) */
-							if (file_exists("/nidb/nidb.sql")) {
-								$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
-								shell_exec($systemstring);
-								
-								if (file_exists("/nidb/nidb-data.sql")) {
-									$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
-									shell_exec($systemstring);
-								}
-								else {
-									?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
-								}
-							}
-							else {
-								?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
 							}
 						}
 					}
-					
 					?>
 					</ol>
 					</div>
@@ -742,7 +750,7 @@
 			<tr>
 				<td></td>
 				<td align="right">
-					<a href="setup.php?step=config">Next</a>
+					<a href="setup.php?step=database1">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="setup.php?step=config"><b>Next</b></a>
 				</td>
 			</tr>
 		</table>
@@ -763,14 +771,17 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("config")?></td>
 				<td valign="top" height="90%">
-					NiDB configuration and settings
+					<h2>NiDB configuration</h2>
 				</td>
 			</tr>
 			<tr>
+				<form name="configform" method="post" action="setup.php">
+				<input type="hidden" name="step" value="updateconfig">
 				<td><? DisplayConfig(); ?></td>
 				<td align="right" valign="bottom">
-					<a href="setup.php?step=setupcomplete">Next</a>
+					<a href="setup.php?step=database1">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" onClick="configform.submit()"><b>Next</b></a>
 				</td>
+				</form>
 			</tr>
 		</table>
 		<?
@@ -790,13 +801,13 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("setupcomplete")?></td>
 				<td valign="top" height="90%">
-					Setup Complete
+					<h2>Setup Complete</h2>
 				</td>
 			</tr>
 			<tr>
 				<td></td>
 				<td align="right">
-					<a href="index.php">Done</a>
+					<a href="setup.php?step=config">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.php"><b>Done</b></a>
 				</td>
 			</tr>
 		</table>
@@ -1001,7 +1012,6 @@
 			$dbconnect = true;
 			$devdbconnect = true;
 			$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
-			$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'],$GLOBALS['cfg']['mysqldevuser'],$GLOBALS['cfg']['mysqldevpassword'],$GLOBALS['cfg']['mysqldevdatabase']) or $devdbconnect = false;
 		}
 		
 		if (!is_null($GLOBALS['cfg']) && file_exists($GLOBALS['cfg']['cfgpath'])) {
@@ -1024,7 +1034,7 @@
 			$GLOBALS['cfg']['emailserver'] = "tls://smtp.gmail.com";
 			$GLOBALS['cfg']['emailport'] = 587;
 			
-			$GLOBALS['cfg']['uploadsizelimit'] = 1000;
+			$GLOBALS['cfg']['uploadsizelimit'] = 5000;
 			$GLOBALS['cfg']['displayrecentstudydays'] = 5;
 			$GLOBALS['cfg']['siteurl'] = $_SERVER['SERVER_NAME'];
 			$GLOBALS['cfg']['sitename'] = gethostname();
@@ -1055,8 +1065,6 @@
 		}
 		?>
 		<br><br>
-		<form name="configform" method="post" action="system.php">
-		<input type="hidden" name="action" value="updateconfig">
 		<table class="entrytable">
 			<thead>
 				<tr>

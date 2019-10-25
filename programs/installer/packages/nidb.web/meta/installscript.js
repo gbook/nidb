@@ -41,13 +41,11 @@ changeLicenseLabels = function()
 Component.prototype.createOperations = function()
 {
     component.createOperations();
-	
-	if (systemInfo.productType === "windows") {
-        component.addOperation("CreateShortcut", "@TargetDir@/NiDBUploader.exe", "@StartMenuDir@/NiDBUploader.lnk", "workingDirectory=@TargetDir@", "iconPath=%SystemRoot%/system32/SHELL32.dll", "iconId=2", "description=NiDB Uploader");
-    }
 }
 
 Component.prototype.createOperationsForArchive = function(archive)
 {
-    component.addOperation("Extract", archive, "/var/www/html");
+    component.addElevatedOperation("Extract", archive, "/var/www/html");
+    component.addElevatedOperation("Execute", "{0}", "chmod", "-R", "755", "/var/www/html");
+    component.addElevatedOperation("Execute", "{0}", "chown", "-R", "nidb:nidb", "/var/www/html");
 }

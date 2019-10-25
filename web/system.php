@@ -107,6 +107,9 @@
     $c['sitetype'] = GetVariable("sitetype");
     $c['allowphi'] = GetVariable("allowphi");
     $c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
+    $c['redcapurl'] = GetVariable("redcapurl");
+    $c['redcaptoken'] = GetVariable("redcaptoken");
+	
     $c['enableremoteconn'] = GetVariable("enableremoteconn");
     $c['enablecalendar'] = GetVariable("enablecalendar");
     $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
@@ -304,6 +307,9 @@
 [sitetype] = $sitetype
 [allowphi] = $allowphi
 [allowrawdicomexport] = $allowrawdicomexport
+[redcapurl] = $redcapurl
+[redcaptoken] = $redcaptoken
+
 [enableremoteconn] = $enableremoteconn
 [enablecalendar] = $enablecalendar
 [uploadsizelimit] = $uploadsizelimit
@@ -775,6 +781,18 @@
 				<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
 				<td></td>
 				<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
+			</tr>
+			<tr>
+				<td class="variable">redcapurl</td>
+				<td><input type="text" name="redcapurl" value="<?=$GLOBALS['cfg']['redcapurl']?>" size="45"></td>
+				<td></td>
+				<td>URL of the RedCap Database API to pull data from RedCap into NiDB</td>
+			</tr>
+			<tr>
+				<td class="variable">redcaptoken</td>
+				<td><input type="text" name="redcaptoken" value="<?=$GLOBALS['cfg']['redcaptoken']?>" size="45"></td>
+				<td></td>
+				<td>Token required to access RedCap</td>
 			</tr>
 
 			<tr>
