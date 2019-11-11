@@ -109,7 +109,7 @@
 				?><a href="subjects.php" style="<?=$style?>"><b>Subjects</b></a><?
 				
 				/* projects */
-				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php") { $style = "background-color:#3B5998"; }
+				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="projects.php" style="<?=$style?>"><b>Projects</b></a><?
 				
@@ -204,9 +204,9 @@
 				}
 				
 				/* projects sub-menu */
-				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php") {
+				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php") {
 					
-					if ($page=="projectchecklist.php" || $page=="projectassessments.php") {
+					if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php") {
 						$projectid = GetVariable("projectid");
 					}
 					else {
@@ -239,7 +239,7 @@
 						
 						if (($page=="projects.php") && ($action == "")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="projects.php?id=<?=$projectid?>" style="<?=$style?>">Studies</a><?
+						?><a href="projects.php?action=displaystudies&id=<?=$projectid?>" style="<?=$style?>">Studies</a><?
 						
 						if ($page=="projectchecklist.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
@@ -249,6 +249,9 @@
 						else { $style = ""; }
 						?><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="<?=$style?>">MR Scan QC</a><?
 
+						if ($page=="minipipeline.php"){ $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="minipipeline.php?projectid=<?=$projectid?>" style="<?=$style?>">Behavioral pipelines</a><?
 					}
 				}
 				

@@ -995,7 +995,7 @@
 	/* ------- ValidID ---------------------------- */
 	/* -------------------------------------------- */
 	function ValidID($var, $varname="") {
-		if (isInteger($var) && ($var > 0)) {
+		if (isInteger($var) && ($var >= 0)) {
 			return 1;
 		}
 		else {
@@ -1606,25 +1606,14 @@
 				<?
 				break;
 			case "studies":
-				?>
-				<b>Options:</b> <a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>" style="font-weight: normal">Study templates</a>
-				<?
 				break;
 			case "checklist":
 				?>
-				<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a> | 
-				<a href="projectchecklist.php?action=viewanalysissummary&projectid=<?=$id?>" style="font-weight: normal">Analysis summary</a>
+				<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a>
 				<?
 				break;
 			case "mrqc":
 				?>
-				<b>Options:</b> <a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>" style="font-weight: normal">Edit scan criteria</a> | 
-				<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>" style="font-weight: normal">Edit QC criteria</a> | 
-				<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>" style="font-weight: normal">View BIDS datatypes</a> | 
-				<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>" style="font-weight: normal">Edit BIDS datatypes</a> 
-				<? if ($GLOBALS['isadmin']) { ?>
-					 | <a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a>
-				<? } ?>
 				<?
 				break;
 		}
@@ -2122,6 +2111,37 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		return $ret;
 
-	}	
+	}
 
+
+	/* -------------------------------------------- */
+	/* ------- startsWith ------------------------- */
+	/* -------------------------------------------- */
+	function startsWith($haystack, $needle) {
+		$length = strlen($needle);
+		return (substr($haystack, 0, $length) === $needle);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- endsWith --------------------------- */
+	/* -------------------------------------------- */
+	function endsWith($haystack, $needle) {
+		$length = strlen($needle);
+		if ($length == 0)
+			return true;
+
+		return (substr($haystack, -$length) === $needle);
+	}
+
+	/* -------------------------------------------- */
+	/* ------- contains --------------------------- */
+	/* -------------------------------------------- */
+	function contains($haystack, $needle) {
+		if (strpos($haystack, $needle) !== false)
+			return true;
+		else
+			return false;
+	}
+	
 ?>

@@ -22,7 +22,6 @@
 
 #include "modulePipeline.h"
 #include <QSqlQuery>
-#include "TextTable.h"
 
 
 /* ---------------------------------------------------------- */
@@ -199,7 +198,7 @@ int modulePipeline::Run() {
 
 			/* insert a temporary row, to be updated later, in the analysis table as a placeholder
 			 * so that no other processes end up running it */
-			q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values (:pid, :version,'','','processing',now())");
+			q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate, analysis_isbad) values (:pid, :version,'','','processing',now(),0)");
 			q2.bindValue(":pid", pipelineid);
 			q2.bindValue(":version", p.version);
 			n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -352,7 +351,7 @@ int modulePipeline::Run() {
 							analysisRowID = q2.value("analysis_id").toInt();
 						}
 						else {
-							q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate) values (:pipelineid, :version, :pipelinedep, :studyid,'processing',now())");
+							q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate, analysis_isbad) values (:pipelineid, :version, :pipelinedep, :studyid,'processing',now(), 0)");
 							q2.bindValue(":pipelineid",pipelineid);
 							q2.bindValue(":version",p.version);
 							q2.bindValue(":pipelinedep",pipelinedep);

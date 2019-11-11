@@ -40,6 +40,8 @@
 #include "gdcmStringFilter.h"
 #include "gdcmAnonymizer.h"
 
+typedef QHash <int, QHash<QString, QString>> indexedHash;
+
 class nidb
 {
 public:
@@ -76,7 +78,7 @@ public:
 	QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
 	QString WriteLog(QString msg, int wrap=0);
 	void AppendCustomLog(QString f, QString msg);
-	QString SystemCommand(QString s, bool detail=true, bool truncate=false);
+	QString SystemCommand(QString s, bool sandboxed=false, bool detail=true, bool truncate=false);
 	QString GenerateRandomString(int n);
 	QString CreateUID(QString prefix, int numletters=3);
 	void SortQStringListNaturally(QStringList &s);
@@ -95,6 +97,7 @@ public:
 	bool IsNumber(QString s);
 	QString GetGroupListing(int groupid);
 	QString WrapText(QString s, int col);
+	bool ParseCSV(QString csv, indexedHash &table, QString &m);
 
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);

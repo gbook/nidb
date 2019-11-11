@@ -523,12 +523,18 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
+QString nidb::SystemCommand(QString s, bool sandboxed, bool detail, bool truncate) {
 
 	double starttime = QDateTime::currentMSecsSinceEpoch();
 	QString ret;
 	QString output;
 	QProcess process;
+
+	if (sandboxed) {
+		//QString tmpdir = "/tmp/" + GenerateRandomString(10);
+		//s = "cd " + tmpdir + "; chroot
+	}
+
 	process.setProcessChannelMode(QProcess::MergedChannels);
 	process.start("sh", QStringList() << "-c" << s);
 
@@ -1641,4 +1647,60 @@ QString nidb::WrapText(QString s, int col) {
 		s.insert(i, "\n");
 
 	return s;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseCSV --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
+	m = "";
+
+	/* get header row */
+	QStringList lines = csv.trimmed().split(QRegularExpression("[\\n\\r]"));
+
+	if (lines.size() > 1) {
+		QString header = lines.takeFirst();
+		QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+		int numcols = cols.size();
+
+		int row = 0;
+		foreach (QString line, lines) {
+			QString buffer = "";
+			int col = 0;
+			bool inQuotes = false;
+			for (int i=0; i<line.size(); i++) {
+				QChar c = line.at(i);
+
+				/* determine if we're in quotes or not */
+				if (c == """") {
+					if (inQuotes)
+						inQuotes = false;
+					else
+						inQuotes = true;
+				}
+
+				/* check if we've hit the next comma, and therefor should end the previous variable */
+				if ((c == ",") && (!inQuotes)) {
+					table[row][cols[col]] = buffer;
+
+					buffer = "";
+					col++;
+				}
+				else {
+					buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+				}
+			}
+			if (col != numcols) {
+				m += QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row).arg(col).arg(numcols);
+			}
+
+			row++;
+		}
+	}
+
+	if (m == "")
+		return true;
+	else
+		return false;
 }

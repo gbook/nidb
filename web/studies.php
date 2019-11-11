@@ -53,6 +53,7 @@
 	$newprojectid = GetVariable("newprojectid");
 	$seriesid = GetVariable("seriesid");
 	$seriesids = GetVariable("seriesids");
+	$minipipelineids = GetVariable("minipipelineids");
 	$modality = GetVariable("modality");
 	$series_num = GetVariable("series_num");
 	$notes = GetVariable("notes");
@@ -98,6 +99,12 @@
 	switch($action) {
 		case 'editform':
 			DisplayStudyForm($studyid);
+			break;
+		case 'minipipelineform':
+			DisplayMiniPipelineForm($studyid, $seriesids);
+			break;
+		case 'submitminipipelines':
+			SubmitMiniPipelines($modality, $seriesids, $minipipelineids);
 			break;
 		case 'update':
 			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
@@ -789,6 +796,89 @@
 		return $folderSize ;
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- SubmitMiniPipelines ---------------- */
+	/* -------------------------------------------- */
+	function SubmitMiniPipelines($modality, $seriesids, $minipipelineids) {
+		
+		foreach ($seriesids as $key => $seriesid) {
+			$mpid = $minipipelineids[$key];
+			$sqlstring = "insert into minipipeline_jobs (minipipeline_id, mp_modality, mp_seriesid, mp_status, mp_queuedate) values ($mpid, '$modality', $seriesid, 'pending', now())";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		?>
+		Mini-pipeline jobs submitted
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayMiniPipelineForm ------------ */
+	/* -------------------------------------------- */
+	function DisplayMiniPipelineForm($studyid, $seriesids) {
+		
+		if (!ValidID($studyid,'Study ID')) { return; }
+		
+		$sqlstring = "select a.study_modality, c.project_id, c.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on c.project_id = b.project_id where a.study_id = $studyid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$modality = strtolower($row['study_modality']);
+		$projectid = $row['project_id'];
+		$projectname = $row['project_name'];
+		
+		$mpselectbox = "<select name='minipipelineids[]'><option value='0' selected>(none)";
+		$sqlstring = "select * from minipipelines where project_id = $projectid order by mp_name";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mpid = $row['minipipeline_id'];
+			$mpversion = $row['mp_version'];
+			$mpname = $row['mp_name'];
+			$mpselectbox .= "<option value='".$mpid."'>$mpname (v$mpversion)";
+		}
+		$mpselectbox .= "</select>";
+		?>
+		<form method="post" action="studies.php">
+		<input type="hidden" name="action" value="submitminipipelines">
+		<input type="hidden" name="studyid" value="<?=$studyid?>">
+		<input type="hidden" name="modality" value="<?=$modality?>">
+		<table class="graydisplaytable">
+			<thead>
+				<th>Series</th>
+				<th>Desc</th>
+				<th>Mini-pipeline</th>
+			</thead>
+			<tbody>
+			<?
+			$seriesidlist = implode2(",",$seriesids);
+			$sqlstring = "select * from $modality" . "_series where $modality" . "series_id in ($seriesidlist) order by series_num";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$seriesid = $row["$modality" . "series_id"];
+				$seriesnum = $row['series_num'];
+				$seriesdesc = $row['series_desc'];
+				if ($seriesdesc == "")
+					$seriesdesc = $row['series_protocol'];
+				?>
+				<tr>
+					<input type="hidden" name="seriesids[]" value="<?=$seriesid?>">
+					<td><?=$seriesnum?></td>
+					<td><?=$seriesdesc?></td>
+					<td><?=$mpselectbox?></td>
+				</tr>
+				<?
+			}
+			?>
+			</tbody>
+		</table>
+		<input type="submit" value="Run mini-pipelines">
+		</form>
+		<?
+		
+	}
+	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayStudyForm ------------------- */
@@ -1110,11 +1200,11 @@
 						</tr>
 						<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post">
 						<tr>
-							<td class="label">Date/time</td>
+							<td class="label" valign="top">Date/time</td>
 							<? if (strtoupper($study_modality) != "MR"){ ?>
 								<td>
 								 <input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime"  required >
-								 <input type="checkbox" name="Sdate" > Copy <b>Date/time</b> value to all series
+								 <br><input type="checkbox" name="Sdate" > Copy <b>Date/time</b> value to all series
 								 <input type="hidden" name="stmod" value="<?=$study_modality?>">
 								</td>
 							 <?}else {?>
@@ -1285,7 +1375,7 @@
 			DisplayFileSeries($studypath);
 		}
 		else {
-			?><a href="studies.php?studyid=<?=$studyid?>&action=displayfiles" style="font-size:8pt">View files</a><?
+			?><a href="studies.php?studyid=<?=$studyid?>&action=displayfiles" style="font-size:8pt">View file list</a><?
 			if ($study_modality == "MR") {
 				DisplayMRSeries($studyid, $study_num, $uid);
 			}
@@ -2206,27 +2296,39 @@
 		?>
 		
 		<SCRIPT LANGUAGE="Javascript">
-		<!---
 			function decision(message, url){
 				if(confirm(message)) location.href = url;
 			}
-		// --->
 		</SCRIPT>
 		
-		<table class="smalldisplaytable">
+		<script type="text/javascript">
+		$(function() {
+			$("#seriesall").click(function() {
+				var checked_status = this.checked;
+				$(".allseries").find("input[type='checkbox']").each(function() {
+					this.checked = checked_status;
+				});
+			});
+		});
+		</script>
+		
+		<table class="graydisplaytable" width="100%">
 			<thead>
 				<tr>
-					<th>Series</th>
+					<th>Series<br><span class="tiny">Click to edit series</span></th>
 					<th>Protocol</th>
 					<th>Date</th>
 					<th>Notes</th>
-					<th># files</th>
+					<th>Files<br><span class="tiny">Click to manage files</span></th>
 					<th>Size</th>
-					<th>Upload <?=strtoupper($modality)?> file(s)<br><span class="tiny">Click button or Drag & Drop</span></th>
+					<th>Upload <?=strtoupper($modality)?> files<br><span class="tiny">Click button or Drag & Drop</span></th>
 					<th>Download</th>
-					<th>Delete</th>
+					<th align="left">Operations<br><input type="checkbox" id="seriesall"><span class="tiny">Select All</span></th>
 				</tr>
 			</thead>
+			<form method="post" name="serieslist" id="serieslist" action="studies.php">
+			<input type="hidden" name="action" value="" id="serieslistaction">
+			<input type="hidden" name="studyid" value="<?=$id?>">
 			<tbody>
 				<?
 					$sqlstringA = "show tables like '" . strtolower($modality) . "_series'";
@@ -2263,25 +2365,16 @@
 							</script>
 							<tr onMouseOver="this.style.backgroundColor='#9EBDFF';" onMouseOut="this.style.backgroundColor='';">
 								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
-								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $protocol; ?></span></td>
-								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_datetime; ?></span></td>
-								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $notes; ?></span></td>
+								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
+								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
+								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
 								<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><?=$numfiles?></a></td>
 								<td><?=$series_size?></td>
 								<td>
-								<!--<form action="studies.php" method="post" enctype="multipart/form-data">
-								<input type="hidden" name="action" value="upload">
-								<input type="hidden" name="modality" value="<?=$modality?>">
-								<input type="hidden" name="studyid" value="<?=$id?>">
-								<input type="hidden" name="seriesid" value="<?=$series_id?>">
-								<input type="file" name="files[]" multiple><input type="submit" value="Upload">-->
 								<span id="uploader<?=$series_id?>"></span>
-								</form>
 								</td>
 								<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><img src="images/download16.png" title="Download <?=$modality?> data"></a></td>
-								<td align="right">
-									<a href="javascript:decision('Are you sure you want to delete this series?', 'studies.php?action=deleteseries&modality=<?=$modality?>&id=<?=$id?>&seriesid=<?=$series_id?>')" style="color: red">X</a>
-								</td>
+								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<?=$series_id?>"></td>
 							</tr>
 						<?
 						}
@@ -2289,7 +2382,7 @@
 					else {
 						?>
 						<tr>
-							<td colspan="9">
+							<td colspan="1">
 								<span style="color: red">Invalid modality [<?=$modality?>]</span>
 							</td>
 						</tr>
@@ -2319,10 +2412,10 @@
 						// don't wait for the window to load  
 						window.onload = createUploaders;
 					</script>
-				<form action="studies.php" method="post">
-				<input type="hidden" name="action" value="addseries">
+				<!--<form action="studies.php" method="post">
+				<input type="hidden" name="action" value="addseries">-->
 				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
-				<input type="hidden" name="id" value="<?=$id?>">
+				<!--<input type="hidden" name="id" value="<?=$id?>">-->
 				<tr>
 					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>"></td>
 					<td>
@@ -2342,14 +2435,21 @@
 					</td>
 					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>"></td>
 					<td><input type="text" name="notes"></td>
+					<td><input type="submit" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"></td>
 					<td></td>
 					<td></td>
-					<td><input type="submit" value="Create"></td>
+					<td></td>
 					<td></td>
 				</tr>
-				</form>
 			</tbody>
 		</table>
+		<div align="right" style="padding: 10px">
+			<b>With Selected</b> &nbsp; &nbsp; <br>
+			<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.serieslist.action.value='deleteseries';return confirm('Are you absolutely sure you want to DELETE the selected series?')">
+			<br><br>
+			<input type="button" name="minipipelineform" value="Run mini-pipeline" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()">
+		</div>
+		</form>
 
 		<?
 	}

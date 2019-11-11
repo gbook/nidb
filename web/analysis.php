@@ -289,13 +289,15 @@
 			
 			if ($status == 'bad') {
 				$sqlstring = "update analysis set analysis_isbad = 1 where analysis_id = $analysisid";
+				$mark = "bad";
 			}
 			else {
 				$sqlstring = "update analysis set analysis_isbad = 0 where analysis_id = $analysisid";
+				$mark = "good";
 			}
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as bad</span><br><?
+			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as <?=$mark?></span><br><?
 		}
 	}
 

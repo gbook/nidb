@@ -102,6 +102,9 @@ span.label { font-size: 8pt; font-weight: bold }
 
 span.value { font-size: 8pt }
 
+.tt { font-family: 'Roboto Mono', monospace; }
+/*.tt { font-family: monospace; font-size: larger; } */
+
 .sublabel { font-size: 8pt; color: #666666; font-weight:normal; }
 
 td.columnheader { font-weight: bold; text-align: center; vertical-align: bottom; border-top: 1pt solid darkblue; border-bottom: 1pt solid darkblue; border-right: 1pt solid #BBBBBB; background-color: #EEEEEE; }
@@ -160,15 +163,15 @@ td.hover, tr.hover { background-color: aliceblue; }
 .displaytable tr:first-child th:last-child { border-top-right-radius: 5px; }
 
 /* small display table (multiple rows) */
-table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-radius:5px; border-spacing: 0px; }
+table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-spacing: 0px; }
 .smalldisplaytable th { font-weight: bold; font-size: 9pt; border-bottom: 1px solid #777; padding: 2px 6px; background-color: #EEE; }
 .smalldisplaytable td { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 1px 6px; }
 .smalldisplaytable tbody tr:hover { background-color: #BBC8E6; }
 .smalldisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.smalldisplaytable tr:last-child > td:first-child { border-bottom-left-radius:5px; } /* kludge to make the border radius appear correct */
+/*.smalldisplaytable tr:last-child > td:first-child { border-bottom-left-radius:5px; } /* kludge to make the border radius appear correct
 .smalldisplaytable tr:last-child > td:last-child { border-bottom-right-radius:5px; }
 .smalldisplaytable tr:first-child > th:first-child { border-top-left-radius: 5px; }
-.smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; }
+.smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; } */
 
 /* merge table */
 table.merge { padding: 0px; border-collapse: collapse; }
@@ -252,10 +255,10 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .demographicstable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
 /* 2 column table (small table with 2 columns: variable, value)*/
-.twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; }
-.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
-.twocoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
-.twocoltable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
+.twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; border-collapse: collapse; }
+.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 14pt; padding: 4px; background-color: #DDD; }
+.twocoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
+.twocoltable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
@@ -291,7 +294,7 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 
 /* update/delete/added messages */
 .message { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }
-.staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }
+.staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; border-radius: 6px; }
 .subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
 .error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
 
@@ -332,6 +335,10 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 /* for links appearing as buttons */
 .linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
 .linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; }
+
+.smalllinkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; font-size: smaller; }
+.smalllinkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; font-size: smaller; }
+
 .redlinkbutton { display: inline-block; background-color: #FF552A; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
 .redlinkbutton:hover { display: inline-block; background-color: #FF7F55; border: 1px solid #FF552A; color: #fff !important; text-decoration: none; }
 

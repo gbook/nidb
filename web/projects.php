@@ -180,7 +180,7 @@
 				DisplayProjectList();
 			}
 			else {
-				DisplayStudiesTable($id);
+				DisplayProjectInfo($id);
 			}
 			break;
 	}
@@ -2275,11 +2275,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['Series Summary'] = "projects.php?action=editbidsdatatypes&id=$id";
-		//NavigationBar("$name", $urllist);
-		
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2373,10 +2368,6 @@
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//NavigationBar("$name", $urllist);
-		
 		/* get studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2411,54 +2402,76 @@
 		/* get list of site IDs */
 		$siteids = array_unique($siteids);
 		
-		//DisplayProjectsMenu("info", $id);
 		?>
 		<div align="center">
-		<br><br>
-		<table class="twocoltable dropshadow">
-			<thead>
-				<tr>
-					<th colspan="2"><?=$name?></th>
-				</tr>
-			</thead>
+		<table cellpadding="15px">
 			<tr>
-				<td class="left">Subjects</td>
-				<td class="right"><?=count($uids)?></td>
-			</tr>
-			<tr>
-				<td class="left">Age (years)</td>
-				<td class="right">
-					<table style="font-size: 9pt">
-						<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
-						<tr><td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
-						<?
-							foreach ($genders as $sex => $a) {
-								list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
-						?>
-						<tr><td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?> &plusmn;<?=number_format($stdev,1)?> (<?=number_format($min,1)?> - <?=number_format($max,1)?>)</td></tr>
-						<?
-							}
-						?>
+				<td>
+					<table class="twocoltable dropshadow">
+						<thead>
+							<tr>
+								<th colspan="2"><?=$name?></th>
+							</tr>
+						</thead>
+						<tr>
+							<td class="left">Subjects</td>
+							<td class="right"><?=count($uids)?></td>
+						</tr>
+						<tr>
+							<td class="left">Studies</td>
+							<td class="right"><?=$numstudies?></td>
+						</tr>
+						<tr>
+							<td class="left">Age (years)</td>
+							<td class="right">
+								<table border="0">
+									<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
+									<tr>
+										<td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
+									</tr>
+									<?
+										foreach ($genders as $sex => $a) {
+											list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
+											?>
+											<tr>
+												<td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range: <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
+											</tr>
+											<?
+										}
+									?>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td class="left">Study date range</td>
+							<td class="right"><?=$lowdate?> to <?=$highdate?></td>
+						</tr>
+						<tr>
+							<td colspan="2">&nbsp;</td>
+						</tr>
+						<tr>
+							<td class="left">Remote connection params</td>
+							<td class="right">
+								Project ID: <?=$id?><br>
+								Instance ID: <?=$instanceid?><br>
+								Site IDs: <?=implode2(",",$siteids)?><br>
+							</td>
+						</tr>
 					</table>
 				</td>
-			</tr>
-			<tr>
-				<td class="left">Studies</td>
-				<td class="right"><?=$numstudies?></td>
-			</tr>
-			<tr>
-				<td class="left">Study date range</td>
-				<td class="right"><?=$lowdate?> to <?=$highdate?></td>
-			</tr>
-			<tr>
-				<td colspan="2">&nbsp;</td>
-			</tr>
-			<tr>
-				<td class="left">Remote connection params</td>
-				<td class="right">
-					Project ID: <?=$id?><br>
-					Instance ID: <?=$instanceid?><br>
-					Site IDs: <?=implode2(",",$siteids)?><br>
+				<td valign="top">
+					<b>Project options</b><br><br>
+					<a href="projectchecklist.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
+					<a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>">Study templates</a><br>
+					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
+					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
+					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
+					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>
+					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
+					<? if ($GLOBALS['isadmin']) { ?>
+					<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
+					<? } ?>
+
 				</td>
 			</tr>
 		</table>
@@ -2642,9 +2655,6 @@
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
 		
-		//$urllist['Projects'] = "projects.php";
-		//NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
-		
 		if ($_SESSION['instanceid'] == "") {
 			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top right corner of the page.</div><?
 		}
@@ -2715,7 +2725,7 @@
 						if ($view_data) {
 							?>
 							<tr valign="top">
-								<td><a href="projects.php?action=displaystudies&id=<?=$id?>"><?=$name?></td>
+								<td><a href="projects.php?id=<?=$id?>"><?=$name?></td>
 								<td><?=$projectuid?></td>
 								<td><?=$costcenter?></td>
 								<td><?=$adminfullname?></td>

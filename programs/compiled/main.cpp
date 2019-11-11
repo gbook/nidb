@@ -32,6 +32,7 @@
 #include "moduleQC.h"
 #include "modulePipeline.h"
 #include "moduleCluster.h"
+#include "moduleMiniPipeline.h"
 #include <iostream>
 #include <smtp/SmtpMime>
 
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
 	p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
 	p.addHelpOption();
 	p.addVersionOption();
-	p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline  cluster");
+	p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  pipeline  cluster  minipipeline");
 
 	/* command line flag options */
 	QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
 	QString paramResultUnit = p.value(optResultUnit).trimmed();
 
 
-	QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "cluster" };
+	QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "cluster", "minipipeline" };
 	QStringList submodules = { "pipelinecheckin", "resultinsert", "updateanalysis", "checkcompleteanalysis"};
 
 	/* now check the command line parameters passed in, to see if they are calling a valid module */
@@ -226,6 +227,11 @@ int main(int argc, char *argv[])
 					}
 					else if (module == "pipeline") {
 						modulePipeline *m = new modulePipeline(n);
+						keepLog = m->Run();
+						delete m;
+					}
+					else if (module == "minipipeline") {
+						moduleMiniPipeline *m = new moduleMiniPipeline(n);
 						keepLog = m->Run();
 						delete m;
 					}

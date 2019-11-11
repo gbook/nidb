@@ -19,6 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     analysis.cpp \
     main.cpp \
+    minipipeline.cpp \
     moduleCluster.cpp \
     moduleExport.cpp \
     moduleFileIO.cpp \
@@ -26,6 +27,7 @@ SOURCES += \
     moduleImportUploaded.cpp \
     moduleMRIQA.cpp \
     moduleManager.cpp \
+    moduleMiniPipeline.cpp \
     modulePipeline.cpp \
     moduleQC.cpp \
     nidb.cpp \
@@ -49,8 +51,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    TextTable.h \
     analysis.h \
+    minipipeline.h \
     moduleCluster.h \
     moduleExport.h \
     moduleFileIO.h \
@@ -58,6 +60,7 @@ HEADERS += \
     moduleImportUploaded.h \
     moduleMRIQA.h \
     moduleManager.h \
+    moduleMiniPipeline.h \
     modulePipeline.h \
     moduleQC.h \
     nidb.h \

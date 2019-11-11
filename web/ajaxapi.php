@@ -25,6 +25,7 @@
 	
 	session_start();
 	require "functions.php";
+	require "includes_php.php";
 
 	$action = GetVariable("action");
 	$nfspath = GetVariable("nfspath");
