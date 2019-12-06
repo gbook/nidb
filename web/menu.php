@@ -260,6 +260,7 @@
 					$pipelineid = GetVariable("id");
 					if ($pipelineid == "") {
 						?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
+						?><a href="pipelines.php?action=addform">New Pipeline</a><?
 						
 						if ($page == "cluster.php") { $style = "background-color:#273f70"; }
 						?><a href="cluster.php" style="<?=$style?>">Cluster</a><?
@@ -270,16 +271,15 @@
         	            $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
                 	    $name = $row['pipeline_name'];
 
-						?><a href="pipelines.php" style="">Pipeline List</a><?
-						?><a href="cluster.php" style="">Cluster</a><?
+						?><a href="pipelines.php" style="">Pipeline List</a> <span style="color:#fff">&gt;</span> <?
 						
 						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a><?
+						?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a> <span style="color:#fff">&gt;</span><?
 
 						if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" style="<?=$style?>">Analysis</a><?
+						?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" style="<?=$style?>">Analyses</a><?
 					}
 				}
 				

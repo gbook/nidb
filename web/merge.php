@@ -43,14 +43,16 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
+	PrintVariable($_POST);
+	PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$subjectids = GetVariable("subjectids");
 	$subjectuid = GetVariable("subjectuid");
 	$selectedid = GetVariable("selectedid");
+	$studyids = GetVariable("studyids");
+	$studyid = GetVariable("studyid");
 	$idtoremove = GetVariable("idtoremove");
 	$name = GetVariable("name");
 	$dob = GetVariable("dob");
@@ -70,6 +72,12 @@
 			break;
 		case 'submitmerge':
 			SubmitMerge($subjectids, $selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $altuids, $guid, $enrollgroup);
+			break;
+		case 'submitmergestudies':
+			SubmitMergeStudies($studyids, $selectedid, $studydatetime, $altuids, $studysite);
+			break;
+		case 'mergestudyform':
+			DisplayMergeStudies($studyids, $studyid);
 			break;
 		default:
 			DisplayMergeSubjects($subjectids, $idtoremove, $subjectuid);
@@ -144,6 +152,148 @@
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- DisplayMergeStudies ---------------- */
+	/* -------------------------------------------- */
+	function DisplayMergeStudies($studyids, $studyid) {
+
+		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$studyids = mysqli_real_escape_array($studyids);
+
+		$sqlstring = "select c.uid, a.study_modality from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$modality = $row['study_modality'];
+
+		?>
+		Select studies you want to merge (<?=$modality?> modality)
+		<br><br>
+		<form action="merge.php" method="post">
+		<input type="hidden" name="action" value="mergestudyform">
+		<input type="hidden" name="studyid" value="<?=$studyid?>">
+		<?
+		$sqlstring = "select * from studies where enrollment_id in (select enrollment_id from studies where study_id = $studyid) and study_modality in (select study_modality from studies where study_id = $studyid)";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$sid = $row['study_id'];
+			$studynum = $row['study_num'];
+			$studydate = $row['study_datetime'];
+			
+			$checked = "";
+			if (in_array($studyid, $studyids)) { $checked = "checked"; }
+			if ($sid == $studyid) { $checked = "checked"; }
+			
+			?><input type="checkbox" name="studyids[]" value="<?=$sid?>" <?=$checked?>><?=$uid?><?=$studynum?> - <?=$studydate?><br><?
+		}
+		?>
+		<input type="submit" class="linkbutton" value="Update list">
+		</form>
+		<?
+
+		if (is_array($studyids)) {
+			$sqlstring = "select * from studies where study_id in (" . MakeSQLListFromArray($studyids) . ")";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$numsubjects = mysqli_num_rows($result);
+			$i=0;
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				/* gather info for this uid and put into an array */
+				$studies[$i]['studyid'] = $row['study_id'];
+				$studies[$i]['studynum'] = $uid . $row['study_num'];
+				$studies[$i]['datetime'] = $row['study_datetime'];
+				$studies[$i]['altid'] = $row['study_alternateid'];
+				$studies[$i]['ageatscan'] = $row['ageatscan'];
+				$studies[$i]['site'] = $row['study_site'];
+				$i++;
+			}
+		}
+
+		/* display one column for each subject with a radio button to "merge all studies into this subject" */
+		?>
+		<style>
+			.radio-toolbar2 input[type="radio"]:checked ~ * {
+				background:yellow !important;
+				padding: 5px;
+			}
+		</style>
+		
+		<table>
+			<tr>
+				<td colspan="2" style="padding: 15px;">
+					<b>Merge studies</b>
+					<ul>
+					<li>Select the study you want to merge into and edit information in that column. <b>Leftmost study is selected by default</b>
+					<li>Only the information in the selected column will be saved, and all other studies will be merged into that study and then deleted.
+					</ul>
+				</td>
+			</tr>
+			<tr>
+				<td>
+				<form action="merge.php" method="post">
+				<input type="hidden" name="action" value="submitmergestudies">
+				<input type="hidden" name="returnpage" value="<?=$returnpage?>">
+				<?
+				for ($i=0;$i<count($studies);$i++) {
+					echo "<input type='hidden' name='studyids[" . $i . "]' value='" . $studies[$i]['studyid'] . "'>\n";
+				}
+				?>
+				<table cellspacing="0" cellpadding="1" class="merge">
+					<tr class="radio-toolbar2">
+						<td class="label">Study</td>
+						<?
+							for ($i=0;$i<count($studies);$i++) {
+								?>
+									<td align="center" class="uid"><label><input type="radio" id="uid<?=$i?>" name="selectedid" value="<?=$studies[$i]['studynum']?>" <? if ($i == 0) { echo "checked"; } ?> ><span><?=$studies[$i]['studynum']?></span></label>
+									</td>
+								<?
+							}
+						?>
+					</tr>
+					<tr>
+						<td class="label">Study date/time</td>
+						<?
+							for ($i=0;$i<count($studies);$i++) {
+								if ($studies[$i]['datetime'] != $studies[0]['datetime']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+								?>
+									<td class="<?=$class?>"><input type="text" name="studydatetime[<?=$studies[$i]['studyid']?>]" value="<?=$studies[$i]['datetime'];?>"></td>
+								<?
+							}
+						?>
+					</tr>
+					<tr>
+						<td class="label">Alternate study ID</td>
+						<?
+							for ($i=0;$i<count($studies);$i++) {
+								if ($studies[$i]['altid'] != $studies[0]['altid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+								?><td class="<?=$class?>"><input type="text" name="altuids[<?=$studies[$i]['studyid']?>]" value="<?=$studies[$i]['altid'];?>"></td><?
+							}
+						?>
+					</tr>
+					<tr>
+						<td class="label">Site/equipment</td>
+						<?
+							for ($i=0;$i<count($studies);$i++) {
+								if ($studies[$i]['site'] != $studies[0]['site']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+								?><td class="<?=$class?>"><input type="text" name="site[<?=$studies[$i]['studyid']?>]" value="<?=$studies[$i]['site'];?>"></td><?
+							}
+						?>
+					</tr>
+					<tr>
+						<td colspan="<?=count($studies)+1?>" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray">
+							<br>
+							<input type="submit" value="Merge">
+							<br><br>
+						</td>
+					</tr>
+				</table>
+				</form>
+			</td>
+		</tr>
+	</table>
+	<?
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- DisplayMergeSubjects --------------- */

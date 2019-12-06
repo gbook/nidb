@@ -98,12 +98,12 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
 		q.bindValue(":analysisid", id);
 	}
 	else if (status == "completererun") {
-		q.prepare("update analysis set analysis_status = complete, analysis_statusmessage = :message, analysis_rerunresults = 0 where analysis_id = :analysisid");
+		q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0 where analysis_id = :analysisid");
 		q.bindValue(":message", message);
 		q.bindValue(":analysisid", id);
 	}
 	else if (status == "completesupplement") {
-		q.prepare("update analysis set analysis_status = complete, analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = :analysisid");
+		q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = :analysisid");
 		q.bindValue(":message", message);
 		q.bindValue(":analysisid", id);
 	}
@@ -237,7 +237,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
 		q.bindValue(":resultnameid", resultnameid);
 		q.bindValue(":resultunitid", resultunitid);
 		if (n->IsInt(paramResultNumber))
-			q.bindValue(":value", static_cast<double>(paramResultNumber.toInt())); /* I know... but the user could have passed an int for a value, and the database only accepts double */
+			q.bindValue(":value", static_cast<double>(paramResultNumber.toInt())); /* type casting... I know. But the user could have passed an int for a value, and the database only accepts double */
 		else
 			q.bindValue(":value", paramResultNumber.toDouble());
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

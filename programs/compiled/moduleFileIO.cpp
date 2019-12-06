@@ -69,6 +69,7 @@ int moduleFileIO::Run() {
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
 			QString merge_ids = q.value("merge_ids").toString().trimmed();
+			int merge_id = q.value("merge_ids").toInt();
 			QString merge_name = q.value("merge_name").toString().trimmed();
 			QString merge_dob = q.value("merge_dob").toString().trimmed();
 			QString merge_sex = q.value("merge_sex").toString().trimmed();
@@ -124,6 +125,7 @@ int moduleFileIO::Run() {
 			}
 			else if (fileio_operation == "merge") {
 				if (data_type == "subject") { found = MergeSubjects(data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_altuids, msg); }
+				//if (data_type == "study") { found = MergeStudies(data_id, merge_id, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
 				//found = AnonymizeSeries(requestid, data_id, modality, dicomtags);
@@ -149,6 +151,7 @@ int moduleFileIO::Run() {
 				SetIORequestStatus(requestid, "error", msg);
 			}
 
+			/* all finished with the request, so set the status */
 			if (found) {
 				/* set the status of the delete_request to complete */
 				SetIORequestStatus(requestid, "complete", msg);
@@ -886,34 +889,36 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
 	msg = "";
 
 	QStringList ids = mergeIDs.split(",");
-	/* moving all studies from each existing subject to the new subject */
-	foreach (QString id, ids) {
+	if (ids.size() > 0) {
+		/* moving all studies from each existing subject to the new subject */
+		foreach (QString id, ids) {
 
-		/* make sure the target subjectid is not in the list of merge ids */
-		if (id == subjectid)
-			continue;
+			/* make sure the target subjectid is not in the list of merge ids */
+			if (id == subjectid)
+				continue;
 
-		/* get list of studies for this subject */
-		q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
-		q.bindValue(":subjectid", id.toInt());
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-		if (q.size() > 0) {
-			n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
-			while (q.next()) {
-				int studyid = q.value("study_id").toInt();
-				QString m;
-				if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
-					n->WriteLog("Error moving study to subject [" + m + "]");
-					return false;
+			/* get list of studies for this subject */
+			q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
+			q.bindValue(":subjectid", id.toInt());
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+			if (q.size() > 0) {
+				n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
+				while (q.next()) {
+					int studyid = q.value("study_id").toInt();
+					QString m;
+					if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
+						n->WriteLog("Error moving study to subject [" + m + "]");
+						return false;
+					}
 				}
 			}
-		}
-		n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
+			n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
 
-		/* delete the subject that has just been merged */
-		q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
-		q.bindValue(":subjectid", id.toInt());
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+			/* delete the subject that has just been merged */
+			q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
+			q.bindValue(":subjectid", id.toInt());
+			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+		}
 	}
 
 	/* update the final subject with the info */

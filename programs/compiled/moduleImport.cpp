@@ -914,7 +914,8 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 					int idx = line.indexOf(".dInPlaneRot");
 					line = line.mid(idx,23);
 					QStringList vals = line.split(QRegExp("\\s+"));
-					PhaseEncodeAngle = vals.last().trimmed();
+					if (vals.size() > 0)
+						PhaseEncodeAngle = vals.last().trimmed();
 					break;
 				}
 			}

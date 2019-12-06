@@ -42,7 +42,8 @@ Component.prototype.createOperations = function()
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "php-process");
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "php-pear");
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "php-mbstring");
-	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "mariadb");
+    component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "php-fpm");
+    component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "mariadb");
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "mariadb-common");
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "mariadb-server");
 	component.addElevatedOperation("Execute", "{0,100}", "yum", "install", "-y", "mariadb-server-utils");
@@ -75,11 +76,13 @@ Component.prototype.createOperations = function()
 	component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/^display_errors = .*/display_errors = On/g", "/etc/php.ini");
     component.addElevatedOperation("Execute", "{0}", "sed", "-i", "s/^error_reporting = .*/error_reporting = E_ALL \\& \\~E_DEPRECATED \\& \\~E_STRICT \\& \\~E_NOTICE/", "/etc/php.ini");
 
-    /* enable and start httpd and mysqld */
-    component.addElevatedOperation("Execute", "{0}", "systemctl", "enable", "httpd.service");
-    component.addElevatedOperation("Execute", "{0}", "systemctl", "enable", "mariadb.service");
+    /* enable and start services */
+    component.addElevatedOperation("Execute", "{0}", "systemctl", "enable", "httpd.service");   /* enable the apache web service */
+    component.addElevatedOperation("Execute", "{0}", "systemctl", "enable", "mariadb.service"); /* enable the MariaDB service */
+    component.addElevatedOperation("Execute", "{0}", "systemctl", "enable", "php-fpm.service"); /* enable PHP-FastCGI Process Manager service */
     component.addElevatedOperation("Execute", "{0}", "systemctl", "start", "httpd.service");
     component.addElevatedOperation("Execute", "{0}", "systemctl", "start", "mariadb.service");
+    component.addElevatedOperation("Execute", "{0}", "systemctl", "start", "php-fpm.service");
 
     /* make sure port 80 is accessible through the firewall */
     component.addElevatedOperation("Execute", "{0}", "firewall-cmd", "--permanent", "--add-port=80/tcp");

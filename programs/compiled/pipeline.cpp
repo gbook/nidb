@@ -68,7 +68,6 @@ void pipeline::LoadPipelineInfo() {
 	useTmpDir = q.value("pipeline_usetmpdir").toBool();
 	tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
 	foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", QString::SkipEmptyParts)) {
-		//n->WriteLog(QString("Adding [%1] to the parentDependencyID list for pipeline [%2]").arg(did.toInt()).arg(name));
 		parentDependencyIDs.append(did.toInt());
 	}
 
@@ -76,7 +75,6 @@ void pipeline::LoadPipelineInfo() {
 	depDir = q.value("pipeline_dependencydir").toString().trimmed();
 	depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
 	foreach (QString gid, q.value("pipeline_groupid").toString().trimmed().split(",", QString::SkipEmptyParts)) {
-		//n->WriteLog(QString("Adding [%1] to the groupID list for pipeline [%2]").arg(gid.toInt()).arg(name));
 		groupIDs.append(gid.toInt());
 	}
 

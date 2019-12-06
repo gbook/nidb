@@ -1630,6 +1630,12 @@ QList<pipelineStep> modulePipeline::GetPipelineSteps(int pipelineid, int version
 			rec.description = q.value("ps_description").toString();
 			rec.logged = q.value("ps_logged").toBool();
 			rec.enabled = q.value("ps_enabled").toBool();
+			if (rec.logged) {
+				if (rec.supplement)
+					rec.logfile = QString("SupplementStep%1").arg(rec.order);
+				else
+					rec.logfile = QString("Step%1").arg(rec.order);
+			}
 			steps.append(rec);
 		}
 	}
@@ -1852,6 +1858,16 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
 	QDir::setCurrent(clusteranalysispath);
 	if (!rerunresults) {
+
+		/* get the number of regular vs supplement steps */
+		int regSize(0), supSize(0);
+		for (int i=0; i<steps.size(); i++) {
+			if (steps[i].supplement)
+				supSize++;
+			else
+				regSize++;
+		}
+
 		/* go through list of data search criteria */
 		for (int i=0; i<steps.size(); i++) {
 			int order = steps[i].order;
@@ -1861,6 +1877,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			QString description = steps[i].description;
 			bool logged = steps[i].logged;
 			bool enabled = steps[i].enabled;
+			QString logfile = steps[i].logfile;
 			bool checkedin = true;
 			bool profile = false;
 
@@ -1871,8 +1888,13 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			}
 
 			QString supplement;
-			if (issupplement)
+			int size(0);
+			if (issupplement) {
 				supplement = "supplement-";
+				size = supSize;
+			}
+			else
+				size = regSize;
 
 			/* check for flags */
 			if ((command.contains("{NOLOG}")) || (description.contains("{NOLOG}")))
@@ -1892,7 +1914,8 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 			if (checkedin) {
 				QString cleandesc = description;
 				cleandesc.replace("'","").replace("\"","");
-				jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5' '%6'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
+				jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(size);
+				//jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5' '%6'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
 				jobfile += "\n# " + description + "\necho Running " + command + "\n";
 			}
 
@@ -1902,7 +1925,8 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
 			/* write to a log file if logging is requested */
 			if (logged)
-				command += QString(" >> " + analysispath + "/pipeline/" + supplement + "step%1.log 2>&1").arg(order);
+				command += QString(" >> " + analysispath + "/pipeline/" + logfile);
+			    //command += QString(" >> " + analysispath + "/pipeline/" + supplement + "step%1.log 2>&1").arg(order);
 
 			if (workingdir != "")
 				jobfile += "cd " + workingdir + ";\n";
@@ -1983,13 +2007,45 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 	int numInitial(0);
 	int numRerun(0);
 	int numSupplement(0);
+	QList<int> list;
 
-	/* step 1 - get list of studies which do not have an entry in the analysis table for this pipeline */
+	/* step 1 - get only the studies that need to have their results rerun */
+	int addedStudies = 0;
+	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
+	q.bindValue(":pipelineid", pipelineid);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		while (q.next()) {
+			int studyid = q.value("study_id").toInt();
+			n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
+			list.append(studyid);
+			addedStudies++;
+		}
+	}
+	numRerun = addedStudies;
+
+	/* step 2 - get only the studies that need to have their supplements run */
+	addedStudies = 0;
+	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
+	q.bindValue(":pipelineid", pipelineid);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		while (q.next()) {
+			int studyid = q.value("study_id").toInt();
+			n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
+			list.append(studyid);
+			addedStudies++;
+		}
+	}
+	//n->WriteLog(QString("Found [%1] additional studies marked for supplement run.").arg(addedStudies));
+	numSupplement = addedStudies;
+
+	/* step 3 - get list of studies which do not have an entry in the analysis table for this pipeline */
 	if (depend >= 0) {
 		/* there is a dependency. need to check if ANY of the subject's studies have the dependency... */
 		n->WriteLog(QString("This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend));
 
-		/* step 1a) get list of studies that have completed the dependency */
+		/* step 3a) get list of studies that have completed the dependency */
 		QList<int> list;
 		QStringList studylist;
 		QSqlQuery q2;
@@ -2008,14 +2064,16 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 		if (studyidlist == "")
 			studyidlist = "-1";
 
-		if (groupids != "") {
-			QStringList gids = groupids.split(",");
-			foreach (QString gid, gids) {
-				n->WriteLog(n->GetGroupListing(gid.toInt()), 250);
+		if (n->cfg["debug"].toInt()) {
+			if (groupids != "") {
+				QStringList gids = groupids.split(",");
+				foreach (QString gid, gids) {
+					n->WriteLog(n->GetGroupListing(gid.toInt()), 250);
+				}
 			}
 		}
 
-		/* step 1b) then find all studies that have completed and have not already been processed by this pipeline */
+		/* step 3b) then find all studies that have completed and have not already been processed by this pipeline */
 		if (groupids == "") {
 			/* NO groupids */
 			q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
@@ -2047,8 +2105,6 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 		}
 	}
 
-	QList<int> list;
-
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		while (q.next()) {
@@ -2064,40 +2120,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 				uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
 			}
 			list.append(studyid);
-		}
-	}
-	numInitial = list.size();
 
-	/* step 2 - get only the studies that need to have their results rerun */
-	int addedStudies = 0;
-	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
-	q.bindValue(":pipelineid", pipelineid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		while (q.next()) {
-			int studyid = q.value("study_id").toInt();
-			n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
-			list.append(studyid);
-			addedStudies++;
+			numInitial++;
 		}
 	}
-	numRerun = addedStudies;
-
-	/* step 3 - get only the studies that need to have their supplements run */
-	addedStudies = 0;
-	q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
-	q.bindValue(":pipelineid", pipelineid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		while (q.next()) {
-			int studyid = q.value("study_id").toInt();
-			n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
-			list.append(studyid);
-			addedStudies++;
-		}
-	}
-	//n->WriteLog(QString("Found [%1] additional studies marked for supplement run.").arg(addedStudies));
-	numSupplement = addedStudies;
 
 	n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
 

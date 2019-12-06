@@ -22,6 +22,7 @@
 
 #include "moduleMiniPipeline.h"
 #include "minipipeline.h"
+#include "series.h"
 #include <QSqlQuery>
 
 
@@ -93,12 +94,22 @@ int moduleMiniPipeline::Run() {
 			if (q.size() > 0) {
 				q.first();
 				int mpid = q.value("minipipeline_id").toInt();
-				//int mpversion = q.value("mp_version").toInt();
+				QString modality = q.value("mp_modality").toString();
+				int seriesid = q.value("mp_seriesid").toInt();
+
 				minipipeline mp(mpid, n); /* get the analysis info */
 				if (!mp.isValid) {
 					logs << n->WriteLog("mini-pipeline was not valid: [" + mp.msg + "]");
 					continue;
 				}
+
+				series s(seriesid, modality, n); /* get the series info */
+				if (!s.isValid) {
+					logs << n->WriteLog("Series was not valid: [" + s.msg + "]");
+					return 0;
+				}
+
+				logs << n->WriteLog("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]");
 
 				/* (1) create a temp space */
 				QString m;
@@ -109,64 +120,83 @@ int moduleMiniPipeline::Run() {
 					/* (2) write the script files */
 					if (mp.WriteScripts(tmpdir, m)) {
 
-						/* (3) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
+						/* (3) copy in all of the behavioral data */
+						QString m;
+						int c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
+						if (c > 0)
+							logs << n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir));
+						else
+							logs << n->WriteLog("Did not copy any series from data directory. Message from CopyAllSeriesData() [" + m + "]");
+
+						/* (4) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
 						QString systemstring = mp.entrypoint;
-						QString output = "";
-						output = n->SystemCommand(systemstring, true, false, false);
+						//QString output = "";
+						logs << n->SandboxedSystemCommand(systemstring, tmpdir, "00:05:00", true, false);
 
-						/* (4) parse the output */
-						indexedHash csv;
-						if (n->ParseCSV(output, csv, m)) {
-							for (int i=0; i<csv.size();i++) {
-								QString csvType = csv[i]["type"];
-								QString csvVariableName = csv[i]["variablename"];
-								QString csvStartDate = csv[i]["startdate"];
-								QString csvEndDate = csv[i]["enddate"];
-								QString csvDuration = csv[i]["duration"];
-								QString csvValue = csv[i]["value"];
-								QString csvUnits = csv[i]["units"];
-								QString csvNotes = csv[i]["notes"];
-								QString csvInstrument = csv[i]["instrument"];
+						/* (5) parse the output */
+						QString outfilename = tmpdir + "/output.csv";
+						QFile f(outfilename);
+						if (!f.open(QFile::ReadOnly | QFile::Text)) {
+							QTextStream in(&f);
+							QString output = in.readAll();
 
-								QStringList sdparts = csvStartDate.split(" ");
-								QDateTime startDate;
-								if (sdparts.size() == 1)
-									startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
-								else
-									startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm::ss");
+							indexedHash csv;
+							if (n->ParseCSV(output, csv, m)) {
+								for (int i=0; i<csv.size();i++) {
+									QString csvType = csv[i]["type"];
+									QString csvVariableName = csv[i]["variablename"];
+									QString csvStartDate = csv[i]["startdate"];
+									QString csvEndDate = csv[i]["enddate"];
+									QString csvDuration = csv[i]["duration"];
+									QString csvValue = csv[i]["value"];
+									QString csvUnits = csv[i]["units"];
+									QString csvNotes = csv[i]["notes"];
+									QString csvInstrument = csv[i]["instrument"];
 
-								QStringList edparts = csvStartDate.split(" ");
-								QDateTime endDate;
-								if (edparts.size() == 1)
-									endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
-								else
-									endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm::ss");
+									QStringList sdparts = csvStartDate.split(" ");
+									QDateTime startDate;
+									if (sdparts.size() >= 1)
+										startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
+									else
+										startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm::ss");
 
-								/* insert the value */
-								QSqlQuery q2;
-								if (csvType == "measure") {
-									numInserts += InsertMeasure(enrollmentID, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt());
+									QStringList edparts = csvStartDate.split(" ");
+									QDateTime endDate;
+									if (edparts.size() >= 1)
+										endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
+									else
+										endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm::ss");
+
+									/* insert the value */
+									QSqlQuery q2;
+									if (csvType == "measure") {
+										numInserts += InsertMeasure(enrollmentID, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt());
+									}
+									else if (csvType == "vital") {
+										numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate);
+									}
+									else if (csvType == "drug") {
+										numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
+									}
+									else {
+										logs << n->WriteLog("Error. Invalid value type [" + csvType + "]");
+									}
 								}
-								else if (csvType == "vital") {
-									numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate);
-								}
-								else if (csvType == "drug") {
-									numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
-								}
-								else {
-									logs << n->WriteLog("Error. Invalid value type [" + csvType + "]");
-								}
+							}
+							else {
+								logs << n->WriteLog("Error. Unable to parse csv output [" + m + "]");
 							}
 						}
 						else {
-							logs << n->WriteLog("Error. Unable to parse csv output [" + m + "]");
+							logs << n->WriteLog("Error. Unable to read .csv output file [" + outfilename + "]");
 						}
-
 					}
+					else
+						logs << n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]");
 
-					/* (5) cleanup */
-					if (!n->RemoveDir(tmpdir, m))
-						logs << n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]");
+					/* (6) cleanup */
+					//if (!n->RemoveDir(tmpdir, m))
+					//	logs << n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]");
 				}
 			}
 			else {
@@ -209,6 +239,52 @@ QList<int> moduleMiniPipeline::GetMPJobList() {
 	}
 
 	return list;
+}
+
+
+/*************************************************************
+* @brief CopyAllSeriesData
+*
+* Copies all series data to a destination path
+* @param modality Modality of the series
+* @param seriesid ID of the series
+* @param destination directory to which the data will be copied
+* @param msg logs or messages returned from the function
+* @param createDestDir true to create the destination directory if it doesn't exist
+* @param rwPerms copy the data with read-write permissions
+**************************************************************/
+int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QString destination, QString &msg, bool createDestDir, bool rwPerms) {
+	int numFilesCopied = 0;
+	msg = "";
+
+	series s(seriesid, modality, n); /* get the series info */
+	if (!s.isValid) {
+		msg = "Series was not valid: [" + s.msg + "]";
+		return 0;
+	}
+
+	QString m;
+	if (createDestDir)
+		if (!n->MakePath(destination,m)) {
+			msg = "Unable to create output path [" + destination + "] because of error [" + m + "]";
+			return 0;
+		}
+
+	QString systemstring = "cp -uvf " + s.datapath + "/* " + destination + "/";
+	msg += n->SystemCommand(systemstring, true, false);
+
+	if (rwPerms) {
+		systemstring = "chmod -R 777 " + destination;
+		msg += n->SystemCommand(systemstring, true, false);
+	}
+
+	int c;
+	qint64 b;
+	n->GetDirSizeAndFileCount(destination,c,b);
+
+	numFilesCopied = c;
+
+	return numFilesCopied;
 }
 
 

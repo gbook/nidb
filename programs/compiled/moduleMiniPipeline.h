@@ -17,6 +17,7 @@ public:
 private:
 	nidb *n;
 
+	int CopyAllSeriesData(QString modality, int seriesid, QString destination, QString &msg, bool createDestDir=true, bool rwPerms=true);
 	int InsertMeasure(int enrollmentID, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration);
 	int InsertVital(int enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalDate);
 	int InsertDrug(int enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit);

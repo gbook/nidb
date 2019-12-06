@@ -725,8 +725,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				QString lastline = lines.last().trimmed();
 				n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
 				QStringList parts = lastline.split(QRegExp("\\s+"), QString::SkipEmptyParts); /* split on whitespace */
-				int unzippedsize = parts[0].toInt();
-				int zippedsize = parts[1].toInt();
+				int unzippedsize(0);
+				int zippedsize(0);
+				if (parts.size() >= 2) {
+					unzippedsize = parts[0].toInt();
+					zippedsize = parts[1].toInt();
+				}
 
 				QSqlQuery q2;
 				q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = :publicdownloadid");
@@ -1464,9 +1468,10 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 				AcquisitionMatrix = "0 0 0 0";
 			}
 
-			QStringList AcqParts = AcquisitionMatrix.split(" ");
 			QString FOV = "0x0";
-			FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
+			QStringList AcqParts = AcquisitionMatrix.split(" ");
+			if (AcqParts.size() >= 4)
+				FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
 			QFile f(file);
 			if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {

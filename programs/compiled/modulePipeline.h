@@ -35,9 +35,10 @@ struct pipelineStep {
 	bool supplement;
 	QString workingDir;
 	int order;
-	QString description; /* comment */
+	QString description; /* the comment */
 	bool logged;
 	bool enabled;
+	QString logfile;
 };
 
 struct dataDefinitionStep {

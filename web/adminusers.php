@@ -666,10 +666,10 @@
 				<td>
 					<?
 						if ($enabled) {
-							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
 						}
 						else {
-							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
 						}
 					?>
 				</td>

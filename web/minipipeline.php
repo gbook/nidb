@@ -68,6 +68,9 @@
 		else
 			DisplayMiniPipelineForm($projectid, "edit", $mpid);
 	}
+	elseif (($action == "viewjobs") && (contains($referringpage, $phpscriptname))) {
+		DisplayMiniPipelineJobs($mpid, $projectid);
+	}
 	elseif (($action == "add") && (contains($referringpage, $phpscriptname))) {
 		AddMiniPipeline($projectid, $minipipelinename);
 		DisplayMiniPipelineList($projectid);
@@ -92,14 +95,14 @@
 		/* perform data checks */
 		$minipipelinename = mysqli_real_escape_string($GLOBALS['linki'], $minipipelinename);
 		//$scriptexecutableids = mysqli_real_escape_array($GLOBALS['linki'], $scriptexecutableids);
-		$scriptentrypointid = mysqli_real_escape_string($GLOBALS['linki'], $scriptentrypointid);
+		//$scriptentrypointid = mysqli_real_escape_string($GLOBALS['linki'], $scriptentrypointid);
 		//$scriptdeleteids = mysqli_real_escape_array($GLOBALS['linki'], $scriptdeleteids);
 		//$scriptparams = mysqli_real_escape_array($GLOBALS['linki'], $scriptparams);
 		//PrintVariable($scriptexecutableids);
 		
 		if (is_null($scriptentrypointid) || ($scriptentrypointid == "")) {
 			echo "No entry point set. An entry point script must be set.<br><br>";
-			return false;
+			//return false;
 		}
 			
 		/* update the minipipeline */
@@ -116,14 +119,16 @@
 		}
 		
 		/* update entry point flag */
-		/* remove previous flags */
-		$sqlstring = "update minipipeline_scripts set mp_entrypoint = 0 where minipipeline_id = $mpid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQL($sqlstring);
-		/* set new flag */
-		$sqlstring = "update minipipeline_scripts set mp_entrypoint = 1 where minipipelinescript_id = $scriptentrypointid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQL($sqlstring);
+		if ((!is_null($scriptentrypointid)) && ($scriptentrypointid > -1)) {
+			/* remove previous flags */
+			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 0 where minipipeline_id = $mpid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//PrintSQL($sqlstring);
+			/* set new flag */
+			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 1 where minipipelinescript_id = $scriptentrypointid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//PrintSQL($sqlstring);
+		}
 		
 		/* update parameter lists */
 		foreach ($scriptparams as $scriptid => $param) {
@@ -149,7 +154,7 @@
 				if(isset($_FILES['scripts']['name'][$key]) && $_FILES['scripts']['size'][$key] > 0) {
 					$scriptFilename = $_FILES['scripts']['name'][$key];
 					$scriptData = base64_encode(file_get_contents($_FILES['scripts']['tmp_name'][$key]));
-					$scriptSize = filesize($_FILES['scripts']['tmp_name'][$key]) + 0;
+					$scriptSize = $_FILES['scripts']['size'][$key];
 
 					/* insert the new minipipeline scripts */
 					$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize,
@@ -162,6 +167,16 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 		
 		?><div align="center"><span class="message"><?=$minipipelinename?> updated</span></div><br><br><?
 		return true;
+	}
+
+	/* -------------------------------------------- */
+	/* ------- AddMiniPipeline -------------------- */
+	/* -------------------------------------------- */
+	function DisplayMiniPipelineJobs($mpid, $projectid) {
+		$sqlstring = "select * from minipipeline_jobs where minipipeline_id = $mpid";
+		PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		PrintSQLTable($result, "", "", "");
 	}
 
 
@@ -269,7 +284,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 								<th>Size</th>
 								<th>Executable?</th>
 								<th>Entry point?</th>
-								<th title="{behfilelist} - alphabetically sorted list of all beh files">Parameter list<br><span class="tiny">{filelist} - alphabetically sorted list of all beh files</span></th>
+								<!--<th title="{behfilelist} - alphabetically sorted list of all beh files">Parameter list<br><span class="tiny">{filelist} - alphabetically sorted list of all beh files</span></th>-->
 								<th>Create date</th>
 								<th>Modify date</th>
 								<th>Remove?</th>
@@ -289,13 +304,13 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 							$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 							?>
 							<tr>
-								<td><tt><?=$script?> <i><?=$params?></i></tt></td>
+								<td><tt style="font-size: larger"><?=$script?></tt></td>
 								<td><?=$scriptsize?></td>
 								<td><input type="checkbox" name="scriptexecutableids[]" value="<?=$scriptid?>" <? if ($executable) { echo "checked"; }?>></td>
 								<td><input type="radio" name="scriptentrypointid" value="<?=$scriptid?>" <? if ($entrypoint) { echo "checked"; }?>></td>
-								<td><input type="text" name="scriptparams[<?=$scriptid?>]" value="<?=$params?>" style="font-family: monospace" size="45"></td>
-								<td><?=$createdate?></td>
-								<td><?=$modifydate?></td>
+								<!--<td><input type="text" name="scriptparams[<?=$scriptid?>]" value="<?=$params?>" style="font-family: monospace" size="45"></td>-->
+								<td style="font-size: smaller"><?=$createdate?></td>
+								<td style="font-size: smaller"><?=$modifydate?></td>
 								<td><input type="checkbox" name="scriptdeleteids[]" value="<?=$scriptid?>"></td>
 							</tr>
 							<?
@@ -304,7 +319,8 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					</table>
 					<br>
 					<? } ?>
-					Add script(s) <input type="file" name="scripts[]" multiple>
+					Add script(s) <input type="file" name="scripts[]" multiple><br>
+					<span class="tiny">Max individual file size 4GB. Max filename length 255 characters</span>
 				</td>
 			</tr>
 			<tr>
@@ -359,6 +375,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 			<thead>
 				<tr>
 					<th style="border: 1px solid #999; ">Name</th>
+					<th style="border: 1px solid #999; ">Logs</th>
 					<th style="border: 1px solid #999; ">Version</th>
 					<th style="border: 1px solid #999; ">Create date</th>
 					<th style="border: 1px solid #999; ">Modify date</th>
@@ -380,6 +397,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 						?>
 						<tr>
 							<td valign="top" style="border-bottom: 1px solid #999"><a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><?=$name?></td>
+							<td valign="top" style="border-bottom: 1px solid #999"><a href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>">View</td>
 							<td valign="top" style="border-bottom: 1px solid #999"><?=$version?></td>
 							<td valign="top" style="border-bottom: 1px solid #999"><?=$mpcreatedate?></td>
 							<td valign="top" style="border-bottom: 1px solid #999"><?=$mpmodifydate?></td>
@@ -389,14 +407,13 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 								$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 								if (mysqli_num_rows($resultA) > 0) {
 							?>
-								<table style="font-size: 9pt" width="100%">
+								<table style="font-size: 9pt" width="100%" class="smallgraydisplaytable">
 									<thead>
 										<tr>
 											<th>Script</th>
 											<th>Size</th>
-											<th>Executable?</th>
-											<!--<th>Create date</th>
-											<th>Modify date</th>-->
+											<th>Executable</th>
+											<th>Entry point</th>
 										</tr>
 									</thead>
 								<?
@@ -404,6 +421,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 									$script = $rowA['mp_scriptname'];
 									$params = $rowA['mp_parameterlist'];
 									$executable = $rowA['mp_executable'];
+									$entrypoint = $rowA['mp_entrypoint'];
 									$scriptsize = $rowA['mp_scriptsize'];
 									$createdate = date('M j, Y h:ia',strtotime($rowA['mp_scriptcreatedate']));
 									$modifydate = date('M j, Y h:ia',strtotime($rowA['mp_scriptmodifydate']));
@@ -412,8 +430,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 										<td><tt><?=$script?> <i><?=$params?></i></tt></td>
 										<td><?=$scriptsize?></td>
 										<td><? if ($executable) { echo "&#10004;"; }?></td>
-										<!--<td><?=$createdate?></td>
-										<td><?=$modifydate?></td>-->
+										<td><? if ($entrypoint) { echo "&#10004;"; }?></td>
 									</tr>
 									<?
 								}
@@ -426,7 +443,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 								}
 								?>
 							</td>
-							<td valign="top" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="redlinkbutton">X</a></td>
+							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="redlinkbutton">X</a></td>
 						</tr>
 						<?
 					}

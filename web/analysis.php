@@ -448,7 +448,7 @@
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
-		NavigationBar("Analyses", $urllist);
+		//NavigationBar("Analyses", $urllist);
 
 		DisplayPipelineStatus($pipeline_name, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
@@ -1018,7 +1018,7 @@
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
-		NavigationBar("Ignored studies for $pipeline_name", $urllist);
+		//NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
 		DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
@@ -1186,7 +1186,7 @@
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
 		$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
-		NavigationBar("Logs for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
+		//NavigationBar("Logs for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 
 		/* get list of steps for the appropriate version */
 		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
@@ -1294,7 +1294,7 @@
 		$urllist['Pipelines'] = "pipelines.php";
 		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
 		$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
-		NavigationBar("File list for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
+		//NavigationBar("File list for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 		
 		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";
 		/* build the correct path */
@@ -1575,17 +1575,33 @@
 							<?
 								if ($isenabled) {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen">
-										<b>Enabled</b><br>
-										<a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/checkedbox16.png"title="Pipeline enabled, click to disable"></a> <span style="font-size: 8pt">Uncheck the box to stop the pipeline from running</span>
+									<td align="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkgreen">
+										<table>
+											<tr>
+												<td valign="middle">
+													<a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-on.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline enabled, click to disable"></a>
+												</td>
+												<td valign="middle" style="padding-left: 20px">
+													<b>Enabled</b>
+												</td>
+											</tr>
+										</table>
 									</td>
 									<?
 								}
 								else {
 									?>
-									<td align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred">
-										<b>Disabled</b><br>
-										<a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/uncheckedbox16.png" title="Pipeline disabled, click to enable"></a> <span style="font-size: 8pt">Check the box to allow the pipeline to run</span>
+									<td align="center" valign="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkred">
+										<table>
+											<tr>
+												<td valign="middle">
+													<a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-off.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline disabled, click to enable"></a>
+												</td>
+												<td valign="middle" style="padding-left: 20px">
+													<b>Disabled</b>
+												</td>
+											</tr>
+										</table>
 									</td>
 									<?
 								}

@@ -1329,6 +1329,8 @@
 							<div style="border: solid 1px #aaa; border-radius: 5px; padding: 5px">
 						
 							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="redlinkbutton">Delete</a>
+							<br><br>
+							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
 							<form action="studies.php" method="post">
 							<input type="hidden" name="studyid" value="<?=$study_id?>">
 							<input type="hidden" name="action" value="movestudytosubject">

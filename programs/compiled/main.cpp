@@ -165,96 +165,98 @@ int main(int argc, char *argv[])
 
 		/* load the config file and connect to the database */
 		n = new nidb(module);
-		n->DatabaseConnect();
+		if (n->DatabaseConnect()) {
+			bool keepLog = false;
+			if (debug)
+				n->cfg["debug"] = "1";
 
-		bool keepLog = false;
-		if (debug)
-			n->cfg["debug"] = "1";
+			if (n->cfg["debug"].toInt())
+				if (!quiet)
+					printf("------------------------- DEBUG MODE ------------------------\n");
 
-		if (n->cfg["debug"].toInt())
 			if (!quiet)
-				printf("------------------------- DEBUG MODE ------------------------\n");
+				n->Print(QString(n->GetBuildString()));
 
-		if (!quiet)
-			n->Print(QString(n->GetBuildString()));
+			/* check if this module should be running now or not */
+			if (n->ModuleCheckIfActive()) {
+				int numlock = n->CheckNumLockFiles();
+				if (numlock < n->GetNumThreads()) {
+					if (n->CreateLockFile()) {
 
-		/* check if this module should be running now or not */
-		if (n->ModuleCheckIfActive()) {
-			int numlock = n->CheckNumLockFiles();
-			if (numlock < n->GetNumThreads()) {
-				if (n->CreateLockFile()) {
+						n->CreateLogFile();
 
-					n->CreateLogFile();
+						/* let the database know this module is running, and if the DB says it should be in debug mode */
+						n->ModuleDBCheckIn();
 
-					/* let the database know this module is running, and if the DB says it should be in debug mode */
-					n->ModuleDBCheckIn();
+						/* run the module */
+						if (module == "fileio") {
+							moduleFileIO *m = new moduleFileIO(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "export") {
+							moduleExport *m = new moduleExport(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "modulemanager") {
+							moduleManager *m = new moduleManager(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "import") {
+							moduleImport *m = new moduleImport(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "importuploaded") {
+							moduleImportUploaded *m = new moduleImportUploaded(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "mriqa") {
+							moduleMRIQA *m = new moduleMRIQA(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "qc") {
+							moduleQC *m = new moduleQC(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "pipeline") {
+							modulePipeline *m = new modulePipeline(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else if (module == "minipipeline") {
+							moduleMiniPipeline *m = new moduleMiniPipeline(n);
+							keepLog = m->Run();
+							delete m;
+						}
+						else
+							n->Print("Unrecognized module [" + module + "]");
 
-					/* run the module */
-					if (module == "fileio") {
-						moduleFileIO *m = new moduleFileIO(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "export") {
-						moduleExport *m = new moduleExport(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "modulemanager") {
-						moduleManager *m = new moduleManager(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "import") {
-						moduleImport *m = new moduleImport(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "importuploaded") {
-						moduleImportUploaded *m = new moduleImportUploaded(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "mriqa") {
-						moduleMRIQA *m = new moduleMRIQA(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "qc") {
-						moduleQC *m = new moduleQC(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "pipeline") {
-						modulePipeline *m = new modulePipeline(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else if (module == "minipipeline") {
-						moduleMiniPipeline *m = new moduleMiniPipeline(n);
-						keepLog = m->Run();
-						delete m;
-					}
-					else
-						n->Print("Unrecognized module [" + module + "]");
+						if ((n->cfg["debug"].toInt()) || (keepLog))
+							keepLog = true;
 
-					if ((n->cfg["debug"].toInt()) || (keepLog))
-						keepLog = true;
+						n->RemoveLogFile(keepLog);
 
-					n->RemoveLogFile(keepLog);
+						/* let the database know this module has stopped running */
+						n->ModuleDBCheckOut();
+					}
 
-					/* let the database know this module has stopped running */
-					n->ModuleDBCheckOut();
+					/* delete the lock file */
+					n->DeleteLockFile();
 				}
-
-				/* delete the lock file */
-				n->DeleteLockFile();
+				else
+					n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
 			}
 			else
-				n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
+				n->Print("This module [" + module + "] is disabled or does not exist");
 		}
 		else
-			n->Print("This module [" + module + "] is disabled or does not exist");
+			n->Print("Unable to connect to database");
 
 		if (!quiet) {
 			printf("-------------------------------------------------------------\n");

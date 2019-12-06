@@ -119,15 +119,22 @@ bool nidb::LoadConfig() {
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
 
 		QTextStream in(&f);
+		int lineno = 0;
         while (!in.atEnd()) {
             QString line = in.readLine();
+			lineno++;
             if ((line.trimmed().count() > 0) && (line.at(0) != '#')) {
                 QStringList parts = line.split(" = ");
-                QString var = parts[0].trimmed();
-                QString value = parts[1].trimmed();
-                var.remove('[').remove(']');
-				if (var != "")
-                    cfg[var] = value;
+				if (parts.size() >= 2) {
+					QString var = parts[0].trimmed();
+					QString value = parts[1].trimmed();
+					var.remove('[').remove(']');
+					if (var != "")
+						cfg[var] = value;
+				}
+				else {
+					Print(QString("Weird config file entry [%1] on line [%2]").arg(line.trimmed()).arg(lineno));
+				}
             }
         }
         f.close();
@@ -151,7 +158,18 @@ bool nidb::LoadConfig() {
 bool nidb::DatabaseConnect(bool cluster) {
 
 	if (!cluster) Print("Connecting to database", false, true);
-	db = QSqlDatabase::addDatabase("QMYSQL");
+
+	if (cfg["debug"].toInt())
+		qDebug()<< QSqlDatabase::drivers();
+
+	try {
+		db = QSqlDatabase::addDatabase("QMYSQL");
+	} catch (...) {
+		QString err = "[Error]\n\tUnable to load QMYSQL driver. Maybe driver wasn't built for this OS? Error message [" + db.driver()->lastError().text() + "]";
+		FatalError(err);
+		return false;
+	}
+
     db.setHostName(cfg["mysqlhost"]);
     db.setDatabaseName(cfg["mysqldatabase"]);
 	if (cluster) {
@@ -523,20 +541,64 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SystemCommand(QString s, bool sandboxed, bool detail, bool truncate) {
+QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 
 	double starttime = QDateTime::currentMSecsSinceEpoch();
 	QString ret;
 	QString output;
 	QProcess process;
 
-	if (sandboxed) {
-		//QString tmpdir = "/tmp/" + GenerateRandomString(10);
-		//s = "cd " + tmpdir + "; chroot
-	}
-
 	process.setProcessChannelMode(QProcess::MergedChannels);
 	process.start("sh", QStringList() << "-c" << s);
+
+	/* Get the output */
+	if (process.waitForStarted(-1)) {
+		while(process.waitForReadyRead(-1)) {
+			output += process.readAll();
+		}
+	}
+	process.waitForFinished();
+
+	double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+
+	output = output.trimmed();
+	output.replace("’", "'");
+	output.replace("‘", "'");
+
+	if (truncate)
+		if (output.size() > 20000)
+			output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
+
+	if (detail)
+		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
+	else
+		ret = output;
+
+	return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SandboxedSystemCommand ------------------------- */
+/* ---------------------------------------------------------- */
+/* this function does not work in Windows                     */
+/* ---------------------------------------------------------- */
+QString nidb::SandboxedSystemCommand(QString s, QString dir, QString timeout, bool detail, bool truncate) {
+
+	double starttime = QDateTime::currentMSecsSinceEpoch();
+	QString ret;
+	QString output;
+	QProcess process;
+
+	QDir d(dir);
+	if (!d.exists())
+		return "Error, sandbox dir [" + dir + "] does not exist";
+
+	/* change to the home directory, which is where the jailed files will appear after running "firejail --private" */
+	QDir::setCurrent("~");
+
+	process.setProcessChannelMode(QProcess::MergedChannels);
+	process.start("firejail", QStringList() << "--timeout=" + timeout << "--quiet" << "--private-cwd" << "--private=" + dir << "./" + s);
 
 	/* Get the output */
 	if (process.waitForStarted(-1)) {
@@ -572,8 +634,13 @@ QString nidb::WriteLog(QString msg, int wrap) {
 	if (msg.trimmed() != "") {
 		if (wrap > 0)
 			msg = WrapText(msg, wrap);
-		if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
-			Print("Unable to write to log file!");
+		if (log.isWritable()) {
+			if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
+				Print("Unable to write to log file!");
+		}
+		else {
+			Print("Log file is not writeable! Tried to write [" + msg + "] to [" + log.fileName() + "]");
+		}
 	}
 
 	return msg;
@@ -1392,7 +1459,7 @@ QString nidb::JoinIntArray(QList<int> a, QString glue) {
 /* ---------------------------------------------------------- */
 /* --------- SplitStringArrayToInt -------------------------- */
 /* ---------------------------------------------------------- */
-QList<int> SplitStringArrayToInt(QStringList a) {
+QList<int> nidb::SplitStringArrayToInt(QStringList a) {
 	QList<int> i;
 
 	if (a.size() > 0)
@@ -1428,8 +1495,11 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 	QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
 	result = SystemCommand(systemstring,false).trimmed();
 
+	/* get the jobid */
+	jobid = -1;
 	QStringList parts = result.split(" ");
-	jobid = parts[2].toInt();
+	if (parts.size() >= 3)
+		jobid = parts[2].toInt();
 
 	/* check the return message from qsub */
 	if (result.contains("invalid option", Qt::CaseInsensitive)) {

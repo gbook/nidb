@@ -285,8 +285,8 @@
 [moduleqcthreads] = $moduleqcthreads
 
 # ----- E-mail -----
-//# emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
-//[emaillib] = $emaillib
+# emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
+#[emaillib] = $emaillib
 [emailusername] = $emailusername
 [emailpassword] = $emailpassword
 [emailserver] = $emailserver
@@ -696,6 +696,14 @@
 								if (mysqli_num_rows($result) > 0) {
 									?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
 									UpgradeDatabase($GLOBALS['linki'], 'nidb', "/nidb/nidb.sql");
+									
+									if (file_exists("/nidb/nidb-data.sql")) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+										shell_exec($systemstring);
+									}
+									else {
+										?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+									}
 								}
 								else {
 									?><li>No tables found in 'nidb' database. Running full SQL script<?
@@ -719,7 +727,7 @@
 								}
 							}
 							else {
-								$sqlstring = "create database 'nidb'";
+								$sqlstring = "create database `nidb`";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								?><li>Created database 'nidb'<?
 								
@@ -863,6 +871,7 @@
 		$indextable = "";
 		$createindex = "";
 		$lastline = false;
+		$sqlstring = "";
 		foreach ($lines as $line) {
 			
 			/* ignore any blank lines, comments, or anything **after** COMMIT; */
@@ -921,6 +930,7 @@
 				$tableexists = false;
 				$createtable = "";
 				$createindex = "";
+				$sqlstring = "";
 			}
 			
 			/* regular column to be added/updated for the current table */
@@ -949,6 +959,7 @@
 				
 				$previouscol = $column;
 				$createindex = "";
+				$sqlstring = "";
 			}
 			
 			/* create index section */
@@ -964,7 +975,7 @@
 					
 					/* run the create index */
 					echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($createindex, __FILE__, __LINE__);
 				}
 				
 				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
@@ -982,7 +993,7 @@
 			if (($lastline) && ($createtable != "")) {
 				echo "Table [$table] did not exist, creating";
 				echo "<tt span style='font-size: smaller;'><pre>$createtable</pre></tt>";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($createtable, __FILE__, __LINE__);
 			}
 			
 			/* this is the end of the file. If there are any indexes/autoincrements to create, create them now */
@@ -993,7 +1004,7 @@
 				$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
 				
 				echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($createindex, __FILE__, __LINE__);
 			}
 		}
 		

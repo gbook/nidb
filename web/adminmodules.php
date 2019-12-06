@@ -296,20 +296,20 @@
 				<td>
 					<?
 						if ($module_isactive) {
-							?><a href="adminmodules.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+							?><a href="adminmodules.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
 						}
 						else {
-							?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+							?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
 						}
 					?>
 				</td>
 				<td>
 					<?
 						if ($module_debug) {
-							?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+							?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
 						}
 						else {
-							?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+							?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
 						}
 					?>
 				</td>
