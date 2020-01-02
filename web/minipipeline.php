@@ -170,13 +170,39 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	}
 
 	/* -------------------------------------------- */
-	/* ------- AddMiniPipeline -------------------- */
+	/* ------- DisplayMiniPipelineJobs ------------ */
 	/* -------------------------------------------- */
 	function DisplayMiniPipelineJobs($mpid, $projectid) {
-		$sqlstring = "select * from minipipeline_jobs where minipipeline_id = $mpid";
-		PrintSQL($sqlstring);
+		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		PrintSQLTable($result, "", "", "");
+		StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Series', 'Modality', 'Rows inserted'), "smallgraydisplaytable");
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mpname = $row['mp_name'];
+			$queuedate = $row['mp_queuedate'];
+			$startdate = $row['mp_startdate'];
+			$enddate = $row['mp_enddate'];
+			$status = $row['mp_status'];
+			$logs = $row['mp_log'];
+			$modality = $row['mp_modality'];
+			$seriesid = $row['mp_seriesid'];
+			$numinserts = $row['mp_numinserts'];
+			$logs = str_replace("<", "&lt;", $logs);
+			$logs = str_replace(">", "&gt;", $logs);
+			?>
+			<tr>
+				<td valign="top"><?=$mpname?></td>
+				<td valign="top"><?=$queuedate?></td>
+				<td valign="top"><?=$startdate?></td>
+				<td valign="top"><?=$enddate?></td>
+				<td valign="top"><?=$status?></td>
+				<td valign="top"><details><summary>View</summary><tt><pre><?=$logs?></pre></tt></details></td>
+				<td valign="top"><?=$seriesid?></td>
+				<td valign="top"><?=$modality?></td>
+				<td valign="top"><?=$numinserts?></td>
+			</tr>
+			<?
+		}
+		EndHTMLTable();
 	}
 
 

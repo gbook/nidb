@@ -59,6 +59,8 @@ moduleMiniPipeline::~moduleMiniPipeline()
 int moduleMiniPipeline::Run() {
 	n->WriteLog("Entering the pipeline module");
 
+	n->ModuleRunningCheckIn();
+
 	int numJobsRun = 0;
 	QSqlQuery q;
 	QList<int> mpjobs = GetMPJobList();
@@ -67,6 +69,14 @@ int moduleMiniPipeline::Run() {
 		foreach(int mpjobid, mpjobs) {
 			i++;
 			n->WriteLog(QString("Working on mini-pipeline job [%1] of [%2]").arg(i).arg(mpjobs.size()));
+			n->ModuleRunningCheckIn();
+			if (!n->ModuleCheckIfActive()) {
+				n->WriteLog("Module is now inactive, stopping the module");
+				if (numJobsRun > 0)
+					return 1;
+				else
+					return 0;
+			}
 
 			/* check if the minipipeline job is still pending */
 			q.prepare("select minipipelinejob_id from minipipeline_jobs where mp_status = 'pending' and minipipelinejob_id = :mpjobid");
@@ -108,6 +118,7 @@ int moduleMiniPipeline::Run() {
 					logs << n->WriteLog("Series was not valid: [" + s.msg + "]");
 					return 0;
 				}
+				enrollmentID = s.enrollmentid;
 
 				logs << n->WriteLog("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]");
 
@@ -130,18 +141,25 @@ int moduleMiniPipeline::Run() {
 
 						/* (4) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
 						QString systemstring = mp.entrypoint;
-						//QString output = "";
-						logs << n->SandboxedSystemCommand(systemstring, tmpdir, "00:05:00", true, false);
+						QString output = "";
+						n->SandboxedSystemCommand(systemstring, tmpdir, output, "00:05:00", true, false);
+						logs << n->WriteLog(output);
 
 						/* (5) parse the output */
 						QString outfilename = tmpdir + "/output.csv";
 						QFile f(outfilename);
-						if (!f.open(QFile::ReadOnly | QFile::Text)) {
+						if (f.exists())
+							logs << n->WriteLog("[" + outfilename + "] exists");
+						else
+							logs << n->WriteLog("[" + outfilename + "] does not exist");
+
+						if (f.open(QFile::ReadOnly | QFile::Text)) {
 							QTextStream in(&f);
-							QString output = in.readAll();
+							QString csvText = in.readAll();
 
 							indexedHash csv;
-							if (n->ParseCSV(output, csv, m)) {
+							if (n->ParseCSV(csvText, csv, m)) {
+								logs << "Parsed .csv file. Message from parser [" + m + "]";
 								for (int i=0; i<csv.size();i++) {
 									QString csvType = csv[i]["type"];
 									QString csvVariableName = csv[i]["variablename"];
@@ -170,7 +188,11 @@ int moduleMiniPipeline::Run() {
 									/* insert the value */
 									QSqlQuery q2;
 									if (csvType == "measure") {
-										numInserts += InsertMeasure(enrollmentID, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt());
+										int n=0;
+										QString m;
+										if (!InsertMeasure(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
+											logs << m;
+										numInserts += n;
 									}
 									else if (csvType == "vital") {
 										numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate);
@@ -195,8 +217,10 @@ int moduleMiniPipeline::Run() {
 						logs << n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]");
 
 					/* (6) cleanup */
-					//if (!n->RemoveDir(tmpdir, m))
-					//	logs << n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]");
+					if (!n->RemoveDir(tmpdir, m))
+						logs << n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]");
+					else
+						logs << n->WriteLog("Deleted temp directory [" + tmpdir + "]");
 				}
 			}
 			else {
@@ -205,17 +229,18 @@ int moduleMiniPipeline::Run() {
 			}
 
 			/* done running the job - update the status and log */
-			q.prepare("update minipipeline_jobs set mp_status = 'complete', mp_log = :logs, mp_enddate = now() where minipipelinejob_id = :mpjobid");
+			q.prepare("update minipipeline_jobs set mp_status = 'complete', mp_log = :logs, mp_numinserts = :numinserts, mp_enddate = now() where minipipelinejob_id = :mpjobid");
 			q.bindValue(":mpjobid", mpjobid);
+			q.bindValue(":numinserts", numInserts);
 			q.bindValue(":logs", logs.join("\n"));
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 	}
 	else {
-		n->WriteLog("Nothing to run. Exiting module");
+		n->WriteLog("Nothing to run. Exiting minipipeline module");
 	}
 
-	n->WriteLog("Leaving the pipeline module");
+	n->WriteLog("Leaving the minipipeline module");
 
 	if (numJobsRun > 0)
 		return 1;
@@ -291,15 +316,22 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
 /* ---------------------------------------------------------- */
 /* --------- InsertMeasure ---------------------------------- */
 /* ---------------------------------------------------------- */
-int moduleMiniPipeline::InsertMeasure(int enrollmentID, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration) {
+bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
 
 	QSqlQuery q;
+	numInserts = 0;
+	msg = "";
+
+	if (enrollmentid < 0) {
+		msg = QString("Invalid enrollmentID [%1]").arg(enrollmentid);
+		return false;
+	}
 
 	/* get the measure name ID */
 	int measureNameID;
 	q.prepare("select measurename_id from measurenames where measure_name = :measurename");
 	q.bindValue(":measurename", measureName);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 	if (q.size() > 0) {
 		q.first();
 		measureNameID = q.value("measurename_id").toInt();
@@ -307,7 +339,7 @@ int moduleMiniPipeline::InsertMeasure(int enrollmentID, QString measureName, QSt
 	else {
 		q.prepare("insert into measurenames (measure_name) values (:measurename)");
 		q.bindValue(":measurename", measureName);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 		measureNameID = q.lastInsertId().toInt();
 	}
 
@@ -315,7 +347,7 @@ int moduleMiniPipeline::InsertMeasure(int enrollmentID, QString measureName, QSt
 	int instrumentNameID;
 	q.prepare("select measureinstrument_id from measureinstruments where instrument_name = :instrument");
 	q.bindValue(":instrument", instrument);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 	if (q.size() > 0) {
 		q.first();
 		instrumentNameID = q.value("measureinstrument_id").toInt();
@@ -323,34 +355,26 @@ int moduleMiniPipeline::InsertMeasure(int enrollmentID, QString measureName, QSt
 	else {
 		q.prepare("insert into measureinstruments (instrument_name) values (:instrument)");
 		q.bindValue(":instrument", instrument);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 		instrumentNameID = q.lastInsertId().toInt();
 	}
 
-	QString type = "s";
-	if (n->IsNumber(value))
-		type = "n";
-
-	q.prepare("insert ignore into measures (enrollment_id, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_instrument, measure_startdate, measure_enddate, measure_duration, measure_entrydate, measure_createdate, measure_modifydate) values (:enrollmentid, :measurenameid, :measuretype, :valuestring, :valuenum, :measurerater, :instrumentnameid, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update measurename_id = :measurenameid, measure_valuestring = :valuestring, measure_valuenum = :valuenum, measure_instrument = :instrumentnameid, measure_startdate = :startdate, measure_enddate = :enddate, measure_modifydate = now()");
-	q.bindValue(":enrollmentid", enrollmentID);
+	q.prepare("insert ignore into measures (enrollment_id, study_id, series_id, instrumentname_id, measurename_id, measure_value, measure_rater, measure_startdate, measure_enddate, measure_duration, measure_entrydate, measure_createdate, measure_modifydate) values (:enrollmentid, :studyid, :seriesid, :instrumentnameid, :measurenameid, :value, :measurerater, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update study_id = :studyid, series_id = :seriesid, measurename_id = :measurenameid, measure_value = :value, instrumentname_id = :instrumentnameid, measure_startdate = :startdate, measure_enddate = :enddate, measure_modifydate = now()");
+	q.bindValue(":enrollmentid", enrollmentid);
+	q.bindValue(":studyid", studyid);
+	q.bindValue(":seriesid", seriesid);
 	q.bindValue(":measurenameid", measureNameID);
-	q.bindValue(":measuretype", type);
-	if (type == "s") {
-		q.bindValue(":valuestring", value);
-		q.bindValue(":valuenum", QVariant::Double);
-	}
-	else {
-		q.bindValue(":valuestring", QVariant::String);
-		q.bindValue(":valuenum", value.toDouble());
-	}
+	q.bindValue(":value", value);
+	q.bindValue(":measurerater", rater);
 	q.bindValue(":instrumentnameid", instrumentNameID);
-	q.bindValue(":startdate", startDate);
-	q.bindValue(":enddate", endDate);
+	q.bindValue(":startdate", startDate.toString(Qt::ISODate));
+	q.bindValue(":enddate", endDate.toString(Qt::ISODate));
 	q.bindValue(":duration", duration);
 
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+	numInserts = 1;
 
-	return 1;
+	return true;
 }
 
 

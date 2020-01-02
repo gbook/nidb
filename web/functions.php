@@ -569,6 +569,23 @@
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
 		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid);
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetEnrollmentInfo ------------------ */
+	/* -------------------------------------------- */
+	function GetEnrollmentInfo($id) {
+		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$subjectid = $row['subject_id'];
+		$projectname = $row['project_name'];
+		$projectid = $row['project_id'];
+		
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
+		return array($uid, $subjectid, $projectname, $projectid);
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -2142,6 +2159,75 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			return true;
 		else
 			return false;
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- StartHTMLTable --------------------- */
+	/* -------------------------------------------- */
+	function StartHTMLTable($cols, $class) {
+		?>
+		<table class="<?=$class?>">
+			<thead>
+				<tr>
+				<?
+				foreach ($cols as $col) {
+					?>
+					<th><?=$col?></th>
+					<?
+				}
+				?>
+				</tr>
+			</thead>
+			<tbody>
+		<?
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- EndHTMLTable ----------------------- */
+	/* -------------------------------------------- */
+	function EndHTMLTable() {
+		?>
+			</tbody>
+		</table>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RunSystemChecks -------------------- */
+	/* -------------------------------------------- */
+	function RunSystemChecks() {
+		$problems = array();
+		
+		/* check if the nidb executable has execute permissions */
+		$nidbexe = $GLOBALS['cfg']['scriptdir'] . "/bin/nidb";
+		if (!is_executable($nidbexe))
+			array_push($problems, "<tt>$nidbexe</tt> executable does not have execute permissions");
+		
+		if (count($problems) > 0) {
+			echo "<ul><li><b>System error(s). Contact NiDB administrator";
+			foreach ($problems as $errmsg) {
+				?><li style="padding: 5px"><span style="background-color: red; color: white; padding: 3px;"><?=$errmsg?></span><?
+			}
+			echo "</ul>";
+		}
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetNiDBVersion --------------------- */
+	/* -------------------------------------------- */
+	function GetNiDBVersion() {
+		
+		/* check if the nidb executable script exists */
+		$nidbsh = $GLOBALS['cfg']['scriptdir'] . "/bin/./nidb.sh -v";
+		$nidbver = shell_exec($nidbsh);
+		$nidbver = str_replace("Neuroinformatics Database (NiDB) ", "", $nidbver);
+		
+		echo "Running [$nidbsh] returned [$nidbver]<br>";
+		return $nidbver;
 	}
 	
 ?>

@@ -1530,7 +1530,7 @@
 													<thead>
 														<th style="background-color: #273F70; color: #fff">Study</th>
 														<th>Modality</th>
-														<th>Date</th>
+														<th>Date &darr;</th>
 														<th># series</th>
 														<th>Age</th>
 														<th>Physician</th>
@@ -1701,44 +1701,16 @@
 											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><b>Phenotypic </b><a href="measures.php?enrollmentid=<?=$enrollmentid?>">measures</a></td>
+													<td><b><a href="measures.php?enrollmentid=<?=$enrollmentid?>">Phenotypic measures</a></b></td>
 												</tr>
 											</table>
 												<?
-												$sqlstring3 = "select * from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+												$sqlstring3 = "select count(*) 'count' from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
 												$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-												$numrows = mysqli_num_rows($result3);
+												$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+												$numrows = $row3['count'];
 												if ($numrows > 0) {
-												?>
-													<div style="-moz-column-count:2; -webkit-column-count:2; column-count:2; width: 100%; font-size:9pt; background-color: white; padding: 4px; border-radius:5px; -moz-column-rule:1px outset #DDD; -webkit-column-rule:1px outset #DDD; column-rule:1px outset #DDD; border:1px solid #888">
-													<?
-													while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-														$measureid = $row3['measure_id'];
-														$measure_name = $row3['measure_name'];
-														$measure_type = $row3['measure_type'];
-														$measure_valuestring = $row3['measure_valuestring'];
-														$measure_valuenum = $row3['measure_valuenum'];
-														$measure_rater = $row3['measure_rater'];
-														$measure_rater2 = $row3['measure_rater2'];
-														$measure_isdoubleentered = $row3['measure_isdoubleentered'];
-														$measure_datecomplete = $row3['measure_datecomplete'];
-														switch ($measure_type) {
-															case 's': $value = $measure_valuestring; break;
-															case 'n': $value = $measure_valuenum; break;
-														}
-														if (!$measure_isdoubleentered) {
-															$color="red";
-														}
-														else {
-															$color="darkblue";
-														}
-														?>
-														<?=$measure_name?> <span style="color: <?=$color?>"><b><?=$value?></b></span><br>
-														<?
-													}
-													?>
-													</div>
-													<?
+													?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
 												}
 												else {
 													?>
@@ -1754,7 +1726,7 @@
 											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><a href="drugs.php?enrollmentid=<?=$enrollmentid?>">Drugs/Dosing</a> <span class="tiny">medications/treatments/substance use</span></td>
+													<td><b><a href="drugs.php?enrollmentid=<?=$enrollmentid?>">Drugs/Dosing</a></b> <span class="tiny">medications/treatments/substance use</span></td>
 												</tr>
 											</table>
 											<?
@@ -1815,7 +1787,7 @@
 											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td><a href="vitals.php?enrollmentid=<?=$enrollmentid?>">Vitals</a> <span class="tiny"></span></td>
+													<td><a href="vitals.php?enrollmentid=<?=$enrollmentid?>"><b>Vitals</b></a> <span class="tiny"></span></td>
 												</tr>
 											</table>
 												<?

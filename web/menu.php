@@ -104,12 +104,12 @@
 				?><a href="search.php" style="<?=$style?>"><b>Search</b></a><?
 				
 				/* subjects */
-				if ($page=="subjects.php" || $page=="groups.php" || $page=="measures.php") { $style = "background-color:#3B5998"; }
+				if ($page=="subjects.php" || $page=="groups.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="subjects.php" style="<?=$style?>"><b>Subjects</b></a><?
 				
 				/* projects */
-				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php") { $style = "background-color:#3B5998"; }
+				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="projects.php" style="<?=$style?>"><b>Projects</b></a><?
 				
@@ -148,8 +148,6 @@
 			</td>
 		</tr>
 		<tr>
-			<!--<td align="left" style="color: white; width: 300px; padding: 4px 10px; background-color: #3B5998">
-			</td>-->
 			<td id="Bar2" style="background-color:#3B5998; padding:0px" width="60%">
 			<?
 				
@@ -172,7 +170,7 @@
 				}
 				
 				/* subjects sub-menu */
-				elseif ($page=="subjects.php" || $page=="groups.php" || $page=="measures.php") {
+				elseif ($page=="subjects.php" || $page=="groups.php") {
 					if ($page=="subjects.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="subjects.php" style="<?=$style?>">Subjects</a><?
@@ -187,8 +185,10 @@
 				}
 				
 				/* studies, which are displayed under the projects menu */
-				elseif ($page == "studies.php") {
+				elseif ($page == "studies.php" || $page=="measures.php") {
 					$studyid = GetVariable("id");
+					$enrollmentid = GetVariable("enrollmentid");
+					
 					if ($studyid == "") {
 						$studyid = GetVariable("studyid");
 					}
@@ -199,6 +199,14 @@
 						<b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>"><?=$projectname?></a></b>
 						<a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a>
 						<a href="studies.php?id=<?=$studyid?>" style="background-color:#273f70">Study <?=$studynum?></a>
+						<?
+					}
+					elseif (($enrollmentid != "") && ($page == "measures.php")) {
+						list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+						?>
+						<a href="projects.php">Project List</a>
+						<b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>"><?=$projectname?></a></b>
+						<a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a>
 						<?
 					}
 				}
@@ -360,6 +368,7 @@
 
 <table width="100%" cellspacing="0" cellpadding="0">
 	<tr>
+		<td><?=RunSystemChecks()?></td>
 		<td align="right" valign="top">
 			<form action="subjects.php" method="post" style="margin: 0px">
 			<input type="hidden" name="action" value="search">

@@ -79,7 +79,7 @@ public:
 	QString WriteLog(QString msg, int wrap=0);
 	void AppendCustomLog(QString f, QString msg);
 	QString SystemCommand(QString s, bool detail=true, bool truncate=false);
-	QString SandboxedSystemCommand(QString s, QString dir, QString timeout="00:05:00", bool detail=true, bool truncate=false);
+	bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
 	QString GenerateRandomString(int n);
 	QString CreateUID(QString prefix, int numletters=3);
 	void SortQStringListNaturally(QStringList &s);

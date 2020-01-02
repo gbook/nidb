@@ -147,20 +147,30 @@
 		$urllist['Subject List'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
 		$urllist["$projectname Measures"] = "measures.php?enrollmentid=$enrollmentid";
-		NavigationBar("Phenotypic measures", $urllist);
+		//NavigationBar("Phenotypic measures", $urllist);
 		
 		?>
 		
-		<table class="smalldisplaytable">
+		<table class="graydisplaytable">
 			<thead>
 				<tr>
-					<th>Name</th>
+					<th colspan="9" style="border-right: 1px solid #666"></th>
+					<th colspan="3">Database record dates</th>
+				</tr>
+				<tr>
+					<th>Variable</th>
 					<th>Instrument</th>
 					<th>Value</th>
-					<th>Date<br>Completed</th>
-					<th>Date<br>Entered</th>
-					<th>Rater(s)<br><span class="tiny">NiDB username(s)</span></th>
-					<th>Delete</th>
+					<!--<th>Notes</th>-->
+					<th>Series</th>
+					<th>Rater</th>
+					<th>Start date</th>
+					<th>Duration</th>
+					<th>End date</th>
+					<th style="border-right: 1px solid #666">Delete</th>
+					<th title="Date the value was entered. May have been entered in a different database before this one">Entry <img src="images/help.png"></th>
+					<th title="Date the record was created in this database">Create <img src="images/help.png"></th>
+					<th title="Date the record was modified in this database">Modify <img src="images/help.png"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -169,33 +179,57 @@
 				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 				<tr>
 					<td><input type="text" name="measure_name" size="15" required></td>
-					<td><input type="text" name="measure_instrument"></td>
-					<td><input type="text" name="measure_value" required></td>
-					<td><input type="text" name="measure_datecompleted" class="completedatetime"></td>
+					<td><input type="text" name="measure_instrument" size="15"></td>
+					<td><input type="text" name="measure_value" size="10" required></td>
+					<!--<td><input type="text" name="measure_notes" size="15"></td>-->
 					<td></td>
-					<td><input type="text" name="measure_rater" value="<?=$GLOBALS['username']?>"></td>
-					<td><input type="submit" value="Add"></td>
+					<td><input type="text" name="measure_rater" size="15" value="<?=$GLOBALS['username']?>"></td>
+					<td><input type="datetime-local" name="measure_startdate"></td>
+					<td><input type="text" name="measure_duration" size="10"></td>
+					<td><input type="datetime-local" name="measure_enddate"></td>
+					<td style="border-right: 1px solid #666"><input type="submit" value="Add"></td>
+					<td></td>
+					<td></td>
+					<td></td>
 				</tr>
 				</form>
 				<?
-					$sqlstring = "select * from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid order by measure_name";
+					$sqlstring = "select a.*, b.*, c.*, e.uid from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by b.measure_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$measureid = $row['measure_id'];
-						$measure_dateentered = $row['measure_dateentered'];
+						$studyid = $row['study_id'];
+						$seriesid = $row['series_id'];
+						$uid = $row['uid'];
 						$measure_name = $row['measure_name'];
-						$measure_type = $row['measure_type'];
-						$measure_valuestring = $row['measure_valuestring'];
-						$measure_valuenum = $row['measure_valuenum'];
-						$measure_instrument = $row['measure_instrument'];
+						$instrument_name = $row['instrument_name'];
+						$measure_value = $row['measure_value'];
+						//$measure_notes = $row['measure_notes'];
 						$measure_rater = $row['measure_rater'];
-						$measure_datecomplete = $row['measure_datecomplete'];
+						$measure_startdate = $row['measure_startdate'];
+						$measure_enddate = $row['measure_enddate'];
+						$measure_duration = $row['measure_duration'];
+						$measure_entrydate = $row['measure_entrydate'];
+						$measure_createdate = $row['measure_createdate'];
+						$measure_modifydate = $row['measure_modifydate'];
 						
-						switch ($measure_type) {
-							case 's': $value = $measure_valuestring; $type = 'string'; break;
-							case 'n': $value = $measure_valuenum; $type = 'number'; break;
+						if ($studyid != "") {
+							$sqlstringA = "select study_num, study_modality from studies where study_id = $studyid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$studynum = $rowA['study_num'];
+							$modality = strtolower($rowA['study_modality']);
+
+							$sqlstringB = "select series_num from $modality" . "_series where $modality" . "series_id = $seriesid";
+							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+							$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+							$seriesnum = $rowB['series_num'];
+							
+							$series = "$uid$studynum-$seriesnum ($modality)";
 						}
-						
+						else {
+							$series = "";
+						}
 						?>
 						<script type="text/javascript">
 							$(document).ready(function(){
@@ -210,14 +244,20 @@
 						</script>
 						<tr>
 							<td><?=$measure_name?></td>
-							<td><?=$measure_instrument?></td>
-							<td><?=$value?></td>
-							<td bgcolor="<?=$color?>"><?=$measure_datecomplete?></td>
-							<td><?=$measure_dateentered?><br><?=$measure_dateentered2?></td>
-							<td><?=$measure_rater?><br><?=$measure_rater2?></td>
-							<td align="right" class="delete">
+							<td><?=$instrument_name?></td>
+							<td><?=$measure_value?></td>
+							<!--<td><?=$measure_notes?></td>-->
+							<td><?=$series?></td>
+							<td><?=$measure_rater?></td>
+							<td><?=$measure_startdate?></td>
+							<td><?=$measure_duration?></td>
+							<td><?=$measure_enddate?></td>
+							<td align="right" class="delete" style="border-right: 1px solid #666">
 								<a href="javascript:decision('Are you sure you want to delete this measure?', 'measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>')" class="delete">X</a>
 							</td>
+							<td><?=$measure_entrydate?></td>
+							<td><?=$measure_createdate?></td>
+							<td><?=$measure_modifydate?></td>
 						</tr>
 					<?
 					}

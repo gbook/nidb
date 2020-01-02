@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 14, 2019 at 09:06 PM
+-- Generation Time: Dec 13, 2019 at 06:29 PM
 -- Server version: 10.3.15-MariaDB
 -- PHP Version: 7.2.18
 
@@ -1133,7 +1133,7 @@ CREATE TABLE `family_members` (
 
 CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
@@ -1146,6 +1146,7 @@ CREATE TABLE `fileio_requests` (
   `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `merge_id` int(11) DEFAULT NULL,
   `merge_ids` varchar(255) DEFAULT NULL,
   `merge_name` varchar(255) DEFAULT NULL,
   `merge_dob` date DEFAULT NULL,
@@ -1983,6 +1984,7 @@ CREATE TABLE `pipeline_data_def` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT 0,
   `pdd_order` int(11) NOT NULL,
+  `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL COMMENT 'if this data step is the primary, then the study and modality are the primary for the analysis',
   `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest','usesizecriteria') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
   `pdd_level` enum('study','subject') NOT NULL,

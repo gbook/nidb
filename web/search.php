@@ -2236,13 +2236,26 @@
 				$swversion = $row['result_softwareversion'];
 				$important = $row['result_isimportant'];
 				$lastupdate = $row['result_lastupdate'];
+				$study_ageatscan = $row['study_ageatscan'];
 				
 				/* calculate age at scan */
-				list($year, $month, $day) = explode("-", $birthdate);
-				$d1 = mktime(0,0,0,$month,$day,$year);
-				list($year, $month, $day, $extra) = explode("-", $study_datetime);
-				$d2 = mktime(0,0,0,$month,$day,$year);
-				$ageatscan = number_format((($d2-$d1)/31536000),1);					
+				if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
+					list($year, $month, $day) = explode("-", $birthdate);
+					$d1 = mktime(0,0,0,$month,$day,$year);
+					list($year, $month, $day, $extra) = explode("-", $study_datetime);
+					$d2 = mktime(0,0,0,$month,$day,$year);
+					$ageatscan = floor(($d2-$d1)/31536000);
+				}
+				else {
+					$ageatscan = $study_ageatscan;
+				}
+				
+				/* calculate age at scan */
+				//list($year, $month, $day) = explode("-", $birthdate);
+				//$d1 = mktime(0,0,0,$month,$day,$year);
+				//list($year, $month, $day, $extra) = explode("-", $study_datetime);
+				//$d2 = mktime(0,0,0,$month,$day,$year);
+				//$ageatscan = number_format((($d2-$d1)/31536000),1);					
 				
 				if (strpos($unit,'^') !== false) {
 					$unit = str_replace('^','<sup>',$unit);

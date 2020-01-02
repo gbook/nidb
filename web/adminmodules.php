@@ -118,7 +118,7 @@
 	
 		$urllist['Administration'] = "admin.php";
 		$urllist['Modules'] = "adminmodules.php";
-		NavigationBar("Admin", $urllist);
+		//NavigationBar("Admin", $urllist);
 		
 		chdir($GLOBALS['cfg']['logdir']);
 		$files = glob("$modulename"."2*.log");
@@ -225,13 +225,15 @@
 	
 		$urllist['Administration'] = "admin.php";
 		$urllist['Modules'] = "adminmodules.php";
-		NavigationBar("Admin", $urllist);
+		//NavigationBar("Admin", $urllist);
 		
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
 		
 	?>
 
+	<!--<b>NiDB version <? //echo GetNiDBVersion();?></b>-->
+	
 	<table class="graydisplaytable">
 		<thead>
 			<tr>

@@ -162,14 +162,7 @@ bool nidb::DatabaseConnect(bool cluster) {
 	if (cfg["debug"].toInt())
 		qDebug()<< QSqlDatabase::drivers();
 
-	try {
-		db = QSqlDatabase::addDatabase("QMYSQL");
-	} catch (...) {
-		QString err = "[Error]\n\tUnable to load QMYSQL driver. Maybe driver wasn't built for this OS? Error message [" + db.driver()->lastError().text() + "]";
-		FatalError(err);
-		return false;
-	}
-
+	db = QSqlDatabase::addDatabase("QMYSQL");
     db.setHostName(cfg["mysqlhost"]);
     db.setDatabaseName(cfg["mysqldatabase"]);
 	if (cluster) {
@@ -408,6 +401,7 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 	if (q.exec())
 		return sql;
 
+	/* if we get to this point, there is a SQL error */
 	QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
 	SendEmail(cfg["adminemail"], "SQL error", err);
 	qDebug() << err;
@@ -583,45 +577,67 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SandboxedSystemCommand(QString s, QString dir, QString timeout, bool detail, bool truncate) {
+bool nidb::SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout, bool detail, bool truncate) {
 
 	double starttime = QDateTime::currentMSecsSinceEpoch();
-	QString ret;
-	QString output;
+	bool ret = true;
+	QString outStr;
 	QProcess process;
+	double elapsedtime(0.0);
 
+	/* check if the temp directory exists */
 	QDir d(dir);
-	if (!d.exists())
-		return "Error, sandbox dir [" + dir + "] does not exist";
+	if (!d.exists()) {
+		output = "Error, sandbox dir [" + dir + "] does not exist";
+		return false;
+	}
 
 	/* change to the home directory, which is where the jailed files will appear after running "firejail --private" */
 	QDir::setCurrent("~");
-
 	process.setProcessChannelMode(QProcess::MergedChannels);
-	process.start("firejail", QStringList() << "--timeout=" + timeout << "--quiet" << "--private-cwd" << "--private=" + dir << "./" + s);
+	/* start the process */
+	process.start("sh", QStringList() << "-c" << "firejail --timeout=" + timeout + " --quiet --private-cwd --private=" + dir + " ./" + s);
+	QString command = "sh -cl 'firejail --timeout=" + timeout + " --quiet --private-cwd --private=" + dir + " ./" + s + "'";
 
-	/* Get the output */
+	/* get the output, and wait for it to finish */
 	if (process.waitForStarted(-1)) {
 		while(process.waitForReadyRead(-1)) {
-			output += process.readAll();
+			outStr += process.readAll();
 		}
 	}
 	process.waitForFinished();
 
-	double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+	/* process should be done by now, check if there was an error */
+	if ((process.errorString().trimmed() != "") && (process.errorString().trimmed() != "Unknown error")) {
+		outStr += QString("Error [%1]. Exit status [%2]").arg(process.errorString()).arg(process.exitStatus());
+		switch (process.error()) {
+		    case QProcess::FailedToStart: outStr += "Program failed to start. Executable not found?"; break;
+		    case QProcess::Crashed: outStr += "Program crashed"; break;
+		    case QProcess::Timedout: outStr += "Program timed out"; break;
+		    case QProcess::WriteError: outStr += "Program encountered a write error"; break;
+		    case QProcess::ReadError: outStr += "Program encountered a write error"; break;
+		    case QProcess::UnknownError: outStr += "Program encountered unknown error"; break;
+		}
+		ret = false;
+	}
+	else {
+		elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
-	output = output.trimmed();
-	output.replace("’", "'");
-	output.replace("‘", "'");
+		outStr = outStr.trimmed();
+		outStr.replace("’", "'");
+		outStr.replace("‘", "'");
 
-	if (truncate)
-		if (output.size() > 20000)
-			output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
+		/* truncate only if there was no error */
+		if (truncate)
+			if (outStr.size() > 10000)
+				outStr = outStr.left(5000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first and last 5,000 characters\n\n     ...\n\n" + outStr.right(5000);
+	}
 
+	/* format the final output */
 	if (detail)
-		ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
+		output = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(command).arg(outStr).arg(elapsedtime, 0, 'f', 3);
 	else
-		ret = output;
+		output = outStr;
 
 	return ret;
 }
@@ -1723,8 +1739,13 @@ QString nidb::WrapText(QString s, int col) {
 /* ---------------------------------------------------------- */
 /* --------- ParseCSV --------------------------------------- */
 /* ---------------------------------------------------------- */
+/* this function handles most Excel compatible .csv formats
+ * but it does not handle nested quotes, and must have a header
+ * row */
 bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
+
 	m = "";
+	bool ret(true);
 
 	/* get header row */
 	QStringList lines = csv.trimmed().split(QRegularExpression("[\\n\\r]"));
@@ -1732,6 +1753,14 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
 	if (lines.size() > 1) {
 		QString header = lines.takeFirst();
 		QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+
+		m += QString("Found [%1] columns. ").arg(cols.size());
+		/* remove the last column if it was blank, because the file contained an extra trailing comma */
+		if (cols.last() == "") {
+			cols.removeLast();
+			m += QString("Last column was blank, removing. ").arg(cols.size());
+		}
+
 		int numcols = cols.size();
 
 		int row = 0;
@@ -1763,14 +1792,17 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
 			}
 			if (col != numcols) {
 				m += QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row).arg(col).arg(numcols);
+				ret = false;
 			}
 
 			row++;
 		}
+		m += QString("Processed [%1] data rows. ").arg(row);
+	}
+	else {
+		ret = false;
+		m += ".csv file contained only one row. csv must contain at least one header row and one data row. ";
 	}
 
-	if (m == "")
-		return true;
-	else
-		return false;
+	return ret;
 }

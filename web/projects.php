@@ -2461,13 +2461,14 @@
 				</td>
 				<td valign="top">
 					<b>Project options</b><br><br>
-					<a href="projectchecklist.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
+					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
 					<a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>">Study templates</a><br>
 					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
 					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
 					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
 					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>
 					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
+					<a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>

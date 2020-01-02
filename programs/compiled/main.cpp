@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
 	/* command line options that take values */
 	QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
 	QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin submodules only", "analysisid");
-	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodules only", "status");
-	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule only", "message");
-	QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin submodule only", "command");
+	QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
+	QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule", "message");
+	QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin submodule", "command");
 	QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
 	QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
 	QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert submodule)", "filepath");
@@ -111,7 +111,6 @@ int main(int argc, char *argv[])
 	QString paramResultDesc = p.value(optResultDesc).trimmed();
 	QString paramResultUnit = p.value(optResultUnit).trimmed();
 
-
 	QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "cluster", "minipipeline" };
 	QStringList submodules = { "pipelinecheckin", "resultinsert", "updateanalysis", "checkcompleteanalysis"};
 
@@ -129,6 +128,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* we've gotten this far, so let's create the nidb object */
 	nidb *n;
 
 	/* check if this is being run from the cluster or locally */
@@ -237,6 +237,7 @@ int main(int argc, char *argv[])
 						else
 							n->Print("Unrecognized module [" + module + "]");
 
+						/* always keep the logfile in debug mode */
 						if ((n->cfg["debug"].toInt()) || (keepLog))
 							keepLog = true;
 

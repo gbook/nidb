@@ -40,7 +40,7 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
+	PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -50,6 +50,7 @@
 	$enddatetime = GetVariable("enddatetime");
 	$resolution = GetVariable("resolution");
 	$selectedprotocols = GetVariable("selectedprotocols");
+	$allmeasures = GetVariable("allmeasures");
 
 	if (is_null($enrollmentid) || trim($enrollmentid) == "")
 		$enrollmentid = $id;
@@ -63,10 +64,10 @@
 	/* determine action */
 	switch ($action) {
 		case 'displaytimeline':
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols);
+			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures);
 			break;
 		default:
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols);
+			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures);
 	}
 	
 	
@@ -76,7 +77,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTimeline -------------------- */
 	/* -------------------------------------------- */
-	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols) {
+	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures) {
 		
 		if ((is_null($enrollmentid)) || ($enrollmentid < 0) || ($enrollmentid == "")) {
 			?><span class="error">Invalid enrollment ID</div><?
@@ -242,9 +243,35 @@
 				}
 			}
 			
+			/* get measures */
+			if ($allmeasures) {
+				$sqlstringA = "select a.*, b.*, c.* from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id where a.enrollment_id = $enrollmentid order by b.measure_name";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$measure_name = $rowA['measure_name'];
+					$instrument_name = $rowA['instrument_name'];
+					$measure_value = $rowA['measure_value'];
+					$measure_startdate = $rowA['measure_startdate'];
+					$measure_enddate = $rowA['measure_enddate'];
+					$measure_duration = $rowA['measure_duration'];
+					
+					$series[$i]['studynum'] = '';
+					$series[$i]['seriesnum'] = '';
+					$series[$i]['modality'] = 'Measure';
+					$series[$i]['studydate'] = $measure_startdate;
+					$series[$i]['seriesdate'] = $measure_startdate;
+					$series[$i]['protocol'] = $measure_name;
+					$series[$i]['age'] = 0;
+					$series[$i]['studysite'] = '';
+					$series[$i]['studytype'] = $instrument_name;
+					$series[$i]['duration'] = $measure_duration;
+					$i++;
+				}
+			}
+			
 			$modalities = array_unique($modalities);
 			
-			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $startdatetime, $enddatetime, $mindate, $maxdate);
+			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allmeasures, $startdatetime, $enddatetime, $mindate, $maxdate);
 			
 			$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'seriesnum'=>SORT_ASC, 'modality'=>SORT_DESC));
 			?>
@@ -327,7 +354,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayOptionsTable ---------------- */
 	/* -------------------------------------------- */
-	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $startdatetime, $enddatetime, $mindate, $maxdate) {
+	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allmeasures, $startdatetime, $enddatetime, $mindate, $maxdate) {
 		
 		natsort($modalities);
 		
@@ -393,12 +420,15 @@
 			?>
 			</tr>
 		</table>
-		
+		<hr>
+		<b>Measures</b>
+		<input type="checkbox" name="allmeasures" value="1" <? if ($allmeasures) { echo "checked"; } ?>> Include all measures
+		<hr>
 		<b>Series Date</b><br>
 		Data range <?=$mindate?> to <?=$maxdate?><br>
 		<input type="datetime-local" name="startdatetime" value="<?=str_replace(" ", "T", $startdatetime)?>"> to <input type="datetime-local" name="enddatetime" value="<?=str_replace(" ", "T", $enddatetime)?>">
 		
-		<br><br>
+		<br><br><br>
 		<input type="submit" value="Update">
 		
 		</form>
