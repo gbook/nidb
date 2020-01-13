@@ -105,7 +105,7 @@ public:
 	bool RemoveDir(QString p, QString &msg);
 	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 	QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
-	QString FindFirstFile(QString dir, QString pattern, bool recursive=false);
+	bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 	bool MoveFile(QString f, QString dir);

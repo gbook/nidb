@@ -101,8 +101,6 @@
     $searchvars['s_qcbuiltinvariable'] = GetVariable("s_qcbuiltinvariable");
     $searchvars['s_qcvariableid'] = GetVariable("s_qcvariableid");
 
-	//PrintVariable($searchvars);
-	
 	/* data request variables */
 	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
 	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
@@ -124,12 +122,6 @@
 	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
 	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
 	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
-	//$requestvars['remotenidbserver'] = GetVariable("remotenidbserver");
-	//$requestvars['remotenidbusername'] = GetVariable("remotenidbusername");
-	//$requestvars['remotenidbpassword'] = GetVariable("remotenidbpassword");
-	//$requestvars['remoteinstanceid'] = GetVariable("remoteinstanceid");
-	//$requestvars['remotesiteid'] = GetVariable("remotesiteid");
-	//$requestvars['remoteprojectid'] = GetVariable("remoteprojectid");
 	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
 	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
 	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
@@ -152,13 +144,11 @@
     $requestvars['allsubject'] = GetVariable("allsubject");
     $requestvars['bidsreadme'] = GetVariable("bidsreadme");
 
-	//PrintVariable($requestvars);
-	
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit with no warning. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
+		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -181,90 +171,79 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySearchForm ------------------ */
 	/* -------------------------------------------- */
-	function DisplaySearchForm($searchvars, $action) {
+	function DisplaySearchForm($s, $action) {
 	
-		//$urllist['New Search'] = "search.php";
-		//NavigationBar("Search", $urllist);
-		
 		/* if using a previous search, load it up */
-		if (isInteger($searchvars['s_searchhistoryid'])) {
-			$sqlstring = "select * from search_history where searchhistory_id = " . $searchvars['s_searchhistoryid'];
+		if (isInteger($s['s_searchhistoryid'])) {
+			$sqlstring = "select * from search_history where searchhistory_id = " . $s['s_searchhistoryid'];
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			
-			$searchvars['s_subjectuid'] = $row['subjectuid'];
-			$searchvars['s_subjectaltuid'] = $row['subjectaltuid'];
-			$searchvars['s_subjectname'] = $row['subjectname'];
-			$searchvars['s_subjectdobstart'] = $row['subjectdobstart'];
-			$searchvars['s_subjectdobend'] = $row['subjectdobend'];
-			$searchvars['s_ageatscanmin'] = $row['ageatscanmin'];
-			$searchvars['s_ageatscanmax'] = $row['ageatscanmax'];
-			$searchvars['s_subjectgender'] = $row['subjectgender'];
-			$searchvars['s_subjectgroupid'] = $row['subjectgroupid'];
-			$searchvars['s_projectid'] = $row['projectid'];
-			$searchvars['s_enrollsubgroup'] = $row['enrollsubgroup'];
-			$searchvars['s_measuresearch'] = $row['measuresearch'];
-			$searchvars['s_measurelist'] = $row['measurelist'];
-			$searchvars['s_studyinstitution'] = $row['studyinstitution'];
-			$searchvars['s_studyequipment'] = $row['studyequipment'];
-			$searchvars['s_studyid'] = $row['studyid'];
-			$searchvars['s_studyaltscanid'] = $row['studyaltscanid'];
-			$searchvars['s_studydatestart'] = $row['studydatestart'];
-			$searchvars['s_studydateend'] = $row['studydateend'];
-			$searchvars['s_studydesc'] = $row['studydesc'];
-			$searchvars['s_studyphysician'] = $row['studyphysician'];
-			$searchvars['s_studyoperator'] = $row['studyoperator'];
-			$searchvars['s_studytype'] = $row['studytype'];
-			$searchvars['s_studymodality'] = $row['studymodality'];
-			$searchvars['s_studygroupid'] = $row['studygroupid'];
-			$searchvars['s_seriesdesc'] = $row['seriesdesc'];
-			$searchvars['s_usealtseriesdesc'] = $row['usealtseriesdesc'];
-			$searchvars['s_seriessequence'] = $row['seriessequence'];
-			$searchvars['s_seriesimagetype'] = $row['seriesimagetype'];
-			$searchvars['s_seriestr'] = $row['seriestr'];
-			$searchvars['s_seriesimagecomments'] = $row['seriesimagecomments'];
-			$searchvars['s_seriesnum'] = $row['seriesnum'];
-			$searchvars['s_seriesnumfiles'] = $row['seriesnumfiles'];
-			$searchvars['s_seriesgroupid'] = $row['seriesgroupid'];
-			$searchvars['s_pipelineid'] = $row['pipelineid'];
-			$searchvars['s_pipelineresultname'] = $row['pipelineresultname'];
-			$searchvars['s_pipelineresultunit'] = $row['pipelineresultunit'];
-			$searchvars['s_pipelineresultvalue'] = $row['pipelineresultvalue'];
-			$searchvars['s_pipelineresultcompare'] = $row['pipelineresultcompare'];
-			$searchvars['s_pipelineresulttype'] = $row['pipelineresulttype'];
-			$searchvars['s_pipelinecolorize'] = $row['pipelinecolorize'];
-			$searchvars['s_pipelinecormatrix'] = $row['pipelinecormatrix'];
-			$searchvars['s_pipelineresultstats'] = $row['pipelineresultstats'];
-			$searchvars['s_resultorder'] = $row['resultorder'];
-			$searchvars['s_formid'] = $row['formid'];
-			$searchvars['s_formfieldid'] = $row['formfieldid'];
-			$searchvars['s_formcriteria'] = $row['formcriteria'];
-			$searchvars['s_formvalue'] = $row['formvalue'];
-			$searchvars['s_audit'] = $row['audit'];
-			$searchvars['s_qcbuiltinvariable'] = $row['qcbuiltinvariable'];
-			$searchvars['s_qcvariableid'] = $row['qcvariableid'];
+			$s['s_subjectuid'] = $row['subjectuid'];
+			$s['s_subjectaltuid'] = $row['subjectaltuid'];
+			$s['s_subjectname'] = $row['subjectname'];
+			$s['s_subjectdobstart'] = $row['subjectdobstart'];
+			$s['s_subjectdobend'] = $row['subjectdobend'];
+			$s['s_ageatscanmin'] = $row['ageatscanmin'];
+			$s['s_ageatscanmax'] = $row['ageatscanmax'];
+			$s['s_subjectgender'] = $row['subjectgender'];
+			$s['s_subjectgroupid'] = $row['subjectgroupid'];
+			$s['s_projectid'] = $row['projectid'];
+			$s['s_enrollsubgroup'] = $row['enrollsubgroup'];
+			$s['s_measuresearch'] = $row['measuresearch'];
+			$s['s_measurelist'] = $row['measurelist'];
+			$s['s_studyinstitution'] = $row['studyinstitution'];
+			$s['s_studyequipment'] = $row['studyequipment'];
+			$s['s_studyid'] = $row['studyid'];
+			$s['s_studyaltscanid'] = $row['studyaltscanid'];
+			$s['s_studydatestart'] = $row['studydatestart'];
+			$s['s_studydateend'] = $row['studydateend'];
+			$s['s_studydesc'] = $row['studydesc'];
+			$s['s_studyphysician'] = $row['studyphysician'];
+			$s['s_studyoperator'] = $row['studyoperator'];
+			$s['s_studytype'] = $row['studytype'];
+			$s['s_studymodality'] = $row['studymodality'];
+			$s['s_studygroupid'] = $row['studygroupid'];
+			$s['s_seriesdesc'] = $row['seriesdesc'];
+			$s['s_usealtseriesdesc'] = $row['usealtseriesdesc'];
+			$s['s_seriessequence'] = $row['seriessequence'];
+			$s['s_seriesimagetype'] = $row['seriesimagetype'];
+			$s['s_seriestr'] = $row['seriestr'];
+			$s['s_seriesimagecomments'] = $row['seriesimagecomments'];
+			$s['s_seriesnum'] = $row['seriesnum'];
+			$s['s_seriesnumfiles'] = $row['seriesnumfiles'];
+			$s['s_seriesgroupid'] = $row['seriesgroupid'];
+			$s['s_pipelineid'] = $row['pipelineid'];
+			$s['s_pipelineresultname'] = $row['pipelineresultname'];
+			$s['s_pipelineresultunit'] = $row['pipelineresultunit'];
+			$s['s_pipelineresultvalue'] = $row['pipelineresultvalue'];
+			$s['s_pipelineresultcompare'] = $row['pipelineresultcompare'];
+			$s['s_pipelineresulttype'] = $row['pipelineresulttype'];
+			$s['s_pipelinecolorize'] = $row['pipelinecolorize'];
+			$s['s_pipelinecormatrix'] = $row['pipelinecormatrix'];
+			$s['s_pipelineresultstats'] = $row['pipelineresultstats'];
+			$s['s_resultorder'] = $row['resultorder'];
+			$s['s_formid'] = $row['formid'];
+			$s['s_formfieldid'] = $row['formfieldid'];
+			$s['s_formcriteria'] = $row['formcriteria'];
+			$s['s_formvalue'] = $row['formvalue'];
+			$s['s_audit'] = $row['audit'];
+			$s['s_qcbuiltinvariable'] = $row['qcbuiltinvariable'];
+			$s['s_qcvariableid'] = $row['qcvariableid'];
 		}
 		
 	?>
 	<style>
-		.sidelabel { font-weight: bold; font-size: 12pt; border-right: solid 1px #444; border-bottom: solid 1px #444; padding-right: 15px; padding-left: 10px; text-align: right; }
+		.sidelabel { font-weight: bold; font-size: 14pt; border-bottom: solid 1px #888; padding: 15px; text-align: right; vertical-align: top; }
 		.toplabel { color: white; font-weight: bold; font-size: 14pt; padding-top: 5px; padding-bottom: 5px; text-align: center; background-color: #444; }
+		.fieldcell { border-bottom: 1pt solid #888; padding: 8px; vertical-align: top; }
 		.tiny { font-size: 8pt; color: gray; }
-		.fieldlabel { color: darkblue; text-align: right; vertical-align: middle; }
-		.importantfield { border: 1pt solid #444; background-color: lightyellow; }
-		.advancedhover:hover { max-width: 25px; background-color: #DDD; color: #000; border-right: 1px solid #444; cursor: pointer; align: center; vertical-align: middle; }
-		.advancedhover { max-width: 25px; background-color: #EEE; color: #AAA; border-right: 1px solid #444; cursor: pointer; align: center; vertical-align: middle; }
+		.fieldhover { white-space: nowrap; }
+		.fieldhover:hover { font-weight: bold; }
+		.fieldlabel { color: #444; text-align: right; vertical-align: middle; }
+		.importantfield { background-color: lightyellow; }
+		input.hasdata { font-weight: bold; box-shadow: 0px 0px 0px 2px #3B5998; }
 	</style>
-	<script type="text/javascript">
-		$(document).ready(function() {
-			/* default action */
-			$('tr.advanced').hide();
-			
-			$('#searchtoggle').click(function(){
-				$('tr.advanced').toggle();
-			});
-		});
-	</script>
 	<script>
 		$(document).ready(function(){
 			$('#pageloading').hide();
@@ -287,67 +266,56 @@
 	</div>
 	<br>
 	<? } ?>
-	<div style="padding-left:30px">
+	
+	<a href="search.php" class="linkbutton" style="font-weight: bold; padding: 5px;">New Search</a><br>
+	<? DisplaySearchHistory(); ?>
+	<br><br>
+	
+	<div align="center">
 	<form action="search.php" method="post" name="searchform">
 	<input type="hidden" name="action" value="search">
 	
-	<table>
+	<table cellspacing="0" cellpadding="0" width="75%" style="border: 2px solid #888; border-radius: 8px">
 		<tr>
-			<td>
-			<? DisplaySearchHistory(); ?>
-	<table cellspacing="0" cellpadding="0" style="border: 2px solid #444;">
-		<tr>
-			<td rowspan="9" id="searchtoggle" class="advancedhover" onMouseOver="this.classname='advancedhover';" onMouseOut="this.classname='advancednohover';">
-				<span style="display: block; -webkit-transform: rotate(-90deg); -moz-transform: rotate(-90deg); writing-mode: rl-bt;">Toggle&nbsp;advanced&nbsp;search</span>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2">
-				<table width="100%" cellspacing="0" cellpadding="0">
-					<tr>
-						<td class="toplabel" width="80%" style="padding: 8px">Search</td>
-						<td style="background-color: #526FAA;" align="center"><a href="search.php" style="color: white; font-size: 12pt; text-decoration: underline">New search</a></td>
+			<td class="sidelabel">Subject</td>
+			<td class="fieldcell">
+				<table width="100%" cellspacing="0" cellpadding="5">
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">UID(s)</td>
+						<td><input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>"></td>
+					</tr>
+					<tr class="fieldhover">
+						<td class="fieldlabel" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">Alternate UID(s)</td>
+						<td><input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>"></td>
+					</tr>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px">Name</td>
+						<td><input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>"></td>
 					</tr>
 				</table>
 			</td>
-
-		</tr>
-		<tr>
-			<td class="sidelabel">Subject</td>
-			<td style="border-bottom: 1pt solid #444">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">
-						<td class="fieldlabel">UID(s)</td>
-						<td><input type="text" name="s_subjectuid" value="<?=$searchvars['s_subjectuid'];?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">
-						<td class="fieldlabel">Alternate UID(s)</td>
-						<td><input type="text" name="s_subjectaltuid" value="<?=$searchvars['s_subjectaltuid'];?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Name</td>
-						<td><input type="text" name="s_subjectname" value="<?=$searchvars['s_subjectname'];?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel">DOB</td>
+			<td class="fieldcell">
+				<table>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">DOB</td>
 						<td>
-							<input type="date" name="s_subjectdobstart" value="<?=$searchvars['s_subjectdobstart'];?>" size="12"> to <input type="date" name="s_subjectdobend" value="<?=$searchvars['s_subjectdobend'];?>" size="12">
+							<input type="date" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobstart'])) ? 'hasdata' : '';?>" > to <input type="date" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobend'])) ? 'hasdata' : '';?>">
 						</td>
 					</tr>
-					<tr class="advanced">
+					<tr class="fieldhover">
 						<td class="fieldlabel">Age-at-scan</td>
 						<td>
-							<input type="text" name="s_ageatscanmin" value="<?=$searchvars['s_ageatscanmin'];?>" size="3" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$searchvars['s_ageatscanmax'];?>" size="3" maxlength="3">
+							<input type="text" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" size="3" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" size="3" maxlength="3">
 						</td>
 					</tr>
-					<tr class="advanced">
+					<tr class="fieldhover">
 						<td class="fieldlabel">Gender</td>
 						<td>
-							<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$searchvars['s_subjectgender']?>"> <span class="tiny">&nbsp;F, M, O, U</span>
+							<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$s['s_subjectgender']?>"> <span class="tiny">&nbsp;F, M, O, U</span>
 						</td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Group</td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px">Subject group</td>
 						<td>
 						<select name="s_subjectgroupid">
 							<option value="">Select a group</option>
@@ -359,8 +327,8 @@
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
 								
-								echo "[[$groupid -- [" . $searchvars['s_subjectgroupid'] . "]]]";
-								if ($groupid == $searchvars['s_subjectgroupid']) {
+								echo "[[$groupid -- [" . $s['s_subjectgroupid'] . "]]]";
+								if ($groupid == $s['s_subjectgroupid']) {
 									$selected = "selected";
 								}
 								else {
@@ -379,10 +347,10 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Enrollment</td>
-			<td style="border-bottom: 1pt solid #444">
+			<td class="fieldcell">
 				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr>
-						<td class="fieldlabel" width="150px">Project</td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Project</td>
 						<td>
 						<select name="s_projectid" class="importantfield">
 							<option value="all">All Projects</option>
@@ -393,7 +361,7 @@
 									$project_id = $row['project_id'];
 									$project_name = $row['project_name'];
 									$project_costcenter = $row['project_costcenter'];
-									if ($project_id == $searchvars['s_projectid']) { $selected = "selected"; } else { $selected = ""; }
+									if ($project_id == $s['s_projectid']) { $selected = "selected"; } else { $selected = ""; }
 									
 									$perms = GetCurrentUserProjectPermissions(array($project_id));
 									if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
@@ -405,10 +373,14 @@
 						</select>
 						</td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Enrollment sub-group</td>
+				</table>
+			</td>
+			<td class="fieldcell">
+				<table>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Enrollment sub-group</td>
 						<td>
-						<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$searchvars['s_enrollsubgroup']?>" size="50"></td>
+						<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$s['s_enrollsubgroup']?>" size="50"></td>
 						<datalist id="s_enrollsubgroup">
 						<?
 							$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
@@ -425,63 +397,21 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Study</td>
-			<td style="border-bottom: 1pt solid #444">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Institution</td>
-						<td>
-						<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$searchvars['s_studyinstitution']?>" size="50"></td>
-						<datalist id="s_studyinstitution">
-						<?
-							$sqlstring = "select distinct(study_institution) from studies order by study_institution";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								?><option value="<?=$row['study_institution']?>"><?
-							}
-						?>
-						</datalist>
-						</td>
+			<td class="fieldcell">
+				<table width="100%" cellspacing="0" cellpadding="5">
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Study ID(s)</td>
+						<td><input type="text" name="s_studyid" value="<?=$s['s_studyid']?>" size="50" class="importantfield"></td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Equipment</td>
-						<td>
-						<select name="s_studyequipment">
-							<option value="">Select equipment</option>
-						<?
-							$sqlstring = "select distinct(study_site) from studies order by study_site";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$study_site = $row['study_site'];
-								
-								if ($study_site != "") {
-									if ($study_site == $searchvars['s_studyequipment']) {
-										$selected = "selected";
-									}
-									else {
-										$selected = "";
-									}
-									?>
-									<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
-									<?
-								}
-							}
-						?>
-						</select>
-						</td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Alternate Scan ID(s)</td>
+						<td><input type="text" name="s_studyaltscanid" value="<?=$s['s_studyaltscanid']?>" size="50" class="importantfield"></td>
 					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Study ID(s)</td>
-						<td><input type="text" name="s_studyid" value="<?=$searchvars['s_studyid']?>" size="50" class="importantfield"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" title="<b>Study date</b><br><br>Leave first date blank to search for anything earlier than the second date. Leave the second date blank to search for anything later than the first date">Date</td>
+						<td><input type="date" name="s_studydatestart" value="<?=$s['s_studydatestart']?>" size="12" class="importantfield"> to <input type="date" name="s_studydateend" value="<?=$s['s_studydateend']?>" size="12" class="importantfield"></td>
 					</tr>
-					<tr>
-						<td class="fieldlabel" width="150px">Alternate Scan ID(s)</td>
-						<td><input type="text" name="s_studyaltscanid" value="<?=$searchvars['s_studyaltscanid']?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr title="<b>Study date</b><br><br>Leave first date blank to search for anything earlier than the second date. Leave the second date blank to search for anything later than the first date">
-						<td class="fieldlabel">Date</td>
-						<td><input type="date" name="s_studydatestart" value="<?=$searchvars['s_studydatestart']?>" size="12" class="importantfield"> to <input type="date" name="s_studydateend" value="<?=$searchvars['s_studydateend']?>" size="12" class="importantfield"></td>
-					</tr>
-					<tr>
+					<tr class="fieldhover">
 						<td class="fieldlabel">Modality</td>
 						<td>
 						<select name="s_studymodality" class="importantfield">
@@ -498,11 +428,11 @@
 								if (mysqli_num_rows($result2) > 0) {
 								
 									/* if the table does exist, allow the user to search on it */
-									if (($mod_code == "MR") && ($searchvars['s_studymodality'] == "")) {
+									if (($mod_code == "MR") && ($s['s_studymodality'] == "")) {
 										$selected = "selected";
 									}
 									else {
-										if ($mod_code == $searchvars['s_studymodality']) {
+										if ($mod_code == $s['s_studymodality']) {
 											$selected = "selected";
 										}
 										else {
@@ -518,10 +448,56 @@
 						</select>
 						</td>
 					</tr>
-					<tr class="advanced">
+				</table>
+			</td>
+			<td class="fieldcell">
+				<table>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Institution</td>
+						<td>
+						<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$s['s_studyinstitution']?>" size="50"></td>
+						<datalist id="s_studyinstitution">
+						<?
+							$sqlstring = "select distinct(study_institution) from studies order by study_institution";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								?><option value="<?=$row['study_institution']?>"><?
+							}
+						?>
+						</datalist>
+						</td>
+					</tr>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Equipment</td>
+						<td>
+						<select name="s_studyequipment">
+							<option value="">Select equipment</option>
+						<?
+							$sqlstring = "select distinct(study_site) from studies order by study_site";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$study_site = $row['study_site'];
+								
+								if ($study_site != "") {
+									if ($study_site == $s['s_studyequipment']) {
+										$selected = "selected";
+									}
+									else {
+										$selected = "";
+									}
+									?>
+									<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
+									<?
+								}
+							}
+						?>
+						</select>
+						</td>
+					</tr>
+					<tr class="fieldhover">
 						<td class="fieldlabel">Description</td>
 						<td>
-							<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$searchvars['s_studydesc']?>" size="50">
+							<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$s['s_studydesc']?>" size="50">
 							<datalist id="s_studydesc">
 							<?
 								$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
@@ -533,10 +509,10 @@
 							</datalist>
 						</td>
 					</tr>
-					<tr class="advanced">
+					<tr class="fieldhover">
 						<td class="fieldlabel">Performing&nbsp;Physician</td>
 						<td>
-							<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$searchvars['s_studyphysician']?>" size="50">
+							<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$s['s_studyphysician']?>" size="50">
 							<datalist id="s_studyphysician">
 							<?
 								$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
@@ -548,10 +524,10 @@
 							</datalist>
 						</td>
 					</tr>
-					<tr class="advanced">
+					<tr class="fieldhover">
 						<td class="fieldlabel">Operator</td>
 						<td>
-							<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$searchvars['s_studyoperator']?>" size="50">
+							<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$s['s_studyoperator']?>" size="50">
 							<datalist id="s_studyoperator">
 							<?
 								$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
@@ -563,10 +539,10 @@
 							</datalist>
 						</td>
 					</tr>
-					<tr class="advanced">
+					<tr class="fieldhover">
 						<td class="fieldlabel">Visit type</td>
 						<td>
-							<input type="text" name="s_studytype" list="s_studytype" value="<?=$searchvars['s_studytype']?>" size="50">
+							<input type="text" name="s_studytype" list="s_studytype" value="<?=$s['s_studytype']?>" size="50">
 							<datalist id="s_studytype">
 							<?
 								$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
@@ -578,8 +554,8 @@
 							</datalist>
 						</td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Group</td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px">Study group</td>
 						<td>
 						<select name="s_studygroupid">
 							<option value="">Select a group</option>
@@ -591,7 +567,7 @@
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
 								
-								if ($groupid == $searchvars['s_studygroupid']) {
+								if ($groupid == $s['s_studygroupid']) {
 									$selected = "selected";
 								}
 								else {
@@ -610,42 +586,46 @@
 		</tr>
 		<tr>
 			<td class="sidelabel">Series</td>
-			<td style="border-bottom: 1pt solid #444">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr title="<b>Comma separated</b> protocols: search will be an AND<br><b>Semi-colon separated</b> protocols: search will be an OR">
-						<td class="fieldlabel" width="150px">Protocol</td>
-						<td><input type="text" name="s_seriesdesc" value="<?=$searchvars['s_seriesdesc']?>" size="50" class="importantfield"></td>
+			<td class="fieldcell">
+				<table width="100%" cellspacing="0" cellpadding="5">
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px" title="<b>Comma separated</b> protocols: search will be an AND<br><b>Semi-colon separated</b> protocols: search will be an OR">Protocol</td>
+						<td><input type="text" name="s_seriesdesc" value="<?=$s['s_seriesdesc']?>" size="50" class="importantfield"></td>
 					</tr>
-					<tr title="Perform the search using the alternate protocol name, and return the results using the alternate protocol name. The alternate protocol name often groups together series with similar names into one protocol. For example 'MPRAGE', 'Axial T1', and 'T1w_SPC' would all be labeled 'T1'">
-						<td class="fieldlabel" width="150px"></td>
-						<td><input type="checkbox" name="s_usealtseriesdesc" value="1" class="importantfield" <? if ($searchvars['s_usealtseriesdesc']) { echo "checked"; } ?>>Use alternate protocol name</td>
+				</table>
+			</td>
+			<td class="fieldcell">
+				<table>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px" title="Perform the search using the alternate protocol name, and return the results using the alternate protocol name. The alternate protocol name often groups together series with similar names into one protocol. For example 'MPRAGE', 'Axial T1', and 'T1w_SPC' would all be labeled 'T1'"></td>
+						<td><input type="checkbox" name="s_usealtseriesdesc" value="1" class="importantfield" <? if ($s['s_usealtseriesdesc']) { echo "checked"; } ?>>Use alternate protocol name</td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Sequence</td>
-						<td><input type="text" name="s_seriessequence" value="<?=$searchvars['s_seriessequence']?>" size="50"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Sequence</td>
+						<td><input type="text" name="s_seriessequence" value="<?=$s['s_seriessequence']?>" size="50"></td>
 					</tr>
-					<tr class="advanced" title="Comma separated. Use * to indicate wildcards">
-						<td class="fieldlabel" width="150px">Image Type</td>
-						<td><input type="text" name="s_seriesimagetype" value="<?=$searchvars['s_seriesimagetype']?>" size="50"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px" title="Comma separated. Use * to indicate wildcards">Image Type</td>
+						<td><input type="text" name="s_seriesimagetype" value="<?=$s['s_seriesimagetype']?>" size="50"></td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Image Comments</td>
-						<td><input type="text" name="s_seriesimagecomments" value="<?=$searchvars['s_seriesimagecomments']?>" size="50"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="180px">Image Comments</td>
+						<td><input type="text" name="s_seriesimagecomments" value="<?=$s['s_seriesimagecomments']?>" size="50"></td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">TR</td>
-						<td><input type="text" name="s_seriestr" value="<?=$searchvars['s_seriestr']?>" title="Repetition time in milliseconds" size="10"> <span class="tiny">ms</span></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px" title="Repetition time in milliseconds">TR</td>
+						<td><input type="text" name="s_seriestr" value="<?=$s['s_seriestr']?>" size="10"> <span class="tiny">ms</span></td>
 					</tr>
-					<tr class="advanced" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">
-						<td class="fieldlabel" width="150px">Series number</td>
-						<td><input type="text" name="s_seriesnum" value="<?=$searchvars['s_seriesnum']?>" size="10"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">Series number</td>
+						<td><input type="text" name="s_seriesnum" value="<?=$s['s_seriesnum']?>" size="10"></td>
 					</tr>
-					<tr class="advanced" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">
-						<td class="fieldlabel" width="150px">Number of files</td>
-						<td><input type="text" name="s_seriesnumfiles" value="<?=$searchvars['s_seriesnumfiles']?>" size="10"></td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">Number of files</td>
+						<td><input type="text" name="s_seriesnumfiles" value="<?=$s['s_seriesnumfiles']?>" size="10"></td>
 					</tr>
-					<tr class="advanced">
-						<td class="fieldlabel" width="150px">Group</td>
+					<tr class="fieldhover">
+						<td class="fieldlabel" width="150px">Series group</td>
 						<td>
 						<select name="s_seriesgroupid">
 							<option value="">Select a group</option>
@@ -657,7 +637,7 @@
 								$groupname = $row['group_name'];
 								$groupowner = $row['group_owner'];
 								
-								if ($groupid == $searchvars['s_seriesgroupid']) {
+								if ($groupid == $s['s_seriesgroupid']) {
 									$selected = "selected";
 								}
 								else {
@@ -675,8 +655,8 @@
 			</td>
 		</tr>
 		<tr>
-			<td class="sidelabel" style="color: #666">Results</td>
-			<td style="border-bottom: 1pt solid #444">
+			<td class="sidelabel" style="color: #666; border-bottom: 0px">Output</td>
+			<td colspan="2">
 				<table width="100%" cellspacing="0" cellpadding="3">
 					<tr>
 						<td>
@@ -690,21 +670,22 @@
 									<ul>
 										<li><a href="#tabs-1">Transfer Data</a></li>
 										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
-										<li><a href="#tabs-2">Assessments</a></li>
+										<!--<li><a href="#tabs-2">Assessments</a></li>-->
 										<li><a href="#tabs-4">Analysis</a></li>
 										<li><a href="#tabs-5">QC</a></li>
 										<li><a href="#tabs-6">Admin</a></li>
 									</ul>
 									<div id="tabs-1">
-										<? if (($searchvars['s_resultorder'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
+										<? if (($s['s_resultorder'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
 										
-										<? if ($searchvars['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Display all series <span class="tiny">(use for "Select All")</span><br>
 
-										<? if ($searchvars['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
 									</div>
+									<!--
 									<div id="tabs-2">
 										<table width="100%" cellspacing="0" cellpadding="3">
 											<tr>
@@ -768,7 +749,7 @@
 																	});
 																});
 															</script>
-																<input type="text" id="s_measure1" name="s_measuresearch" value="<?=$searchvars['s_measuresearch'];?>" size="50" maxlength="255"><br><span class="tiny">Example: meas1=4;meas*&lt;50;meas3~value</span>
+																<input type="text" id="s_measure1" name="s_measuresearch" value="<?=$s['s_measuresearch'];?>" size="50" maxlength="255"><br><span class="tiny">Example: meas1=4;meas*&lt;50;meas3~value</span>
 															</td>
 														</tr>
 													</table>
@@ -780,7 +761,7 @@
 													<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
 														<tr>
 															<td>
-																<input type="text" id="s_measure2" name="s_measurelist" value="<?=$searchvars['s_measurelist'];?>" size="50" maxlength="255">
+																<input type="text" id="s_measure2" name="s_measurelist" value="<?=$s['s_measurelist'];?>" size="50" maxlength="255">
 																<br><span class="tiny">Example: meas1,meas2,meas3<br>Or * for all measures</span>
 															</td>
 														</tr>
@@ -789,23 +770,24 @@
 											</tr>
 										</table>
 										<br>
-										<? if ($searchvars['s_resultorder'] == "assessment") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "assessment") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="assessment" value="study" <?=$checked?>> Phenotypic measures<br>
 									</div>
+									-->
 									<div id="tabs-3">
-										<? if ($searchvars['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewtable" value="table" <?=$checked?>> Table<br>
 										
-										<? if ($searchvars['s_resultorder'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
 										
-										<? if ($searchvars['s_resultorder'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
 										
-										<? if ($searchvars['s_resultorder'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
 										
-										<? if ($searchvars['s_resultorder'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
 									</div>
 									<div id="tabs-4">
@@ -822,7 +804,7 @@
 														$pipelineid = $row2['pipeline_id'];
 														$pipelinename = $row2['pipeline_name'];
 														?>
-														<option value="<?=$pipelineid?>" <? if ($searchvars['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
+														<option value="<?=$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
 														<?
 													}
 												?>
@@ -831,53 +813,53 @@
 											</tr>
 											<tr>
 												<td class="fieldlabel" width="150px">Result name</td>
-												<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultname']?>" size="50" class="importantfield"></td>
+												<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
 											</tr>
 											<tr>
 												<td class="fieldlabel" width="150px">Result unit</td>
-												<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
+												<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
 											</tr>
 											<tr>
 												<td class="fieldlabel" width="150px">Result type</td>
 												<td>
-													<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
-													<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
-													<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
-													<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
-													<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($searchvars['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
+													<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
+													<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
+													<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
+													<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
+													<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
 												</td>
 											</tr>
 											<tr>
 												<td class="fieldlabel" width="150px">Result value</td>
 												<td valign="top">
 													<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
-														<option value="=" <? if ($searchvars['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
-														<option value=">" <? if ($searchvars['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
-														<option value=">=" <? if ($searchvars['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
-														<option value="<" <? if ($searchvars['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
-														<option value="<=" <? if ($searchvars['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
+														<option value="=" <? if ($s['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
+														<option value=">" <? if ($s['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
+														<option value=">=" <? if ($s['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
+														<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
+														<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
 													</select>
-													<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$searchvars['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
-													<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
+													<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
+													<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
 													<br>
-													<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
+													<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
 													<br>
-													<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($searchvars['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
+													<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
 												</td>
 											</tr>
 										</table>
 										<br><br>
 									
-										<? if ($searchvars['s_resultorder'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
 										
-										<? if ($searchvars['s_resultorder'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
 										
-										<? if ($searchvars['s_resultorder'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
 										
-										<? if ($searchvars['s_resultorder'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
 									</div>
 									<div id="tabs-5">
@@ -902,30 +884,30 @@
 													$qcresultname = $row2['qcresult_name'];
 													$qcresultunits = $row2['qcresult_units'];
 													?>
-													<option value="<?=$qcresultnameid?>" <? if ($searchvars['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
+													<option value="<?=$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
 													<?
 												}
 												
 											?>
 										</select>
 										<br><br>
-										<? if ($searchvars['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
 										
-										<? if ($searchvars['s_resultorder'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="qctable" value="qctable" <?=$checked?>> Table<br>
 									</div>
 									<div id="tabs-6">
-										<? if ($searchvars['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
 										
 										<? if ($GLOBALS['isadmin']) { ?>
-										<? if ($searchvars['s_resultorder'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_resultorder'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewoperations" value="operations" <?=$checked?>> File operations
 										<? } ?>
 										<br>
 										
-										<? if ($searchvars['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
+										<? if ($s['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
 									</div>
 								</div>
@@ -933,14 +915,10 @@
 						</td>
 					</tr>
 				</table>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="2" align="center" style="padding-top: 15px;">
+				<div align="center">
 				<input type="submit" value="Search">
-			</td>
-		</tr>
-	</table>
+				</div>
+				<br>
 			</td>
 		</tr>
 	</table>
@@ -966,7 +944,7 @@
 		if ($userid == "") { return; }
 		
 		/* only keep the 10 most recent searches */
-		$sqlstring = "delete from search_history where user_id = $userid and saved_name <> '' and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid and saved_name <> '' order by date_added asc limit 10) temp_tab)";
+		$sqlstring = "delete from search_history where user_id = $userid and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid order by date_added asc limit 10) temp_tab)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* escape all the variables and put them back into meaningful variable names */
@@ -1028,7 +1006,6 @@
 		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
 
 		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectid, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $s_projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
-		//PrintVariable($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
@@ -1101,19 +1078,12 @@
 				$s['Pipeline Result Name'] = $row['pipelineresultname'];
 				$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
 				$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
-				//$s['Pipeline Result Compare'] = $row['pipelineresultcompare'];
 				$s['Pipeline Result Type'] = $row['pipelineresulttype'];
-				//$s['Pipeline Colorize'] = $row['pipelinecolorize'];
-				//$s['Pipeline Corr Matrix'] = $row['pipelinecormatrix'];
-				//$s['Pipeline Result Stats'] = $row['pipelineresultstats'];
 				$s['Result Order'] = $row['resultorder'];
 				$s['Form ID'] = $row['formid'];
 				$s['Form Field ID'] = $row['formfieldid'];
 				$s['Form Criteria'] = $row['formcriteria'];
 				$s['Form Value'] = $row['formvalue'];
-				//$s['Audit'] = $row['audit'];
-				//$s['QC Built-in Variable'] = $row['qcbuiltinvariable'];
-				//$s['QC Variable ID'] = $row['qcvariableid'];
 				
 				$searchterms = "";
 				foreach ($s as $key => $value) {
@@ -1567,6 +1537,9 @@
 			<?
 		}
 		
+		/* create some variables to store info about the restuls */
+		$foundprojectids = array();
+		
 		/* ----- loop through the results and display them ----- */
 		mysqli_data_seek($result,0); /* rewind the record pointer */
 		$laststudy_id = "";
@@ -1579,7 +1552,7 @@
 				continue;
 			}
 			$enrollment_id = $row['enrollment_id'];
-			$subject_id = $row['subject_id'];
+			$project_id = $row['project_id'];
 			$project_name = $row['project_name'];
 			$project_costcenter = $row['project_costcenter'];
 			$name = $row['name'];
@@ -1604,6 +1577,9 @@
 			$study_institution = $row['study_institution'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 
+			/* keep a list of projects to which this result belongs */
+			$foundprojectids[$project_id] = "";
+			
 			/* determine the displayID - in case the user wants to see the project specific IDs instead */
 			$displayid = $uid;
 			$displayidcolor = "";
@@ -2086,16 +2062,19 @@
 		?>
 		</table>
 		
+		<div style="padding-left: 15px">
 		<?
 			/* ---------- display download/group box ---------- */
 			if (($s_resultorder == "study") || ($s_resultorder == "series") || ($s_resultorder == "export")) {
-				DisplayDownloadBox($s_studymodality, $s_resultorder);
+				DisplayDownloadBox($s_studymodality, $s_resultorder, $foundprojectids);
 			}
 			elseif ($s_resultorder == "operations") {
 				DisplayFileIOBox();
 			}
 		?>
-		<br><br><br>
+		</div>
+		<br>
+		<br>
 		<?
 	}
 
@@ -2244,7 +2223,8 @@
 					$d1 = mktime(0,0,0,$month,$day,$year);
 					list($year, $month, $day, $extra) = explode("-", $study_datetime);
 					$d2 = mktime(0,0,0,$month,$day,$year);
-					$ageatscan = floor(($d2-$d1)/31536000);
+					//$ageatscan = floor(($d2-$d1)/31536000);
+					$ageatscan = number_format((($d2-$d1)/31536000),1);					
 				}
 				else {
 					$ageatscan = $study_ageatscan;
@@ -2796,7 +2776,7 @@
 		?>
 		</table>
 		<?
-		DisplayDownloadBox('', 'subject');
+		DisplayDownloadBox('', 'subject', $projectids);
 	}
 	
 	
@@ -2876,7 +2856,7 @@
 		?>
 		</table>
 		<?
-		DisplayDownloadBox('', 'subject');
+		DisplayDownloadBox('', 'subject', $projectids);
 	}
 	
 	
@@ -3086,7 +3066,7 @@
 		.csv file with study numbers<br>
 		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
-		DisplayDownloadBox(strtolower($modality), 'long');
+		DisplayDownloadBox(strtolower($modality), 'long', $projectids);
 	}
 
 	
@@ -3574,8 +3554,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDownloadBox ----------------- */
 	/* -------------------------------------------- */
-	function DisplayDownloadBox($s_studymodality, $s_resultorder) {
-		//PrintVariable($s_resultorder, 's_resultorder');
+	function DisplayDownloadBox($s_studymodality, $s_resultorder, $projectids) {
+		
 		?>
 			<br><br>
 			
@@ -3700,15 +3680,39 @@
 				});
 			</script>
 			
-			<table style="border: 2px solid #444" cellpadding="0" cellspacing="0">
+			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="5" cellspacing="0" width="60%">
 				<tr>
 					<td style="background-color: #444; color: #fff; padding: 5px">
-						<b>Add to Group</b>
+						<b>Operations for Selected Items</b>
 					</td>
 				</tr>
 				<tr>
 					<td>
-						<table>
+						<span style="font-weight: bold; color: #444">Run mini-pipeline</span>
+						<?
+							$projectids2 = array_unique(array_keys($projectids));
+							$projidlist = implode2(',', $projectids2);
+							$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
+							$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
+							//PrintSQL($sqlstring);
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$mpid = $row['minipipeline_id'];
+								$mpversion = $row['mp_version'];
+								$mpname = $row['mp_name'];
+								$projectname = $row['project_name'];
+								$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+							}
+							$mpselectbox .= "</select>";
+						?>
+						<?=$mpselectbox?>
+						<input type="submit" value="Submit mini-pipelines" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<span style="font-weight: bold; color: #444">Add to Group</span>
+						<table cellpadding="5">
 							<tr>
 								<td>
 									Subject
@@ -3786,7 +3790,7 @@
 			
 			<br><br>
 			
-			<table style="border: 2px solid #444" cellpadding="0" cellspacing="0">
+			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="0" cellspacing="0" width="60%">
 				<tr>
 					<td>
 						<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Transfer/Export Data</div>

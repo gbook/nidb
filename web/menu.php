@@ -99,7 +99,7 @@
 				?><a href="index.php" style="<?=$style?>"><b>Home</b></a><?
 				
 				/* search */
-				if ($page=="search.php" || $page=="requeststatus.php") { $style = "background-color:#3B5998"; }
+				if ($page=="search.php" || $page=="requeststatus.php" || $page=="analysisbuilder.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="search.php" style="<?=$style?>"><b>Search</b></a><?
 				
@@ -158,7 +158,7 @@
 				}
 				
 				/* search sub-menu */
-				elseif ($page=="search.php" || $page=="requeststatus.php") {
+				elseif ($page=="search.php" || $page=="requeststatus.php" || $page=="analysisbuilder.php") {
 					
 					if ($page=="search.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
@@ -167,6 +167,10 @@
 					if ($page=="requeststatus.php"){ $style = "background-color:#273f70"; }
 					else { $style = ""; }
 					?><a href="requeststatus.php" style="<?=$style?>">Export Status</a><?
+					
+					if ($page=="analysisbuilder.php"){ $style = "background-color:#273f70"; }
+					else { $style = ""; }
+					?><a href="analysisbuilder.php" style="<?=$style?>">Analysis Builder</a><?
 				}
 				
 				/* subjects sub-menu */

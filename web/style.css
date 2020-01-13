@@ -50,15 +50,15 @@ body {
 }
 
 /* all form elements */
-input { border: 1px solid #999; border-radius:6px; padding: 4px; }
-input:focus { border: 1px solid #666; background-color: #ffffcc; }
-input:hover { border: 1px solid #666; }
-textarea { border: 1px solid #999; border-radius:6px; padding: 4px; }
-textarea:focus { border: 1px solid #666; background-color: #ffffcc; }
-textarea:hover { border: 1px solid #666; }
-select { border: 1px solid #999; border-radius:6px; padding: 4px; }
-select:focus { border: 1px solid #666; background-color: #ffffcc; }
-select:hover { border: 1px solid #666; }
+input { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; box-sizing: border-box; }
+input:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; border-radius:6px; padding: 4px; }
+input:hover { box-shadow: 0px 0px 0px 2px #444; border-radius:6px; padding: 4px; }
+textarea { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; }
+textarea:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; }
+textarea:hover { box-shadow: 0px 0px 0px 2px #444; }
+select { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; }
+select:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; }
+select:hover { box-shadow: 0px 0px 0px 2px #444; }
 
 input[type=submit] {
 	padding:4px 7px; background:#ccc; border:1px solid #ccc;
@@ -168,10 +168,6 @@ table.smalldisplaytable { padding: 0px; border: 1px solid #777; border-spacing: 
 .smalldisplaytable td { border-bottom: 1px solid #DDD; font-size: 9pt; padding: 1px 6px; }
 .smalldisplaytable tbody tr:hover { background-color: #BBC8E6; }
 .smalldisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-/*.smalldisplaytable tr:last-child > td:first-child { border-bottom-left-radius:5px; } /* kludge to make the border radius appear correct
-.smalldisplaytable tr:last-child > td:last-child { border-bottom-right-radius:5px; }
-.smalldisplaytable tr:first-child > th:first-child { border-top-left-radius: 5px; }
-.smalldisplaytable tr:first-child > th:last-child { border-top-right-radius: 5px; } */
 
 /* merge table */
 table.merge { padding: 0px; border-collapse: collapse; }
@@ -189,14 +185,13 @@ table.smallgridtable { padding: 0px; border: 1px solid #666; border-spacing: 0px
 .smallgridtable tbody tr:hover { background-color: #BBC8E6; }
 
 /* gray display table (multiple rows) */
-table.graydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px; }
-.graydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px; }
-.graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; }
+table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing: 0px; }
+.graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; text-align: left; }
+.graydisplaytable th.right { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; text-align: right; }
 .graydisplaytable td { border-top: 1px solid #DDD; font-size: 11pt; padding: 2px 4px; vertical-align: top }
 .graydisplaytable td.child { font-size: 11pt; padding: 2px 4px; }
 .graydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 11pt; padding: 3px 6px; background-color: #EFEFEF; }
 .graydisplaytable tbody tr:hover { background-color: #eee; }
-/*.graydisplaytable tbody td:hover { border: solid 1px #666; border-collapse: collapse; }*/
 .graydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 .graydisplaytable a { text-decoration: none; color: #224ea5; }
 .graydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
@@ -262,6 +257,11 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
+/* 2 column table (small table with 2 columns: variable, value; no border, no headers) */
+.twocoltablesimple { border-spacing: 0px; padding: 0px; }
+.twocoltablesimple tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; padding: 4px; }
+.twocoltablesimple tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #444; padding: 4px; white-space: nowrap; }
+
 /* enrollment table */
 .enrolltable { border: 2px solid #444; border-collapse: collapse; }
 .enrolltable td.cell { border: 1px solid #ccc; padding: 5px; }
@@ -326,14 +326,14 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 /*.staticmessage { font-size: 9pt; color: darkred; }*/
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
 
-.adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; }
+.adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; border-radius: 6px; }
 .adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
 
-.adminbutton2 { background-color: darkred; font-weight: bold; color: #fff !important; text-align: center; padding: 7px; text-decoration: none; border: 1px solid #444; }
+.adminbutton2 { background-color: darkred; font-weight: bold; color: #fff !important; text-align: center; padding: 7px; text-decoration: none; border: 1px solid #444; border-radius: 6px; }
 .adminbutton2:hover {background-color: #e57272; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
 
 /* for links appearing as buttons */
-.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
+.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 6px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
 .linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; }
 
 .smalllinkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; font-size: smaller; }

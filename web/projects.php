@@ -68,9 +68,6 @@
 	$serieslist2 = GetVariable("serieslist2");
 	
 	$rdoc_label = GetVariable("rdoc_label");
-	$templateid = GetVariable("templateid");
-	$newtemplatename = GetVariable("newtemplatename");
-	$newtemplatemodality = GetVariable("newtemplatemodality");
 	$itemprotocol = GetVariable("itemprotocol");
 
 	/* determine action */
@@ -154,23 +151,6 @@
 			break;
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
-			break;
-		case 'displaystudytemplatelist':
-			DisplayStudyTemplateList($id);
-			break;
-		case 'createtemplate':
-			DisplayStudyTemplateForm($id, 0, $newtemplatename, $newtemplatemodality);
-			break;
-		case 'edittemplate':
-			DisplayStudyTemplateForm($id, $templateid, '','');
-			break;
-		case 'updatetemplate':
-			UpdateStudyTemplate($id, $templateid, $itemprotocol);
-			DisplayStudyTemplateForm($id, $templateid, '','');
-			break;
-		case 'deletetemplate':
-			DeleteStudyTemplate($templateid);
-			DisplayStudyTemplateList($id);
 			break;
 		case 'assessmentinfo':
 			DisplayFormList($id);
@@ -1136,196 +1116,7 @@
 
 # End My Changes Asim 04/16/2018
 	
-	/* -------------------------------------------- */
-	/* ------- DisplayStudyTemplateList ----------- */
-	/* -------------------------------------------- */
-	function DisplayStudyTemplateList($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		//$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		//NavigationBar("$name", $urllist);
-		
-		?>
-		<table class="graydisplaytable">
-			<thead>
-				<th>Name</th>
-				<th>Modality</th>
-				<th></th>
-			</thead>
-			<form action="projects.php" method="post" name="theform" id="theform">
-			<input type="hidden" name="action" value="createtemplate">
-			<input type="hidden" name="id" value="<?=$projectid?>">
-			<tr>
-				<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-				<td>
-					<select name="newtemplatemodality">
-						<option value="">Select modality</option>
-					<?
-						$modalities = GetModalityList();
-						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
-						}
-					?>
-					</select>
-				</td>
-				<td><input type="submit" value="Create"></td>
-			</tr>
-			</form>
-		<?
-		$sqlstring = "select * from study_template where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$templateid = $row['studytemplate_id'];
-			$templatename = $row['template_name'];
-			$templatemodality = $row['template_modality'];
-			?>
-			<tr>
-				<td><a href="projects.php?action=edittemplate&id=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
-				<td><?=$templatemodality?></td>
-				<td><a href="projects.php?action=deletetemplate&id=<?=$projectid?>&templateid=<?=$templateid?>" style="color: red">X</a></td>
-			</tr>
-			<?
-		}
-		?>
-		</table>
-		<?
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayStudyTemplateForm ----------- */
-	/* -------------------------------------------- */
-	function DisplayStudyTemplateForm($projectid, $templateid, $newtemplatename, $newtemplatemodality) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		$newtemplatename = mysqli_real_escape_string($GLOBALS['linki'], $newtemplatename);
-		$newtemplatemodality = mysqli_real_escape_string($GLOBALS['linki'], $newtemplatemodality);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		//$urllist['Study templates'] = "projects.php?action=displaystudytemplatelist&id=$projectid";
-		//NavigationBar("$name", $urllist);
-		
-		if (($templateid == "") || ($templateid == 0)) {
-			$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$templateid = mysqli_insert_id($GLOBALS['linki']);
-			$templatename = $newtemplatename;
-			$templatemodality = $newtemplatemodality;
-		}
-		else {
-			$sqlstring = "select * from study_template where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$templatename = $row['template_name'];
-			$templatemodality = $row['template_modality'];
-		}
-		?>
-		
-		<b><?=$templatename?></b> - <?=$templatemodality?>
-		<br><br>
-		<form action="projects.php" method="post" name="theform" id="theform">
-		<input type="hidden" name="action" value="updatetemplate">
-		<input type="hidden" name="id" value="<?=$projectid?>">
-		<input type="hidden" name="templateid" value="<?=$templateid?>">
-		<span class="tiny">Leave protocol blank to delete</span>
-		<table class="graydisplaytable">
-			<thead>
-				<th>Protocol</th>
-			</thead>
-			<tr>
-		<?
-		$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by item_order";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$itemprotocol = $row['item_protocol'];
-			?>
-			<tr>
-				<td><input type="text" name="itemprotocol[]" value="<?=$itemprotocol?>" size="50"></td>
-			</tr>
-			<?
-		}
-		for($i=0;$i<5;$i++) {
-			?>
-			<tr>
-				<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
-			</tr>
-			<?
-		}
-		?>
-			<tr>
-				<td colspan="2" align="right"><input type="submit" value="Save"></td>
-			</tr>
-		</table>
-		</form>
-		<?
-	}
 
-
-	/* -------------------------------------------- */
-	/* ------- UpdateStudyTemplate ---------------- */
-	/* -------------------------------------------- */
-	function UpdateStudyTemplate($projectid, $templateid, $itemprotocol) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		$itemprotocol = mysqli_real_escape_array($itemprotocol);
-		
-		/* start a transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete existing template items for this templateid */
-		$sqlstring = "delete from study_templateitems where studytemplate_id = $templateid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		$i = 0;
-		foreach ($itemprotocol as $protocol) {
-			if (trim($protocol) != "") {
-				$sqlstring = "insert into study_templateitems (studytemplate_id, item_order, item_protocol) values ($templateid, $i, '$protocol')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$i++;
-			}
-		}
-		
-		/* commit the transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DeleteStudyTemplate ---------------- */
-	/* -------------------------------------------- */
-	function DeleteStudyTemplate($templateid) {
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		
-		if ($templateid > 0) {
-			$sqlstring = "delete from study_templateitems where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-
-			$sqlstring = "delete from study_template where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			
-			?><span class="message">Template deleted</span><?
-		}
-		else {
-			?><span class="message">Invalid study template ID</span><?
-		}
-	}
-	
-	
 	/* -------------------------------------------- */
 	/* ------- DisplayStudiesTable ---------------- */
 	/* -------------------------------------------- */
@@ -2462,7 +2253,7 @@
 				<td valign="top">
 					<b>Project options</b><br><br>
 					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
-					<a href="projects.php?action=displaystudytemplatelist&id=<?=$id?>">Study templates</a><br>
+					<a href="templates.php?action=displaystudytemplatelist&id=<?=$id?>">Study templates</a><br>
 					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
 					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
 					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>

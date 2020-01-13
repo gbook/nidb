@@ -790,20 +790,39 @@ QStringList nidb::FindAllFiles(QString dir, QString pattern, bool recursive) {
 /* ---------------------------------------------------------- */
 /* --------- FindFirstFile ---------------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::FindFirstFile(QString dir, QString pattern, bool recursive) {
-	QString f;
-	if (recursive) {
-		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-		if (it.hasNext())
-			f = it.next();
-	}
-	else {
-		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-		if (it.hasNext())
-			f = it.next();
+bool nidb::FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive) {
+
+	QDir d = QDir(dir);
+	if (!d.exists()) {
+		msg = "Directory [" + dir + "] does not exist";
+		return false;
 	}
 
-	return f;
+	f = "";
+
+	if (recursive) {
+		//WriteLog("Checkpoint A");
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+		//WriteLog("Checkpoint B");
+		if (it.hasNext()) {
+			//WriteLog("Checkpoint C");
+			f = it.next();
+		}
+	}
+	else {
+		//WriteLog("Checkpoint D");
+		QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+		//WriteLog("Checkpoint E");
+		if (it.hasNext()) {
+			//WriteLog("Checkpoint F");
+			f = it.next();
+		}
+	}
+
+	if (f.size() == 0)
+		return false;
+	else
+		return true;
 }
 
 

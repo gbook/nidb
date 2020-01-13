@@ -54,6 +54,7 @@
 	$scriptentrypointid = GetVariable("scriptentrypointid");
 	$scriptdeleteids = GetVariable("scriptdeleteids");
 	$scriptparams = GetVariable("scriptparams");
+	$scriptid = GetVariable("scriptid");
 	
 	/* determine action */
 	if (($action == "editform") && (contains($referringpage, $phpscriptname)))  {
@@ -79,6 +80,9 @@
 		DeleteMiniPipeline($mpid);
 		DisplayMiniPipelineList($projectid);
 	}
+	elseif (($action == "viewscript") && (contains($referringpage, $phpscriptname))) {
+		ViewScript($projectid, $scriptid);
+	}
 	else {
 		DisplayMiniPipelineList($projectid);
 	}
@@ -91,14 +95,8 @@
 	/* ------- UpdateMiniPipeline ----------------- */
 	/* -------------------------------------------- */
 	function UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams) {
-		//PrintVariable($scriptexecutableids);
 		/* perform data checks */
 		$minipipelinename = mysqli_real_escape_string($GLOBALS['linki'], $minipipelinename);
-		//$scriptexecutableids = mysqli_real_escape_array($GLOBALS['linki'], $scriptexecutableids);
-		//$scriptentrypointid = mysqli_real_escape_string($GLOBALS['linki'], $scriptentrypointid);
-		//$scriptdeleteids = mysqli_real_escape_array($GLOBALS['linki'], $scriptdeleteids);
-		//$scriptparams = mysqli_real_escape_array($GLOBALS['linki'], $scriptparams);
-		//PrintVariable($scriptexecutableids);
 		
 		if (is_null($scriptentrypointid) || ($scriptentrypointid == "")) {
 			echo "No entry point set. An entry point script must be set.<br><br>";
@@ -115,7 +113,6 @@
 			$executablelist = implode2(",", $scriptexecutableids);
 			$sqlstring = "update minipipeline_scripts set mp_executable = 1 where minipipelinescript_id in ($executablelist)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
 		}
 		
 		/* update entry point flag */
@@ -123,11 +120,10 @@
 			/* remove previous flags */
 			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 0 where minipipeline_id = $mpid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
+
 			/* set new flag */
 			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 1 where minipipelinescript_id = $scriptentrypointid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
 		}
 		
 		/* update parameter lists */
@@ -135,7 +131,6 @@
 			$param = mysqli_real_escape_string($GLOBALS['linki'], $param);
 			$sqlstring = "update minipipeline_scripts set mp_parameterlist = '$param' where minipipelinescript_id = $scriptid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
 		}
 		
 		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
@@ -143,7 +138,6 @@
 			$deletelist = implode2(",", $scriptdeleteids);
 			$sqlstring = "delete from minipipeline_scripts where minipipelinescript_id in ($deletelist)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
 		}
 		
 		/* add new files */
@@ -159,7 +153,6 @@
 					/* insert the new minipipeline scripts */
 					$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize,
 mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename', '$scriptData', $scriptSize, now(), now())";
-					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -230,7 +223,6 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					/* insert the new minipipeline scripts */
 					$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize,
 mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename', '$scriptData', $scriptSize, now(), now())";
-					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -322,7 +314,6 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$scriptid = $row['minipipelinescript_id'];
 							$script = $row['mp_scriptname'];
-							$params = $row['mp_parameterlist'];
 							$executable = $row['mp_executable'];
 							$entrypoint = $row['mp_entrypoint'];
 							$scriptsize = $row['mp_scriptsize'];
@@ -330,11 +321,10 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 							$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 							?>
 							<tr>
-								<td><tt style="font-size: larger"><?=$script?></tt></td>
+								<td><tt style="font-size: larger"><a href="minipipeline.php?action=viewscript&projectid=<?=$projectid?>&scriptid=<?=$scriptid?>"><?=$script?></a></tt></td>
 								<td><?=$scriptsize?></td>
 								<td><input type="checkbox" name="scriptexecutableids[]" value="<?=$scriptid?>" <? if ($executable) { echo "checked"; }?>></td>
 								<td><input type="radio" name="scriptentrypointid" value="<?=$scriptid?>" <? if ($entrypoint) { echo "checked"; }?>></td>
-								<!--<td><input type="text" name="scriptparams[<?=$scriptid?>]" value="<?=$params?>" style="font-family: monospace" size="45"></td>-->
 								<td style="font-size: smaller"><?=$createdate?></td>
 								<td style="font-size: smaller"><?=$modifydate?></td>
 								<td><input type="checkbox" name="scriptdeleteids[]" value="<?=$scriptid?>"></td>
@@ -478,6 +468,72 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 		</table>
 		<?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ViewScript ------------------------- */
+	/* -------------------------------------------- */
+	function ViewScript($projectid, $scriptid) {
+
+		/* perform data checks */
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$scriptid = mysqli_real_escape_string($GLOBALS['linki'], $scriptid);
+		
+		if (!ValidID($projectid,'Project ID')) { return; }
+		if (!ValidID($scriptid,'Script ID')) { return; }
+		
+		$sqlstring = "select * from minipipeline_scripts where minipipelinescript_id = $scriptid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$mpid = $row['minipipeline_id'];
+			$scriptid = $row['minipipelinescript_id'];
+			$scriptname = $row['mp_scriptname'];
+			$contents = base64_decode($row['mp_script']);
+			$executable = $row['mp_executable'];
+			$entrypoint = $row['mp_entrypoint'];
+			$scriptsize = $row['mp_scriptsize'];
+			$createdate = date('M j, Y h:ia',strtotime($row['mp_scriptcreatedate']));
+			$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
+			?>
+			
+			&nbsp; &nbsp; <a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="linkbutton"><b>&larr; Back</b></a>
+			
+			<div style="padding: 20px">
+				<table class="twocoltablesimple">
+					<tr>
+						<td>Script name</td>
+						<td><?=$scriptname?></td>
+					</tr>
+					<tr>
+						<td>Executable?</td>
+						<td><? if ($executable) { echo "&#10004;"; } ?></td>
+					</tr>
+					<tr>
+						<td>Entry point?</td>
+						<td><? if ($entrypoint) { echo "&#10004;"; } ?></td>
+					</tr>
+					<tr>
+						<td>Script size</td>
+						<td><?=$scriptsize?> <span class="tiny">bytes</span></td>
+					</tr>
+					<tr>
+						<td>Create date</td>
+						<td><?=$createdate?></td>
+					</tr>
+					<tr>
+						<td>Modify date</td>
+						<td><?=$modifydate?></td>
+					</tr>
+				</table>
+				<br>
+				Displaying entire file
+				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
+			</div>
+			<?
+		}
+	}
+	
 ?>
 
 

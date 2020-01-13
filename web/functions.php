@@ -686,7 +686,7 @@
 	   parent instance. Also highlight selected IDs.
 	   width and height are in px
 	*/
-	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids,$width=350,$height=100) {
+	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids,$width=350,$height=30) {
 		//PrintVariable($selectedids);
 		if (in_array(0, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
 		?>
@@ -2229,5 +2229,14 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		echo "Running [$nidbsh] returned [$nidbver]<br>";
 		return $nidbver;
 	}
-	
+
+	/* -------------------------------------------- */
+	/* ------- isEmpty ---------------------------- */
+	/* -------------------------------------------- */
+	function isEmpty($s) {
+		if (trim($s) == "")
+			return true;
+		else
+			return false;
+	}
 ?>

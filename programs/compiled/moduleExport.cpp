@@ -100,11 +100,14 @@ int moduleExport::Run() {
 			}
 			else {
 				/* skip this IO request... the status was changed outside of this instance of the program */
-				n->WriteLog(QString("The status for this export [%1] has been changed to [%2]. Skipping.").arg(exportid).arg(status));
+				n->WriteLog(QString("The status for this export [%1] has been changed from [submitted] to [%2]. Skipping.").arg(exportid).arg(status));
 				continue;
 			}
 
-			n->WriteLog(QString(" ----- Export operation (%1 of %2) ----- ").arg(i).arg(q.size()));
+			n->WriteLog("");
+			n->WriteLog(QString(" ---------- Export operation (%1 of %2) ---------- ").arg(i).arg(q.size()));
+			n->WriteLog("");
+
 			QString log;
 
 			if (exporttype == "web") {
@@ -142,8 +145,13 @@ int moduleExport::Run() {
 				found = ExportToRemoteFTP(exportid, remoteftpusername, remoteftppassword, remoteftpserver, remoteftpport.toInt(), remoteftppath, status, log);
 			}
 			else {
-				n->WriteLog(QString("Unknown export type [%1]").arg(exporttype));
+				log += n->WriteLog(QString("Unknown export type [%1]").arg(exporttype));
+				status = "error";
 			}
+
+			if (!SetExportStatus(exportid,status,log))
+				n->WriteLog(QString("Unable to set export status to [%1]").arg(status));
+
 		}
 		n->WriteLog("Finished performing exports");
 	}
@@ -766,8 +774,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 	msg = msgs.join("\n");
 
-	SetExportStatus(exportid,exportstatus,msg);
-
 	return 1;
 }
 
@@ -789,20 +795,20 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 	QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + n->CreateLogDate();
 	QString headerfile = rootoutdir + "/ndar.csv";
 
+	msgs << "ExportNDAR() rootoutdir [" + rootoutdir + "]";
+	msgs << "ExportNDAR() .csv header file [" + headerfile + "]";
 
 	QString m;
 	if (n->MakePath(rootoutdir, m)) {
-		n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
+		msgs << "ExportNDAR() " + n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
 	}
 	else {
 		exportstatus = "error";
-		msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+		msgs << "ExportNDAR() " + n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
 		return false;
 	}
 
 	QString systemstring;
-	//int laststudynum = 0;
-	//int newseriesnum = 1;
 	/* iterate through the UIDs */
 	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
 		QString uid = a.key();
@@ -816,10 +822,6 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 				int seriesnum = c.key();
 
 				int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-				//QSqlQuery q;
-				//q.prepare("update exportseries set status = 'processing' where exportseries_id = :exportseriesid");
-				//q.bindValue(":exportseriesid",exportseriesid);
-				//n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 				SetExportSeriesStatus(exportseriesid, "processing");
 
 				QString seriesstatus = "complete";
@@ -828,91 +830,92 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 				int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
 				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
 				QString altuids = s[uid][studynum][seriesnum]["altuids"];
-				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
 				QString projectname = s[uid][studynum][seriesnum]["projectname"];
-				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
 				QString studytype = s[uid][studynum][seriesnum]["studytype"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
 				QString modality = s[uid][studynum][seriesnum]["modality"];
-				//int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
 				int numfilesbeh = s[uid][studynum][seriesnum]["numfilesbeh"].toInt();
 				QString datatype = s[uid][studynum][seriesnum]["datatype"];
 				QString indir = s[uid][studynum][seriesnum]["datadir"];
 				QString behindir = s[uid][studynum][seriesnum]["behdir"];
 				QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
 				bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
-				//bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
-				//bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
-				//bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-				//bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
-				//bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+				QStringList logs;
 
 				if (datadirexists) {
-					if (!QFile::exists(headerfile)) {
-						WriteNDARHeader(headerfile, modality);
-					}
+					WriteNDARHeader(headerfile, modality, logs);
+					msgs << logs;
 
 					QString behzipfile;
 					QString behdesc;
-					if (!csvonly) {
+
+					/* write the header, find out if the data is valid and should copied to the output */
+					bool validData = WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, indir, logs);
+					msgs << logs;
+
+					if (!csvonly && validData) {
 						QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 						m = "";
 						if (n->MakePath(tmpdir, m)) {
 							QString systemstring;
 							if ((modality == "mr") && (datatype == "dicom")) {
 								systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
-								n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
 								n->AnonymizeDir(tmpdir,2,"","");
 							}
 							else if ((modality == "mr") && (datatype == "parrec")) {
 								systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
-								n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
 								systemstring = "find " + indir + " -iname '*.rec' -exec cp {} " + tmpdir + " \\;";
-								n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
 							}
 							else {
 								systemstring = "rsync " + indir + "/* " + tmpdir + "/";
-								n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
 							}
 
-							// zip the data to the out directory
+							/* zip the data to the output directory */
 							QString zipfile = QString("%1/%2-%3-%4.zip").arg(rootoutdir).arg(uid).arg(studynum).arg(seriesnum);
 							systemstring = "zip -vjrq1 " + zipfile + " " + tmpdir;
-							n->WriteLog(n->SystemCommand(systemstring, true));
-							n->WriteLog("Done zipping image files...");
-							systemstring = "unzip -Z " + zipfile;
-							n->WriteLog(n->SystemCommand(systemstring, true));
+							msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+							msgs << "ExportNDAR() " + n->WriteLog("Done zipping image files...");
 
+							/* create a behavioral data zip file if there is beh data */
 							if (numfilesbeh > 0) {
 								behzipfile = QString("%1-%2-%3-beh.zip").arg(uid).arg(studynum).arg(seriesnum);
 								systemstring = QString("zip -vjrq1 %1/%2 %3").arg(rootoutdir).arg(behzipfile).arg(behindir);
-								n->WriteLog(n->SystemCommand(systemstring, true));
-								n->WriteLog("Done zipping beh files...");
-								systemstring = "unzip -Z " + zipfile;
-								n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+								msgs << "ExportNDAR() " + n->WriteLog("Done zipping beh files...");
 
 								behdesc = "Behavioral/design data file";
 							}
 							if (modality == "mr") {
-								n->RemoveDir(tmpdir,m);
+								if (!n->RemoveDir(tmpdir,m))
+									msgs << "ExportNDAR() Unable to remove tmpdir [" + tmpdir + "] because [" + m + "]";
 							}
 						}
 						else {
-							msgs << "Unable to create tmpdir [" + tmpdir + "] because [" + m + "]";
+							seriesstatus = "error";
+							statusmessage = "Unable to create tmpdir [" + tmpdir + "] because [" + m + "]";
+							msgs << "ExportNDAR() " + statusmessage;
 						}
 					}
-					WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, QString("%1/%2").arg(indir).arg(datatype));
 
-					SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
 				}
 				else {
-					msgs << "Unable to export [" + indir + "] Directory does not exist\n";
+					seriesstatus = "error";
+					statusmessage = "Data directory [" + indir + "] does not exist";
+					msgs << "ExportNDAR() Data directory does not exist. Unable to export data from [" + indir + "]\n";
 				}
+				SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
 			}
 		}
 	}
 
 	n->WriteLog("Leaving ExportNDAR()...");
+
+	msg = msgs.join("\n");
 
 	return true;
 }
@@ -1117,8 +1120,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 	}
 
 	exportstatus = "complete";
-	//int lastsid = 0;
-	//int newseriesnum = 1;
 	/* iterate through the UIDs */
 	for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
 		QString uid = a.key();
@@ -1288,8 +1289,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
 	EndRemoteNiDBTransaction(transactionid, conn.server, conn.username, conn.password);
 
-	SetExportStatus(exportid, exportstatus);
-
 	n->WriteLog("Leaving ExportToRemoteNiDB()...");
 
 	return true;
@@ -1312,9 +1311,12 @@ bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QS
 /* ---------------------------------------------------------- */
 /* --------- WriteNDARHeader -------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::WriteNDARHeader(QString file, QString modality) {
+bool moduleExport::WriteNDARHeader(QString file, QString modality, QStringList &log) {
 
 	QFile f(file);
+	if (f.exists())
+		return true;
+
 	if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
 
 		modality = modality.toLower();
@@ -1334,6 +1336,9 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality) {
 		}
 
 		f.close();
+
+		log << "WriteNDARHeader() " + n->WriteLog("Wrote header to NDAR .csv file [" + file + "]");
+
 		return true;
 	}
 	else
@@ -1344,12 +1349,12 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality) {
 /* ---------------------------------------------------------- */
 /* --------- WriteNDARSeries -------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir) {
+bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log) {
 
 	/* get the information on the subject and series */
 	QSqlQuery q;
 	q.prepare(QString("select *, date_format(study_datetime,'%m/%d/%Y') 'study_datetime', TIMESTAMPDIFF(MONTH, birthdate, study_datetime) 'ageatscan' from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where %1series_id = :seriesid").arg(modality));
-	q.bindValue(":id", seriesid);
+	q.bindValue(":seriesid", seriesid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.size() > 0) {
@@ -1382,12 +1387,11 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 			double studyageatscan = q.value("study_ageatscan").toDouble();
 			QString seriesdesc = q.value("series_desc").toString().trimmed();
 			int boldreps = q.value("bold_reps").toInt();
-			//bool usecustomid = q.value("project_usecustomid").toBool();
 			int projectid = q.value("project_id").toInt();
 
-			/* skip this if the GUID is blank... we can't submit to NDAR/RDoC anyway if its blank */
+			/* skip this subject entirely if the GUID is blank... we can't submit to NDAR/RDoC if there is no GUID */
 			if (guid == "") {
-				n->WriteLog("GUID was blank, skipping writing this row");
+				log << "WriteNDARSeries() " + n->WriteLog("GUID was blank for subject [" + uid + "], skipping writing any data for this subject");
 				return false;
 			}
 
@@ -1406,6 +1410,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 			if (imgcols < 1) imgcols = 1;
 			if (imgslices < 1) imgslices = 1;
 
+			/* fix ages that are stored in months, although they shouldn't be... */
 			if ((studyageatscan > 0) && (studyageatscan < 120))
 				ageatscan = studyageatscan * 12.0;
 
@@ -1418,134 +1423,145 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 				srcsubjectid = altuid;
 			}
 
-			/* get some DICOM specific tags from the first file in the series */
-			QString dcmfile = n->FindFirstFile(indir, "*.dcm");
-			gdcm::Reader r;
-			r.SetFileName(dcmfile.toStdString().c_str());
-			if (!r.Read()) {
-				/* could not read the first dicom file... */
-				return false;
-			}
-
-			r.Read();
-			gdcm::StringFilter sf;
-			sf = gdcm::StringFilter();
-			sf.SetFile(r.GetFile());
-
-			QString Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-			QString ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-			QString PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-			QString PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-			QString AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-			QString SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-			QString PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-			QString ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
-			QString TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
-			QString SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
-
-			/* clean up the tags */
-			if (Manufacturer == "") Manufacturer = "Unknown";
-			if (PatientPosition == "") PatientPosition = "Unknown";
-			if (SoftwareVersion == "") SoftwareVersion = "Unknown";
-			if (PhotometricInterpretation == "") PhotometricInterpretation = "RGB";
-			if (ManufacturersModelName == "") ManufacturersModelName = "Unknown";
-			if (TransmitCoilName == "") TransmitCoilName = "Unknown";
-
-			/* figure out the scan type (T1,T2,DTI,fMRI) */
-			QString scantype = "MR structural (T1)";
-			if ((boldreps > 1) || (seriessequence.contains("epfid2d1")))
-				scantype = "fMRI";
-			if (seriesdesc.contains("perfusion",Qt::CaseInsensitive) && seriessequence.contains("ep2d_perf_tra", Qt::CaseInsensitive))
-				scantype = "MR diffusion";
-
-			if (seriesdesc.contains("dti",Qt::CaseInsensitive) || seriesdesc.contains("dwi",Qt::CaseInsensitive))
-				scantype = "MR diffusion";
-			if (seriesdesc.contains("T2"))
-				scantype = "MR structural (T2)";
-
-			/* build the aquisition matrix */
-			if (AcquisitionMatrix.trimmed() == "") {
-				AcquisitionMatrix = "0 0 0 0";
-			}
-
-			QString FOV = "0x0";
-			QStringList AcqParts = AcquisitionMatrix.split(" ");
-			if (AcqParts.size() >= 4)
-				FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
-
+			/* open the file appending */
 			QFile f(file);
-			if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			if (!f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+				log << "WriteNDARSeries() " + n->WriteLog("Could not open NDAR .csv output file [" + file + "]");
+				continue;
+			}
+			QTextStream fs(&f);
 
-				QTextStream fs(&f);
-				fs << "image,3\n";
-
-				if (modality == "MRI") {
-
-					QString str;
-					QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << ageatscan << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
-
-					fs << str;
+			/* create the modality specific line for the csv */
+			if (modality == "MRI") {
+				/* get some DICOM specific tags from the first file in the series */
+				QString dcmfile;
+				QString m;
+				if (!n->FindFirstFile(indir, "*.dcm",dcmfile,m)) {
+					log << "WriteNDARSeries() " + n->WriteLog("Unable to find any DICOM files in [" + indir + "]");
+					return false;
 				}
-				else if (modality == "EEG") {
-					int expid = 0;
 
-					QString sp = seriesprotocol.toLower();
-
-					/* NDAR */
-					if (seriesprotocol.contains("domino",Qt::CaseInsensitive)) expid = 115;
-					if (seriesprotocol.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
-					if (seriesprotocol.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
-					if (seriesprotocol.contains("HNumber",Qt::CaseInsensitive)) expid = 113;
-					if (seriesprotocol.contains("HPain", Qt::CaseInsensitive)) expid = 113;
-
-					if ((sp == "gating") || (sp == "gating2") || (sp == "gating3")) expid = 530;
-					if ((sp == "resteyesopen") || (sp == "rest") || (sp == "rest - eyes open")) expid = 528;
-					if ((sp == "resteyesclosed") || (sp == "rest - eyes closed")) expid = 556;
-					if ((sp == "oddball") || (sp == "oddball - beh data")) expid = 529;
-
-					/* PARDIP */
-					if ((projectid == 173) || (projectid == 174) || (projectid == 176)) {
-						if (sp == "auditory steady state") expid = 538;
-						else if (sp == "rmr") expid = 575;
-						else if (sp == "rest - eyes open") expid = 531;
-						else if (sp == "pro-saccade") expid = 566;
-						else if (sp == "anti-saccade") expid = 569;
-						else if (sp == "iaps") expid = 537;
-						else if (sp == "visual steady state") expid = 539;
-						else if (sp == "oddball") expid = 532;
-						else if (sp == "gating") expid = 536;
-					}
-
-					/* BSNIP2 */
-					if ((projectid == 185) || (projectid == 187) || (projectid == 191) || (projectid == 192) || (projectid == 194)) {
-						if (sp == "rest - eyes open") expid = 549;
-						else if (sp == "rmr") expid = 587;
-						else if (sp == "anti-saccade") expid = 559;
-						else if (sp == "pro-saccade") expid = 558;
-						else if (sp == "iaps") expid = 582;
-						else if (sp == "visual steady state") expid = 584;
-						else if (sp == "auditory steady state") expid = 583;
-						else if (sp == "oddball") expid = 550;
-						else if (sp == "gating") expid = 581;
-					}
-
-					QString str;
-					QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+				gdcm::Reader r;
+				r.SetFileName(dcmfile.toStdString().c_str());
+				if (!r.Read()) {
+					/* could not read the first dicom file... */
+					log << "WriteNDARSeries() " + n->WriteLog("Could not read DICOM file [" + dcmfile + "]");
+					return false;
 				}
-				else if (modality == "ET") {
-					int expid = 0;
-					QString str;
-					QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+
+				r.Read();
+				gdcm::StringFilter sf;
+				sf = gdcm::StringFilter();
+				sf.SetFile(r.GetFile());
+
+				QString Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
+				QString ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
+				QString PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
+				QString PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
+				QString AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+				QString SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+				QString PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+				QString ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
+				QString TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
+				QString SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
+
+				/* clean up the tags */
+				if (Manufacturer == "") Manufacturer = "Unknown";
+				if (PatientPosition == "") PatientPosition = "Unknown";
+				if (SoftwareVersion == "") SoftwareVersion = "Unknown";
+				if (PhotometricInterpretation == "") PhotometricInterpretation = "RGB";
+				if (ManufacturersModelName == "") ManufacturersModelName = "Unknown";
+				if (TransmitCoilName == "") TransmitCoilName = "Unknown";
+
+				/* figure out the scan type (T1,T2,DTI,fMRI) */
+				QString scantype = "MR structural (T1)";
+				if ((boldreps > 1) || (seriessequence.contains("epfid2d1")))
+					scantype = "fMRI";
+				if (seriesdesc.contains("perfusion",Qt::CaseInsensitive) && seriessequence.contains("ep2d_perf_tra", Qt::CaseInsensitive))
+					scantype = "MR diffusion";
+
+				if (seriesdesc.contains("dti",Qt::CaseInsensitive) || seriesdesc.contains("dwi",Qt::CaseInsensitive))
+					scantype = "MR diffusion";
+				if (seriesdesc.contains("T2"))
+					scantype = "MR structural (T2)";
+
+				/* build the aquisition matrix */
+				if (AcquisitionMatrix.trimmed() == "") {
+					AcquisitionMatrix = "0 0 0 0";
 				}
-				f.close();
+
+				QString FOV = "0x0";
+				QStringList AcqParts = AcquisitionMatrix.split(" ");
+				if (AcqParts.size() >= 4)
+					FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
+
+				QString str;
+				QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << ageatscan << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+
+				fs << str;
+			}
+			else if (modality == "EEG") {
+				int expid = 0;
+
+				QString sp = seriesprotocol.toLower();
+
+				/* NDAR */
+				if (sp.contains("domino",Qt::CaseInsensitive)) expid = 115;
+				if (sp.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
+				if (sp.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
+				if (sp.contains("HNumber",Qt::CaseInsensitive)) expid = 113;
+				if (sp.contains("HPain", Qt::CaseInsensitive)) expid = 113;
+
+				if ((sp == "gating") || (sp == "gating2") || (sp == "gating3")) expid = 530;
+				if ((sp == "resteyesopen") || (sp == "rest") || (sp == "rest - eyes open")) expid = 528;
+				if ((sp == "resteyesclosed") || (sp == "rest - eyes closed")) expid = 556;
+				if ((sp == "oddball") || (sp == "oddball - beh data")) expid = 529;
+
+				/* PARDIP */
+				if ((projectid == 173) || (projectid == 174) || (projectid == 176)) {
+					if (sp == "auditory steady state") expid = 538;
+					else if (sp == "rmr") expid = 575;
+					else if (sp == "rest - eyes open") expid = 531;
+					else if (sp == "pro-saccade") expid = 566;
+					else if (sp == "anti-saccade") expid = 569;
+					else if (sp == "iaps") expid = 537;
+					else if (sp == "visual steady state") expid = 539;
+					else if (sp == "oddball") expid = 532;
+					else if (sp == "gating") expid = 536;
+				}
+
+				/* BSNIP2 */
+				if ((projectid == 185) || (projectid == 187) || (projectid == 191) || (projectid == 192) || (projectid == 194)) {
+					if (sp == "rest - eyes open") expid = 549;
+					else if (sp == "rmr") expid = 587;
+					else if (sp == "anti-saccade") expid = 559;
+					else if (sp == "pro-saccade") expid = 558;
+					else if (sp == "iaps") expid = 582;
+					else if (sp == "visual steady state") expid = 584;
+					else if (sp == "auditory steady state") expid = 583;
+					else if (sp == "oddball") expid = 550;
+					else if (sp == "gating") expid = 581;
+				}
+
+				QString str;
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+				fs << str;
+			}
+			else if (modality == "ET") {
+				int expid = 0;
+				QString str;
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+				fs << str;
 			}
 			else {
-				n->WriteLog("Could not open output file");
+				log << "WriteNDARSeries() " + n->WriteLog("Unknown modality [" + modality + "]. Nothing to written to file [" + file + "].");
 			}
+
+			f.close();
 		}
 	}
 	else {
-		n->WriteLog(QString("No rows found for this series... [%1, %2, %3, %4, %5, %6, %7] ").arg(file).arg(imagefile).arg(behfile).arg(behdesc).arg(seriesid).arg(modality).arg(indir));
+		log << "WriteNDARSeries() " + n->WriteLog(QString("No rows found for this series... [%1, %2, %3, %4, %5, %6, %7] ").arg(file).arg(imagefile).arg(behfile).arg(behdesc).arg(seriesid).arg(modality).arg(indir));
 	}
 
 	return true;

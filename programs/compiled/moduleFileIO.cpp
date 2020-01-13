@@ -69,7 +69,7 @@ int moduleFileIO::Run() {
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
 			QString merge_ids = q.value("merge_ids").toString().trimmed();
-			int merge_id = q.value("merge_ids").toInt();
+			//int merge_id = q.value("merge_ids").toInt();
 			QString merge_name = q.value("merge_name").toString().trimmed();
 			QString merge_dob = q.value("merge_dob").toString().trimmed();
 			QString merge_sex = q.value("merge_sex").toString().trimmed();

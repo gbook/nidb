@@ -40,7 +40,7 @@
 	require "menu.php";
 	require "nanodicom.php";
 
-	//PrintVariable($_POST);
+	PrintVariable($_POST);
 	//PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
@@ -53,6 +53,7 @@
 	$newprojectid = GetVariable("newprojectid");
 	$seriesid = GetVariable("seriesid");
 	$seriesids = GetVariable("seriesids");
+	$minipipelineid = GetVariable("minipipelineid");
 	$minipipelineids = GetVariable("minipipelineids");
 	$modality = GetVariable("modality");
 	$series_num = GetVariable("series_num");
@@ -104,7 +105,9 @@
 			DisplayMiniPipelineForm($studyid, $seriesids);
 			break;
 		case 'submitminipipelines':
-			SubmitMiniPipelines($modality, $seriesids, $minipipelineids);
+			/* sad :( but the variable seriesid can come from the search.php page, and is an array. too much work to change all references to it now though
+			   this function needs to check for both variable names */
+			SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid);
 			break;
 		case 'update':
 			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
@@ -800,10 +803,20 @@
 	/* -------------------------------------------- */
 	/* ------- SubmitMiniPipelines ---------------- */
 	/* -------------------------------------------- */
-	function SubmitMiniPipelines($modality, $seriesids, $minipipelineids) {
+	function SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid) {
 		
-		foreach ($seriesids as $key => $seriesid) {
-			$mpid = $minipipelineids[$key];
+		$s = array();
+		if (is_array($seriesids))
+			$s = $seriesids;
+		elseif (is_array($seriesid))
+			$s = $seriesid;
+			
+		foreach ($s as $key => $seriesid) {
+			if ($minipipelineid != "")
+				$mpid = $minipipelineid;
+			else
+				$mpid = $minipipelineids[$key];
+			
 			$sqlstring = "insert into minipipeline_jobs (minipipeline_id, mp_modality, mp_seriesid, mp_status, mp_queuedate) values ($mpid, '$modality', $seriesid, 'pending', now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}

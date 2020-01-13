@@ -519,6 +519,11 @@
 			<form method="post" action="analysis.php" id="numperpageform">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
+			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
+			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
+			<input type="hidden" name="sortby" value="<?=$sortby?>">
+			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
 			<tr>
 				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
 				<td class="pagenum">
@@ -534,11 +539,11 @@
 					</select>
 				</td>
 				<td class="middle">&nbsp;</td>
-				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1">&#171;</a></td>
-				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>">&lsaquo;</a></td>
+				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&#171;</a></td>
+				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&lsaquo;</a></td>
 				<td title="Refresh page"><a href="" style="margin-left:20px; margin-right:20px; font-size:14pt">&#10227;</a></td>
-				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>">&rsaquo;</a></td>
-				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>">&#187;</a></td>
+				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&rsaquo;</a></td>
+				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&#187;</a></td>
 			</tr>
 			</form>
 		</table>
@@ -559,6 +564,13 @@
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="numperpage" value="<?=$numperpage?>">
+			<input type="hidden" name="pagenum" value="<?=$pagenum?>">
+			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
+			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
+			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
+			<input type="hidden" name="sortby" value="<?=$sortby?>">
+			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
 			<thead>
 				<tr>
 					<th align="left" <? if ($sortby == "studynum") { echo "style='background-color: #fff'"; } ?>>

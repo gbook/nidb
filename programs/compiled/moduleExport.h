@@ -50,8 +50,8 @@ public:
 	bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
 	bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
 
-	bool WriteNDARHeader(QString headerfile, QString modality);
-	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir);
+	bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
+	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log);
 
 	int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
 	void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
