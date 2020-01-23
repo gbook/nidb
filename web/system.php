@@ -116,6 +116,8 @@
     $c['displayrecentstudies'] = GetVariable("displayrecentstudies");
     $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
 
+    $c['setupips'] = GetVariable("setupips");
+
     $c['importchunksize'] = GetVariable("importchunksize");
     $c['numretry'] = GetVariable("numretry");
     $c['enablenfs'] = GetVariable("enablenfs");
@@ -129,7 +131,8 @@
 	$c['localftphostname'] = GetVariable("localftphostname");
     $c['localftpusername'] = GetVariable("localftpusername");
     $c['localftppassword'] = GetVariable("localftppassword");
-	
+
+	/* directories */
 	$c['analysisdir'] = GetVariable("analysisdir");
 	$c['analysisdirb'] = GetVariable("analysisdirb");
 	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
@@ -154,6 +157,7 @@
     $c['uploadeddir'] = GetVariable("uploadeddir");
     $c['tmpdir'] = GetVariable("tmpdir");
     $c['deleteddir'] = GetVariable("deleteddir");
+
 	$systemmessage = GetVariable("systemmessage");
 	$messageid = GetVariable("messageid");
 	
@@ -306,21 +310,23 @@
 [ispublic] = $ispublic
 [sitetype] = $sitetype
 [allowphi] = $allowphi
-[allowrawdicomexport] = $allowrawdicomexport
-[redcapurl] = $redcapurl
-[redcaptoken] = $redcaptoken
-
 [enableremoteconn] = $enableremoteconn
 [enablecalendar] = $enablecalendar
 [uploadsizelimit] = $uploadsizelimit
 [displayrecentstudies] = $displayrecentstudies
 [displayrecentstudydays] = $displayrecentstudydays
 
+# ----- security options -----
+[setupips] = $setupips
+
 # ----- import/export options -----
 [importchunksize] = $importchunksize
 [numretry] = $numretry
 [enablenfs] = $enablenfs
 [enableftp] = $enableftp
+[allowrawdicomexport] = $allowrawdicomexport
+[redcapurl] = $redcapurl
+[redcaptoken] = $redcaptoken
 
 # ----- qc -----
 [fslbinpath] = $fslbinpath
@@ -440,9 +446,6 @@
 		/* load the actual .cfg file */
 		$GLOBALS['cfg'] = LoadConfig();
 	
-		$urllist['System Settings'] = "system.php";
-		NavigationBar("System Settings", $urllist);
-
 		$dbconnect = true;
 		$devdbconnect = true;
 		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
@@ -456,23 +459,28 @@
 		</style>
 
 		<fieldset>
-			<legend>System message</legend>
+			<legend>System status messages</legend>
 			
-			Current messages:<br>
+			Current messages:
 		<?
 			$sqlstring = "select * from system_messages where message_status = 'active'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$messageid = $row['message_id'];
-				$messagedate = $row['message_date'];
-				$message = $row['message'];
-				?><?=$messagedate?> - <b><?=$message?></b> <a href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" class="adminbutton">Delete</a><br><?
+			if (mysqli_num_rows($result) > 0) {
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$messageid = $row['message_id'];
+					$messagedate = $row['message_date'];
+					$message = $row['message'];
+					?><br><?=$messagedate?> - <b><?=$message?></b> <a href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" class="adminbutton">Delete</a><br><?
+				}
+			}
+			else {
+				echo " None";
 			}
 		?>
-			<br>
+			<br><br>
 			<form method="post" action="system.php">
 			<input type="hidden" name="action" value="setsystemmessage">
-			<textarea name="systemmessage"></textarea>
+			<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
 			<input type="submit" value="Set message">
 			</form>
 		</fieldset>
@@ -517,7 +525,7 @@
 				<td class="variable">mysqlhost</td>
 				<td><input type="text" name="mysqlhost" value="<?=$GLOBALS['cfg']['mysqlhost']?>" size="45"></td>
 				<td><? if ($dbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Database hostname (should be localhost or 127.0.0.1 unless the database is running on a different server than the website)</td>
+				<td>Database hostname (should be <code>localhost</code> or <code>127.0.0.1</code> unless the database is running on a different server than the website)</td>
 			</tr>
 			<tr>
 				<td class="variable">mysqluser</td>
@@ -541,7 +549,7 @@
 				<td class="variable">mysqldevhost</td>
 				<td><input type="text" name="mysqldevhost" value="<?=$GLOBALS['cfg']['mysqldevhost']?>"></td>
 				<td><? if ($devdbconnect) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Development database hostname. This database will only be used if the website is accessed from port 8080 instead of 80 (example: http://localhost:8080)</td>
+				<td>Development database hostname. This database will only be used if the website is accessed from port 8080 instead of 80. Example <code>http://localhost:8080</code></td>
 			</tr>
 			<tr>
 				<td class="variable">mysqldevuser</td>
@@ -647,7 +655,7 @@
 				<td class="variable">emailserver</td>
 				<td><input type="text" name="emailserver" value="<?=$GLOBALS['cfg']['emailserver']?>" size="45"></td>
 				<td></td>
-				<td>Email server for sending email. For gmail, it should be <tt>tls://smtp.gmail.com</tt></td>
+				<td>Email server for sending email. For gmail, it should be <code>tls://smtp.gmail.com</code></td>
 			</tr>
 			<tr>
 				<td class="variable">emailport</td>
@@ -678,9 +686,9 @@
 			</tr>
 			<tr>
 				<td class="variable">version</td>
-				<td><input type="text" name="version" value="<?=$GLOBALS['cfg']['version']?>" size="45"></td>
+				<td><input type="text" name="version" value="<?=GetNiDBVersion()?>" size="45" readonly></td>
 				<td></td>
-				<td>NiDB version. No need to change this</td>
+				<td>NiDB version. Automatically populated</td>
 			</tr>
 			<tr>
 				<td class="variable">sitename</td>
@@ -747,6 +755,16 @@
 				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>" size="45"></td>
 				<td></td>
 				<td>Number of days to display of recently collected studies on the Home page</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" class="heading"><br>Security</td>
+			</tr>
+			<tr>
+				<td class="variable">setupips</td>
+				<td><input type="text" name="setupips" value="<?=$GLOBALS['cfg']['setupips']?>" size="45"></td>
+				<td></td>
+				<td>Comma separated list of IP addresses from which the setup and update functionality can be accessed. Example <code>127.0.0.1, 10.24.1.1</code> Your current IP address is <code><?=$_SERVER['REMOTE_ADDR']?></code></td>
 			</tr>
 
 			<tr>
@@ -836,7 +854,7 @@
 				<td class="variable">qsubpath</td>
 				<td><input type="text" name="qsubpath" value="<?=$GLOBALS['cfg']['qsubpath']?>" size="45"></td>
 				<td></td>
-				<td>Path to the qsub program. Use a full path to the executable, or just qsub if its already in the PATH environment variable</td>
+				<td>Path to the <code>qsub</code> program. Use a full path to the executable, or just <code>qsub</code> if its already in the PATH environment variable</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteruser</td>
@@ -848,7 +866,7 @@
 				<td class="variable">clusternidbpath</td>
 				<td><input type="text" name="clusternidbpath" value="<?=$GLOBALS['cfg']['clusternidbpath']?>" size="45"></td>
 				<td></td>
-				<td>Path to the directory comtaining the <i>nidb</i> executable (relative to the cluster itself) on the cluster</td>
+				<td>Path to the directory containing the <i>nidb</i> executable (relative to the cluster itself) on the cluster</td>
 			</tr>
 
 			<tr>
@@ -858,7 +876,7 @@
 				<td class="variable">enablecas</td>
 				<td><input type="checkbox" name="enablecas" value="1" <? if ($GLOBALS['cfg']['enablecas']) { echo "checked"; } ?>></td>
 				<td></td>
-				<td>Uses CAS authentication instead of locally stored usernames</td>
+				<td>Use CAS authentication</td>
 			</tr>
 			<tr>
 				<td class="variable">casserver</td>
@@ -920,25 +938,25 @@
 				<td class="variable">analysisdir</td>
 				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 			</tr>
 			<tr>
 				<td class="variable">analysisdirb</td>
 				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteranalysisdir</td>
 				<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteranalysisdirb</td>
 				<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 			</tr>
 			<tr>
 				<td class="variable">groupanalysisdir</td>
@@ -998,7 +1016,7 @@
 				<td class="variable">mountdir</td>
 				<td><input type="text" name="mountdir" value="<?=$GLOBALS['cfg']['mountdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters [/home/user1/data/testing] the mountdir will be prepended to point to the real mount point of [/mount/home/user1/data/testing]. This prevents users from writing data to the OS directories.</td>
+				<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters <code>/home/user1/data/testing</code> the mountdir will be prepended to point to the real mount point of <code>/mount/home/user1/data/testing</code>. This prevents users from writing data to the OS directories.</td>
 			</tr>
 			<tr>
 				<td class="variable">packageimportdir</td>
@@ -1022,7 +1040,7 @@
 				<td class="variable">webdownloaddir</td>
 				<td><input type="text" name="webdownloaddir" value="<?=$GLOBALS['cfg']['webdownloaddir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default /var/www/html directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
+				<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 			</tr>
 			<tr>
 				<td class="variable">downloaddir</td>

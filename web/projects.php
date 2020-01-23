@@ -240,7 +240,7 @@
 				
 				/* now update the alternate IDs */
 				/* ... first delete entries for this subject from the altuid table ... */
-				$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+				$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* ... and insert the new rows into the altuids table */
@@ -303,6 +303,9 @@
 	/* ------- UpdateSubjectTable ----------------- */
 	/* -------------------------------------------- */
 	function UpdateSubjectTable($id,$subjecttable) {
+		
+		StartSQLTransaction();
+		
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
@@ -444,7 +447,7 @@
 					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
 					
 					/* delete entries for this subject from the altuid table ... */
-					$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+					$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					/* ... and insert the new rows into the altuids table */
@@ -473,6 +476,7 @@
 				}
 			}
 		}
+		CommitSQLTransaction();
 	}
 
 
@@ -480,6 +484,9 @@
 	/* ------- UpdateStudyTable ------------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyTable($id,$studytable) {
+		
+		StartSQLTransaction();
+		
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
@@ -550,7 +557,7 @@
 					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
 					
 					/* delete entries for this subject from the altuid table ... */
-					$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+					$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					/* ... and insert the new rows into the altuids table */
 					$altuids = explode(',',$altuidlist);
@@ -573,7 +580,8 @@
 				}
 			}
 		}
-	}	
+		CommitSQLTransaction();
+	}
 
 
 	/* -------------------------------------------- */
@@ -1976,12 +1984,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['Edit Group Protocols'] = "projects.php?action=editbidsdatatypes&id=$id";
-		//NavigationBar("$name", $urllist);
-		
+
 		/* get all studies associated with this project */
 		$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2253,7 +2256,7 @@
 				<td valign="top">
 					<b>Project options</b><br><br>
 					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
-					<a href="templates.php?action=displaystudytemplatelist&id=<?=$id?>">Study templates</a><br>
+					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates</a><br>
 					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
 					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
 					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>

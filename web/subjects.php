@@ -88,6 +88,7 @@
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
 	$templateid = GetVariable("templateid");
+	$grouptemplateid = GetVariable("grouptemplateid");
 
 	/* fix the 'active' search */
 	if (($searchactive == '') && ($action != '')) {
@@ -123,7 +124,11 @@
 			CreateNewStudy($modality, $enrollmentid, $id);
 			break;
 		case 'newstudyfromtemplate':
-			CreateNewStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
+			CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
+			break;
+		case 'newstudygroupfromtemplate':
+			CreateStudyGroupFromTemplate($modality, $enrollmentid, $id, $grouptemplateid);
+			DisplaySubject($id);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($id);
@@ -203,6 +208,8 @@
 		/* update the tags */
 		SetTags('subject','',$id,$tags);
 		
+		StartSQLTransaction();
+		
 		/* delete entries for this subject from the altuid table ... */
 		$sqlstring = "delete from subject_altuid where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -231,6 +238,8 @@
 			}
 			$i++;
 		}
+
+		CommitSQLTransaction();
 		
 		?><div align="center"><span class="staticmessage"><?=$uid?> updated</span></div><br><br><?
 	}
@@ -395,9 +404,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- CreateNewStudyFromTemplate --------- */
+	/* ------- CreateStudyFromTemplate ------------ */
 	/* -------------------------------------------- */
-	function CreateNewStudyFromTemplate($modality, $enrollmentid, $id, $templateid) {
+	function CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid) {
 		
 		if (!isInteger($templateid)) {
 			?><span class="staticmessage">Invalid templateID [<?=$templateid?>]</span><?
@@ -453,6 +462,106 @@
 		$urllist['Subjects'] = "subjects.php";
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$uid", $urllist,$perms);
+		
+		?>
+		<div align="center">
+		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
+		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
+		</div>
+		<?
+	}	
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateStudyGroupFromTemplate ------- */
+	/* -------------------------------------------- */
+	function CreateStudyGroupFromTemplate($modality, $enrollmentid, $subjectid, $grouptemplateid) {
+		
+		if (!isInteger($grouptemplateid)) {
+			?><span class="staticmessage">Invalid grouptemplateid [<?=$grouptemplateid?>]</span><?
+			return;
+		}
+		
+		/* get the list of study templates */
+		$sqlstring = "select * from project_templatestudies where pt_id = $grouptemplateid order by pts_order asc";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$i = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$ptsid = $row['pts_id'];
+			$pts_visittype = $row['pts_visittype'];
+			$pts_modality = $row['pts_modality'];
+
+			$pts_desc = $row['pts_desc'];
+			$pts_operator = $row['pts_operator'];
+			$pts_physician = $row['pts_physician'];
+			$pts_site = $row['pts_site'];
+			$pts_notes = $row['pts_notes'];
+			
+			$sqlstringA = "select * from project_templatestudyitems where pts_id = $ptsid order by ptsitem_order asc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$items = array();
+			$ii = 0;
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$items[$ii] = $rowA['ptsitem_protocol'];
+				$ii++;
+			}
+			
+			$templates[$i]['modality'] = $pts_modality;
+			$templates[$i]['visittype'] = $pts_visittype;
+			$templates[$i]['series'] = $items;
+
+			$templates[$i]['desc'] = $pts_desc;
+			$templates[$i]['operator'] = $pts_operator;
+			$templates[$i]['physician'] = $pts_physician;
+			$templates[$i]['site'] = $pts_site;
+			$templates[$i]['notes'] = $pts_notes;
+			
+			$i++;
+		}
+		PrintVariable($templates);
+
+		/* start a transaction */
+		StartSQLTransaction();
+		
+		$studynum=1;
+		foreach ($templates as $study) {
+			$modality = strtolower(trim($study['modality']));
+			$visit = strtolower(trim($study['visittype']));
+
+			$desc = trim($study['desc']);
+			$operator = trim($study['operator']);
+			$physician = trim($study['physician']);
+			$site = trim($study['site']);
+			$notes = trim($study['notes']);
+			
+			/* get the newest study # first */
+			$sqlstring = "SELECT max(a.study_num) 'max' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$oldstudynum = $row['max'] + 0;
+			$studynum = $oldstudynum + 1;
+			
+			$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_type, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_notes, study_status, study_createdby, study_createdate) values ($enrollmentid, $studynum, upper('$modality'), '$visit', now(), '$desc' , '$operator', '$physician', '$site', '$notes', 'complete', '" . $_SESSION['username'] . "', now())";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$studyRowID = mysqli_insert_id($GLOBALS['linki']);
+		
+			/* create the series */
+			$seriesnum = 1;
+			foreach ($study['series'] as $series) {
+				$series = trim($series);
+				$sqlstring = "insert into $modality" . "_series (study_id, series_num, series_datetime, series_protocol) values ($studyRowID, $seriesnum, now(), '$series')";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$seriesnum++;
+			}
+			
+			$studynum++;
+		}
+		
+		/* commit a transaction */
+		CommitSQLTransaction();
+		
+		return;
+		
 		
 		?>
 		<div align="center">
@@ -1464,6 +1573,8 @@
 														<? if (!$enrolled) { ?>
 														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
 														<? } else { ?>
+														<details>
+														<summary>Create new studies</summary>
 														<table>
 															<tr>
 																<form action="subjects.php" method="post">
@@ -1516,7 +1627,45 @@
 																</td>
 																</form>														
 															</tr>
+															<tr>
+																<form action="subjects.php" method="post">
+																<td align="right">
+																	<input type="hidden" name="id" value="<?=$id?>">
+																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																	<input type="hidden" name="action" value="newstudygroupfromtemplate">
+																	<span style="font-size:10pt">New study group from <u>template</u></span>
+																	<select name="grouptemplateid">
+																		<option value="" style="<?=$style?>">(Select group template)</option>
+																		<?
+																		$sqlstring = "select * from project_template where project_id = $projectid order by template_name asc";
+																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+																		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+																			$ptid = $row['projecttemplate_id'];
+																			$templatename = $row['template_name'];
+																			$templatemodality = $row['template_modality'];
+																			
+																			$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
+																			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+																			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+																			$numstudies = $rowA['count'];
+																			
+																			$sqlstringA = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
+																			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+																			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+																			$numseries = $rowA['count'];
+																			
+																			?>
+																			<option value="<?=$ptid?>" style="<?=$style?>"><?=$templatename?> (<?=$numstudies?> studies, <?=$numseries?> total series)</option>
+																			<?
+																		}
+																	?>
+																	</select>
+																	<input type="submit" value="Create">
+																</td>
+																</form>														
+															</tr>
 														</table>
+														</details>
 														<? } ?>
 													</td>
 												</tr>
@@ -1792,7 +1941,7 @@
 											</table>
 												<?
 
- 											$sqlstring4 = "select a.*,b.*,  date_format(a.vital_date,'%m-%d-%Y; %r') 'vdate' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
+ 											$sqlstring4 = "select a.*,b.*,  date_format(a.vital_startdate,'%m-%d-%Y; %r') 'vdate' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
 												$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
 												$numrows = mysqli_num_rows($result4);
 												if ($numrows > 0) {

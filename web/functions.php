@@ -2222,11 +2222,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function GetNiDBVersion() {
 		
 		/* check if the nidb executable script exists */
-		$nidbsh = $GLOBALS['cfg']['scriptdir'] . "/bin/./nidb.sh -v";
+		$nidbsh = "cd /nidb/programs/bin; LD_LIBRARY_PATH=\$PWD; export LD_LIBRARY_PATH; " . $GLOBALS['cfg']['scriptdir'] . "/bin/./nidb.sh -v";
 		$nidbver = shell_exec($nidbsh);
-		$nidbver = str_replace("Neuroinformatics Database (NiDB) ", "", $nidbver);
+		$nidbver = trim(str_replace("Neuroinformatics Database (NiDB) ", "", $nidbver));
 		
-		echo "Running [$nidbsh] returned [$nidbver]<br>";
+		//echo "Running [$nidbsh] returned [$nidbver]<br>";
 		return $nidbver;
 	}
 
@@ -2239,4 +2239,25 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		else
 			return false;
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- StartSQLTransaction ---------------- */
+	/* -------------------------------------------- */
+	function StartSQLTransaction() {
+		/* start a transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CommitSQLTransaction --------------- */
+	/* -------------------------------------------- */
+	function CommitSQLTransaction() {
+		/* commit transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+	
 ?>

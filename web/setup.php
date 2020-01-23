@@ -46,14 +46,32 @@
 <body>
 	<div id="wrapper">
 <?
+	require "functions.php";
+
 	/* check if the .cfg file exists */
+	$cfgexists = false;
 	if ( (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
 		/* if so, load the config, but still treat the page as a setup */
+		$cfg = LoadConfig();
+		if ($cfg != null)
+			$cfgexists = true;
+	}
+	
+	if ($cfg['setupips'] != "") {
+		$valid = false;
+		$iplist = explode(",", $cfg['setupips']);
+		foreach ($iplist as $ip) {
+			if (trim($ip) == $_SERVER['REMOTE_ADDR'])
+				$valid = true;
+		}
+		if (!$valid) {
+			echo "You are not allowed to access this page";
+			exit(0);
+		}
 	}
 	
 	$setup = true;
 	
-	require "functions.php";
 	require "includes_html.php";
 	
 	//PrintVariable($_POST);

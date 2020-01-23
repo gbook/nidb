@@ -1441,12 +1441,12 @@
 		
 		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
 		if ($s['s_subjectuid'] != "") {
-			$uidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectuid']);
+			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
 			
 			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
 		}
 		if ($s['s_subjectaltuid'] != "") {
-			$altuidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
+			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
 			/* get list of UIDs from the list of alternate UIDs */
 			$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
@@ -2596,11 +2596,11 @@
 		
 		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
 		if ($s['s_subjectuid'] != "") {
-			$uidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectuid']);
+			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
 			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
 		}
 		if ($s['s_subjectaltuid'] != "") {
-			$altuidsearchlist = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
+			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
 			/* get list of UIDs from the list of alternate UIDs */
 			$sqlstringX = "select altuid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid in (" . MakeSQLList($s['s_subjectaltuid']) . ")";
@@ -4933,7 +4933,7 @@
 	/* ------- DelimitedListToArray --------------- */
 	/* -------------------------------------------- */
 	function DelimitedListToArray($str) {
-		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
+		$parts = preg_split('/[\^,;\'\s\t\n\f\r]+/', $str);
 		$newparts = array();
 		foreach ($parts as $part) {
 			$newparts[] = trim($part);

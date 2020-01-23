@@ -22,12 +22,8 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
 	session_start();
 
-?>
-
-<?
 	require "functions.php";
 	require "includes_php.php";
 
@@ -99,7 +95,6 @@ class qqFileUploader {
 
     function __construct(array $allowedExtensions = array(), $sizeLimit = 5000000000){
         $allowedExtensions = array_map("strtolower", $allowedExtensions);
-        //echo "check A";
             
         $this->allowedExtensions = $allowedExtensions;
 		if (($GLOBALS['cfg']['uploadsizelimit'] == "") || ($GLOBALS['cfg']['uploadsizelimit'] < 0)) {
@@ -108,10 +103,8 @@ class qqFileUploader {
 		else {
 			$this->sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
 		}
-        //echo "check B";
         
         $this->checkServerSettings();       
-        //echo "check C";
 
         if (isset($_GET['qqfile'])) {
             $this->file = new qqUploadedFileXhr();
@@ -120,7 +113,6 @@ class qqFileUploader {
         } else {
             $this->file = false; 
         }
-        //echo "check D";
     }
     
     private function checkServerSettings(){        
@@ -204,7 +196,6 @@ class qqFileUploader {
     }    
 }
 
-//echo "check 100\n";
 
 	
 /* params are stored in $_GET */
@@ -212,7 +203,6 @@ $modality = strtolower(GetVariable("modality"));
 $studyid = GetVariable("studyid");
 $seriesid = GetVariable("seriesid");
 
-//echo $modality;
 if ($modality == "mr") {
 	$uploadpath = $GLOBALS['dicomincomingpath'] . '/';
 }

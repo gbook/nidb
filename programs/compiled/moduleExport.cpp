@@ -1433,37 +1433,51 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 
 			/* create the modality specific line for the csv */
 			if (modality == "MRI") {
-				/* get some DICOM specific tags from the first file in the series */
-				QString dcmfile;
-				QString m;
-				if (!n->FindFirstFile(indir, "*.dcm",dcmfile,m)) {
-					log << "WriteNDARSeries() " + n->WriteLog("Unable to find any DICOM files in [" + indir + "]");
-					return false;
+
+				QString Manufacturer;
+				QString ProtocolName;
+				QString PercentPhaseFieldOfView;
+				QString PatientPosition;
+				QString AcquisitionMatrix;
+				QString SoftwareVersion;
+				QString PhotometricInterpretation;
+				QString ManufacturersModelName;
+				QString TransmitCoilName;
+				QString SequenceName;
+
+				if (datatype == "DICOM") {
+					/* get some DICOM specific tags from the first file in the series */
+					QString dcmfile;
+					QString m;
+					if (!n->FindFirstFile(indir, "*.dcm",dcmfile,m)) {
+						log << "WriteNDARSeries() " + n->WriteLog("Unable to find any DICOM files in [" + indir + "]");
+						return false;
+					}
+
+					gdcm::Reader r;
+					r.SetFileName(dcmfile.toStdString().c_str());
+					if (!r.Read()) {
+						/* could not read the first dicom file... */
+						log << "WriteNDARSeries() " + n->WriteLog("Could not read DICOM file [" + dcmfile + "]");
+						return false;
+					}
+
+					r.Read();
+					gdcm::StringFilter sf;
+					sf = gdcm::StringFilter();
+					sf.SetFile(r.GetFile());
+
+					Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
+					ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
+					PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
+					PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
+					AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+					SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+					PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
+					ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
+					TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
+					SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
 				}
-
-				gdcm::Reader r;
-				r.SetFileName(dcmfile.toStdString().c_str());
-				if (!r.Read()) {
-					/* could not read the first dicom file... */
-					log << "WriteNDARSeries() " + n->WriteLog("Could not read DICOM file [" + dcmfile + "]");
-					return false;
-				}
-
-				r.Read();
-				gdcm::StringFilter sf;
-				sf = gdcm::StringFilter();
-				sf.SetFile(r.GetFile());
-
-				QString Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-				QString ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-				QString PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-				QString PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-				QString AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-				QString SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-				QString PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-				QString ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
-				QString TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
-				QString SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
 
 				/* clean up the tags */
 				if (Manufacturer == "") Manufacturer = "Unknown";

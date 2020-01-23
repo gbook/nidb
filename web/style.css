@@ -390,6 +390,7 @@ th.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-
 td.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
 
 .codelisting { background-color: #DDDDDD; font-family: courier new; padding-left: 4px; padding-right: 4px; font-size:85%}
+code { background-color: #ddd; border: 1px solid #ccc; padding:0px 4px; border-radius: 3px }
 
 td.delete { background-color: transparent; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: #942617; text-decoration: none; }
 td.delete:hover { background-color: #942617; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: white; text-decoration: underline; }

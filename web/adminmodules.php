@@ -223,16 +223,13 @@
 	/* -------------------------------------------- */
 	function DisplayModuleList() {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Modules'] = "adminmodules.php";
-		//NavigationBar("Admin", $urllist);
-		
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
 		
 	?>
 
-	<!--<b>NiDB version <? //echo GetNiDBVersion();?></b>-->
+	<!--NiDB version <b><? //echo GetNiDBVersion();?></b>-->
+	<br><br>
 	
 	<table class="graydisplaytable">
 		<thead>

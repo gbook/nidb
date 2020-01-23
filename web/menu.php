@@ -109,7 +109,7 @@
 				?><a href="subjects.php" style="<?=$style?>"><b>Subjects</b></a><?
 				
 				/* projects */
-				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php") { $style = "background-color:#3B5998"; }
+				if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php") { $style = "background-color:#3B5998"; }
 				else { $style = ""; }
 				?><a href="projects.php" style="<?=$style?>"><b>Projects</b></a><?
 				
@@ -216,9 +216,9 @@
 				}
 				
 				/* projects sub-menu */
-				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php") {
+				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php") {
 					
-					if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php") {
+					if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php") {
 						$projectid = GetVariable("projectid");
 					}
 					else {
@@ -237,7 +237,7 @@
 						
 						?><a href="projects.php" style="<?=$style?>">Project List</a> <?
 						
-						if (($page == "projects.php") && ($action == "displayprojectinfo")) { $style = "background-color:#273f70"; }
+						if (($page == "projects.php") && ($action == "" || $action == "displayprojectinfo")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" style="<?=$style?>"><?=$name?></a></b><?
 						
@@ -249,7 +249,7 @@
 						else { $style = ""; }
 						?><a href="projects.php?action=editsubjects&id=<?=$projectid?>" style="<?=$style?>">Subjects</a><?
 						
-						if (($page=="projects.php") && ($action == "")) { $style = "background-color:#273f70"; }
+						if (($page=="projects.php") && ($action == "displaystudies")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="projects.php?action=displaystudies&id=<?=$projectid?>" style="<?=$style?>">Studies</a><?
 						
@@ -264,6 +264,10 @@
 						if ($page=="minipipeline.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="minipipeline.php?projectid=<?=$projectid?>" style="<?=$style?>">Behavioral pipelines</a><?
+						
+						if ($page=="templates.php"){ $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="templates.php?projectid=<?=$projectid?>" style="<?=$style?>">Templates</a><?
 					}
 				}
 				
