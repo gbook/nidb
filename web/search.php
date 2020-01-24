@@ -670,7 +670,6 @@
 									<ul>
 										<li><a href="#tabs-1">Transfer Data</a></li>
 										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
-										<!--<li><a href="#tabs-2">Assessments</a></li>-->
 										<li><a href="#tabs-4">Analysis</a></li>
 										<li><a href="#tabs-5">QC</a></li>
 										<li><a href="#tabs-6">Admin</a></li>
@@ -685,95 +684,6 @@
 										<? if ($s['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
 									</div>
-									<!--
-									<div id="tabs-2">
-										<table width="100%" cellspacing="0" cellpadding="3">
-											<tr>
-												<td class="fieldlabel" width="150px">Measure Search<br><span class="tiny">Search based on these critera</span></td>
-												<td>
-													<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
-														<tr>
-															<td>
-															<?
-																$sqlstring = "select measure_name from measurenames order by measure_name";
-																$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-																while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-																	$tags[] = '"' . $row['measure_name'] . '"';
-																}
-															?>
-															<script>
-																$(function() {
-																	var availableTags = [<?=implode2(',',$tags);?>];
-																	function split( val ) {
-																		return val.split( /,\s*/ );
-																	}
-																	function extractLast( term ) {
-																		return split( term ).pop();
-																	}
-
-																	$( "#s_measure1" )
-																		// don't navigate away from the field on tab when selecting an item
-																		.bind( "keydown", function( event ) {
-																			if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
-																				event.preventDefault();
-																			}
-																	})
-																	$( "#s_measure2" )
-																		// don't navigate away from the field on tab when selecting an item
-																		.bind( "keydown", function( event ) {
-																			if ( event.keyCode === $.ui.keyCode.TAB && $( this ).data( "ui-autocomplete" ).menu.active ) {
-																				event.preventDefault();
-																			}
-																	}).autocomplete({
-																		minLength: 0,
-																		source: function( request, response ) {
-																			// delegate back to autocomplete, but extract the last term
-																			response( $.ui.autocomplete.filter(
-																			availableTags, extractLast( request.term ) ) );
-																		},
-																		focus: function() {
-																			// prevent value inserted on focus
-																			return false;
-																		},
-																		select: function( event, ui ) {
-																			var terms = split( this.value );
-																			// remove the current input
-																			terms.pop();
-																			// add the selected item
-																			terms.push( ui.item.value );
-																			// add placeholder to get the comma-and-space at the end
-																			terms.push( "" );
-																			this.value = terms.join( ", " );
-																			return false;
-																		}
-																	});
-																});
-															</script>
-																<input type="text" id="s_measure1" name="s_measuresearch" value="<?=$s['s_measuresearch'];?>" size="50" maxlength="255"><br><span class="tiny">Example: meas1=4;meas*&lt;50;meas3~value</span>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
-											<tr>
-												<td class="fieldlabel" width="150px">Measure Columns<br><span class="tiny">Show these columns in results</span></td>
-												<td>
-													<table style="font-size: 10pt" cellspacing="0" cellpadding="1">
-														<tr>
-															<td>
-																<input type="text" id="s_measure2" name="s_measurelist" value="<?=$s['s_measurelist'];?>" size="50" maxlength="255">
-																<br><span class="tiny">Example: meas1,meas2,meas3<br>Or * for all measures</span>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
-										</table>
-										<br>
-										<? if ($s['s_resultorder'] == "assessment") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="assessment" value="study" <?=$checked?>> Phenotypic measures<br>
-									</div>
-									-->
 									<div id="tabs-3">
 										<? if ($s['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
 										<input type="radio" name="s_resultorder" id="viewtable" value="table" <?=$checked?>> Table<br>

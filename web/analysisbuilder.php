@@ -27,6 +27,8 @@
 	require "functions.php";
 	require "includes_php.php";
 	
+	//PrintVariable($_POST);
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
@@ -41,6 +43,10 @@
     $a['includeallmeasures'] = GetVariable("includeallmeasures");
     $a['includeallvitals'] = GetVariable("includeallvitals");
     $a['includealldrugs'] = GetVariable("includealldrugs");
+    $a['includetimesincedose'] = GetVariable("includetimesincedose");
+    $a['dosevariable'] = GetVariable("dosevariable");
+    $a['dosetimerange'] = GetVariable("dosetimerange");
+    $a['dosedisplaytime'] = GetVariable("dosedisplaytime");
     $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
     $a['reportformat'] = GetVariable("reportformat");
     $a['outputformat'] = GetVariable("outputformat");
@@ -187,6 +193,26 @@
 								<br>
 								<input type="checkbox" name="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drugs/dosing
 								<br>
+								<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
+								<input type="checkbox" name="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?>>Include time since dose<br>
+								Dose variable <input type="text" name="dosevariable" value="<?=$a['dosevariable']?>"><br>
+								Group dose time by 
+								<select name="dosetimerange">
+									<!--<option value="hour">Hour-->
+									<option value="day" selected>Day
+									<!--<option value="week">Week
+									<option value="month">Month
+									<option value="year">Year-->
+								</select>
+								<br>
+								Display time since dose in 
+								<select name="dosedisplaytime">
+									<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
+									<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
+									<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
+								</select>
+								</div>
+								<br>
 								<br>
 								<b>Options</b>
 								<br>
@@ -241,6 +267,11 @@
 	/* ------- CreateLongReport ------------------- */
 	/* -------------------------------------------- */
 	function CreateLongReport($projectid, $a) {
+
+		/* setup some global-ish variables */
+		$dosevariable = $a['dosevariable'];
+		$dosetimerange = $a['dosetimerange'];
+		$dosedisplaytime = $a['dosedisplaytime'];
 		
 		/* create the table */
 		$t;
@@ -269,15 +300,31 @@
 		$row = 0;
 		foreach ($subjects as $i => $subj) {
 			$hasdata = false;
+			
+			$enrollmentid = $subj['enrollmentid'];
+			
+			/* get dose datetimes for this enrollment */
+			$dosedates = array();
+			if ($a['includetimesincedose']) {
+				if ($dosevariable != "") {
+					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$dosevariable'";
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						/* add the measure info to this row */
+						$dosedates[] = $rowA['drug_startdate'];
+					}
+				}
+			}
+			
 			/* get all of the protocol info */
 			if (!empty($a['mr_protocols'])) {
 				
 				if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
-					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = " . $subjects[$i]['enrollmentid'];
+					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
 				}
 				else {
 					$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
-					$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = " . $subjects[$i]['enrollmentid'] . " and a.series_desc in ($mrprotocollist) group by a.series_desc";
+					$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
 				}
 			
 				/* add in the protocols */
@@ -285,7 +332,7 @@
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesdesc = preg_replace('/\s+/', '', $rowA['series_desc']);
 					$seriesid = $rowA['mrseries_id'];
-					
+					$seriesdatetime = $rowA['series_datetime'];
 					$pixdimX = $rowA['series_spacingx'];
 					$pixdimY = $rowA['series_spacingy'];
 					$pixdimZ = $rowA['series_spacingz'];
@@ -340,6 +387,10 @@
 					$t[$row]["$seriesdesc-Weight"] = $weight;
 					$t[$row]["$seriesdesc-Notes"] = $studynotes;
 					
+					$timeSinceDose = GetTimeSinceDose($dosedates, $seriesdatetime, $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$seriesdesc-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+					
 					if ($a["includeprotocolparms"]) {
 						$t[$row]["$seriesdesc-voxX"] = $pixdimX;
 						$t[$row]["$seriesdesc-voxY"] = $pixdimY;
@@ -388,7 +439,7 @@
 
 			/* get all of the measures */
 			if ($a['includeallmeasures']) {
-				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = " . $subj['enrollmentid'];
+				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					/* need to add the demographic info to every row */
@@ -407,6 +458,10 @@
 					$t[$row][$measurename . '_enddatetime'] = $rowA['measure_enddate'];
 					$t[$row][$measurename] = $rowA['measure_value'];
 
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['measure_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$measurename-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+
 					$row++;
 					$hasdata = true;
 				}
@@ -414,7 +469,7 @@
 			
 			/* get all of the vitals */
 			if ($a['includeallvitals']) {
-				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = " . $subj['enrollmentid'];
+				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					/* need to add the demographic info to every row */
@@ -433,6 +488,10 @@
 					$t[$row][$vitalname . '_enddatetime'] = $rowA['vital_enddate'];
 					$t[$row][$vitalname] = $rowA['vital_value'];
 
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['vital_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$vitalname-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+
 					$row++;
 					$hasdata = true;
 				}
@@ -440,7 +499,7 @@
 			
 			/* get all of the drugs/dosing */
 			if ($a['includealldrugs']) {
-				$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = " . $subj['enrollmentid'];
+				$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					/* need to add the demographic info to every row */
@@ -458,6 +517,10 @@
 					$t[$row][$drugname . '_duration'] = $rowA['drug_duration'];
 					$t[$row][$drugname . '_enddatetime'] = $rowA['drug_enddate'];
 					$t[$row][$drugname] = $rowA['drug_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['drug_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$drugname-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
 
 					$row++;
 					$hasdata = true;
@@ -722,8 +785,8 @@
 		// output csv to the browser
 		echo $csv;
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- PrintTable ------------------------- */
 	/* -------------------------------------------- */
@@ -771,6 +834,37 @@
 			</tbody>
 		</table>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetTimeSinceDose ------------------- */
+	/* -------------------------------------------- */
+	function GetTimeSinceDose($dosetimes, $event, $dosedisplaytime) {
+		$eventParts = date_parse($event);
+		
+		$timeSinceDose = null;
+		foreach ($dosetimes as $dtime) {
+			$dtimeParts = date_parse($dtime);
+			
+			/* check if the event is on the same date as the dose datetime */
+			if ( ($eventParts['day'] == $dtimeParts['day']) && ($eventParts['month'] == $dtimeParts['month']) && ($eventParts['years'] == $dtimeParts['years']) ) {
+				/* get date diff in seconds */
+				$dt = strtotime($dtime);
+				$et = strtotime($event);
+
+				$timeSinceDose = $et - $dt;
+				
+				if ($dosedisplaytime == "min")
+					$timeSinceDose = $timeSinceDose/60;
+				if ($dosedisplaytime == "hour")
+					$timeSinceDose = $timeSinceDose/60/60;
+				
+				break;
+			}
+		}
+		
+		return $timeSinceDose;
 	}
 	
 ?>
