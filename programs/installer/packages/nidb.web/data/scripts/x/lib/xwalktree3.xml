@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWalkTree3'>
+
+<sources>
+  <src><sym>xWalkTree3</sym><file>xwalktree3.js</file><note><![CDATA[An enhanced version of xWalkTree.]]></note></src>
+  <src><sym>xWalkTree</sym><file>xwalktree.js</file><note><![CDATA[The default implementation.]]></note></src>
+  <src><sym>xWalkTree2</sym><file>xwalktree2.js</file><note><![CDATA[Olivier Spinelli's implementation, which is an enhanced version of xWalkTree3.]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Perform a preorder traversal on the subtree starting at oNode and pass each Element node to fnVisit.]]></description>
+
+<syntax>xWalkTree3(oNode, fnVisit, oData[, iLevel[, iBranch]])</syntax>
+
+<parameters>
+  <par>
+    <name>oNode</name>
+    <note><![CDATA[The Element object at which to begin traversal]]></note>
+  </par>
+  <par>
+    <name>fnVisit</name>
+    <note><![CDATA[This function will be called for each Element in the tree]]></note>
+  </par>
+  <par>
+    <name>oData</name>
+    <note><![CDATA[Object or variable to be passed to fnVisit]]></note>
+  </par>
+  <par>
+    <name>iLevel</name>
+    <note><![CDATA[The starting level number (omit for 0)]]></note>
+  </par>
+  <par>
+    <name>iBranch</name>
+    <note><![CDATA[The starting branch number (omit for 0)]]></note>
+  </par>
+</parameters>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date><author>mf</author>
+    <note><![CDATA[
+  Call-back function syntax:
+
+  ret = fnVisit(node, level, branch, data);
+  node:   The current Element object in the traversal.
+  level:  The current depth of the traversal.
+  branch: The number of the current level 0 subtree.
+  data:   The oData object originally passed to xWalkEleTree.
+  ret:    0 = stop, 1 = continue, 2 = skip subtree.
+    ]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>3</num>
+    <date>15Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[reduced by 123 bytes with shorter parameter names]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>11Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>10Jan05</date>
+    <author>mf</author>
+    <note><![CDATA[Rewrote xWalkTree and implemented xWalkEleTree]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

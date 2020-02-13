@@ -235,8 +235,9 @@
 							</td>
 						</tr>
 					</table>
+					<br>
 					<div align="center">
-						<input type="submit" value="Update Summary">
+						<input type="submit" value="Update Summary" style="width: 90%; border: 2px solid #999; font-weight: bold; background-color: lightblue">
 					</div>
 					</form>
 				</td>
@@ -558,6 +559,11 @@
 	/* -------------------------------------------- */
 	function CreateWideReport($projectid, $a) {
 
+		/* setup some global-ish variables */
+		$dosevariable = $a['dosevariable'];
+		$dosetimerange = $a['dosetimerange'];
+		$dosedisplaytime = $a['dosedisplaytime'];
+
 		/* create the table */
 		$t;
 		
@@ -578,6 +584,19 @@
 			
 			$altuids = implode2(" | ", GetAlternateUIDs($subjectid, $enrollmentid));
 			$t[$uid]['altuids'] = $altuids;
+
+			/* get dose datetimes for this enrollment */
+			$dosedates = array();
+			if ($a['includetimesincedose']) {
+				if ($dosevariable != "") {
+					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$dosevariable'";
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						/* add the measure info to this row */
+						$dosedates[] = $rowA['drug_startdate'];
+					}
+				}
+			}
 			
 			/* get all of the protocol info */
 			if (!empty($a['mr_protocols'])) {
@@ -596,6 +615,7 @@
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesdesc = preg_replace('/\s+/', '', $rowA['series_desc']);
 					$seriesid = $rowA['mrseries_id'];
+					$seriesdatetime = $rowA['series_datetime'];
 					
 					$pixdimX = $rowA['series_spacingx'];
 					$pixdimY = $rowA['series_spacingy'];
@@ -682,6 +702,11 @@
 						$t[$uid]["$seriesdesc"."_rot_maxr_$i"] = $rowC['rot_maxr'];
 						$t[$uid]["$seriesdesc"."_rot_maxy_$i"] = $rowC['rot_maxy'];
 					}
+					
+					$timeSinceDose = GetTimeSinceDose($dosedates, $seriesdatetime, $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$uid]["$seriesdesc-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					
 					$i++;
 				}
 			}
@@ -698,6 +723,11 @@
 					$t[$uid]["measure_enddatetime_$i"] = $rowA['measure_enddate'];
 					$measurename = $rowA['measure_name'];
 					$t[$uid]["measure_$measurename"."_$i"] = $rowA['measure_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['measure_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$uid]["$measurename-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					
 					$i++;
 				}
 			}
@@ -714,6 +744,11 @@
 					$t[$uid]["vital_enddatetime_$i"] = $rowA['vital_enddate'];
 					$vitalname = $rowA['vital_name'];
 					$t[$uid]["vital_$vitalname"."_$i"] = $rowA['vital_value'];
+					
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['vital_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$uid]["$vitalname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					
 					$i++;
 				}
 			}
@@ -730,6 +765,11 @@
 					$t[$uid]["drug_enddatetime_$i"] = $rowA['drug_enddate'];
 					$drugname = $rowA['drug_name'];
 					$t[$uid]["drug_$drugname"."_$i"] = $rowA['drug_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['drug_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$uid]["$drugname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					
 					$i++;
 				}
 			}
@@ -843,6 +883,8 @@
 	function GetTimeSinceDose($dosetimes, $event, $dosedisplaytime) {
 		$eventParts = date_parse($event);
 		
+		//PrintVariable($eventParts);
+		
 		$timeSinceDose = null;
 		foreach ($dosetimes as $dtime) {
 			$dtimeParts = date_parse($dtime);
@@ -853,6 +895,9 @@
 				$dt = strtotime($dtime);
 				$et = strtotime($event);
 
+				//PrintVariable($dt);
+				//PrintVariable($et);
+				
 				$timeSinceDose = $et - $dt;
 				
 				if ($dosedisplaytime == "min")

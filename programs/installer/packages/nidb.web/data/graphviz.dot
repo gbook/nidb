@@ -1,0 +1,19 @@
+digraph shells {
+
+rankdir = LR
+node [shape = plaintext];
+
+pipelineT1w -> pipelinefMRI;
+pipelinefMRI -> pipelinefMRIstats;
+ 
+node [shape = box, label="S1234ABC1\nT1w"] { rank=same; pipelineT1w S1234ABC1t1; }
+node [shape = box, label="S1234ABC1"] { rank=same; pipelinefMRI S1234ABC1fmri; }
+node [shape = box, label="S1234ABC2"] { rank=same; pipelinefMRI S1234ABC2fmri; }
+node [shape = box, label="S1234ABC1"] { rank=same; pipelinefMRIstats S1234ABC1stat; }
+node [shape = box, label="S1234ABC2"] { rank=same; pipelinefMRIstats S1234ABC2stat; }
+ 
+S1234ABC1t1 -> S1234ABC1fmri;
+S1234ABC1t1 -> S1234ABC2fmri;
+S1234ABC1fmri -> S1234ABC1stat;
+S1234ABC2fmri -> S1234ABC2stat;
+}

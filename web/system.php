@@ -150,6 +150,7 @@
     $c['packageimportdir'] = GetVariable("packageimportdir");
     $c['qcmoduledir'] = GetVariable("qcmoduledir");
     $c['problemdir'] = GetVariable("problemdir");
+    $c['nidbdir'] = GetVariable("nidbdir");
     $c['scriptdir'] = GetVariable("scriptdir");
     $c['webdir'] = GetVariable("webdir");
     $c['webdownloaddir'] = GetVariable("webdownloaddir");
@@ -371,6 +372,7 @@
 [packageimportdir] = $packageimportdir
 [qcmoduledir] = $qcmoduledir
 [problemdir] = $problemdir
+[nidbdir] = $nidbdir
 [scriptdir] = $scriptdir
 [tmpdir] = $tmpdir
 [uploadeddir] = $uploadeddir
@@ -383,7 +385,7 @@
 			?><div class="staticmessage">Problem writing [<?=$GLOBALS['cfg']['cfgpath']?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {
-			?><div class="staticmessage">Config file has been written to <?=$GLOBALS['cfg']['cfgpath']?></div><?
+			?>Config file has been written to <code><?=$GLOBALS['cfg']['cfgpath']?></code><br><?
 		}
 
 		/* write a cconfig file for when NiDB is run from a cluster. this only contains basic info, separate DB login, and no paths */
@@ -431,7 +433,7 @@
 			?><div class="staticmessage">Problem writing [<?=$clustercfgfile?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {
-			?><div class="staticmessage">Cluster config file has been written to <?=$clustercfgfile?></div><?
+			?>Cluster config file has been written to <code><?=$clustercfgfile?></code><br><br><?
 		}
 		
 	
@@ -920,13 +922,19 @@
 			</tr>
 
 			<tr>
-				<td colspan="4" class="heading"><br>Directories</td>
+				<td colspan="4" class="heading"><br>Directories<br><span class="tiny">Leave off trailing slashes</span></td>
+			</tr>
+			<tr>
+				<td class="variable"><b>nidbdir</b></td>
+				<td><input type="text" name="nidbdir" value="<?=$GLOBALS['cfg']['nidbdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['nidbdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td><b>Main NiDB installation directory</b></td>
 			</tr>
 			<tr>
 				<td class="variable"><b>scriptdir</b></td>
 				<td><input type="text" name="scriptdir" value="<?=$GLOBALS['cfg']['scriptdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td><b>Directory for Perl programs, scripts, and settings file (Backend)</b></td>
+				<td><b>Directory for NiDB programs, scripts, and settings file (Backend)</b></td>
 			</tr>
 			<tr>
 				<td class="variable"><b>webdir</b></td>

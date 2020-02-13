@@ -1528,7 +1528,7 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 
 	/* submit the job to the cluster */
 	QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
-	result = SystemCommand(systemstring,false).trimmed();
+	result = SystemCommand(systemstring,true).trimmed();
 
 	/* get the jobid */
 	jobid = -1;

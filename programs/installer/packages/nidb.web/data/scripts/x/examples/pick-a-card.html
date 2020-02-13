@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Pick A Card</title>
+<style type="text/css">
+* {
+  margin: 0;
+  padding: 0;
+}
+/* for the demo */
+#parent {
+  position: relative;
+  width: 500px;
+  height: 100px;
+  padding: 10px;
+  background-color: #CCC;
+}
+.child {
+  float: left;
+  margin-right: -40px;
+  width: 50px;
+  height: 100px;
+  background-color: #009;
+  border: 1px solid #FFF;
+}
+/* for the page template */
+html, body {
+  color:#000;
+  background:#fff;
+  font-size:small;
+  font-family:verdana,arial,helvetica,sans-serif;
+}
+body {
+  min-width:750px;
+  text-align:center; /* to center Page in IE6 */
+}
+a {
+  color:#339;
+  text-decoration:none;
+}
+a:hover {
+  color:#fff;
+  background-color:#339;
+  text-decoration:none;
+}
+h1 {
+  color:#009;
+  font-size:225%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h2 {
+  font-size:166%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h3 {
+  font-size:133%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+h4 {
+  font-size:100%;
+  font-weight:bold;
+  margin: .5em 0 .3em 0;
+}
+#Page {
+  margin:1em auto; /* to center Page in modern browsers */
+  width:750px;
+  text-align:left; /* to keep body's "text-align:center" from being inherited */
+}
+#Header {
+  padding:.5em 2em;
+  background:#ccc;
+}
+#Header h1 {
+}
+#Header p {
+  padding:.2em 0;
+}
+#NavBar {
+  background:#ddd;
+  padding:.2em 2em;
+}
+#NavBar ul {
+  list-style:none;
+}
+#NavBar li {
+  display:inline;
+  margin:0 .6em 0 0;
+}
+#NavBar li a {
+  font-size:smaller;
+}
+#Main {
+  padding:1em 2em;
+  background:#eee;
+}
+#Footer {
+  padding:.2em 2em;
+  background:#ccc;
+}
+</style>
+<script type="text/javascript" src="../x.js"></script>
+<script type="text/javascript" src="../lib/xenabledrag.js"></script>
+<script type="text/javascript" src="../lib/xconsole.js"></script>
+<script type="text/javascript">
+window.onload = function() {
+  var i, e, p = xGetElementById('parent');
+  for (i = 0; i < 20; ++i) {
+    e = document.createElement('div');
+    e.className = 'child';
+    p.appendChild(e);
+    xEnableDrag(e, onDragStart);
+  }
+};
+function onDragStart(ele, mouseX, mouseY, xEventObj) {
+  var x = xPageX(ele), y = xPageY(ele);
+  document.body.appendChild(ele);
+  ele.style.float = 'none';
+  ele.style.position = 'absolute';
+  xMoveTo(ele, x, y);
+  xConsole.log('x:' + x + ', y:' + y);
+}
+</script>
+</head>
+<body>
+
+<div id="Page">
+  <div id="Header">
+    <h1>Pick A Card</h1>
+  </div>
+  <div id="NavBar">
+    <ul>
+      <li><a href="">Option 1</a></li>
+      <li><a href="">Option 2</a></li>
+      <li><a href="">Option 3</a></li>
+    </ul>
+  </div>
+  <div id="Main">
+    <h2>H2 Heading</h2>
+    <div>
+      <h3>H3 Heading</h3>
+      <div>
+        <p>This is a quick demo I threw together for <a href='http://cross-browser.com/forums/viewtopic.php?id=701'>ericj</a>. Drag a card out of the spread. This page uses the "Single Column, Simple Layout" template.</p>
+        <p>Aenean tempor. Mauris tortor quam, elementum eu, convallis a, semper quis, purus. Cras at tortor in purus tincidunt tristique. In hac habitasse platea dictumst. Ut eu lectus eu metus molestie iaculis. In ornare. Donec at enim vel erat tempor congue. Nullam varius. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p>
+        <p>Nulla feugiat hendrerit risus. Integer enim velit, gravida id, sollicitudin at, consequat sit amet, leo. Fusce imperdiet condimentum velit. Phasellus nonummy interdum est. Pellentesque quam.</p>
+      </div>
+      <h3>H3 Heading</h3>
+      <div>
+        <h4>H4 Heading</h4>
+        <div>
+          <div id='parent'></div>
+        </div>
+        <h4>H4 Heading</h4>
+        <div>
+          <p>Nulla a lacus. Nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Fusce pulvinar lobortis purus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec semper ipsum et urna. Ut consequat neque vitae felis.</p>
+          <p>Suspendisse dapibus, magna quis pulvinar laoreet, dolor neque lacinia arcu, et luctus mi erat vestibulum sem. Mauris faucibus iaculis lacus. Aliquam nec ante in quam sollicitudin congue. Quisque congue egestas elit. Quisque viverra. Donec feugiat elementum est. Etiam vel lorem.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="Footer">
+    <p><a href='http://cross-browser.com/'>Cross-Browser.com</a></p>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEnableDrop'>
+
+<sources>
+  <src><file>xenabledrop.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Enable an element to receive a drop event from any element drag-enabled with xEnableDrag.]]></description>
+
+<syntax>xEnableDrop(ele, fnDrop)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or element object reference]]></note>
+  </par>
+  <par>
+    <name>fnDrop</name>
+    <note><![CDATA[this function will be called when some drag-enabled element is dropped on this element.]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xHasPoint</dep>
+  <dep>xEnableDrag</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/drag4.html</url>
+    <note><![CDATA[A test page for xDragInFence, xEnableDrag and xEnableDrop.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>3</num><date>9Jul07</date><author>mf</author><note><![CDATA[Reimplemented (see http://cross-browser.com/forums/viewtopic.php?id=62).]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>5Jun07</date><author>mf</author><note><![CDATA[Removed use of xZIndex.]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>24Nov06</date><author>mf</author><note><![CDATA[Initial release.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

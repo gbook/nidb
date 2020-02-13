@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>xCalendar Demo</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<style type='text/css'>
+/*------------------------------ xCalendar -----------------------------------*/
+
+/* container div */
+
+#xcY-con,
+#xcL-con,
+#xcH-con {
+  display: none;
+  position: absolute;
+  padding: 3px;
+  background-color: #FFFFFF;
+  border: 2px solid #909090;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+}
+
+/* calendar table */
+
+#xcY-tbl,
+#xcL-tbl,
+#xcH-tbl {
+  border-collapse: collapse;
+}
+#xcY-tbl th,
+#xcL-tbl th,
+#xcH-tbl th {
+  text-align: center;
+  border: none;
+  background-color: #FFFFFF;
+}
+
+/* dynamically assigned to day td's */
+
+td.xcY-day,
+td.xcL-day,
+td.xcH-day { /* a valid day of the month */
+  text-align: right;
+  width: 1.2em;
+  padding: 2px 3px;
+  border: 1px solid #CCCCCC;
+  font-size: 16px;
+}
+td.xcY-dir,
+td.xcL-dir,
+td.xcH-dir { /* a day in range */
+  color: #000000;
+  cursor: pointer;
+  background-color: #FFFFFF;
+}
+td.xcY-dor,
+td.xcL-dor,
+td.xcH-dor { /* a day out of range */
+  color: #cccccc;
+  cursor: default;
+  background-color: #FFFFFF;
+}
+td.xcY-sel,
+td.xcL-sel,
+td.xcH-sel { /* selected in range day */
+  color: #ffffff;
+  background-color: #909090;
+}
+td.xcY-ovr,
+td.xcL-ovr,
+td.xcH-ovr { /* mouseover in range day */
+  color: #ffffff;
+  background-color: #909090;
+}
+
+/* thead tr's */
+
+#xcY-hr1 th,
+#xcL-hr1 th,
+#xcH-hr1 th {
+  border-bottom: 1px solid #CCCCCC;
+  font-size: 14px;
+  padding: 0 0 3px 0;
+}
+#xcY-hr2 th,
+#xcL-hr2 th,
+#xcH-hr2 th {
+  border-bottom: 1px solid #CCCCCC;
+  cursor: default;
+  font-size: 14px;
+  font-weight: normal;
+}
+#xcY-ttl,
+#xcL-ttl,
+#xcH-ttl { /* title td, in hr1 */
+  cursor: default;
+}
+
+/* previous/next button td's */
+
+#xcY-prv,
+#xcL-prv,
+#xcH-prv {
+  padding: 0;
+}
+th.xcY-pir,
+th.xcL-pir,
+th.xcH-pir {
+  cursor: pointer;
+  background-image: url(../../images/prev3.gif);
+  background-repeat: no-repeat;
+  background-position: 25% 14%;
+}
+th.xcY-por,
+th.xcL-por,
+th.xcH-por {
+  cursor: default;
+  background-image: none;
+}
+#xcY-nxt,
+#xcL-nxt,
+#xcH-nxt {
+  padding: 0;
+}
+th.xcY-nir,
+th.xcL-nir,
+th.xcH-nir {
+  cursor: pointer;
+  background-image: url(../../images/next3.gif);
+  background-repeat: no-repeat;
+  background-position: 75% 14%;
+}
+th.xcY-nor,
+th.xcL-nor,
+th.xcH-nor {
+  cursor: default;
+  background-image: none;
+}
+</style>
+<script type='text/javascript' src='../x.js'></script>
+<script type="text/javascript" src="../lib/xaddclass.js"></script>
+<script type="text/javascript" src="../lib/xhasclass.js"></script>
+<script type="text/javascript" src="../lib/xremoveclass.js"></script>
+<script type='text/javascript' src='../lib/xstrrepeat.js'></script>
+<script type='text/javascript' src='../lib/xparent.js'></script>
+<script type='text/javascript' src='../lib/xcalendar.js'></script>
+<script type='text/javascript'>
+var xcL, xcH, xcY, dL = new Date(1999, 10, 14), dH = new Date(2000, 3, 16);
+
+xAddEventListener(window, 'load',
+  function() {
+
+    xcL = new xCalendar('xcL');
+    xcL.setInput('txt1');
+    xcL.setRange(dL, dH);
+
+    xcH = new xCalendar('xcH');
+    xcH.setInput('txt2');
+    xcH.setRange(dL, dH);
+
+    xcY = new xCalendar('xcY');
+    xcY.setInput('txt3');
+
+    xEachN('txt', 1, null,
+      function(e) {
+        e.onclick = inpClick;
+        e.onkeypress = inpKey;
+      }
+    );
+  }, false
+);
+
+function inpKey()
+{
+  return false;
+}
+
+function inpClick(ne)
+{
+  var r;
+  if (this.id == 'txt1') {
+    xcH.hide();
+    if (xcH.sel) {
+      r = xcL.setRange(null, xcH.dS, true);
+      window.status = 'xcL.setRange: ' + r;
+    }
+    xcL.show();
+  }
+  else if (this.id == 'txt2') {
+    xcL.hide();
+    if (xcL.sel) {
+      r = xcH.setRange(xcL.dS, null, true);
+      window.status = 'xcH.setRange: ' + r;
+    }
+    xcH.show();
+  }
+  else if (this.id == 'txt3') {
+    xcY.show();
+  }
+  xStopPropagation(ne);
+}
+</script>
+
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xCalendar Demo</h2>
+
+<h3>Intro</h3>
+<div>
+  <p><a href='http://cross-browser.com/x/lib/view.php?s=xCalendar' title='Source, docs and more'>xCalendar</a> is a popup date-picker. View the source of this page to see how this demo is implemented.</p>
+  <p>This demo was thrown together rather quickly. Since then there have been improvements to xCalendar which this demo does not take advantage of.</p>
+</div>
+
+<h3>Demo 1</h3>
+<div>
+  <p>Pick a range between: Nov 14, 1999 and Apr 16, 2000</p>
+  <p>Low end of range <input type='text' id='txt1'></p>
+  <p>High end of range <input type='text' id='txt2'></p>
+</div>
+
+<h3>Demo 2</h3>
+<div>
+  <p>Pick a date from the current year <input type='text' id='txt3'></p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

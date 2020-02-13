@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAddHandlers'>
+
+<sources>
+  <src><file>xaddhandlers.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Assign DOM0 event handlers. For each N do: xGetElementById(idN)[ev] = fnN]]></description>
+
+<syntax>xAddHandlers(ev, id1, fn1[, id2, fn2[...]])</syntax>
+
+<parameters>
+  <par><name>ev</name><note><![CDATA[The DOM0 event property name, for example: onclick, onmouseover, etc.]]></note></par>
+  <par><name>idN</name><note><![CDATA[Provide ID strings or element references as 2nd, 4th, etc. arguments.]]></note></par>
+  <par><name>fnN</name><note><![CDATA[Provide handlers as 3rd, 5th, etc. arguments.]]></note></par>
+</parameters>
+
+<return><![CDATA[The number of handlers added successfully.]]></return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>14May11</date><author>mf</author><note><![CDATA[Cache arguments.length.]]></note></rev>
+  <rev><num>1</num><date>12Sep10</date><author>mf</author><note><![CDATA[Initial release but something I've been using for a long time.]]></note></rev>
+</revisions>
+
+</x_symbol>

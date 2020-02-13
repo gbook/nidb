@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Quick-Start</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>X Quick-Start</h2>
+
+<h3>Installation</h3>
+<div>
+  <p><a href='http://cross-browser.com/downloads/'>Download</a> the <b>X</b> distribution file and unzip it into the folder of your choice. Be sure to select the "Use folder names" option when unzipping. After unzipping you will find a folder named <code>Cross-Browser.com</code> which has several sub-folders. In this root folder you will find a web page, <code>index.html</code>, which serves as the index for the distribution package.</p>
+</div>
+
+<h3>Folder Structure</h3>
+<div>
+  <p>Under the root folder <code>Cross-Browser.com</code> are the following sub-folders.</p>
+  <p><span class='h5i'>/css/</span> Styles for the distribution package.</p>
+  <p><span class='h5i'>/images/</span> Images used by the demos.</p>
+<!--
+  <p><span class='h5i'>/talk/</span> General articles.</p>
+-->
+  <p><span class='h5i'>/templates/</span> General-purpose template files.</p>
+<!--
+  <p><span class='h5i'>/toys/</span> Demos that do not use the X Library.</p>
+-->
+  <p><span class='h5i'>/x/</span> Prebuilt library file <code>x.js</code> and the build script <code>build.xml</code>.</p>
+  <p><span class='h5i'>/x/docs/</span> X Library documentation files.</p>
+  <p><span class='h5i'>/x/examples/</span> Examples that demonstrate the use of X.</p>
+  <p><span class='h5i'>/x/lib/</span> This is the actual library. It contains all XML and Javascript source files for the X Library.</p>
+<!--
+  <p><span class='h5i'>/x/menus/</span> More examples that demonstrate the use of X.</p>
+-->
+  <p><span class='h5i'>/x/tools/</span> Ant macros and executable, source code and project files for the X Tools.</p>
+</div>
+
+<h3>Library Files</h3>
+<div>
+  <p>There are very many <code>.js</code> files in the distribution package. This section summarizes their purposes.</p>
+  <h4>Cross-Browser.com/x/ - Prebuilt Library Files</h4>
+  <div>
+    <p>This folder contains a general-purpose, <em>prebuilt</em> library file. In almost every application there will be X functions that you always need. This file contains some of the most commonly used X functions. This file does not constitute the entire X Library itself, which is located in the directory <code>/x/lib/</code>.</p>
+    <p>The prebuilt library file "x.js" contains the following X functions. Click a link to see that symbol in the online X Viewer.</p>
+    <p id='xSymbols'>
+      <span class='h5i'>x.js</span>
+      <a href='../lib/view.php?s=xGetElementById'>xGetElementById</a>,
+      <a href='../lib/view.php?s=xGetElementsByTagName'>xGetElementsByTagName</a>,
+      <a href='../lib/view.php?s=xGetElementsByClassName'>xGetElementsByClassName</a>,
+      <a href='../lib/view.php?s=xMoveTo'>xMoveTo</a>,
+      <a href='../lib/view.php?s=xLeft'>xLeft</a>,
+      <a href='../lib/view.php?s=xTop'>xTop</a>,
+      <a href='../lib/view.php?s=xPageX'>xPageX</a>,
+      <a href='../lib/view.php?s=xPageY'>xPageY</a>,
+      <a href='../lib/view.php?s=xScrollLeft'>xScrollLeft</a>,
+      <a href='../lib/view.php?s=xScrollTop'>xScrollTop</a>,
+      <a href='../lib/view.php?s=xHasPoint'>xHasPoint</a>,
+      <a href='../lib/view.php?s=xResizeTo'>xResizeTo</a>,
+      <a href='../lib/view.php?s=xWidth'>xWidth</a>,
+      <a href='../lib/view.php?s=xHeight'>xHeight</a>,
+      <a href='../lib/view.php?s=xClientWidth'>xClientWidth</a>,
+      <a href='../lib/view.php?s=xClientHeight'>xClientHeight</a>,
+      <a href='../lib/view.php?s=xStyle'>xStyle</a>,
+      <a href='../lib/view.php?s=xOpacity'>xOpacity</a>,
+      <a href='../lib/view.php?s=xGetComputedStyle'>xGetComputedStyle</a>,
+      <a href='../lib/view.php?s=xCamelize'>xCamelize</a>,
+      <a href='../lib/view.php?s=xDef'>xDef</a>,
+      <a href='../lib/view.php?s=xStr'>xStr</a>,
+      <a href='../lib/view.php?s=xNum'>xNum</a>,
+      <a href='../lib/view.php?s=xLibrary'>xLibrary</a>.
+      <a href='../lib/view.php?s=xAddEventListener'>xAddEventListener</a>,
+      <a href='../lib/view.php?s=xRemoveEventListener'>xRemoveEventListener</a>,
+      <a href='../lib/view.php?s=xEvent'>xEvent</a>,
+      <a href='../lib/view.php?s=xStopPropagation'>xStopPropagation</a>,
+      <a href='../lib/view.php?s=xPreventDefault'>xPreventDefault</a>,
+      <a href='../lib/view.php?s=xEachE'>xEachE</a>,
+      <a href='../lib/view.php?s=xEachN'>xEachN</a>,
+      <a href='../lib/view.php?s=xOffset'>xOffset</a>.
+    </p>
+  </div>
+  <h4>Cross-Browser.com/x/lib/ - X Library Files</h4>
+  <div>
+    <p>This folder contains the actual library. It contains <code>.xml</code> and <code>.js</code> files. There is an XML file and a Javascript file for every <span class='hint' title='A variable, function, object prototype, object method or object property'>symbol</span> in the library. So, the X Library is not made up of a few files which each contain many functions and objects. All the functions and objects (symbols) in the X Library are each in individual files. This separation into individual files, along with the dependency information in the XML file, allows you to create a library file which only contains the X symbols your application uses. The <a title='X Tools' href='x_tools.html'>X Tools</a> completely automate this task.</p>
+    <p>Read more about the <a href='x_structure.html'>structure</a> of <b>X</b>. Use the online <a href='http://cross-browser.com/x/lib/'>X Viewer</a> to browse the sources and documentation for all X Library symbols.</p>
+  </div>
+</div>
+
+<h3>Quickly Starting a New Project</h3>
+<div>
+  <p>Start with a copy of one of the template files, or visit one of the demos online and save it as HTML on your computer. For example, make a copy of "html5_template.html" and place it in the <code>x/examples</code> directory. This file has a script element which loads the "x.js" file, and has another script element in which a listener is registered for the <code>load</code> event. If you need a function which is not in "x.js" use the online <a href='http://cross-browser.com/x/lib/'>X Viewer</a> to look for it. Add another script element to your HTML file which loads the file from the <code>x/lib</code> directory.</p>
+<pre>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="utf-8"&gt;
+&lt;title&gt;Template&lt;/title&gt;
+&lt;link rel="stylesheet" type="text/css" href=""&gt;
+&lt;style&gt;
+&lt;/style&gt;
+&lt;script src="../x.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+xAddEventListener(window, 'load',
+  function() {
+  }, false
+);
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+  <p>Also take a look at the <a href='x_tutorial.html'>X Tutorial</a>.</p>
+
+</div> <!-- end Usage -->
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

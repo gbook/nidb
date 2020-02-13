@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSmartLoad2'>
+
+<sources>
+  <src><sym>xSmartLoad2</sym><file>xsmartload2.js</file><note><![CDATA[Supports multiple URLs.]]></note></src>
+  <src><sym>xSmartLoad</sym><file>xsmartload.js</file><note><![CDATA[Default implementation.]]></note></src>
+</sources>
+
+<copyright>Copyright 2007 Michael Foster (Cross-Browser.com)</copyright>
+
+<license>Part of X, a Cross-Browser Javascript Library, Distributed under the terms of the GNU LGPL</license>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Create any number of script or link elements and assign a URL to each.]]></description>
+
+<syntax>xSmartLoad2(what, url1, url2, url3, etc)</syntax>
+
+<parameters>
+  <par><name>what</name><note><![CDATA['link' or 'script']]></note></par>
+  <par><name>url</name><note><![CDATA[file to load from server]]></note></par>
+</parameters>
+
+<return><![CDATA[Return the number of elements created.]]></return>
+
+<dependencies>
+</dependencies>
+
+<demos>
+</demos>
+
+<tests>
+</tests>
+
+<comments>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>2Jul07</date><author></author><note><![CDATA[initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

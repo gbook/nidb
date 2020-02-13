@@ -60,28 +60,34 @@
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
 	
-		$urllist['Administration'] = "admin.php";
-		NavigationBar("Admin", $urllist);
-		
+
 		?>
 		<ul>
-		<li><a href="adminusers.php">Users</a>
-		<li><a href="adminprojects.php">Projects</a>
-		<li><a href="adminassessmentforms.php">Assessment Forms</a>
-		<li><a href="adminmodules.php">Modules</a>
-		<li><a href="adminmodalities.php">Modalities</a>
-		<li><a href="adminsites.php">Sites</a>
-		<li><a href="reports.php">Reports</a>
-		<li><a href="adminqc.php">QC</a>
-		<li><a href="importlog.php">Import Logs</a>
-		<li><a href="admininstances.php">Instances</a>
-		<li><a href="adminaudits.php">Audits</a>
-		<li><a href="cleanup.php">Clean-up data</a>
-		<li><a href="stats.php">System usage</a>
-		<li><a href="status.php">System status</a>
-		<li><a href="longqc.php">Longitudinal QC</a>
-		<li><a href="adminemail.php">Mass email</a>
-		<li><a href="system.php">NiDB Settings...</a>
+			<li><a href="adminusers.php">Users</a>
+			<li><a href="adminprojects.php">Projects</a>
+			<!--<li><a href="adminassessmentforms.php">Assessment Forms</a>-->
+		</ul>
+		
+		<ul>
+			<li><a href="reports.php">Reports</a>
+			<li><a href="adminaudits.php">Audits</a>
+			<li><a href="cleanup.php">Clean-up data</a>
+			<li><a href="longqc.php">Longitudinal QC</a>
+			<li><a href="stats.php">System Usage Statistics</a>
+		</ul>
+		
+		<ul>
+			<li><a href="adminmodules.php">Modules</a>
+			<li><a href="adminmodalities.php">Modalities</a>
+			<li><a href="adminsites.php">Sites</a>
+			<li><a href="adminqc.php">QC Modules</a>
+			<!--<li><a href="importlog.php">Import Logs</a>-->
+			<li><a href="admininstances.php">Instances</a>
+			<li><a href="status.php">System status</a>
+			<li><a href="adminemail.php">Mass email</a>
+			<li><a href="setup.php">Update</a>
+
+			<li><a href="system.php">NiDB Settings...</a>
 		</ul>
 		<?
 	}

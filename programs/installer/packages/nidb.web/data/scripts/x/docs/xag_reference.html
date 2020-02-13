@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>XAG: The X Library Aggregator</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>XAG: The X Library Aggregator</h2>
+
+<h3>Summary</h3>
+<div>
+  <p><b>XAG</b> is a library file creation tool. XAG scans your application files and creates a custom <b>X</b> library file which contains only those <b>X</b> variables, functions and objects (X symbols) used in your application.</p>
+  <p>XAG also allows you to create a general-purpose library file containing only the <b>X</b> symbols you specify in a list.</p>
+  <p>XAG optionally appends all your application '*.js' files into the output file. The app code will follow the library code, so your app code has access to X functions while being loaded.</p>
+  <p>For "*.htm*" files, only the contents of SCRIPT elements are searched for <b>X</b> symbols. Javascript in HTML files is not appended to the output file.</p>
+  <p><i>20Dec09</i>: There are now Ant build files that automate the use of XAG. See <a href='x_tools.html'>X Tools</a>.</p>
+</div>
+
+<h2>Using XAG</h2>
+
+<h3>XAG Invocation</h3>
+<div>
+<p>XAG is invoked as follows:</p>
+<pre>xag prj_name[.ext]</pre>
+<p>You can use any extension for your project file. If you don't supply an extension on the command line, '.xag' will be assumed. XAG will open the file 'prj_name.ext' in the current directory and create the output file, 'prj_name.js', also in the current directory.</p>
+<p>In Windows you can associate 'xag.exe' with all '.xag' files and then simply double-click on a project file to compile the project.</p>
+</div>
+
+<h3>XAG Project File</h3>
+<div>
+
+<h4>Format</h4>
+<div>
+<p>The general format of the project file is as follows.</p>
+<pre>
+; line comments start with ';'
+options [+|-]lib [+|-]app [+|-]dep [+|-]xpp [+|-]dbg  ; optional
+output <pathname>  ; optional. default "<prj>.js"
+libpath <path>  ; x/lib directory (with trailing slash). required
+obfprefix <string>  ; xpp file obfuscation prefix. optional. default "X"
+appfiles  ; app file pathnames from next line to end of file. required
+</pre>
+</div>
+<h4>Options</h4>
+<div>
+  <p>Following the 'options' directive is a space-delimited list of zero or more of the following. Prefix with '-' for false or '+' (or no prefix) for true.</p>
+  <p><span class='h5i'>lib</span> Generate output file. Default = true.</p>
+  <p><span class='h5i'>app</span> Append application js files to output file. Default = false.</p>
+  <p><span class='h5i'>dep</span> Symbol dependents included in output. Default = true. When false it is useful for creating a general-purpose library file from a list of X symbols. I use -dep to create "/x/x.js". The list of symbols is put in the xag file (commented with ';') and the only app file is the xag file itself.</p>
+  <p><span class='h5i'>xpp</span> Write xpp obfuscation file to stdout. Default = false.</p>
+  <p><span class='h5i'>dbg</span> Write debug info to stdout. Default = false.</p>
+</div>
+
+<h4>Building Application Libraries</h4>
+<div>
+<p>Here's an application example. Let's say you want to compile a library file for the <a href='../examples/xtable.html'>xTable demo</a>. After unzipping the X distribution file, visit the online <a href='../examples/xtable.html'>xTable demo</a> and "save as HTML" into your local <tt>cross-browser.com\x\examples</tt> folder. In that folder create a text file named "xtable_xlib.xag" with the following contents:</p>
+<pre>
+options -app +dep
+libpath ..\lib\
+appfiles
+xtable.html
+</pre>
+<p>Also in the <tt>examples</tt> folder create another text file named "xtable.bat" with the following contents:</p>
+<pre>
+..\xc\xag xtable_xlib
+@pause
+</pre>
+<p>Now just run the "xtable.bat" file. It will create a file named "xtable_xlib.js" and that file will contain all the <b>X</b> functions and objects needed by the xTable demo. In the demo file "xtable.html" all you need is this:</p>
+<pre>
+&lt;script type='text/javascript' src='xtable_xlib.js'&gt;&lt;/script&gt;
+</pre>
+<p>The file names I used above are just examples. You can choose your own file names.</p>
+</div>
+
+<h4>Building General-Purpose Libraries</h4>
+<div>
+<p>By setting the 'dep' option to false (symbol dependents <em>not</em> included), XAG will create a general-purpose library file. You simply provide XAG with a list of symbol identifiers and a library file consisting of the source code of those symbols is created.</p>
+<p>In the <code>/x/</code> directory you will find the "build_x.bat" and "x_src.xag" files which are used to build "x.js". The file "build_x.bat" shows how to integrate <a href='xpp_reference.html'>XPP</a> and <a href='http://developer.yahoo.com/yui/compressor/'>YUI Compressor</a> into the build process.</p>
+<h5>build_x.bat</h5>
+<pre>
+@echo off
+set outputFileName=x.js
+echo.
+echo Building %outputFileName%
+xc\xag x_src
+
+rem This is where you run XPP if you need it. For example:
+rem xc\xpp x_xpp.js obfs_demo.xpp x_src.js
+rem java -jar "C:\Program Files\yuicompressor\yuicompressor-2.4.2\build\yuicompressor-2.4.2.jar" x_xpp.js -o %outputFileName%
+rem del x_src.js
+rem del x_xpp.js
+
+java -jar "C:\Program Files\yuicompressor\yuicompressor-2.4.2\build\yuicompressor-2.4.2.jar" x_src.js -o %outputFileName%
+del x_src.js
+</pre>
+<h5>x_src.xag</h5>
+<pre>
+; XAG Project: x_src
+; x.js will contain the contents of both x_core.js and x_event.js
+
+options +lib -app -dep
+
+libpath lib\
+
+appfiles
+
+x_src.xag
+
+; This project file is the only app file fed to XAG.
+; The following X symbols will be included in the
+; library file. They are commented-out so XAG will
+; not see them as more app files. No dependents
+; are included, only the following symbols.
+
+; xGetElementById, xGetElementsByTagName, xGetElementsByClassName,
+; xMoveTo, xLeft, xTop, xPageX, xPageY, xScrollLeft, xScrollTop, xHasPoint,
+; xResizeTo, xWidth, xHeight, xClientWidth, xClientHeight,
+; xStyle, xOpacity, xGetComputedStyle, xCamelize,
+; xDef, xStr, xNum, xLibrary
+
+; xAddEventListener, xRemoveEventListener, xEvent, xStopPropagation and xPreventDefault.
+</pre>
+</div>
+
+</div> <!-- end h3 -->
+
+<h3>Symbols of Type 'P' or 'M'</h3>
+<div>
+<p>Symbols of type 'property' or 'method' are supported - but with a slight limitation. For a symbol's source to be included in the output library the symbol's <code>id</code> (see <a href='../../templates/x_symbol_template.xml'>x_symbol_template.xml</a>) must be found in your application code. For symbols of type 'P' or 'M' their <code>id</code>s are <code>objectName.propertyName</code> and <code>objectName.methodName</code>. So for example if you want to use the <code>rgb</code> animation method of the <code>xAnimation</code> object then XAG must find <code>xAnimation.rgb</code> in your code. So the solution (for now) is to put <code>xAnimation.rgb</code> <em>in a comment</em> in your application code.</p>
+</div>
+
+<h3>Adding Your Own Functions to the X Library</h3>
+<div>
+<p>Adding your own functions to the library is easy once you understand the <a href='x_structure.html'>X library structure</a>.</p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

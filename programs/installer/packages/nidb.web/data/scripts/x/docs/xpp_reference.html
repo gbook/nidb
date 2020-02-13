@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>XPP: General Purpose Text Preprocessor</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>XPP: General Purpose Text Preprocessor</h2>
+
+<h3>Summary</h3>
+<div>
+  <p>XPP is a general purpose text preprocessor. It supports conditional output and simple text replacement. These features enable you to perform objectification and obfuscation in a much easier (and more powerful) way than XC did. And of course the conditional output feature is extremely useful. Now you can use <i>conditional compilation</i> in js, css, php and even in batch and make files! This conditional compilation does not occur at run-time, only at build-time.</p>
+  <p><i>20Dec09</i>: There are now Ant build files that automate the use of XPP. See <a href='x_tools.html'>X Tools</a>.</p>
+</div>
+
+<h2>Using XPP</h2>
+
+<h3>XPP Invocation</h3>
+<div>
+<p>XPP is invoked as follows:</p>
+<pre>xpp [options] output_file input_file1 input_file2 ...</pre>
+<h4>Options</h4>
+<div>
+  <p>Prefix an option with '+' to turn it on or '-' to turn it off.</p>
+  <p><span class='h5i'>o</span> - Output. Generate output file. Default = true.</p>
+  <p><span class='h5i'>v</span> - Verbose. Display info. Default = false.</p>
+  <p><span class='h5i'>d</span> - Debug. Display more info. Default = false. +d forces +v.</p>
+</div>
+</div><!-- end h3 -->
+
+<h3>XPP Directives</h3>
+<div>
+<p>The '#' character of an XPP directive must be the first non-whitespace character on the line.</p>
+<p>There is no output, and directives are not processed, inside an <code>#ifdef</code> block that eval'd false or an <code>#ifndef</code> block that eval'd true.</p>
+<p><code>#define</code> and <code>#defword</code> can re-define an existing symbol.</p>
+<p>If id is found in the text it will be replaced with its value. Replacements are made in the reverse order of which the identifiers were defined.</p>
+<p><code>#ifdef</code> and <code>#ifndef</code> can not be nested.</p>
+<p>In the directives, id can be enclosed with quote characters (either double or single) so id can contain whitespace. The quotes do not become part of the id. Escaped quotes are not supported.</p>
+<h4>Syntax</h4>
+<div>
+<p>The currently supported directives are as follows.</p>
+<p><code>#//</code> - Comment.</p>
+<p><code>#include filename</code> - Preprocesses and outputs filename. If filename contains spaces it must be enclosed in quotes.</p>
+<p><code>#define id</code> - Defines a symbol which can be used with <code>#ifdef</code> and <code>#ifndef</code>.</p>
+<p><code>#define id value</code> - Defines a symbol and assigns it a value. The value starts at the first non-whitespace char following the id and continues to the last char on the line, including whitespace, but not including any newline characters.</p>
+<p><code>#defword id value</code> - Same as <code>define</code> except the search for id in the text is done by "whole-word".</p>
+<p><code>#undef id</code> - Undefines a symbol.</p>
+<p><code>#ifdef id</code> - Conditional output. Evals to true if id is defined, regardless of id's value.</p>
+<p><code>#ifndef id</code> - Conditional output. Evals to false if id is defined, regardless of id's value.</p>
+<p><code>#else</code> - Else conditional.</p>
+<p><code>#endif</code> - Closes a conditional block.</p>
+</div>
+</div><!-- end h3 -->
+
+<h3>XPP Examples</h3>
+<div>
+<p>Here are some interesting things you can do with XPP and the X Library.</p>
+<h4>Misc. Example</h4>
+<div>
+<pre>
+#//#define XOPTIONS-IE5-SUPPORT
+#define "function X1" X.X1 = function
+#defword xGetElementsByClassName X1
+#undef "function X1"
+
+#include "test_src_2.js"
+
+function xGetElementsByClassName(c,p,t,f)
+{
+  var r = new Array();
+  var re = new RegExp("(^|\\s)"+c+"(\\s|$)");
+#ifdef XOPTIONS-IE5-SUPPORT
+  var e = xGetElementsByTagName(t,p); // See xml comments.
+#else
+  var e = p.getElementsByTagName(t);
+#endif
+  for (var i = 0; i < e.length; ++i) {
+    if (re.test(e[i].className)) {
+      r[r.length] = e[i];
+      if (f) f(e[i]);
+    }
+  }
+#ifndef AN-ID-NOT-DEFINED
+  return r;
+#endif
+}
+</pre>
+</div><!-- end h4 -->
+
+<h4>Obfuscation Example</h4>
+<div>
+<p>XAG can generate a project-specific obfuscation file like the following.</p>
+<pre>
+#defword xGetElementById         X0
+#defword xGetElementsByClassName X1
+#defword xGetElementsByTagName   X2
+#defword xAddClass               X3
+#defword xHasClass               X4
+#defword xRemoveClass            X5
+#defword xToggleClass            X6
+#defword xEvent                  X7
+#defword xAddEventListener       X8
+#defword xRemoveEventListener    X9
+#defword xHeight                 XA
+#defword xClientHeight           XB
+#defword xHttpRequest            XC
+#defword xImgRollSetup           XD
+#defword xGetCookie              XE
+#defword xDeleteCookie           XF
+#defword xSetCookie              XG
+#defword xLeft                   XH
+#defword xOffsetLeft             XI
+#defword xPageX                  XJ
+#defword xScrollLeft             XK
+#defword xMoveTo                 XL
+#defword xOpacity                XM
+#defword xResizeTo               XN
+#defword xStyle                  XO
+#defword xGetComputedStyle       XP
+#defword xCamelize               XQ
+#defword xTop                    XR
+#defword xOffsetTop              XS
+#defword xPageY                  XT
+#defword xScrollTop              XU
+#defword xWidth                  XV
+#defword xClientWidth            XW
+#defword xDef                    XX
+#defword xNum                    XY
+#defword xStr                    XZ
+</pre>
+</div><!-- end h4 -->
+
+</div><!-- end h3 -->
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

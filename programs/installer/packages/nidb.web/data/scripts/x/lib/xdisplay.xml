@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xDisplay'>
+
+<sources>
+  <src><file>xdisplay.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[A safe wrapper for element.style.display.]]></description>
+
+<syntax>xDisplay(e[, sProp])</syntax>
+
+<parameters>
+  <par>
+    <name>e</name>
+    <note><![CDATA[id string or element reference]]></note>
+  </par>
+  <par>
+    <name>sProp</name>
+    <note><![CDATA[One of the valid CSS strings for this property]]></note>
+  </par>
+</parameters>
+
+<return>string, element.style.display if it exists else null</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xDef</dep>
+  <dep>xStr</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment><date>27Nov09</date><author>mf</author><note><![CDATA[See: "http://cross-browser.com/forums/viewtopic.php?id=683".]]></note></comment>
+  <comment><date>2Jul07</date><author>mf</author><note><![CDATA[Unless we go with something like alternative 2 then this function may not be very useful.]]></note></comment>
+  <comment><date>1Nov06</date><author>mf</author><note><![CDATA[
+<br>Original:
+[code]function xDisplay(e,s)
+{
+  if(!(e=xGetElementById(e))) return null;
+  if(e.style && xDef(e.style.display)) {
+    if (xStr(s)) e.style.display = s;
+    return e.style.display;
+  }
+  return null;
+}[/code]
+Alternative 2:
+[code]function xDisplay(e,s)
+{
+  if ((e=xGetElementById(e)) && e.style && xDef(e.style.display)) {
+    if (xStr(s)) {
+      if (s == 'block' && e.nodeName) { /////// ???
+        var ie = 'block';
+        switch (e.nodeName.toLowerCase()) {
+          case 'table': s = 'table'; break;
+          case 'tr': s = 'table-row'; break;
+          case 'td': case 'th': s = 'table-cell'; break;
+          case 'li': s = 'list-item'; break;
+          case 'caption': s = 'table-caption'; ie = 'inline'; break; // inline (IE6dn)
+          case 'tbody': s = 'table-row-group'; ie = ''; break; // not rendered
+          case 'thead': s = 'table-header-group'; ie = ''; break; // not rendered
+          case 'tfoot': s = 'table-footer-group'; ie = ''; break; // not rendered
+          case 'col': s = 'table-column'; break;
+          case 'colgroup': s = 'table-column-group'; break;
+        }
+        try { e.style.display = s; }
+        catch (e) { e.style.display = ie; }
+      }
+      else e.style.display = s;
+    }
+    return e.style.display;
+  }
+  return null;
+}[/code]
+  ]]></note></comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>3</num><date>1Nov06</date><author>mf</author>
+    <note><![CDATA[Using try/catch since IE6dn doesn't support the table css properties. Thanks very much to Edward Glowacki.]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>15Mar05</date><author>mf</author>
+    <note><![CDATA[Reduced 13 bytes]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>11Mar05</date><author>mf</author>
+    <note><![CDATA[put into its own file for XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Collapsible/Expandable Sections</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='This is the HTML for the tutorial: Collapsible/Expandable Sections.'>
+<link rel='stylesheet' type='text/css' href='demo1.css'>
+<!--
+This demo has the following X dependencies, but uses "x.js" as a convenience.
+../lib/xaddeventlistener.js
+../lib/xgetelementbyid.js
+../lib/xgetelementsbyclassname.js
+../lib/xgetelementsbytagname.js
+../lib/xnextsib.js
+-->
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xnextsib.js'></script>
+<script type='text/javascript' src='demo1.js'></script>
+</head>
+<body>
+<div id="layout-container">
+  <div id="layout-header">
+    <h1>Cross-Browser.com</h1>
+    <p>X Quick-Start Demo</p>
+  </div>
+  <div id="layout-hmenu">
+    <ul>
+      <li><a href="http://cross-browser.com/">Home</a></li>
+      <li><a href="http://cross-browser.com/x/docs/x_quickstart.php">X Quick-Start</a></li>
+      <li><a href="http://cross-browser.com/x/lib/">X Viewer</a></li>
+    </ul>
+  </div>
+  <div id="layout-main-col">
+    <h2 class='collapsible'>Collapsible/Expandable Sections</h2>
+    <div>
+      <h3 class='collapsible'>H3 Heading</h3>
+      <div style='display:block;'> <!-- this div will be collapsed initially -->
+        <p>This is the demo for the <a href='../docs/x_tutorial.html'>tutorial</a>.</p>
+        <p>This demo consists of the following files.</p>
+        <p><a href='demo1.html'>demo1.html</a> - This HTML file.</p>
+        <p><a href='demo1.css'>demo1.css</a> - The CSS file.</p>
+        <p><a href='demo1.js'>demo1.js</a> - The application Javascript file.</p>
+        <p>This demo also uses 5 functions from the X Library.</p>
+      </div>
+      <h3 class='collapsible'>H3 Heading</h3>
+      <div>
+        <h4 class='collapsible'>H4 Heading</h4>
+        <div>
+          <p>Aenean tempor. Mauris tortor quam, elementum eu, convallis a, semper quis, purus. Cras at tortor in purus tincidunt tristique. In hac habitasse platea dictumst. Ut eu lectus eu metus molestie iaculis. In ornare. Donec at enim vel erat tempor congue. Nullam varius. Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</p>
+          <p>Nulla feugiat hendrerit risus. Integer enim velit, gravida id, sollicitudin at, consequat sit amet, leo. Fusce imperdiet condimentum velit. Phasellus nonummy interdum est. Pellentesque quam.</p>
+        </div>
+        <h4 class='collapsible'>H4 Heading</h4>
+        <div>
+          <p>Nulla a lacus. Nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Fusce pulvinar lobortis purus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec semper ipsum et urna. Ut consequat neque vitae felis.</p>
+          <p>Suspendisse dapibus, magna quis pulvinar laoreet, dolor neque lacinia arcu, et luctus mi erat vestibulum sem. Mauris faucibus iaculis lacus. Aliquam nec ante in quam sollicitudin congue. Quisque congue egestas elit. Quisque viverra. Donec feugiat elementum est. Etiam vel lorem.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="layout-footer">
+    <p>Footer</p>
+  </div>
+</div>
+</body>
+</html>

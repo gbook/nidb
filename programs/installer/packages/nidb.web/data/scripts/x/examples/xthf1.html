@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>xTableHeaderFixed Demo 1</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<meta http-equiv='X-UA-Compatible' content='IE=7'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='xthf-con.css'>
+<link rel='stylesheet' type='text/css' href='xthf-bor-sep.css'>
+<style type='text/css'>
+#leftColumn {
+  left:3%; width:auto; right:3%;
+}
+</style>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xtableheaderfixed.js'></script>
+<script type='text/javascript'>
+xAddEventListener(window, 'load',
+  function() {
+    new xTableHeaderFixed('xthf-site', window);
+    new xTableHeaderFixed('xthf-green', window);
+    new xTableHeaderFixed('xthf-blue', window);
+  }, false
+);
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xTableHeaderFixed Demo 1</h2>
+
+<h3>Description</h3>
+<div>
+<p>xTableHeaderFixed is an unobtrusive table enhancement. It makes a copy of a table's THEAD section. While the table is visible in its container the THEAD copy will be fixed to the top of the container, so you can scroll up and down in a long table and the header will always be visible. The container can be a window or a scrollable element. The position and size of the THEAD copy will be adjusted when the window is resized. The THEAD copy is clipped to its container's inner width. You only need to instantiate one xTableHeaderFixed object for each group of tables that have the same styling - and so those tables should have a common className, which you pass to the constructor. You must assign all of the table's styles relative to this className so that the THEAD copy will be styled just like it. It takes the widths of all THs (not TDs) in the THEAD and assigns them to the corresponding THs in the THEAD copy. When instantiating, you do not have to keep a reference to the object - it keeps a reference to itself, but if you plan on calling the 'init' or 'paint' methods later then you'll need to keep a reference to the object.</p>
+<p>There are more <a href='http://cross-browser.com/x/examples/xthf-demo.php'>xTableHeaderFixed demos</a> available online.</p>
+</div>
+
+<h3>Demo</h3>
+
+<script type='text/javascript'>insert_xthf_tables(0);</script>
+
+</div> <!-- end leftContent -->
+
+<div class='leftContent'>
+  <pre id='dbg' style='position:relative;max-height:500px;height:500px;'>&nbsp;</pre>
+</div>
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xPersistentDisplay'>
+
+<sources>
+  <src><file>xpersistentdisplay.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+<type>Var</type>
+
+<description><![CDATA[xPersistentDisplay provides persistent display or non-display of elements with specific CSS class names.]]></description>
+
+<syntax>No user Js needed for this object. See the demo.</syntax>
+
+<dependencies>
+  <dep>xEachN</dep>
+  <dep>xCookie</dep>
+  <dep>xGetElementById</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xGetElementsByTagName</dep>
+  <dep>xGetElementsByClassName</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xpersistentdisplay2.php</url><note><![CDATA[xPersistentDisplay demo 2.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>1</num><date>22Dec2010</date><author>mf</author><note><![CDATA[Added to X.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

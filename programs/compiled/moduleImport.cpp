@@ -218,11 +218,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 			continue;
 		}
 
-		/* check if the file has been modified in the past 2 minutes (-120 seconds)
+		/* check if the file has been modified in the past 1 minutes (-60 seconds)
 		 * if so, the file may still be being copied, so skip it */
 		QDateTime now = QDateTime::currentDateTime();
 		qint64 fileAgeInSec = now.secsTo(QFileInfo(file).lastModified());
-		if (fileAgeInSec > -120) {
+		if (fileAgeInSec > -60) {
 			n->WriteLog(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
 			okToDeleteDir = false;
 			continue;
@@ -1756,7 +1756,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	qint64 dirsize = 0;
 	int nfiles;
 	n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
-	msgs << n->WriteLog(QString("output directory [%1] is size [%2] and contains numfiles [%3]").arg(outdir).arg(dirsize).arg(numfiles));
+	msgs << n->WriteLog(QString("output directory [%1] is size [%2] and contains nfiles [%3]").arg(outdir).arg(dirsize).arg(nfiles));
 
 	/* check if its an EPI sequence, but not a perfusion sequence */
 	if (SequenceName.contains("epfid2d1_")) {
@@ -1764,17 +1764,17 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		else {
 			mrtype = "epi";
 			/* get the bold reps and attempt to get the z size */
-			boldreps = numfiles;
+			boldreps = nfiles;
 
 			/* this method works ... sometimes */
 			if ((mat1 > 0) && (mat4 > 0))
 				zsize = (Rows/mat1)*(Columns/mat4); /* example (384/64)*(384/64) = 6*6 = 36 possible slices in a mosaic */
 			else
-				zsize = numfiles;
+				zsize = nfiles;
 		}
 	}
 	else {
-		zsize = numfiles;
+		zsize = nfiles;
 	}
 
 	/* update the database with the correct number of files/BOLD reps */
@@ -1783,7 +1783,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		QSqlQuery q2;
 		q2.prepare(sqlstring);
 		q2.bindValue(":dirsize", dirsize);
-		q2.bindValue(":numfiles", numfiles);
+		q2.bindValue(":numfiles", nfiles);
 		q2.bindValue(":boldreps", boldreps);
 		q2.bindValue(":seriesid", seriesRowID);
 		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -1793,7 +1793,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		QSqlQuery q2;
 		q2.prepare(sqlstring);
 		q2.bindValue(":dirsize", dirsize);
-		q2.bindValue(":numfiles", numfiles);
+		q2.bindValue(":numfiles", nfiles);
 		q2.bindValue(":seriesid", seriesRowID);
 		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 	}

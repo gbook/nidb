@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTableSync'>
+
+<sources>
+  <src><file>xtablesync.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Table</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Assign a function to handle events which occur on either table and access corresponding TDs.]]></description>
+
+<syntax>xTableSync(sT1Id, sT2Id, sEvent, fn)</syntax>
+
+<parameters>
+  <par><name>sT1Id</name><note><![CDATA[Table 1 ID string.]]></note></par>
+  <par><name>sT2Id</name><note><![CDATA[Table 2 ID string.]]></note></par>
+  <par><name>sEvent</name><note><![CDATA[Event type string ('click', 'mouseover', etc).]]></note></par>
+  <par><name>fn</name><note><![CDATA[Callback function, called when sEvent occurs on a TD in either table.
+     fn(td1, td2)
+     td1 - the TD which received the event.
+     td2 - the corresponding TD in the other table.
+    ]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/table_sync.html</url><note><![CDATA[table toys]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment><date>9Jan07</date><author>mf</author><note><![CDATA[Note: the use of 'sectionRowIndex' may not be very cross-browser.]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>10Jan07</date><author>mf</author><note><![CDATA[This was an object prototype then I changed it to a function. So now I'm trying to not have circular refs while still making use of the closure.]]></note></rev>
+  <rev><num>1</num><date>9Jan07</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

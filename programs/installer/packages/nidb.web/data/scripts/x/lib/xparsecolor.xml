@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xParseColor'>
+
+<sources>
+  <src><file>xparsecolor.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>String</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Parse a color string or number into its components.]]></description>
+
+<syntax>xParseColor(c)</syntax>
+
+<parameters>
+  <par><name>c</name><note><![CDATA[An unsigned integer or a string. If a string then it must be in "rgb(num, num, num)" or "#RRGGBB" format.]]></note></par>
+</parameters>
+
+<return><![CDATA[
+[code]It returns an object with these properties:
+r - numeric value of red
+g - numeric value of green
+b - numeric value of blue
+n - numeric value of argument
+s - hex string value of argument (includes '#' prefix)[/code]
+]]></return>
+
+<dependencies>
+  <dep>xStr</dep>
+  <dep>xHex</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/animation_tech.html</url><note><![CDATA[Article and demos on animation techniques.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>17Mar2007</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

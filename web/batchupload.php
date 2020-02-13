@@ -23,23 +23,9 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
-?>
-
-<html>
-	<head>
-		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Behavioral data analysis pipelines</title>
-	</head>
-
-<body>
-	<div id="wrapper">
-<?
+	
 	require "functions.php";
 	require "includes_php.php";
-	require "includes_html.php";
-	require "menu.php";
-
-	//PrintVariable($_POST);
 
 	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
@@ -48,93 +34,224 @@
 		$selfcall = true;
 	else
 		$selfcall = false;
-
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$s['subjectuids'] = GetVariable("s_subjectuids");
-	$s['subjectaltuids'] = GetVariable("s_subjectaltuids");
-	$s['modality'] = GetVariable("s_modality");
-	$s['seriesdesc'] = GetVariable("s_seriesdesc");
+	if (is_array(GetVariable("seriesid")))
+		$seriesids = GetVariable("seriesid");
+	else
+		$seriesid = GetVariable("seriesid");
+	$modality = GetVariable("modality");
+	
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
+	//PrintVariable($_FILES);
+
 	
 	/* determine action */
-	if ($selfcall) {
-		switch ($action) {
-			case 'displaystudytemplatelist':
-				DisplayStudyTemplateList($projectid);
-				break;
-			default:
-				DisplayStudyTemplateList($projectid);
-				DisplayProjectStudyTemplateList($projectid);
-		}
+	if (($selfcall && $action == "upload")) {
+		UploadFile($seriesid, $modality, $file);
 	}
 	else {
-		DisplayBatchUploadSearchForm($projectid);
-		DisplayBatchUploadResults($projectid, $s);
+		?>
+		<html>
+			<head>
+				<link rel="icon" type="image/png" href="images/squirrel.png">
+				<title>NiDB - Behavioral data analysis pipelines</title>
+			</head>
+		<body>
+			<div id="wrapper">
+		<?
+		require "includes_html.php";
+		require "menu.php";
+		
+		DisplaySeriesList($seriesids, $modality);
+
+		include("footer.php");
+		
 	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayStudyTemplateList ----------- */
+	/* ------- DisplaySeriesList ------------------ */
 	/* -------------------------------------------- */
-	function DisplayStudyTemplateList($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
-		?>
-		<div style="color: #444; font-weight: bold">Study Templates</div>
-		<span class="tiny">Creates <b>single</b> studies</span>
-		<br><br>
-		<table class="graydisplaytable">
-			<thead>
-				<th>Name</th>
-				<th>Modality</th>
-				<th></th>
-			</thead>
-			<form action="templates.php" method="post" name="theform" id="theform">
-			<input type="hidden" name="action" value="createstudytemplate">
-			<input type="hidden" name="projectid" value="<?=$projectid?>">
-			<tr>
-				<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-				<td>
-					<select name="newtemplatemodality">
-						<option value="">Select modality</option>
-					<?
-						$modalities = GetModalityList();
-						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
-						}
-					?>
-					</select>
-				</td>
-				<td><input type="submit" value="Create Study Template"></td>
-			</tr>
-			</form>
-		<?
-		$sqlstring = "select * from study_template where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$templateid = $row['studytemplate_id'];
-			$templatename = $row['template_name'];
-			$templatemodality = $row['template_modality'];
-			?>
-			<tr>
-				<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
-				<td><?=$templatemodality?></td>
-				<td><a href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>" style="color: red">X</a></td>
-			</tr>
-			<?
+	function DisplaySeriesList($seriesids, $modality) {
+		$seriesids = mysqli_real_escape_array($seriesids);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+
+		if (!IsNiDBModality($modality)) {
+			echo "Invalid modality [$modality]<br>";
+			return;
 		}
+
 		?>
+		<link rel="stylesheet" href="scripts/dropzone.css">
+		<script src="scripts/dropzone.js"></script>
+		<style>
+			table .batchupload { border: 2px solid #444; border-radius: 8px; border-spacing: 0px; width: 90%; }
+			table .batchupload thead:last-of-type th { border-bottom: 2px solid #444; }
+			table .batchupload th { padding: 5px; background-color: #444; color: #fff; }
+			table .batchupload td { padding: 7px; border-top: 1px solid #ccc; border-right: 1px solid #ccc; vertical-align: middle; }
+			table .batchupload tr:hover td { background-color: lightyellow; border-top: 1px solid gold; }
+			table .batchupload tr.newuid td { border-top: 2px solid #444; }
+		</style>
+		<div align="center">
+		<form action="batchupload.php" method="post">
+			<input name="action" type="hidden" value="displayseries">
+			<?
+				foreach ($seriesids as $seriesid) {
+				?>
+				<input name="seriesid[]" type="hidden" value="<?=$seriesid?>">
+				<?
+				}
+			?>
+			<input name="modality" type="hidden" value="<?=$modality?>">
+			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt">
+		</form>
+		<br><br>
+		<table class="batchupload">
+			<thead>
+				<th style="text-align: center; border-right: 1px solid #aaa">&nbsp;</th>
+				<th colspan="2" style="text-align: center; border-right: 1px solid #aaa">Subject</th>
+				<th colspan="3" style="text-align: center; border-right: 1px solid #aaa">Study</th>
+				<th colspan="4" style="text-align: center;">Series</th>
+			</thead>
+			<thead>
+				<th style="border-right: 1px solid #aaa">Upload</th>
+				<th>UID</th>
+				<th style="border-right: 1px solid #aaa">Age</th>
+				<th>Study</th>
+				<th>Modality</th>
+				<th style="border-right: 1px solid #aaa">Date</th>
+				<th>Number</th>
+				<th>Date</th>
+				<th>Protocol</th>
+				<th>Files</th>
+			</thead>
+			<tbody>
+			<?
+				$seriesidlist = implode2(",", $seriesids);
+				$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$lastuid = "";
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$uid = $row['uid'];
+					$age = $row['study_ageatscan'];
+					$studydate = $row['study_datetime'];
+					$studynum = $row['study_num'];
+					$studyid = $row['study_id'];
+					$seriesnum = $row['series_num'];
+					$seriesdate = $row['series_datetime'];
+					$seriesdesc = $row['series_desc'];
+					$seriesid = $row[$modality."series_id"];
+					if ($seriesdesc == "")
+						$seriesdesc = $row['series_protocol'];
+					
+					if (($uid != $lastuid) && ($lastuid != "")) {
+						$tdclass = "newuid";
+					}
+					else {
+						$tdclass = "";
+					}
+					?>
+					<tr class="<?=$tdclass?>">
+						<td>
+							<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>" style="margin-block-end: 0px">
+								<input name="action" type="hidden" value="upload">
+								<input name="seriesid" type="hidden" value="<?=$seriesid?>">
+								<input name="modality" type="hidden" value="<?=$modality?>">
+								<div class="fallback">
+									<input name="file" type="file" multiple />
+								</div>
+							</form>
+						</td>
+						<td><?=$uid?></td>
+						<td><?=$age?></td>
+						<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+						<td><?=$modality?></td>
+						<td><?=$studydate?></td>
+						<td><?=$seriesnum?></td>
+						<td><?=$seriesdate?></td>
+						<td><?=$seriesdesc?></td>
+						<td>
+							<span class="tiny">
+							<?
+								list($datapath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+								$filelist = array_diff(scandir($datapath), array('..', '.'));
+
+								$numfiles = count($filelist);
+								$numremain = $numfiles;
+								$i = 0;
+								foreach ($filelist as $file) {
+									echo "$file<br>";
+									$i++;
+									$numremain--;
+									if ($i >= 5)
+										break;
+								}
+								if ($numremain > 0)
+									echo "<br><b>[$numremain] additonal files not listed</b>";
+							?>
+							</span>
+						</td>
+					</tr>
+					<?
+					$lastuid = $uid;
+				}
+			?>
+			</tbody>
 		</table>
+		</div>
 		<?
 	}
+	
+	/* -------------------------------------------- */
+	/* ------- UploadFile ------------------------- */
+	/* -------------------------------------------- */
+	function UploadFile($seriesid, $modality) {
+		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+
+		if (!IsNiDBModality($modality)) {
+			echo "Invalid modality [$modality]<br>";
+			return 0;
+		}
+		
+		list($outpath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+		
+		if ($modality == "mr")
+			$outpath = "$outpath/beh";
+
+		/* go through all the files and save them */
+		mkdir($outpath, 0777, true);
+		chmod($outpath, 0777);
+		foreach ($_FILES['file']['name'] as $i => $name) {
+			$filesize = 0;
+			error_reporting(E_ALL);
+			if (move_uploaded_file($_FILES['file']['tmp_name'][$i], "$outpath/$name")) {
+				$filesize = filesize("$outpath/$name");
+				chmod("$outpath/$name", 0777);
+				$success = 1;
+				echo "SUCCESS: File [$name] written to [$outpath]<br>";
+			}
+			else {
+				echo "ERROR moving [" . $_FILES['file']['tmp_name'][$i] . "] to [$outpath/$name]<br>";
+				$success = 0;
+			}
+		}
+		
+		$filecount = count(glob("$outpath/*"));
+		$filesize = GetDirectorySize($outpath);
+		
+		/* update the database to reflect the number of size of the files */
+		if ($modality == "mr")
+			$sqlstring = "update mr_series set numfiles = $filecount, series_size = $filesize where mrseries_id = $seriesid";
+		else
+			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+		
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
 ?>
-
-
-<? include("footer.php") ?>

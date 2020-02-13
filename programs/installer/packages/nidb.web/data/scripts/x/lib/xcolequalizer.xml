@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xColEqualizer'>
+
+<sources>
+  <src><file>xcolequalizer.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Size</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Equalize the heights of any number of columns. Pass any number of pairs of elements to this function.]]></description>
+
+<syntax>xColEqualizer(parent1, child1, parent2, child2, ...)</syntax>
+
+<parameters>
+  <par><name>parent1</name><note><![CDATA[element reference or id string of relative or absolute column.]]></note></par>
+  <par><name>child1</name><note><![CDATA[element reference or id string of static child (content container).]]></note></par>
+</parameters>
+
+<return><![CDATA[the height to which each column was set.]]></return>
+
+<dependencies>
+  <dep>xHeight</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/layout3.html</url><note><![CDATA[This demo does not use xColEqualizer but it uses the same technique.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>10Oct06</date><author>mf</author><note><![CDATA[Equalizing column heights has been explored in a number of different applications. It is highly dependent on the HTML structure. Here is the structure I have found to work well with this technique. A 'column' should be a DIV with position:absolute or position:relative. Contained within this column DIV should be a 'content container' DIV with position:static. The column DIV should have overflow:hidden, and the child DIV should have overflow:visible.]]></note></comment>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks, moi!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>8Nov05</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

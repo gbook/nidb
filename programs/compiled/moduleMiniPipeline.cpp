@@ -420,6 +420,8 @@ int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString
 /* ---------------------------------------------------------- */
 int moduleMiniPipeline::InsertDrug(int enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit) {
 
+	doseFreq = "";
+
 	QSqlQuery q;
 
 	/* get the drug name ID */

@@ -48,15 +48,20 @@
 <?
 	require "functions.php";
 
-	/* check if the .cfg file exists */
+	/* check if the .cfg file exists, and what type of installation this is: setup/upgrade */
 	$cfgexists = false;
+	$installtype = "setup";
 	if ( (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
 		/* if so, load the config, but still treat the page as a setup */
 		$cfg = LoadConfig();
-		if ($cfg != null)
+		if ($cfg != null) {
 			$cfgexists = true;
+			if (file_exists($cfg['scriptdir']))
+				$installtype = "upgrade";
+		}
 	}
 	
+	/* check if the client can run this page. ie, is it in the list of safe IPs */
 	if ($cfg['setupips'] != "") {
 		$valid = false;
 		$iplist = explode(",", $cfg['setupips']);
@@ -65,7 +70,7 @@
 				$valid = true;
 		}
 		if (!$valid) {
-			echo "You are not allowed to access this page";
+			echo "You are not allowed to access this page. Setup/upgrade functionality is only available to specified IP addresses.";
 			exit(0);
 		}
 	}
@@ -456,7 +461,7 @@
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("welcome")?></td>
 				<td valign="top" height="90%">
-					<h2>The following pages will guide you through the NiDB setup process</h2>
+					<h2>The following pages will guide you through the NiDB setup/upgrade process</h2>
 				</td>
 			</tr>
 			<tr>
@@ -558,6 +563,37 @@
 					</table>
 					<br><br>
 					If any packages are missing or the incorrect version, install them using yum or other methods. Then come back and refresh this page.
+					<br><br>
+					<h2>NiDB</h2><br>
+					<?
+					
+					if ($GLOBALS['cfgexists']) {
+						if (file_exists($GLOBALS['cfg']['nidbdir'])) {
+							?>
+							An existing NiDB installation was found at <code><?=$GLOBALS['cfg']['nidbdir']?></code> and valid config file was found at <code><?=$GLOBALS['cfg']['cfgpath']?></code>
+							<br><br>
+							<b style="font-size: larger">The existing installation will be upgraded</b>
+							<?
+						}
+					}
+					elseif (file_exists("/nidb")) {
+						?>
+						Config file not found but an NiDB installation directory was found at <code>/nidb</code>. You are most likely in the middle of the first-time setup process.
+						<br>
+						<b style="font-size: larger">A new installation will be configured</b>
+						<?
+					}
+					else {
+						?>
+						No config file or NiDB installation directory found.
+						<br><br>
+						<b>First-time Setup</b> via the website can only be run after the binary installer has been run. Run the binary nidbinstaller first.
+						<br>
+						<b>Upgrade</b> can only be run on an existing installation.
+						<?
+					}
+					
+					?>
 				</td>
 			</tr>
 			<tr>
@@ -576,15 +612,6 @@
 	/* ------- DisplayDatabase1Page --------------- */
 	/* -------------------------------------------- */
 	function DisplayDatabase1Page() {
-		
-		$cfg = LoadConfig(true);
-		
-		if (!is_null($cfg)) {
-			$mysqlhost = $cfg['mysqlhost'];
-			$mysqldatabase = $cfg['mysqldatabase'];
-			$mysqluser = $cfg['mysqluser'];
-			$mysqlpassword = $cfg['mysqlpassword'];
-		}
 		?>
 		<br><br>
 		<div align="center" valign="middle">
@@ -593,7 +620,7 @@
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%">
 					<h2>Database connection parameters</h2>
-					<i><b>NOTE</b> MySQL and MariaDB are synonymous within NiDB.</i>
+					<!--<i><b>NOTE</b> MySQL and MariaDB are synonymous within NiDB.</i>-->
 					<br>
 					<br>
 					<form method="post" action="setup.php" name="theform">
@@ -602,10 +629,10 @@
 						<tr>
 							<td>MariaDB server</td>
 							<td>
-								<? if ($mysqlhost == "") { ?>
+								<? if ( ($GLOBALS['cfg']['mysqlhost'] == "") || ($GLOBALS['cfg']['mysqlhost'] == null) ) { ?>
 								localhost
 								<? } else { ?>
-								<span style="color: darkred; font-weight: bold"><?=$mysqlhost?></span><br>
+								<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqlhost']?></span><br>
 								<span class="tiny">Loaded from config file</span>
 								<? }?>
 							</td>
@@ -613,10 +640,10 @@
 						<tr>
 							<td>Database name</td>
 							<td>
-								<? if ($mysqldatabase == "") { ?>
+								<? if ( ($GLOBALS['cfg']['mysqldatabase'] == "") || ($GLOBALS['cfg']['mysqldatabase'] == null) ) { ?>
 								nidb
 								<? } else { ?>
-								<span style="color: darkred; font-weight: bold"><?=$mysqldatabase?></span><br>
+								<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqldatabase']?></span><br>
 								<span class="tiny">Loaded from config file</span>
 								<? }?>
 							</td>
@@ -624,40 +651,47 @@
 						<tr>
 							<td>MariaDB root password<br><span class="tiny" style="font-weight: normal">root access to DB required to setup tables</span></td>
 							<td>
-								<input type="password" required name="rootpassword"><br><span class="tiny">Should be <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
+								<? if ( ($GLOBALS['cfg']['mysqlpassword'] == "") || ($GLOBALS['cfg']['mysqlpassword'] == null) ) { ?>
+								<input type="password" required name="rootpassword"><br><span class="tiny">Password is <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
+								<? } else {
+									$len = strlen($GLOBALS['cfg']['mysqlpassword']);
+									$pwstars = str_repeat("*",$len);
+									?>
+								<span style="color: darkred; font-weight: bold"><?=$pwstars?></span><br>
+								<span class="tiny">Loaded from config file</span>
+								<? } ?>
 							</td>
 						</tr>
 						<tr>
 							<td>MariaDB username<br><span class="tiny" style="font-weight: normal">NiDB will run as this user</span></td>
 							<td>
-								<? if ($mysqluser == "") { ?>
+								<? if ( ($GLOBALS['cfg']['mysqluser'] == "") || ($GLOBALS['cfg']['mysqluser'] == null) ) { ?>
 								nidb
 								<? } else { ?>
-								<span style="color: darkred; font-weight: bold"><?=$mysqluser?></span><br>
+								<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqluser']?></span><br>
 								<span class="tiny">Loaded from config file</span>
 								<? }?>
 							</td>
 						</tr>
-						<!--
-						<tr>
-							<td>MySQL user password</td>
-							<td>
-								<? if ($mysqlpassword == "") { ?>
-								<input type="password" name="nidbpassword" value="<?=$cfgpassword?>"><br>
-								<input type="password" name="nidbpassword2" value="<?=$cfgpassword?>">
-								<? } else { ?>
-								********<br><span class="tiny">Password loaded from config file</span>
-								<? } ?>
-							</td>
-						</tr>-->
 					</table>
 					</form>
+					<?
+					
+						$sqlfileurl = "http://raw.githubusercontent.com/gbook/nidb/master/setup/nidb.sql";
+						$file = file($sqlfileurl);
+						PrintVariable($file);
+					
+					if ($sqlfile > "") { ?>
+					Database will be installed/upgraded on the next page using the schema found at <code>/nidb/nidb.sql</code> dated <?=date('Y-m-d H:i:s', filemtime("/nidb/nidb.sql"))?>.<br><br>Please backup your database before continuing!!!
+					<? } else { ?>
+					<? } ?>
 				</td>
 			</tr>
 			<tr>
-				<td></td>
+				<td>Installation type <b><?=$GLOBALS['installtype']?></b>
+				</td>
 				<td align="right">
-					<a href="setup.php?step=systemcheck">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a onClick="document.theform.submit()" style="cursor: hand; font-weight: bold">Next</a>
+					<a href="setup.php?step=systemcheck">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a onClick="document.theform.submit()" style="cursor: hand; font-weight: bold">Configure database</a>
 				</td>
 			</tr>
 		</table>
@@ -671,6 +705,8 @@
 	/* -------------------------------------------- */
 	function DisplayDatabase2Page($rootpassword) {
 		
+		if ($GLOBALS['cfg']['mysqlpassword'] != "")
+			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
 		?>
 		<br><br>
 		<div align="center" valign="middle">
@@ -774,7 +810,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td></td>
+				<td>Installation type <b><?=$GLOBALS['installtype']?></b>
 				<td align="right">
 					<a href="setup.php?step=database1">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="setup.php?step=config"><b>Next</b></a>
 				</td>

@@ -85,43 +85,62 @@ win32: {
     GDCMSRC = C:/gdcm/Source
     win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
     else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
+    INCLUDEPATH += $$GDCMSRC/Attribute
+    INCLUDEPATH += $$GDCMSRC/Common
+    INCLUDEPATH += $$GDCMSRC/DataDictionary
+    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
+    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
+    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
+    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
+    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
+    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+
+    LIBS += -lgdcmMSFF \
+        -lgdcmCommon \
+        -lgdcmDICT \
+        -lgdcmDSED \
+        -lgdcmIOD \
+        -lgdcmMEXD \
+        -lgdcmcharls \
+        -lgdcmexpat \
+        -lgdcmjpeg12 \
+        -lgdcmjpeg16 \
+        -lgdcmjpeg8 \
+        -lgdcmopenjp2 \
+        -lgdcmzlib \
+        -lsocketxx
+
 }
 unix: {
     GDCMBIN = /nidb/programs/gdcmbin
     GDCMSRC = /nidb/programs/gdcm/Source
     LIBS += -L$$GDCMBIN/bin/
+    INCLUDEPATH += $$GDCMSRC/Attribute
+    INCLUDEPATH += $$GDCMSRC/Common
+    INCLUDEPATH += $$GDCMSRC/DataDictionary
+    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
+    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
+    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
+    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
+    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
+    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+
+    LIBS += -lgdcmMSFF \
+        -lgdcmCommon \
+        -lgdcmDICT \
+        -lgdcmDSED \
+        -lgdcmIOD \
+        -lgdcmMEXD \
+        -lgdcmcharls \
+        -lgdcmexpat \
+        -lgdcmjpeg12 \
+        -lgdcmjpeg16 \
+        -lgdcmjpeg8 \
+        -lgdcmopenjp2 \
+        -lgdcmuuid \
+        -lgdcmzlib \
+        -lsocketxx
 }
-
-#contains(QT_ARCH, i386) {
-#    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Release/
-#    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Debug/
-#} else {
-#}
-
-INCLUDEPATH += $$GDCMSRC/Attribute
-INCLUDEPATH += $$GDCMSRC/Common
-INCLUDEPATH += $$GDCMSRC/DataDictionary
-INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
-
-LIBS += -lgdcmMSFF \
-    -lgdcmCommon \
-    -lgdcmDICT \
-    -lgdcmDSED \
-    -lgdcmIOD \
-    -lgdcmMEXD \
-    -lgdcmcharls \
-    -lgdcmexpat \
-    -lgdcmjpeg12 \
-    -lgdcmjpeg16 \
-    -lgdcmjpeg8 \
-    -lgdcmopenjp2 \
-    -lgdcmzlib \
-    -lsocketxx
 
 DISTFILES += \
     build.sh

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAnimation.rgb'>
+
+<sources>
+  <src><file>xanimation.rgb.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Method</type>
+
+<description><![CDATA[Animate an element's CSS property that accepts color values. This is an xAnimation method.]]></description>
+
+<syntax>xa.rgb(e, p, v, t[, a[, b[, oe]]]);</syntax>
+
+<parameters>
+  <par><name>xa</name><note><![CDATA[An xAnimation object.]]></note></par>
+  <par><name>e</name><note><![CDATA[An Element object reference or an id string.]]></note></par>
+  <par><name>p</name><note><![CDATA[The CSS property name (string).]]></note></par>
+  <par><name>v</name><note><![CDATA[The target value (a color string, '#RRGGBB', or an integer).]]></note></par>
+  <par><name>t</name><note><![CDATA[The total time for the animation, in milliseconds.]]></note></par>
+  <par><name>a</name><note><![CDATA[Acceleration type: 0=none(constant velocity), 1=sine(fast start, slow end), 2=cosine(slow start, fast end), 3=combined(slow start, fast mid, slow end). This is optional, the default is 0.]]></note></par>
+  <par><name>b</name><note><![CDATA[Bounces: 0=no bounce, 1=from start to end then bounce back to start, 2=from start to end then bounce back to start then bounce back to end, etc. Ignored when a=0. This is optional, the default is 0.]]></note></par>
+  <par><name>oe</name><note><![CDATA[The onEnd handler. It can be a function reference or a string. It will be executed at the completion of the animation. The handler will receive the xAnimation object as an argument and the handler's "this" also points to the xAnimation object. If the handler returns or evaluates true then the animation will be repeated. This is optional.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xAnimation</dep>
+  <dep>xParseColor</dep>
+  <dep>xGetComputedStyle</dep>
+  <dep>xCamelize</dep>
+  <dep>xRgbToHex</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xanimation.php</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>3</num><date>23Nov10</date><author>mf</author><note><![CDATA[Adapted to xAnimation rev 5.]]></note></rev>
+  <rev><num>2</num><date>15Apr07</date><author>mf</author><note><![CDATA[xAnimation object re-implemented.]]></note></rev>
+  <rev><num>1</num><date>25Sep06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

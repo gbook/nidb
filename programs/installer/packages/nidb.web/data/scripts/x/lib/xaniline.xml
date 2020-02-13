@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAniLine'>
+
+<sources>
+  <src><file>xaniline.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Animate an element's position over a line segment.]]></description>
+
+<syntax>xAniLine(e, x, y, t[, a[, oe]]);</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[An Element object reference or an id string.]]></note></par>
+  <par><name>x</name><note><![CDATA[The target X coordinate (integer).]]></note></par>
+  <par><name>y</name><note><![CDATA[The target Y coordinate (integer).]]></note></par>
+  <par><name>t</name><note><![CDATA[The total time for the animation, in milliseconds.]]></note></par>
+  <par><name>a</name><note><![CDATA[Acceleration type: 0=none, 1=sine(fast start, slow at end), 2=cosine(slow start, fast at end). This is optional, the default is 0.]]></note></par>
+  <par><name>oe</name><note><![CDATA[The onEnd handler. It can be a function reference or a string. It will be executed at the completion of the animation. This is optional.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xLeft</dep>
+  <dep>xTop</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xanimation.html</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>26Apr07</date><author>mf</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

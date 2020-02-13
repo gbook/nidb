@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTabPanelGroup'>
+
+<sources>
+  <src><file>xtabpanelgroup.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[Downgradeable, accessible, tabbed panels.]]></description>
+
+<syntax>xTabPanelGroup(id, w, h, th, clsTP, clsTG, clsTD, clsTS)</syntax>
+
+<parameters>
+  <par>
+    <name>id</name>
+    <note><![CDATA[id string of tabPanelGroup element]]></note>
+  </par>
+  <par>
+    <name>w</name>
+    <note><![CDATA[Overall width. Pass a zero if you want width controlled by CSS.]]></note>
+  </par>
+  <par>
+    <name>h</name>
+    <note><![CDATA[Overall height. Pass a zero if you want height controlled by CSS.]]></note>
+  </par>
+  <par>
+    <name>th</name>
+    <note><![CDATA[tab height]]></note>
+  </par>
+  <par>
+    <name>clsTP</name>
+    <note><![CDATA[tabPanel css class]]></note>
+  </par>
+  <par>
+    <name>clsTG</name>
+    <note><![CDATA[tabGroup css class]]></note>
+  </par>
+  <par>
+    <name>clsTD</name>
+    <note><![CDATA[tabDefault css class]]></note>
+  </par>
+  <par>
+    <name>clsTS</name>
+    <note><![CDATA[tabSelected css class]]></note>
+  </par>
+</parameters>
+
+<methods>
+  <meth>
+    <name>select(tabIndex)</name>
+    <note><![CDATA[tabIndex is 1-based]]></note>
+  </meth>
+  <meth>
+    <name>onResize(newW, newH)</name>
+    <note><![CDATA[pass zeros if you want width and height controlled by CSS]]></note>
+  </meth>
+</methods>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xGetElementsByClassName</dep>
+  <dep>xResizeTo</dep>
+  <dep>xMoveTo</dep>
+  <dep>xAddEventListener</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/tabpanelgroup.php</url><note><![CDATA[accessible tabbed panels]]></note></demo>
+  <demo><url>http://cross-browser.com/x/examples/vtb_with_tpg.html</url><note><![CDATA[width flows with html]]></note></demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date><author>mf</author><note><![CDATA[Assumes tabPanelGroup element (overall container) has a 1px border. The select() method's argument should be "1-based".]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>12</num><date>26Jul07</date><author>mf</author><note><![CDATA[Removed unload method - now adds its own unload listener. Added the instances object so your app does not have to keep a reference to the tpg object: xTabPanelGroup.instances['outerContainerID'].]]></note>
+  </rev>
+  <rev>
+    <num>11</num><date>5Jun07</date><author>mf</author>
+    <note><![CDATA[Removed use of xZIndex and xDisplay.]]></note>
+  </rev>
+  <rev>
+    <num>10</num>
+    <date>19Oct06</date>
+    <author>mf</author>
+    <note><![CDATA[Removed IE4UP sniffer.]]></note>
+  </rev>
+  <rev>
+    <num>9</num>
+    <date>2Oct06</date>
+    <author>mf</author>
+    <note><![CDATA[Added an onResize method. w and h arguments can now be zero, allowing you to set height in CSS and allow width to flow with the HTML. Thanks for everyone's feedback!]]></note>
+  </rev>
+  <rev>
+    <num>8</num>
+    <date>8Sep06</date>
+    <author>mf</author>
+    <note><![CDATA[Two dependencies were not listed. Thanks, Jason! Also added semicolons to the end of the public method assignments.]]></note>
+  </rev>
+  <rev>
+    <num>7</num>
+    <date>10May05</date>
+    <author>mf</author>
+    <note><![CDATA[I added the select() method for Jonathan. Made the demo much more accessible, using A elements as tabs instead of divs and now support onfocus event for kbd nav.]]></note>
+  </rev>
+  <rev>
+    <num>6</num>
+    <date>3May05</date>
+    <author>mf</author>
+    <note><![CDATA[pdub23 found a little Firefox quirk (inputs had focus but no cursor) and he and Jose Ignacio Santa Cruz both pointed out that form controls were 'showing through' for IE. I think I've fixed both issues.]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>3Jan05</date>
+    <author>mf</author>
+    <note><![CDATA[Initial release]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>
+  

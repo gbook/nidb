@@ -1,0 +1,7 @@
+To use this site you must agree to the terms of service (TOS). Failure to comply with the TOS will result in your account being locked, terminated, or your data removed from this site. You agree to the following:
+
+* You have IRB approval to have neuroimaging data hosted on this site
+* All of your data is de-identified prior to upload, by removing patient name, date or birth, address, phone numbers, emails, or any other personally identifiable information
+* You assume any risk associated with sharing your data, including but not limited to loss of grant funding, loss of IRB approval, costs associated with identity theft and credit protection services, lost data, inadvertent sharing of data leading to another investigator getting a paper out before you do
+* You will host only data that is directly related to IRB approved research projects
+* Data stored or retrieved from this site may not be used for diagnostic purposes

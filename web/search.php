@@ -167,7 +167,7 @@
 			DisplaySearchForm($searchvars, $action);
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplaySearchForm ------------------ */
 	/* -------------------------------------------- */
@@ -261,8 +261,8 @@
 	</script>
 	
 	<? if ($action == "search") { ?>
-	<div id="pageloading" align="center" style="font-size:11pt; color:darkblue">
-		Searching... <img src="images/loading.gif">
+	<div id="pageloading" align="center" valign="middle" style="font-size:16pt; font-weight: bold; color:darkblue">
+		<img src="images/SpinningSquirrel.gif"><br>Searching...
 	</div>
 	<br>
 	<? } ?>
@@ -1039,6 +1039,11 @@
 
 		if ($sqlstring == "") { return; }
 		
+		/* ---------- [2] run the query ----------- */
+		$starttime = microtime(true);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$querytime = microtime(true) - $starttime;
+		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
 			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
@@ -1048,10 +1053,6 @@
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
 		
-		/* ---------- [2] run the query ----------- */
-		$starttime = microtime(true);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$querytime = microtime(true) - $starttime;
 		
 		if ($s_resultorder == "debug") {
 			?>
@@ -3593,47 +3594,17 @@
 			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="5" cellspacing="0" width="60%">
 				<tr>
 					<td style="background-color: #444; color: #fff; padding: 5px">
-						<b>Operations for Selected Items</b>
+						<b>Operations</b>
 					</td>
 				</tr>
 				<tr>
-					<td>
-						<span style="font-weight: bold; color: #444">Run mini-pipeline</span>
-						<?
-							$projectids2 = array_unique(array_keys($projectids));
-							$projidlist = implode2(',', $projectids2);
-							$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
-							$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
-							//PrintSQL($sqlstring);
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$mpid = $row['minipipeline_id'];
-								$mpversion = $row['mp_version'];
-								$mpname = $row['mp_name'];
-								$projectname = $row['project_name'];
-								$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
-							}
-							$mpselectbox .= "</select>";
-						?>
-						<?=$mpselectbox?>
-						<input type="submit" value="Submit mini-pipelines" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">
-					</td>
+					<td><span style="font-weight: bold; color: #444">With Selected Studies:</span></td>
 				</tr>
 				<tr>
 					<td>
-						<span style="font-weight: bold; color: #444">Add to Group</span>
-						<table cellpadding="5">
+						<table>
 							<tr>
-								<td>
-									Subject
-								</td>
-								<td>
-									<?
-										$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-										$userid = $row['user_id'];
-									?>
+								<td align="right" style="padding: 5px">
 									<select name="subjectgroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
@@ -3647,15 +3618,13 @@
 											}
 										?>
 									</select>
-									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
-									<br>
+								</td>
+								<td style="padding: 5px">
+									<input type="submit" name="addtogroup" value="Add to Subject Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
 								</td>
 							</tr>
 							<tr>
-								<td>
-									Study
-								</td>
-								<td>
+								<td align="right" style="padding: 5px">
 									<select name="studygroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'study' order by group_name";
@@ -3669,14 +3638,13 @@
 											}
 										?>
 									</select>
-									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup'">
+								</td>
+								<td style="padding: 5px">
+									<input type="submit" name="addtogroup" value="Add to Study Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup'">
 								</td>
 							</tr>
 							<tr>
-								<td>
-									Series
-								</td>
-								<td>
+								<td align="right" style="padding: 5px">
 									<select name="seriesgroupid" style="width:150px">
 										<?
 											$sqlstring = "select * from groups where group_type = 'series' order by group_name";
@@ -3690,7 +3658,41 @@
 											}
 										?>
 									</select>
-									<input type="submit" name="addtogroup" value="Add" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup'">
+								</td>
+								<td style="padding: 5px">
+									<input type="submit" name="addtogroup" value="Add to Series Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup'">
+								</td>
+							</tr>
+							<tr>
+								<td align="right" style="padding: 5px">
+								<?
+									$projectids2 = array_unique(array_keys($projectids));
+									$projidlist = implode2(',', $projectids2);
+									$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
+									$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
+									//PrintSQL($sqlstring);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$mpid = $row['minipipeline_id'];
+										$mpversion = $row['mp_version'];
+										$mpname = $row['mp_name'];
+										$projectname = $row['project_name'];
+										$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+									}
+									$mpselectbox .= "</select>";
+								?>
+								<?=$mpselectbox?>
+								</td>
+								<td style="padding: 5px">
+									<input type="submit" value="Run Mini-pipelines" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">
+								</td>
+							</tr>
+							<tr>
+								<td style="padding: 5px">
+									&nbsp;
+								</td>
+								<td style="padding: 5px">
+									<input type="submit" value="Batch Upload Data" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist'">
 								</td>
 							</tr>
 						</table>
@@ -4497,7 +4499,7 @@
 			}
 		}
 		return $sqlstring;
-	}	
+	}
 
 	/* -------------------------------------------- */
 	/* ------- GetIDListFromGroup ----------------- */

@@ -507,7 +507,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* delete existing project template study items */
-		$sqlstring = "delete from project_templatestudies where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
+		$sqlstring = "delete from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete existing project templates studies */

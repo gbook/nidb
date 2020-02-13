@@ -677,6 +677,28 @@
 		}
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- IsNiDBModality --------------------- */
+	/* -------------------------------------------- */
+	function IsNiDBModality($modality) {
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+
+		$valid = false;
+		
+		$sqlstring = "select * from modalities where mod_code = '$modality'";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "'";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$valid = true;
+			}
+		}
+			
+		return $valid;
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayProjectSelectBox ------------ */

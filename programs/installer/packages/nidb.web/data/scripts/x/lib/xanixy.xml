@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAniXY'>
+
+<sources>
+  <src><file>xanixy.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Animate an element's position over a line segment. This is a minimal, time-based implementation - only supports constant velocity.]]></description>
+
+<syntax>xAniXY(e, x, y, t);</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[An Element object reference or an id string.]]></note></par>
+  <par><name>x</name><note><![CDATA[The target X coordinate (integer).]]></note></par>
+  <par><name>y</name><note><![CDATA[The target Y coordinate (integer).]]></note></par>
+  <par><name>t</name><note><![CDATA[The total time for the animation, in milliseconds.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xLeft</dep>
+  <dep>xTop</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xanimation.html</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>26Apr07</date><author>mf</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

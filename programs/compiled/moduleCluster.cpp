@@ -60,7 +60,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
 		q.bindValue(":analysisid",id);
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() != 1) {
-			m = QString("analysisID string[%1]  int[%2] not found. q.size() [%3]").arg(analysisid).arg(analysisid.toInt()).arg(q.size());
+			m = QString("Analysis ID [%1] [%2] not found").arg(analysisid).arg(analysisid.toInt());
 			return false;
 		}
 	}

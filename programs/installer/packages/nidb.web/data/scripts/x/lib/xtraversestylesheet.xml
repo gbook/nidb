@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTraverseStyleSheet'>
+
+<sources>
+  <src><file>xtraversestylesheet.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Traverses all rules in the stylesheet, calling callback function on each rule. Recursively handles stylesheets imported with @import CSS directive. Stops when the callback function returns true (it has found what it's been looking for).]]></description>
+
+<syntax>xTraverseStyleSheet(ss,cb)</syntax>
+
+<parameters>
+  <par><name>ss</name><note><![CDATA[stylesheet object]]></note></par>
+  <par><name>cb</name><note><![CDATA[callback function]]></note></par>
+</parameters>
+
+<return><![CDATA[undefined - problems with CSS-related objects<br>true - callback function returned true at least once<br>false - callback function always returned false]]></return>
+
+<dependencies>
+  <dep>xGetCSSRules</dep>
+</dependencies>
+
+<revisions>
+  <rev><num>1</num><date>12Aug06</date><author>ip</author><note><![CDATA[Initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

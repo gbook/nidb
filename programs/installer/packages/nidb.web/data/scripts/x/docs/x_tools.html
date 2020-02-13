@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Tools</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(2, '../..');</script>
+
+<h2>X Tools</h2>
+
+<h3>Summary</h3>
+<div>
+  <p>In X all functions and objects are in separate files. A <i>build</i> consists of determining library dependencies, optionally preprocessing, and optionally compressing them into one file. Additional files can be inserted into this process at any step.</p>
+  <p>In the following I describe the tools I use in this build process.</p>
+  <p>XAG and XPP are both <i>command-line</i> programs written in C. Currently I am compiling them with <a href='http://www.mingw.org/'>MinGW</a> using the <a href='http://www.codeblocks.org/'>CodeBlocks</a> IDE. They will compile on both Windows and GNU/Linux. XAG, XPP and the Ant build files are distributed under the terms of the GNU LGPL.</p>
+</div>
+
+<h3>Ant Build Files</h3>
+<div>
+  <p>The Ant build files automate the use of the following three tools, XAG, XPP and YUICompressor. To run a build you must have Java installed.</p>
+  <p>See this forum topic on the <a href='http://cross-browser.com/forums/viewtopic.php?id=749'>Ant Build Files for X</a>.</p>
+</div>
+
+<h3>XAG</h3>
+<div>
+  <p>XAG is an X Library file aggregator. It scans your application files and creates a custom X library file which contains only those X variables, functions and objects used in your application.</p>
+  <p>See the <a href='xag_reference.html'>XAG Reference</a>.</p>
+</div>
+
+<h3>XPP</h3>
+<div>
+  <p>XPP is a general purpose text preprocessor. It supports conditional output and simple text replacement. This conditional compilation does not occur at run-time, only at build-time.</p>
+  <p>See the <a href='xpp_reference.html'>XPP Reference</a>.</p>
+</div>
+
+<h3>YUICompressor</h3>
+<div>
+  <p>I've been using YUICompressor for some time now on my Javascript and CSS files. I think it does a great job. The X distribution file includes XAG and XPP but not <a href='http://developer.yahoo.com/yui/compressor/'>YUICompressor</a>, you'll need to download that.</p>
+</div>
+
+<h2 id='revs'>Revision History</h2>
+<div>
+
+<h3>XAG 1.0, XPP 1.0 (11Feb10)</h3>
+<ul>
+<li>Improvements and bug fixes.</li>
+</ul>
+
+<h3>XC/XAG/XPP (9Mar09)</h3>
+<ul>
+<li>I have split the XC project into two separate projects: XAG and XPP. More info coming soon. The previous documentation for XC is still available.</li>
+</ul>
+
+<h3>XC 1.07</h3>
+<ul>
+<li>This version of XC is in the X 4.18 distribution file.</li>
+<li>Thanks to ChrisNelson for ideas on the new <tt>hdr</tt> option. See <a href='http://cross-browser.com/forums/viewtopic.php?id=94'>this topic</a>.</li>
+</ul>
+<h3>XC 1.06.01</h3>
+<ul>
+
+<li>Thanks to clowncoder (from the X forums) XC will now compile on Linux as well as Windows! See <a href='http://cross-browser.com/forums/viewtopic.php?id=48'>this topic</a> for details. Thanks also to ChrisNelson.</li>
+</ul>
+<h3>XC 1.06 (23Jun07)</h3>
+<ul>
+<li>This version of XC will be released in the X 4.16 distribution file.</li>
+<li>I found a problem with my previous update to the REL (regular expression literal) detection logic. Now I assume that the only characters that could be to the left of a REL are '=', '(' or ','. A '/' found with one of those characters to its left could <em>not</em> be a division operator. Am I missing anything? Please <a href='http://cross-browser.com/forums/viewforum.php?id=1'>let me know</a> if you think this is not complete.</li>
+
+<li>Now if the <code>app</code> option is true then the application code will be <em>appended</em> to the library code. Previously it was <em>pre</em>pended. This makes X functions available to the application code as it is loaded. Typically at this point you want access to xAddEventListener.</li>
+</ul>
+<h3>XC 1.05 (1Jun07)</h3>
+<ul>
+<li>This version of XC will be released in the X 4.15 distribution file.</li>
+<li>XC has a great new feature - <a href='#samode'>Standalone Mode</a>! You can now use XC's compression feature without needing the X Library files. </li>
+
+<li>Previously, if you chose the "-cmp" option then XC would not fully compress but would still remove blank lines and single-line comments that started at the beginning of a line. Now when you choose "-cmp" XC will remove nothing at all.</li>
+<li>Big changes! I've been doing some rigorous testing on XC and discovered a few problems: (1) The compressor was too agressive in removing sequential spaces - that is now fixed. (2) The compressor did not recognize RegExp literals and removed spaces from them - that is now fixed (but needs more testing). It also properly recognizes escaped foreslashes in RegExp literals. (3) The compressor would sometimes append the first char of one line onto the last char of the previous line, even tho sometimes a space should have been inserted - that is now fixed. This problem was showing itself in the way JScript conditional compilation sections were compressed - but XC now handles them properly.</li>
+</ul>
+<h3>XC 1.04 (21May07)</h3>
+<ul>
+<li>get_symbol_dependents no longer excludes symbols found in "//" comments. In certain situations it was doing it incorrectly. Thanks very much to Cyrillus for the bug report.</li>
+<li>Rewrote processing of start and end of strings. This fixed a problem with detecting escaped backslashes.</li>
+<li>Fixed a problem with ignoring single-line comments inside multi-line comments.</li>
+</ul>
+<h3>XC 1.03 (26Apr07)</h3>
+
+<ul><li>I caused problems by trying to have xAnimation methods as separate symbols. Now those methods will have symbols like this: "xAnimation.methodName". I modified get_symbol_index and wrote str_tok. This is not a solution, but just a quick bandaid because to get, for example, "xAnimation.css" included in the output library XC must find the symbol "xAnimation.css" somewhere in the source. It can be put in a comment for this purpose. After this I saw that methods could possibly be ouput before their object. I used qsort and wrote compare_fn. Symbols are sorted by type and then by id. The type precedence is: V, O, P, M, F.</li></ul>
+<h3>XC 1.02 (20Jan07)</h3>
+<ul><li>When removing comments, JScript conditional compilation comments are not removed.</li></ul>
+<h3>XC 1.01 (31Oct06)</h3>
+<ul>
+<li>New option: obj - objectify function names. will prefix all X functions with an object name you specify. The xSplitter demo is now using this feature.</li>
+<li>Now +cmp is not required for +obf.</li>
+<li>Wrote stricmp and uitoa to remove some non-ansi functions. Current non-ansi usage (all from io.h): struct _finddata_t, _findfirst, _findnext, _findclose. It should be relatively easy to port to some *nix now.</li>
+<li>Fixed a bug that was in XC 1.0 which prevented a symbol file from being included if there was an app file with the same name and option +app was set.</li>
+
+</ul>
+<h3>XC 1.0 (24Oct06)</h3>
+<ul><li>Release.</li></ul>
+<h3>XC 0.34b (5Oct06)</h3>
+<ul>
+<li>Replaces tabs with spaces.</li>
+<li>Now gets version from xLibrary object in xlibrary.js.</li>
+<li>During compression it now checks if a comment directive is in a string.</li>
+<li>Now compression also skips multi-line comments.</li>
+<li>Removed support for these options: lws, nln, and bln.</li>
+
+<li>For *.htm* app files, only the script elements are parsed for X symbols.</li>
+<li>Now compression also skips sequential spaces, when not in a string.</li>
+<li>Cmp now removes spaces that have a delimiter on one side of it.</li>
+<li>New option: obf - obfuscate function names.</li>
+<li>New option: app - compresses and adds app js files to output.</li>
+<li>Support for the glb option is disabled.</li>
+<li>Now X symbols are not required to have an 'x' prefix.</li>
+</ul>
+<h3>XC 0.29b (21Sep06)</h3>
+
+<ul><li>Allow .xcp extension on command line arg. Thanks to gagenellina for code.</li></ul>
+<h3>XC 0.28b (8Aug05)</h3>
+<ul><li>Now parses x symbols in quotes. Thanks for bug report from Miguel Angel Alvarez.</li></ul>
+<h3>XC 0.24b (25May05)</h3>
+<ul><li>Removed all txt doc support for now.</li></ul>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

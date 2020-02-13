@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWindow'>
+
+<sources>
+  <src><file>xwindow.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Window</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[]]></description>
+
+<syntax>new xWindow(name, w, h, x, y, loc, men, res, scr, sta, too)</syntax>
+
+<parameters>
+  <par>
+    <name>name</name>
+    <note><![CDATA[]]></note>
+  </par>
+  <par>
+    <name>w, h, x, y</name>
+    <note><![CDATA[integer]]></note>
+  </par>
+  <par>
+    <name>loc, men, res, scr, sta, too</name>
+    <note><![CDATA[boolean]]></note>
+  </par>
+</parameters>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xwindow.php</url>
+    <note><![CDATA[demos]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

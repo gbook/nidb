@@ -526,8 +526,13 @@
 		$studynum=1;
 		foreach ($templates as $study) {
 			$modality = strtolower(trim($study['modality']));
-			$visit = strtolower(trim($study['visittype']));
 
+			if (!IsNiDBModality($modality)) {
+				echo "Modality was not valid [$modality]<br>";
+				continue;
+			}
+			
+			$visit = strtolower(trim($study['visittype']));
 			$desc = trim($study['desc']);
 			$operator = trim($study['operator']);
 			$physician = trim($study['physician']);
@@ -845,7 +850,7 @@
 													</td>
 												</tr>
 											</table>
-											<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
+											<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
 												<thead>
 													<th>#</th>
 													<th>Modality</th>
@@ -1197,7 +1202,7 @@
 		?>
 
 		<div align="center">
-			<span align="center" style="padding: 8pt; font-size: 18pt; font-weight: bold; background-color: #ffff87" class="tt"><?=$uid?></span>
+			<span align="center" style="padding: 6pt 14pt; font-size: 18pt; font-weight: bold; background-color: #ffff87; border: 1px solid #ccc; border-radius: 8px" class="tt"><?=$uid?></span>
 		</div>
 		
 		<br>
@@ -1211,7 +1216,7 @@
 				<td valign="top">
 					<table cellpadding="0" width="100%">
 						<tr>
-							<td style="border: 2px solid #444">
+							<td style="border: 2px solid #444; border-radius: 8px">
 								<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Demographics</div>
 								<div align="left" style="padding: 5px">
 								
@@ -1258,6 +1263,7 @@
 										<td class="label">Education</td>
 										<td class="value"><?=$education?></td>
 									</tr>
+									<!--
 									<tr>
 										<td class="label">Phone</td>
 										<td class="value"><?=$phone1?></td>
@@ -1274,6 +1280,7 @@
 										<td class="label">Smoking&nbsp;status</td>
 										<td class="value"><?=$smokingstatus?></td>
 									</tr>
+									-->
 									<tr>
 										<td class="label">GUID</td>
 										<td class="value"><?=$guid?></td>
@@ -1391,7 +1398,7 @@
 					<table width="100%">
 						<tr>
 							<form action="subjects.php" method="post">
-							<td style="padding: 10px; background-color: #444; color: #fff">
+							<td style="padding: 10px; background-color: #444; color: #fff; border-radius: 8px">
 								<input type="hidden" name="id" value="<?=$id?>">
 								<input type="hidden" name="action" value="enroll">
 								<b>Enroll in project</b> &nbsp; 
@@ -1424,6 +1431,7 @@
 						
 						<?
 							$sqlstringA = "select a.project_id 'projectid', a.*, b.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
+							//PrintVariable($sqlstringA);
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 								$enrollmentid = $rowA['enrollment_id'];
@@ -1470,7 +1478,7 @@
 						<tr>
 							<td style="background-color: #eee">
 							
-								<table width="100%" style="border: 2px solid #444; border-spacing: 0px; margin: 0px" cellpadding="0">
+								<table width="100%" style="border: 2px solid #444; border-spacing: 0px; margin: 0px; border-radius: 8px" cellpadding="0">
 									<tr>
 										<td style="width: 250px; text-align: left; vertical-align: top; background-color: #fff;">
 											<div style="background-color: #444; padding: 8px"><a href="projects.php?id=<?=$projectid?>" style="font-size: 12pt; font-weight: bold; color: #fff"><?=$project_name?> (<?=$costcenter?>)</a></div>
@@ -1479,12 +1487,12 @@
 												<table class="reviewtable">
 													<tr>
 														<td class="label">ID(s)</td>
-														<td class="value"><b style="background-color: #ffff87; padding: 5px"><?=$subjectaltids?></b></td>
+														<td class="value"><b style="background-color: #ffff87; padding: 1px 6px; border: 1px solid #ccc; border-radius: 3px"><?=$subjectaltids?></b></td>
 													</tr>
 													<tr>
 														<td class="label">Group</td>
 														<? if ($modifyphi) { ?>
-														<td class="value"><span id="enroll_subgroup" title="Click to edit in place" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; border: 1px solid skyblue; padding: 1px 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
+														<td class="value"><span id="enroll_subgroup" title="Click to edit in place" class="edit_inline<? echo $enrollmentid; ?>" style="background-color: lightyellow; border: 1px solid skyblue; padding: 1px 6px; border-radius: 3px; font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
 														<? } elseif ($viewphi) { ?>
 														<td class="value"><span style="font-size: 9pt;"><? echo $enrollgroup; ?></span></td>
 														<? } ?>
@@ -1565,7 +1573,7 @@
 
 											<!-- ******************** Imaging ******************** -->
 											
-											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td valign="top" style="padding-bottom: 8px"><b>Imaging studies</b></td>
@@ -1644,15 +1652,15 @@
 																			$templatename = $row['template_name'];
 																			$templatemodality = $row['template_modality'];
 																			
-																			$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
-																			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-																			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-																			$numstudies = $rowA['count'];
+																			$sqlstringC = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
+																			$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+																			$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+																			$numstudies = $rowC['count'];
 																			
-																			$sqlstringA = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
-																			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-																			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-																			$numseries = $rowA['count'];
+																			$sqlstringC = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
+																			$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+																			$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+																			$numseries = $rowC['count'];
 																			
 																			?>
 																			<option value="<?=$ptid?>" style="<?=$style?>"><?=$templatename?> (<?=$numstudies?> studies, <?=$numseries?> total series)</option>
@@ -1761,7 +1769,7 @@
 											<br>
 											<!-- ******************** Assessments ******************** -->
 											
-											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td><b>Assessments</b></td>
@@ -1798,7 +1806,7 @@
 												$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 												if (mysqli_num_rows($result3) > 0) {
 												?>
-												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
+												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
 													<thead>
 														<th>Instrument</th>
 														<th>Date</th>
@@ -1847,7 +1855,7 @@
 											
 											<!-- ******************** Phenotypes ******************** -->
 											
-											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:8px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td><b><a href="measures.php?enrollmentid=<?=$enrollmentid?>">Phenotypic measures</a></b></td>
@@ -1872,7 +1880,7 @@
 
 											<!-- ******************** Drugs ******************** -->
 
-											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:8px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td><b><a href="drugs.php?enrollmentid=<?=$enrollmentid?>">Drugs/Dosing</a></b> <span class="tiny">medications/treatments/substance use</span></td>
@@ -1884,7 +1892,7 @@
 												$numrows = mysqli_num_rows($result3);
 												if ($numrows > 0) {
 												?>
- 												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
+ 												<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
 													<thead align="left">
 														<th>Drug</th>
 														<th>Type</th>
@@ -1933,7 +1941,7 @@
 											<br>
 
 											<!-- ******************** Vitals ******************** -->
-											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius:5px; padding:3px">
+											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid gray; border-radius: 8px; padding:3px">
 											<table width="100%">
 												<tr>
 													<td><a href="vitals.php?enrollmentid=<?=$enrollmentid?>"><b>Vitals</b></a> <span class="tiny"></span></td>
@@ -1948,7 +1956,7 @@
 													?>
 													<details>
 													<summary>List of Vitals</summary>
-													<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 5px; width: 100%; padding:5px">
+													<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
 														<thead align="left">
 															<th>Vitals</th>
 															<th>Type</th>
@@ -2113,7 +2121,7 @@
 		}
 		else {
 			?>
-			<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:5px; padding:3px">No imaging studies</div>
+			<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">No imaging studies</div>
 			<?
 		}
 	}

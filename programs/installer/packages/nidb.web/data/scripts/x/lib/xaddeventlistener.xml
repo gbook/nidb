@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAddEventListener'>
+
+<sources>
+  <src><sym>xAddEventListener</sym><file>xaddeventlistener.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Register an event listener on the element.]]></description>
+
+<syntax>xAddEventListener(ele, sEventType, fnEventListener, bCapture)</syntax>
+
+<parameters>
+  <par><name>ele</name><note><![CDATA[ID string or object reference.]]></note></par>
+  <par><name>sEventType</name><note><![CDATA[String event type: 'mousemove', 'click', 'resize', etc.]]></note></par>
+  <par><name>fnEventListener</name><note><![CDATA[Reference to the listener function.]]></note></par>
+  <par><name>bCapture</name><note><![CDATA[Boolean capture event flag.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+<demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Many of the demos use xAddEventListener.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>8</num><date>17Mar2007</date><author>mf</author><note><![CDATA[Added the closure for DOM0 handlers.]]></note></rev>
+  <rev><num>7</num><date>21Nov06</date><author>mf</author><note><![CDATA[This implementation came from the original, which is now xAddEventListener2. See the alternative implementations for complete revision history.]]></note></rev>
+</revisions>
+
+</x_symbol>

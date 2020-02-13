@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWalkUL'>
+
+<sources>
+  <src><sym>xWalkUL</sym><file>xwalkul.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Perform a preorder traversal on nested ULs starting at oUL. If there is a nested UL it must be a direct child of the LI (not neccessarily the first). Only supports having one nested UL in each LI. The callback function is called for every LI.]]></description>
+
+<syntax>xWalkUL(oUL, data, callbackFn, level)</syntax>
+
+<parameters>
+  <par><name>oUL</name><note><![CDATA[UL Element object (required)]]></note></par>
+  <par><name>data</name><note><![CDATA[passed to callbackFn on every call (optional)]]></note></par>
+  <par><name>callbackFn</name><note><![CDATA[called for every LI (required)]]></note></par>
+  <par><name>level</name><note><![CDATA[initial level-count (optional; default is zero)]]></note></par>
+</parameters>
+
+<return>true if callback fn only returned true; false if callback fn returned false</return>
+
+<dependencies>
+  <dep>xFirstChild</dep>
+  <dep>xNextSib</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/menus/xmenu6.html</url><note><![CDATA[xMenu6 demo]]></note></demo>
+  <demo><url>http://cross-browser.com/x/menus/xmenu7.html</url><note><![CDATA[xMenu7 demo]]></note></demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date><author>mf</author>
+    <note><![CDATA[
+  Call-back function syntax:
+[code]  r = fn(p, li, c, d, lvl)
+
+  r: return false to cancel, true to continue
+  p: parent UL of li
+  li: LI element
+  c: child UL - the first UL in LI if any
+  d: data - the data object originally passed to xWalkUL
+  lvl: level - indicates the depth of nested ULs[/code]
+    ]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>3</num><date>17May07</date><author>mf</author>
+    <note><![CDATA[Added the 'level' feature and reduced size by 17 bytes. This change does not affect backwards compatibility.]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>4Dec06</date><author>mf</author>
+    <note><![CDATA[Made it more generic. The first version was too specific for the menu demo.]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>1Dec06</date><author>mf</author>
+    <note><![CDATA[initial release]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

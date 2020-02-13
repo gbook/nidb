@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>xFenster Demo 3</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='xfenster.css'>
+<style type='text/css'>
+.fenster-content {
+  padding:1em;
+}
+.vspace {
+  padding: 20px 0;
+}
+#fenster-fence {
+  border: 1px dotted #596380;
+  overflow: hidden;
+  padding: 4px 4px 30px 4px;
+  position: relative;
+}
+.clk {
+  cursor: pointer;
+  border-bottom: 1px dotted #596380;
+}
+</style>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xenabledrag.js'></script>
+<script type='text/javascript' src='../lib/xdocsize.js'></script>
+<script type='text/javascript' src='../lib/xfenster.js'></script>
+<script type='text/javascript' src='../lib/xaniline.js'></script>
+<script type='text/javascript'>
+document.write("<style type='text/css'>.xFenster {display:none}</style>");
+var args = [
+  { title: 'I Ching', x:100, y:150, w:400, h:250, minW: 110, noStatus: true,  noResize: true },
+  { title: 'Alabama', x:125, y:180, w:400, h:250, minW: 110, noStatus: false, noResize: false },
+  { title: 'VIM',     x:150, y:210, w:400, h:250, minW: 110, noStatus: true,  noResize: false }
+];
+xAddEventListener(window, 'load',
+  function() {
+    for (var i = 0; i < args.length; ++i) {
+      args[i].clientId = 'xf' + (i + 1);
+      args[i].noFixed = true;
+      args[i].fenceId = 'fenster-fence';
+      new xFenster(args[i]);
+    }
+    xGetElementById('clk1').onclick=function(){xFenster.paintAll();};
+    xGetElementById('clk2').onclick=function(){xFenster.showAll();};
+    xGetElementById('clk3').onclick=function(){xFenster.hideAll();};
+    xGetElementById('clk4').onclick=function(){xFenster.minimizeAll();};
+    xGetElementById('clk5').onclick=function(){xFenster.maximizeAll();};
+    xGetElementById('clk6').onclick=function(){xFenster.restoreAll();};
+  }, false
+);
+function aniDemo()
+{
+  var ox, oy, tx, ty, xf = xFenster.instances.xf3, con = xf.con;
+  if (xf.hid) xf.show();
+  if (xf.min || xf.max) xf.restore();
+  xf.focus();
+  ox = xPageX(con);
+  oy = xPageY(con);
+  tx = xScrollLeft() + xClientWidth() - con.offsetWidth - 10;
+  ty = xScrollTop() + xClientHeight() - con.offsetHeight - 10;
+  xAniLine(con, tx, ty, 2000, 2,
+    function(){xAniLine(con, ox, oy, 2000, 1);}
+  );
+}
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<div id='fenster-fence'>
+
+<h2>xFenster Demo 3</h2>
+
+<h3>Intro</h3>
+<div>
+<p>This demo illustrates...</p>
+<ul>
+<li>Creating fensters from static DIVs.</li>
+<li>Absolute fensters instead of fixed</li>
+<li>Fensters with and without status bars and disabled resize.</li>
+<li>Fensters in a <i>fence</i> (it has a dotted border). Move, resize, minimize and maximize are restricted to the fence.</li>
+<li>Animating a fenster's position (xf3): <span class='clk' onclick='aniDemo()'>try it</span>.</li>
+</ul>
+</div> <!-- end Intro -->
+
+<h3>Code &amp; Docs</h3>
+<div>
+<p><a href='http://cross-browser.com/x/lib/view.php?sym=xFenster'>xFenster rev 21</a> (online) - view source code, documentation, revision history and more.</p>
+</div>
+
+<h3>The "all" Methods</h3>
+<div>
+
+<p>
+<span id='clk1' class='clk'>paintAll()</span>,
+<span id='clk2' class='clk'>showAll()</span>,
+<span id='clk3' class='clk'>hideAll()</span>,
+<span id='clk4' class='clk'>minimizeAll()</span>,
+<span id='clk5' class='clk'>maximizeAll()</span>,
+<span id='clk6' class='clk'>restoreAll()</span>
+</p>
+</div>
+
+<h3>Demos</h3>
+
+<div>
+<ul>
+<li><a href='xfenster1.html'>Demo 1</a> - fixed fensters from DIVs</li>
+<li><a href='xfenster2.html'>Demo 2</a> - absolute fensters from IFRAMEs</li>
+<li><a href='xfenster3.html'>Demo 3</a> - absolute fensters from DIVs, in a fence</li>
+<li><a href='xfenster4.html'>Demo 4</a> - with a "control menu"</li>
+</ul>
+</div>
+
+</div> <!-- end fenster-fence -->
+
+<div id="xf1" class='xFenster'>
+  <div class='fenster-content'>
+    <h4>The I Ching</h4>
+
+    <p>The I Ching, or Book of Changes, is the most widely read of the five Chinese Classics. The book was traditionally written by the legendary Chinese Emperor Fu Hsi (2953-2838 B.C.). It is possible that the the I Ching originated from a prehistoric divination technique which dates back as far as 5000 B.C. Thus it may be the oldest text at this site. Futher commentaries were added by King Wen and the Duke of Chou in the eleventh century B.C.</p>
+    <p>(<a href='http://www.sacred-texts.com/ich/index.htm'>source</a>)</p>
+  </div>
+</div><!-- end xFenster -->
+<div id="xf2" class='xFenster'>
+  <div class='fenster-content'>
+    <h4>History of Alabama</h4>
+
+    <p><i>by Albert James Pickett, 1851</i></p>
+    <p>In reference to that portion of the work which relates to the Indians, I will state that my father removed from Anson county, North Carolina, and carried me to the wilds of the "Alabama Territory," in 1818, when I was a boy but eight years of age. He established a trading-house in connection with his plantation, in the present county of Autauga. During my youthful days, I was accustomed to be much with the Creek Indians-- hundreds of whom came almost daily to the trading-house. For twenty years I frequently visited the Creek nation. Their green corn dances, ball plays, war ceremonies, and manners and customs, are fresh in my recollections. In my intercourse with them I was thrown into the company of many old white men, called "Indian countrymen, " who had for years conduted a commerce with them. Some of these men had come to the Creek nation before the revolutionary war, and others being tories, had fled to it during the war, and after it, to escape from whig persecution. They were unquestionably the shrewdest and most interesting men with whom I ever conversed. Generally of Scotch descent, many of them were men of some education. All of them were married to Indian wives, and some of them had intelligent and handsome children. From these Indian countrymen I learned much concerning the manners and customs of the Creeks, with whom they had so long been associated, and more particularly with regard to the commerce which thet carried on with them. In addition to this, I often conversed with the Chiefs while they were seated in the shades of the spreading mulberry and walnut, upon the banks of the beautiful Tallapoosa. As they liesurely smoked their pipes, some of them related to me the traditions of their country. I occasionally saw Choctaw and Cherokee traders, learned much from them. I had no particular object in view at that time, except the gratification of a curiosity, which led me for my own satisfaction alone, to learn something of the early history of Alabama.</p>
+    <p>(<a href='http://homepages.rootsweb.ancestry.com/~cmamcrk4/pktfm.html'>source</a>)</p>
+  </div>
+</div><!-- end xFenster -->
+<div id="xf3" class='xFenster'>
+  <div class='fenster-content'>
+
+    <h4>Graphical vi-vim Cheat Sheet and Tutorial</h4>
+    <p>Learning vi or vim is not easy. But it doesn't have to be that difficult, either. It is, in any case, faster, more powerful, and more productive than editing with any other editor, so you would do very well in investing the time and effort to learn it.</p>
+    <p>Being a vi lover myself, I came up with the idea of providing a graphical cheat sheet for those learning vi or vim, and I also found out it was a very good way to structure a tutorial. Here are the results for your learning enjoyment (or your colleagues').</p>
+    <p>(<a href='http://www.viemu.com/a_vi_vim_graphical_cheat_sheet_tutorial.html'>source</a>)</p>
+  </div>
+</div><!-- end xFenster -->
+
+<div class='vspace'></div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

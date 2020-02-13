@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Library Demo</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='tpg_def.css'>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xtabpanelgroup.js'></script>
+<script type='text/javascript'>
+document.write("<link rel='stylesheet' type='text/css' href='tpg_dyn.css'>");
+xAddEventListener(window, 'load',
+  function() {
+    new xTabPanelGroup('tpg1', 300, 150, 22, 'tabPanel', 'tabGroup', 'tabDefault', 'tabSelected');
+    new xTabPanelGroup('tpg2', 500, 250, 40, 'tabPanel', 'tabGroup', 'tabDefault', 'tabSelected');
+    changeTab(2, 3);
+  }, false
+);
+function changeTab(demo, tab) {
+  xTabPanelGroup.instances['tpg' + demo].select(tab);
+  return false;
+}
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xTabPanelGroup</h2>
+
+<h3>Demo 1</h3>
+<div>
+<div id='tpg1' class='tabPanelGroup'>
+
+  <div class='tabGroup'>
+    <a href='#tpg11' class='tabDefault'>General</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg12' class='tabDefault'>Javascript</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg13' class='tabDefault'>CSS</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg14' class='tabDefault'>HTML</a>
+  </div>
+  
+  <div id='tpg11' class='tabPanel'>
+    <h4>General</h4>
+    <p>Tab panel groups. Multiple objects can be instantiated on one page.</p>
+  </div>
+  
+  <div id='tpg12' class='tabPanel'>
+    <h4>Javascript</h4>
+    <p>Cross-browser, downgradeable, and unobtrusive. Disable Javascript and reload this page.</p>
+  </div>
+  
+  <div id='tpg13' class='tabPanel'>
+    <h4>CSS</h4>
+    <p>In 2 files: tpg_def.css for default styles, and tpg_dyn.css for dynamic overrides when Javascript is enabled.</p>
+  </div>
+  
+  <div id='tpg14' class='tabPanel'>
+    <h4>HTML</h4>
+    <p>The content is in the HTML - it is not written with Javascript.</p>
+  </div>
+  
+</div>
+</div>
+
+<h3>Demo 2</h3>
+<div>
+<div id='tpg2' class='tabPanelGroup'>
+
+  <div class='tabGroup'>
+    <a href='#tpg21' class='tabDefault'>But I must explain</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg22' class='tabDefault'>Sed ut perspiciatis</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg23' class='tabDefault'>On the other hand</a><span class='linkDelim'>&nbsp;|&nbsp;</span>
+    <a href='#tpg24' class='tabDefault'>At vero eos et</a>
+  </div>
+  
+  <div id='tpg21' class='tabPanel'>
+    <h4>But I must explain...</h4>
+    <form name='f1'>
+      <input type='text' size='40'>
+      <input type='button' value='ok'>
+      <select id='sel1'>
+        <option selected='1'>Select one of the following...</option>
+        <option>Browse...</option>
+        <option>Mars</option>
+        <option>Veil Nebula</option>
+      </select>
+    </form>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui do<a href="http://lipsum.com/" title="Read about Lorem Ipsum at lipsum.com">lorem ipsum</a> quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</p>
+  </div>
+  
+  <div id='tpg22' class='tabPanel'>
+    <h4>Sed ut perspiciatis...</h4>
+    <form name='f2'>
+      <input type='text' size='30'>
+      <input type='button' value='ok'>
+      <br><textarea rows='5' cols='20'></textarea>
+    </form>
+    <p>But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it is pain, but because occasionally circumstances occur in which toil and pain can procure him some great pleasure. To take a trivial example, which of us ever undertakes laborious physical exercise, except to obtain some advantage from it? But who has any right to find fault with a man who chooses to enjoy a pleasure that has no annoying consequences, or one who avoids a pain that produces no resultant pleasure?</p>
+  </div>
+  
+  <div id='tpg23' class='tabPanel'>
+    <h4>On the other hand...</h4>
+    <form name='f2'>
+      <input type='text' size='20'>
+      <input type='button' value='ok'>
+      <input type='checkbox'>
+      <input type='checkbox'>
+      <input type='checkbox'>
+    </form>
+    <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</p>
+  </div>
+  
+  <div id='tpg24' class='tabPanel'>
+    <h4>At vero eos et...</h4>
+    <form name='f4'>
+      <input type='text' size='10'>
+      <input type='button' value='ok'>
+      <input name='r4' type='radio'>
+      <input name='r4' type='radio'>
+      <input name='r4' type='radio'>
+    </form>
+    <p>On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse pains.</p>
+  </div>
+  
+</div>
+</div>
+
+<h3>Demo 3</h3>
+<div>
+<p>A simple example of how to use the object's static <tt>select</tt> method.</p>
+<p>Select <a href='#tpg12' onclick='return changeTab(1,2)'>tab 2</a> of demo 1.</p>
+<p>Select <a href='#tpg24' onclick='return changeTab(2,4)'>tab 4</a> of demo 2.</p>
+</div>
+
+<h3>Files</h3>
+<div>
+<p>This demo uses the following files: 
+ <a href='tabpanelgroup.html'>this page</a>,
+ <a href='../x.js'>x.js</a>,
+ <a href='http://cross-browser.com/x/lib/view.php?s=xtabpanelgroup'>xTabPanelGroup.js</a> (online),
+ <a href='tpg_def.css'>tpg_def.css</a>,
+ <a href='tpg_dyn.css'>tpg_dyn.css</a>.
+</p>
+</div>
+
+<h3>Revisions</h3>
+<div>
+<h4>22Sep06</h4>
+<p>Check out the cool new styles on the tabs! Thanks very much to José Ignacio for contributing the CSS files!</p>
+<h4>11May05</h4>
+<p>Jonathan needed a way to dynamically select tabs (a useful addition to this object). At first it looks like you could just do this: <code>tpg2.tabs[0].onclick()</code>. But that won't work because I made the <code>tabs[]</code> array private ;-). So I added a method to <code>select()</code> a tab. It is used onload to select tab 3 of demo 2.</p>
+<p>I made some other changes which make the demo even more downgradeable/accessible.</p>
+<h4>4May05</h4>
+<p>There have been several people finding problems and making suggestions for xTabPanelGroup. <a href='http://www.sitepoint.com/forums/showthread.php?t=259632'>pdub23</a> found a little Firefox quirk (inputs had focus but no cursor) and he and José Ignacio Santa Cruz both pointed out that form controls were 'showing through' for IE. I think I've fixed both issues.</p>
+<p>I made changes to both x_tpg.js and tpg_dyn.css.</p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

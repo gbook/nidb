@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xInsertRule'>
+
+<sources>
+  <src><file>xinsertrule.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Insert a new rule into a styleSheet.]]></description>
+
+<syntax>xInsertRule(ss, sel, rule, idx)</syntax>
+
+<parameters>
+  <par><name>ss</name><note><![CDATA[StyleSheet object or an id string.]]></note></par>
+  <par><name>sel</name><note><![CDATA[String - The CSS selector.]]></note></par>
+  <par><name>rule</name><note><![CDATA[String - The CSS rule for sel. Do not include the '{' and '}'.]]></note></par>
+  <par><name>idx</name><note><![CDATA[Integer - Indicates where the rule will be inserted in ss. If -1 the rule is appended to the end.]]></note></par>
+</parameters>
+
+<return><![CDATA[True on success, false on error.]]></return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>9Jul07</date><author>mf</author><note><![CDATA[Example of usage:
+[code]<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>xInsertRule Example</title>
+<link rel='stylesheet' type='text/css' href='../css/v3.css'>
+<style type='text/css'>
+.test {
+  background-color:#000;
+}
+</style>
+<style type='text/css'>
+.test {
+  width:300px;
+  height:300px;
+}
+</style>
+<script type='text/javascript' src='../x/lib/xinsertrule.js'></script>
+<script type='text/javascript' src='../x/lib/xgetelementbyid.js'></script>
+<script type='text/javascript'>
+window.onload = function()
+{
+  var ss = document.styleSheets;
+  xInsertRule(ss[0], '.test', 'background-color:#f00', -1); // styleSheet from the link element
+  xInsertRule(ss[1], '.test', 'background-color:#fff', -1); // styleSheet from the 1st style element
+  xInsertRule(ss[2], '.test', 'background-color:#00f', -1); // styleSheet from the 2nd style element
+};
+</script>
+</head>
+<body>
+  <div class='test'></div>
+</body>
+</html>[/code]
+  ]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>9Jul07</date><author>mf</author><note><![CDATA[If idx is -1 the rule is appended to the end.]]></note></rev>
+  <rev><num>1</num><date>3Nov06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>
+

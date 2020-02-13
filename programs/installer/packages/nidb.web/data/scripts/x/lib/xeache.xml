@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEachE'>
+
+<sources>
+  <src><file>xeache.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[For each ele/id, call the callback function passing it the element object and the count. Pass any number of ele/id's as arguments - the callback function must be the last argument.]]></description>
+
+<syntax>xEachE(e1[, e2, ...], f)</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[Any number of element ID strings or objects.]]></note></par>
+  <par><name>f</name><note><![CDATA[Function to execute for each element. This must be the last argument.]]></note></par>
+</parameters>
+
+<return><![CDATA[nothing]]></return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>27Jan10</date><author>mf</author><note><![CDATA[Renamed xEachE.]]></note></rev>
+  <rev><num>1</num><date>20Dec09</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

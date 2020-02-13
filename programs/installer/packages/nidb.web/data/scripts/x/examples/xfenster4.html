@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>xFenster Demo 4</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content='Cross-Browser Javascript Libraries and Applications'>
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<script type='text/javascript' src='../../offline.js'></script>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<link rel='stylesheet' type='text/css' href='xfenster.css'>
+<style type='text/css'>
+.fenster-content {
+  padding:1em;
+}
+.vspace {
+  padding: 20px 0;
+}
+.xfContainer, .xfClient, .xfTBar, .xfTBarF, .xfSBar, .xfSBarF {
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  -khtml-border-radius: 0;
+}
+.xfTBar, .xfTBarF {
+  /* This makes room for the menu icon to the left of the titlebar text. */
+  padding-left: 16px;
+}
+.clk {
+  cursor: pointer;
+  border-bottom: 1px dotted #596380;
+}
+</style>
+<script type='text/javascript' src='../x.js'></script>
+<script type='text/javascript' src='../lib/xenabledrag.js'></script>
+<script type='text/javascript' src='../lib/xdocsize.js'></script>
+<script type='text/javascript' src='../lib/xfenster.js'></script>
+<script type='text/javascript'>
+document.write("<style type='text/css'>.xFenster {display:none}</style>");
+/*@cc_on
+@if (@_jscript)
+  document.write("<style type='text/css'>.xfMask {filter: alpha(opacity=20);}</style>");
+@end @*/
+var args = [
+  { title: 'Calligraphy', x:125, y:130, w:420, h:180, fnMenu:xfMenu, minW: 150, conBor: 2, conPad: 1, cliBor: 0, noStatus: true,  noResize: true,  noMinimize: false, noMaximize: false, noClose: false },
+  { title: "A Stephanus", x:150, y:160, w:420, h:210, fnMenu:xfMenu, minW: 150, conBor: 1, conPad: 1, cliBor: 1, noStatus: false, noResize: false, noMinimize: false, noMaximize: false, noClose: false },
+  { title: 'mfoster.com', x:175, y:190, w:420, h:250, fnMenu:xfMenu, minW: 150, conBor: 0, conPad: 1, cliBor: 2, noStatus: true,  noResize: false, noMinimize: false, noMaximize: false, noClose: false, url: 'http://mfoster.com/' }
+];
+xAddEventListener(window, 'load',
+  function() {
+    for (var i = 0; i < args.length; ++i) {
+      args[i].clientId = 'xf' + (i + 1);
+      new xFenster(args[i]);
+    }
+    xGetElementById('clk1').onclick=function(){xFenster.paintAll();};
+    xGetElementById('clk2').onclick=function(){xFenster.showAll();};
+    xGetElementById('clk3').onclick=function(){xFenster.hideAll();};
+    xGetElementById('clk4').onclick=function(){xFenster.minimizeAll();};
+    xGetElementById('clk5').onclick=function(){xFenster.maximizeAll();};
+    xGetElementById('clk6').onclick=function(){xFenster.restoreAll();};
+  }, false
+);
+function xfMenu(xf)
+{
+  if (xf.mnu.innerHTML.length == 0) {
+    xf.mnu.innerHTML =
+        '<a class="xfMnuCmd showAll" href="#">Show All</a>' +
+        '<a class="xfMnuCmd hideAll" href="#">Hide All</a>' +
+        '<a class="xfMnuCmd paintAll" href="#">Paint All</a>' +
+        '<a class="xfMnuCmd restoreAll" href="#">Restore All</a>' +
+        '<a class="xfMnuCmd minimizeAll" href="#">Minimize All</a>' +
+        '<a class="xfMnuCmd maximizeAll" href="#">Maximize All</a>';
+    xGetElementsByClassName('xfMnuCmd', xf.mnu, 'a', function(a){a.onclick=xfMnuClk;});
+  }
+  return true;
+}
+function xfMnuClk(ne)
+{
+  var a = this.className.split(' ');
+  if (xFenster.focused) xFenster.focused.mnuHide();
+  if (a && a.length > 0) {
+    xFenster[a[a.length - 1]]();
+  }
+  return false; // cancel the click
+}
+</script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>xFenster Demo 4</h2>
+
+<h3>Intro</h3>
+<div>
+<p>This demo was for testing xFenster rev 21, which adds support for a "control menu".</p>
+</div>
+
+<h3>Code &amp; Docs</h3>
+<div>
+<p><a href='http://cross-browser.com/x/lib/view.php?sym=xFenster'>xFenster rev 21</a> (online) - view source code, documentation, revision history and more.</p>
+</div>
+
+<h3>The "all" Methods</h3>
+<div>
+<p>
+<span id='clk1' class='clk'>paintAll()</span>,
+<span id='clk2' class='clk'>showAll()</span>,
+<span id='clk3' class='clk'>hideAll()</span>,
+<span id='clk4' class='clk'>minimizeAll()</span>,
+<span id='clk5' class='clk'>maximizeAll()</span>,
+<span id='clk6' class='clk'>restoreAll()</span>
+</p>
+</div>
+
+<h3>Demos</h3>
+<div>
+<ul>
+<li><a href='xfenster1.html'>Demo 1</a> - fixed fensters from DIVs</li>
+<li><a href='xfenster2.html'>Demo 2</a> - absolute fensters from IFRAMEs</li>
+<li><a href='xfenster3.html'>Demo 3</a> - absolute fensters from DIVs, in a fence</li>
+<li><a href='xfenster4.html'>Demo 4</a> - with a "control menu"</li>
+</ul>
+</div>
+
+<div id="xf1" class='xFenster'>
+  <div class='fenster-content'>
+    <h4>Calligraphy by Yongsheng Zhao</h4>
+    <p>These pieces of calligraphy are in English, but designed to look like ancient (seal style) Chinese characters. The style of calligraphy is known as 'Vertical English Character and Calligraphy' (VEC).</p>
+    <p>(<a href='http://www.omniglot.com/gallery/vec/index.php'>source</a>)</p>
+  </div>
+</div><!-- end xFenster -->
+<div id="xf2" class='xFenster'>
+  <div class='fenster-content'>
+    <h4>The Stephanus Of Meleager</h4>
+<p>To whom, dear Muse, dost thou bring these varied fruits of song, or who was it who wrought this garland of poets ? The work was Meleager's, and he laboured thereat to give it as a keepsake to glorious Diocles. Many lilies of Anyte he inwove, and many of Moero, of Sappho few flowers, but they are roses ; narcissus, too, heavy with the clear song of Melanippides and a young branch of the vine of Simonides; and therewith he wove in the sweet-scented lovely iris of Nossis, the wax for whose writing-tablets Love himself melted ; and with it marjoram from fragrant Rhianus, and Erinna's sweet crocus, maiden-hued, the hyacinth of Alcaeus, the vocal poets' flower, and a dark-leaved branch of Samius' laurel.</p>
+<p>He wove in too the luxuriant ivy-clusters of Leonidas and the sharp needles of Mnasalcas' pine ; the deltoid plane-leaves of the song of Pamphilus he plucked intangled with Pancrates' walnut branches; and the graceful poplar leaves of Tymnes, the green serpolet of Nicias and the spurge of Euphermts that grows on the sands ; Damagetus, the dark violet, too, and the sweet myrtle of Callimachus, ever full of harsh honey : and Euphorion's lychnis and the Muses' cyclamen which takes its name from the twin sons of Zeus.</p>
+<p>And with these he inwove Hegesippus" maenad clusters and Perseus' aromatic rush, the sweet apple also from the boughs of Diotimus and the first flowers of Menecrates' pomegranate, branches of Nicaenetus' myrrh, and Phaennus' terebinth, and the tapering wild pear of Simmias; and from the meadow where grows her perfect celery he plucked but a few blooms of Parlhenis to inweave with the yellow-eared corn gleaned from Bacchylides, fair fruit on which the honey of the Muses drops.</p>
+<p>He plaited in too Anacreon's sweet lyric song, and a bloom that may not be sown in verse; and the flower of Archilochus' crisp-haired cardoon&ndash;a few drops from the ocean; and therewith young shoots of Alexander's olive and the blue corn-flower of Poly-cKlus; the amaracus of Polystratus, too, he inwove, the poet's flower, and a fresh scarlet gopher from Antipater, and the Syrian spikenard of Hermodorus; he added the wild field-flowers of Posidippus and Hedylus, and the anemones of Sicelides3; yea, verily, and the golden bough of Plato, ever divine, all asheen with virtue; and Aratus therewith did he set on, wise in starlore, cutting the first-born branches from a heaven-seeking palm; and the fair-tressed lotus of Chaeremon mingled with Phaedimus' phlox, and Antagoras' sweetly-turning oxeye, and Theodoridas' newly flowered thyme that loveth wine, and the blossom of Phanias' bean and the newly written buds of many others, and with all these the still early white violets of his own Muse.</p>
+<p>To my friends I make the gift, but this sweet-voiced garland of the Muses is common to all the initiated.</p>
+    <p>(<a href='http://www.ancientlibrary.com/greek-anthology/0126.html'>source</a>)</p>
+  </div>
+</div><!-- end xFenster -->
+
+<div class='vspace'></div>
+
+</div> <!-- end leftContent -->
+
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>

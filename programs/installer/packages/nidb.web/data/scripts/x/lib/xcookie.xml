@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xCookie'>
+
+<sources>
+  <src><file>xcookie.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Misc</grp>
+</groups>
+<type>Var</type>
+
+<description><![CDATA[Set, get or delete a cookie name/value.]]></description>
+
+<syntax>see 'methods' below</syntax>
+
+<parameters>
+</parameters>
+
+<methods>
+  <meth><name>xCookie.get(name)</name><note><![CDATA[Returns a string or null.]]></note></meth>
+  <meth><name>xCookie.set(name, value, days, path, domain, secure)</name><note><![CDATA[name, value, path and domain are strings; days is an integer; secure is a boolean.]]></note></meth>
+  <meth><name>xCookie.del(name, path, domain)</name><note><![CDATA[Sets the value to an empty string and sets expiry to now minus one day.]]></note></meth>
+</methods>
+
+<dependencies>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<tests>
+  <test><date>6May09</date><author>mf</author><url>http://cross-browser.com/forums/viewtopic.php?id=504</url><note><![CDATA[Forum topic.]]></note></test>
+</tests>
+
+<revisions>
+  <rev>
+    <num>2</num><date>29Jul09</date><author>mf</author>
+    <note><![CDATA[Added Vic's improvements to the 'set' method.]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>6May09</date><author>mf</author>
+    <note><![CDATA[Initial implementation. A new cookie object to replace the existing xGetCookie, xSetCookie and xDeleteCookie. Thanks very much to Vic! Note that xCookie's "set" method takes an expiry interval in "days relative to today", whereas xSetCookie required an explicit expiry date.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

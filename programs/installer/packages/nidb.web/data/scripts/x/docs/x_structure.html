@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>X Library Structure</title>
+<meta name='author' content='Mike Foster (Cross-Browser.com)'>
+<meta name='description' content="Cross-Browser Javascript Libraries and Applications">
+<meta name='license' content='Distributed under the terms of the GNU LGPL (gnu.org)'>
+<link rel='stylesheet' type='text/css' href='../../css/v3.css'>
+<script type='text/javascript' src='../../offline.js'></script>
+</head>
+<body><div id='topLinkCon'><a name='topofpg'>&nbsp;</a></div>
+
+<div id='leftColumn' class='column'> <!-- Begin left column -->
+<div class='leftContent'> <!-- Begin left content -->
+
+<script type='text/javascript'>insert_header(0, '../..');</script>
+
+<h2>X Library Structure</h2>
+<h3>x_symbol</h3>
+<div>
+<p><b>X</b> consists of <i>symbols</i>. A symbol is a variable, object prototype, object property, object method or function.</p>
+<p><b>X</b> is defined by a set of <tt>x_symbol</tt> XML elements. The <tt>id</tt> attribute of <tt>x_symbol</tt> specifies the identifier for the symbol. The only requirement is that each symbol's <tt>id</tt> be unique within the library.</p>
+<p>Symbols that are object methods must have <tt>id</tt> = <tt>objectName.methodName</tt>, and symbols that are object properties must have <tt>id</tt> = <tt>objectName.propertyName</tt>.</p>
+<p>Each symbol is completely defined by two files: an XML file and at least one Javascript source file.</p>
+</div>
+
+<h3>The x_symbol XML File</h3>
+<div>
+<p>For every <b>X</b> symbol there must be an XML file with an <tt>x_symbol</tt> root element. For convenience the name of the XML file is the symbol identifier in all lower-case.</p>
+<p>The XML file provides the symbol's actual identifier, the location of the Javascript source file (and alternate files), a list of dependencies, complete usage documentation, revision history, author copyright, license statement, and more. In <tt>/templates/</tt> you will find an <a href='../../templates/x_symbol_template.xml'>x_symbol_template.xml</a> file.</p>
+<h4>x_symbol.groups</h4>
+<p>The <tt>groups</tt> node can contain one or more <tt>grp</tt> nodes. Valid values for a <tt>grp</tt> node are: Animation, DOM, Debug, Event, Image, Iteration, Misc, Position, Size, String, Style, Table, UI or Window.</p>
+<h4>x_symbol.type</h4>
+<p>Valid values for the <tt>type</tt> node are: Var, Object, Property, Method or Function.</p>
+</div>
+
+<h3>The x_symbol Source File</h3>
+<div>
+<p>Most <b>X</b> symbol identifiers begin with a lower-case 'x' but it is not required. Each symbol's source code is in its own file. For convenience the filenames are all lower-case. Also, multiple symbols (multiple XML files) can have their sources in the same Javascript file (but XC will include the entire source file in the ouput even if only one of the symbols is used in the application code).</p>
+<p>The Javascript source file should begin with the following, standard header. If you are the author you should use your own copyright info. I do not require copyright assignment for code contributions to <b>X</b>. For "[your URL]" please provide the URL to your web-site. I never make your email addresses publically available.</p>
+<pre>
+// [symbol identifier], Copyright [your date] [your name] ([your URL])
+// Part of X, a Cross-Browser Javascript Library, Distributed under the terms of the GNU LGPL
+</pre>
+<p>Please only use 'text' files with no special characters.</p>
+<p>Please do not use tabs - use spaces for indentation.</p>
+<p>Please do not use <i>implicit</i> statement termination.</p>
+<p>&nbsp;</p>
+<p>I am proud to include your contribution in the official X distribution - but it is your responsibility to document, test and maintain your function or object.</p>
+</div>
+
+</div> <!-- end leftContent -->
+
+<script type='text/javascript'>insert_footer('../..');</script>
+
+</div> <!-- end leftColumn -->
+
+<div id='rightColumn' class='column'>
+<div class='rightContent'>
+
+<script type='text/javascript'>insert_sidebar('../..');</script>
+
+</div> <!-- end rightContent -->
+</div> <!-- end rightColumn -->
+
+</body>
+</html>
