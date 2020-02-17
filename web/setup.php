@@ -50,7 +50,7 @@
 
 	/* check if the .cfg file exists, and what type of installation this is: setup/upgrade */
 	$cfgexists = false;
-	$installtype = "setup";
+	$installtype = "install";
 	if ( (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
 		/* if so, load the config, but still treat the page as a setup */
 		$cfg = LoadConfig();
@@ -178,10 +178,12 @@
     $c['uploadeddir'] = GetVariable("uploadeddir");
     $c['tmpdir'] = GetVariable("tmpdir");
     $c['deleteddir'] = GetVariable("deleteddir");
+	$noconfig = GetVariable("noconfig");
 	$systemmessage = GetVariable("systemmessage");
 	$messageid = GetVariable("messageid");
 
 	$rootpassword = GetVariable("rootpassword");
+	$debugonly = GetVariable("debugonly");
 	//$userpassword = GetVariable("userpassword");
 	//$userpassword2 = GetVariable("userpassword2");
 	
@@ -200,13 +202,13 @@
 			DisplayDatabase1Page();
 			break;
 		case 'database2':
-			DisplayDatabase2Page($rootpassword); //, $userpassword, $userpassword2);
+			DisplayDatabase2Page($rootpassword, $debugonly); //, $userpassword, $userpassword2);
 			break;
 		case 'config':
 			DisplayConfigPage();
 			break;
 		case 'updateconfig':
-			WriteConfig($c);
+			WriteConfig($c, $noconfig);
 			DisplaySetupCompletePage();
 			break;
 		case 'setupcomplete':
@@ -240,6 +242,11 @@
 	/* -------------------------------------------- */
 	function WriteConfig($c) {
 		
+		/* if this is not an install, don't do anything with the config file */
+		if ($GLOBALS['installtype'] != "install")
+			return;
+		
+		/* otherwise, continue and write a new config file */
 		if (is_null($GLOBALS['cfg']['cfgpath'])) {
 			$GLOBALS['cfg']['cfgpath'] = "/nidb/nidb.cfg";
 		}
@@ -651,7 +658,7 @@
 						<tr>
 							<td>MariaDB root password<br><span class="tiny" style="font-weight: normal">root access to DB required to setup tables</span></td>
 							<td>
-								<? if ( ($GLOBALS['cfg']['mysqlpassword'] == "") || ($GLOBALS['cfg']['mysqlpassword'] == null) ) { ?>
+								<? if ( ($GLOBALS['cfg']['mysqlpassword'] == "") || ($GLOBALS['cfg']['mysqlpassword'] == null) || ($GLOBALS['cfg']['mysqluser'] != 'root') ) { ?>
 								<input type="password" required name="rootpassword"><br><span class="tiny">Password is <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
 								<? } else {
 									$len = strlen($GLOBALS['cfg']['mysqlpassword']);
@@ -673,25 +680,56 @@
 								<? }?>
 							</td>
 						</tr>
+						<tr>
+							<td>Debug Only<br><span class="tiny" style="font-weight: normal">This will not update the database</span></td>
+							<td><input type="checkbox" value="1" name="debugonly"></td>
+						</tr>
 					</table>
 					</form>
+					<br><br>
 					<?
-					
 						$sqlfileurl = "http://raw.githubusercontent.com/gbook/nidb/master/setup/nidb.sql";
 						$file = file($sqlfileurl);
-						PrintVariable($file);
 					
-					if ($sqlfile > "") { ?>
-					Database will be installed/upgraded on the next page using the schema found at <code>/nidb/nidb.sql</code> dated <?=date('Y-m-d H:i:s', filemtime("/nidb/nidb.sql"))?>.<br><br>Please backup your database before continuing!!!
-					<? } else { ?>
-					<? } ?>
+						if ($sqlfile > "") {
+							?>
+							Database will be <?=$GLOBALS['installtype']?>d on the next page using the schema <code><?=$sqlfileurl?></code>.<br><br><b style="color: red">Please backup your database before continuing</b>
+							<?
+						}
+						else {
+							?>
+							<div style="border-radius: 8px; background-color: #ffe8ee; border: 1px solid #fca583; padding: 10px">
+							<b>Unable to access GitHub to retrieve current SQL schema</b><br>
+							Cannot find file <code><?=$sqlfileurl?></code>. Check your internet connection, or firewall rules to see if github is blocked.
+							</div>
+							<br><br>
+							<?
+							$schemafile = "";
+							if (file_exists("/nidb/nidb.sql"))
+								$schemafile = "/nidb/nidb.sql";
+							
+							if ($schemafile == "") {
+								?><code>nidb.sql</code> not found in <code>/nidb</code>... <b>Database will not be upgraded</b><?
+								return;
+							}
+							else {
+								?>
+								Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d on the next page.
+								<br><br>
+								Use the following command to <b style="color: red">backup your database before continuing</b>
+								<p style="margin-left: 20px">
+								<code>mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -p&lt;&lt;yourPassword&gt;&gt; <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>
+								</p>
+								<?
+							}
+						} ?>
 				</td>
 			</tr>
 			<tr>
 				<td>Installation type <b><?=$GLOBALS['installtype']?></b>
 				</td>
 				<td align="right">
-					<a href="setup.php?step=systemcheck">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a onClick="document.theform.submit()" style="cursor: hand; font-weight: bold">Configure database</a>
+					<a href="setup.php?step=systemcheck">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a onClick="document.theform.submit()" style="cursor: hand; font-weight: bold" title="This will make changes to the database. Have you backed up the original database?">Configure database</a>
 				</td>
 			</tr>
 		</table>
@@ -703,10 +741,13 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDatabase2Page --------------- */
 	/* -------------------------------------------- */
-	function DisplayDatabase2Page($rootpassword) {
-		
-		if ($GLOBALS['cfg']['mysqlpassword'] != "")
+	function DisplayDatabase2Page($rootpassword, $debugonly) {
+
+		if ( ($GLOBALS['cfg']['mysqlpassword'] != "") && ($GLOBALS['cfg']['mysqluser'] == "root") )
 			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
+		
+		$schemafile = "/nidb/nidb.sql";
+		$sqldatafile = "/nidb/nidb-data.sql";
 		?>
 		<br><br>
 		<div align="center" valign="middle">
@@ -715,7 +756,7 @@
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%" width="100%">
 					<div style="width: 800px; height: 100%; overflow: auto; overflow-x:auto">
-					<h2>Performing database setup...</h2>
+					<h2>Performing database setup... <? if ($debugonly) { echo "DEBUG only. No database changes"; } ?></h2>
 					<ol>
 					<?
 					
@@ -749,33 +790,33 @@
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								if (mysqli_num_rows($result) > 0) {
 									?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
-									UpgradeDatabase($GLOBALS['linki'], 'nidb', "/nidb/nidb.sql");
+									UpgradeDatabase($GLOBALS['linki'], 'nidb', $schemafile, $debugonly);
 									
-									if (file_exists("/nidb/nidb-data.sql")) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+									if (file_exists("/nidb/$sqldatafile")) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
 										shell_exec($systemstring);
 									}
 									else {
-										?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+										?><li><span class="bad"></span> <code><?=$sqldatafile?></code> not found. This file should have been provided by the installer<?
 									}
 								}
 								else {
 									?><li>No tables found in 'nidb' database. Running full SQL script<?
 									/* load the sql file(s) */
-									if (file_exists("/nidb/nidb.sql")) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
+									if (file_exists($schemafile)) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < $schemafile";
 										shell_exec($systemstring);
 										
-										if (file_exists("/nidb/nidb-data.sql")) {
-											$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+										if (file_exists($sqldatafile)) {
+											$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
 											shell_exec($systemstring);
 										}
 										else {
-											?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+											?><li><span class="bad"></span> <code><?=$sqldatafile?></code> not found. This file should have been provided by the installer<?
 										}
 									}
 									else {
-										?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
+										?><li><span class="bad"></span> <code><?=$schemafile?></code> not found. This file should have been provided by the installer<?
 									}
 
 								}
@@ -786,20 +827,20 @@
 								?><li>Created database 'nidb'<?
 								
 								/* load the sql file(s) */
-								if (file_exists("/nidb/nidb.sql")) {
-									$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb.sql";
+								if (file_exists($schemafile)) {
+									$systemstring = "mysql -uroot -p$rootpassword nidb < $schemafile";
 									shell_exec($systemstring);
 									
-									if (file_exists("/nidb/nidb-data.sql")) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < /nidb/nidb-data.sql";
+									if (file_exists($sqldatafile)) {
+										$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
 										shell_exec($systemstring);
 									}
 									else {
-										?><li><span class="bad"></span> <tt>/nidb/nidb-data.sql</tt> not found. This file should have been provided by the installer<?
+										?><li><span class="bad"></span> <code><?=$sqldatafile?></code> not found. This file should have been provided by the installer<?
 									}
 								}
 								else {
-									?><li><span class="bad"></span> <tt>/nidb/nidb.sql</tt> not found. This file should have been provided by the installer<?
+									?><li><span class="bad"></span> <code><?=$schemafile?></code> not found. This file should have been provided by the installer<?
 								}
 							}
 						}
@@ -829,22 +870,40 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="80%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="60%" cellpadding="20" cellspacing="0" rowspan="2" style="border: 2px solid #888; border-radius: 10px">
+			<? if ($GLOBALS['installtype'] == "install") { ?>
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("config")?></td>
 				<td valign="top" height="90%">
 					<h2>NiDB configuration</h2>
+					<form name="configform" method="post" action="setup.php">
+					<input type="hidden" name="step" value="updateconfig">
+					<? DisplayConfig(); ?>
 				</td>
 			</tr>
 			<tr>
-				<form name="configform" method="post" action="setup.php">
-				<input type="hidden" name="step" value="updateconfig">
-				<td><? DisplayConfig(); ?></td>
+				<td>Installation type <b><?=$GLOBALS['installtype']?></b>
 				<td align="right" valign="bottom">
 					<a href="setup.php?step=database1">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" onClick="configform.submit()"><b>Next</b></a>
 				</td>
 				</form>
 			</tr>
+			<? } else { ?>
+			<tr>
+				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("config")?></td>
+				<td valign="top" height="90%">
+					<h2>NiDB configuration</h2>
+					Existing config file is <code><?=$GLOBALS['cfg']['cfgpath']?></code>.
+				</td>
+			</tr>
+			<tr>
+				<td>Installation type <b><?=$GLOBALS['installtype']?></b>
+				<td align="right" valign="bottom">
+					<a href="setup.php?step=database1">Back</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="setup.php?step=updateconfig&noconfig=1"><b>Next</b></a>
+				</td>
+				</form>
+			</tr>
+			<? } ?>
 		</table>
 		<?
 		
@@ -864,6 +923,7 @@
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("setupcomplete")?></td>
 				<td valign="top" height="90%">
 					<h2>Setup Complete</h2>
+					Visit the menu option <b>Admin &rarr; Settings</b> to update configuration settings after this <?=$GLOBALS['installtype']?> is complete.
 				</td>
 			</tr>
 			<tr>
@@ -901,7 +961,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpgradeDatabase -------------------- */
 	/* -------------------------------------------- */
-	function UpgradeDatabase($linki, $database, $sqlfile) {
+	function UpgradeDatabase($linki, $database, $sqlfile, $debug) {
 		
 		if (!file_exists($sqlfile)) {
 			echo "[$sqlfile] not found<br>";
@@ -947,6 +1007,7 @@
 				/* check if this table exists */
 				$sqlstring = "show tables like '$table'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				
 				if (mysqli_num_rows($result) > 0) {
 					$tableexists = true;
 				}
@@ -976,7 +1037,10 @@
 					
 					/* create the table */
 					$sqlstring = $createtable;
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if ($debug)
+						echo "<code>$sqlstring</code><br>";
+					else
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 				
 				$table = "";
@@ -1000,16 +1064,22 @@
 					$sqlstring .= " after `$previouscol`";
 				}
 				/* if there is an issue with this column, it will be an error, so no need to check warnings */
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if ($debug)
+					echo "<code>$sqlstring</code><br>";
+				else
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				
 				/* add the column if it does not exist */
 				$sqlstring = "alter table `$table` add column if not exists `$column` $properties";
 				if ($previouscol != "") {
 					$sqlstring .= " after `$previouscol`";
 				}
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if ($debug)
+					echo "<code>$sqlstring</code><br>";
+				else
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-				echo "<tt style='font-size: smaller;'><span class='good'></span> $column</tt><br>";
+				echo "<tt style='font-size: smaller;'><span class='good'></span> $column</tt>";
 				
 				$previouscol = $column;
 				$createindex = "";
@@ -1029,7 +1099,10 @@
 					
 					/* run the create index */
 					echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-					$result = MySQLiQuery($createindex, __FILE__, __LINE__);
+					if ($debug)
+						echo "<code>$sqlstring</code><br>";
+					else
+						$result = MySQLiQuery($createindex, __FILE__, __LINE__);
 				}
 				
 				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
@@ -1047,7 +1120,10 @@
 			if (($lastline) && ($createtable != "")) {
 				echo "Table [$table] did not exist, creating";
 				echo "<tt span style='font-size: smaller;'><pre>$createtable</pre></tt>";
-				$result = MySQLiQuery($createtable, __FILE__, __LINE__);
+				if ($debug)
+					echo "<code>$sqlstring</code><br>";
+				else
+					$result = MySQLiQuery($createtable, __FILE__, __LINE__);
 			}
 			
 			/* this is the end of the file. If there are any indexes/autoincrements to create, create them now */
@@ -1058,7 +1134,10 @@
 				$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
 				
 				echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-				$result = MySQLiQuery($createindex, __FILE__, __LINE__);
+				if ($debug)
+					echo "<code>$sqlstring</code><br>";
+				else
+					$result = MySQLiQuery($createindex, __FILE__, __LINE__);
 			}
 		}
 		
@@ -1581,21 +1660,21 @@
 			</tr>
 			
 			
-												<script>
-													function CheckNFSPath() {
-														var xhttp = new XMLHttpRequest();
-														xhttp.onreadystatechange = function() {
-															if (this.readyState == 4 && this.status == 200) {
-																document.getElementById("pathcheckresult").innerHTML = this.responseText;
-															}
-														};
-														var nfsdir = document.getElementById("nfsdir").value;
-														//alert(nfsdir);
-														xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
-														xhttp.send();
-													}
-												</script>
-												<!--<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>-->
+			<script>
+				function CheckNFSPath() {
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							document.getElementById("pathcheckresult").innerHTML = this.responseText;
+						}
+					};
+					var nfsdir = document.getElementById("nfsdir").value;
+					//alert(nfsdir);
+					xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
+					xhttp.send();
+				}
+			</script>
+			<!--<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>-->
 			
 			
 		</table>

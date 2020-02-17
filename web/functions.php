@@ -2231,6 +2231,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (!is_executable($nidbexe))
 			array_push($problems, "<tt>$nidbexe</tt> executable does not have execute permissions");
 		
+		/* check if any disks are full */
+		
+		/* check if load is above 100% */
+		
+		/* check if import, export, or fileio modules are disabled */
+		
 		if (count($problems) > 0) {
 			echo "<ul><li><b>System error(s). Contact NiDB administrator";
 			foreach ($problems as $errmsg) {

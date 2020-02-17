@@ -236,14 +236,14 @@ echo $value . "\n";
 				</td>
 			</tr>
 			<tr>
-				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=parsedicom" title="View parsedicom.pl logs">Parse DICOM module</a><br><span class="tiny"><?=$GLOBALS['cfg']['incomingdir']?></span></td>
+				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=import" title="View import logs">Import module</a><br><span class="tiny"><?=$GLOBALS['cfg']['incomingdir']?></span></td>
 				<td>
 					<?=$numdicomfiles?> queued files<br>
 					<?=$numdicomdirs?> queued directories<br>
 				</td>
 			</tr>
 			<tr>
-				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import module</a><br><span class="tiny"><?=$GLOBALS['cfg']['uploadeddir']?></span></td>
+				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import Uploads module</a><br><span class="tiny"><?=$GLOBALS['cfg']['uploadeddir']?></span></td>
 				<td>
 					<?=$numimportpending?> requests pending<br>
 					<?=$numimportdirs?> queued directories<br>

@@ -93,7 +93,7 @@
 			table .batchupload { border: 2px solid #444; border-radius: 8px; border-spacing: 0px; width: 90%; }
 			table .batchupload thead:last-of-type th { border-bottom: 2px solid #444; }
 			table .batchupload th { padding: 5px; background-color: #444; color: #fff; }
-			table .batchupload td { padding: 7px; border-top: 1px solid #ccc; border-right: 1px solid #ccc; vertical-align: middle; }
+			table .batchupload td { padding: 7px; border-top: 1px solid #ddd; border-right: 1px solid #ddd; vertical-align: middle; }
 			table .batchupload tr:hover td { background-color: lightyellow; border-top: 1px solid gold; }
 			table .batchupload tr.newuid td { border-top: 2px solid #444; }
 		</style>
@@ -110,21 +110,22 @@
 			<input name="modality" type="hidden" value="<?=$modality?>">
 			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt">
 		</form>
-		<br><br>
+		<br>
+		<? if ($modality == "mr") { echo "Data for MRI series will be uploaded as <u>behavioral</u> data<br><br>"; } ?>
 		<table class="batchupload">
 			<thead>
-				<th style="text-align: center; border-right: 1px solid #aaa">&nbsp;</th>
-				<th colspan="2" style="text-align: center; border-right: 1px solid #aaa">Subject</th>
-				<th colspan="3" style="text-align: center; border-right: 1px solid #aaa">Study</th>
+				<th style="text-align: center; border-right: 1px solid #ddd">&nbsp;</th>
+				<th colspan="2" style="text-align: center; border-right: 1px solid #ddd">Subject</th>
+				<th colspan="3" style="text-align: center; border-right: 1px solid #ddd">Study</th>
 				<th colspan="4" style="text-align: center;">Series</th>
 			</thead>
 			<thead>
-				<th style="border-right: 1px solid #aaa">Upload</th>
+				<th style="border-right: 1px solid #ddd">Upload</th>
 				<th>UID</th>
-				<th style="border-right: 1px solid #aaa">Age</th>
+				<th style="border-right: 1px solid #ddd">Age</th>
 				<th>Study</th>
 				<th>Modality</th>
-				<th style="border-right: 1px solid #aaa">Date</th>
+				<th style="border-right: 1px solid #ddd">Date</th>
 				<th>Number</th>
 				<th>Date</th>
 				<th>Protocol</th>
@@ -141,10 +142,11 @@
 					$uid = $row['uid'];
 					$age = $row['study_ageatscan'];
 					$studydate = $row['study_datetime'];
+					$studydate = date('M j, Y g:ia',strtotime($row['study_datetime']));
 					$studynum = $row['study_num'];
 					$studyid = $row['study_id'];
 					$seriesnum = $row['series_num'];
-					$seriesdate = $row['series_datetime'];
+					$seriesdate = date('M j, Y g:ia',strtotime($row['series_datetime']));
 					$seriesdesc = $row['series_desc'];
 					$seriesid = $row[$modality."series_id"];
 					if ($seriesdesc == "")
@@ -171,7 +173,7 @@
 						<td><?=$uid?></td>
 						<td><?=$age?></td>
 						<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-						<td><?=$modality?></td>
+						<td><?=strtoupper($modality)?></td>
 						<td><?=$studydate?></td>
 						<td><?=$seriesnum?></td>
 						<td><?=$seriesdate?></td>
@@ -180,6 +182,8 @@
 							<span class="tiny">
 							<?
 								list($datapath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+								if (strtolower($modality) == "mr")
+									$datapath = "$datapath/beh";
 								$filelist = array_diff(scandir($datapath), array('..', '.'));
 
 								$numfiles = count($filelist);
@@ -248,7 +252,7 @@
 		
 		/* update the database to reflect the number of size of the files */
 		if ($modality == "mr")
-			$sqlstring = "update mr_series set numfiles = $filecount, series_size = $filesize where mrseries_id = $seriesid";
+			$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
 		else
 			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
 		
