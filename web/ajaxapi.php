@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB ajaxapi.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -27,6 +27,8 @@
 	require "functions.php";
 	require "includes_php.php";
 
+	PrintVariable($_GET);
+	
 	$action = GetVariable("action");
 	$nfspath = GetVariable("nfspath");
 	$connectionid = GetVariable("connectionid");
@@ -239,4 +241,12 @@
 		}
 		?></body><?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- PipelineSearchTest ----------------- */
+	/* -------------------------------------------- */
+	function PipelineSearchTest($nfspath) {
+		$p = trim($nfspath);
+	}	
 ?>

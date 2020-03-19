@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB minipipeline.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -57,7 +57,7 @@
 		<html>
 			<head>
 				<link rel="icon" type="image/png" href="images/squirrel.png">
-				<title>NiDB - Behavioral data analysis pipelines</title>
+				<title>NiDB - Batch data upload</title>
 			</head>
 		<body>
 			<div id="wrapper">
@@ -258,4 +258,33 @@
 		
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
+	
+	/* -------------------------------------------- */
+	/* ------- GetDirectorySize ------------------- */
+	/* -------------------------------------------- */
+	function GetDirectorySize($dirname) {
+		// open the directory, if the script cannot open the directory then return folderSize = 0
+		$dir_handle = opendir($dirname);
+		if (!$dir_handle)
+			return 0;
+
+		$folderSize = 0;
+		
+		// traversal for every entry in the directory
+		while ($file = readdir($dir_handle)){
+			// ignore '.' and '..' directory
+			if  ($file  !=  "."  &&  $file  !=  "..")  {
+				/* if this is a directory then go recursive! */
+				if (is_dir($dirname."/".$file)) {
+					$folderSize += GetDirectorySize($dirname.'/'.$file);
+				} else {
+					$folderSize += filesize($dirname."/".$file);
+				}
+			}
+		}
+		// close the directory
+		closedir($dir_handle);
+		// return $dirname folder size
+		return $folderSize ;
+	}	
 ?>

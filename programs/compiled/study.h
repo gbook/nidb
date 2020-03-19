@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB study.h
-  Copyright (C) 2004 - 2019
+  Copyright (C) 2004 - 2020
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------

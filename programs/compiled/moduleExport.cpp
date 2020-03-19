@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleExport.cpp
-  Copyright (C) 2004 - 2019
+  Copyright (C) 2004 - 2020
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -1211,7 +1211,9 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							foreach (QString f, dcmfiles) {
 								c++;
 								QString systemstringA = QString("cp -v '%1' %2/").arg(f).arg(tmpzipdir);
-								n->WriteLog(n->SystemCommand(systemstringA));
+								QString output = n->SystemCommand(systemstringA);
+								if ((output == "") || output.contains("error", Qt::CaseInsensitive))
+									n->WriteLog(output);
 							}
 
 							if (behdirexists && !behdirempty) {
@@ -1227,7 +1229,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 							}
 
 							/* send the zip and send file */
-							QString systemstringB = QString("GZIP=-1; tar -czvf %2 --warning=no-timestamp -C %1 .; chmod -v 777 %2").arg(tmpzipdir).arg(tmpzip);
+							QString systemstringB = QString("GZIP=-1; tar -czf %2 --warning=no-timestamp -C %1 .; chmod -v 777 %2").arg(tmpzipdir).arg(tmpzip);
 							n->WriteLog(n->SystemCommand(systemstringB));
 
 							/* get size before sending */

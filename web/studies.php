@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB studies.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 	require "menu.php";
 	require "nanodicom.php";
 
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
@@ -771,7 +771,7 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- GetDirectoySize -------------------- */
+	/* ------- GetDirectorySize ------------------- */
 	/* -------------------------------------------- */
 	function GetDirectorySize($dirname) {
 		// open the directory, if the script cannot open the directory then return folderSize = 0

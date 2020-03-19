@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB includes.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 <script type="text/javascript" src="scripts/stupidtable.min.js"></script>
 
 <link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">
-<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>
+<!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 
 <!-- menu drop box -->
 <script language="javascript" type="text/javascript" src="scripts/jquery.dropmenu.js"></script>
@@ -54,7 +54,6 @@
 
 <!-- main style sheet -->
 <link rel="stylesheet" type="text/css" href="style.css">
-
 
 <!-- the following are for emulating the <details> and <summary> tags -->
 <script>

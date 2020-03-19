@@ -268,9 +268,9 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .enrolltable td.headercell { border-top: 2px solid #444; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; border-right: 1px solid #ccc; padding: 5px; background-color: #ddd; font-weight: bold }
 
 /* analysis summary table */
-.summarytable { border: 2px solid #444; border-collapse: collapse; font-size: 10pt }
-.summarytable th { border: 1px solid #ccc; background-color: #ddd; font-weight: bold; }
-.summarytable td { border: 1px solid #ccc; }
+.summarytable { border: 2px solid #444; border-collapse: collapse; }
+.summarytable th { border: 1px solid #ccc; background-color: #ddd; font-weight: bold; font-size: 10pt; }
+.summarytable td { border: 1px solid #ddd; font-size: 9pt; white-space: nowrap; padding: 2px 5px; }
 
 /* 2 column table (small table with 2 columns: variable, value)*/
 .multicoltable { border-spacing: 0px; padding: 0px; border: 1px solid #AAA; border-collapse:collapse; }

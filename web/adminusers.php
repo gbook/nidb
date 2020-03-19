@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminusers.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -38,8 +38,16 @@
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
-	require "nidbapi.php";
+	//require "nidbapi.php";
 	require "menu.php";
+
+	/* check if this page is being called from itself */
+	$referringpage = $_SERVER['HTTP_REFERER'];
+	$phpscriptname = pathinfo(__FILE__)['basename'];
+	if (contains($referringpage, $phpscriptname))
+		$selfcall = true;
+	else
+		$selfcall = false;
 
 	//PrintVariable($_POST,'post');
 	
@@ -85,6 +93,7 @@
 			break;
 		case 'delete':
 			DeleteUser($id);
+			DisplayUserList();
 			break;
 		default:
 			DisplayUserList();
@@ -262,7 +271,7 @@
 	/* ------- DeleteUser ------------------------- */
 	/* -------------------------------------------- */
 	function DeleteUser($id) {
-		$sqlstring = "delete from users where user_id = $id";
+		$sqlstring = "update users set user_deleted = 1, user_enabled = 0 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
 
@@ -357,14 +366,15 @@
 					<b><?=$formtitle?></b>
 				</td>
 			</tr>
-			<? if ($type != 'edit') { ?>
 			<tr>
+			<? if ($type != 'edit') { ?>
 				<td class="label">Username</td>
 				<td><input type="text" name="username" value="<?=$username?>"></td>
-			</tr>
 			<? } else { ?>
-			<input type="hidden" name="username" value="<?=$username?>">
+				<td><input type="hidden" name="username" value="<?=$username?>"></td>
+				<td><div align="right"><a href="adminusers.php?action=delete&id=<?=$id?>" title="Delete this user account" class="adminbutton2">Delete</a></div></td>
 			<? } ?>
+			</tr>
 			<tr>
 				<td class="label">Full name</td>
 				<td><input type="text" name="fullname" value="<?=$fullname?>" required></td>
@@ -639,7 +649,7 @@
 		<tbody>
 			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>Users in this project group (<?=$_SESSION['instancename']?>)</b></td></tr>
 			<?
-				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' order by username";
+				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' and (a.user_deleted is null or a.user_deleted <> 1) order by a.username";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -678,6 +688,43 @@
 			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All other users</b></td></tr>
 			<?
 				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' group by username order by username";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['user_id'];
+					$username = $row['username'];
+					$fullname = $row['user_fullname'];
+					$email = $row['user_email'];
+					$login_type = $row['login_type'];
+					$instancename = $row['instance_name'];
+					$lastlogin = $row['user_lastlogin'];
+					$logincount = $row['user_logincount'];
+					$enabled = $row['user_enabled'];
+					$isadmin = $row['user_isadmin'];
+			?>
+			<tr>
+				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
+				<td><?=$fullname?></td>
+				<td><?=$email?></td>
+				<td><?=$login_type?></td>
+				<td><?=$lastlogin?></td>
+				<td><?=$logincount?></td>
+				<td>
+					<?
+						if ($enabled) {
+							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+						}
+						else {
+							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+						}
+					?>
+				</td>
+			</tr>
+			<? 
+				}
+			?>
+			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All deleted users</b></td></tr>
+			<?
+				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where a.user_deleted = 1 group by a.username order by a.username";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['user_id'];

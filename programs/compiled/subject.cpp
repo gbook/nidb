@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB subject.cpp
-  Copyright (C) 2004 - 2019
+  Copyright (C) 2004 - 2020
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -86,7 +86,10 @@ void subject::LoadSubjectInfo() {
 			QDir d(subjectpath);
 			if (!d.exists()) {
 				msgs << QString("Subject path does not exist [%1]").arg(subjectpath);
-				subjectpath = "";
+				dataPathExists = false;
+			}
+			else {
+				dataPathExists = true;
 			}
 		}
 		isValid = true;

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB setup.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -183,6 +183,7 @@
 	$messageid = GetVariable("messageid");
 
 	$rootpassword = GetVariable("rootpassword");
+	$rowlimit = GetVariable("rowlimit");
 	$debugonly = GetVariable("debugonly");
 	//$userpassword = GetVariable("userpassword");
 	//$userpassword2 = GetVariable("userpassword2");
@@ -202,7 +203,7 @@
 			DisplayDatabase1Page();
 			break;
 		case 'database2':
-			DisplayDatabase2Page($rootpassword, $debugonly); //, $userpassword, $userpassword2);
+			DisplayDatabase2Page($rootpassword, $rowlimit, $debugonly); //, $userpassword, $userpassword2);
 			break;
 		case 'config':
 			DisplayConfigPage();
@@ -464,7 +465,7 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="70%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("welcome")?></td>
 				<td valign="top" height="90%">
@@ -491,7 +492,7 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="70%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("systemcheck")?></td>
 				<td valign="top" height="90%">
@@ -575,12 +576,19 @@
 					<?
 					
 					if ($GLOBALS['cfgexists']) {
-						if (file_exists($GLOBALS['cfg']['nidbdir'])) {
+						if (is_null($GLOBALS['cfg']['nidbdir'])) {
 							?>
-							An existing NiDB installation was found at <code><?=$GLOBALS['cfg']['nidbdir']?></code> and valid config file was found at <code><?=$GLOBALS['cfg']['cfgpath']?></code>
-							<br><br>
-							<b style="font-size: larger">The existing installation will be upgraded</b>
+							The NiDB root directory was not defined in the config file. Go to <a href="system.php">NiDB Settings</a> to update the <code>nidbrootdir</code> variable to reflect the installation directory of NiDB. This should be something similar to <code>/nidb</code>. The new <code>nidb.sql</code> schema file should then be located in that directory.
 							<?
+						}
+						else {
+							if (file_exists($GLOBALS['cfg']['nidbdir'])) {
+								?>
+								An existing NiDB installation was found at <code><?=$GLOBALS['cfg']['nidbdir']?></code> and valid config file was found at <code><?=$GLOBALS['cfg']['cfgpath']?></code>
+								<br><br>
+								<b style="font-size: larger">The existing installation will be upgraded</b>
+								<?
+							}
 						}
 					}
 					elseif (file_exists("/nidb")) {
@@ -622,7 +630,7 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="70%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%">
@@ -681,6 +689,13 @@
 							</td>
 						</tr>
 						<tr>
+							<td colspan="2"><br>Upgrade Options</td>
+						</tr>
+						<tr>
+							<td>Row Limit<br><span class="tiny" style="font-weight: normal">Do not update tables with more than N rows.<br>Leave at 0 to update all tables</span></td>
+							<td><input type="number" value="0" name="rowlimit"></td>
+						</tr>
+						<tr>
 							<td>Debug Only<br><span class="tiny" style="font-weight: normal">This will not update the database</span></td>
 							<td><input type="checkbox" value="1" name="debugonly"></td>
 						</tr>
@@ -692,6 +707,7 @@
 						$file = file($sqlfileurl);
 					
 						if ($sqlfile > "") {
+							file_put_contents("/nidb/nidb.sql", $file);
 							?>
 							Database will be <?=$GLOBALS['installtype']?>d on the next page using the schema <code><?=$sqlfileurl?></code>.<br><br><b style="color: red">Please backup your database before continuing</b>
 							<?
@@ -699,8 +715,7 @@
 						else {
 							?>
 							<div style="border-radius: 8px; background-color: #ffe8ee; border: 1px solid #fca583; padding: 10px">
-							<b>Unable to access GitHub to retrieve current SQL schema</b><br>
-							Cannot find file <code><?=$sqlfileurl?></code>. Check your internet connection, or firewall rules to see if github is blocked.
+							<b>Unable to access GitHub to retrieve current SQL schema</b> Cannot retrieve <code><?=$sqlfileurl?></code>. Check your internet connection, or firewall rules to see if github is blocked.
 							</div>
 							<br><br>
 							<?
@@ -714,14 +729,19 @@
 							}
 							else {
 								?>
-								Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d on the next page.
-								<br><br>
-								Use the following command to <b style="color: red">backup your database before continuing</b>
-								<p style="margin-left: 20px">
-								<code>mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -p&lt;&lt;yourPassword&gt;&gt; <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>
-								</p>
+								Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d
 								<?
 							}
+							?>
+							</div>
+							
+							Use the following command to <b style="color: red">backup your database before continuing</b>
+							<p style="margin-left: 20px">
+							<code>mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>
+							</p>
+							It is also recommended to disable access to NiDB during the upgrade. This can be done by setting the config file variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.
+							
+							<?
 						} ?>
 				</td>
 			</tr>
@@ -741,17 +761,25 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDatabase2Page --------------- */
 	/* -------------------------------------------- */
-	function DisplayDatabase2Page($rootpassword, $debugonly) {
+	function DisplayDatabase2Page($rootpassword, $rowlimit, $debugonly) {
 
 		if ( ($GLOBALS['cfg']['mysqlpassword'] != "") && ($GLOBALS['cfg']['mysqluser'] == "root") )
 			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
 		
 		$schemafile = "/nidb/nidb.sql";
 		$sqldatafile = "/nidb/nidb-data.sql";
+		
+		if ( (is_null($GLOBALS['cfg']['mysqldatabase'])) || ($GLOBALS['cfg']['mysqldatabase'] == "") ) {
+			$database = "nidb";
+		}
+		else {
+			$database = $GLOBALS['cfg']['mysqldatabase'];
+		}
+		
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="70%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%" width="100%">
@@ -780,20 +808,20 @@
 							?><li><span class="good"></span> Successfully connected to the database server<?
 							
 							/* check if the database itself exists */
-							$sqlstring = "show databases like 'nidb'";
+							$sqlstring = "show databases like '$database'";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							if (mysqli_num_rows($result) > 0) {
-								?><li><span class="good"></span> Database 'nidb' exists<?
+								?><li><span class="good"></span> Database '<?=$database?>' exists<?
 								
 								/* check if there are any tables */
-								$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = 'nidb'";
+								$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = '$database'";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								if (mysqli_num_rows($result) > 0) {
-									?><li><span class="good"></span> Existing tables found in 'nidb' database. Upgrading SQL schema<br><?
-									UpgradeDatabase($GLOBALS['linki'], 'nidb', $schemafile, $debugonly);
+									?><li><span class="good"></span> Existing tables found in '<?=$database?>' database. Upgrading SQL schema<br><?
+									$ignoredtables = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
 									
 									if (file_exists("/nidb/$sqldatafile")) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
+										$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 										shell_exec($systemstring);
 									}
 									else {
@@ -801,14 +829,14 @@
 									}
 								}
 								else {
-									?><li>No tables found in 'nidb' database. Running full SQL script<?
+									?><li>No tables found in '<?=$database?>' database. Running full SQL script<?
 									/* load the sql file(s) */
 									if (file_exists($schemafile)) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < $schemafile";
+										$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
 										shell_exec($systemstring);
 										
 										if (file_exists($sqldatafile)) {
-											$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
+											$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 											shell_exec($systemstring);
 										}
 										else {
@@ -822,17 +850,17 @@
 								}
 							}
 							else {
-								$sqlstring = "create database `nidb`";
+								$sqlstring = "create database `$database`";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								?><li>Created database 'nidb'<?
+								?><li>Created database '<?=$database?>'<?
 								
 								/* load the sql file(s) */
 								if (file_exists($schemafile)) {
-									$systemstring = "mysql -uroot -p$rootpassword nidb < $schemafile";
+									$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
 									shell_exec($systemstring);
 									
 									if (file_exists($sqldatafile)) {
-										$systemstring = "mysql -uroot -p$rootpassword nidb < $sqldatafile";
+										$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 										shell_exec($systemstring);
 									}
 									else {
@@ -848,6 +876,11 @@
 					?>
 					</ol>
 					</div>
+					<b>Ignored tables</b><br>
+					The following tables were not updated because they have too many rows. They must be upgraded manually via phpMyAdmin.<br>
+					<?
+						echo implode2("<br>", $ignoredtables);
+					?>
 				</td>
 			</tr>
 			<tr>
@@ -918,7 +951,7 @@
 		?>
 		<br><br>
 		<div align="center" valign="middle">
-		<table width="60%" height="60%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
+		<table width="80%" height="70%" cellpadding="20" cellspacing="0" style="border: 2px solid #888; border-radius: 10px">
 			<tr>
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("setupcomplete")?></td>
 				<td valign="top" height="90%">
@@ -961,7 +994,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpgradeDatabase -------------------- */
 	/* -------------------------------------------- */
-	function UpgradeDatabase($linki, $database, $sqlfile, $debug) {
+	function UpgradeDatabase($linki, $database, $sqlfile, $rowlimit, $debug) {
 		
 		if (!file_exists($sqlfile)) {
 			echo "[$sqlfile] not found<br>";
@@ -973,6 +1006,12 @@
 			return false;
 		}
 		
+		if ($rowlimit > 0) {
+			echo "Tables with more than $rowlimit rows will not be upgraded<br>";
+		}
+		
+		$ignoredtables = array();
+		
 		/* disable strict mode to prevent truncation errors */
 		$sqlstring = "SET @@global.sql_mode= ''";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -980,6 +1019,7 @@
 		/* load the file, loop through the lines */
 		$lines = file($sqlfile);
 		$table = "";
+		$tablerowcount = 0;
 		$lastcolumn = "";
 		$tableexists = false;
 		$indextable = "";
@@ -1002,7 +1042,6 @@
 			/* create table section */
 			if (substr($line,0,12) == "CREATE TABLE") {
 				$table = str_replace("`", "", preg_split('/\s+/', $line)[2]);
-				echo "<br>Table <span class='e'>$table</span><br>";
 				
 				/* check if this table exists */
 				$sqlstring = "show tables like '$table'";
@@ -1010,6 +1049,11 @@
 				
 				if (mysqli_num_rows($result) > 0) {
 					$tableexists = true;
+					/* get the table row count */
+					$sqlstring = "select count(*) 'count' from $table";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+					$tablerowcount = intval($row['count']);
 				}
 				else {
 					$tableexists = false;
@@ -1017,6 +1061,9 @@
 					$createtable = $line;
 				}
 				$createindex = "";
+				
+				echo "Table <span class='e'>$table</span> - " . number_format($tablerowcount, 0) . " rows<br>";
+				
 			}
 			
 			/* table doesn't exist, so build the create table statement */
@@ -1031,19 +1078,26 @@
 				echo "</ul>";
 				//echo "Done examining [$table]<br>";
 				
-				if ($createtable != "") {
-					echo "Table <tt class='e'>$table</tt> did not exist, creating";
-					echo "<tt><pre>$createtable</pre></tt>";
-					
-					/* create the table */
-					$sqlstring = $createtable;
-					if ($debug)
-						echo "<code>$sqlstring</code><br>";
-					else
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (($tablerowcount >= $rowlimit) && ($rowlimit > 0)) {
+					echo "Table <tt class='e'>$table</tt> has $tablerowcount rows. Skipping upgrade<br>";
+					$ignoredtables[] = $table;
+				}
+				else {
+					if ($createtable != "") {
+						echo "Table <tt class='e'>$table</tt> did not exist, creating";
+						echo "<tt><pre>$createtable</pre></tt>";
+						
+						/* create the table */
+						$sqlstring = $createtable;
+						if ($debug)
+							echo "<code>$sqlstring</code><br>";
+						else
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 				
 				$table = "";
+				$tablerowcount = 0;
 				$previouscol = "";
 				$tableexists = false;
 				$createtable = "";
@@ -1053,33 +1107,106 @@
 			
 			/* regular column to be added/updated for the current table */
 			if (($table != "") && ($createtable == "") && (substr($line,0,1) == "`")) {
-				$parts = preg_split('/`/', $line);
-				$column = trim($parts[1]);
-				$properties = trim($parts[2]);
-				$properties = rtrim($properties,",");
-
-				/* change the column if it already exists */
-				$sqlstring = "alter ignore table `$table` change column if exists `$column` `$column` $properties";
-				if ($previouscol != "") {
-					$sqlstring .= " after `$previouscol`";
+				if (($tablerowcount >= $rowlimit) && ($rowlimit > 0)) {
+					//echo "Table <tt class='e'>$table</tt> has $tablerowcount rows. Skipping upgrade<br>";
 				}
-				/* if there is an issue with this column, it will be an error, so no need to check warnings */
-				if ($debug)
-					echo "<code>$sqlstring</code><br>";
-				else
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				/* add the column if it does not exist */
-				$sqlstring = "alter table `$table` add column if not exists `$column` $properties";
-				if ($previouscol != "") {
-					$sqlstring .= " after `$previouscol`";
-				}
-				if ($debug)
-					echo "<code>$sqlstring</code><br>";
-				else
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				else {
+					$parts = preg_split('/`/', $line);
+					$column = trim($parts[1]);
+					$properties = trim($parts[2]);
+					$properties = rtrim($properties,",");
+					
+					$parts2 = explode(" ", $properties);
+					$file_type = trim($parts2[0]);
+					if (contains(strtolower($properties), "on update current_timestamp()")) {
+						$file_type = $file_type . " on update current_timestamp()";
+					}
+					elseif (contains(strtolower($properties), "unsigned zerofill")) {
+						$file_type = $file_type . " unsigned zerofill";
+					}
+					elseif (strtolower($parts2[1]) == "unsigned") {
+						$file_type = $file_type . " unsigned";
+					}
+					elseif (strtolower($parts2[1]) == "binary") {
+						$file_type = $file_type . " binary";
+					}
+					
+					
+					$file_null = false;
+					$file_default = "";
 
-				echo "<tt style='font-size: smaller;'><span class='good'></span> $column</tt>";
+					if (contains($properties, "DEFAULT NULL")) {
+						$file_default = "null";
+						$file_null = true;
+					}
+					
+					/* check if the column exists */
+					$sqlstringA = "show columns from `$table` where Field = '$column'";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					if (mysqli_num_rows($resultA) > 0) {
+						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+						$type = $rowA['Type'];
+						$key = $rowA['Key'];
+						$null = $rowA['Null']; /* possible values YES, NO */
+						$default = $rowA['Default']; /* possible values: anything, or NULL */
+						$extra = $rowA['Extra']; /* possible values: on update current_timestamp() */
+						
+						/* figure out what the default value should look like, to compare it to the  */
+						if (is_null($default)) {
+							if ($null == "YES")
+								$default = "DEFAULT NULL";
+							else
+								$default = "";
+						}
+						else
+							if (is_numeric($default))
+								$default = "DEFAULT $default";
+							else
+								if ($default == "current_timestamp()")
+									$default = "DEFAULT $default";
+								else
+									$default = "DEFAULT '$default'";
+						
+						if (strtolower($extra) == "on update current_timestamp()") {
+							$type = $type . " on update current_timestamp()";
+						}
+						
+						/* check if the column is different */
+						if ( (($default == "") || (contains($properties, $default)) ) && (strtolower($file_type) == strtolower($type)) ) {
+							//echo "Column <tt>$column</tt> is unchanged, skipping<br>";
+						}
+						else {
+
+							echo "Column <tt>$column</tt> is different. Current [$type $null $default $extra] new [$file_type $properties]<br>";
+							
+							/* change the column if it already exists */
+							$sqlstring = "alter ignore table `$table` change column if exists `$column` `$column` $properties";
+							if ($previouscol != "") {
+								$sqlstring .= " after `$previouscol`";
+							}
+							/* if there is an issue with this column, it will be an error, so no need to check warnings */
+							if ($debug)
+								echo "<code>$sqlstring</code><br>";
+							else
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							
+							echo " &nbsp; <tt style='font-size: smaller;'><span class='good'></span> $column</tt> modified.<br>";
+						}
+					}
+					else {
+						/* add the column if it does not exist */
+						$sqlstring = "alter table `$table` add column if not exists `$column` $properties";
+						if ($previouscol != "") {
+							$sqlstring .= " after `$previouscol`";
+						}
+						if ($debug)
+							echo "<code>$sqlstring</code><br>";
+						else
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+						echo " &nbsp; Column <tt style='font-size: smaller;'><span class='good'></span> $column</tt> added.<br>";
+					}
+				}
 				
 				$previouscol = $column;
 				$createindex = "";
@@ -1140,7 +1267,7 @@
 					$result = MySQLiQuery($createindex, __FILE__, __LINE__);
 			}
 		}
-		
+		return array_unique($ignoredtables);
 	}
 
 

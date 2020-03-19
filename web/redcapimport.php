@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB redcapimport.php
- // Copyright (C) 2004 - 2019
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -49,6 +49,8 @@
 	$redcapevent = GetVariable("redcapevent");
 	$redcapform = GetVariable("redcapform");
 	$redcapfields = GetVariable("redcapfields");
+	$redcapurl = GetVariable("redcapurl");
+	$redcaptoken = GetVariable("redcaptoken");
 	$nidbdatatype = GetVariable("nidbdatatype");
 	$nidbvariablename = GetVariable("nidbvariablename");
 	$nidbinstrumentname = GetVariable("nidbinstrumentname");
@@ -57,14 +59,18 @@
 	switch ($action) {
 		case 'updatemapping':
 			UpdateMapping($projectid, $redcapevent, $redcapform, $redcapfields, $nidbdatatype, $nidbvariablename, $nidbinstrumentname);
-			DisplayImportSettings($projectid);
+			DisplayRedCapSettings($projectid);
+			break;
+		case 'updateconnection':
+			UpdateConnection($projectid, $redcapurl, $redcaptoken);
+			DisplayRedCapSettings($projectid);
 			break;
 		case 'deletemapping':
 			DeleteMapping($mappingid);
-			DisplayImportSettings($projectid);
+			DisplayRedCapSettings($projectid);
 			break;
 		default:
-			DisplayImportSettings($projectid);
+			DisplayRedCapSettings($projectid);
 	}
 	
 	
@@ -110,18 +116,62 @@
 		?><div align="center"><span class="message">Mapping deleted</span></div><br><br><?
 	}
 
-	
+
 	/* -------------------------------------------- */
-	/* ------- DisplayImportSettings -------------- */
+	/* ------- UpdateConnection ------------------- */
 	/* -------------------------------------------- */
-	function DisplayImportSettings($projectid) {
+	function UpdateConnection($projectid, $redcapurl, $redcaptoken) {
+		$redcapurl = mysqli_real_escape_string($GLOBALS['linki'], $redcapurl);
+		$redcaptoken = mysqli_real_escape_string($GLOBALS['linki'], $redcaptoken);
 		
 		if ((trim($projectid) == "") || ($projectid < 0)) {
 			?>Invalid or blank project ID [<?=$projectid?>]<?
 			return;
 		}
 		
+		$sqlstring = "update projects set redcap_server = '$redcapurl', redcap_token = '$redcaptoken' where project_id = '$projectid'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayRedCapSettings -------------- */
+	/* -------------------------------------------- */
+	function DisplayRedCapSettings($projectid) {
+		
+		if ((trim($projectid) == "") || ($projectid < 0)) {
+			?>Invalid or blank project ID [<?=$projectid?>]<?
+			return;
+		}
+		
+		$sqlstring = "select redcap_server, redcap_token from projects where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$redcapurl = $row['redcap_server'];
+		$redcaptoken = $row['redcap_token'];
+		
 		?>
+
+		<span style="font-size: larger; font-weight: bold">RedCap connection settings</span><br>
+		<form action="redcapimport.php" method="post">
+		<input type="hidden" name="action" value="updateconnection">
+		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<table>
+			<tr>
+				<td>Server URL</td>
+				<td><input type="url" name="redcapurl" value="<?=$redcapurl?>" required></td>
+			</tr>
+			<tr>
+				<td>RedCap token</td>
+				<td><input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="70" required></td>
+			</tr>
+			<tr>
+				<td colspan="2"><input type="submit" value="Update"></td>
+			</tr>
+		</table>
+		</form>
+		
+		<br><br>
 		
 		<form action="redcapimport.php" method="post">
 		<input type="hidden" name="action" value="updatemapping">

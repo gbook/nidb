@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleFileIO.cpp
-  Copyright (C) 2004 - 2019
+  Copyright (C) 2004 - 2020
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -784,7 +784,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 	/* check if this is looking for a UID or rowID */
 	subject *newsubject;
 	if ((newuid == "") && (newsubjectid > -1)) {
-		newsubject = new subject(newsubjectid, n); /* get the new subject info */
+		newsubject = new subject(newsubjectid, n); /* get the new subject info, by subjectID */
 		if (!newsubject->isValid) {
 			msg = n->WriteLog("New subject was not valid: [" + newsubject->msg + "]");
 			delete newsubject;
@@ -792,7 +792,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 		}
 	}
 	else {
-		newsubject = new subject(newuid, n); /* get the new subject info */
+		newsubject = new subject(newuid, n); /* get the new subject info, by UID */
 		if (!newsubject->isValid) {
 			msg = n->WriteLog("New subject was not valid: [" + newsubject->msg + "]");
 			delete newsubject;
@@ -852,15 +852,21 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 	/* copy the data, don't move in case there is a problem */
 	QString oldpath = thestudy.studypath;
 	QString newpath = QString("%1/%2").arg(newsubject->subjectpath).arg(newstudynum);
+	if (!newsubject->dataPathExists) {
+		QString m;
+		if (!n->MakePath(newsubject->subjectpath, m)) {
+			n->WriteLog("Subject directory [" + newsubject->subjectpath + "] did not exist on disk. Tried to create the directory path, but failed with error [" + m + "]");
+		}
+	}
 
 	QDir d;
 	d.mkpath(newpath);
-	d.mkpath(oldpath);
+	//d.mkpath(oldpath);
 	if (!d.exists(newpath)) msgs << "Error creating newpath [" + newpath + "]";
-	if (!d.exists(oldpath)) msgs << "Error creating oldpath [" + oldpath + "]";
+	if (!d.exists(oldpath)) msgs << "Error: oldpath [" + oldpath + "] does not exist";
 
 	n->WriteLog("Moving data within archive directory");
-	QString systemstring = QString("rsync -rtu %1/* %2 2>&1").arg(oldpath).arg(newpath);
+	QString systemstring = QString("rsync -rtu %1/* %2").arg(oldpath).arg(newpath);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	msg = msgs.join(" | ");

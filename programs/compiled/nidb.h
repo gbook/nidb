@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB nidb.h
-  Copyright (C) 2004 - 2019
+  Copyright (C) 2004 - 2020
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -23,8 +23,8 @@
 #ifndef NIDB_H
 #define NIDB_H
 
-#define VERSION_MAJ "2019"
-#define VERSION_MIN "1"
+#define VERSION_MAJ "2020"
+#define VERSION_MIN "2"
 
 #include <QFile>
 #include <QString>
