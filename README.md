@@ -15,7 +15,7 @@ This is a unified repository for the NiDB project. It is composed of four main s
 ## Current version of NiDB - March 2020
 NiDB was re-written in 2019 using C++ instead of Perl. This allowed much more reliable code. All Perl files have been moved to the <i>old</i> directory within programs for historical purposes.
 
-As part of the rewrite, a new installer was created. See the <i>Releases<i> section to download the current installer. The installer should be used the first time NiDB is installed, and the internal update tool used for subsequent updates.
+As part of the rewrite, a new installer was created. See the *Releases* section to download the current installer. The installer should be used the first time NiDB is installed, and the internal update tool used for subsequent updates.
 
 Further changes include:
  * Only CentOS 8 is supported
