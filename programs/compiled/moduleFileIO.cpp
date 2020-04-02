@@ -593,7 +593,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
 /* --------- RearchiveStudy --------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
-	n->WriteLog("In DeleteSeries()");
+	n->WriteLog("In RearchiveStudy()");
 
 	QStringList msgs;
 	QSqlQuery q;
@@ -633,7 +633,10 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	/* move all DICOMs to the incomingdir */
 	QString m;
 	if (!n->MoveAllFiles(s.studypath,"*.dcm",outpath, m)) {
-		msgs << QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m);
+		msgs << n->WriteLog(QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m));
+	}
+	else {
+		n->WriteLog(QString("Moved all .dcm files from [%1] to [%2]").arg(s.studypath).arg(outpath));
 	}
 
 	/* move the old study to the deleted directory */
@@ -641,6 +644,9 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	QDir d2;
 	if(d2.rename(s.studypath, newpath)) {
 		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.studypath).arg(newpath));
+	}
+	else {
+		n->WriteLog(QString("Unable to move [%1] to [%2]").arg(s.studypath).arg(newpath));
 	}
 
 	/* update the import_requests table with the new uploadid */
@@ -659,7 +665,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	q.bindValue(":studyid", studyid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	msg = msgs.join(" | ");
+	msg = msgs.join("\n");
 	return true;
 }
 
@@ -668,7 +674,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 /* --------- RearchiveSubject ------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int projectid, QString &msg) {
-	n->WriteLog("In DeleteSeries()");
+	n->WriteLog("In RearchiveSubject()");
 
 	QStringList msgs;
 	QSqlQuery q;
@@ -710,12 +716,18 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	if (!n->MoveAllFiles(s.subjectpath,"*.dcm",outpath, m)) {
 		msgs << QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m);
 	}
+	else {
+		msgs << QString("Moved all .dcm files from [%1] to  [%2]").arg(s.subjectpath).arg(outpath);
+	}
 
 	/* move the remains of the subject directory to the deleted directory */
 	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
 	QDir d2;
 	if(d2.rename(s.subjectpath, newpath)) {
-		n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+		msgs << n->WriteLog(QString("Moved [%1] to [%2]").arg(s.subjectpath).arg(newpath));
+	}
+	else {
+		msgs << n->WriteLog(QString("Unable to move [%1] to [%2]").arg(s.subjectpath).arg(newpath));
 	}
 
 	/* update the import_requests table with the new uploadid */
@@ -758,7 +770,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	msg = msgs.join(" | ");
+	msg = msgs.join("\n");
 	return true;
 }
 

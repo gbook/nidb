@@ -2291,4 +2291,89 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 	
+	
+	/* -------------------------------------------- */
+	/* ------- ShellWords ------------------------- */
+	/* -------------------------------------------- */
+	function ShellWords($line) {
+        $line .= ' ';
+
+		//PrintVariable($line);
+		
+        $pattern = '/\G\s*(?>([^\s\\\'\"]+)|\'([^\']*)\'|"((?:[^\"\\\\]|\\.)*)"|(\\.?)|(\S))(\s|\z)?/m';
+        preg_match_all($pattern, $line, $matches, PREG_SET_ORDER);
+		//PrintVariable($matches);
+
+        $words = array();
+        $field = '';
+
+        foreach ($matches as $set) {
+            # Index #0 is the full match.
+            array_shift($set);
+
+			//echo "$word, $sq, $dq, $esc, $garbage, $sep<br>";
+            @list($word, $sq, $dq, $esc, $garbage, $sep) = $set;
+
+            if ($garbage) {
+				//echo "[$garbage]<br>";
+                throw new \UnexpectedValueException("Unmatched double quote: '$line'");
+            }
+
+			if (trim($dq) != "")
+				$field = $dq;
+			elseif (trim($sq) != "")
+				$field = $sq;
+			elseif (trim($word) != "")
+				$field = $word;
+            //$field .= ($dq ?: $sq ?: $word);
+			//echo "[$field]<br>";
+            //if (strlen($sep) > 0) {
+				if (trim($field) > "") {
+					$words[] = $field;
+					$field = '';
+				}
+            //}
+        }
+
+        return $words;
+    }
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSQLComparison ------------------- */
+	/* -------------------------------------------- */
+	function GetSQLComparison($c) {
+		$comp = "";
+		$num = 0;
+		
+		$c = preg_replace('/\s/', '', $c);
+
+		if (substr($c,0,2) == '>=') {
+			$comp = ">=";
+			$num = substr($c,2);
+		}
+		elseif (substr($c,0,2) == '<=') {
+			$comp = "<=";
+			$num = substr($c,2);
+		}
+		elseif (substr($c,0,1) == '>') {
+			$comp = ">";
+			$num = substr($c,1);
+		}
+		elseif (substr($c,0,1) == '<') {
+			$comp = "<";
+			$num = substr($c,1);
+		}
+		elseif (substr($c,0,1) == '~') {
+			$comp = "<>";
+			$num = substr($c,1);
+		}
+		else {
+			$comp = "=";
+			$num = $c;
+		}
+		
+		return array($comp, $num);
+	}
+	
 ?>

@@ -28,11 +28,17 @@
 	require "includes_php.php";
 	
 	//PrintVariable($_POST);
+	//PrintVariable($_SESSION);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
 	$enrollmentid = GetVariable("enrollmentid");
+
+	$savedsearchname = GetVariable("savedsearchname");
+	$savedsearchid = GetVariable("savedsearchid");
+	
+	$a = array(); /* have the variable ready in case we're loading a saved search */
 	
 	$a['mr_protocols'] = GetVariable("mr_protocols");
     $a['eeg_protocols'] = GetVariable("eeg_protocols");
@@ -55,47 +61,173 @@
 	
 	/* determine action */
 	switch ($action) {
-		default:
-			if ($a['outputformat'] == "csv") {
-				if ($a['reportformat'] == "long") {
-					list($h, $t) = CreateLongReport($projectid, $a);
-					PrintCSV($h,$t,'long');
-				}
-				else {
-					list($h, $t) = CreateWideReport($projectid, $a);
-					PrintCSV($h,$t,'wide');
-				}
-				exit(0);
-			}
-			?>
-
-			<html>
-				<head>
-					<link rel="icon" type="image/png" href="images/squirrel.png">
-					<title>NiDB - Analysis report builder</title>
-				</head>
-
-			<body>
-				<div id="wrapper">
-			<?
-			/* requires don't work inside of functions */
-			require "includes_html.php";
-			require "menu.php";
-			DisplayAnalysisSummaryBuilder($projectid, $a);
+		case 'savesearch':
+			SaveSearch($projectid, $savedsearchname, $a);
+			break;
+		case 'deletesavedsearch':
+			DeleteSavedSearch($savedsearchid);
+			break;
+		case 'usesavedsearch':
+			$a = LoadSavedSearch($savedsearchid);
+			$projectid = $a['projectid'];
+			break;
 	}
+	
+	//PrintVariable($a);
+	//PrintVariable($projectid);
+	
+	/* perform the default operation for this page, to display the search criteria and results */
+	if ($a['outputformat'] == "csv") {
+		if ($a['reportformat'] == "long") {
+			list($h, $t) = CreateLongReport($projectid, $a);
+			PrintCSV($h,$t,'long');
+		}
+		else {
+			list($h, $t) = CreateWideReport($projectid, $a);
+			PrintCSV($h,$t,'wide');
+		}
+		exit(0);
+	}
+	?>
+
+	<html>
+		<head>
+			<link rel="icon" type="image/png" href="images/squirrel.png">
+			<title>NiDB - Analysis report builder</title>
+		</head>
+
+	<body>
+		<div id="wrapper">
+	<?
+	/* requires don't work inside of functions */
+	require "includes_html.php";
+	require "menu.php";
+	DisplayAnalysisSummaryBuilder($projectid, $savedsearchid, $a);
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
+	/* -------------------------------------------- */
+	/* ------- DeleteSavedSearch ------------------ */
+	/* -------------------------------------------- */
+	function DeleteSavedSearch($savedsearchid) {
+		$savedsearchid = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchid);
+		
+		$sqlstring = "delete from saved_search where savedsearch_id = $savedsearchid";
+		PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		echo "Search saved deleted [$savedsearchid]<br>";
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- SaveSearch ------------------------- */
+	/* -------------------------------------------- */
+	function SaveSearch($projectid, $savedsearchname, $a) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$savedsearchname = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchname);
+		$mr_protocols = implode2(",", mysqli_real_escape_array($a['mr_protocols']));
+		$eeg_protocols = implode2(",", mysqli_real_escape_array($a['eeg_protocols']));
+		$et_protocols = implode2(",", mysqli_real_escape_array($a['et_protocols']));
+		$pipelineid = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineid']);
+		$pipelineresultname = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineresultname']);
+		$pipelineseriesdatetime = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineseriesdatetime']);
+		$includeprotocolparms = mysqli_real_escape_string($GLOBALS['linki'], $a['includeprotocolparms']);
+		$includemrqa = mysqli_real_escape_string($GLOBALS['linki'], $a['includemrqa']);
+		$includeallmeasures = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallmeasures']);
+		$includeallvitals = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallvitals']);
+		$includealldrugs = mysqli_real_escape_string($GLOBALS['linki'], $a['includealldrugs']);
+		$includetimesincedose = mysqli_real_escape_string($GLOBALS['linki'], $a['includetimesincedose']);
+		$dosevariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
+		$dosetimerange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
+		$dosedisplaytime = mysqli_real_escape_string($GLOBALS['linki'], $a['dosedisplaytime']);
+		$includeemptysubjects = mysqli_real_escape_string($GLOBALS['linki'], $a['includeemptysubjects']);
+		$reportformat = mysqli_real_escape_string($GLOBALS['linki'], $a['reportformat']);
+		$outputformat = mysqli_real_escape_string($GLOBALS['linki'], $a['outputformat']);
+		$measurename = mysqli_real_escape_string($GLOBALS['linki'], $a['measurename']);
+		$vitalname = mysqli_real_escape_string($GLOBALS['linki'], $a['vitalname']);
+		$drugname = mysqli_real_escape_string($GLOBALS['linki'], $a['drugname']);
+
+		$sqlstring = "insert ignore into saved_search (user_id, saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_includeemptysubjects, search_reportformat, search_outputformat) values (" . $_SESSION['userid'] . ", now(), '$savedsearchname', '$projectid', '$includeprotocolparms', '$includemrqa', '$mr_protocols', '$eeg_protocols', '$et_protocols', '$pipelineid', '$pipelineresultname', '$pipelineseriesdatetime', '$measurename', '$includeallmeasures', '$vitalname', '$includeallvitals', '$drugname', '$includealldrugs', '$includetimesincedose', '$dosevariable', '$dosetimerange', '$dosedisplaytime', '$includeemptysubjects', '$reportformat', '$outputformat')";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		echo "Search saved [$savedsearchname]<br>";
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- LoadSavedSearch -------------------- */
+	/* -------------------------------------------- */
+	function LoadSavedSearch($savedsearchid) {
+		$savedsearchid = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchid);
+		
+		$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//PrintSQL($sqlstring);
+		//$projectid = $row['search_projectid");
+		$a['projectid'] = $row['search_projectid'];
+		$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
+		$a['eeg_protocols'] = explode(",", $row['search_eeg_protocol']);
+		$a['et_protocols'] = explode(",", $row['search_et_protocol']);
+		$a['pipelineid'] = $row['search_pipelineid'];
+		$a['pipelineresultname'] = $row['search_pipelineresultname'];
+		$a['pipelineseriesdatetime'] = $row['search_pipelineseriesdatetime'];
+		$a['includeprotocolparms'] = $row['search_includeprotocolparms'];
+		$a['includemrqa'] = $row['search_includemrqa'];
+		$a['includeallmeasures'] = $row['search_includeallmeasures'];
+		$a['includeallvitals'] = $row['search_includeallvitals'];
+		$a['includealldrugs'] = $row['search_includealldrugs'];
+		$a['includetimesincedose'] = $row['search_includetimesincedose'];
+		$a['dosevariable'] = $row['search_dosevariable'];
+		$a['dosetimerange'] = $row['search_dosetimerange'];
+		$a['dosedisplaytime'] = $row['search_dosedisplaytime'];
+		$a['includeemptysubjects'] = $row['search_includeemptysubjects'];
+		$a['reportformat'] = $row['search_reportformat'];
+		$a['outputformat'] = $row['search_outputformat'];
+		
+		//PrintVariable($a);
+		return $a;
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- DisplayAnalysisSummaryBuilder ------ */
 	/* -------------------------------------------- */
-	function DisplayAnalysisSummaryBuilder($projectid, $a) {
+	function DisplayAnalysisSummaryBuilder($projectid, $savedid, $a) {
 		
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 	
 		?>
+		<form method="post" action="analysisbuilder.php">
+		<input type="hidden" name="action" value="usesavedsearch">
+		Saved Searches
+		<select name="savedsearchid">
+			<?
+			$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$savedsearchid = $row['savedsearch_id'];
+				$savedname = $row['saved_name'];
+				if ($savedid == $savedsearchid) {
+					$selected = "selected";
+				}
+				else {
+					$selected = "";
+				}
+				?>
+				<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
+				<?
+			}
+			?>
+		</select>
+		<input type="submit" value="Use saved search">
+		</form>
+		
+		<br>
+		
 		<form method="post" action="analysisbuilder.php">
 		<input type="hidden" name="action" value="viewanalysissummary">
 		<b>Select Project: </b> <? DisplayProjectSelectBox(0,"projectid",'','',0,$projectid); ?> <input type="submit" value="Use selected project">
@@ -204,7 +336,7 @@
 		<table style="width: 100%; height: 100%">
 			<tr>
 				<td width="450px" valign="top">
-					<form method="post" action="analysisbuilder.php">
+					<form method="post" name="analysisbuilder" action="analysisbuilder.php">
 					<input type="hidden" name="action" value="viewanalysissummary">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">
 					<table width="450px">
@@ -219,7 +351,7 @@
 									<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includerqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA
 									<br>
 									MR Protocol<br>
-									<select name="mr_protocols[]" id="mr_protocols" multiple style="width: 400px" size="5" onChange="CheckForMRICriteria()">
+									<select name="mr_protocols[]" id="mr_protocols" multiple style="width: 400px" size="10" onChange="CheckForMRICriteria()">
 										<option value="NONE" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>(None)
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
@@ -247,7 +379,7 @@
 									<summary><b>EEG</b>&nbsp;<span id="eegIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
 									EEG Protocol<br>
-									<select name="eeg_protocols[]" id="eeg_protocols" multiple style="width: 400px" size="5" onChange="CheckForEEGCriteria()">
+									<select name="eeg_protocols[]" id="eeg_protocols" multiple style="width: 400px" size="10" onChange="CheckForEEGCriteria()">
 										<option value="NONE" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>(None)
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
@@ -275,7 +407,7 @@
 									<summary><b>ET</b>&nbsp;<span id="etIndicator" class="indicator"></span></summary>
 									<div>
 									ET Protocol<br>
-									<select name="et_protocols[]" id="et_protocols" multiple style="width: 400px" size="5" onChange="CheckForETCriteria()">
+									<select name="et_protocols[]" id="et_protocols" multiple style="width: 400px" size="10" onChange="CheckForETCriteria()">
 										<option value="NONE" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>(None)
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
@@ -303,7 +435,7 @@
 									<summary><b>Pipeline&nbsp;results</b>&nbsp;<span id="pipelineIndicator" class="indicator"></span></summary>
 									<div>
 									Pipeline<br>
-									<select name="pipelineid" id="pipelineid" style="width: 400px" size="5" onChange="CheckForPipelineCriteria()">
+									<select name="pipelineid" id="pipelineid" style="width: 400px" size="10" onChange="CheckForPipelineCriteria()">
 										<option value="NONE" <? if ($a['pipelineid'] == "NONE" || ($a['pipelineid'] == "")) echo "selected"; ?>>(None)
 									<?
 										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
@@ -397,6 +529,10 @@
 					<br>
 					<div align="center">
 						<input type="submit" value="Update Summary" style="width: 90%; border: 2px solid #999; font-weight: bold; background-color: lightblue">
+					</div>
+					<br>
+					<div align="center">
+						<input type="text" placeholder="Saved search name" name="savedsearchname"><input type="submit" value="Save Search" onClick="document.analysisbuilder.action.value='savesearch'"; style="border: 2px solid #999; font-weight: bold; background-color: lightblue">
 					</div>
 					</form>
 				</td>
@@ -751,7 +887,7 @@
 							/* if we should search for a series datetime */
 							$variabledatetime = $studydatetime;
 							if ($a['pipelineseriesdatetime'] != "") {
-								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid";
+								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
 								//PrintSQL($sqlstringB);
 								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
 								if (mysqli_num_rows($resultB) > 0) {
@@ -887,6 +1023,7 @@
 					$studydatetime = $rowA['study_datetime'];
 					$studyage = $rowA['study_ageatscan'];
 					$studynotes = $rowA['study_notes'];
+					$studyvisit = $rowA['study_type'];
 					
 					if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
 						$age = strtotime($studydate) - strtotime($dob);
@@ -912,6 +1049,7 @@
 					$t[$uid]["$seriesdesc"."_Height_$i"] = $height;
 					$t[$uid]["$seriesdesc"."_Weight_$i"] = $weight;
 					$t[$uid]["$seriesdesc"."_Notes_$i"] = $studynotes;
+					$t[$row]['$seriesdesc"."_VisitType_$i'] = $studyvisit;
 					
 					if ($a["includeprotocolparms"]) {
 						$t[$uid]["$seriesdesc"."_voxX_$i"] = $pixdimX;
@@ -1024,16 +1162,103 @@
 					$i++;
 				}
 			}
+
+			/* get the pipeline info */
+			if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
+				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
+				$resultnameids = array();
+				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
+				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					$resultnameids[] = $rowX['resultname_id'];
+					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+				}
+
+				if (count($resultnameids) > 0) {
+					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND a.pipeline_id = " . $a['pipelineid'] . " AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = $subjectid ORDER BY c.study_num, c.study_datetime";
+					
+					$laststudyid = "";
+					
+					/* create a hash of series datetimes */
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					if (mysqli_num_rows($resultA) > 0) {
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+
+							$studyage = $rowA['ageinmonths']/12.0;
+							$studydatetime = $rowA['study_datetime'];
+							$studyheight = $rowA['study_height'];
+							$studyweight = $rowA['study_weight'];
+							$studynum = $rowA['study_num'];
+							$studyid = $rowA['study_id'];
+							$studyvisit = $rowA['study_type'];
+							$studymodality = strtolower($rowA['study_modality']);
+							
+							if (($studyage == "") || ($studyage == "null") || ($studyage == 0)) $age = strtotime($studydate) - strtotime($subj['dob']);
+							else $age = $studyage;
+							
+							if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0)) $height = $subj['height'];
+							else $height = $studyheight;
+							
+							if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0)) $weight = $subj['weight'];
+							else $weight = $studyweight;
+							
+							//if ( ($studyid != $laststudyid) && ($laststudyid != "") )
+							//	$row++;
+							
+							/* need to add the demographic info to every row */
+							//$t[$uid]['Row'] = $row;
+							//$t[$uid]['UID'] = $subj['uid'];
+							//$t[$uid]['Sex'] = $subj['sex'];
+							//$t[$uid]['Age'] = $age;
+							//$t[$uid]['Height'] = $height;
+							//$t[$uid]['Weight'] = $weight;
+							//$t[$uid]['EnrollGroup'] = $subj['enrollgroup'];
+							//$t[$uid]['AltUIDs'] = $subj['altuids'];
+							//$t[$uid]['Pipeline-StudyID'] = $subj['uid'] . $studynum;
+							//$t[$uid]['Pipeline-StudyDateTime'] = $studydatetime;
+							//$t[$uid]['VisitType'] = $studyvisit;
+
+							$resultname = $resultnames[$rowA['result_nameid']];
+							
+							/* add the measure info to this row */
+							$t[$uid]["Pipeline_$resultname"."_$i"] = $rowA['result_value'];
+
+							/* if we should search for a series datetime */
+							$variabledatetime = $studydatetime;
+							if ($a['pipelineseriesdatetime'] != "") {
+								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
+								//PrintSQL($sqlstringB);
+								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+								if (mysqli_num_rows($resultB) > 0) {
+									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+									$variabledatetime = $rowB['series_datetime'];
+									$t[$uid]["Pipeline-SeriesDateTime-$resultname-$i"] = $variabledatetime;
+								}
+							}
+
+							$timeSinceDose = GetTimeSinceDose($dosedates, $variabledatetime, $dosedisplaytime);
+							if ($timeSinceDose != null)
+								$t[$uid][$resultname . "_TimeSinceDose_$dosedisplaytime"."_$i"] = $timeSinceDose;
+							
+							$hasdata = true;
+							$laststudyid = $studyid;
+						}
+						//$row++;
+					}
+				}
+				else {
+					echo "Result names not found [$sqlstringX]";
+				}
+			}
 			
 			/* add a row if the subject had no data */
 			if ((!$hasdata) && ($a['includeemptysubjects'] == 1)) {
-				$t[$uid]['uid'] = $uid;
-				$t[$uid]['dob'] = $dob;
-				$t[$uid]['sex'] = $sex;
-				$t[$uid]['subjectheight'] = $subjectheight;
-				$t[$uid]['subjectweight'] = $subjectweight;
-				$t[$uid]['enrollgroup'] = $enrollgroup;
-				$t[$uid]['altuids'] = $altuids;
+				$t[$uid]['UID'] = $uid;
+				$t[$uid]['Sex'] = $sex;
+				$t[$uid]['SubjectHeight'] = $subjectheight;
+				$t[$uid]['SubjectWeight'] = $subjectweight;
+				$t[$uid]['EnrollGroup'] = $enrollgroup;
+				$t[$uid]['AltUIDs'] = $altuids;
 			}
 		}
 		

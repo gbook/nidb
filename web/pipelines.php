@@ -1569,7 +1569,7 @@
 				</td>
 			</tr>
 			<tr class="level1">
-				<td class="label" valign="top">Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
+				<td class="label" valign="top">Study Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
 				<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 				</td>
 				<td valign="top">
@@ -1648,15 +1648,19 @@
 						<script>
 							function TestDataSearch() {
 								var xhttp = new XMLHttpRequest();
+
+								document.getElementById("searchwaiting").innerHTML = "Searching... <img src='images/SpinningSquirrel.gif'>";
 								
 								/* setup the callback function to get the response */
 								xhttp.onreadystatechange = function() {
 									if (this.readyState == 4 && this.status == 200) {
 										document.getElementById("testsearchresult").innerHTML = this.responseText;
+										document.getElementById("searchwaiting").innerHTML = "Done searching";
 									}
 								};
 								
 								/* create the XML http request */
+								var pipelineid = <?=$id?>;
 								var dependency = $('#dependency').val().join();
 								var deplevel = $('#deplevel').val();
 								var groupid = $('#groupid').val().join();
@@ -1694,7 +1698,7 @@
 
 								var dd_imagetype = $("input[name^='dd_imagetype']").map(function (idx, ele) {
 								   return $(ele).val();
-								}).get().join();
+								}).get().join("|");
 
 								var dd_seriescriteria = $("input[name^='dd_seriescriteria']").map(function (idx, ele) {
 								   return $(ele).val();
@@ -1704,11 +1708,13 @@
 								   return $(ele).val();
 								}).get().join();
 
-								xhttp.open("GET", "ajaxapi.php?action=pipelinedatasearch&dependency=" + dependency + "&deplevel=" + deplevel + "&groupid=" + groupid + "&projectid=" + projectid + "&dd_isprimary=" + dd_isprimary + "&dd_enabled=" + dd_enabled + "&dd_optional=" + dd_optional + "&dd_order=" + dd_order + "&dd_protocol=" + dd_protocol + "&dd_modality=" + dd_modality + "&dd_datalevel=" + dd_datalevel + "&dd_studyassoc=" + dd_studyassoc + "&dd_imagetype=" + dd_imagetype + "&dd_seriescriteria=" + dd_seriescriteria + "&dd_numboldreps=" + dd_numboldreps, true);
+								xhttp.open("GET", "ajaxapi.php?action=pipelinetestsearch&pipelineid=" + pipelineid + "&dependency=" + dependency + "&deplevel=" + deplevel + "&groupid=" + groupid + "&projectid=" + projectid + "&dd_isprimary=" + dd_isprimary + "&dd_enabled=" + dd_enabled + "&dd_optional=" + dd_optional + "&dd_order=" + dd_order + "&dd_protocol=" + dd_protocol + "&dd_modality=" + dd_modality + "&dd_datalevel=" + dd_datalevel + "&dd_studyassoc=" + dd_studyassoc + "&dd_imagetype=" + dd_imagetype + "&dd_seriescriteria=" + dd_seriescriteria + "&dd_numboldreps=" + dd_numboldreps, true);
 								xhttp.send();
 							}
 						</script>
-						<input type="button" value="Update search" onClick="TestDataSearch()"> <span id="testsearchresult"></span>
+						<input type="button" value="Run test search" onClick="TestDataSearch()"> <span id="searchwaiting" style="color: red; font-weight: bold;"></span>
+						<br>
+						<div id="testsearchresult" style="padding: 15px;"></div>
 					</details>
 				</td>
 			</tr>
