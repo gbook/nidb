@@ -12,40 +12,20 @@ This is a unified repository for the NiDB project. It is composed of four main s
 * setup - setup script and SQL schema files
 * documentation - Word documents for usage and administration
 
+## Current version of NiDB - March 2020
+NiDB was re-written in 2019 using C++ instead of Perl. This allowed much more reliable code. All Perl files have been moved to the <i>old</i> directory within programs for historical purposes.
+
+As part of the rewrite, a new installer was created. See the *Releases* section to download the current installer. The installer should be used the first time NiDB is installed, and the internal update tool used for subsequent updates.
+
+Further changes include:
+ * Only CentOS 8 is supported
+ * Only MariaDB 10.0+ supported
+ * Only PHP7+ is supported
+
 ## Install
+Use the binary installer. It will go through the process of installing several packages, and requires root privileges. Once finished, the installer will launch the web browser, through which you will complete the setup.
+
 After setup, go to http://localhost/ and login with `admin` and `password`. Change the default password immediately after logging in!
-
-### CentOS 7
-To <u>install on CentOS 7</u>, type the following on the command line (as root), and follow the instructions: (This has been tested and is generally stable)<br>
-`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-centos7.sh .`<br>
-`> chmod 777 setup-centos7.sh`<br>
-`> sudo ./setup-centos7.sh`
-
-### Ubuntu 16
-To <u>install on Ubuntu 16</u>, type the following on the command line (as root), and follow the instructions: (This is untested and might or might not work...)<br>
-`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/setup-ubuntu16.sh .`<br>
-`> chmod 777 setup-ubuntu16.sh`<br>
-`> sudo ./setup-ubuntu16.sh`
-
-### Generic requirements for installation any OS
-Most of these are available through `yum` or `apt-get`
-* httpd
-* MySQL/MariaDB 10.0+
-* Perl 5.16+ - including the following libraries: `File::Path`, `Net::SMTP::TLS`, `List::Util`, `Date::Parse`, `Image::ExifTool`, `String::CRC32`, `Date::Manip`, `Sort::Naturally`, `Digest::MD5`, `Digest::MD5::File`, `Statistics::Basic`, `Email::Send::SMTP::Gmail`
-* PHP 7+ - including the following packages (through yum or PEAR): `php-mysql`, `php-gd`, `php-process`, `php-pear`, `php-mcrypt`, `php-mbstring`, `Mail`, `Mail_Mime`, `Net_SMTP`
-* iptables (configured to forward external port 104 to internal port 8104)
-* svn (for downloading updates from github)
-* java
-* ImageMagick
-* phpMyAdmin
-* FSL
-
-## Upgrade
-To <u>upgrade</u> an existing installation of NiDB, do the following (as root). (Tested, should work. <b>Backup your database before attempting the upgrade!!</b>)<br>
-`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/Upgrade.php .`<br>
-`> wget https://raw.githubusercontent.com/gbook/nidb/master/setup/nidb.sql .`<br>
-Edit the options at the top of Upgrade.php to reflect your site (usernames/passwords) and the options you want to execute. Then run the updater by typing<br>
-`> php Upgrade.php`
 
 ## Support
 Visit the NiDB's github <a href="https://github.com/gbook/nidb/issues">issues</a> page for more support.
