@@ -431,27 +431,26 @@
 			$studyids_valid = array_unique($studyids_valid);
 
 			if ((count($studyids_groups) > 0) && (count($studyids_completedparent) > 0)) {
-				$cumtotal = count(array_diff(array_intersect($studyids_completedparent, $studyids_groups, $studyids_valid), $studyids_existing));
+				$studyids_remaining = array_diff(array_intersect($studyids_completedparent, $studyids_groups, $studyids_valid), $studyids_existing);
 			}
 			elseif (count($studyids_groups) > 0) {
-				$cumtotal = count(array_diff(array_intersect($studyids_groups, $studyids_valid), $studyids_existing));
+				$studyids_remaining = array_diff(array_intersect($studyids_groups, $studyids_valid), $studyids_existing);
 			}
 			elseif (count($studyids_completedparent) > 0) {
-				$cumtotal = count(array_diff(array_intersect($studyids_completedparent, $studyids_valid), $studyids_existing));
+				$studyids_remaining = array_diff(array_intersect($studyids_completedparent, $studyids_valid), $studyids_existing);
 			}
 			else {
-				$cumtotal = count(array_diff($studyids_valid, $studyids_existing));
+				$studyids_remaining = array_diff($studyids_valid, $studyids_existing);
 			}
+			$cumtotal = count($studyids_remaining);
 			PrintSearchRow("Valid $primarymodality studies", "Valid studies for non-deleted subjects, collected more than 6 hours ago", "", count($studyids_valid), $cumtotal);
 
 			/* ---------- LINE 5 - remaining studies to be processed ---------- */
 			PrintSearchRow("Remaining studies", "Remaining studies to be processed. These will be checked for valid data", "", $cumtotal, $cumtotal, true);
 			
 			/* now check the data steps */
-			//PrintVariable($datadef);
-		
+			
 			foreach ($datadef as $step => $details) {
-				//PrintVariable($details);
 				$enabled = $details['enabled'];
 				//$optional = $details['optional']; /* doesn't matter if optional */
 				$order = $details['order'];
@@ -482,26 +481,18 @@
 				if ($modality == "mr")
 					$seriesdescfield = "series_desc";
 				
-				//PrintVariable($protocol);
 				/* prepare the protocol name(s) for SQL. Seperate any protocols that have multiples */
 				if (contains($protocol,'"')) {
-					//echo "[$protocol] contains a \"";
 					$prots = ShellWords($protocol);
-					//PrintVariable($prots);
 					$protocols = "'" . implode2("','", $prots) . "'";
 				}
 				else
 					$protocols = "'" . $protocol . "'";
-				//PrintVariable($protocols);
 				
 				/* prepare image type(s) for SQL */
-				PrintVariable($imagetype);
+				//PrintVariable($imagetype);
 				if (contains($imagetype, ",")) {
 					$types = preg_split("/,[\s,]+/", $imagetype);
-					//PrintVariable($types);
-					//foreach ($types as $i => $type) {
-					//	$types[$i] = str_replace("\\", "\\\\", $types[$i]);
-					//}
 					$imagetypes = "'" . implode("','", $types) . "'";
 				}
 				else
@@ -510,138 +501,65 @@
 				
 				/* prepare the numboldreps comparison */
 				list($comp, $num) = GetSQLComparison($numboldreps);
-				
-				/* if study level, check the study for criteria */
-				$sqlstring = "select a.study_id from studies a left join $modality" . "_series b on a.study_id = b.study_id where b.$seriesdescfield in ($protocols)";
-				if ($imagetypes != "")
-					$sqlstring .= " and b.image_type in ($imagetypes)";
-				if ($numboldreps != "")
-					$sqlstring .= " and b.numfiles $comp $num";
-				PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$studyids_step[$order][] = $row['study_id'];
+					
+				/* check each of the studies from the previous list */
+				foreach ($studyids_remaining as $studyid) {
+					list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+					$modality = strtolower($modality);
+					
+					if ($datalevel == "study") {
+						/* if study level, check the study for criteria */
+						$sqlstring = "select a.study_id from studies a left join $modality" . "_series b on a.study_id = b.study_id where b.$seriesdescfield in ($protocols)";
+						if ($imagetypes != "")
+							$sqlstring .= " and b.image_type in ($imagetypes)";
+						if ($numboldreps != "")
+							$sqlstring .= " and b.numfiles $comp $num";
+						PrintSQL($sqlstring);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$studyids_step[$step][] = $row['study_id'];
+							}
+						}
+						$studyids_step[$step] = array_unique($studyids_step[$step]);
+						$cumtotal = count(array_diff($studyids_step[$step], $studyids_existing));
+						
+					}
+					else {
+						/* if subject level, check the subject for the criteria */
+						
+						if (($studyassoc == "nearesttime") || ($studyassoc == "nearestintime")) {
+							/* find the data from the same subject and modality that has the nearest (in time) matching scan */
+							echo "Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan<br>";
+
+							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+							if (($imagetypes != "") && ($imagetypes != "''"))
+								$sqlstring .= " and b.image_type in ($imagetypes)";
+						}
+						else if ($studyassoc == "all") {
+							echo "Searching for ALL data from the same SUBJECT and modality<br>";
+							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+							if (($imagetypes != "") && ($imagetypes != "''"))
+								$sqlstring .= " and b.image_type in ($imagetypes)";
+						}
+						else {
+							/* find the data from the same subject and modality that has the same study_type */
+							echo "Searching for data from the same SUBJECT, Modality, and StudyType<br>";
+
+							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+
+							if (($imagetypes != "") && ($imagetypes != "''"))
+								$sqlstring .= " and b.image_type in ($imagetypes)";
+
+							//sqlstring += " and `studies`.study_type = :studytype";
+						}
+						
+						PrintSQL($sqlstring);
 					}
 				}
-				$studyids_step[$order] = array_unique($studyids_step[$order]);
-				$cumtotal = count(array_diff($studyids_step[$order], $studyids_existing));
+				PrintSearchRow("[$datalevel level] data step $step", $protocol, "-", count($studyids_step[$step]), $cumtotal);
 				
-				PrintSearchRow("Data step $step", $protocol, "-", count($studyids_step[$order]), $cumtotal);
-				/* if subject level, check the subject for the criteria */
 			}
-			//PrintVariable($studyids_step);
-			
-			
-		// for (int i = 0; i < datadef.size(); i++) {
-			// QString protocol = datadef[i].protocol;
-			// QString modality = datadef[i].modality.toLower();
-			// QString imagetype = datadef[i].imagetype;
-			// bool enabled = datadef[i].enabled;
-			// QString type = datadef[i].type;
-			// QString level = datadef[i].level;
-			// QString assoctype = datadef[i].assoctype;
-			// bool optional = datadef[i].optional;
-			// QString numboldreps = datadef[i].numboldreps;
-
-			// dlog << QString("   Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
-
-			// /* expand the comparison into SQL */
-			// QString comparison;
-			// int num(0);
-			// bool validComparisonStr = false;
-			// if (n->GetSQLComparison(numboldreps, comparison, num))
-				// validComparisonStr = true;
-
-			// /* if its a subject level, check the subject for the protocol(s) */
-			// int subjectid = s.subjectid;
-			// QString studydate = s.studydatetime.toString("yyyy-MM-dd hh:mm:ss");
-			// if (level == "subject") {
-				// dlog << "   Note: this data step is subject level [" + protocol + "], association type [" + assoctype + "]";
-
-				// QString sqlstring;
-				// if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
-					// /* find the data from the same subject and modality that has the nearest (in time) matching scan */
-					// dlog << QString("   Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan");
-
-					// sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
-
-					// if (imagetypes != "''")
-						// sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
-
-					// sqlstring += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(studydate);
-
-					// q.prepare(sqlstring);
-					// q.bindValue(":subjectid", subjectid);
-				// }
-				// else if (assoctype == "all") {
-					// dlog << QString("   Searching for ALL data from the same SUBJECT and modality");
-
-					// sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
-
-					// if (imagetypes != "''")
-						// sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
-
-					// q.prepare(sqlstring);
-					// q.bindValue(":subjectid", subjectid);
-				// }
-				// else {
-					// /* find the data from the same subject and modality that has the same study_type */
-					// dlog << QString("   Searching for data from the same SUBJECT, Modality, and StudyType");
-
-					// sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
-
-					// if (imagetypes != "''")
-						// sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
-
-					// sqlstring += " and `studies`.study_type = :studytype";
-
-					// q.prepare(sqlstring);
-					// q.bindValue(":subjectid", subjectid);
-					// q.bindValue(":studytype", studytype);
-				// }
-
-				// dlog << n->WriteLog("   SQL used for this search (for debugging) [" + n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true) + "]");
-				// if (q.size() > 0) {
-					// dlog << QString("   Data FOUND for step [%1] (subject level)").arg(i);
-					// RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, -1, "", i, "Data found for this step (subject level)");
-				// }
-				// else {
-					// dlog << QString("   Data NOT found for step [%1] (subject level)").arg(i);
-					// RecordDataDownload(datadownloadid, analysisid, modality, 1, 0, -1, "", i, "Data NOT found for this step (subject level). Stopping search");
-					// stepIsInvalid = true;
-					// break;
-				// }
-			// }
-			// /* otherwise, check the study for the protocol(s) */
-			// else {
-				// QString sqlstring;
-				// dlog << QString("   Checking the study [%1] for the protocol (%2)").arg(studyid).arg(protocols);
-				// /* get a list of series satisfying the search criteria, if it exists */
-				// sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
-				// if (imagetypes != "''") {
-					// sqlstring += " and image_type in (" + imagetypes + ")";
-				// }
-				// if (validComparisonStr)
-					// sqlstring += QString(" and numfiles %1 %2").arg(comparison).arg(num);
-
-				// q.prepare(sqlstring);
-				// q.bindValue(":studyid", studyid);
-				// n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-				// if (q.size() > 0) {
-					// dlog << QString("   Data found for step [%1] - protocol [%2] (study level)").arg(i).arg(protocol);
-					// RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, -1, "", i, "Data found for this step (study level)");
-				// }
-				// else {
-					// dlog << QString("   Data NOT found for step [%1] - protocol [%2] (study level). Stopping search for this step").arg(i).arg(protocol);
-					// RecordDataDownload(datadownloadid, analysisid, modality, 1, 0, -1, "", i, "Data NOT found for this step (study level). Stopping search");
-					// stepIsInvalid = true;
-					// break;
-				// }
-			// }
-		// }
-		// dlog << "\n ********** Done checking data steps **********";
-
 		// /* if it's a subject level dependency, but there is no data found, we don't want to copy any dependencies */
 		// if ((stepIsInvalid) && (deplevel == "subject")) {
 			// dlog << " ********** One of the required steps was invalid because no data was found based on the search criteria. (This was a subject-level dependency) No data will be downloaded. **********";
@@ -664,10 +582,6 @@
 			// if we get to here, the data spec is valid for this study
 			// so we can assume all of the data exists, and start copying it
 		   // ------------------------------------------------------------------------- */
-		
-		
-		
-		
 		?>
 			</tbody>
 		</table>

@@ -79,6 +79,7 @@ void series::LoadSeriesInfo() {
 			seriespath = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
 			if (modality == "mr") {
 				datapath = seriespath + "/" + datatype;
+				behpath = seriespath + "/beh";
 			}
 			else {
 				datapath = seriespath + "/" + modality;

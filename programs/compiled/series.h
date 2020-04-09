@@ -44,6 +44,7 @@ public:
 	int seriesid;
 	QString seriespath;
 	QString datapath;
+	QString behpath;
 	QString datatype;
 	int enrollmentid;
 	int projectid;

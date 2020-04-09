@@ -98,7 +98,7 @@ public:
 	bool IsNumber(QString s);
 	QString GetGroupListing(int groupid);
 	QString WrapText(QString s, int col);
-	bool ParseCSV(QString csv, indexedHash &table, QString &m);
+	bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
 
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);

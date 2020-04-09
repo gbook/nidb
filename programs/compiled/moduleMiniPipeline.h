@@ -21,6 +21,7 @@ private:
 	bool InsertMeasure(int enrollmentid, int studyid, int seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg);
 	int InsertVital(int enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalDate);
 	int InsertDrug(int enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit);
+	void AppendMiniPipelineLog(QString log, int jobid);
 };
 
 #endif // MODULEMINIPIPELINE_H

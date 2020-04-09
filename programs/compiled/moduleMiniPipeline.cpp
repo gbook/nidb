@@ -109,24 +109,24 @@ int moduleMiniPipeline::Run() {
 
 				minipipeline mp(mpid, n); /* get the analysis info */
 				if (!mp.isValid) {
-					logs << n->WriteLog("mini-pipeline was not valid: [" + mp.msg + "]");
+					AppendMiniPipelineLog(n->WriteLog("mini-pipeline was not valid: [" + mp.msg + "]"), mpjobid);
 					continue;
 				}
 
 				series s(seriesid, modality, n); /* get the series info */
 				if (!s.isValid) {
-					logs << n->WriteLog("Series was not valid: [" + s.msg + "]");
+					AppendMiniPipelineLog(n->WriteLog("Series was not valid: [" + s.msg + "]"), mpjobid);
 					return 0;
 				}
 				enrollmentID = s.enrollmentid;
 
-				logs << n->WriteLog("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]");
+				AppendMiniPipelineLog(n->WriteLog("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]"), mpjobid);
 
 				/* (1) create a temp space */
 				QString m;
 				QString tmpdir = "/tmp/" + n->GenerateRandomString(10);
 				if (!n->MakePath(tmpdir, m))
-					logs << n->WriteLog("Error creating directory [" + tmpdir + "] error message [" + m + "]");
+					AppendMiniPipelineLog(n->WriteLog("Error creating directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 				else {
 					/* (2) write the script files */
 					if (mp.WriteScripts(tmpdir, m)) {
@@ -135,55 +135,103 @@ int moduleMiniPipeline::Run() {
 						QString m;
 						int c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
 						if (c > 0)
-							logs << n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir));
+							AppendMiniPipelineLog(n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir)), mpjobid);
 						else
-							logs << n->WriteLog("Did not copy any series from data directory. Message from CopyAllSeriesData() [" + m + "]");
+							AppendMiniPipelineLog(n->WriteLog("Did not copy any series from data directory. Message from CopyAllSeriesData() [" + m + "]"), mpjobid);
 
 						/* (4) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
 						QString systemstring = mp.entrypoint;
 						QString output = "";
 						n->SandboxedSystemCommand(systemstring, tmpdir, output, "00:05:00", true, false);
-						logs << n->WriteLog(output);
+						AppendMiniPipelineLog(n->WriteLog(output), mpjobid);
 
 						/* (5) parse the output */
 						QString outfilename = tmpdir + "/output.csv";
 						QFile f(outfilename);
 						if (f.exists())
-							logs << n->WriteLog("[" + outfilename + "] exists");
+							AppendMiniPipelineLog(n->WriteLog("[" + outfilename + "] exists"), mpjobid);
 						else
-							logs << n->WriteLog("[" + outfilename + "] does not exist");
+							AppendMiniPipelineLog(n->WriteLog("[" + outfilename + "] does not exist"), mpjobid);
 
 						if (f.open(QFile::ReadOnly | QFile::Text)) {
 							QTextStream in(&f);
 							QString csvText = in.readAll();
 
+							AppendMiniPipelineLog("\nContents of .csv file:\n ----------\n" + csvText + "\n ----------\n", mpjobid);
+
 							indexedHash csv;
-							if (n->ParseCSV(csvText, csv, m)) {
-								logs << "Parsed .csv file. Message from parser [" + m + "]";
+							QStringList cols;
+							if (n->ParseCSV(csvText, csv, cols, m)) {
+								AppendMiniPipelineLog("\nParsed .csv file. Message(s) from parser [" + m + "]", mpjobid);
+								if (!cols.contains("type"))
+									AppendMiniPipelineLog("\nError - csv header did not contain the [type] column header. This column is required", mpjobid);
+								if (!cols.contains("variablename"))
+									AppendMiniPipelineLog("\nError - csv header did not contain the [variablename] column header. This column is required", mpjobid);
+								if (!cols.contains("startdate"))
+									AppendMiniPipelineLog("\nError - csv header did not contain the [startdate] column header. This column is required", mpjobid);
+								if (!cols.contains("enddate"))
+									AppendMiniPipelineLog("\ncsv header did not contain the [enddate] column header. The header is required, though the column values are optional", mpjobid);
+								if (!cols.contains("duration"))
+									AppendMiniPipelineLog("\ncsv header did not contain the [duration] column header. The header is required, though the column values are optional", mpjobid);
+								if (!cols.contains("value"))
+									AppendMiniPipelineLog("\nError - csv header did not contain the [value] column header. This column is required", mpjobid);
+								if (!cols.contains("units"))
+									AppendMiniPipelineLog("\ncsv header did not contain the [units] column header. The header is required, though the column values are optional", mpjobid);
+								if (!cols.contains("notes"))
+									AppendMiniPipelineLog("\ncsv header did not contain the [notes] column header. The header is required, though the column values are optional", mpjobid);
+								if (!cols.contains("instrument"))
+									AppendMiniPipelineLog("\ncsv header did not contain the [instrument] column header. The header is required, though the column values are optional", mpjobid);
+
+								/* go through all the rows from the csv */
 								for (int i=0; i<csv.size();i++) {
 									QString csvType = csv[i]["type"];
 									QString csvVariableName = csv[i]["variablename"];
-									QString csvStartDate = csv[i]["startdate"];
+									QString csvStartDate;
+									if (csv[i]["startdate"] == "") csvStartDate = csv[i]["startdatetime"];
+									else csvStartDate = csv[i]["startdate"];
 									QString csvEndDate = csv[i]["enddate"];
+									if (csv[i]["enddate"] == "") csvEndDate = csv[i]["enddatetime"];
+									else csvEndDate = csv[i]["enddate"];
 									QString csvDuration = csv[i]["duration"];
 									QString csvValue = csv[i]["value"];
 									QString csvUnits = csv[i]["units"];
 									QString csvNotes = csv[i]["notes"];
 									QString csvInstrument = csv[i]["instrument"];
 
-									QStringList sdparts = csvStartDate.split(" ");
-									QDateTime startDate;
-									if (sdparts.size() >= 1)
-										startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
-									else
-										startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm::ss");
+									/* check the variable name */
+									if (csvVariableName == "")
+										AppendMiniPipelineLog(n->WriteLog(QString("variablename was blank for line %1").arg(i)), mpjobid);
+									/* check the value name */
+									if (csvValue == "")
+										AppendMiniPipelineLog(n->WriteLog(QString("value was blank for line %1").arg(i)), mpjobid);
 
-									QStringList edparts = csvStartDate.split(" ");
+									/* check and reformat the startDate */
+									QDateTime startDate;
+									if (csvStartDate == "")
+										AppendMiniPipelineLog(n->WriteLog(QString("startdate was blank for line %1").arg(i)), mpjobid);
+									else {
+										QStringList sdparts = csvStartDate.split(" ");
+										if (sdparts.size() >= 1)
+											startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
+										else
+											startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm::ss");
+									}
+
+									/* check and reformat the endDate */
 									QDateTime endDate;
-									if (edparts.size() >= 1)
-										endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
-									else
-										endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm::ss");
+									if (csvEndDate != "") {
+										QStringList edparts = csvStartDate.split(" ");
+										if (edparts.size() >= 1)
+											endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
+										else
+											endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm::ss");
+									}
+
+									/* check for valid dates */
+									if (!startDate.isValid())
+										AppendMiniPipelineLog(n->WriteLog("Error. Invalid start date [" + csvStartDate + "]"), mpjobid);
+									if (!endDate.isValid())
+										AppendMiniPipelineLog(n->WriteLog("Invalid end date [" + csvEndDate + "]"), mpjobid);
 
 									/* insert the value */
 									QSqlQuery q2;
@@ -191,8 +239,9 @@ int moduleMiniPipeline::Run() {
 										int n=0;
 										QString m;
 										if (!InsertMeasure(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
-											logs << m;
-										numInserts += n;
+											AppendMiniPipelineLog(m, mpjobid);
+										else
+											numInserts += n;
 									}
 									else if (csvType == "vital") {
 										numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate);
@@ -201,43 +250,42 @@ int moduleMiniPipeline::Run() {
 										numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
 									}
 									else {
-										logs << n->WriteLog("Error. Invalid value type [" + csvType + "]");
+										AppendMiniPipelineLog(n->WriteLog("Error. Invalid value type [" + csvType + "]"), mpjobid);
 									}
 								}
 							}
 							else {
-								logs << n->WriteLog("Error. Unable to parse csv output [" + m + "]");
+								AppendMiniPipelineLog(n->WriteLog("Error. Unable to parse csv output file. Message(s) from parser [" + m + "]"), mpjobid);
 							}
 						}
 						else {
-							logs << n->WriteLog("Error. Unable to read .csv output file [" + outfilename + "]");
+							AppendMiniPipelineLog(n->WriteLog("Error. Unable to read .csv output file [" + outfilename + "]"), mpjobid);
 						}
 					}
 					else
-						logs << n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]");
+						AppendMiniPipelineLog(n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 
 					/* (6) cleanup */
 					if (!n->RemoveDir(tmpdir, m))
-						logs << n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]");
+						AppendMiniPipelineLog(n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 					else
-						logs << n->WriteLog("Deleted temp directory [" + tmpdir + "]");
+						AppendMiniPipelineLog(n->WriteLog("Deleted temp directory [" + tmpdir + "]"), mpjobid);
 				}
 			}
 			else {
 				/* the minipipeline specified by this job was not found, set an error */
-				logs << n->WriteLog("The pipeline specified was not found. Maybe it was deleted since this job was submitted?");
+				AppendMiniPipelineLog(n->WriteLog("The pipeline specified was not found. Maybe it was deleted since this job was submitted?"), mpjobid);
 			}
 
 			/* done running the job - update the status and log */
-			q.prepare("update minipipeline_jobs set mp_status = 'complete', mp_log = :logs, mp_numinserts = :numinserts, mp_enddate = now() where minipipelinejob_id = :mpjobid");
+			q.prepare("update minipipeline_jobs set mp_status = 'complete', mp_numinserts = :numinserts, mp_enddate = now() where minipipelinejob_id = :mpjobid");
 			q.bindValue(":mpjobid", mpjobid);
 			q.bindValue(":numinserts", numInserts);
-			q.bindValue(":logs", logs.join("\n"));
 			n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		}
 	}
 	else {
-		n->WriteLog("Nothing to run. Exiting minipipeline module");
+		n->WriteLog("Nothing to run");
 	}
 
 	n->WriteLog("Leaving the minipipeline module");
@@ -295,7 +343,13 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
 			return 0;
 		}
 
-	QString systemstring = "cp -uvf " + s.datapath + "/* " + destination + "/";
+	/* MR modality: copy thebeh data. Otherwise copy the raw data */
+	QString systemstring;
+	if (modality.toLower() == "mr")
+		systemstring = "cp -uvf " + s.behpath + "/* " + destination + "/";
+	else
+		systemstring = "cp -uvf " + s.datapath + "/* " + destination + "/";
+
 	msg += n->SystemCommand(systemstring, true, false);
 
 	if (rwPerms) {
@@ -456,4 +510,18 @@ int moduleMiniPipeline::InsertDrug(int enrollmentID, QDateTime startDate, QDateT
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	return 1;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendMiniPipelineLog -------------------------- */
+/* ---------------------------------------------------------- */
+void moduleMiniPipeline::AppendMiniPipelineLog(QString log, int jobid) {
+	QSqlQuery q;
+
+	q.prepare("update minipipeline_jobs set mp_log = concat(mp_log, :log) where minipipelinejob_id = :jobid");
+	q.bindValue(":jobid", jobid);
+	q.bindValue(":log", log);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+
 }

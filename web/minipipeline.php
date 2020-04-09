@@ -42,9 +42,14 @@
 	//PrintVariable($_FILES);
 	//PrintVariable($_POST);
 
+	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
 	$phpscriptname = pathinfo(__FILE__)['basename'];
-
+	if (contains($referringpage, $phpscriptname))
+		$selfcall = true;
+	else
+		$selfcall = false;
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$mpid = GetVariable("mpid");
@@ -57,31 +62,34 @@
 	$scriptid = GetVariable("scriptid");
 	
 	/* determine action */
-	if (($action == "editform") && (contains($referringpage, $phpscriptname)))  {
+	if (($action == "editform") && ($selfcall))  {
 		DisplayMiniPipelineForm($projectid, "edit", $mpid);
 	}
-	elseif (($action == "addform") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "addform") && ($selfcall)) {
 		DisplayMiniPipelineForm($projectid, "add", "");
 	}
-	elseif (($action == "update") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "update") && ($selfcall)) {
 		if (UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams))
 			DisplayMiniPipelineList($projectid);
 		else
 			DisplayMiniPipelineForm($projectid, "edit", $mpid);
 	}
-	elseif (($action == "viewjobs") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "viewjobs") && ($selfcall)) {
 		DisplayMiniPipelineJobs($mpid, $projectid);
 	}
-	elseif (($action == "add") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "add") && ($selfcall)) {
 		AddMiniPipeline($projectid, $minipipelinename);
 		DisplayMiniPipelineList($projectid);
 	}
-	elseif (($action == "delete") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "delete") && ($selfcall)) {
 		DeleteMiniPipeline($mpid);
 		DisplayMiniPipelineList($projectid);
 	}
-	elseif (($action == "viewscript") && (contains($referringpage, $phpscriptname))) {
+	elseif (($action == "viewscript") && ($selfcall)) {
 		ViewScript($projectid, $scriptid);
+	}
+	elseif (($action == "rerun") && ($selfcall)) {
+		ReRun($projectid, $scriptid);
 	}
 	else {
 		DisplayMiniPipelineList($projectid);
@@ -168,7 +176,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	function DisplayMiniPipelineJobs($mpid, $projectid) {
 		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Series', 'Modality', 'Rows inserted'), "smallgraydisplaytable");
+		StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Study', 'Modality', 'Rows inserted'), "smallgraydisplaytable");
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$mpname = $row['mp_name'];
 			$queuedate = $row['mp_queuedate'];
@@ -181,6 +189,8 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			$numinserts = $row['mp_numinserts'];
 			$logs = str_replace("<", "&lt;", $logs);
 			$logs = str_replace(">", "&gt;", $logs);
+			
+			list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality)
 			?>
 			<tr>
 				<td valign="top"><?=$mpname?></td>
@@ -189,7 +199,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 				<td valign="top"><?=$enddate?></td>
 				<td valign="top"><?=$status?></td>
 				<td valign="top"><details><summary>View</summary><tt><pre><?=$logs?></pre></tt></details></td>
-				<td valign="top"><?=$seriesid?></td>
+				<td valign="top"><a href="studies.php?studyid=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 				<td valign="top"><?=$modality?></td>
 				<td valign="top"><?=$numinserts?></td>
 			</tr>
@@ -459,7 +469,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 								}
 								?>
 							</td>
-							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="redlinkbutton">X</a></td>
+							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="redlinkbutton" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')">X</a></td>
 						</tr>
 						<?
 					}

@@ -917,7 +917,7 @@
 			$groupbysubject = $row['pipeline_groupbysubject'];
 			$isenabled = $row['pipeline_enabled'];
 			
-			if (($owner == $GLOBALS['username']) || ($GLOBALS['issiteadmin'])) {
+			if ((strtolower($owner) == strtolower($GLOBALS['username'])) || ($GLOBALS['issiteadmin'])) {
 				$readonly = false;
 			}
 			else {

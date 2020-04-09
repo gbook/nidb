@@ -1761,9 +1761,9 @@ QString nidb::WrapText(QString s, int col) {
 /* this function handles most Excel compatible .csv formats
  * but it does not handle nested quotes, and must have a header
  * row */
-bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
+bool nidb::ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg) {
 
-	m = "";
+	QStringList m;
 	bool ret(true);
 
 	/* get header row */
@@ -1772,12 +1772,13 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
 	if (lines.size() > 1) {
 		QString header = lines.takeFirst();
 		QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+		columns = cols;
 
-		m += QString("Found [%1] columns. ").arg(cols.size());
+		m << QString("Found [%1] columns").arg(cols.size());
 		/* remove the last column if it was blank, because the file contained an extra trailing comma */
 		if (cols.last() == "") {
 			cols.removeLast();
-			m += QString("Last column was blank, removing. ").arg(cols.size());
+			m << QString("Last column was blank, removing").arg(cols.size());
 		}
 
 		int numcols = cols.size();
@@ -1800,7 +1801,7 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
 
 				/* check if we've hit the next comma, and therefor should end the previous variable */
 				if ((c == ",") && (!inQuotes)) {
-					table[row][cols[col]] = buffer;
+					table[row][cols[col]] = buffer.trimmed();
 
 					buffer = "";
 					col++;
@@ -1809,19 +1810,25 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QString &m) {
 					buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
 				}
 			}
-			if (col != numcols) {
-				m += QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row).arg(col).arg(numcols);
+			/* acquire the last column */
+			table[row][cols[col]] = buffer.trimmed();
+			buffer = "";
+
+			if ((col+1) != numcols) {
+				m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);
 				ret = false;
 			}
 
 			row++;
 		}
-		m += QString("Processed [%1] data rows. ").arg(row);
+		m << QString("Processed [%1] data rows").arg(row);
 	}
 	else {
 		ret = false;
-		m += ".csv file contained only one row. csv must contain at least one header row and one data row. ";
+		m << ".csv file contained only one row. The csv must contain at least one header row and one data row";
 	}
+
+	msg = m.join("  \n");
 
 	return ret;
 }

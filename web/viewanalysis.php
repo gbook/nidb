@@ -607,16 +607,19 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelineid = $row['pipeline_id'];
-		$pipelineversion = $row['pipeline_version'];
+		$pipelineversion = $row['pipeline_version'] + 0;
 		$pipelinedependency = $row['pipeline_dependency'];
 		$studyid = $row['study_id'];
 		$datalog = $row['analysis_datalog'];
 		$datatable = $row['analysis_datatable'];
 		
+		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
+		if (!ValidID($studyid,'Study ID')) { return; }
+		
 		if ($datatable == "") { $datatable = "No record of data download found. Check <tt>data.log</tt> in the pipeline directory"; }
 		else { $datatable = "<pre><tt>$datatable</tt></pre>"; }
 
-		$sqlstring = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
+		$sqlstring = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = '$studyid'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
@@ -673,7 +676,7 @@
 				<th>Beh dir</th>
 			</tr>
 			</thead>";
-		$sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = $pipelineversion order by pdd_order + 0";
+		$sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = '$pipelineversion' order by pdd_order + 0";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$pipelinedatadef_id = $row['pipelinedatadef_id'];
