@@ -561,13 +561,14 @@
 		$subjectid = $row['subject_id'];
 		$studyid = $row['study_id'];
 		$modality = $row['study_modality'];
+		$type = $row['study_type'];
 		$studydatetime = $row['study_datetime'];
 		$enrollmentid = $row['enrollment_id'];
 		$projectname = $row['project_name'];
 		$projectid = $row['project_id'];
 		
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid);
+		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
 	}
 
 

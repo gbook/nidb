@@ -268,6 +268,8 @@
 	/* -------------------------------------------- */
 	function PipelineTestSearch($s) {
 		
+		set_time_limit(30);
+		
 		/* setup the variables */
 		$dd = array(); /* data definition */
 		$pipelineid = trim($s['pipelineid']);
@@ -448,8 +450,7 @@
 			/* ---------- LINE 5 - remaining studies to be processed ---------- */
 			PrintSearchRow("Remaining studies", "Remaining studies to be processed. These will be checked for valid data", "", $cumtotal, $cumtotal, true);
 			
-			/* now check the data steps */
-			
+			/* ---------- LINE 6+ - check the data steps ---------- */
 			foreach ($datadef as $step => $details) {
 				$enabled = $details['enabled'];
 				//$optional = $details['optional']; /* doesn't matter if optional */
@@ -501,10 +502,10 @@
 				
 				/* prepare the numboldreps comparison */
 				list($comp, $num) = GetSQLComparison($numboldreps);
-					
+				
 				/* check each of the studies from the previous list */
 				foreach ($studyids_remaining as $studyid) {
-					list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+					list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studytype, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
 					$modality = strtolower($modality);
 					
 					if ($datalevel == "study") {
@@ -514,16 +515,6 @@
 							$sqlstring .= " and b.image_type in ($imagetypes)";
 						if ($numboldreps != "")
 							$sqlstring .= " and b.numfiles $comp $num";
-						PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						if (mysqli_num_rows($result) > 0) {
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$studyids_step[$step][] = $row['study_id'];
-							}
-						}
-						$studyids_step[$step] = array_unique($studyids_step[$step]);
-						$cumtotal = count(array_diff($studyids_step[$step], $studyids_existing));
-						
 					}
 					else {
 						/* if subject level, check the subject for the criteria */
@@ -532,13 +523,13 @@
 							/* find the data from the same subject and modality that has the nearest (in time) matching scan */
 							echo "Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan<br>";
 
-							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+							$sqlstring = "SELECT d.study_id FROM enrollment a JOIN projects b on a.project_id = b.project_id JOIN subjects c on c.subject_id = a.subject_id JOIN studies d on d.enrollment_id = a.enrollment_id JOIN $modality"."_series e on e.study_id = d.study_id WHERE c.isactive = 1 AND d.study_modality = '$modality' AND c.subject_id = $subjectid AND trim(e.$seriesdescfield) in ($protocols)";
 							if (($imagetypes != "") && ($imagetypes != "''"))
 								$sqlstring .= " and b.image_type in ($imagetypes)";
 						}
 						else if ($studyassoc == "all") {
 							echo "Searching for ALL data from the same SUBJECT and modality<br>";
-							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+							$sqlstring = "SELECT d.study_id FROM enrollment a JOIN projects b on a.project_id = b.project_id JOIN subjects c on c.subject_id = a.subject_id JOIN studies d on d.enrollment_id = a.enrollment_id JOIN $modality"."_series e on e.study_id = d.study_id WHERE c.isactive = 1 AND d.study_modality = '$modality' AND c.subject_id = $subjectid AND trim(e.$seriesdescfield) in ($protocols)";
 							if (($imagetypes != "") && ($imagetypes != "''"))
 								$sqlstring .= " and b.image_type in ($imagetypes)";
 						}
@@ -546,16 +537,25 @@
 							/* find the data from the same subject and modality that has the same study_type */
 							echo "Searching for data from the same SUBJECT, Modality, and StudyType<br>";
 
-							$sqlstring = "SELECT *, `$modality"."_series`.$modality"."series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `$modality"."_series` on `$modality"."_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '$modality' AND `subjects`.subject_id = $subjectid AND trim(`$modality"."_series`.$seriesdescfield) in ($protocols)";
+							$sqlstring = "SELECT d.study_id FROM enrollment a JOIN projects b on a.project_id = b.project_id JOIN subjects c on c.subject_id = a.subject_id JOIN studies d on d.enrollment_id = a.enrollment_id JOIN $modality"."_series e on e.study_id = d.study_id WHERE c.isactive = 1 AND d.study_modality = '$modality' AND c.subject_id = $subjectid AND trim(e.$seriesdescfield) in ($protocols)";
 
 							if (($imagetypes != "") && ($imagetypes != "''"))
 								$sqlstring .= " and b.image_type in ($imagetypes)";
 
-							//sqlstring += " and `studies`.study_type = :studytype";
+							if ($studytype != "")
+								$sqlstring += " and d.study_type = '$studytype'";
 						}
-						
-						PrintSQL($sqlstring);
 					}
+					//PrintSQL($sqlstring);
+					//break;
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$studyids_step[$step][] = $row['study_id'];
+						}
+					}
+					$studyids_step[$step] = array_unique($studyids_step[$step]);
+					$cumtotal = count(array_diff($studyids_step[$step], $studyids_existing));
 				}
 				PrintSearchRow("[$datalevel level] data step $step", $protocol, "-", count($studyids_step[$step]), $cumtotal);
 				

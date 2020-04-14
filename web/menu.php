@@ -197,7 +197,7 @@
 						$studyid = GetVariable("studyid");
 					}
 					if ($studyid != "") {
-						list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
+						list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 						?>
 						<a href="projects.php">Project List</a>
 						<b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>"><?=$projectname?></a></b>

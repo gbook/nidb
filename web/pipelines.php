@@ -1644,7 +1644,7 @@
 				</td>
 				<td style="vertical-align: top; padding: 2px 10px;">
 					<details>
-					<summary>Test Search<br><span class="tiny">Check how many studies will be found based on the search criteria</span></summary>
+					<summary>Test Search<br><span class="tiny">Check how many studies will be found based on the search criteria. This search has a 30 sec time limit.</span></summary>
 						<script>
 							function TestDataSearch() {
 								var xhttp = new XMLHttpRequest();

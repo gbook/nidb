@@ -49,6 +49,7 @@
     $a['includeprotocolparms'] = GetVariable("includeprotocolparms");
     $a['includemrqa'] = GetVariable("includemrqa");
     $a['includeallmeasures'] = GetVariable("includeallmeasures");
+    $a['measurename'] = GetVariable("measurename");
     $a['includeallvitals'] = GetVariable("includeallvitals");
     $a['includealldrugs'] = GetVariable("includealldrugs");
     $a['includetimesincedose'] = GetVariable("includetimesincedose");
@@ -178,6 +179,7 @@
 		$a['includeprotocolparms'] = $row['search_includeprotocolparms'];
 		$a['includemrqa'] = $row['search_includemrqa'];
 		$a['includeallmeasures'] = $row['search_includeallmeasures'];
+		$a['measurename'] = $row['search_measurename'];
 		$a['includeallvitals'] = $row['search_includeallvitals'];
 		$a['includealldrugs'] = $row['search_includealldrugs'];
 		$a['includetimesincedose'] = $row['search_includetimesincedose'];
@@ -461,9 +463,19 @@
 								</details>
 								
 								<details>
+									<datalist id="measurenames">
+									<?
+										$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$measurename = $rowA['measure_name'];
+											?><option value="<?=$measurename?>"><?
+										}
+									?>
+									</datalist>
 									<summary><b>Measures</b>&nbsp;<span id="measureIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
-									Measure name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="measurename" id="measurename" value="<?=$a['measurename']?>" onChange="CheckForMeasureCriteria()"><br>
+									Measure name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="measurename" id="measurename" value="<?=$a['measurename']?>" onChange="CheckForMeasureCriteria()"list="measurenames"><br>
 									<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">Include all measures
 									</div>
 								</details>
@@ -737,9 +749,38 @@
 				}
 			}
 
-			/* get all of the measures */
+			/* get all of the measures ... */
 			if ($a['includeallmeasures']) {
 				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					/* need to add the demographic info to every row */
+					$t[$row]['UID'] = $subj['uid'];
+					$t[$row]['Sex'] = $subj['sex'];
+					$t[$row]['Height'] = $subj['height'];
+					$t[$row]['Weight'] = $subj['weight'];
+					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+					$t[$row]['AltUIDs'] = $subj['altuids'];
+
+					/* add the measure info to this row */
+					$measurename = $rowA['measure_name'];
+					$t[$row][$measurename . '_startdatetime'] = $rowA['measure_startdate'];
+					$t[$row][$measurename . '_duration'] = $rowA['measure_duration'];
+					$t[$row][$measurename . '_enddatetime'] = $rowA['measure_enddate'];
+					$t[$row][$measurename] = $rowA['measure_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['measure_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$measurename-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+
+					$row++;
+					$hasdata = true;
+				}
+			}
+			/* ... or just the measures specified */
+			if ($a['measurename'] != "") {
+				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where a.enrollment_id = $enrollmentid and " . CreateSQLSearchString("b.measure_name", $a['measurename']);
+				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					/* need to add the demographic info to every row */
