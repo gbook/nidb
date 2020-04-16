@@ -51,7 +51,9 @@
     $a['includeallmeasures'] = GetVariable("includeallmeasures");
     $a['measurename'] = GetVariable("measurename");
     $a['includeallvitals'] = GetVariable("includeallvitals");
+    $a['vitalname'] = GetVariable("vitalname");
     $a['includealldrugs'] = GetVariable("includealldrugs");
+    $a['drugname'] = GetVariable("drugname");
     $a['includetimesincedose'] = GetVariable("includetimesincedose");
     $a['dosevariable'] = GetVariable("dosevariable");
     $a['dosetimerange'] = GetVariable("dosetimerange");
@@ -181,7 +183,9 @@
 		$a['includeallmeasures'] = $row['search_includeallmeasures'];
 		$a['measurename'] = $row['search_measurename'];
 		$a['includeallvitals'] = $row['search_includeallvitals'];
+		$a['vitalname'] = $row['search_vitalname'];
 		$a['includealldrugs'] = $row['search_includealldrugs'];
+		$a['drugname'] = $row['search_drugname'];
 		$a['includetimesincedose'] = $row['search_includetimesincedose'];
 		$a['dosevariable'] = $row['search_dosevariable'];
 		$a['dosetimerange'] = $row['search_dosetimerange'];
@@ -481,6 +485,16 @@
 								</details>
 								
 								<details>
+									<datalist id="vitalnames">
+									<?
+										$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$vitalname = $rowA['vital_name'];
+											?><option value="<?=$vitalname?>"><?
+										}
+									?>
+									</datalist>
 									<summary><b>Vitals</b>&nbsp;<span id="vitalIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
 									Vital <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="vitalname" id="vitalname" value="<?=$a['vitalname']?>" onChange="CheckForVitalCriteria()"><br>
@@ -489,6 +503,16 @@
 								</details>
 
 								<details>
+									<datalist id="drugnames">
+									<?
+										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$drugname = $rowA['drug_name'];
+											?><option value="<?=$drugname?>"><?
+										}
+									?>
+									</datalist>
 									<summary><b>Drugs/dosing</b>&nbsp;<span id="drugIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
 									Drug <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="drugname" id="drugname" value="<?=$a['drugname']?>" onChange="CheckForDrugCriteria()"><br>
@@ -610,6 +634,7 @@
 		foreach ($subjects as $i => $subj) {
 			$hasdata = false;
 			
+			$row = $uid . "0000-00-00 00:00:00";
 			$enrollmentid = $subj['enrollmentid'];
 			
 			/* get dose datetimes for this enrollment */
@@ -679,6 +704,7 @@
 						$weight = $studyweight;
 					
 					/* need to add the demographic info to every row */
+					$row = "$uid$studydate";
 					$t[$row]['Row'] = $row;
 					$t[$row]['UID'] = $subj['uid'];
 					$t[$row]['Sex'] = $subj['sex'];
@@ -692,6 +718,7 @@
 					/* add the protocol info to the row */
 					$t[$row]["$seriesdesc-SeriesNum"] = $seriesnum;
 					$t[$row]["$seriesdesc-StudyDateTime"] = $studydatetime;
+					$t[$row]['EventDateTime'] = $seriesdatetime;
 					$t[$row]["$seriesdesc-StudyID"] = $subj['uid'] . $studynum;
 					$t[$row]["$seriesdesc-NumSeries"] = $numseries;
 					//$t[$row]["$seriesdesc-AgeAtScan"] = $age;
@@ -744,7 +771,7 @@
 						$t[$row]["$seriesdesc-rot_maxy"] = $rowC['rot_maxy'];
 					}
 					
-					$row++;
+					//$row++;
 					$hasdata = true;
 				}
 			}
@@ -763,8 +790,10 @@
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 
 					/* add the measure info to this row */
+					$row = $uid . $rowA['measure_startdate'];
 					$measurename = $rowA['measure_name'];
-					$t[$row][$measurename . '_startdatetime'] = $rowA['measure_startdate'];
+					//$t[$row][$measurename . '_startdatetime'] = $rowA['measure_startdate'];
+					$t[$row]['EventDateTime'] = $rowA['measure_startdate'];
 					$t[$row][$measurename . '_duration'] = $rowA['measure_duration'];
 					$t[$row][$measurename . '_enddatetime'] = $rowA['measure_enddate'];
 					$t[$row][$measurename] = $rowA['measure_value'];
@@ -773,7 +802,7 @@
 					if ($timeSinceDose != null)
 						$t[$row]["$measurename-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
 
-					$row++;
+					//$row++;
 					$hasdata = true;
 				}
 			}
@@ -792,8 +821,10 @@
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 
 					/* add the measure info to this row */
+					$row = $uid . $rowA['measure_startdate'];
 					$measurename = $rowA['measure_name'];
-					$t[$row][$measurename . '_startdatetime'] = $rowA['measure_startdate'];
+					//$t[$row][$measurename . '_startdatetime'] = $rowA['measure_startdate'];
+					$t[$row]['EventDateTime'] = $rowA['measure_startdate'];
 					$t[$row][$measurename . '_duration'] = $rowA['measure_duration'];
 					$t[$row][$measurename . '_enddatetime'] = $rowA['measure_enddate'];
 					$t[$row][$measurename] = $rowA['measure_value'];
@@ -802,12 +833,12 @@
 					if ($timeSinceDose != null)
 						$t[$row]["$measurename-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
 
-					$row++;
+					//$row++;
 					$hasdata = true;
 				}
 			}
 			
-			/* get all of the vitals */
+			/* get all of the vitals ... */
 			if ($a['includeallvitals']) {
 				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -835,8 +866,39 @@
 					$hasdata = true;
 				}
 			}
+			/* ... or just the vitals specified */
+			if ($a['vitalname'] != "") {
+				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid and " . CreateSQLSearchString("b.vital_name", $a['vitalname']);
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					/* need to add the demographic info to every row */
+					$t[$row]['UID'] = $subj['uid'];
+					$t[$row]['Sex'] = $subj['sex'];
+					$t[$row]['Height'] = $subj['height'];
+					$t[$row]['Weight'] = $subj['weight'];
+					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+					$t[$row]['AltUIDs'] = $subj['altuids'];
+
+					/* add the vital info to this row */
+					$row = $uid . $rowA['vital_startdate'];
+					$vitalname = $rowA['vital_name'];
+					//$t[$row][$vitalname . '_startdatetime'] = $rowA['vital_startdate'];
+					$t[$row]['EventDateTime'] = $rowA['vital_startdate'];
+					$t[$row][$vitalname . '_duration'] = $rowA['vital_duration'];
+					$t[$row][$vitalname . '_enddatetime'] = $rowA['vital_enddate'];
+					$t[$row][$vitalname] = $rowA['vital_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['vital_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$vitalname-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+
+					//$row++;
+					$hasdata = true;
+				}
+			}
 			
-			/* get all of the drugs/dosing */
+			/* get all of the drugs/dosing ... */
 			if ($a['includealldrugs']) {
 				$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -849,7 +911,7 @@
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 
-					/* add the measure info to this row */
+					/* add the drug info to this row */
 					$drugname = $rowA['drug_name'];
 					$t[$row][$drugname . '_startdatetime'] = $rowA['drug_startdate'];
 					$t[$row][$drugname . '_duration'] = $rowA['drug_duration'];
@@ -860,11 +922,42 @@
 					if ($timeSinceDose != null)
 						$t[$row]["$drugname-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
 
-					$row++;
+					//$row++;
 					$hasdata = true;
 				}
 			}
+			/* ... or just the drugs specified */
+			if ($a['drugname'] != "") {
+				$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and " . CreateSQLSearchString("b.drug_name", $a['drugname']);
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					/* need to add the demographic info to every row */
+					$t[$row]['UID'] = $subj['uid'];
+					$t[$row]['Sex'] = $subj['sex'];
+					$t[$row]['Height'] = $subj['height'];
+					$t[$row]['Weight'] = $subj['weight'];
+					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+					$t[$row]['AltUIDs'] = $subj['altuids'];
 
+					/* add the drug info to this row */
+					$row = $uid . $rowA['drug_startdate'];
+					$drugname = $rowA['drug_name'];
+					//$t[$row][$drugname . '_startdatetime'] = $rowA['drug_startdate'];
+					$t[$row]['EventDateTime'] = $rowA['drug_startdate'];
+					$t[$row][$drugname . '_duration'] = $rowA['drug_duration'];
+					$t[$row][$drugname . '_enddatetime'] = $rowA['drug_enddate'];
+					$t[$row][$drugname] = $rowA['drug_value'];
+
+					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['drug_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null)
+						$t[$row]["$drugname-TimeSinceDose-$dosedisplaytime"] = $timeSinceDose;
+
+					//$row++;
+					$hasdata = true;
+				}
+			}
+			
 			/* get the pipeline info */
 			if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
 				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
@@ -885,7 +978,6 @@
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					if (mysqli_num_rows($resultA) > 0) {
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-
 							$studyage = $rowA['ageinmonths']/12.0;
 							$studydatetime = $rowA['study_datetime'];
 							$studyheight = $rowA['study_height'];
@@ -904,8 +996,22 @@
 							if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0)) $weight = $subj['weight'];
 							else $weight = $studyweight;
 							
-							if ( ($studyid != $laststudyid) && ($laststudyid != "") )
-								$row++;
+							//if ( ($studyid != $laststudyid) && ($laststudyid != "") )
+							//	$row++;
+							
+							/* if we should search for a series datetime */
+							$variabledatetime = $studydatetime;
+							if ($a['pipelineseriesdatetime'] != "") {
+								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
+								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+								if (mysqli_num_rows($resultB) > 0) {
+									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+									$variabledatetime = $rowB['series_datetime'];
+									$row = $uid . $rowA['drug_startdate'];
+									$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
+								}
+							}
+							$row = $uid . $variabledatetime;
 							
 							/* need to add the demographic info to every row */
 							$t[$row]['Row'] = $row;
@@ -924,19 +1030,6 @@
 							
 							/* add the measure info to this row */
 							$t[$row]["Pipeline_$resultname"] = $rowA['result_value'];
-
-							/* if we should search for a series datetime */
-							$variabledatetime = $studydatetime;
-							if ($a['pipelineseriesdatetime'] != "") {
-								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
-								//PrintSQL($sqlstringB);
-								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
-								if (mysqli_num_rows($resultB) > 0) {
-									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-									$variabledatetime = $rowB['series_datetime'];
-									$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
-								}
-							}
 
 							$timeSinceDose = GetTimeSinceDose($dosedates, $variabledatetime, $dosedisplaytime);
 							if ($timeSinceDose != null)
@@ -965,7 +1058,7 @@
 				$t[$row]['VisitType'] = $studyvisit;
 				$t[$row]['Age'] = $age;
 				
-				$row++;
+				//$row++;
 			}
 		}
 		

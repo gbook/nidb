@@ -211,20 +211,32 @@ int moduleMiniPipeline::Run() {
 										AppendMiniPipelineLog(n->WriteLog(QString("startdate was blank for line %1").arg(i)), mpjobid);
 									else {
 										QStringList sdparts = csvStartDate.split(" ");
-										if (sdparts.size() >= 1)
-											startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
+										if (sdparts.size() == 1)
+											if (sdparts[0].contains("T"))
+												startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-ddThh:mm:ss");
+											else
+												startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
 										else
-											startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm::ss");
+											if (sdparts[1].size() == 5)
+												startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm");
+											else
+												startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm:ss");
 									}
 
 									/* check and reformat the endDate */
 									QDateTime endDate;
 									if (csvEndDate != "") {
-										QStringList edparts = csvStartDate.split(" ");
-										if (edparts.size() >= 1)
-											endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
+										QStringList edparts = csvEndDate.split(" ");
+										if (edparts.size() == 1)
+											if (edparts[0].contains("T"))
+												endDate = QDateTime::fromString(edparts[0],"yyyy-MM-ddThh:mm:ss");
+											else
+												endDate = QDateTime::fromString(edparts[0],"yyyy-MM-dd");
 										else
-											endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm::ss");
+											if (edparts[1].size() == 5)
+												endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm");
+											else
+												endDate = QDateTime::fromString(edparts[0] + " " + edparts[1],"yyyy-MM-dd hh:mm:ss");
 									}
 
 									/* check for valid dates */
@@ -385,7 +397,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 	int measureNameID;
 	q.prepare("select measurename_id from measurenames where measure_name = :measurename");
 	q.bindValue(":measurename", measureName);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		q.first();
 		measureNameID = q.value("measurename_id").toInt();
@@ -393,7 +405,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 	else {
 		q.prepare("insert into measurenames (measure_name) values (:measurename)");
 		q.bindValue(":measurename", measureName);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		measureNameID = q.lastInsertId().toInt();
 	}
 
@@ -401,7 +413,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 	int instrumentNameID;
 	q.prepare("select measureinstrument_id from measureinstruments where instrument_name = :instrument");
 	q.bindValue(":instrument", instrument);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
 		q.first();
 		instrumentNameID = q.value("measureinstrument_id").toInt();
@@ -409,7 +421,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 	else {
 		q.prepare("insert into measureinstruments (instrument_name) values (:instrument)");
 		q.bindValue(":instrument", instrument);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		instrumentNameID = q.lastInsertId().toInt();
 	}
 
@@ -522,6 +534,6 @@ void moduleMiniPipeline::AppendMiniPipelineLog(QString log, int jobid) {
 	q.prepare("update minipipeline_jobs set mp_log = concat(mp_log, :log) where minipipelinejob_id = :jobid");
 	q.bindValue(":jobid", jobid);
 	q.bindValue(":log", log);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 }

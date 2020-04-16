@@ -40,6 +40,8 @@
 	require "includes_html.php";
 	require "menu.php";
 	
+	//PrintVariable($_POST);
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$measureid = GetVariable("measureid");
@@ -253,11 +255,11 @@
 							<td><?=$measure_duration?></td>
 							<td><?=$measure_enddate?></td>
 							<td align="right" class="delete" style="border-right: 1px solid #666">
-								<a href="javascript:decision('Are you sure you want to delete this measure?', 'measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>')" class="delete">X</a>
+								<a href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" onClick="return confirm('Are you sure you want to delete this record?')" class="delete">X</a>
 							</td>
-							<td><?=$measure_entrydate?></td>
-							<td><?=$measure_createdate?></td>
-							<td><?=$measure_modifydate?></td>
+							<td style="font-size: smaller"><?=$measure_entrydate?></td>
+							<td style="font-size: smaller"><?=$measure_createdate?></td>
+							<td style="font-size: smaller"><?=$measure_modifydate?></td>
 						</tr>
 					<?
 					}
