@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 05, 2020 at 04:40 PM
+-- Generation Time: Apr 21, 2020 at 08:33 PM
 -- Server version: 10.3.22-MariaDB
 -- PHP Version: 7.2.18
 
@@ -1368,7 +1368,7 @@ CREATE TABLE `measures` (
   `enrollment_id` int(11) NOT NULL,
   `measure_dateentered` timestamp NULL DEFAULT NULL,
   `instrumentname_id` int(11) DEFAULT NULL,
-  `measurename_id` int(11) DEFAULT NULL,
+  `measurename_id` int(11) NOT NULL,
   `measure_type` enum('s','n') DEFAULT NULL,
   `measure_valuestring` varchar(255) DEFAULT NULL,
   `measure_valuenum` double DEFAULT NULL,
@@ -1380,8 +1380,8 @@ CREATE TABLE `measures` (
   `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `study_id` int(11) DEFAULT NULL,
   `series_id` int(11) DEFAULT NULL,
-  `measure_value` varchar(255) NOT NULL DEFAULT '',
-  `measure_startdate` datetime DEFAULT NULL,
+  `measure_value` varchar(255) NOT NULL,
+  `measure_startdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `measure_enddate` datetime DEFAULT NULL,
   `measure_duration` int(11) DEFAULT NULL,
   `measure_entrydate` datetime DEFAULT NULL,
@@ -1416,7 +1416,7 @@ CREATE TABLE `minipipeline_jobs` (
   `mp_modality` varchar(50) DEFAULT NULL,
   `mp_seriesid` int(11) DEFAULT NULL,
   `mp_status` enum('','pending','running','error','complete') DEFAULT '',
-  `mp_log` text DEFAULT NULL,
+  `mp_log` longtext NOT NULL DEFAULT '',
   `mp_numinserts` int(11) DEFAULT NULL,
   `mp_queuedate` datetime DEFAULT NULL,
   `mp_startdate` datetime DEFAULT NULL,
@@ -1521,6 +1521,8 @@ CREATE TABLE `mostrecent` (
   `user_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `pipeline_id` int(11) DEFAULT NULL,
   `mostrecent_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
@@ -1812,6 +1814,7 @@ CREATE TABLE `pipelines` (
   `pipeline_groupid` text DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
+  `pipeline_projectid` text DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
@@ -1974,6 +1977,7 @@ CREATE TABLE `pipeline_options` (
   `pipeline_groupid` text DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) DEFAULT NULL,
+  `pipeline_projectid` int(11) DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_completefiles` text DEFAULT NULL,
   `pipeline_resultsscript` text DEFAULT NULL
@@ -3437,7 +3441,7 @@ ALTER TABLE `measurenames`
 --
 ALTER TABLE `measures`
   ADD PRIMARY KEY (`measure_id`),
-  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_value`,`measure_startdate`,`measure_enddate`);
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_value`,`measure_startdate`);
 
 --
 -- Indexes for table `minipipelines`

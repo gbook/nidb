@@ -2255,6 +2255,7 @@
 				</td>
 				<td valign="top">
 					<b>Project options</b><br><br>
+					<a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br>
 					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
 					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates</a><br>
 					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
