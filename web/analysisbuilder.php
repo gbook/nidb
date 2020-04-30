@@ -53,6 +53,7 @@
     $a['includeallvitals'] = GetVariable("includeallvitals");
     $a['vitalname'] = GetVariable("vitalname");
     $a['includealldrugs'] = GetVariable("includealldrugs");
+    $a['includedrugdetails'] = GetVariable("includedrugdetails");
     $a['drugname'] = GetVariable("drugname");
     $a['includetimesincedose'] = GetVariable("includetimesincedose");
     $a['dosevariable'] = GetVariable("dosevariable");
@@ -143,7 +144,7 @@
 		$includemrqa = mysqli_real_escape_string($GLOBALS['linki'], $a['includemrqa']);
 		$includeallmeasures = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallmeasures']);
 		$includeallvitals = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallvitals']);
-		$includealldrugs = mysqli_real_escape_string($GLOBALS['linki'], $a['includealldrugs']);
+		$includedrugdetails = mysqli_real_escape_string($GLOBALS['linki'], $a['includedrugdetails']);
 		$includetimesincedose = mysqli_real_escape_string($GLOBALS['linki'], $a['includetimesincedose']);
 		$dosevariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
 		$dosetimerange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
@@ -188,6 +189,7 @@
 		$a['includeallvitals'] = $row['search_includeallvitals'];
 		$a['vitalname'] = $row['search_vitalname'];
 		$a['includealldrugs'] = $row['search_includealldrugs'];
+		$a['includedrugdetails'] = $row['search_includedrugdetails'];
 		$a['drugname'] = $row['search_drugname'];
 		$a['includetimesincedose'] = $row['search_includetimesincedose'];
 		$a['dosevariable'] = $row['search_dosevariable'];
@@ -333,7 +335,7 @@
 			
 			/* drugs */
 			function CheckForDrugCriteria() {
-				if ((document.getElementById("drugname").value != "") || (document.getElementById("includealldrugs").checked == true) || (document.getElementById("includetimesincedose").checked == true) || (document.getElementById("dosevariable").checked == true) ) {
+				if ((document.getElementById("drugname").value != "") || (document.getElementById("includealldrugs").checked == true) || (document.getElementById("includedrugdetails").checked == true) || (document.getElementById("includetimesincedose").checked == true) || (document.getElementById("dosevariable").checked == true) ) {
 					document.getElementById("drugIndicator").innerHTML = "Search criteria entered";
 				}
 				else {
@@ -456,29 +458,27 @@
 									<summary><b>Pipeline&nbsp;results</b>&nbsp;<span id="pipelineIndicator" class="indicator"></span></summary>
 									<div>
 									Pipeline<br>
-									<select class="js-example-basic-multiple" name="pipelineid[]" id="pipelineid" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%">
-									<!--<select name="pipelineid" id="pipelineid" style="width: 400px" size="10" onChange="CheckForPipelineCriteria()">-->
-										<!--<option value="NONE" <? if ($a['pipelineid'] == "NONE" || ($a['pipelineid'] == "")) echo "selected"; ?>>(None)-->
-									<?
-										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
+									<select class="js-example-basic-multiple" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
+										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
 										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
 										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 											$pipelineid = $row2['pipeline_id'];
 											$pipelinename = $row2['pipeline_name'];
-											
-											if ($pipelineid == $a['pipelineid'])
+
+											$selected = "";
+											if (is_array($a['pipelineid']))
+												if (in_array($pipelineid, $a['pipelineid']))
+													$selected = "selected";
+											if (trim($pipelineid) == trim($a['pipelineid']))
 												$selected = "selected";
-											else
-												$selected = "";
 											?>
 											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
 											<?
 										}
-									?>
-									</select>
-									Result name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForEEGCriteria()">
+									?></select>
+									Result name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
 									<br>
-									Get DateTime from Series <img src="images/help.gif" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime"> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForEEGCriteria()">
+									Get Datetime from Series <img src="images/help.gif" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime"> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
 									</div>
 								</details>
 								
@@ -487,22 +487,23 @@
 									<div style="padding: 10px">
 									Measure name(s)
 									<br>
-									<select class="js-example-basic-multiple" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%">
-									<?
+									<select class="js-example-basic-multiple" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
 										$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$measurename = $rowA['measure_name'];
-											$selected = "";
-											if (is_array($a['measurename']))
-												if (in_array($measurename, $a['measurename']))
+											if (trim($measurename) != "") {
+												$selected = "";
+												if (is_array($a['measurename']))
+													if (in_array($measurename, $a['measurename']))
+														$selected = "selected";
+												if (trim($measurename) == trim($a['measurename']))
 													$selected = "selected";
-											if (trim($measurename) == trim($a['measurename']))
-												$selected = "selected";
-											?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
+												?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
+											}
 										}
-									?>
-									</select><br>
+									?></select>
+									<br>
 									<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">Include all measures
 									</div>
 								</details>
@@ -512,8 +513,7 @@
 									<div style="padding: 10px">
 									Vital name(s)
 									<br>
-									<select class="js-example-basic-multiple" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%">
-									<?
+									<select class="js-example-basic-multiple" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
 										$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -526,8 +526,7 @@
 												$selected = "selected";
 											?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
 										}
-									?>
-									</select>
+									?></select>
 									<br>
 									<input type="checkbox" name="includeallvitals" id="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?> onChange="CheckForVitalCriteria()">Include all vitals
 									</div>
@@ -536,7 +535,7 @@
 								<details>
 									<summary><b>Drugs/Dosing</b>&nbsp;<span id="drugIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
-									Drug name(s)<br>
+									Drug variable name(s)<br>
 									<select class="js-example-basic-multiple" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
 										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
@@ -554,10 +553,13 @@
 									?>
 									</select>
 									<br>
-									<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drugs/dosing
+									<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drug/dosing variables
+									<br>
+									<input type="checkbox" name="includedrugdetails" id="includedrugdetails" value="1" <? if ($a['includedrugdetails']) echo "checked"; ?>>Include drug/dose extended details
+									<br>
 									<br>
 									<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
-									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include time since dose<br>
+									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b><br>
 									Dose variable(s)
 									<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
@@ -955,13 +957,27 @@
 			}
 			
 			/* ----- Drugs ----- */
-			if (($a['includealldrugs']) || ($a['drugname'] != "") || ($a['dosevariable'] != "")) {
+			if (($a['includealldrugs']) || ($a['drugname'] != "") || ($a['includedrugdetails']) || ($a['dosevariable'] != "")) {
+				//PrintVariable($a['drugname']);
 				
 				if ($a['includealldrugs']) {
 					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where enrollment_id = $enrollmentid";
 				}
 				else {
-					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", array_unique(array_merge($a['drugname'], $a['dosevariable']))) . ")";
+					$drugarray = array();
+					
+					if (is_array($a['drugname']))
+						$drugarray = array_merge($drugarray, $a['drugname']);
+					elseif (($a['drugname'] != "") && ($a['drugname'] != null))
+						$drugarray[] = $a['drugname'];
+						
+					if (is_array($a['dosevariable']))
+						$drugarray = array_merge($drugarray, $a['dosevariable']);
+					elseif (($a['dosevariable'] != "") && ($a['dosevariable'] != null))
+						$drugarray[] = $a['dosevariable'];
+					$drugarray = array_unique($drugarray);
+					//PrintVariable($drugarray);
+					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $drugarray) . ")";
 				}
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1004,6 +1020,12 @@
 					if ($timeSinceDose != null)
 						$t[$row]["$drugname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
 
+					/* add the drug details */
+					if ($a['includedrugdetails']) {
+						$t[$row][$drugname . '_doseamount'] = $rowA['drug_doseamount'];
+						$t[$row][$drugname . '_dosekey'] = $rowA['drug_dosekey'];
+					}
+					
 					$hasdata = true;
 				}
 			}
@@ -1093,7 +1115,7 @@
 					}
 				}
 				else {
-					echo "Result names not found [$sqlstringX]";
+					echo "<br>Pipeline results not found using search criteria entered. Check the analysis result name and try again. SQL [$sqlstringX]<br>";
 				}
 			}
 			
@@ -1591,11 +1613,13 @@
 		   task*				variable like 'task%'
 		   'task*'				variable = 'task*'
 		*/
+		//PrintVariable($variable);
+		//PrintVariable($str);
 		
 		if (is_array($str))
 			$str2 = implode2(",", $str);
 		else
-			$str2 = str;
+			$str2 = $str;
 
 		$strings = array();
 		/* split string by commas */

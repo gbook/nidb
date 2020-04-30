@@ -216,9 +216,9 @@
 				}
 				
 				/* projects sub-menu */
-				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php") {
+				elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php") {
 					
-					if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php") {
+					if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php") {
 						$projectid = GetVariable("projectid");
 					}
 					else {
@@ -240,6 +240,10 @@
 						if (($page == "projects.php") && ($action == "" || $action == "displayprojectinfo")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><b><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" style="<?=$style?>"><?=$name?></a></b><?
+						
+						if ($page=="datadictionary.php"){ $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="datadictionary.php?projectid=<?=$projectid?>" style="<?=$style?>">Data Dictionary</a><?
 						
 						if ($page=="projectassessments.php"){ $style = "background-color:#273f70"; }
 						else { $style = ""; }

@@ -2191,9 +2191,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- StartHTMLTable --------------------- */
 	/* -------------------------------------------- */
-	function StartHTMLTable($cols, $class) {
+	function StartHTMLTable($cols, $class, $id) {
 		?>
-		<table class="<?=$class?>">
+		<table class="<?=$class?>" id="<?=$id?>">
 			<thead>
 				<tr>
 				<?
