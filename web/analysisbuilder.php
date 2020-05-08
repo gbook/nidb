@@ -712,14 +712,18 @@
 			$age = "";
 			
 			/* get dose datetimes for this enrollment */
-			$dosedates = array();
+			$drugdoses = array();
 			if ($a['includetimesincedose']) {
 				if ($dosevariable != "") {
 					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $a['dosevariable']) . ")";
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$i=0;
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 						/* add the measure info to this row */
-						$dosedates[] = $rowA['drug_startdate'];
+						$drugdoses[$i]['date'] = $rowA['drug_startdate'];
+						$drugdoses[$i]['doseamount'] = $rowA['drug_doseamount'];
+						$drugdoses[$i]['dosekey'] = $rowA['drug_dosekey'];
+						$i++;
 					}
 				}
 			}
@@ -801,9 +805,12 @@
 					$t[$row]["$seriesdesc-NumSeries"] = $numseries;
 					$t[$row]["$seriesdesc-Notes"] = $studynotes;
 					
-					$timeSinceDose = GetTimeSinceDose($dosedates, $seriesdatetime, $dosedisplaytime);
-					if ($timeSinceDose != null)
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $seriesdatetime, $dosedisplaytime);
+					if ($timeSinceDose != null) {
 						$t[$row]["$seriesdesc-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]['DoseAmount'] = $doseamount;
+						$t[$row]['DoseKey'] = $dosekey;
+					}
 					
 					if ($a["includeprotocolparms"]) {
 						$t[$row]["$seriesdesc-voxX"] = $pixdimX;
@@ -895,9 +902,12 @@
 					else
 						$t[$row][$measurename] = $measurevalue;
 
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['measure_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null) {
 						$t[$row]["$measurename-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]['DoseAmount'] = $doseamount;
+						$t[$row]['DoseKey'] = $dosekey;
+					}
 
 					$hasdata = true;
 				}
@@ -948,9 +958,12 @@
 					else
 						$t[$row][$vitalname] = $vitalvalue;
 
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['vital_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $dosedisplaytime);
+					if ($timeSinceDose != null) {
 						$t[$row]["$vitalname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]['DoseAmount'] = $doseamount;
+						$t[$row]['DoseKey'] = $dosekey;
+					}
 
 					$hasdata = true;
 				}
@@ -971,62 +984,67 @@
 					elseif (($a['drugname'] != "") && ($a['drugname'] != null))
 						$drugarray[] = $a['drugname'];
 						
-					if (is_array($a['dosevariable']))
-						$drugarray = array_merge($drugarray, $a['dosevariable']);
-					elseif (($a['dosevariable'] != "") && ($a['dosevariable'] != null))
-						$drugarray[] = $a['dosevariable'];
+					//if (is_array($a['dosevariable']))
+					//	$drugarray = array_merge($drugarray, $a['dosevariable']);
+					//elseif (($a['dosevariable'] != "") && ($a['dosevariable'] != null))
+					//	$drugarray[] = $a['dosevariable'];
 					$drugarray = array_unique($drugarray);
 					//PrintVariable($drugarray);
-					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $drugarray) . ")";
+						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $drugarray) . ")";
 				}
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				if (count($drugarray) > 0) {
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-					$row = $uid . $rowA['drug_startdate'];
-					$drugvalue = $rowA['drug_value'];
-					
-					$dob = date_create($subj['dob']);
-					$eventdate = date_create($rowA['drug_startdate']);
-					$diff = date_diff($eventdate, $dob);
-					$age = $diff->format("%a")/365.25;
-					
-					/* need to add the demographic info to every row */
-					$t[$row]['UID'] = $subj['uid'];
-					$t[$row]['Sex'] = $subj['sex'];
-					if ($includeheightweight) {
-						$t[$row]['Height'] = $subj['height'];
-						$t[$row]['Weight'] = $subj['weight'];
+						$row = $uid . $rowA['drug_startdate'];
+						$drugvalue = $rowA['drug_value'];
+						
+						$dob = date_create($subj['dob']);
+						$eventdate = date_create($rowA['drug_startdate']);
+						$diff = date_diff($eventdate, $dob);
+						$age = $diff->format("%a")/365.25;
+						
+						/* need to add the demographic info to every row */
+						$t[$row]['UID'] = $subj['uid'];
+						$t[$row]['Sex'] = $subj['sex'];
+						if ($includeheightweight) {
+							$t[$row]['Height'] = $subj['height'];
+							$t[$row]['Weight'] = $subj['weight'];
+						}
+						if ($includedob) {
+							$t[$row]['DOB'] = $subj['dob'];
+						}
+						$t[$row]['AgeAtEvent'] = $age;
+						$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+						$t[$row]['AltUIDs'] = $subj['altuids'];
+
+						/* add the drug info to this row */
+						$drugname = $rowA['drug_name'];
+						$t[$row]['EventDateTime'] = $rowA['drug_startdate'];
+						if ($includeduration)
+							$t[$row][$drugname . '_DURATION'] = $rowA['drug_duration'];
+						if ($includeenddate)
+							$t[$row][$drugname . '_ENDDATETIME'] = $rowA['drug_enddate'];
+						if ($drugvalue == "")
+							$t[$row][$drugname] = $blankvalueplaceholder;
+						else
+							$t[$row][$drugname] = $drugvalue;
+
+						list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $dosedisplaytime);
+						if ($timeSinceDose != null) {
+							$t[$row]["$drugname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+							$t[$row]['DoseAmount'] = $doseamount;
+							$t[$row]['DoseKey'] = $dosekey;
+						}
+
+						/* add the drug details */
+						if ($a['includedrugdetails']) {
+							$t[$row][$drugname . '_doseamount'] = $rowA['drug_doseamount'];
+							$t[$row][$drugname . '_dosekey'] = $rowA['drug_dosekey'];
+						}
+						
+						$hasdata = true;
 					}
-					if ($includedob) {
-						$t[$row]['DOB'] = $subj['dob'];
-					}
-					$t[$row]['AgeAtEvent'] = $age;
-					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
-					$t[$row]['AltUIDs'] = $subj['altuids'];
-
-					/* add the drug info to this row */
-					$drugname = $rowA['drug_name'];
-					$t[$row]['EventDateTime'] = $rowA['drug_startdate'];
-					if ($includeduration)
-						$t[$row][$drugname . '_DURATION'] = $rowA['drug_duration'];
-					if ($includeenddate)
-						$t[$row][$drugname . '_ENDDATETIME'] = $rowA['drug_enddate'];
-					if ($drugvalue == "")
-						$t[$row][$drugname] = $blankvalueplaceholder;
-					else
-						$t[$row][$drugname] = $drugvalue;
-
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['drug_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
-						$t[$row]["$drugname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
-
-					/* add the drug details */
-					if ($a['includedrugdetails']) {
-						$t[$row][$drugname . '_doseamount'] = $rowA['drug_doseamount'];
-						$t[$row][$drugname . '_dosekey'] = $rowA['drug_dosekey'];
-					}
-					
-					$hasdata = true;
 				}
 			}
 			
@@ -1104,9 +1122,12 @@
 							/* add the measure info to this row */
 							$t[$row]["Pipeline_$resultname"] = $rowA['result_value'];
 
-							$timeSinceDose = GetTimeSinceDose($dosedates, $variabledatetime, $dosedisplaytime);
-							if ($timeSinceDose != null)
+							list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $variabledatetime, $dosedisplaytime);
+							if ($timeSinceDose != null) {
 								$t[$row][$resultname . "_TIMESINCEDOSE_$dosedisplaytime"] = $timeSinceDose;
+								$t[$row]['DoseAmount'] = $doseamount;
+								$t[$row]['DoseKey'] = $dosekey;
+							}
 							
 							$hasdata = true;
 							$laststudyid = $studyid;
@@ -1154,332 +1175,332 @@
 	/* -------------------------------------------- */
 	function CreateWideReport($projectid, $a) {
 
-		/* setup some global-ish variables */
-		$dosevariable = $a['dosevariable'];
-		$dosetimerange = $a['dosetimerange'];
-		$dosedisplaytime = $a['dosedisplaytime'];
+		// /* setup some global-ish variables */
+		// $dosevariable = $a['dosevariable'];
+		// $dosetimerange = $a['dosetimerange'];
+		// $dosedisplaytime = $a['dosedisplaytime'];
 
-		/* create the table */
-		$t;
+		// /* create the table */
+		// $t;
 		
-		/* get all of the subject information */
-		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$uid = $row['uid'];
-			$t[$uid]['uid'] = $uid;
+		// /* get all of the subject information */
+		// $sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
+		// $result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			// $uid = $row['uid'];
+			// $t[$uid]['uid'] = $uid;
 			
-			$subjectid 		= $t[$uid]['subjectid'] 	= $row['subject_id'];
-			$enrollmentid 	= $t[$uid]['enrollmentid'] 	= $row['enrollment_id'];
-			$dob 			= $t[$uid]['dob'] 			= $row['birthdate'];
-			$sex 			= $t[$uid]['sex'] 			= $row['gender'];
-			$subjectheight 	= $t[$uid]['subjectheight'] = $row['height'];
-			$subjectweight 	= $t[$uid]['subjectweight'] = $row['weight'];
-			$enrollgroup 	= $t[$uid]['enrollgroup'] 	= $row['enroll_subgroup'];
+			// $subjectid 		= $t[$uid]['subjectid'] 	= $row['subject_id'];
+			// $enrollmentid 	= $t[$uid]['enrollmentid'] 	= $row['enrollment_id'];
+			// $dob 			= $t[$uid]['dob'] 			= $row['birthdate'];
+			// $sex 			= $t[$uid]['sex'] 			= $row['gender'];
+			// $subjectheight 	= $t[$uid]['subjectheight'] = $row['height'];
+			// $subjectweight 	= $t[$uid]['subjectweight'] = $row['weight'];
+			// $enrollgroup 	= $t[$uid]['enrollgroup'] 	= $row['enroll_subgroup'];
 			
-			$altuids = implode2(" | ", GetAlternateUIDs($subjectid, $enrollmentid));
-			$t[$uid]['altuids'] = $altuids;
+			// $altuids = implode2(" | ", GetAlternateUIDs($subjectid, $enrollmentid));
+			// $t[$uid]['altuids'] = $altuids;
 
-			/* get dose datetimes for this enrollment */
-			$dosedates = array();
-			if ($a['includetimesincedose']) {
-				if ($dosevariable != "") {
-					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$dosevariable'";
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						/* add the measure info to this row */
-						$dosedates[] = $rowA['drug_startdate'];
-					}
-				}
-			}
+			// /* get dose datetimes for this enrollment */
+			// $dosedates = array();
+			// if ($a['includetimesincedose']) {
+				// if ($dosevariable != "") {
+					// $sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$dosevariable'";
+					// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						// /* add the measure info to this row */
+						// $dosedates[]['date'] = $rowA['drug_startdate'];
+					// }
+				// }
+			// }
 			
-			/* get all of the protocol info */
-			if (!empty($a['mr_protocols'])) {
+			// /* get all of the protocol info */
+			// if (!empty($a['mr_protocols'])) {
 				
-				if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
-					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
-				}
-				else {
-					$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
-					$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
-				}
+				// if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
+					// $sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
+				// }
+				// else {
+					// $mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
+					// $sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
+				// }
 			
-				/* add in the protocols */
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				$i=1;
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$seriesdesc = preg_replace('/\s+/', '', $rowA['series_desc']);
-					$seriesid = $rowA['mrseries_id'];
-					$seriesdatetime = $rowA['series_datetime'];
+				// /* add in the protocols */
+				// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				// $i=1;
+				// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					// $seriesdesc = preg_replace('/\s+/', '', $rowA['series_desc']);
+					// $seriesid = $rowA['mrseries_id'];
+					// $seriesdatetime = $rowA['series_datetime'];
 					
-					$pixdimX = $rowA['series_spacingx'];
-					$pixdimY = $rowA['series_spacingy'];
-					$pixdimZ = $rowA['series_spacingz'];
-					$dimX = $rowA['dimX'];
-					$dimY = $rowA['dimY'];
-					$dimZ = $rowA['dimZ'];
-					$dimT = $rowA['dimT'];
-					$tr = $rowA['series_tr'];
-					$te = $rowA['series_te'];
-					$ti = $rowA['series_ti'];
-					$flip = $rowA['series_flip'];
-					$seriesnum = $rowA['series_num'];
-					$studynum = $rowA['study_num'];
-					$numseries = $rowA['seriescount'];
-					$studyheight = $rowA['study_height'];
-					$studyweight = $rowA['study_weight'];
-					$studydatetime = $rowA['study_datetime'];
-					$studyage = $rowA['study_ageatscan'];
-					$studynotes = $rowA['study_notes'];
-					$studyvisit = $rowA['study_type'];
+					// $pixdimX = $rowA['series_spacingx'];
+					// $pixdimY = $rowA['series_spacingy'];
+					// $pixdimZ = $rowA['series_spacingz'];
+					// $dimX = $rowA['dimX'];
+					// $dimY = $rowA['dimY'];
+					// $dimZ = $rowA['dimZ'];
+					// $dimT = $rowA['dimT'];
+					// $tr = $rowA['series_tr'];
+					// $te = $rowA['series_te'];
+					// $ti = $rowA['series_ti'];
+					// $flip = $rowA['series_flip'];
+					// $seriesnum = $rowA['series_num'];
+					// $studynum = $rowA['study_num'];
+					// $numseries = $rowA['seriescount'];
+					// $studyheight = $rowA['study_height'];
+					// $studyweight = $rowA['study_weight'];
+					// $studydatetime = $rowA['study_datetime'];
+					// $studyage = $rowA['study_ageatscan'];
+					// $studynotes = $rowA['study_notes'];
+					// $studyvisit = $rowA['study_type'];
 					
-					if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
-						$age = strtotime($studydate) - strtotime($dob);
-					else
-						$age = $studyage;
+					// if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
+						// $age = strtotime($studydate) - strtotime($dob);
+					// else
+						// $age = $studyage;
 					
-					if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
-						$height = $subjectheight;
-					else
-						$height = $studyheight;
+					// if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
+						// $height = $subjectheight;
+					// else
+						// $height = $studyheight;
 					
-					if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0))
-						$weight = $subjectweight;
-					else
-						$weight = $studyweight;
+					// if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0))
+						// $weight = $subjectweight;
+					// else
+						// $weight = $studyweight;
 					
-					/* add the protocol info to the row */
-					$t[$uid]["$seriesdesc"."_SeriesNum_$i"] = $seriesnum;
-					$t[$uid]["$seriesdesc"."_StudyDateTime_$i"] = $studydatetime;
-					$t[$uid]["$seriesdesc"."_StudyNum_$i"] = $studynum;
-					$t[$uid]["$seriesdesc"."_NumSeries_$i"] = $numseries;
-					$t[$uid]["$seriesdesc"."_AgeAtScan_$i"] = $age;
-					$t[$uid]["$seriesdesc"."_Height_$i"] = $height;
-					$t[$uid]["$seriesdesc"."_Weight_$i"] = $weight;
-					$t[$uid]["$seriesdesc"."_Notes_$i"] = $studynotes;
-					$t[$row]['$seriesdesc"."_VisitType_$i'] = $studyvisit;
+					// /* add the protocol info to the row */
+					// $t[$uid]["$seriesdesc"."_SeriesNum_$i"] = $seriesnum;
+					// $t[$uid]["$seriesdesc"."_StudyDateTime_$i"] = $studydatetime;
+					// $t[$uid]["$seriesdesc"."_StudyNum_$i"] = $studynum;
+					// $t[$uid]["$seriesdesc"."_NumSeries_$i"] = $numseries;
+					// $t[$uid]["$seriesdesc"."_AgeAtScan_$i"] = $age;
+					// $t[$uid]["$seriesdesc"."_Height_$i"] = $height;
+					// $t[$uid]["$seriesdesc"."_Weight_$i"] = $weight;
+					// $t[$uid]["$seriesdesc"."_Notes_$i"] = $studynotes;
+					// $t[$row]['$seriesdesc"."_VisitType_$i'] = $studyvisit;
 					
-					if ($a["includeprotocolparms"]) {
-						$t[$uid]["$seriesdesc"."_voxX_$i"] = $pixdimX;
-						$t[$uid]["$seriesdesc"."_voxY_$i"] = $pixdimY;
-						$t[$uid]["$seriesdesc"."_voxZ_$i"] = $pixdimZ;
-						$t[$uid]["$seriesdesc"."_dimX_$i"] = $dimX;
-						$t[$uid]["$seriesdesc"."_dimY_$i"] = $dimY;
-						$t[$uid]["$seriesdesc"."_dimZ_$i"] = $dimZ;
-						$t[$uid]["$seriesdesc"."_dimT_$i"] = $dimT;
-						$t[$uid]["$seriesdesc"."_TR_$i"] = $tr;
-						$t[$uid]["$seriesdesc"."_TE_$i"] = $te;
-						$t[$uid]["$seriesdesc"."_TI_$i"] = $ti;
-						$t[$uid]["$seriesdesc"."_flip_$i"] = $flip;
-					}
+					// if ($a["includeprotocolparms"]) {
+						// $t[$uid]["$seriesdesc"."_voxX_$i"] = $pixdimX;
+						// $t[$uid]["$seriesdesc"."_voxY_$i"] = $pixdimY;
+						// $t[$uid]["$seriesdesc"."_voxZ_$i"] = $pixdimZ;
+						// $t[$uid]["$seriesdesc"."_dimX_$i"] = $dimX;
+						// $t[$uid]["$seriesdesc"."_dimY_$i"] = $dimY;
+						// $t[$uid]["$seriesdesc"."_dimZ_$i"] = $dimZ;
+						// $t[$uid]["$seriesdesc"."_dimT_$i"] = $dimT;
+						// $t[$uid]["$seriesdesc"."_TR_$i"] = $tr;
+						// $t[$uid]["$seriesdesc"."_TE_$i"] = $te;
+						// $t[$uid]["$seriesdesc"."_TI_$i"] = $ti;
+						// $t[$uid]["$seriesdesc"."_flip_$i"] = $flip;
+					// }
 					
-					if ($a['includemrqa']) {
-						$sqlstringC = "select * from mr_qa where mrseries_id = $seriesid";
-						$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-						$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+					// if ($a['includemrqa']) {
+						// $sqlstringC = "select * from mr_qa where mrseries_id = $seriesid";
+						// $resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+						// $rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 						
-						$t[$uid]["$seriesdesc"."_io_snr_$i"] = $rowC['io_snr'];
-						$t[$uid]["$seriesdesc"."_pv_snr_$i"] = $rowC['pv_snr'];
-						$t[$uid]["$seriesdesc"."_move_minx_$i"] = $rowC['move_minx'];
-						$t[$uid]["$seriesdesc"."_move_miny_$i"] = $rowC['move_miny'];
-						$t[$uid]["$seriesdesc"."_move_minz_$i"] = $rowC['move_minz'];
-						$t[$uid]["$seriesdesc"."_move_maxx_$i"] = $rowC['move_maxx'];
-						$t[$uid]["$seriesdesc"."_move_maxy_$i"] = $rowC['move_maxy'];
-						$t[$uid]["$seriesdesc"."_move_maxz_$i"] = $rowC['move_maxz'];
-						$t[$uid]["$seriesdesc"."_acc_minx_$i"] = $rowC['acc_minx'];
-						$t[$uid]["$seriesdesc"."_acc_miny_$i"] = $rowC['acc_miny'];
-						$t[$uid]["$seriesdesc"."_acc_minz_$i"] = $rowC['acc_minz'];
-						$t[$uid]["$seriesdesc"."_acc_maxx_$i"] = $rowC['acc_maxx'];
-						$t[$uid]["$seriesdesc"."_acc_maxy_$i"] = $rowC['acc_maxy'];
-						$t[$uid]["$seriesdesc"."_acc_maxz_$i"] = $rowC['acc_maxz'];
-						$t[$uid]["$seriesdesc"."_rot_minp_$i"] = $rowC['rot_minp'];
-						$t[$uid]["$seriesdesc"."_rot_minr_$i"] = $rowC['rot_minr'];
-						$t[$uid]["$seriesdesc"."_rot_miny_$i"] = $rowC['rot_miny'];
-						$t[$uid]["$seriesdesc"."_rot_maxp_$i"] = $rowC['rot_maxp'];
-						$t[$uid]["$seriesdesc"."_rot_maxr_$i"] = $rowC['rot_maxr'];
-						$t[$uid]["$seriesdesc"."_rot_maxy_$i"] = $rowC['rot_maxy'];
-					}
+						// $t[$uid]["$seriesdesc"."_io_snr_$i"] = $rowC['io_snr'];
+						// $t[$uid]["$seriesdesc"."_pv_snr_$i"] = $rowC['pv_snr'];
+						// $t[$uid]["$seriesdesc"."_move_minx_$i"] = $rowC['move_minx'];
+						// $t[$uid]["$seriesdesc"."_move_miny_$i"] = $rowC['move_miny'];
+						// $t[$uid]["$seriesdesc"."_move_minz_$i"] = $rowC['move_minz'];
+						// $t[$uid]["$seriesdesc"."_move_maxx_$i"] = $rowC['move_maxx'];
+						// $t[$uid]["$seriesdesc"."_move_maxy_$i"] = $rowC['move_maxy'];
+						// $t[$uid]["$seriesdesc"."_move_maxz_$i"] = $rowC['move_maxz'];
+						// $t[$uid]["$seriesdesc"."_acc_minx_$i"] = $rowC['acc_minx'];
+						// $t[$uid]["$seriesdesc"."_acc_miny_$i"] = $rowC['acc_miny'];
+						// $t[$uid]["$seriesdesc"."_acc_minz_$i"] = $rowC['acc_minz'];
+						// $t[$uid]["$seriesdesc"."_acc_maxx_$i"] = $rowC['acc_maxx'];
+						// $t[$uid]["$seriesdesc"."_acc_maxy_$i"] = $rowC['acc_maxy'];
+						// $t[$uid]["$seriesdesc"."_acc_maxz_$i"] = $rowC['acc_maxz'];
+						// $t[$uid]["$seriesdesc"."_rot_minp_$i"] = $rowC['rot_minp'];
+						// $t[$uid]["$seriesdesc"."_rot_minr_$i"] = $rowC['rot_minr'];
+						// $t[$uid]["$seriesdesc"."_rot_miny_$i"] = $rowC['rot_miny'];
+						// $t[$uid]["$seriesdesc"."_rot_maxp_$i"] = $rowC['rot_maxp'];
+						// $t[$uid]["$seriesdesc"."_rot_maxr_$i"] = $rowC['rot_maxr'];
+						// $t[$uid]["$seriesdesc"."_rot_maxy_$i"] = $rowC['rot_maxy'];
+					// }
 					
-					$timeSinceDose = GetTimeSinceDose($dosedates, $seriesdatetime, $dosedisplaytime);
-					if ($timeSinceDose != null)
-						$t[$uid]["$seriesdesc-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $seriesdatetime, $dosedisplaytime);
+					// if ($timeSinceDose != null)
+						// $t[$uid]["$seriesdesc-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
 					
-					$i++;
-				}
-			}
+					// $i++;
+				// }
+			// }
 
-			/* get all of the measures */
-			if ($a['includeallmeasures']) {
-				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				$i=1;
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					/* add the measure info to this row */
-					$t[$uid]["measure_startdatetime_$i"] = $rowA['measure_startdate'];
-					$t[$uid]["measure_Duration_$i"] = $rowA['measure_duration'];
-					$t[$uid]["measure_Enddatetime_$i"] = $rowA['measure_enddate'];
-					$measurename = $rowA['measure_name'];
-					$t[$uid]["measure_$measurename"."_$i"] = $rowA['measure_value'];
+			// /* get all of the measures */
+			// if ($a['includeallmeasures']) {
+				// $sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+				// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				// $i=1;
+				// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					// /* add the measure info to this row */
+					// $t[$uid]["measure_startdatetime_$i"] = $rowA['measure_startdate'];
+					// $t[$uid]["measure_Duration_$i"] = $rowA['measure_duration'];
+					// $t[$uid]["measure_Enddatetime_$i"] = $rowA['measure_enddate'];
+					// $measurename = $rowA['measure_name'];
+					// $t[$uid]["measure_$measurename"."_$i"] = $rowA['measure_value'];
 
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['measure_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
-						$t[$uid]["$measurename-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $dosedisplaytime);
+					// if ($timeSinceDose != null)
+						// $t[$uid]["$measurename-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
 					
-					$i++;
-				}
-			}
+					// $i++;
+				// }
+			// }
 			
-			/* get all of the vitals */
-			if ($a['includeallvitals']) {
-				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				$i=1;
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					/* add the measure info to this row */
-					$t[$uid]["vital_startdatetime_$i"] = $rowA['vital_startdate'];
-					$t[$uid]["vital_duration_$i"] = $rowA['vital_duration'];
-					$t[$uid]["vital_enddatetime_$i"] = $rowA['vital_enddate'];
-					$vitalname = $rowA['vital_name'];
-					$t[$uid]["vital_$vitalname"."_$i"] = $rowA['vital_value'];
+			// /* get all of the vitals */
+			// if ($a['includeallvitals']) {
+				// $sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
+				// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				// $i=1;
+				// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					// /* add the measure info to this row */
+					// $t[$uid]["vital_startdatetime_$i"] = $rowA['vital_startdate'];
+					// $t[$uid]["vital_duration_$i"] = $rowA['vital_duration'];
+					// $t[$uid]["vital_enddatetime_$i"] = $rowA['vital_enddate'];
+					// $vitalname = $rowA['vital_name'];
+					// $t[$uid]["vital_$vitalname"."_$i"] = $rowA['vital_value'];
 					
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['vital_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
-						$t[$uid]["$vitalname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $dosedisplaytime);
+					// if ($timeSinceDose != null)
+						// $t[$uid]["$vitalname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
 					
-					$i++;
-				}
-			}
+					// $i++;
+				// }
+			// }
 			
-			/* get all of the drugs/dosing */
-			if ($a['includealldrugs']) {
-				$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				$i=1;
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					/* add the measure info to this row */
-					$t[$uid]["drug_startdatetime_$i"] = $rowA['drug_startdate'];
-					$t[$uid]["drug_duration_$i"] = $rowA['drug_duration'];
-					$t[$uid]["drug_enddatetime_$i"] = $rowA['drug_enddate'];
-					$drugname = $rowA['drug_name'];
-					$t[$uid]["drug_$drugname"."_$i"] = $rowA['drug_value'];
+			// /* get all of the drugs/dosing */
+			// if ($a['includealldrugs']) {
+				// $sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
+				// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				// $i=1;
+				// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					// /* add the measure info to this row */
+					// $t[$uid]["drug_startdatetime_$i"] = $rowA['drug_startdate'];
+					// $t[$uid]["drug_duration_$i"] = $rowA['drug_duration'];
+					// $t[$uid]["drug_enddatetime_$i"] = $rowA['drug_enddate'];
+					// $drugname = $rowA['drug_name'];
+					// $t[$uid]["drug_$drugname"."_$i"] = $rowA['drug_value'];
 
-					$timeSinceDose = GetTimeSinceDose($dosedates, $rowA['drug_startdate'], $dosedisplaytime);
-					if ($timeSinceDose != null)
-						$t[$uid]["$drugname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $dosedisplaytime);
+					// if ($timeSinceDose != null)
+						// $t[$uid]["$drugname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
 					
-					$i++;
-				}
-			}
+					// $i++;
+				// }
+			// }
 
-			/* get the pipeline info */
-			if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
-				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
-				$resultnameids = array();
-				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
-				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
-				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-					$resultnameids[] = $rowX['resultname_id'];
-					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
-				}
+			// /* get the pipeline info */
+			// if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
+				// /* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
+				// $resultnameids = array();
+				// $sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
+				// $resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				// while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					// $resultnameids[] = $rowX['resultname_id'];
+					// $resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+				// }
 
-				if (count($resultnameids) > 0) {
-					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND a.pipeline_id = " . $a['pipelineid'] . " AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = $subjectid ORDER BY c.study_num, c.study_datetime";
+				// if (count($resultnameids) > 0) {
+					// $sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND a.pipeline_id = " . $a['pipelineid'] . " AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = $subjectid ORDER BY c.study_num, c.study_datetime";
 					
-					$laststudyid = "";
+					// $laststudyid = "";
 					
-					/* create a hash of series datetimes */
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-					if (mysqli_num_rows($resultA) > 0) {
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					// /* create a hash of series datetimes */
+					// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					// if (mysqli_num_rows($resultA) > 0) {
+						// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-							$studyage = $rowA['ageinmonths']/12.0;
-							$studydatetime = $rowA['study_datetime'];
-							$studyheight = $rowA['study_height'];
-							$studyweight = $rowA['study_weight'];
-							$studynum = $rowA['study_num'];
-							$studyid = $rowA['study_id'];
-							$studyvisit = $rowA['study_type'];
-							$studymodality = strtolower($rowA['study_modality']);
+							// $studyage = $rowA['ageinmonths']/12.0;
+							// $studydatetime = $rowA['study_datetime'];
+							// $studyheight = $rowA['study_height'];
+							// $studyweight = $rowA['study_weight'];
+							// $studynum = $rowA['study_num'];
+							// $studyid = $rowA['study_id'];
+							// $studyvisit = $rowA['study_type'];
+							// $studymodality = strtolower($rowA['study_modality']);
 							
-							if (($studyage == "") || ($studyage == "null") || ($studyage == 0)) $age = strtotime($studydate) - strtotime($subj['dob']);
-							else $age = $studyage;
+							// if (($studyage == "") || ($studyage == "null") || ($studyage == 0)) $age = strtotime($studydate) - strtotime($subj['dob']);
+							// else $age = $studyage;
 							
-							if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0)) $height = $subj['height'];
-							else $height = $studyheight;
+							// if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0)) $height = $subj['height'];
+							// else $height = $studyheight;
 							
-							if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0)) $weight = $subj['weight'];
-							else $weight = $studyweight;
+							// if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0)) $weight = $subj['weight'];
+							// else $weight = $studyweight;
 							
-							//if ( ($studyid != $laststudyid) && ($laststudyid != "") )
-							//	$row++;
+							// //if ( ($studyid != $laststudyid) && ($laststudyid != "") )
+							// //	$row++;
 							
-							/* need to add the demographic info to every row */
-							//$t[$uid]['Row'] = $row;
-							//$t[$uid]['UID'] = $subj['uid'];
-							//$t[$uid]['Sex'] = $subj['sex'];
-							//$t[$uid]['Age'] = $age;
-							//$t[$uid]['Height'] = $height;
-							//$t[$uid]['Weight'] = $weight;
-							//$t[$uid]['EnrollGroup'] = $subj['enrollgroup'];
-							//$t[$uid]['AltUIDs'] = $subj['altuids'];
-							//$t[$uid]['Pipeline-StudyID'] = $subj['uid'] . $studynum;
-							//$t[$uid]['Pipeline-StudyDateTime'] = $studydatetime;
-							//$t[$uid]['VisitType'] = $studyvisit;
+							// /* need to add the demographic info to every row */
+							// //$t[$uid]['Row'] = $row;
+							// //$t[$uid]['UID'] = $subj['uid'];
+							// //$t[$uid]['Sex'] = $subj['sex'];
+							// //$t[$uid]['Age'] = $age;
+							// //$t[$uid]['Height'] = $height;
+							// //$t[$uid]['Weight'] = $weight;
+							// //$t[$uid]['EnrollGroup'] = $subj['enrollgroup'];
+							// //$t[$uid]['AltUIDs'] = $subj['altuids'];
+							// //$t[$uid]['Pipeline-StudyID'] = $subj['uid'] . $studynum;
+							// //$t[$uid]['Pipeline-StudyDateTime'] = $studydatetime;
+							// //$t[$uid]['VisitType'] = $studyvisit;
 
-							$resultname = $resultnames[$rowA['result_nameid']];
+							// $resultname = $resultnames[$rowA['result_nameid']];
 							
-							/* add the measure info to this row */
-							$t[$uid]["Pipeline_$resultname"."_$i"] = $rowA['result_value'];
+							// /* add the measure info to this row */
+							// $t[$uid]["Pipeline_$resultname"."_$i"] = $rowA['result_value'];
 
-							/* if we should search for a series datetime */
-							$variabledatetime = $studydatetime;
-							if ($a['pipelineseriesdatetime'] != "") {
-								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
-								//PrintSQL($sqlstringB);
-								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
-								if (mysqli_num_rows($resultB) > 0) {
-									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-									$variabledatetime = $rowB['series_datetime'];
-									$t[$uid]["Pipeline-SeriesDateTime-$resultname-$i"] = $variabledatetime;
-								}
-							}
+							// /* if we should search for a series datetime */
+							// $variabledatetime = $studydatetime;
+							// if ($a['pipelineseriesdatetime'] != "") {
+								// $sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
+								// //PrintSQL($sqlstringB);
+								// $resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+								// if (mysqli_num_rows($resultB) > 0) {
+									// $rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+									// $variabledatetime = $rowB['series_datetime'];
+									// $t[$uid]["Pipeline-SeriesDateTime-$resultname-$i"] = $variabledatetime;
+								// }
+							// }
 
-							$timeSinceDose = GetTimeSinceDose($dosedates, $variabledatetime, $dosedisplaytime);
-							if ($timeSinceDose != null)
-								$t[$uid][$resultname . "_TimeSinceDose_$dosedisplaytime"."_$i"] = $timeSinceDose;
+							// $timeSinceDose = GetTimeSinceDose($drugdoses, $variabledatetime, $dosedisplaytime);
+							// if ($timeSinceDose != null)
+								// $t[$uid][$resultname . "_TimeSinceDose_$dosedisplaytime"."_$i"] = $timeSinceDose;
 							
-							$hasdata = true;
-							$laststudyid = $studyid;
-						}
-						//$row++;
-					}
-				}
-				else {
-					echo "Result names not found [$sqlstringX]";
-				}
-			}
+							// $hasdata = true;
+							// $laststudyid = $studyid;
+						// }
+						// //$row++;
+					// }
+				// }
+				// else {
+					// echo "Result names not found [$sqlstringX]";
+				// }
+			// }
 			
-			/* add a row if the subject had no data */
-			if ((!$hasdata) && ($a['includeemptysubjects'] == 1)) {
-				$t[$uid]['UID'] = $uid;
-				$t[$uid]['Sex'] = $sex;
-				$t[$uid]['SubjectHeight'] = $subjectheight;
-				$t[$uid]['SubjectWeight'] = $subjectweight;
-				$t[$uid]['EnrollGroup'] = $enrollgroup;
-				$t[$uid]['AltUIDs'] = $altuids;
-			}
-		}
+			// /* add a row if the subject had no data */
+			// if ((!$hasdata) && ($a['includeemptysubjects'] == 1)) {
+				// $t[$uid]['UID'] = $uid;
+				// $t[$uid]['Sex'] = $sex;
+				// $t[$uid]['SubjectHeight'] = $subjectheight;
+				// $t[$uid]['SubjectWeight'] = $subjectweight;
+				// $t[$uid]['EnrollGroup'] = $enrollgroup;
+				// $t[$uid]['AltUIDs'] = $altuids;
+			// }
+		// }
 		
-		/* create table header */
-		$h2 = array();
-		foreach ($t as $row => $subj) {
-			foreach ($subj as $col => $vals) {
-				$h2[$col] = "";
-			}
-		}
-		$h = array_keys($h2);
+		// /* create table header */
+		// $h2 = array();
+		// foreach ($t as $row => $subj) {
+			// foreach ($subj as $col => $vals) {
+				// $h2[$col] = "";
+			// }
+		// }
+		// $h = array_keys($h2);
 		
-		return array($h, $t);
+		// return array($h, $t);
 	}
 
 
@@ -1571,13 +1592,25 @@
 	/* -------------------------------------------- */
 	/* ------- GetTimeSinceDose ------------------- */
 	/* -------------------------------------------- */
-	function GetTimeSinceDose($dosetimes, $event, $dosedisplaytime) {
+	function GetTimeSinceDose($drugdoses, $event, $dosedisplaytime) {
 		$eventParts = date_parse($event);
 		
 		//PrintVariable($eventParts);
+		$dosetimes = array();
+		//foreach ($drugdoses as $d) {
+		//	$dosetimes[] = $d['date'];
+		//}
+		
+		//PrintVariable($drugdoses);
 		
 		$timeSinceDose = null;
-		foreach ($dosetimes as $dtime) {
+		foreach ($drugdoses as $d) {
+			//PrintVariable($d);
+			
+			$dtime = $d['date'];
+			$doseamount = $d['doseamount'];
+			$dosekey = $d['dosekey'];
+			
 			$dtimeParts = date_parse($dtime);
 			
 			/* check if the event is on the same date as the dose datetime */
@@ -1586,9 +1619,6 @@
 				$dt = strtotime($dtime);
 				$et = strtotime($event);
 
-				//PrintVariable($dt);
-				//PrintVariable($et);
-				
 				$timeSinceDose = $et - $dt;
 				
 				if ($dosedisplaytime == "min")
@@ -1600,7 +1630,7 @@
 			}
 		}
 		
-		return $timeSinceDose;
+		return array($timeSinceDose, $doseamount, $dosekey);
 	}
 
 

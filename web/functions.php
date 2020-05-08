@@ -2291,6 +2291,28 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ParseCSV --------------------------- */
+	/* -------------------------------------------- */
+	function ParseCSV($s) {
+		
+		$lines = explode( "\n", $s );
+		$headers = str_getcsv( array_shift( $lines ) );
+		$data = array();
+		foreach ( $lines as $line ) {
+			$row = array();
+			foreach ( str_getcsv( $line ) as $key => $field )
+				$row[ trim($headers[ trim($key) ]) ] = $field;
+			
+			$row = array_filter( $row );
+			$data[] = $row;
+		}
+		//PrintVariable($data);
+
+		return $data;
+	}
 	
 	
 	/* -------------------------------------------- */
