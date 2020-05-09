@@ -8,7 +8,6 @@ Watch an overview of the main features of NiDB (Recorded 2015): <a href="https:/
 The git repository is composed of the following sections:
 
 * `doc` - Documentation, Word documents
-* `setup` - Files related to installing NiDB. Including C++/Qt installer
 * `src` - Source code. Qt required for nidb core program
 * `tools` - Various tools, binary helper programs, and scripts
 
