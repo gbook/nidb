@@ -1,19 +1,19 @@
 # NeuroInformatics Database
 
 ## Overview
-The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics can also be stored.
+The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics, family relationships, and data imported from RedCap can be stored and queried in the database.
 
-Watch an overview of the main features of NiDB: <a href="https://youtu.be/tOX7VamHGvM">Part 1</a> | <a href="https://youtu.be/dX11HRj_kEs">Part 2</a> | <a href="https://youtu.be/aovrq-oKO-M">Part 3</a>
+Watch an overview of the main features of NiDB (Recorded 2015): <a href="https://youtu.be/tOX7VamHGvM">Part 1</a> | <a href="https://youtu.be/dX11HRj_kEs">Part 2</a> | <a href="https://youtu.be/aovrq-oKO-M">Part 3</a>
 
-This is a unified repository for the NiDB project. It is composed of four main sections:
+The git repository is composed of the following sections:
 
-* programs - the behind the scenes programs and scripts that make things happen without the user seeing it. Usually copied to `/nidb/programs`
-* web - the website that the user interacts with. Usually copied to `/var/www/html`
-* setup - setup script and SQL schema files
-* documentation - Word documents for usage and administration
+* `doc` - Documentation, Word documents
+* `setup` - Files related to installing NiDB. Including C++/Qt installer
+* `src` - Source code. Qt required for nidb core program
+* `tools` - Various tools, binary helper programs, and scripts
 
 ## Current version of NiDB - March 2020
-NiDB was re-written in 2019 using C++ instead of Perl. This allowed much more reliable code. All Perl files have been moved to the <i>old</i> directory within programs for historical purposes.
+NiDB was re-written in 2019 using C++ instead of Perl. This allowed much more reliable code. All Perl files have been moved to the <i>src/old</i> directory for historical reference.
 
 As part of the rewrite, a new installer was created. See the *Releases* section to download the current installer. The installer should be used the first time NiDB is installed, and the internal update tool used for subsequent updates.
 
