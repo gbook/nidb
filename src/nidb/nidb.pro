@@ -70,14 +70,6 @@ HEADERS += \
     study.h \
     subject.h
 
-# Location of SMTP Library
-SMTP_LIBRARY_LOCATION = $$PWD/smtp
-win32:CONFIG(release, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/../SMTPEmail/release -lSMTPEmail
-#else:win32:CONFIG(debug, debug|release): LIBS += -L$$SMTP_LIBRARY_LOCATION/debug/ -lSMTPEmail
-else:unix: LIBS += -L$$SMTP_LIBRARY_LOCATION/ -lSMTPEmail
-INCLUDEPATH += $$SMTP_LIBRARY_LOCATION
-DEPENDPATH += $$SMTP_LIBRARY_LOCATION
-
 
 # gdcm
 win32: {
@@ -110,10 +102,16 @@ win32: {
         -lgdcmzlib \
         -lsocketxx
 
+    # Location of SMTP Library
+    SMTPBIN = $$PWD/smtp
+    LIBS += -L$$SMTPBIN/../SMTPEmail/release -lSMTPEmail
+    INCLUDEPATH += $$SMTPBIN
+    DEPENDPATH += $$SMTPBIN
+
 }
 unix: {
-    GDCMBIN = /nidb/programs/gdcmbin
-    GDCMSRC = /nidb/programs/gdcm/Source
+    GDCMBIN = ../../bin/gdcm
+    GDCMSRC = ../gdcm
     LIBS += -L$$GDCMBIN/bin/
     INCLUDEPATH += $$GDCMSRC/Attribute
     INCLUDEPATH += $$GDCMSRC/Common
@@ -140,6 +138,13 @@ unix: {
         -lgdcmuuid \
         -lgdcmzlib \
         -lsocketxx
+
+    # Location of SMTP Library
+    SMTPBIN = ../../bin/smtp
+    LIBS += -L$$SMTPBIN/ -lSMTPEmail
+    INCLUDEPATH += $$SMTPBIN
+    DEPENDPATH += $$SMTPBIN
+
 }
 
 DISTFILES += \
