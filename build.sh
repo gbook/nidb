@@ -26,6 +26,8 @@ if [ ! -d "$BUILDDIR/gdcm" ]; then
 	cd $BUILDDIR/gdcm
 	cmake3 $SRCDIR/gdcm
 	make
+else
+	echo "gdcm already built. Using $BUILDDIR/gdcm"
 fi
 
 # build smtp module
@@ -33,15 +35,17 @@ if [ ! -d "$BUILDDIR/smtp" ]; then
 
 	echo "smtp module not built. Building smtp module now"
 
-	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++ && make qmake_all
-	cd $BUILDDIR/nidb
+	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+	cd $BUILDDIR/smtp
 	make
+else
+	echo "smtp already built. Using $BUILDDIR/gdcm"
 fi
 
 # build NiDB core
 echo "Building NiDB core"
 # create make file in the build directory
-$QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++ CONFIG+=qtquickcompiler && make qmake_all
+$QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++ # CONFIG+=qtquickcompiler
 cd $BUILDDIR/nidb
 make
 

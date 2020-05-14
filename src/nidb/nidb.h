@@ -33,7 +33,7 @@
 #include <QtSql>
 #include <QHostInfo>
 #include <QDirIterator>
-#include "smtp/SmtpMime"
+#include "SmtpMime"
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
 #include "gdcmAttribute.h"

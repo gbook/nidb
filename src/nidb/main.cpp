@@ -34,8 +34,7 @@
 #include "moduleCluster.h"
 #include "moduleMiniPipeline.h"
 #include <iostream>
-#include <smtp/SmtpMime>
-
+#include <SmtpMime>
 
 /* ---------------------------------------------------------- */
 /* --------- main ------------------------------------------- */

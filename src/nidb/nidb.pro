@@ -111,7 +111,7 @@ win32: {
 }
 unix: {
     GDCMBIN = ../../bin/gdcm
-    GDCMSRC = ../gdcm
+    GDCMSRC = ../gdcm/Source
     LIBS += -L$$GDCMBIN/bin/
     INCLUDEPATH += $$GDCMSRC/Attribute
     INCLUDEPATH += $$GDCMSRC/Common
@@ -139,7 +139,8 @@ unix: {
         -lgdcmzlib \
         -lsocketxx
 
-    # Location of SMTP Library
+    # Location of SMTP Library and header
+	INCLUDEPATH += ../smtp
     SMTPBIN = ../../bin/smtp
     LIBS += -L$$SMTPBIN/ -lSMTPEmail
     INCLUDEPATH += $$SMTPBIN
