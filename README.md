@@ -1,3 +1,4 @@
+
 # NeuroInformatics Database
 
 ## Overview
@@ -25,6 +26,20 @@ Further changes include:
 Use the binary installer. It will go through the process of installing several packages, and requires root privileges. Once finished, the installer will launch the web browser, through which you will complete the setup.
 
 After setup, go to http://localhost/ and login with `admin` and `password`. Change the default password immediately after logging in!
+
+## Build NiDB
+<ul>
+	<li><b>Prepare the build environment</b>. This is for CentOS 8.
+	<ol>
+		<li>Install build tools `yum group install 'Development Tools'` and `yum install cmake3`
+		<li>Install <a href="https://www.qt.io/download-open-source">Qt open-source</a>. Currently Qt 5.12.x is supported by NiDB. Note the installation location of Qt. Usually `/home/user/Qt/5.12.x`
+	</ol>
+	<li><b>Build NiDB</b>
+	<ol>
+		<li>Edit the `build.sh` to change the `QTMAKEDIR`, `BUILDDIR`, and `SRCDIR` to reflect the correct paths
+		<li>Run the bash script `./build.sh`
+	</ol>
+</ul>
 
 ## Support
 Visit the NiDB's github <a href="https://github.com/gbook/nidb/issues">issues</a> page for more support.
