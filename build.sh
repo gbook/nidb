@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # global build variables
-QMAKEBIN=/Qt/5.12.3/gcc_64/bin/qmake
-BUILDDIR=/nidb/nidbgit/bin
-SRCDIR=/nidb/nidbgit/src
+QMAKEBIN=~/Qt/5.12.3/gcc_64/bin/qmake
+BUILDDIR=~/nidb/bin
+SRCDIR=~/nidb/src
 
 
 # this script requires make, cmake3, and qmake
