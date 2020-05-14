@@ -13,7 +13,7 @@ The git repository is composed of the following sections:
 * `tools` - Various tools, binary helper programs, and scripts
 
 ## Current version of NiDB - March 2020
-NiDB was re-written in 2019 using C++ instead of Perl. This allowed much more reliable code. All Perl files have been moved to the <i>src/old</i> directory for historical reference.
+NiDB was re-written in 2019 using C++ instead of Perl, which allowed for much more reliable code. All Perl files have been moved to the <i>src/old</i> directory for historical reference.
 
 As part of the rewrite, a new installer was created. See the *Releases* section to download the current installer. The installer should be used the first time NiDB is installed, and the internal update tool used for subsequent updates.
 
@@ -27,19 +27,20 @@ Use the binary installer. It will go through the process of installing several p
 
 After setup, go to http://localhost/ and login with `admin` and `password`. Change the default password immediately after logging in!
 
-## Build NiDB
-<ul>
-	<li><b>Prepare the build environment</b>. This is for CentOS 8.
-	<ol>
-		<li>Install build tools `yum group install 'Development Tools'` and `yum install cmake3`
-		<li>Install <a href="https://www.qt.io/download-open-source">Qt open-source</a>. Currently Qt 5.12.x is supported by NiDB. Note the installation location of Qt. Usually `/home/user/Qt/5.12.x`
-	</ol>
-	<li><b>Build NiDB</b>
-	<ol>
-		<li>Edit the `build.sh` to change the `QTMAKEDIR`, `BUILDDIR`, and `SRCDIR` to reflect the correct paths
-		<li>Run the bash script `./build.sh`
-	</ol>
-</ul>
+## Building NiDB from Source
+**Prepare the build environment**. This is for CentOS 8.
+- Install build tools `yum group install 'Development Tools'` and `yum install cmake3`
+- Install Qt open-source: https://www.qt.io/download-open-source. Currently the 5.12.x of Qt is supported by NiDB. Note the installation location of Qt for later, and it's location is usually `/home/user/Qt/5.12.x`
+
+**Build NiDB**
+- Download NiDB source code from github: https://github.com/gbook/nidb/archive/master.zip
+- Unzip nidb-master.zip. Preferably to the home directory
+- Edit the `build.sh` to change the `QTMAKEDIR`, `BUILDDIR`, and `SRCDIR` to reflect the correct paths
+- `QMAKEDIR` is usually `~/Qt/5.12.x/gcc_64/bin/qmake`
+- `SRCDIR` is usually `~/nidb/src`
+- `BUILDDIR` is usually `~/nidb/bin`
+- Run the bash script `./build.sh`
+- nidb binaries should now be in the the `BUILDDIR`
 
 ## Support
 Visit the NiDB's github <a href="https://github.com/gbook/nidb/issues">issues</a> page for more support.
