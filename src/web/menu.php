@@ -27,6 +27,7 @@
 	$action = GetVariable("action");
 ?>
 
+<!--
 <script language="javascript" type="text/javascript">
     $(document).ready(function() {
         $('#menu1').dropmenu(
@@ -34,9 +35,10 @@
         );
     });
 </script>
+-->
 
-<script type="text/javascript" src="scripts/dropdowntabs.js"></script>
-<link rel="stylesheet" type="text/css" href="scripts/bluetabs.css" />
+<!--<script type="text/javascript" src="scripts/dropdowntabs.js"></script>-->
+<!--<link rel="stylesheet" type="text/css" href="scripts/bluetabs.css" />-->
 
 <? if ($isdevserver) { ?>
 <div style="position:fixed; width:100%">

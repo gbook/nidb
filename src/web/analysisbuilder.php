@@ -478,7 +478,7 @@
 									?></select>
 									Result name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
 									<br>
-									Get Datetime from Series <img src="images/help.gif" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime"> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
+									Get Datetime from Series. Enter series description <img src="images/help.gif" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
 									</div>
 								</details>
 								
@@ -1095,7 +1095,7 @@
 									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 									$variabledatetime = $rowB['series_datetime'];
 									$row = $uid . $rowA['drug_startdate'];
-									$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
+									//$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
 								}
 							}
 							$row = $uid . $variabledatetime;

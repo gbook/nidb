@@ -49,77 +49,70 @@
 	
 	switch ($action) {
 		case 'cancelfileio':
-			CancelFileio($fileioid);
+			CancelFileIO($fileioid);
 			ShowList($viewall);
 			break;
 		case 'deletefileio':
-                        DeleteFileio($fileioid);
-                        ShowList($viewall);
-                        break;
+			DeleteFileIO($fileioid);
+			ShowList($viewall);
+			break;
 		default:
 			ShowList($viewall);
 	}
 
 	
 	/* --------------------------------------------------- */
-	/* ------- Cancel file I/O ------------------------------- */
+	/* ------- CancelFileIO ------------------------------ */
 	/* --------------------------------------------------- */
-	function CancelFileio($fileioid) {
+	function CancelFileIO($fileioid) {
 		$sqlstring = "update fileio_requests set request_status = 'cancelled' where fileiorequest_id = $fileioid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?><span class="staticmessage">File I/O Id=<?=$fileioid?> is cancelled</span><?
 	}
 
 	/* --------------------------------------------------- */
-        /* ------- Cancel file I/O ------------------------------- */
-        /* --------------------------------------------------- */
-        function DeleteFileio($fileioid) {
-                $sqlstring = "delete from fileio_requests where fileiorequest_id = $fileioid";
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                ?><span class="message">File I/O Id=<?=$fileioid?> is deleted</span><?
-        }
+	/* ------- DeleteFileIO ------------------------------ */
+	/* --------------------------------------------------- */
+	function DeleteFileIO($fileioid) {
+		$sqlstring = "delete from fileio_requests where fileiorequest_id = $fileioid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		?><span class="message">File I/O Id=<?=$fileioid?> is deleted</span><?
+	}
 
 
 	/* --------------------------------------------------- */
-        /* ------- Show file I/O ------------------------------- */
+	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList($viewall) {
-		NavigationBar("I/O status of files", $urllist);
-		
 		?>
 		<a href="filesio.php?viewall=<?=1?>">Show all file I/O</a>
 		<br><br>
-			
 		<SCRIPT LANGUAGE="Javascript">
-                        function decision(message, url){
-                                if(confirm(message)) location.href = url;
-                        }
-                </SCRIPT>
-		 <table class="graydisplaytable" width="100%">
-                        <thead>
-                                <th align="left">I/O Id</th>
-                                <th align="left">Requested By</th>
-                                <th align="left">Request Time</th>
-                                <th align="left">Operation</th>
-                                <th align="left">Type</th>
-                                <th align="left">Status</th>
+			function decision(message, url){
+					if(confirm(message)) location.href = url;
+			}
+		</SCRIPT>
+		<table class="graydisplaytable" width="100%">
+			<thead>
+				<th align="left">I/O Id</th>
+				<th align="left">Requested By</th>
+				<th align="left">Request Time</th>
+				<th align="left">Operation</th>
+				<th align="left">Type</th>
+				<th align="left">Status</th>
 				<th align="left">Time Left</th>
-                         <? if ($iostatus!='complete'){ ?>
-                                <th align="center">Action</th>
-                                <?}?>
-                        </thead>
-
-	<?	
+				<? if ($iostatus!='complete'){ ?>
+				<th align="center">Action</th>
+				<?}?>
+			</thead>
+		<?	
+		
 		$completecolor = "66AAFF";
 		$processingcolor = "AAAAFF";
 		$errorcolor = "FF6666";
 		$othercolor = "EFEFFF";
-		
-			?>
-	
-		
 
-		<? if ($GLOBALS['issiteadmin']) {
+		if ($GLOBALS['issiteadmin']) {
                         if ($viewall) { $sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`,`username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100"; }
                         else { $sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`,`username`,`requestdate` FROM `fileio_requests`  order by fileiorequest_id desc"; }
                 }

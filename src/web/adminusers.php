@@ -32,7 +32,7 @@
 		<title>NiDB - Manage Users</title>
 	</head>
 
-<body onload="onload()">
+<body>
 	<div id="wrapper">
 <?
 	require "functions.php";
@@ -419,11 +419,11 @@
 					});
 	
 					/* to disable the autofill thing in Chrome */
-					if ($.browser.webkit) {
-						$('input[name="username"]').attr('autocomplete', 'off');
-						$('input[name="fullname"]').attr('autocomplete', 'off');
-						$('input[name="password"]').attr('autocomplete', 'off');
-					}
+					//if ($.browser.webkit) {
+					//	$('input[name="username"]').attr('autocomplete', 'off');
+					//	$('input[name="fullname"]').attr('autocomplete', 'off');
+					//	$('input[name="password"]').attr('autocomplete', 'off');
+					//}
 					$("#allprojectadmin").click(function() {
 						var checked_status = this.checked;
 						$(".projectadmin").find("input[type='checkbox']").each(function() {

@@ -1127,7 +1127,7 @@
 		
 		if (($subjectid == 0) || ($subjectid == "")) {
 			?>
-			<span class="staticmessage">Subject ID is not found... unable to display this study because the subject could not be found</span>
+			<span class="staticmessage">Subject ID not found. unable to display this study because the subject could not be found</span>
 			<?
 		}
 

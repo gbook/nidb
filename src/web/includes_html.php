@@ -26,34 +26,27 @@
 ?>
 
 <!-- all of the javascripts and style include files -->
-<script type="text/javascript" src="scripts/js/jquery-2.1.1.min.js"></script>
-<script type="text/javascript" src="scripts/js/jquery-migrate-1.2.1.min.js"></script>
-<script type="text/javascript" src="scripts/js/jquery-ui-1.10.3.custom.min.js"></script>
+<script type="text/javascript" src="scripts/jquery-3.5.1.min.js"></script>
+<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
+<link rel="stylesheet" type="text/css" href="scripts/jquery-ui.min.css">
 <script type="text/javascript" src="scripts/flot/jquery.flot.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
-<script type="text/javascript" src="scripts/jquery.validate.js"></script>
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
 <script type="text/javascript" src="scripts/jquery.jeditable.js"></script>
 <script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
-<script type="text/javascript" src="scripts/jquery.details.js"></script>
 <script type="text/javascript" src="scripts/stupidtable.min.js"></script>
 
+<!-- select2 input element -->
 <link href="scripts/select2/css/select2.css" rel="stylesheet" />
 <script src="scripts/select2/js/select2.min.js"></script>
 
-<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">
+<!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
-
-<!-- menu drop box -->
-<script language="javascript" type="text/javascript" src="scripts/jquery.dropmenu.js"></script>
-<link type="text/css" rel="stylesheet" href="scripts/dropmenu.css" />
 
 <!-- file uploader -->
 <script src="scripts/fileuploader.js" type="text/javascript"></script>
 <link href="scripts/fileuploader.css" rel="stylesheet" type="text/css">	
-
-<link rel="stylesheet" type="text/css" href="scripts/development-bundle/themes/smoothness/jquery-ui.css">
 
 <!-- main style sheet -->
 <link rel="stylesheet" type="text/css" href="style.css">
@@ -61,15 +54,6 @@
 <!-- the following are for emulating the <details> and <summary> tags -->
 <script>
 	window.console || (window.console = { 'log': alert });
-	$(function() {
-
-		// Add conditional classname based on support
-		$('html').addClass($.fn.details.support ? 'details' : 'no-details');
-
-		// Emulate <details> where necessary and enable open/close event handlers
-		$('details').details();
-
-	});
 	
 	/* odd fix necessary to make the HTML'd jQuery tooltips work */
 	$(function () {
