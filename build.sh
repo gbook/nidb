@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # global build variables
-QMAKEBIN=~/Qt/5.12.3/gcc_64/bin/qmake
+QMAKEBIN=~/Qt/5.12.8/gcc_64/bin/qmake
 BUILDDIR=~/nidb/bin
 SRCDIR=~/nidb/src
 
@@ -16,15 +16,15 @@ mkdir -p $BUILDDIR
 
 # ----- build pre-requisites -----
 
-# build gdcm (make sure cmake3 is installed)
+# build gdcm (make sure cmake 3.x is installed)
 if [ ! -d "$BUILDDIR/gdcm" ]; then
-	command -v cmake3 >/dev/null 2>&1 || { echo -e "\nThis script requires cmake3, but it's not installed. Install using 'yum install cmake3'.\n"; exit 1; }
+	command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake3' or 'apt-get cmake'.\n"; exit 1; }
 
 	echo -e "\ngdcm not built. Building gdcm now\n"
 
 	mkdir -p $BUILDDIR/gdcm
 	cd $BUILDDIR/gdcm
-	cmake3 -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
+	cmake -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 	make
 else
 	echo -e "\ngdcm already built. Using $BUILDDIR/gdcm\n"

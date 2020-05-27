@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>OS requisites</DisplayName>
+	<Description>Install and configure PHP, MySQL, httpd, and other required packages</Description>
+	<Version>2019.1.75</Version>
+	<ReleaseDate>2019-12-06</ReleaseDate>
+	<Default>true</Default>
+	<Script>installscript.js</Script>
+	<SortingPriority>100</SortingPriority>
+</Package>

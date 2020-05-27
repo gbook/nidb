@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>Configuration</DisplayName>
+	<Description>Configure the MySQL database, set passwords and permissions</Description>
+	<Version>2019.1.75</Version>
+	<ReleaseDate>2019-12-06</ReleaseDate>
+    <Default>true</Default>
+	<Script>installscript.js</Script>
+	<SortingPriority>70</SortingPriority>
+	<UserInterfaces>
+	    <UserInterface>finalform.ui</UserInterface>
+	</UserInterfaces>
+</Package>

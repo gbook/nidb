@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>NiDB Server</Name>
+	<Version>2019.1.75</Version>
+	<Title>NiDB Server Installer</Title>
+    <Publisher>NiDB</Publisher>
+	<StartMenuDir>NiDB Server</StartMenuDir>
+	<TargetDir>/nidb</TargetDir>
+	<Logo>squirrel.png</Logo>
+	<Watermark>nidb.png</Watermark>
+	<RemoteRepositories>
+	    <Repository>
+		    <Url>http://olinnidb.org/repository</Url>
+			<Enabled>1</Enabled>
+			<DisplayName>NiDB repository</DisplayName>
+		</Repository>
+	</RemoteRepositories>
+</Installer>
