@@ -7,8 +7,8 @@ SRCDIR=~/nidb/src
 
 
 # this script requires make, cmake3, and qmake
-command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it's not installed\n"; exit 1; }
-command -v gcc >/dev/null 2>&1 || { echo -e "\nThis script requires gcc, but it's not installed\n"; exit 1; }
+command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
+command -v gcc >/dev/null 2>&1 || { echo -e "\nThis script requires gcc, but it is not installed\n"; exit 1; }
 
 # create the build directory
 echo "Creating build directory"
