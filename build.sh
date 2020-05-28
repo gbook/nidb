@@ -3,8 +3,8 @@
 # global build variables
 #QMAKEBIN=~/Qt/5.12.8/gcc_64/bin/qmake
 QMAKEBIN=$1
-BUILDDIR=bin
-SRCDIR=src
+BUILDDIR=$PWD/bin
+SRCDIR=$PWD/src
 
 # this script requires make, cmake3, and qmake
 command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
@@ -26,7 +26,6 @@ if [ ! -d "$BUILDDIR/gdcm" ]; then
 	cd $BUILDDIR/gdcm
 	cmake -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 	make
-	cd ..
 else
 	echo -e "\ngdcm already built. Using $BUILDDIR/gdcm\n"
 fi
@@ -39,7 +38,6 @@ if [ ! -d "$BUILDDIR/smtp" ]; then
 	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 	cd $BUILDDIR/smtp
 	make
-	cd ..
 else
 	echo -e "\nsmtp already built. Using $BUILDDIR/smtp\n"
 fi
@@ -50,4 +48,3 @@ echo -e "\nBuilding NiDB core\n"
 $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make
-cd ..
