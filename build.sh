@@ -1,10 +1,24 @@
 #!/bin/sh
 
 # global build variables
-#QMAKEBIN=~/Qt/5.12.8/gcc_64/bin/qmake
-QMAKEBIN=$1
-BUILDDIR=$PWD/bin
-SRCDIR=$PWD/src
+if [ -z "$1" ]; then
+	QMAKEBIN=~/Qt/5.12.8/gcc_64/bin/qmake
+else
+	QMAKEBIN=$1
+fi
+
+if [ -z "$2" ]; then
+	SRCDIR=$PWD/src
+else
+	SRCDIR=$2
+fi
+
+if [ -z "$3" ]; then
+	BUILDDIR=$PWD/bin
+else
+	BUILDDIR=$3
+fi
+
 
 # this script requires make, cmake3, and qmake
 command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
@@ -27,7 +41,7 @@ if [ ! -d "$BUILDDIR/gdcm" ]; then
 	cmake -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 	make
 else
-	echo -e "\ngdcm already built. Using $BUILDDIR/gdcm\n"
+	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
 fi
 
 # build smtp module
@@ -39,7 +53,7 @@ if [ ! -d "$BUILDDIR/smtp" ]; then
 	cd $BUILDDIR/smtp
 	make
 else
-	echo -e "\nsmtp already built. Using $BUILDDIR/smtp\n"
+	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
 fi
 
 # build NiDB core

@@ -15,20 +15,27 @@ Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, phpmbs
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
 
 %build # This section does the building. all the binary files will end up in %{builddir}
-%{_sourcedir}/build.sh ~/Qt/5.12.8/gcc_64/bin/qmake
+%{_sourcedir}/build.sh ~/Qt/5.12.8/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/lock
 mkdir -p %{buildroot}/nidb/bin/logs
 mkdir -p %{buildroot}/var/www/html
-cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html
-cp -r %{_builddir}/* %{buildroot}/nidb/bin
+cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html # copy web files to the end location
+cp %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin
+cp -r %{_sourcedir}/tools/* %{buildroot}/nidb/bin
+cp %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib # copy SMTP libs
+cp %{_builddir}/bin/gdcm/lib* %{buildroot}/usr/lib # copy GDCM libs
+cp ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib # copy Qt libs
+cp ~/Qt/5.12.8/gcc_64/lib/libQt5Network* %{buildroot}/usr/lib # copy Qt libs
+cp ~/Qt/5.12.8/gcc_64/lib/libQt5Sql* %{buildroot}/usr/lib # copy Qt libs
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
 /nidb
 /var/www/html
+/usr/lib
 
 %post
 /nidb/rpm_post_install.sh
