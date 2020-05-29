@@ -15,7 +15,7 @@ Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, phpmbs
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
 
 %build # This section does the building. all the binary files will end up in %{builddir}
-%{_sourcedir}/build.sh
+%{_sourcedir}/build.sh ~/Qt/5.12.8/gcc_64/bin/qmake
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/nidb/bin
@@ -23,7 +23,7 @@ mkdir -p %{buildroot}/nidb/bin/lock
 mkdir -p %{buildroot}/nidb/bin/logs
 mkdir -p %{buildroot}/var/www/html
 cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html
-cp -r %{builddir}/* %{buildroot}/nidb/bin
+cp -r %{_builddir}/* %{buildroot}/nidb/bin
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
