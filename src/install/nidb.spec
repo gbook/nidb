@@ -23,7 +23,7 @@ mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/lock
 mkdir -p %{buildroot}/nidb/bin/logs
 mkdir -p %{buildroot}/var/www/html
-cp %{_sourcedir}/src/installer/rpm_post_install.sh %{buildroot}/nidb/ # RPM post-install script
+cp %{_sourcedir}/src/install/rpm_post_install.sh %{buildroot}/nidb/ # RPM post-install script
 cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -r %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
