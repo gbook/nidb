@@ -27,7 +27,7 @@ cp %{_sourcedir}/src/installer/rpm_post_install.sh %{buildroot}/nidb/ # RPM post
 cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -r %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-cp %{_sourcedir}/setup/* %{buildroot}/nidb/
+cp %{_sourcedir}/src/setup/* %{buildroot}/nidb/
 cp %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
 cp %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
 cp ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib/ # copy Qt libs
