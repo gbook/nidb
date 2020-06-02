@@ -23,19 +23,19 @@ mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/lock
 mkdir -p %{buildroot}/nidb/bin/logs
 mkdir -p %{buildroot}/var/www/html
-cp %{_sourcedir}/src/install/rpm_post_install.sh %{buildroot}/nidb/ # RPM post-install script
-cp -r %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
-cp %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
-cp -r %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-cp %{_sourcedir}/src/setup/* %{buildroot}/nidb/
-cp %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
-cp %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
-cp ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib/ # copy Qt libs
-cp ~/Qt/5.12.8/gcc_64/lib/libQt5Network* %{buildroot}/usr/lib/ # copy Qt libs
-cp ~/Qt/5.12.8/gcc_64/lib/libQt5Sql* %{buildroot}/usr/lib/ # copy Qt libs
-cp ~/Qt/5.12.8/gcc_64/lib/libicudata* %{buildroot}/usr/lib/ # copy Qt libs
-cp ~/Qt/5.12.8/gcc_64/lib/libicui18n* %{buildroot}/usr/lib/ # copy Qt libs
-cp ~/Qt/5.12.8/gcc_64/lib/libicuuc* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f %{_sourcedir}/src/install/rpm_post_install.sh %{buildroot}/nidb/ # RPM post-install script
+cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
+cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
+cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
+cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/
+cp -f %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
+cp -f %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Network* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Sql* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicudata* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicui18n* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicuuc* %{buildroot}/usr/lib/ # copy Qt libs
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
