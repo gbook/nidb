@@ -39,7 +39,7 @@ if [ ! -d "$BUILDDIR/gdcm" ]; then
 	mkdir -p $BUILDDIR/gdcm
 	cd $BUILDDIR/gdcm
 	cmake -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
-	make
+	make -j 8
 else
 	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
 fi
@@ -51,7 +51,7 @@ if [ ! -d "$BUILDDIR/smtp" ]; then
 
 	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 	cd $BUILDDIR/smtp
-	make
+	make -j 8
 else
 	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
 fi
@@ -61,4 +61,4 @@ echo -e "\nBuilding NiDB core\n"
 # create make file in the build directory
 $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
-make
+make -j 8
