@@ -23,11 +23,11 @@ mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/lock
 mkdir -p %{buildroot}/nidb/bin/logs
 mkdir -p %{buildroot}/var/www/html
-cp -f %{_sourcedir}/src/install/rpm_post_install.sh %{buildroot}/nidb/ # RPM post-install script
+cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/
+cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
 cp -f %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib/ # copy Qt libs
@@ -44,6 +44,6 @@ cp -f ~/Qt/5.12.8/gcc_64/lib/libicuuc* %{buildroot}/usr/lib/ # copy Qt libs
 /usr/lib/*
 
 %post
-/nidb/rpm_post_install.sh
+/nidb/setup/rpm_post_install.sh
 
 - 

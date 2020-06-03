@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# create link to the mariadb libraries */
+# create link to the mariadb libraries (may or may not be necessary) */
 ln -s /lib64/libmariadb.so.3 /lib64/libmysqlclient.so.18
 
 # PHP packages */
@@ -47,14 +47,13 @@ chmod -R g+w /nidb        # change permissions of the install directorys content
 chmod 777 /nidb              # change permissions of the install directory */
 
 # setup cron jobs */
-crontab -u nidb /nidb/crontab.txt
+crontab -u nidb /nidb/setup/crontab.txt
 
 # database stuff */
-chmod 777 /nidb/mysql.sh
-/nidb/mysql.sh
+mysqladmin -uroot password password # set the root password
 
 # add dcmrcv service at boot */
-cp /nidb/dcmrcv /etc/init.d  # copy the dcmrcv init script */
+cp /nidb/setup/dcmrcv /etc/init.d  # copy the dcmrcv init script */
 chmod 755 /etc/init.d/dcmrcv # change permissions of the script */
 chkconfig --add dcmrcv       # add the script to start at boot */
 
@@ -71,4 +70,3 @@ mkdir -p /nidb/data/tmp
 mkdir -p /nidb/data/upload
 
 chown -R nidb:nidb /var/www/html
-firefox http://localhost/
