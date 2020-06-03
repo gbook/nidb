@@ -71,3 +71,4 @@ mkdir -p /nidb/data/tmp
 mkdir -p /nidb/data/upload
 
 chown -R nidb:nidb /var/www/html
+firefox http://localhost/
