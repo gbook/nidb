@@ -703,46 +703,35 @@
 					</form>
 					<br><br>
 					<?
-						$sqlfileurl = "http://raw.githubusercontent.com/gbook/nidb/master/setup/nidb.sql";
-						$file = file($sqlfileurl);
+					$schemafile = "";
+					if (file_exists("/nidb/setup/nidb.sql"))
+						$schemafile = "/nidb/setup/nidb.sql";
+					elseif (file_exists("/nidb/nidb.sql"))
+						$schemafile = "/nidb/nidb.sql";
 					
-						if ($sqlfile > "") {
-							file_put_contents("/nidb/nidb.sql", $file);
-							?>
-							Database will be <?=$GLOBALS['installtype']?>d on the next page using the schema <code><?=$sqlfileurl?></code>.<br><br><b style="color: red">Please backup your database before continuing</b>
-							<?
-						}
-						else {
-							?>
-							<div style="border-radius: 8px; background-color: #ffe8ee; border: 1px solid #fca583; padding: 10px">
-							<b>Unable to access GitHub to retrieve current SQL schema</b> Cannot retrieve <code><?=$sqlfileurl?></code>. Check your internet connection, or firewall rules to see if github is blocked.
-							</div>
-							<br><br>
-							<?
-							$schemafile = "";
-							if (file_exists("/nidb/nidb.sql"))
-								$schemafile = "/nidb/nidb.sql";
-							
-							if ($schemafile == "") {
-								?><code>nidb.sql</code> not found in <code>/nidb</code>... <b>Database will not be upgraded</b><?
-								return;
-							}
-							else {
-								?>
-								Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d
-								<?
-							}
-							?>
-							</div>
-							
-							Use the following command to <b style="color: red">backup your database before continuing</b>
-							<p style="margin-left: 20px">
-							<code>mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>
-							</p>
-							It is also recommended to disable access to NiDB during the upgrade. This can be done by setting the config file variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.
-							
-							<?
-						} ?>
+					if ($schemafile == "") {
+						?>
+						<br><br>
+						<div style="border-radius: 8px; background-color: #ffe8ee; border: 1px solid #fca583; padding: 10px">
+						<code>nidb.sql</code> not found in <code>/nidb</code> or <code>/nidb/setup</code>... <b><?=$GLOBALS['installtype']?> cannot proceed</b>
+						</div>
+						<br><br>
+						<?
+						return;
+					}
+					else {
+						?>
+						Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d
+						<?
+					}
+					?>
+					</div>
+					
+					Use the following command to <b style="color: red">backup your database before continuing</b>
+					<p style="margin-left: 20px">
+					<code>mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>
+					</p>
+					It is also recommended to disable access to NiDB during the upgrade. This can be done by setting the config file variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.
 				</td>
 			</tr>
 			<tr>
