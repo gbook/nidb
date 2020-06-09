@@ -56,7 +56,7 @@
 		$cfg = LoadConfig();
 		if ($cfg != null) {
 			$cfgexists = true;
-			if (file_exists($cfg['scriptdir']))
+			if (file_exists($cfg['nidbdir']))
 				$installtype = "upgrade";
 		}
 	}
@@ -171,7 +171,7 @@
     $c['packageimportdir'] = GetVariable("packageimportdir");
     $c['qcmoduledir'] = GetVariable("qcmoduledir");
     $c['problemdir'] = GetVariable("problemdir");
-    $c['scriptdir'] = GetVariable("scriptdir");
+    $c['nidbdir'] = GetVariable("nidbdir");
     $c['webdir'] = GetVariable("webdir");
     $c['webdownloaddir'] = GetVariable("webdownloaddir");
     $c['downloaddir'] = GetVariable("downloaddir");
@@ -390,7 +390,7 @@
 [packageimportdir] = $packageimportdir
 [qcmoduledir] = $qcmoduledir
 [problemdir] = $problemdir
-[scriptdir] = $scriptdir
+[nidbdir] = $nidbdir
 [tmpdir] = $tmpdir
 [uploadeddir] = $uploadeddir
 [webdir] = $webdir
@@ -635,7 +635,6 @@
 				<td width="20%" valign="top" style="border-right: 2px solid #888" rowspan="2"><?=DisplaySetupMenu("database")?></td>
 				<td valign="top" height="90%">
 					<h2>Database connection parameters</h2>
-					<!--<i><b>NOTE</b> MySQL and MariaDB are synonymous within NiDB.</i>-->
 					<br>
 					<br>
 					<form method="post" action="setup.php" name="theform">
@@ -755,8 +754,8 @@
 		if ( ($GLOBALS['cfg']['mysqlpassword'] != "") && ($GLOBALS['cfg']['mysqluser'] == "root") )
 			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
 		
-		$schemafile = "/nidb/nidb.sql";
-		$sqldatafile = "/nidb/nidb-data.sql";
+		$schemafile = "/nidb/setup/nidb.sql";
+		$sqldatafile = "/nidb/setup/nidb-data.sql";
 		
 		if ( (is_null($GLOBALS['cfg']['mysqldatabase'])) || ($GLOBALS['cfg']['mysqldatabase'] == "") ) {
 			$database = "nidb";
@@ -809,7 +808,7 @@
 									?><li><span class="good"></span> Existing tables found in '<?=$database?>' database. Upgrading SQL schema<br><?
 									$ignoredtables = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
 									
-									if (file_exists("/nidb/$sqldatafile")) {
+									if (file_exists($sqldatafile)) {
 										$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 										shell_exec($systemstring);
 									}
@@ -1299,6 +1298,7 @@
 			$GLOBALS['cfg']['siteurl'] = $_SERVER['SERVER_NAME'];
 			$GLOBALS['cfg']['sitename'] = gethostname();
 			$GLOBALS['cfg']['sitetype'] = 'local';
+			$GLOBALS['cfg']['version'] = GetNiDBVersion();
 			
 			$GLOBALS['cfg']['analysisdir'] = "/nidb/data/pipeline";
 			$GLOBALS['cfg']['analysisdirb'] = "/nidb/data/pipelineb";
@@ -1310,12 +1310,12 @@
 			$GLOBALS['cfg']['ftpdir'] = "/nidb/data/ftp";
 			$GLOBALS['cfg']['importdir'] = "/nidb/data/import";
 			$GLOBALS['cfg']['incomingdir'] = "/nidb/data/dicomincoming";
-			$GLOBALS['cfg']['lockdir'] = "/nidb/programs/lock";
-			$GLOBALS['cfg']['logdir'] = "/nidb/programs/logs";
+			$GLOBALS['cfg']['lockdir'] = "/nidb/lock";
+			$GLOBALS['cfg']['logdir'] = "/nidb/logs";
 			$GLOBALS['cfg']['mountdir'] = "/mount";
-			$GLOBALS['cfg']['qcmoduledir'] = "/nidb/programs/qcmodules";
+			$GLOBALS['cfg']['qcmoduledir'] = "/nidb/qcmodules";
 			$GLOBALS['cfg']['problemdir'] = "/nidb/data/problem";
-			$GLOBALS['cfg']['scriptdir'] = "/nidb/programs";
+			$GLOBALS['cfg']['nidbdir'] = "/nidb";
 			$GLOBALS['cfg']['webdir'] = "/var/www/html";
 			$GLOBALS['cfg']['webdownloaddir'] = "/var/www/html/download";
 			$GLOBALS['cfg']['downloaddir'] = "/nidb/data/download";
@@ -1649,9 +1649,9 @@
 				<td colspan="4" class="heading"><br>Directories</td>
 			</tr>
 			<tr>
-				<td class="variable"><b>scriptdir</b></td>
-				<td><input type="text" name="scriptdir" required value="<?=$GLOBALS['cfg']['scriptdir']?>"size="30"></td>
-				<!--<td><? if (!is_null($GLOBALS['cfg']['scriptdir']) && file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
+				<td class="variable"><b>nidbdir</b></td>
+				<td><input type="text" name="nidbdir" required value="<?=$GLOBALS['cfg']['nidbdir']?>"size="30"></td>
+				<!--<td><? if (!is_null($GLOBALS['cfg']['nidbdir']) && file_exists($GLOBALS['cfg']['nidbdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
 				<td><b>Directory for programs and settings file (Backend)</b></td>
 			</tr>
 			<tr>

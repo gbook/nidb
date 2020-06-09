@@ -51,6 +51,7 @@ crontab -u nidb /nidb/setup/crontab.txt
 
 # database stuff */
 mysqladmin -uroot password password # set the root password
+mysql -uroot -ppassword -e "CREATE USER IF NOT EXISTS 'nidb'@'%' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON *.* TO 'nidb'@'%'; FLUSH PRIVILEGES;"
 
 # add dcmrcv service at boot */
 cp /nidb/setup/dcmrcv /etc/init.d  # copy the dcmrcv init script */

@@ -2228,7 +2228,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$problems = array();
 		
 		/* check if the nidb executable has execute permissions */
-		$nidbexe = $GLOBALS['cfg']['scriptdir'] . "/bin/nidb";
+		$nidbexe = $GLOBALS['cfg']['nidbdir'] . "/bin/nidb";
 		if (!is_executable($nidbexe))
 			array_push($problems, "<tt>$nidbexe</tt> executable does not have execute permissions");
 		
@@ -2254,7 +2254,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function GetNiDBVersion() {
 		
 		/* check if the nidb executable script exists */
-		$nidbsh = "cd /nidb/programs/bin; LD_LIBRARY_PATH=\$PWD; export LD_LIBRARY_PATH; " . $GLOBALS['cfg']['scriptdir'] . "/bin/./nidb.sh -v";
+		$nidbsh = $GLOBALS['cfg']['nidbdir'] . "/bin/./nidb -v";
 		$nidbver = shell_exec($nidbsh);
 		$nidbver = trim(str_replace("Neuroinformatics Database (NiDB) ", "", $nidbver));
 		

@@ -200,7 +200,7 @@
 		$scriptname = $row['module_name'];
 		
 		/* delete all lock files */
-		$path = $GLOBALS['cfg']['scriptdir'] . "/lock/$scriptname*";
+		$path = $GLOBALS['cfg']['lockdir'] . "/$scriptname*";
 		//echo "$path<br>";
 		$files = glob($path);
 		//print_r($files);

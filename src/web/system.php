@@ -151,7 +151,6 @@
     $c['qcmoduledir'] = GetVariable("qcmoduledir");
     $c['problemdir'] = GetVariable("problemdir");
     $c['nidbdir'] = GetVariable("nidbdir");
-    $c['scriptdir'] = GetVariable("scriptdir");
     $c['webdir'] = GetVariable("webdir");
     $c['webdownloaddir'] = GetVariable("webdownloaddir");
     $c['downloaddir'] = GetVariable("downloaddir");
@@ -373,7 +372,6 @@
 [qcmoduledir] = $qcmoduledir
 [problemdir] = $problemdir
 [nidbdir] = $nidbdir
-[scriptdir] = $scriptdir
 [tmpdir] = $tmpdir
 [uploadeddir] = $uploadeddir
 [webdir] = $webdir
@@ -929,12 +927,6 @@
 				<td><input type="text" name="nidbdir" value="<?=$GLOBALS['cfg']['nidbdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['nidbdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td><b>Main NiDB installation directory</b></td>
-			</tr>
-			<tr>
-				<td class="variable"><b>scriptdir</b></td>
-				<td><input type="text" name="scriptdir" value="<?=$GLOBALS['cfg']['scriptdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['scriptdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td><b>Directory for NiDB programs, scripts, and settings file (Backend)</b></td>
 			</tr>
 			<tr>
 				<td class="variable"><b>webdir</b></td>

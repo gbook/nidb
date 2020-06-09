@@ -72,20 +72,23 @@
 	
 	/* database connection */
 	if ($isdevserver) {
-		/* php-mysqli */
 		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
 		
 		$sitename = $cfg['sitenamedev'];
 	}
 	else {
-		/* php-mysqli */
 		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die (SendGmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
 		
 		$sitename = $cfg['sitename'];
 	}
 
+	/* check if DB connection was successful */
+	if (mysqli_connect_errno()) {
+		echo "Unable to connect to database with error [" . mysqli_connect_error() . "]";
+		exit();
+	}
+
 	/* disable the login checking, if its the signup page or if authentication is done in the page (such as api.php) */
-	//if (defined('nologin') && !$nologin) {
 	if (!$nologin) {
 		/* cookie info */
 		$username = $_SESSION['username'];
