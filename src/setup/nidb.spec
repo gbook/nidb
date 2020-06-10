@@ -22,14 +22,14 @@ mkdir -p %{buildroot}/usr/lib
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/lock
 mkdir -p %{buildroot}/nidb/logs
-mkdir -p %{buildroot}/nidb/qcmodule
+mkdir -p %{buildroot}/nidb/qcmodules
 mkdir -p %{buildroot}/nidb/setup
 mkdir -p %{buildroot}/var/www/html
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
+#cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
 cp -f %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
