@@ -107,9 +107,18 @@ win32: {
     LIBS += -L$$SMTPBIN/../SMTPEmail/release -lSMTPEmail
     INCLUDEPATH += $$SMTPBIN
     DEPENDPATH += $$SMTPBIN
-
+    *msvc* { # visual studio spec filter
+        QMAKE_CXXFLAGS += -MP
+    }
 }
 unix: {
+    # Location of SMTP Library and header
+	INCLUDEPATH += ../smtp
+    SMTPBIN = ../../bin/smtp
+    LIBS += -L$$SMTPBIN/ -lSMTPEmail
+    INCLUDEPATH += $$SMTPBIN
+    DEPENDPATH += $$SMTPBIN
+
     GDCMBIN = ../../bin/gdcm
     GDCMSRC = ../gdcm/Source
     LIBS += -L$$GDCMBIN/bin/
@@ -138,14 +147,6 @@ unix: {
         -lgdcmuuid \
         -lgdcmzlib \
         -lsocketxx
-
-    # Location of SMTP Library and header
-	INCLUDEPATH += ../smtp
-    SMTPBIN = ../../bin/smtp
-    LIBS += -L$$SMTPBIN/ -lSMTPEmail
-    INCLUDEPATH += $$SMTPBIN
-    DEPENDPATH += $$SMTPBIN
-
 }
 
 DISTFILES += \

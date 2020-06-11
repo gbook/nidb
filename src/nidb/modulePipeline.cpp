@@ -487,7 +487,7 @@ int modulePipeline::Run() {
 							else
 								n->WriteLog("Created directory [" + analysispath + "/pipeline] - B");
 
-							n->WriteLog(n->SystemCommand("chmod -R 777 " + analysispath + "/pipeline", true, true));
+                            n->WriteLog(n->SystemCommand("chmod -Rf 777 " + analysispath + "/pipeline", true, true));
 							if (pipelinedep != -1) {
 								if (p.depLevel == "subject") {
 									if (p.dirStructure == "b")
@@ -537,7 +537,7 @@ int modulePipeline::Run() {
 								setuplog << n->WriteLog(n->SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job").arg(analysispath)));
 
 								/* make sure the whole tree is writeable */
-								setuplog << n->WriteLog(n->SystemCommand("chmod -R 777 " + analysispath, true, true));
+                                setuplog << n->WriteLog(n->SystemCommand("chmod -Rf 777 " + analysispath, true, true));
 							}
 							else {
 								setuplog << n->WriteLog("This pipeline is not dependent on another pipeline");

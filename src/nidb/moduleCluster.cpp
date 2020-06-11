@@ -298,7 +298,7 @@ bool moduleCluster::UpdateAnalysis(QString analysisid, QString &m) {
 		return false;
 	}
 
-	"Getting directory size for [" + a.analysispath + "]";
+    m = "Getting directory size for [" + a.analysispath + "]";
 	int c;
 	qint64 b;
 	n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
@@ -355,14 +355,19 @@ bool moduleCluster::CheckCompleteAnalysis(QString analysisid, QString &m) {
 	QString completefiles = q.value("pipeline_completefiles").toString().trimmed();
 	QStringList filelist = completefiles.split(',');
 
-	int iscomplete = 1;
+    n->Print("Checking if analysis should be marked successful, based on the successful file list");
+    int iscomplete = 1;
 	for(int i=0; i<filelist.size(); i++) {
 		QString filepath = a.analysispath + "/" + filelist[i];
 		QFile f(filepath);
 		if (!f.exists()) {
-			iscomplete = 0;
+            n->Print("[" + filepath + "] exists");
+            iscomplete = 0;
 			break;
 		}
+        else {
+            n->Print("[" + filepath + "] does not exist");
+        }
 	}
 
 	q.prepare("update analysis set analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
