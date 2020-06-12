@@ -31,14 +31,28 @@ cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 #cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
-cp -f %{_builddir}/bin/smtp/libSMTPEmail.* %{buildroot}/usr/lib/ # copy SMTP libs
-cp -f %{_builddir}/bin/gdcm/bin/lib* %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Core* %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Network* %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Sql* %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libicudata* %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libicui18n* %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/5.12.8/gcc_64/lib/libicuuc* %{buildroot}/usr/lib/ # copy Qt libs
+cp -f %{_builddir}/bin/smtp/libSMTPEmail.so.1 %{buildroot}/usr/lib/ # copy SMTP libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmMSFF.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmopenjp2.so.7 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmuuid.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmzlib.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmcharls.so.2 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmCommon.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmDICT.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmDSED.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmexpat.so.2.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmIOD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg8.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Core.so.5 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Network.so.5 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Sql.so.5 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/5.12.8/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/ # copy Qt MySQL lib
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
