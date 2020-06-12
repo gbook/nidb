@@ -46,6 +46,7 @@ cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg8.so.3.0 %{buildroot}/usr/lib/ # copy
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Core.so.5 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Network.so.5 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/5.12.8/gcc_64/lib/libQt5Sql.so.5 %{buildroot}/usr/lib/ # copy Qt libs
