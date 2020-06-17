@@ -18,7 +18,7 @@ NeuroInformatics Database (NiDB) is a full neuroimaging database system to store
 %{_sourcedir}/build.sh ~/Qt/5.12.8/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
-mkdir -p %{buildroot}/usr/lib
+mkdir -p %{buildroot}/usr/lib/sqldrivers
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/lock
 mkdir -p %{buildroot}/nidb/logs
