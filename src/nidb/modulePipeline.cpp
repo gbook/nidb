@@ -517,7 +517,7 @@ int modulePipeline::Run() {
 
 								/* copy any parent pipelines */
 								QString systemstring;
-								if (p.depLinkType == "hardlink") systemstring = "cp -aul ";
+                                if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
 								else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
 								else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
 								if (p.depDir == "subdir") {
