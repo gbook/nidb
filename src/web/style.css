@@ -143,10 +143,11 @@ td.hover, tr.hover { background-color: aliceblue; }
 
 /* entry table */
 .entrytable  { font-size: 11pt; color: #003366; }
+.entrytable th { font-weight: bold; color: #fff; background-color: #444; padding: 5px 10px; text-align: left; font-size: 14pt; }
 .entrytable td.label { font-weight: bold; color: #555555; font-size: 11pt; padding: 5px; vertical-align:top; }
 .entrytable td.requiredlabel { font-weight: bold; color: darkred; font-size: 11pt; padding: 5px; vertical-align: top;}
 .entrytable td.heading { font-weight: bold; color: #333; padding: 5px; vertical-align: top; font-size: 14pt }
-.entrytable td.variable { font-weight: normal; color: #333; padding: 5px; vertical-align: top; }
+.entrytable td.variable { font-weight: normal; color: #333; padding: 5px; vertical-align: top; font-family: monospace; }
 .entrytable td { vertical-align: top; }
 .entrytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 .entrytable .requiredtiny { font-weight: normal; font-size:8pt; color:darkred; }

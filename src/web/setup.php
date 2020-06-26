@@ -51,7 +51,7 @@
 	/* check if the .cfg file exists, and what type of installation this is: setup/upgrade */
 	$cfgexists = false;
 	$installtype = "install";
-	if ( (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
+	if ( (file_exists('/nidb/nidb.cfg')) || (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
 		/* if so, load the config, but still treat the page as a setup */
 		$cfg = LoadConfig();
 		if ($cfg != null) {
@@ -84,100 +84,100 @@
 	/* ----- setup variables ----- */
 	$step = GetVariable("step");
 
-    $c['debug'] = GetVariable("debug");
-    $c['hideerrors'] = GetVariable("hideerrors");
+	$c['debug'] = GetVariable("debug");
+	$c['hideerrors'] = GetVariable("hideerrors");
 	
-    $c['mysqlhost'] = GetVariable("mysqlhost");
-    $c['mysqluser'] = GetVariable("mysqluser");
-    $c['mysqlpassword'] = GetVariable("mysqlpassword");
-    $c['mysqldatabase'] = GetVariable("mysqldatabase");
+	$c['mysqlhost'] = GetVariable("mysqlhost");
+	$c['mysqluser'] = GetVariable("mysqluser");
+	$c['mysqlpassword'] = GetVariable("mysqlpassword");
+	$c['mysqldatabase'] = GetVariable("mysqldatabase");
 	$c['mysqldevhost'] = GetVariable("mysqldevhost");
-    $c['mysqldevuser'] = GetVariable("mysqldevuser");
-    $c['mysqldevpassword'] = GetVariable("mysqldevpassword");
-    $c['mysqldevdatabase'] = GetVariable("mysqldevdatabase");
-    $c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
-    $c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
+	$c['mysqldevuser'] = GetVariable("mysqldevuser");
+	$c['mysqldevpassword'] = GetVariable("mysqldevpassword");
+	$c['mysqldevdatabase'] = GetVariable("mysqldevdatabase");
+	$c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
+	$c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
 
-    $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
-    $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
-    $c['moduleimportthreads'] = GetVariable("moduleimportthreads");
-    $c['modulemriqathreads'] = GetVariable("modulemriqathreads");
-    $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
-    $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
-    $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
+	$c['modulefileiothreads'] = GetVariable("modulefileiothreads");
+	$c['moduleexportthreads'] = GetVariable("moduleexportthreads");
+	$c['moduleimportthreads'] = GetVariable("moduleimportthreads");
+	$c['modulemriqathreads'] = GetVariable("modulemriqathreads");
+	$c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
+	$c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
+	$c['moduleqcthreads'] = GetVariable("moduleqcthreads");
 	
-    //$c['emaillib'] = GetVariable("emaillib");
-    $c['emailusername'] = GetVariable("emailusername");
-    $c['emailpassword'] = GetVariable("emailpassword");
-    $c['emailserver'] = GetVariable("emailserver");
-    $c['emailport'] = GetVariable("emailport");
-    $c['emailfrom'] = GetVariable("emailfrom");
-    $c['adminemail'] = GetVariable("adminemail");
+	//$c['emaillib'] = GetVariable("emaillib");
+	$c['emailusername'] = GetVariable("emailusername");
+	$c['emailpassword'] = GetVariable("emailpassword");
+	$c['emailserver'] = GetVariable("emailserver");
+	$c['emailport'] = GetVariable("emailport");
+	$c['emailfrom'] = GetVariable("emailfrom");
+	$c['adminemail'] = GetVariable("adminemail");
 	
-    $c['siteurl'] = GetVariable("siteurl");
-    
-    $c['fslbinpath'] = GetVariable("fslbinpath");
+	$c['siteurl'] = GetVariable("siteurl");
+	
+	$c['fslbinpath'] = GetVariable("fslbinpath");
 	
 	$c['usecluster'] = GetVariable("usecluster");
-    $c['queuename'] = GetVariable("queuename");
-    $c['queueuser'] = GetVariable("queueuser");
-    $c['clustersubmithost'] = GetVariable("clustersubmithost");
-    $c['qsubpath'] = GetVariable("qsubpath");
-    $c['clusteruser'] = GetVariable("clusteruser");
-    $c['clusternidbpath'] = GetVariable("clusternidbpath");
+	$c['queuename'] = GetVariable("queuename");
+	$c['queueuser'] = GetVariable("queueuser");
+	$c['clustersubmithost'] = GetVariable("clustersubmithost");
+	$c['qsubpath'] = GetVariable("qsubpath");
+	$c['clusteruser'] = GetVariable("clusteruser");
+	$c['clusternidbpath'] = GetVariable("clusternidbpath");
 
-    $c['version'] = GetVariable("version");
-    $c['sitename'] = GetVariable("sitename");
-    $c['sitenamedev'] = GetVariable("sitenamedev");
-    $c['sitecolor'] = GetVariable("sitecolor");
-    $c['ispublic'] = GetVariable("ispublic");
-    $c['sitetype'] = GetVariable("sitetype");
-    $c['allowphi'] = GetVariable("allowphi");
-    $c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
-    $c['enableremoteconn'] = GetVariable("enableremoteconn");
-    $c['enablecalendar'] = GetVariable("enablecalendar");
-    $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
-    $c['displayrecentstudies'] = GetVariable("displayrecentstudies");
-    $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
+	$c['version'] = GetVariable("version");
+	$c['sitename'] = GetVariable("sitename");
+	$c['sitenamedev'] = GetVariable("sitenamedev");
+	$c['sitecolor'] = GetVariable("sitecolor");
+	$c['ispublic'] = GetVariable("ispublic");
+	$c['sitetype'] = GetVariable("sitetype");
+	$c['allowphi'] = GetVariable("allowphi");
+	$c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
+	$c['enableremoteconn'] = GetVariable("enableremoteconn");
+	$c['enablecalendar'] = GetVariable("enablecalendar");
+	$c['uploadsizelimit'] = GetVariable("uploadsizelimit");
+	$c['displayrecentstudies'] = GetVariable("displayrecentstudies");
+	$c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
 
-    $c['importchunksize'] = GetVariable("importchunksize");
-    $c['numretry'] = GetVariable("numretry");
-    $c['enablenfs'] = GetVariable("enablenfs");
-    $c['enableftp'] = GetVariable("enableftp");
+	$c['importchunksize'] = GetVariable("importchunksize");
+	$c['numretry'] = GetVariable("numretry");
+	$c['enablenfs'] = GetVariable("enablenfs");
+	$c['enableftp'] = GetVariable("enableftp");
 
-    $c['enablecas'] = GetVariable("enablecas");
-    $c['casserver'] = GetVariable("casserver");
-    $c['casport'] = GetVariable("casport");
-    $c['cascontext'] = GetVariable("cascontext");
-    
+	$c['enablecas'] = GetVariable("enablecas");
+	$c['casserver'] = GetVariable("casserver");
+	$c['casport'] = GetVariable("casport");
+	$c['cascontext'] = GetVariable("cascontext");
+	
 	$c['localftphostname'] = GetVariable("localftphostname");
-    $c['localftpusername'] = GetVariable("localftpusername");
-    $c['localftppassword'] = GetVariable("localftppassword");
+	$c['localftpusername'] = GetVariable("localftpusername");
+	$c['localftppassword'] = GetVariable("localftppassword");
 	
 	$c['analysisdir'] = GetVariable("analysisdir");
 	$c['analysisdirb'] = GetVariable("analysisdirb");
 	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
 	$c['clusteranalysisdirb'] = GetVariable("clusteranalysisdirb");
-    $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
-    $c['archivedir'] = GetVariable("archivedir");
-    $c['backupdir'] = GetVariable("backupdir");
-    $c['ftpdir'] = GetVariable("ftpdir");
-    $c['importdir'] = GetVariable("importdir");
-    $c['incomingdir'] = GetVariable("incomingdir");
-    $c['incoming2dir'] = GetVariable("incoming2dir");
-    $c['lockdir'] = GetVariable("lockdir");
-    $c['logdir'] = GetVariable("logdir");
-    $c['mountdir'] = GetVariable("mountdir");
-    $c['packageimportdir'] = GetVariable("packageimportdir");
-    $c['qcmoduledir'] = GetVariable("qcmoduledir");
-    $c['problemdir'] = GetVariable("problemdir");
-    $c['nidbdir'] = GetVariable("nidbdir");
-    $c['webdir'] = GetVariable("webdir");
-    $c['webdownloaddir'] = GetVariable("webdownloaddir");
-    $c['downloaddir'] = GetVariable("downloaddir");
-    $c['uploadeddir'] = GetVariable("uploadeddir");
-    $c['tmpdir'] = GetVariable("tmpdir");
-    $c['deleteddir'] = GetVariable("deleteddir");
+	$c['groupanalysisdir'] = GetVariable("groupanalysisdir");
+	$c['archivedir'] = GetVariable("archivedir");
+	$c['backupdir'] = GetVariable("backupdir");
+	$c['ftpdir'] = GetVariable("ftpdir");
+	$c['importdir'] = GetVariable("importdir");
+	$c['incomingdir'] = GetVariable("incomingdir");
+	$c['incoming2dir'] = GetVariable("incoming2dir");
+	$c['lockdir'] = GetVariable("lockdir");
+	$c['logdir'] = GetVariable("logdir");
+	$c['mountdir'] = GetVariable("mountdir");
+	$c['packageimportdir'] = GetVariable("packageimportdir");
+	$c['qcmoduledir'] = GetVariable("qcmoduledir");
+	$c['problemdir'] = GetVariable("problemdir");
+	$c['nidbdir'] = GetVariable("nidbdir");
+	$c['webdir'] = GetVariable("webdir");
+	$c['webdownloaddir'] = GetVariable("webdownloaddir");
+	$c['downloaddir'] = GetVariable("downloaddir");
+	$c['uploadeddir'] = GetVariable("uploadeddir");
+	$c['tmpdir'] = GetVariable("tmpdir");
+	$c['deleteddir'] = GetVariable("deleteddir");
 	$noconfig = GetVariable("noconfig");
 	$systemmessage = GetVariable("systemmessage");
 	$messageid = GetVariable("messageid");
@@ -720,7 +720,7 @@
 					}
 					else {
 						?>
-						Found SQL schema <code><?=$schemafile?></code> dated <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d
+						Found SQL schema <code><?=$schemafile?></code> with file date of <?=date('Y-m-d H:i:s', filemtime($schemafile))?>. Database will be <?=$GLOBALS['installtype']?>d.<br>
 						<?
 					}
 					?>
@@ -864,11 +864,14 @@
 					?>
 					</ol>
 					</div>
+					<? if (count($ignoredtables) > 0) {?>
+					<br>
 					<b>Ignored tables</b><br>
 					The following tables were not updated because they have too many rows. They must be upgraded manually via phpMyAdmin.<br>
 					<?
 						echo implode2("<br>", $ignoredtables);
 					?>
+					<? } ?>
 				</td>
 			</tr>
 			<tr>
@@ -1221,7 +1224,7 @@
 				}
 				
 				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
-				echo "<br>Alter Table for <span class='e'>$indextable</span><br>";
+				echo "<br>Index/autoincrement for table <span class='e'>$indextable</span><br>";
 				$createindex = "$line\n";
 			}
 			else {
@@ -1774,8 +1777,7 @@
 				<!-- <td><? if (!is_null($GLOBALS['cfg']['deleteddir']) && file_exists($GLOBALS['cfg']['deleteddir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td> -->
 				<td>Data is not usually deleted. It may be removed from the database and not appear on the website, but the data will end up in this directory.</td>
 			</tr>
-			
-			
+
 			<script>
 				function CheckNFSPath() {
 					var xhttp = new XMLHttpRequest();
@@ -1791,8 +1793,6 @@
 				}
 			</script>
 			<!--<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>-->
-			
-			
 		</table>
 		</form>
 		<?

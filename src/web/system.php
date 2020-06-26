@@ -454,8 +454,8 @@
 		?>
 		
 		<style>
-			legend { font-weight: bold; padding: 8px; background-color: #444; color: #fff; border: 2px solid #444; font-size: 14pt }
-			fieldset { background-color: #eee; border: 2px solid #444; }
+			legend { font-weight: bold; padding: 8px; background-color: #444; color: #fff; border: 2px solid #000; font-size: 14pt; border-radius: 12px; }
+			fieldset { background-color: #eee; border: 2px solid #444; border-radius: 10px; }
 		</style>
 
 		<fieldset>
@@ -920,7 +920,7 @@
 			</tr>
 
 			<tr>
-				<td colspan="4" class="heading"><br>Directories<br><span class="tiny">Leave off trailing slashes</span></td>
+				<td colspan="4" class="heading"><br>NiDB Directories<br><span class="tiny">Leave off trailing slashes</span></td>
 			</tr>
 			<tr>
 				<td class="variable"><b>nidbdir</b></td>
@@ -935,34 +935,33 @@
 				<td><b>Root of the website directory (Frontend)</b></td>
 			</tr>
 			<tr>
-				<td class="variable">analysisdir</td>
-				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
+				<td class="variable">lockdir</td>
+				<td><input type="text" name="lockdir" value="<?=$GLOBALS['cfg']['lockdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['lockdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Lock directory for the programs</td>
 			</tr>
 			<tr>
-				<td class="variable">analysisdirb</td>
-				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
+				<td class="variable">logdir</td>
+				<td><input type="text" name="logdir" value="<?=$GLOBALS['cfg']['logdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['logdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Log directory for the programs</td>
 			</tr>
 			<tr>
-				<td class="variable">clusteranalysisdir</td>
-				<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
+				<td class="variable">mountdir</td>
+				<td><input type="text" name="mountdir" value="<?=$GLOBALS['cfg']['mountdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters <code>/home/user1/data/testing</code> the mountdir will be prepended to point to the real mount point of <code>/mount/home/user1/data/testing</code>. This prevents users from writing data to the OS directories.</td>
 			</tr>
 			<tr>
-				<td class="variable">clusteranalysisdirb</td>
-				<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
+				<td class="variable">qcmoduledir</td>
+				<td><input type="text" name="qcmoduledir" value="<?=$GLOBALS['cfg']['qcmoduledir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Directory containing QC modules. Usually a subdirectory of the programs directory</td>
 			</tr>
+
+
 			<tr>
-				<td class="variable">groupanalysisdir</td>
-				<td><input type="text" name="groupanalysisdir" value="<?=$GLOBALS['cfg']['groupanalysisdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
+				<td colspan="4" class="heading"><br>Data Directories<br><span class="tiny">Leave off trailing slashes</span></td>
 			</tr>
 			<tr>
 				<td class="variable">archivedir</td>
@@ -1001,34 +1000,10 @@
 				<td>Unused</td>
 			</tr>
 			<tr>
-				<td class="variable">lockdir</td>
-				<td><input type="text" name="lockdir" value="<?=$GLOBALS['cfg']['lockdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['lockdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Lock directory for the programs</td>
-			</tr>
-			<tr>
-				<td class="variable">logdir</td>
-				<td><input type="text" name="logdir" value="<?=$GLOBALS['cfg']['logdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['logdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Log directory for the programs</td>
-			</tr>
-			<tr>
-				<td class="variable">mountdir</td>
-				<td><input type="text" name="mountdir" value="<?=$GLOBALS['cfg']['mountdir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters <code>/home/user1/data/testing</code> the mountdir will be prepended to point to the real mount point of <code>/mount/home/user1/data/testing</code>. This prevents users from writing data to the OS directories.</td>
-			</tr>
-			<tr>
 				<td class="variable">packageimportdir</td>
 				<td><input type="text" name="packageimportdir" value="<?=$GLOBALS['cfg']['packageimportdir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['packageimportdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>If using the data package export/import feature, packages to be imported should be placed here</td>
-			</tr>
-			<tr>
-				<td class="variable">qcmoduledir</td>
-				<td><input type="text" name="qcmoduledir" value="<?=$GLOBALS['cfg']['qcmoduledir']?>" size="45"></td>
-				<td><? if (file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
-				<td>Directory containing QC modules. Usually a subdirectory of the programs directory</td>
 			</tr>
 			<tr>
 				<td class="variable">problemdir</td>
@@ -1066,8 +1041,41 @@
 				<td><? if (file_exists($GLOBALS['cfg']['deleteddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Data is not usually deleted. It may be removed from the database and not appear on the website, but the data will end up in this directory.</td>
 			</tr>
-			
-			
+
+
+			<tr>
+				<td colspan="4" class="heading"><br>Cluster/pipeline Directories<br><span class="tiny">Leave off trailing slashes</span></td>
+			</tr>
+			<tr>
+				<td class="variable">analysisdir</td>
+				<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
+			</tr>
+			<tr>
+				<td class="variable">analysisdirb</td>
+				<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
+			</tr>
+			<tr>
+				<td class="variable">clusteranalysisdir</td>
+				<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
+			</tr>
+			<tr>
+				<td class="variable">clusteranalysisdirb</td>
+				<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
+			</tr>
+			<tr>
+				<td class="variable">groupanalysisdir</td>
+				<td><input type="text" name="groupanalysisdir" value="<?=$GLOBALS['cfg']['groupanalysisdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
+			</tr>
 			<tr>
 				<td colspan="3">
 					<input type="submit" value="Update nidb.cfg">
