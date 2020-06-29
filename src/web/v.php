@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 	define("LEGIT_REQUEST", true);
 	$nologin = true;
- 	require "functions.php";
+	require "functions.php";
 	require "includes_php.php";
 
 ?>

@@ -8,6 +8,8 @@ cp -uv /nidb/programs/compiled/nidb/*.pro /nidb/nidbgit/src/nidb/
 # copy web source
 cp -uv /var/www/html/*.php /nidb/nidbgit/src/web/
 cp -uv /var/www/html/*.css /nidb/nidbgit/src/web/
+cp -ruv /var/www/html/tools /nidb/nidbgit/src/web/
+cp -ruv /var/www/html/nanodicom /nidb/nidbgit/src/web/
 
 # dump SQL
 #mysqldump
