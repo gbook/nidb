@@ -107,8 +107,8 @@
 				<td><pre><?=trim(`uptime`)?></pre></td>
 			</tr>
 			<tr>
-				<td class="label">Memory (GB)</td>
-				<td><pre><?=trim(`free -g`)?></pre></td>
+				<td class="label">Memory</td>
+				<td><pre><?=trim(`free -h`)?></pre></td>
 			</tr>
 			<tr>
 				<td class="label">Number CPU cores</td>

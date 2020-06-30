@@ -49,9 +49,11 @@ usermod -G apache nidb
 usermod -G nidb apache
 
 # change permissions of the /nidb directory
-echo 'Change permissions and ownership'
-chown -R nidb:nidb /nidb  # change ownership of the install directory
-chmod -R g+w /nidb        # change permissions of the install directorys contents
+echo 'Change ownership of /nidb contents'
+chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup /nidb/*  # change ownership of the install directory
+echo 'Change permissions of /nidb'
+chmod -R g+w  /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup /nidb/* # change permissions of the install directorys contents
+echo 'Change ownership of /nidb'
 chmod 777 /nidb              # change permissions of the install directory
 
 # setup cron jobs
