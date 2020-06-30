@@ -1,5 +1,5 @@
 Name:           nidb
-Version:        2020.6.527
+Version:        2020.6.529
 Release:        1%{?dist}
 Summary:        NeuroInformatics Database
 
@@ -9,11 +9,7 @@ URL:            http://github.com/gbook/nidb
 
 BuildArch:	x86_64
 BuildRequires:  gcc, cmake3, make
-%if %{el7}
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, mariadb, mariadb-server, mariadb-devel, mariadb-libs, httpd, ImageMagick, perl-Image-ExifTool, openssl
-%else
 Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl
-%endif
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
@@ -67,5 +63,3 @@ cp -f ~/Qt/5.12.8/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib
 
 %post
 /nidb/setup/rpm_post_install.sh
-
-- 
