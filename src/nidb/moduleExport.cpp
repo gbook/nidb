@@ -476,9 +476,16 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
 				/* make the output directory */
 				QDir d;
-				if (d.mkpath(rootoutdir)) {
+                if (d.mkpath(rootoutdir)) {
 					n->WriteLog(QString("Created rootoutdir [%1]").arg(rootoutdir));
 					msgs << "Created rootoutdir [" + rootoutdir + "]. Writing data to directory";
+                    QStringList dirparts = rootoutdir.split("/");
+                    QString dirpath = "";
+                    foreach (QString part, dirparts) {
+                        dirpath += dirpart + "/" + part;
+                        systemstring = "chmod -f 777 " + dirpath;
+                        n->WriteLog(n->SystemCommand(systemstring, true));
+                    }
 				}
 				else {
 					seriesstatus = "error";
