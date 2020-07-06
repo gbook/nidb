@@ -479,7 +479,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 if (d.mkpath(rootoutdir)) {
 					n->WriteLog(QString("Created rootoutdir [%1]").arg(rootoutdir));
 					msgs << "Created rootoutdir [" + rootoutdir + "]. Writing data to directory";
-                    QStringList dirparts = rootoutdir.split("/");
+                    QStringList dirparts = rootoutdir.split("/", QString::SkipEmptyParts);
                     QString dirpath = "";
                     foreach (QString part, dirparts) {
                         dirpath = dirpath + "/" + part;
