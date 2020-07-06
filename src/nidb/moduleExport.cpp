@@ -482,7 +482,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     QStringList dirparts = rootoutdir.split("/");
                     QString dirpath = "";
                     foreach (QString part, dirparts) {
-                        dirpath += dirpath + "/" + part;
+                        dirpath = dirpath + "/" + part;
                         QString systemstring = "chmod -f 777 " + dirpath;
                         n->WriteLog(n->SystemCommand(systemstring, true));
                     }
