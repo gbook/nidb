@@ -851,7 +851,10 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
 		
-		if ($userid == "") { return; }
+		if ($userid == "") {
+			DisplayErrorMessage("Username was blank. You appear not to be logged in. Please login with your username to access NiDB");
+			return;
+		}
 		
 		/* only keep the 10 most recent searches */
 		$sqlstring = "delete from search_history where user_id = $userid and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid order by date_added asc limit 10) temp_tab)";

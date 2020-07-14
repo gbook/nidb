@@ -47,6 +47,9 @@ echo 'Add nidb user'
 id -u nidb &>/dev/null || useradd -p $(openssl passwd -1 password) nidb
 usermod -G apache nidb
 usermod -G nidb apache
+# set nidb as the owner of these directories
+chown nidb:nidb /run/php-fpm/www.sock
+chown -R nidb:nidb /var/lib/php/session
 
 # change permissions of the /nidb directory
 echo 'Change ownership of /nidb contents'

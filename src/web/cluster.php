@@ -74,9 +74,10 @@
 	/* -------------------------------------------- */
 	function GetClusterStats() {
 		//$statsoutput = explode("\n",shell_exec("SGE_ROOT=/sge/sge-root; export SGE_ROOT; SGE_CELL=nrccell; export SGE_CELL; /sge/sge-root/bin/lx24-amd64/./qstat -f -u '*'"));
-		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'";
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*' 2>&1";
 		$statsoutput = explode("\n",shell_exec($command));
 		
+		//PrintVariable($command);
 		//PrintVariable($statsoutput);
 
 		$hostname = $queue = "";
@@ -143,8 +144,10 @@
 		
 		DisplayStatsMenu();
 
-		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat";
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat 2>&1";
 		$statsoutput = explode("\n",shell_exec($command));
+		//PrintVariable($command);
+		//PrintVariable($statsoutput);
 		
 		?>
 		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?
@@ -168,8 +171,16 @@ echo "$line\n";
 		
 		DisplayStatsMenu();
 
-		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*'";
+		//phpinfo();
+		
+		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*' 2>&1";
 		$statsoutput = explode("\n",shell_exec($command));
+		//PrintVariable($command);
+		//PrintVariable($statsoutput);
+		
+		//PrintVariable(shell_exec("ls"));
+
+		//PrintVariable(shell_exec('/bin/bash -v 2>&1'));
 		
 		?>
 		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?

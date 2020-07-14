@@ -1043,8 +1043,9 @@
 		}
 		else {
 			if (trim($varname) != "") {
-				?><div class="error"><b>Error</b> - ID [<?=$var?>] named [<?=$varname?>] was not valid</div><?
+				DisplayErrorMessage("Invalid ID", "ID value [$var], named [$varname], was not valid");
 			}
+			
 			return 0;
 		}
 	}
@@ -2239,11 +2240,8 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* check if import, export, or fileio modules are disabled */
 		
 		if (count($problems) > 0) {
-			echo "<ul><li><b>System error(s). Contact NiDB administrator";
-			foreach ($problems as $errmsg) {
-				?><li style="padding: 5px"><span style="background-color: red; color: white; padding: 3px;"><?=$errmsg?></span><?
-			}
-			echo "</ul>";
+			echo "<br>";
+			DisplayErrorMessage("System Error. Contact NiDB administrator", "<ul><li>" . implode2("<li>", $problems) . "</ul>");
 		}
 	}
 	
@@ -2397,6 +2395,24 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		return array($comp, $num);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayErrorMessage ---------------- */
+	/* -------------------------------------------- */
+	function DisplayErrorMessage($title, $msg) {
+		?>
+		<style>
+			legend { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; }
+			fieldset { background-color: #ffe3e0; border: 2px solid darkred; border-radius: 8px; }
+		</style>
+
+		<fieldset>
+			<legend><?=$title?></legend>
+			<?=$msg?>
+		</fieldset>
+		<?
 	}
 	
 ?>

@@ -27,19 +27,6 @@
 	$action = GetVariable("action");
 ?>
 
-<!--
-<script language="javascript" type="text/javascript">
-    $(document).ready(function() {
-        $('#menu1').dropmenu(
-            { effect: 'none', nbsp: true }
-        );
-    });
-</script>
--->
-
-<!--<script type="text/javascript" src="scripts/dropdowntabs.js"></script>-->
-<!--<link rel="stylesheet" type="text/css" href="scripts/bluetabs.css" />-->
-
 <? if ($isdevserver) { ?>
 <div style="position:fixed; width:100%">
 <table width="95%">
@@ -424,9 +411,12 @@
 			<!--  begin main page content -->
 <?			
 	if (count($_POST, COUNT_RECURSIVE) >= ini_get("max_input_vars")) {
-		?>
-		<div class="staticmessage">You POSTed <?=count($_POST, COUNT_RECURSIVE)?> variables, but your server's PHP limit is <?=ini_get("max_input_vars")?>. Truncation of the submitted form may have occured.<br>
-		Contact your server administrator or increase the <code>max_input_vars</code> PHP variable.</div>
-		<?
+		DisplayErrorMessage("Error", "You POSTed " . count($_POST, COUNT_RECURSIVE). " variables, but your server's PHP limit is " . ini_get("max_input_vars") . ". Truncation of the submitted form may have occured.<br>
+		Contact your server administrator or increase the <code>max_input_vars</code> PHP variable.");
 	}
+	
+	if ($_SESSION['username'] == "") {
+		DisplayErrorMessage("Error", "Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
+	}
+	
 ?>
