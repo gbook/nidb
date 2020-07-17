@@ -867,10 +867,23 @@
 					$studyage = $rowA['study_ageatscan'];
 					$studynotes = $rowA['study_notes'];
 					
-					if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
-						$age = strtotime($studydate) - strtotime($t[$id]['Demographics']['DOB']);
+					//if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
+					//	$age = strtotime($studydate) - strtotime($t[$id]['Demographics']['DOB']);
+					//else
+					//	$age = $studyage;
+					
+					list($studyAge, $calcStudyAge) = GetStudyAge($t[$id]['Demographics']['DOB'], $studyage, $studydate);
+					
+					if ($studyAge == null)
+						$studyAge = "-";
 					else
-						$age = $studyage;
+						$studyAge = number_format($studyAge,1);
+
+					if ($calcStudyAge == null)
+						$calcStudyAge = "-";
+					else
+						$calcStudyAge = number_format($calcStudyAge,1);
+					
 					
 					if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
 						$height = $subjectheight;
@@ -886,7 +899,8 @@
 					$t[$id][$seriesdesc]['StudyDateTime'] = $studydatetime;
 					$t[$id][$seriesdesc]['StudyNum'] = $studynum;
 					$t[$id][$seriesdesc]['NumSeries'] = $numseries;
-					$t[$id][$seriesdesc]['AgeAtScan'] = $age;
+					$t[$id][$seriesdesc]['AgeAtScan'] = $studyAge;
+					$t[$id][$seriesdesc]['CalcAgeAtScan'] = $calcStudyAge;
 					$t[$id][$seriesdesc]['Height'] = $height;
 					$t[$id][$seriesdesc]['Weight'] = $weight;
 					$t[$id][$seriesdesc]['Notes'] = $studynotes;

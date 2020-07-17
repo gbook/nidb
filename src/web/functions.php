@@ -570,7 +570,42 @@
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
 		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetStudyAge ------------------------ */
+	/* -------------------------------------------- */
+	function GetStudyAge($dob, $studyage, $studydate) {
+		
+		//$studydate = str_replace(" ", "T", $studydate);
 
+		# calculate study age
+		if (($dobUnix = strtotime($dob)) === false) {
+			echo "Bad date/time format [$dob]<br>";
+			$calculatedStudyAge = null;
+		}
+		else {
+			if (($studyUnix = strtotime($studydate)) === false) {
+				echo "Bad date/time format [$studydate]<br>";
+				$calculatedStudyAge = null;
+			}
+			else {
+				$calculatedStudyAge = ($studyUnix - $dobUnix)/31536000;
+				if (($calculatedStudyAge <= 0) || ($calculatedStudyAge > 150))
+					$calculatedStudyAge = null;
+			}
+				
+		}
+
+		# check for valid stored study age
+		if (($studyage > 0) && ($studyage < 150))
+			$storedStudyAge = $studyage;
+		else
+			$storedStudyAge = null;
+		
+		return array($storedStudyAge, $calculatedStudyAge);
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- GetEnrollmentInfo ------------------ */
@@ -2403,16 +2438,23 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayErrorMessage($title, $msg) {
 		?>
-		<style>
-			legend { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; }
-			fieldset { background-color: #ffe3e0; border: 2px solid darkred; border-radius: 8px; }
-		</style>
-
-		<fieldset>
-			<legend><?=$title?></legend>
+		<fieldset class="error">
+			<legend class="error"><?=$title?></legend>
 			<?=$msg?>
 		</fieldset>
 		<?
+	}
+
+	/* -------------------------------------------- */
+	/* ------- ValidDOB --------------------------- */
+	/* -------------------------------------------- */
+	function ValidDOB($dob) {
+		if (($dobUnix = strtotime($dob)) === false)
+			return false;
+		if (in_array($dob, array("0000-00-00", "0000-01-01", "1000-01-01", "1776-07-04", "1900-01-01")))
+			return false;
+		
+		return true;
 	}
 	
 ?>

@@ -457,6 +457,11 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 
 .question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }
 
+.invalid { background-color: #ffe3e0; border: 1px solid darkred; border-radius: 3px; padding: 1px 5px; }
+
+legend.error { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; text-align: left; }
+fieldset.error { background-color: #ffe3e0; border: 2px solid darkred; border-radius: 8px; text-align: left; width: 100%; }
+
 .tag { background-color: #f4cbbe; border-radius: 4px; padding: 2px 4px; margin: 2px; color: black; }
 
 /* generic drop shadow */

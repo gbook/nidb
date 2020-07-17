@@ -115,14 +115,15 @@
 		<table class="batchupload">
 			<thead>
 				<th style="text-align: center; border-right: 1px solid #ddd">&nbsp;</th>
-				<th colspan="2" style="text-align: center; border-right: 1px solid #ddd">Subject</th>
+				<th colspan="3" style="text-align: center; border-right: 1px solid #ddd">Subject</th>
 				<th colspan="3" style="text-align: center; border-right: 1px solid #ddd">Study</th>
 				<th colspan="4" style="text-align: center;">Series</th>
 			</thead>
 			<thead>
 				<th style="border-right: 1px solid #ddd">Upload</th>
 				<th>UID</th>
-				<th style="border-right: 1px solid #ddd">Age</th>
+				<th>Age</th>
+				<th style="border-right: 1px solid #ddd">Calculated Age</th>
 				<th>Study</th>
 				<th>Modality</th>
 				<th style="border-right: 1px solid #ddd">Date</th>
@@ -134,12 +135,13 @@
 			<tbody>
 			<?
 				$seriesidlist = implode2(",", $seriesids);
-				$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
+				$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				$lastuid = "";
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$uid = $row['uid'];
+					$dob = $row['birthdate'];
 					$age = $row['study_ageatscan'];
 					$studydate = $row['study_datetime'];
 					$studydate = date('M j, Y g:ia',strtotime($row['study_datetime']));
@@ -151,6 +153,18 @@
 					$seriesid = $row[$modality."series_id"];
 					if ($seriesdesc == "")
 						$seriesdesc = $row['series_protocol'];
+					
+					list($studyAge, $calcStudyAge) = GetStudyAge($dob, $age, $studydate);
+					
+					if ($studyAge == null)
+						$studyAge = "-";
+					else
+						$studyAge = number_format($studyAge,1);
+
+					if ($calcStudyAge == null)
+						$calcStudyAge = "-";
+					else
+						$calcStudyAge = number_format($calcStudyAge,1);
 					
 					if (($uid != $lastuid) && ($lastuid != "")) {
 						$tdclass = "newuid";
@@ -171,7 +185,8 @@
 							</form>
 						</td>
 						<td><?=$uid?></td>
-						<td><?=$age?></td>
+						<td><?=$studyAge?></td>
+						<td><?=$calcStudyAge?></td>
 						<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
 						<td><?=strtoupper($modality)?></td>
 						<td><?=$studydate?></td>

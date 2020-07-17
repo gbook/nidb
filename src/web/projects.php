@@ -499,18 +499,18 @@
 			if (trim($line) != '') {
 				$parts = mysqli_real_escape_array(str_getcsv($line));
 				//PrintVariable($parts,'Parts');
-				if ((count($parts) == 16) || (count($parts) == 15)) {
-					//PrintVariable($parts, 'Parts');
+				if ((count($parts) == 17) || (count($parts) == 16)) {
+					PrintVariable($parts, 'Parts');
 					
-					if (count($parts) == 16) {
+					if (count($parts) == 17) {
 						$studyid = trim($parts[0]);
 						$subjectid = trim($parts[1]);
 						$uid = trim($parts[2]);
 						$sex = strtoupper(trim($parts[3]));
 						$altuidlist = trim($parts[4]);
 						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[9]);
-						$site = trim($parts[14]);
+						$ageatscan = trim($parts[10]);
+						$site = trim($parts[15]);
 					}
 					else {
 						$studyid = trim($parts[0]);
@@ -519,8 +519,8 @@
 						$sex = strtoupper(trim($parts[3]));
 						$altuidlist = trim($parts[4]);
 						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[9]);
-						$site = trim($parts[13]);
+						$ageatscan = trim($parts[10]);
+						$site = trim($parts[14]);
 					}
 					
 					/* validate each variable before trying the SQL */
@@ -1162,23 +1162,27 @@
 		</style>
 		<?		
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
+		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
 		
 		/* get some stats about the project */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
+			
 			$uids[$uid]['sex'] = $row['gender']; /* create hash of UID and sex */
 			$studydates[] = $row['study_datetime']; /* get list of study dates */
 			$genders[$row['gender']]['count']++; /* get the count of each gender */
-			if ($row['study_ageatscan'] > 0) {
-				$ages[] = $row['study_ageatscan'];
-				$genders[$row['gender']]['ages'][] = $row['study_ageatscan'];
+			
+			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
+			
+			if ($studyAge != null) {
+				$ages[] = $studyAge;
+				$genders[$row['gender']]['ages'][] = $studyAge;
 			}
-			else {
-				$ages[] = $row['age'];
-				$genders[$row['gender']]['ages'][] = $row['age'];
+			elseif ($calcStudyAge != null) {
+				$ages[] = $calcStudyAge;
+				$genders[$row['gender']]['ages'][] = $calcStudyAge;
 			}
 		}
 		
@@ -1208,6 +1212,7 @@
 					{ name: "deleted", datatype: "boolean", editable: false },
 					{ name: "studydate", datatype: "date", editable: false },
 					{ name: "ageatscan", datatype: "double", editable: true, precision: 2, thousands_separator: '', decimal_point: '.' },
+					{ name: "calcageatscan", datatype: "string", editable: false },
 					{ name: "modality", datatype: "string", editable: false },
 					{ name: "studydesc", datatype: "string", editable: false },
 					{ name: "studyid", datatype: "string", editable: false },
@@ -1249,7 +1254,8 @@
 				<th>Visit</th>
 				<th>Deleted?</th>
 				<th>Study Date</th>
-				<th>Age at scan (years)</th>
+				<th>StudyAge</th>
+				<th>CalcStudyAge</th>
 				<th>Modality</th>
 				<th>Study Desc</th>
 				<th>Study ID</th>
@@ -1275,8 +1281,9 @@
 				$study_site = $row['study_site'];
 				$study_altid = $row['study_alternateid'];
 				$study_ageatscan = $row['study_ageatscan'];
-				$age = $row['age'];
+				//$age = $row['age'];
 				$sex = $row['gender'];
+				$dob = $row['birthdate'];
 				$uid = $row['uid'];
 				$subjectid = $row['subject_id'];
 				$enrollmentid = $row['enrollment_id'];
@@ -1285,12 +1292,25 @@
 				$isactive = $row['isactive'];
 
 				/* calculate age at scan */
-				if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
-					$ageatscan = $age;
-				}
-				else {
-					$ageatscan = $study_ageatscan;
-				}
+				//if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
+				//	$ageatscan = $age;
+				//}
+				//else {
+				//	$ageatscan = $study_ageatscan;
+				//}
+				
+				
+				list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
+				
+				if ($studyAge == null)
+					$studyAge = "-";
+				else
+					$studyAge = number_format($studyAge,1);
+
+				if ($calcStudyAge == null)
+					$calcStudyAge = "-";
+				else
+					$calcStudyAge = number_format($calcStudyAge,1);
 				
 				$altids = array();
 				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' and altuid <> '' order by isprimary desc";
@@ -1338,7 +1358,8 @@
 					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_visit?></td>
 					<td style="<?=$rowstyle?>"><? if (!$isactive) { echo "Deleted"; } ?></td>
 					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
-					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=number_format($ageatscan,1)?></td>
+					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=$studyAge?></td>
+					<td style="<?=$rowstyle?>"><?=$calcStudyAge?></td>
 					<td style="<?=$rowstyle?>"><?=$modality?></td>
 					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
 					<td style="<?=$rowstyle?>" class="tt"><?=$study_altid?></td>

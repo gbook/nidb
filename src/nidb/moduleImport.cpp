@@ -804,7 +804,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	int importProjectID(0);
 	int importPermanent(0);
 	int importAnonymize(0);
-	int importMatchIDOnly(0);
+    int importMatchIDOnly(1); /* match by ID first, by default */
 	QString importUUID;
 	QString importSeriesNotes;
 	QString importAltUIDs;

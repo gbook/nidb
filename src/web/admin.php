@@ -65,7 +65,6 @@
 		<ul>
 			<li><a href="adminusers.php">Users</a>
 			<li><a href="adminprojects.php">Projects</a>
-			<!--<li><a href="adminassessmentforms.php">Assessment Forms</a>-->
 		</ul>
 		
 		<ul>
@@ -86,12 +85,10 @@
 			<li><a href="status.php">System status</a>
 			<li><a href="adminemail.php">Mass email</a>
 			<li><a href="setup.php">Update</a>
-
 			<li><a href="system.php">NiDB Settings...</a>
 		</ul>
 		<?
 	}
 ?>
-
 
 <? include("footer.php") ?>

@@ -761,7 +761,7 @@
 						</tr>
 						<tr>
 							<td class="label">Date of birth</td>
-							<td class="value"><?=$dob?></td>
+							<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
 						</tr>
 						<tr>
 							<td class="label">Gender</td>
@@ -981,7 +981,7 @@
 			</tr>
 			<tr>
 				<td class="label">Date of birth</td>
-				<td class="value"><?=$dob?></td>
+				<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
 			</tr>
 			<tr>
 				<td class="label">Gender</td>
@@ -1230,7 +1230,7 @@
 									</tr>
 									<tr>
 										<td class="label">Date of birth</td>
-										<td class="value"><?=$dob?></td>
+										<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
 									</tr>
 									<tr>
 										<td class="label">Gender</td>

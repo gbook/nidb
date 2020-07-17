@@ -766,10 +766,22 @@
 					$studynotes = $rowA['study_notes'];
 					$studyvisit = $rowA['study_type'];
 					
-					if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
-						$age = strtotime($studydate) - strtotime($subj['dob']);
+					//if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
+					//	$age = strtotime($studydate) - strtotime($subj['dob']);
+					//else
+					//	$age = $studyage;
+					
+					list($studyAge, $calcStudyAge) = GetStudyAge($subj['dob'], $studyage, $studydatetime);
+					
+					if ($studyAge == null)
+						$studyAge = "-";
 					else
-						$age = $studyage;
+						$studyAge = number_format($studyAge,1);
+
+					if ($calcStudyAge == null)
+						$calcStudyAge = "-";
+					else
+						$calcStudyAge = number_format($calcStudyAge,1);
 					
 					if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
 						$height = $subj['height'];
@@ -785,7 +797,8 @@
 					$row = "$uid$studydate";
 					$t[$row]['UID'] = $subj['uid'];
 					$t[$row]['Sex'] = $subj['sex'];
-					$t[$row]['AgeAtEvent'] = $age;
+					$t[$row]['AgeAtEvent'] = $studyAge;
+					$t[$row]['CalcAgeAtEvent'] = $calcStudyAge;
 					if ($includeheightweight) {
 						$t[$row]['Height'] = $height;
 						$t[$row]['Weight'] = $weight;
