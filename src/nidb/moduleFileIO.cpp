@@ -69,7 +69,6 @@ int moduleFileIO::Run() {
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
 			QString merge_ids = q.value("merge_ids").toString().trimmed();
-			//int merge_id = q.value("merge_ids").toInt();
 			QString merge_name = q.value("merge_name").toString().trimmed();
 			QString merge_dob = q.value("merge_dob").toString().trimmed();
 			QString merge_sex = q.value("merge_sex").toString().trimmed();
@@ -444,8 +443,12 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) {
 	QSqlQuery q;
 
+    n->WriteLog("Checkpoint A");
+
 	subject s(subjectid, n); /* get the subject info */
 	if (!s.isValid) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
+
+    n->WriteLog("Checkpoint B");
 
 	QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(n->GenerateRandomString(10));
 	QDir d;
@@ -468,6 +471,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 	else {
 		n->WriteLog(QString("Subject has no path on disk"));
 	}
+    n->WriteLog("Checkpoint C");
 
 	/* remove all database entries about this subject:
 	   TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
@@ -518,7 +522,12 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    n->WriteLog("Checkpoint D");
+
 	n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
+
+    n->WriteLog("Checkpoint E");
+
 	return true;
 }
 

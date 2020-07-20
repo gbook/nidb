@@ -7,6 +7,7 @@
 * * * * * cd /nidb/bin; ./nidb mriqa > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb qc > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb pipeline > /dev/null 2>&1
+* * * * * cd /nidb/bin; ./nidb minipipeline > /dev/null 2>&1
 
 # cleanup
 @hourly find /nidb/bin/logs/*.log -mtime +4 -exec rm {} \;

@@ -1527,17 +1527,6 @@
 			$newstudyid = $uid . $study_num;
 
 			/* calculate age at scan */
-			//if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
-			//	list($year, $month, $day) = explode("-", $birthdate);
-			//	$d1 = mktime(0,0,0,$month,$day,$year);
-			//	list($year, $month, $day, $extra) = explode("-", $study_datetime);
-			//	$d2 = mktime(0,0,0,$month,$day,$year);
-			//	$ageatscan = floor(($d2-$d1)/31536000);
-			//}
-			//else {
-			//	$ageatscan = $study_ageatscan;
-			//}
-			
 			list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $study_ageatscan, $study_datetime);
 			
 			if ($studyAge == null)
@@ -1549,7 +1538,6 @@
 				$calcStudyAge = "-";
 			else
 				$calcStudyAge = number_format($calcStudyAge,1);
-			
 
 			/* fix some fields */
 			list($lname, $fname) = explode("^",$name);
@@ -2145,18 +2133,6 @@
 				$study_ageatscan = $row['study_ageatscan'];
 				
 				/* calculate age at scan */
-				//if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
-				//	list($year, $month, $day) = explode("-", $birthdate);
-				//	$d1 = mktime(0,0,0,$month,$day,$year);
-				//	list($year, $month, $day, $extra) = explode("-", $study_datetime);
-				//	$d2 = mktime(0,0,0,$month,$day,$year);
-				//	//$ageatscan = floor(($d2-$d1)/31536000);
-				//	$ageatscan = number_format((($d2-$d1)/31536000),1);					
-				//}
-				//else {
-				//	$ageatscan = $study_ageatscan;
-				//}
-				
 				list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $study_ageatscan, $study_datetime);
 				
 				if ($studyAge == null)

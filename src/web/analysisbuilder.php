@@ -765,11 +765,7 @@
 					$studyage = $rowA['study_ageatscan'];
 					$studynotes = $rowA['study_notes'];
 					$studyvisit = $rowA['study_type'];
-					
-					//if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
-					//	$age = strtotime($studydate) - strtotime($subj['dob']);
-					//else
-					//	$age = $studyage;
+
 					
 					list($studyAge, $calcStudyAge) = GetStudyAge($subj['dob'], $studyage, $studydatetime);
 					

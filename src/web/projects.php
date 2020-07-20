@@ -1291,15 +1291,6 @@
 				$project_costcenter = $row['project_costcenter'];
 				$isactive = $row['isactive'];
 
-				/* calculate age at scan */
-				//if (($study_ageatscan == '') || ($study_ageatscan == 0)) {
-				//	$ageatscan = $age;
-				//}
-				//else {
-				//	$ageatscan = $study_ageatscan;
-				//}
-				
-				
 				list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
 				
 				if ($studyAge == null)

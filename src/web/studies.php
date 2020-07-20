@@ -1119,16 +1119,13 @@
 			$study_heightft = "$ft1' $in\"";
 		}
 		else {
-			?>
-			Study [<?=$studyid?>] does not exist
-			<?
+			DisplayErrorMessage("Error", "Invalid study ID. Unable to display this study");
 			return;
 		}
 		
 		if (($subjectid == 0) || ($subjectid == "")) {
-			?>
-			<span class="staticmessage">Subject ID not found. unable to display this study because the subject could not be found</span>
-			<?
+			DisplayErrorMessage("Error", "Invalid subject ID. Unable to display this study because the subject could not be found");
+			return;
 		}
 
 		if ($study_modality == "") {

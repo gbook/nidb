@@ -581,12 +581,12 @@
 
 		# calculate study age
 		if (($dobUnix = strtotime($dob)) === false) {
-			echo "Bad date/time format [$dob]<br>";
+			//echo "Bad date/time format [$dob]<br>";
 			$calculatedStudyAge = null;
 		}
 		else {
 			if (($studyUnix = strtotime($studydate)) === false) {
-				echo "Bad date/time format [$studydate]<br>";
+				//echo "Bad date/time format [$studydate]<br>";
 				$calculatedStudyAge = null;
 			}
 			else {
