@@ -781,7 +781,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 
 	/* import log variables */
 	QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
-	double IL_patientage_orig(0.0);
+    //double IL_patientage_orig(0.0);
 	int IL_seriesnumber_orig(0);
 	QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
 	QString IL_subject_uid;
@@ -799,11 +799,11 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	QString costcenter;
 	int studynum(0);
 
-	int importInstanceID(0);
+    //int importInstanceID(0);
 	int importSiteID(0);
 	int importProjectID(0);
-	int importPermanent(0);
-	int importAnonymize(0);
+    //int importPermanent(0);
+    //int importAnonymize(0);
     int importMatchIDOnly(1); /* match by ID first, by default */
 	QString importUUID;
 	QString importSeriesNotes;
@@ -818,11 +818,11 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		if (q.size() > 0) {
 			q.first();
 			QString status = q.value("import_status").toString();
-			importInstanceID = q.value("import_instanceid").toInt();
+            //importInstanceID = q.value("import_instanceid").toInt();
 			importSiteID = q.value("import_siteid").toInt();
 			importProjectID = q.value("import_projectid").toInt();
-			importPermanent = q.value("import_permanent").toInt();
-			importAnonymize = q.value("import_anonymize").toInt();
+            //importPermanent = q.value("import_permanent").toInt();
+            //importAnonymize = q.value("import_anonymize").toInt();
 			importMatchIDOnly = q.value("import_matchidonly").toInt();
 			importUUID = q.value("import_uuid").toString();
 			importSeriesNotes = q.value("import_seriesnotes").toString();
@@ -932,7 +932,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	if (parts.size() == 5) {
 		val = parts[4];
 		val.replace("Data '","",Qt::CaseInsensitive);
-		val.replace("'","").trimmed();
+        val.replace("'","");
 		if (val.trimmed() == "Data")
 			val = "";
 		PhaseEncodingDirectionPositive = val.trimmed();
@@ -1039,7 +1039,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	IL_studydesc_orig = StudyDescription;
 	IL_seriesdesc_orig = SeriesDescription;
 	IL_protocolname_orig = ProtocolName;
-	IL_patientage_orig = PatientAge;
+    //IL_patientage_orig = PatientAge;
 
 	/* get the ID search string */
 	QString SQLIDs = CreateIDSearchList(PatientID, importAltUIDs);
@@ -1352,13 +1352,13 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 
 			msgs << n->WriteLog(QString("This MR series [%1] exists, updating").arg(SeriesNumber));
 
-			int dimN(0), dimT(0), dimZ(0);
-			if (NumberOfTemporalPositions > 0) {
-				dimN = 4;
-				dimT = NumberOfTemporalPositions;
-			}
-			if (ImagesInAcquisition > 0)
-				dimZ = ImagesInAcquisition;
+            //int dimN(0), dimT(0), dimZ(0);
+            //if (NumberOfTemporalPositions > 0) {
+            //	dimN = 4;
+            //	dimT = NumberOfTemporalPositions;
+            //}
+            //if (ImagesInAcquisition > 0)
+            //	dimZ = ImagesInAcquisition;
 
 			QString sqlstring = "update mr_series set series_datetime = '" + SeriesDateTime + "', series_desc = :SeriesDescription, series_protocol = :ProtocolName, series_sequencename = :SequenceName, series_tr = :RepetitionTime, series_te = :EchoTime,series_flip = :FlipAngle, phaseencodedir = :InPlanePhaseEncodingDirection, phaseencodeangle = :PhaseEncodeAngle, PhaseEncodingDirectionPositive = :PhaseEncodingDirectionPositive, series_spacingx = :pixelX,series_spacingy = :pixelY, series_spacingz = :SliceThickness, series_fieldstrength = :MagneticFieldStrength, img_rows = :Rows, img_cols = :Columns, img_slices = :zsize, series_ti = :InversionTime, percent_sampling = :PercentSampling, percent_phasefov = :PercentPhaseFieldOfView, acq_matrix = :AcquisitionMatrix, slicethickness = :SliceThickness, slicespacing = :SpacingBetweenSlices, bandwidth = :PixelBandwidth, image_type = :ImageType, image_comments = :ImageComments, bold_reps = :boldreps, numfiles = :numfiles, series_notes = :importSeriesNotes, series_status = 'complete' where mrseries_id = :seriesRowID";
 			QSqlQuery q3;
@@ -1906,11 +1906,11 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	int pixelX(0), pixelY(0);
 	double SliceThickness(0.0), xspacing(0.0), yspacing(0.0), EchoTime(0.0), FlipAngle(0.0);
 
-	int importInstanceID(0);
+    //int importInstanceID(0);
 	int importSiteID(0);
 	int importProjectID(0);
-	int importPermanent(0);
-	int importAnonymize(0);
+    //int importPermanent(0);
+    //int importAnonymize(0);
 	int importMatchIDOnly(0);
 	QString importUUID;
 	QString importSeriesNotes;
@@ -1925,11 +1925,11 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 		if (q.size() > 0) {
 			q.first();
 			QString status = q.value("import_status").toString();
-			importInstanceID = q.value("import_instanceid").toInt();
+            //importInstanceID = q.value("import_instanceid").toInt();
 			importSiteID = q.value("import_siteid").toInt();
 			importProjectID = q.value("import_projectid").toInt();
-			importPermanent = q.value("import_permanent").toInt();
-			importAnonymize = q.value("import_anonymize").toInt();
+            //importPermanent = q.value("import_permanent").toInt();
+            //importAnonymize = q.value("import_anonymize").toInt();
 			importMatchIDOnly = q.value("import_matchidonly").toInt();
 			importUUID = q.value("import_uuid").toString();
 			importSeriesNotes = q.value("import_seriesnotes").toString();

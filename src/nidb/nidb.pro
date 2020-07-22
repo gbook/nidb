@@ -2,7 +2,7 @@ QT -= gui
 QT += sql
 QT += network
 
-CONFIG += c++11 console
+CONFIG += c++17 cmdline
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use
@@ -103,9 +103,9 @@ win32: {
         -lsocketxx
 
     # Location of SMTP Library
-    SMTPBIN = $$PWD/smtp
-    LIBS += -L$$SMTPBIN/../SMTPEmail/release -lSMTPEmail
-    INCLUDEPATH += $$SMTPBIN
+    SMTPBIN = K:/bin/smtp-win
+    LIBS += -L$$SMTPBIN/release -lSMTPEmail
+    INCLUDEPATH += K:/src/smtp
     DEPENDPATH += $$SMTPBIN
     *msvc* { # visual studio spec filter
         QMAKE_CXXFLAGS += -MP
