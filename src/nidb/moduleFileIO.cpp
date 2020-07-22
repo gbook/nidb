@@ -79,6 +79,7 @@ int moduleFileIO::Run() {
 
 			/* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
 			QString status = GetIORequestStatus(requestid);
+            n->WriteLog(QString("Status for request_id [%1] is [%2]").arg(requestid).arg(status));
 			if (status == "pending") {
 				/* set the status, if something is wrong, skip this request */
 				if (!SetIORequestStatus(requestid, "pending")) {
@@ -308,6 +309,7 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
 	destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
 	if (n->MakePath(destination, msg)) {
 		QString systemstring = QString("rsync -az %1/* %2").arg(a.analysispath).arg(destination);
+        n->WriteLog(QString("About to run the following command[" + systemstring + "]"));
 		n->WriteLog(n->SystemCommand(systemstring));
 		n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
 		return true;
@@ -418,7 +420,7 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 	if (q.size() > 0) {
 		while (q.next()) {
 			QString msg;
-			int analysisid = q.value("anlaysis_id").toInt();
+            int analysisid = q.value("analysis_id").toInt();
 			if (!DeleteAnalysis(analysisid, msg))
 				n->WriteLog(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(msg));
 		}
@@ -478,55 +480,72 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 	q.prepare("delete from mostrecent where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	//q.numRowsAffected();
-
-	q.prepare("delete from mostrecent where subject_id = :subjectid");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->WriteLog(QString("Checkpoint C.1 - delete from mostrecent - [%1] rows deleted").arg(q.numRowsAffected()));
 
 	q.prepare("delete from family_members where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->WriteLog(QString("Checkpoint C.2 - delete from family_members - [%1] rows deleted").arg(q.numRowsAffected()));
 
 	q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->WriteLog(QString("Checkpoint C.3 - delete from subject_relation - [%1] rows deleted").arg(q.numRowsAffected()));
 
-	q.prepare("delete from subject_altuid where subject_id = :subjectid");
+    q.prepare("delete from subject_altuid where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->WriteLog(QString("Checkpoint C.4 - delete from subject_altuid - [%1] rows deleted").arg(q.numRowsAffected()));
 
-	// delete all series
-	q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid))");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    /* get enrollment_ids for the subject */
+    q.prepare("select enrollment_id from enrollment where subject_id = :subjectid");
+    q.bindValue(":subjectid", subjectid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QStringList enrollmentIDs;
+    if (q.size() > 0) {
+        while (q.next()) {
+            enrollmentIDs.append(QString("%1").arg(q.value("enrollment_id").toInt()));
+        }
 
-	// delete all studies
-	q.prepare("delete from studies where enrollment_id in (select enrollment_id from enrollment where subject_id = :subjectid)");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        /* delete all series */
+        q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
+        q.bindValue(":subjectid", subjectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->WriteLog(QString("Checkpoint C.5 - delete from mr_series - [%1] rows deleted").arg(q.numRowsAffected()));
+        q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
+        q.bindValue(":subjectid", subjectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->WriteLog(QString("Checkpoint C.6 - delete from et_series - [%1] rows deleted").arg(q.numRowsAffected()));
+        q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
+        q.bindValue(":subjectid", subjectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->WriteLog(QString("Checkpoint C.7 - delete from eeg_series - [%1] rows deleted").arg(q.numRowsAffected()));
 
-	// delete all enrollments
-	q.prepare("delete from enrollment where subject_id = :subjectid");
-	q.bindValue(":subjectid", subjectid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        /* delete all studies */
+        q.prepare("delete from studies where enrollment_id in (" + enrollmentIDs.join(",") + ")");
+        q.bindValue(":subjectid", subjectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->WriteLog(QString("Checkpoint C.8 - delete from studies - [%1] rows deleted").arg(q.numRowsAffected()));
+
+        /* delete all enrollments */
+        q.prepare("delete from enrollment where subject_id = :subjectid");
+        q.bindValue(":subjectid", subjectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->WriteLog(QString("Checkpoint C.9 - [%1] rows deleted").arg(q.numRowsAffected()));
+    }
+    else {
+        n->WriteLog("No enrollments found");
+    }
 
 	// delete the subject
 	q.prepare("delete from subjects where subject_id = :subjectid");
 	q.bindValue(":subjectid", subjectid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-    n->WriteLog("Checkpoint D");
+    n->WriteLog(QString("Checkpoint C.10 - [%1] rows deleted").arg(q.numRowsAffected()));
 
 	n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
 
-    n->WriteLog("Checkpoint E");
+    n->WriteLog("Checkpoint D");
 
 	return true;
 }
@@ -616,7 +635,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 	int instanceid;
 	if (q.size() > 0) {
 		q.first();
-		instanceid = q.value("anlaysis_id").toInt();
+        instanceid = q.value("instance_id").toInt();
 	}
 	else {
 		msg = "Invalid instance ID";
@@ -697,7 +716,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 	int instanceid;
 	if (q.size() > 0) {
 		q.first();
-		instanceid = q.value("anlaysis_id").toInt();
+        instanceid = q.value("instance_id").toInt();
 	}
 	else {
 		msg = "Invalid instance ID";
