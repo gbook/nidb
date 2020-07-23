@@ -58,7 +58,7 @@ int moduleManager::Run() {
 			int pid = q.value("process_id").toInt();
 			QString lastcheckin = q.value("last_checkin").toString();
 
-			QString lockfile = QString("%1/lock/%2.%3").arg(n->cfg["scriptdir"]).arg(modulename).arg(pid);
+            QString lockfile = QString("%1/%2.%3").arg(n->cfg["lockdir"]).arg(modulename).arg(pid);
 
 			n->WriteLog("Deleting [" + lockfile + "] last checked in on [" + lastcheckin + "]");
 

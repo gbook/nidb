@@ -997,13 +997,13 @@ bool nidb::ConvertDicom(QString filetype, QString indir, QString outdir, bool gz
 	QString systemstring;
 	QDir::setCurrent(indir);
 	if (filetype == "nifti4dme")
-		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir);
+        systemstring = QString("%1/bin/./dcm2niixme %2 -o '%3' %4").arg(cfg["nidbdir"]).arg(gzipstr).arg(outdir).arg(indir);
 	else if (filetype == "nifti4d")
-		systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(cfg["scriptdir"]).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/bin/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(cfg["nidbdir"]).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
 	else if (filetype == "nifti3d")
-		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/bin/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(cfg["nidbdir"]).arg(outdir).arg(indir).arg(fileext);
 	else if (filetype == "bids")
-		systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(cfg["scriptdir"]).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/bin/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(cfg["nidbdir"]).arg(outdir).arg(indir).arg(fileext);
 	else
 		return false;
 

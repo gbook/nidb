@@ -90,6 +90,7 @@
     $c['siteurl'] = GetVariable("siteurl");
     
     $c['fslbinpath'] = GetVariable("fslbinpath");
+    $c['fsldir'] = GetVariable("fsldir");
 	
 	$c['usecluster'] = GetVariable("usecluster");
     $c['queuename'] = GetVariable("queuename");
@@ -330,6 +331,7 @@
 
 # ----- qc -----
 [fslbinpath] = $fslbinpath
+[fsldir] = $fsldir
 
 # ----- cluster -----
 [usecluster] = $usecluster
@@ -821,6 +823,12 @@
 				<td><input type="text" name="fslbinpath" value="<?=$GLOBALS['cfg']['fslbinpath']?>" size="45"></td>
 				<td></td>
 				<td>Path to FSL binaries. Example /opt/fsl/bin</td>
+			</tr>
+			<tr>
+				<td class="variable">fsldir</td>
+				<td><input type="text" name="fsldir" value="<?=$GLOBALS['cfg']['fsldir']?>" size="45"></td>
+				<td></td>
+				<td>FSL_DIR environment variable. Example /opt/fsl/bin</td>
 			</tr>
 
 			<tr>

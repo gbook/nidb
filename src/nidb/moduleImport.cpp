@@ -925,7 +925,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	}
 
 	/* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-	QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(n->cfg["scriptdir"]).arg(f);
+    QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(n->cfg["nidbdir"]).arg(f);
 	QString csaheader = n->SystemCommand(systemstring, false);
 	QStringList parts = csaheader.split(",");
 	QString val;

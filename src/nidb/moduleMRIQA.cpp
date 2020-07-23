@@ -163,9 +163,9 @@ bool moduleMRIQA::QA(int seriesid) {
 
 		/* create a 4D file to pass to the SNR program and run the SNR program on it */
 		if (datatype == "dicom")
-			systemstring = QString("pwd; %1/./dcm2niix -g y -o '%2' %3").arg(n->cfg["scriptdir"]).arg(tmpdir).arg(indir);
+            systemstring = QString("pwd; %1/bin/./dcm2niix -g y -o '%2' %3").arg(n->cfg["nidbdir"]).arg(tmpdir).arg(indir);
 		else
-			systemstring = QString("pwd; %1/./dcm2niix -g y -o '%2' %3").arg(n->cfg["scriptdir"]).arg(tmpdir).arg(indir);
+            systemstring = QString("pwd; %1/bin/./dcm2niix -g y -o '%2' %3").arg(n->cfg["nidbdir"]).arg(tmpdir).arg(indir);
 
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
@@ -201,7 +201,7 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	n->WriteLog("Starting the nii_qa script. Will return to logging after the script is finished");
 	/* create a 4D file to pass to the SNR program and run the SNR program on it */
-	systemstring = QString("%1/./nii_qa.sh -i "+filepath4d+" -o %2/qa.txt -v 2 -t %3").arg(n->cfg["scriptdir"]).arg(qapath).arg(tmpdir);
+    systemstring = QString("%1/bin/./nii_qa.sh -i "+filepath4d+" -o %2/qa.txt -v 2 -t %3").arg(n->cfg["nidbdir"]).arg(qapath).arg(tmpdir);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	/* move the realignment file(s) from the tmp to the archive directory */
@@ -361,7 +361,7 @@ bool moduleMRIQA::QA(int seriesid) {
 	/* run the motion detection program (for 3D volumes only) */
 	double motion_rsq(0.0);
 	if (dimT == 1) {
-		systemstring = "python " + n->cfg["scriptdir"] + "/StructuralMRIQA.py " + s.seriespath;
+        systemstring = "python " + n->cfg["nidbdir"] + "/bin/StructuralMRIQA.py " + s.seriespath;
 		msgs << n->WriteLog("Running structural motion calculation");
 		QString rsq = n->SystemCommand(systemstring, false);
 		if (rsq == "")
