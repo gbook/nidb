@@ -201,7 +201,7 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	n->WriteLog("Starting the nii_qa script. Will return to logging after the script is finished");
 	/* create a 4D file to pass to the SNR program and run the SNR program on it */
-    systemstring = QString("%1/bin/./nii_qa.sh -i "+filepath4d+" -o %2/qa.txt -v 2 -t %3").arg(n->cfg["nidbdir"]).arg(qapath).arg(tmpdir);
+    systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; %2/bin/./nii_qa.sh -i " + filepath4d + " -o %2/qa.txt -v 2 -t %3").arg(n->cfg["fsldir"]).arg(n->cfg["nidbdir"]).arg(qapath).arg(tmpdir);
 	msgs << n->WriteLog(n->SystemCommand(systemstring));
 
 	/* move the realignment file(s) from the tmp to the archive directory */
@@ -226,22 +226,20 @@ bool moduleMRIQA::QA(int seriesid) {
 	QString thumbfile = s.seriespath + "/thumb.png";
 	if (!QFile::exists(thumbfile)) {
 		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 1)");
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + filepath4d + " -a " + thumbfile;
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2 -a %3").arg(n->cfg["fsldir"]).arg(filepath4d).arg(thumbfile);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + filepath4d + " -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	if (!QFile::exists(thumbfile)) {
-		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 2)");
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + filepath4d + " -a " + thumbfile;
+        msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 2)");
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2/*.nii.gz -a %3").arg(n->cfg["fsldir"]).arg(s.datapath).arg(thumbfile);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii.gz -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	if (!QFile::exists(thumbfile)) {
-		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 3)");
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii.gz -a " + thumbfile;
-		msgs << n->WriteLog(n->SystemCommand(systemstring));
-	}
-	if (!QFile::exists(thumbfile)) {
-		msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 4)");
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii -a " + thumbfile;
+        msgs << n->WriteLog(thumbfile + " does not exist, attempting to create it (method 3)");
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2/*.nii -a %3").arg(n->cfg["fsldir"]).arg(s.datapath).arg(thumbfile);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + s.datapath + "/*.nii -a " + thumbfile;
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 
@@ -250,29 +248,34 @@ bool moduleMRIQA::QA(int seriesid) {
 	double voxX(0.0), voxY(0.0), voxZ(0.0);
 	if (filepath4d != "") {
 		QString s;
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim0";
-
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim0";
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2 dim0").arg(n->cfg["fsldir"]).arg(filepath4d);
 		n->WriteLog(n->SystemCommand(s));
 		dimN = n->SystemCommand(s, false).trimmed().toInt();
 
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim1";
-		n->WriteLog(n->SystemCommand(s));
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim1";
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2 dim1").arg(n->cfg["fsldir"]).arg(filepath4d);
+        n->WriteLog(n->SystemCommand(s));
 		dimX = n->SystemCommand(s, false).trimmed().toInt();
 
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim2";
-		n->WriteLog(n->SystemCommand(s));
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim2";
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2 dim2").arg(n->cfg["fsldir"]).arg(filepath4d);
+        n->WriteLog(n->SystemCommand(s));
 		dimY = n->SystemCommand(s, false).trimmed().toInt();
 
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim3";
-		n->WriteLog(n->SystemCommand(s));
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim3";
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2 dim3").arg(n->cfg["fsldir"]).arg(filepath4d);
+        n->WriteLog(n->SystemCommand(s));
 		dimZ = n->SystemCommand(s, false).trimmed().toInt();
 
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim4";
-		n->WriteLog(n->SystemCommand(s));
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d + " dim4";
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2 dim4").arg(n->cfg["fsldir"]).arg(filepath4d);
+        n->WriteLog(n->SystemCommand(s));
 		dimT = n->SystemCommand(s, false).trimmed().toInt();
 
-		s = n->cfg["fslbinpath"] + "/fslval " + filepath4d;
-		n->WriteLog(n->SystemCommand(s + " pixdim1"));
+        //s = n->cfg["fslbinpath"] + "/fslval " + filepath4d;
+        s = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslval %2").arg(n->cfg["fsldir"]).arg(filepath4d);
+        n->WriteLog(n->SystemCommand(s + " pixdim1"));
 		voxX = n->SystemCommand(s + " pixdim1", false).trimmed().toDouble();
 		n->WriteLog(n->SystemCommand(s + " pixdim2"));
 		voxY = n->SystemCommand(s + " pixdim2", false).trimmed().toDouble();
@@ -282,27 +285,33 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	/* get min/max intensity in the mean/variance/stdev volumes and create thumbnails of the mean, sigma, and varaiance images */
 	if (QFile::exists(qapath + "/Tmean.nii.gz")) {
-		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats %2/Tmean.nii.gz -R > %2/minMaxMean.txt").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tmean.nii.gz -a " + qapath + "/Tmean.png";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2/Tmean.nii.gz -a %2/Tmean.png").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tmean.nii.gz -a " + qapath + "/Tmean.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
 		msgs << n->WriteLog(qapath + "/Tmean.nii.gz does not exist");
 
 	if (QFile::exists(qapath + "/Tsigma.nii.gz")) {
-		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats %2/Tsigma.nii.gz -R > %2/minMaxSigma.txt").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tsigma.nii.gz -a " + qapath + "/Tsigma.png";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2/Tsigma.nii.gz -a %2/Tsigma.png").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tsigma.nii.gz -a " + qapath + "/Tsigma.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
 		msgs << n->WriteLog(qapath + "/Tsigma.nii.gz does not exist");
 
 	if (QFile::exists(qapath + "/Tvariance.nii.gz")) {
-		systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats %2/Tvariance.nii.gz -R > %2/minMaxVariance.txt").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = QString(n->cfg["fslbinpath"] + "/fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tvariance.nii.gz -a " + qapath + "/Tvariance.png";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; slicer %2/Tvariance.nii.gz -a %2/Tvariance.png").arg(n->cfg["fsldir"]).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/slicer " + qapath + "/Tvariance.nii.gz -a " + qapath + "/Tvariance.png";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
@@ -310,17 +319,23 @@ bool moduleMRIQA::QA(int seriesid) {
 
 	if (QFile::exists(tmpdir + "/mc4D.nii.gz")) {
 		/* get mean/stdev in intensity over time */
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -m > " + qapath + "/meanIntensityOverTime.txt";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -m > %3/meanIntensityOverTime.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -m > " + qapath + "/meanIntensityOverTime.txt";
+        msgs << n->WriteLog(n->SystemCommand(systemstring));
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -s > %3/stdevIntensityOverTime.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -s > " + qapath + "/stdevIntensityOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -s > " + qapath + "/stdevIntensityOverTime.txt";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -e > %3/entropyOverTime.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -e > " + qapath + "/entropyOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -e > " + qapath + "/entropyOverTime.txt";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -c > %3/centerOfGravityOverTimeMM.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -c > " + qapath + "/centerOfGravityOverTimeMM.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -c > " + qapath + "/centerOfGravityOverTimeMM.txt";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -C > %3/centerOfGravityOverTimeVox.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -C > " + qapath + "/centerOfGravityOverTimeVox.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -C > " + qapath + "/centerOfGravityOverTimeVox.txt";
-		msgs << n->WriteLog(n->SystemCommand(systemstring));
-		systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -h 100 > " + qapath + "/histogramOverTime.txt";
+        systemstring = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; fslstats -t %2/mc4D -h 100 > %3/histogramOverTime.txt").arg(n->cfg["fsldir"]).arg(tmpdir).arg(qapath);
+        //systemstring = n->cfg["fslbinpath"] + "/fslstats -t " + tmpdir + "/mc4D -h 100 > " + qapath + "/histogramOverTime.txt";
 		msgs << n->WriteLog(n->SystemCommand(systemstring));
 	}
 	else
