@@ -1608,7 +1608,7 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 
 	n->WriteLog(QString("Remote NiDB transactionID: [%1]").arg(t));
 
-	return t;
+    return ret;
 }
 
 

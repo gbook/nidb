@@ -160,8 +160,9 @@ int moduleFileIO::Run() {
 				/* some error occurred, so set it to 'error' */
 				SetIORequestStatus(requestid, "error", msg);
 			}
-		}
-		n->WriteLog("Finished performing file IO");
+            n->WriteLog("File IO operation finished, with message from function [" + msg + "]");
+        }
+        n->WriteLog("Finished performing file IO");
 	}
 	else {
 		n->WriteLog("Nothing to do");
@@ -280,7 +281,7 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
 
 	if (n->MakePath(destination, msg)) {
 		QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
-		n->WriteLog(n->SystemCommand(systemstring));
+        n->WriteLog(n->SystemCommand(systemstring));
 		n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
 		return true;
 	}

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB filesio.php
- // Copyright (C) 2004 - 2018
+ // Copyright (C) 2004 - 2020
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -101,6 +101,7 @@
 				<th align="left">Type</th>
 				<th align="left">Status</th>
 				<th align="left">Time Left</th>
+				<th align="left">Message</th>
 				<? if ($iostatus!='complete'){ ?>
 				<th align="center">Action</th>
 				<?}?>
@@ -113,53 +114,61 @@
 		$othercolor = "EFEFFF";
 
 		if ($GLOBALS['issiteadmin']) {
-                        if ($viewall) { $sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`,`username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100"; }
-                        else { $sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`,`username`,`requestdate` FROM `fileio_requests`  order by fileiorequest_id desc"; }
-                }
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-                        $fileioid = $row['fileiorequest_id'];
-                        $rquser = $row['username'];
-                        $rtime = $row['requestdate'];
-                        $iooperation = $row['fileio_operation'];
-                        $iotype = $row['data_type'];
-                        $iostatus = $row['request_status'];
+			if ($viewall) {
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100"; }
+			else {
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests`  order by fileiorequest_id desc"; }
+			}
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$fileioid = $row['fileiorequest_id'];
+				$rquser = $row['username'];
+				$rtime = $row['requestdate'];
+				$iooperation = $row['fileio_operation'];
+				$iotype = $row['data_type'];
+				$iostatus = $row['request_status'];
+				$iomessage = $row['request_message'];
 			?>                        
 
 			<tr>
-					<td><?=$fileioid?></td>
-					<td><?=$rquser?></td>
-					<td><?=$rtime?></td>
-					<td><?=$iooperation?></td>
-					<td><?=$iotype?></td>
-					<td><?=$iostatus?></td>
-				
-				 <?$now = strtotime($rtime);
-                                  $Five_minutes = $now + (5 * 60);
-                                  $startDate = date('Y-m-y H:i:s', $now);
-                                  $endDate = date('Y-m-y H:i:s', $Five_minutes);
+				<td><?=$fileioid?></td>
+				<td><?=$rquser?></td>
+				<td><?=$rtime?></td>
+				<td><?=$iooperation?></td>
+				<td><?=$iotype?></td>
+				<td><?=$iostatus?></td>
+				<td><?=$iomessage?></td>
+				<?
+				$now = strtotime($rtime);
+				$Five_minutes = $now + (5 * 60);
+				$startDate = date('Y-m-y H:i:s', $now);
+				$endDate = date('Y-m-y H:i:s', $Five_minutes);
 				   
-				   if ($endDate > $startDate){
+				if ($endDate > $startDate) {
 					$D2 = date('d',$endDate);
 					$D1 = date('d',$startDate);
-					$Ttime =$D2-$D1;}
-				   else { $Ttime = 2;}	
-                                  ?>
-					<td><?=$endDate?></td>
-			<? if ($iostatus=='pending'){ ?>
-					<td align="center" class="cancel">
-
-                                        <a href="javascript:decision('Are you sure you want to cancel this I/O request?', 'filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>')" class="cancel">Cancel Operation</a></td>
-			<? }?>
-			<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
-                                        <td align="center" class="delete">
-                                        <a href="javascript:decision('Are you sure you want to Remove this file I/O Entry?', 'filesio.php?action=deletefileio&fileioid=<?=$fileioid?>')" class="delete">Remove</a></td>
-                        <? }?>
+					$Ttime =$D2-$D1;
+				}
+				else {
+					$Ttime = 2;
+				}
+				?>
+				<td><?=$endDate?></td>
+				<? if ($iostatus=='pending'){ ?>
+				<td align="center" class="cancel">
+					<a href="javascript:decision('Are you sure you want to cancel this I/O request?', 'filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>')" class="cancel">Cancel Operation</a>
+				</td>
+				<? }?>
+				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
+				<td align="center" class="delete">
+					<a href="javascript:decision('Are you sure you want to Remove this file I/O Entry?', 'filesio.php?action=deletefileio&fileioid=<?=$fileioid?>')" class="delete">Remove</a>
+				</td>
+				<? } ?>
 
 			</tr>
 			<?
 			}
-			?></table><?
-		
-
-}
+		?>
+		</table>
+		<?
+	}

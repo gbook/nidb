@@ -817,7 +817,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() > 0) {
 			q.first();
-			QString status = q.value("import_status").toString();
+            QString status = q.value("import_status").toString();
             //importInstanceID = q.value("import_instanceid").toInt();
 			importSiteID = q.value("import_siteid").toInt();
 			importProjectID = q.value("import_projectid").toInt();
@@ -1861,7 +1861,7 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 
 	/* import log variables */
 	QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
-	double IL_patientage_orig;
+    //double IL_patientage_orig;
 	int IL_seriesnumber_orig;
 	QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
 	QString IL_subject_uid;
@@ -2071,7 +2071,7 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	IL_studydesc_orig = StudyDescription;
 	IL_seriesdesc_orig = SeriesDescription;
 	IL_protocolname_orig = ProtocolName;
-	IL_patientage_orig = PatientAge;
+    //IL_patientage_orig = PatientAge;
 
 	/* ----- check if this subject/study/series/etc exists ----- */
 	int projectRowID(0);
@@ -2535,7 +2535,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 
 	/* import log variables */
 	QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
-	double IL_patientage_orig;
+    //double IL_patientage_orig;
 	int IL_seriesnumber_orig;
 	QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
 	QString IL_subject_uid;
@@ -2670,7 +2670,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	IL_studydesc_orig = StudyDescription;
 	IL_seriesdesc_orig = ProtocolName;
 	IL_protocolname_orig = ProtocolName;
-	IL_patientage_orig = 0;
+    //IL_patientage_orig = 0;
 
 	msgs << n->WriteLog(PatientID + " - " + StudyDescription);
 
