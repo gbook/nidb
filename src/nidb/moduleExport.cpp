@@ -246,6 +246,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 	q.bindValue(":exportid",exportid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 	if (q.size() > 0) {
+        n->WriteLog(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
 		while (q.next()) {
 			QString modality = q.value("modality").toString().toLower();
 			int seriesid = q.value("series_id").toInt();
@@ -273,7 +274,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 					QString studyaltid = q2.value("study_alternateid").toString();
 					QString studytype = q2.value("study_type").toString();
 					QString datatype = q2.value("data_type").toString();
-					if (datatype == "") /* datatype (dicom, nifti, parrec) will be blank if modality is not MR. So the datatype becomes the modality */
+                    if (datatype == "") /* If the modality is MR, the datatype will have a value (dicom, nifti, parrec), otherwise we will set the datatype to the modality */
 						datatype = modality;
 					int numfiles = q2.value("numfiles").toInt();
 					if (modality != "mr")
@@ -510,13 +511,17 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				else
 					behoutdir = rootoutdir;
 
-				n->WriteLog(QString("Destination is '%1'. rootoutdir [%2], outdir [%3], qcoutdir [%4], behoutdir [%5]").arg(exporttype).arg(rootoutdir).arg(outdir).arg(qcoutdir).arg(behoutdir));
+                n->WriteLog(QString("Export type is '%1'. rootoutdir [%2], outdir [%3], qcoutdir [%4], behoutdir [%5]").arg(exporttype).arg(rootoutdir).arg(outdir).arg(qcoutdir).arg(behoutdir));
 
 				/* export the imaging data */
 				if (downloadimaging) {
+                    n->WriteLog("Downloading imaging data");
 					if (numfiles > 0) {
+                        n->WriteLog(QString("Series contains [%1] files").arg(numfiles));
 						if (datadirexists) {
-							if (!datadirempty) {
+                            n->WriteLog("Series data directory [" + indir + "] exists");
+                            if (!datadirempty) {
+                                n->WriteLog("Data directory is empty");
 								// output the correct file type
 								if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
 									// use rsync instead of cp because of the number of files limit
@@ -599,6 +604,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 						msgs << "Series contains 0 files";
 					}
 				}
+                else {
+                    n->WriteLog("Imaging data not selected for download");
+                }
 
 				/* export the beh data */
 				if (downloadbeh) {

@@ -56,7 +56,7 @@ public:
 	int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
 	void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
 
-	/* create a multilevel hash s[uid][study][series]['attribute'] */
+    /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
 	QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> s;
 
 private:
