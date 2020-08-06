@@ -239,12 +239,6 @@
 					$timestamp2 = filemtime($file);
 					$perm2 = substr(sprintf('%o', fileperms($file)), -4);
 					$size2 = filesize($file);
-					//if (substr(finfo_file($finfo, "/mount$file"), 0, 4) == 'text') {
-					//	$istext = true;
-					//}
-					//else {
-					//	$istext = false;
-					//}
 					$filetype = "";
 					if (stristr(strtolower($file),'.nii') !== FALSE) { $filetype = 'nifti'; }
 					if (stristr(strtolower($file),'.nii.gz') !== FALSE) { $filetype = 'nifti'; }
@@ -280,7 +274,7 @@
 				if ($islink2) { $filecolor = "red"; } else { $filecolor = ''; }
 				if ($isdir1) { $filecolor = "darkblue"; $fileweight = ''; } else { $filecolor = ''; $fileweight = ''; }
 				
-				$clusterpath = str_replace('/mount','',$path);
+				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
 				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
@@ -356,18 +350,7 @@
 				$size2 = 0;
 				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = explode("\t",$line);
 				
-				//if (is_link('/mount' . $file)) { $islink2 = 1; }
-				//if (is_dir('/mount' . $file)) { $isdir2 = 1; }
-				if (file_exists('/mount' . $file)) {
-					#$timestamp2 = filemtime('/mount' . $file);
-					#$perm2 = substr(sprintf('%o', fileperms('/mount' . $file)), -4);
-					#$size2 = filesize('/mount' . $file);
-					//if (substr(finfo_file($finfo, "/mount$file"), 0, 4) == 'text') {
-					//	$istext = true;
-					//}
-					//else {
-					//	$istext = false;
-					//}
+				if (file_exists($GLOBALS['cfg']['mountdir'] . "/$file")) {
 					$filetype = "";
 					if (stristr(strtolower($file),'.nii') !== FALSE) { $filetype = 'nifti'; }
 					if (stristr(strtolower($file),'.nii.gz') !== FALSE) { $filetype = 'nifti'; }
@@ -398,7 +381,7 @@
 				if ($islink2) { $filecolor = "red"; } else { $filecolor = ''; }
 				if ($isdir1) { $filecolor = "darkblue"; $fileweight = ''; } else { $filecolor = ''; $fileweight = ''; }
 				
-				$clusterpath = str_replace('/mount','',$path);
+				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
 				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
@@ -420,21 +403,22 @@
 				<tr>
 					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
 					<?
+						$fullpath = $GLOBALS['cfg']['mountdir'] . "/$file";
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?="/mount$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<?=$filetype?>&filename=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:
@@ -487,7 +471,7 @@
 				$important = $row2['result_isimportant'];
 				$lastupdate = $row2['result_lastupdate'];
 				
-				if (!file_exists($filename)) { $filename = "/mount$filename"; }
+				if (!file_exists($filename)) { $filename = $GLOBALS['cfg']['mountdir'] . "/$filename"; }
 				if (strpos($units,'^') !== false) {
 					$units = str_replace('^','<sup>',$units);
 					$units .= '</sup>';

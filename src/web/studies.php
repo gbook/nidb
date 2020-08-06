@@ -2544,7 +2544,7 @@
 				if ($islink2) { $filecolor = "red"; } else { $filecolor = ''; }
 				if ($isdir1) { $filecolor = "darkblue"; $fileweight = ''; } else { $filecolor = ''; $fileweight = ''; }
 				
-				$clusterpath = str_replace('/mount','',$path);
+				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
 				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
@@ -2712,7 +2712,7 @@
 												break;
 											case "i":
 												?>
-												<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
 												<?
 												break;
 										}
@@ -2817,11 +2817,11 @@
 						
 						if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
 						
-						list($width, $height, $type, $attr) = getimagesize("/mount$filename");
-						$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
+						list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
+						$filesize = number_format(filesize($GLOBALS['cfg']['mountdir'] . "/$filename")/1000) . " kB";
 						?>
 							<td>
-								<a href="preview.php?image=/mount<?=$filename?>"><img src="preview.php?image=/mount<?=$filename?>" width="<?=$maximgwidth?>px"></a>
+								<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>"><img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" width="<?=$maximgwidth?>px"></a>
 								<table width="<?=$maximgwidth?>px">
 									<tr>
 										<td style="font-size:9pt">
@@ -2890,7 +2890,7 @@
 											break;
 										case "i":
 											?>
-											<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+											<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
 											<?
 											break;
 									}

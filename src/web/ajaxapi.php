@@ -27,7 +27,7 @@
 	require "functions.php";
 	require "includes_php.php";
 
-	PrintVariable($_GET);
+	//PrintVariable($_GET);
 	
 	$action = GetVariable("action");
 	$nfspath = GetVariable("nfspath");

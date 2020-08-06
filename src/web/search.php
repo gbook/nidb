@@ -2074,10 +2074,9 @@
 							foreach ($names as $name => $blah) {
 								if ($tables[$uid][$name] == "") { $dispval = "-"; }
 								else { $dispval = $tables[$uid][$name]; }
-								list($width, $height, $type, $attr) = getimagesize("/mount$filename");
-								//$filesize = number_format(filesize("/mount$filename")/1000) . " kB";
+								list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
 							?>
-								<td style="padding:2px"><a href="preview.php?image=/mount<?=$dispval?>" class="preview"><img src="preview.php?image=/mount<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
+								<td style="padding:2px"><a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview"><img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
 								
 							<?
 							}
@@ -2157,7 +2156,7 @@
 					case "h": $thevalue = $filename; break;
 					case "i":
 						?>
-						<a href="preview.php?image=/mount<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+						<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
 						<?
 						break;
 				}
@@ -4682,7 +4681,7 @@
 		$modality = $r['modality'];
 		$destinationtype = $r['destination'];
 		$nfsdir = $r['nfsdir'];
-		$realnfsdir = "/mount" . $r['nfsdir'];
+		$realnfsdir = $GLOBALS['cfg']['mountdir'] . "/" . $r['nfsdir'];
 		$seriesids = $r['seriesid'];
 		$enrollmentids = $r['enrollmentid'];
 		$remoteftpusername = $r['remoteftpusername'];

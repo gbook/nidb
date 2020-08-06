@@ -1667,13 +1667,13 @@
 				<td class="variable">analysisdir</td>
 				<td><input type="text" name="analysisdir" required value="<?=$GLOBALS['cfg']['analysisdir']?>"size="30"></td>
 				<!--<td><? if (!is_null($GLOBALS['cfg']['analysisdir']) && file_exists($GLOBALS['cfg']['analysisdir'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [<tt>mountdir</tt>]) for data stored in the <tt>/S1234ABC/<b>PipelineName</b>/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">analysisdirb</td>
 				<td><input type="text" name="analysisdirb" required value="<?=$GLOBALS['cfg']['analysisdirb']?>"size="30"></td>
 				<!--<td><? if (!is_null($GLOBALS['cfg']['analysisdirb']) && file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><span class="good"></span><? } else { ?><span class="bad"></span><? } ?></td>-->
-				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
+				<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [<tt>mountdir</tt>]) for data stored in the <tt>/<b>PipelineName</b>/S1234ABC/1</tt> format</td>
 			</tr>
 			<tr>
 				<td class="variable">clusteranalysisdir</td>
