@@ -24,8 +24,8 @@
 #define NIDB_H
 
 #define VERSION_MAJ "2020"
-#define VERSION_MIN "7"
-#define BUILD_NUM "541"
+#define VERSION_MIN "8"
+#define BUILD_NUM "548"
 
 #include <QFile>
 #include <QString>

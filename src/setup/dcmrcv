@@ -4,14 +4,21 @@
 
 case "$1" in
 'start')
-	su nidb -c '/nidb/programs/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/dicomincoming > /dev/null 2>&1 &'
+	/nidb/bin/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/dicomincoming > /dev/null 2>&1 &
 	touch /var/lock/subsys/dcmrcv
 	;;
 'stop')
 	rm -f /var/lock/subsys/dcmrcv
 	;;
+'status')
+	if pgrep "dcmrcv" >/dev/null 2>&1 ; then
+		echo "dcmrcv is running"
+	else
+		echo "dcmrcv is NOT running"
+	fi
+	;;
 *)
-	echo "Usage: $0 { start | stop }"
+	echo "Usage: $0 { start | stop | status }"
 	;;
 esac
 exit 0
