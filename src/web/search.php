@@ -3482,12 +3482,20 @@
 					$('.dicom').hide();
 
 					$('input[name=filetype]').click(function() {
-						//alert('hi');
 						if ($('#filetype:checked').val() == 'dicom') {
 							$('.dicom').show();
+							$('.bids').hide();
+							$('.dirstructure').show();
+						}
+						else if ($('#filetype:checked').val() == 'bids') {
+							$('.bids').show();
+							$('.dicom').hide();
+							$('.dirstructure').hide();
 						}
 						else {
 							$('.dicom').hide();
+							$('.bids').hide();
+							$('.dirstructure').show();
 						}
 					});
 					
@@ -3718,15 +3726,10 @@
 										<tr>
 											<td valign="top" align="right"><b>This</b> server</td>
 											<td valign="top">
+												<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
 												<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web (http download)<br>
-												<input type="radio" name="destination" id="destination" value="bids">BIDS<br>
-												<table class="bids">
-													<tr>
-														<td>README</td>
-														<td><textarea name="bidsreadme" class="bids"></textarea></td>
-													</tr>
-												</table>
-												<? if ($GLOBALS['isadmin']) { ?>
+												<? } ?>
+												<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 												<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
 												<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
 													<tr>
@@ -3764,14 +3767,17 @@
 												}
 												if ($s_resultorder != 'subject') {
 													if (!$GLOBALS['cfg']['ispublic']) {
-													?>
-													<input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br>
-													<? } ?>
-													<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission<br>
-													<input type="radio" name="destination" id="destination" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
-													<?
+														?><input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br><?
+													}
+
+													if ($GLOBALS['cfg']['enablerdoc']) {
+														?>
+														<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission<br>
+														<input type="radio" name="destination" id="destination" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
+														<?
+													}
 												}
-													?>
+												?>
 												<br>
 											</td>
 										</tr>
@@ -3806,6 +3812,7 @@
 													<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
 												</table>
 												<br>
+												<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
 												<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
 												<select name="remoteconnid" class="remotenidb">
 													<option value="">(Select connection)</option>
@@ -3828,6 +3835,7 @@
 													?>
 												</select>
 												<?
+												}
 											}
 											?>
 											</td>
@@ -3906,6 +3914,14 @@
 												<input type="radio" name="filetype" id="filetype" value="nifti3d" checked>Nifti 3D<br>
 												<input type="radio" name="filetype" id="filetype" value="nifti4d">Nifti 4D<br>
 												<input type="radio" name="filetype" id="filetype" value="dicom">DICOM<br>
+												<input type="radio" name="filetype" id="filetype" value="bids">BIDS<br>
+												<table class="bids">
+													<tr>
+														<td>README</td>
+														<td><textarea name="bidsreadme" class="bids"></textarea></td>
+													</tr>
+												</table>
+												
 												<div class="dicom" style="padding-left: 15px;">
 												<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
 												<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>

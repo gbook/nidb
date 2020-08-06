@@ -103,19 +103,25 @@
 				?><a href="projects.php" style="<?=$style?>"><b>Projects</b></a><?
 				
 				/* pipelines */
-				if ($page=="pipelines.php" || $page=="analysis.php") { $style = "background-color:#3B5998"; }
-				else { $style = ""; }
-				?><a href="pipelines.php" style="<?=$style?>"><b>Pipelines</b></a><?
+				if ($GLOBALS['cfg']['enablepipelines']) {
+					if ($page=="pipelines.php" || $page=="analysis.php") { $style = "background-color:#3B5998"; }
+					else { $style = ""; }
+					?><a href="pipelines.php" style="<?=$style?>"><b>Pipelines</b></a><?
+				}
 				
-				/* import */
-				if ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
-				else { $style = ""; }
-				?><a href="import.php" style="<?=$style?>"><b>Data</b></a><?
+				/* data */
+				if ($GLOBALS['cfg']['enabledatamenu']) {
+					if ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
+					else { $style = ""; }
+					?><a href="import.php" style="<?=$style?>"><b>Data</b></a><?
+				}
 				
 				/* calendar */
-				if ($page=="calendar.php" || $page=="calendar_calendars.php") { $style = "background-color:#3B5998"; }
-				else { $style = ""; }
-				?><a href="calendar.php" style="<?=$style?>"><b>Calendar</b></a><?
+				if ($GLOBALS['cfg']['enablecalendar']) {
+					if ($page=="calendar.php" || $page=="calendar_calendars.php") { $style = "background-color:#3B5998"; }
+					else { $style = ""; }
+					?><a href="calendar.php" style="<?=$style?>"><b>Calendar</b></a><?
+				}
 				
 			?>
 			</td>
@@ -266,67 +272,73 @@
 				
 				/* pipelines sub-menu */
 				elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
-					$pipelineid = GetVariable("id");
-					if ($pipelineid == "") {
-						?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
-						?><a href="pipelines.php?action=addform">New Pipeline</a><?
-						
-						if ($page == "cluster.php") { $style = "background-color:#273f70"; }
-						?><a href="cluster.php" style="<?=$style?>">Cluster</a><?
-					} 
-					else {
-						$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $pipelineid";
- 	                    $result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-        	            $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-                	    $name = $row['pipeline_name'];
+					if ($GLOBALS['cfg']['enablepipelines']) {
+						$pipelineid = GetVariable("id");
+						if ($pipelineid == "") {
+							?><a href="pipelines.php" style="background-color: #273f70">Pipeline List</a><?
+							?><a href="pipelines.php?action=addform">New Pipeline</a><?
+							
+							if ($page == "cluster.php") { $style = "background-color:#273f70"; }
+							?><a href="cluster.php" style="<?=$style?>">Cluster</a><?
+						} 
+						else {
+							$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $pipelineid";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							$name = $row['pipeline_name'];
 
-						?><a href="pipelines.php" style="">Pipeline List</a> <span style="color:#fff">&gt;</span> <?
-						
-						if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
-						else { $style = ""; }
-						?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a> <span style="color:#fff">&gt;</span><?
+							?><a href="pipelines.php" style="">Pipeline List</a> <span style="color:#fff">&gt;</span> <?
+							
+							if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
+							else { $style = ""; }
+							?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a> <span style="color:#fff">&gt;</span><?
 
-						if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
-						else { $style = ""; }
-						?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" style="<?=$style?>">Analyses</a><?
+							if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
+							else { $style = ""; }
+							?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" style="<?=$style?>">Analyses</a><?
+						}
 					}
 				}
 				
 				/* data sub-menu */
 				elseif ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
 					
-					if (($page == "import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="import.php" style="<?=$style?>">Import</a><?
-					
-					if (($page == "import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="import.php?action=idmapper" style="<?=$style?>">ID mapper</a><?
+					if ($GLOBALS['cfg']['enabledatamenu']) {
+						if (($page == "import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="import.php" style="<?=$style?>">Import</a><?
+						
+						if (($page == "import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="import.php?action=idmapper" style="<?=$style?>">ID mapper</a><?
 
-					if ($page == "importlog.php") { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="importlog.php" style="<?=$style?>">Import Log</a><?
+						if ($page == "importlog.php") { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="importlog.php" style="<?=$style?>">Import Log</a><?
 
-					if ($page == "publicdownloads.php") { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="publicdownloads.php" style="<?=$style?>">Public Downloads</a><?
+						if ($page == "publicdownloads.php") { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="publicdownloads.php" style="<?=$style?>">Public Downloads</a><?
 
-					if ($page == "downloads.php") { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="downloads.php" style="<?=$style?>">Downloads</a><?
+						if ($page == "downloads.php") { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="downloads.php" style="<?=$style?>">Downloads</a><?
+					}
 					
 				}
 				
 				/* calendar sub-menu */
 				elseif ($page=="calendar.php" || $page=="calendar_calendars.php") {
-					if ($page=="calendar.php") { $style = "background-color:#273f70"; }
-					else { $style = ""; }
-					?><a href="calendar.php" style="<?=$style?>">Calendar</a><?
-					
-					if ($GLOBALS['isadmin']) {
-						if ($page=="calendar_calendars.php") { $style = "background-color:#273f70"; }
+					if ($GLOBALS['cfg']['enablecalendar']) {
+						if ($page=="calendar.php") { $style = "background-color:#273f70"; }
 						else { $style = ""; }
-						?><a href="calendar_calendars.php" style="<?=$style?>">Manage</a><?
+						?><a href="calendar.php" style="<?=$style?>">Calendar</a><?
+						
+						if ($GLOBALS['isadmin']) {
+							if ($page=="calendar_calendars.php") { $style = "background-color:#273f70"; }
+							else { $style = ""; }
+							?><a href="calendar_calendars.php" style="<?=$style?>">Manage</a><?
+						}
 					}
 				}
 				

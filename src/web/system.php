@@ -113,6 +113,12 @@
 	
     $c['enableremoteconn'] = GetVariable("enableremoteconn");
     $c['enablecalendar'] = GetVariable("enablecalendar");
+    $c['enablepipelines'] = GetVariable("enablepipelines");
+    $c['enabledatamenu'] = GetVariable("enabledatamenu");
+    $c['enablerdoc'] = GetVariable("enablerdoc");
+    $c['enablepublicdownloads'] = GetVariable("enablepublicdownloads");
+    $c['enablewebexport'] = GetVariable("enablewebexport");
+			
     $c['uploadsizelimit'] = GetVariable("uploadsizelimit");
     $c['displayrecentstudies'] = GetVariable("displayrecentstudies");
     $c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
@@ -311,11 +317,18 @@
 [ispublic] = $ispublic
 [sitetype] = $sitetype
 [allowphi] = $allowphi
-[enableremoteconn] = $enableremoteconn
-[enablecalendar] = $enablecalendar
 [uploadsizelimit] = $uploadsizelimit
 [displayrecentstudies] = $displayrecentstudies
 [displayrecentstudydays] = $displayrecentstudydays
+
+# ----- features -----
+[enableremoteconn] = $enableremoteconn
+[enablecalendar] = $enablecalendar
+[enablepipelines] = $enablepipelines
+[enabledatamenu] = $enabledatamenu
+[enablerdoc] = $enablerdoc
+[enablepublicdownloads] = $enablepublicdownloads
+[enablewebexport] = $enablewebexport
 
 # ----- security options -----
 [setupips] = $setupips
@@ -729,18 +742,6 @@
 				<td>Checked to allow PHI (name, DOB) on server. Unchecked to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
 			</tr>
 			<tr>
-				<td class="variable">enableremoteconn</td>
-				<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
-				<td></td>
-				<td>Allow this server to send data to remote NiDB servers</td>
-			</tr>
-			<tr>
-				<td class="variable">enablecalendar</td>
-				<td><input type="checkbox" name="enablecalendar" value="1" <? if ($GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
-				<td></td>
-				<td>Enable the calendar</td>
-			</tr>
-			<tr>
 				<td class="variable">uploadsizelimit</td>
 				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>" size="45"></td>
 				<td></td>
@@ -757,6 +758,52 @@
 				<td><input type="text" name="displayrecentstudydays" value="<?=$GLOBALS['cfg']['displayrecentstudydays']?>" size="45"></td>
 				<td></td>
 				<td>Number of days to display of recently collected studies on the Home page</td>
+			</tr>
+
+			<tr>
+				<td colspan="4" class="heading"><br>Features</td>
+			</tr>
+			<tr>
+				<td class="variable">enableremoteconn</td>
+				<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Allow this server to send data to remote NiDB servers</td>
+			</tr>
+			<tr>
+				<td class="variable">enablecalendar</td>
+				<td><input type="checkbox" name="enablecalendar" value="1" <? if ($GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable the calendar</td>
+			</tr>
+			<tr>
+				<td class="variable">enablepipelines</td>
+				<td><input type="checkbox" name="enablepipelines" value="1" <? if ($GLOBALS['cfg']['enablepipelines']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable pipelines</td>
+			</tr>
+			<tr>
+				<td class="variable">enabledatamenu</td>
+				<td><input type="checkbox" name="enabledatamenu" value="1" <? if ($GLOBALS['cfg']['enabledatamenu']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable the main Data menu</td>
+			</tr>
+			<tr>
+				<td class="variable">enablerdoc</td>
+				<td><input type="checkbox" name="enablerdoc" value="1" <? if ($GLOBALS['cfg']['enablerdoc']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable RDoCdb features</td>
+			</tr>
+			<tr>
+				<td class="variable">enablepublicdownloads</td>
+				<td><input type="checkbox" name="enablepublicdownloads" value="1" <? if ($GLOBALS['cfg']['enablepublicdownloads']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable public downloads</td>
+			</tr>
+			<tr>
+				<td class="variable">enablewebexport</td>
+				<td><input type="checkbox" name="enablewebexport" value="1" <? if ($GLOBALS['cfg']['enablewebexport']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Allow this server to send data to remote NiDB servers</td>
 			</tr>
 
 			<tr>
@@ -818,17 +865,11 @@
 			<tr>
 				<td colspan="4" class="heading"><br>Quality Control</td>
 			</tr>
-			<!--<tr>
-				<td class="variable">fslbinpath</td>
-				<td><input type="text" name="fslbinpath" value="<?=$GLOBALS['cfg']['fslbinpath']?>" size="45"></td>
-				<td></td>
-				<td>Path to FSL binaries. Example /opt/fsl/bin</td>
-			</tr>-->
 			<tr>
 				<td class="variable">fsldir</td>
 				<td><input type="text" name="fsldir" value="<?=$GLOBALS['cfg']['fsldir']?>" size="45"></td>
 				<td></td>
-				<td>FSL_DIR environment variable. Example /opt/fsl/bin</td>
+				<td>The value of the FSL_DIR environment variable. Example /opt/fsl/bin</td>
 			</tr>
 
 			<tr>

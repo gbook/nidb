@@ -398,14 +398,14 @@
 	/* --------- Delete ------------------------------ */
 	/* ----------------------------------------------- */
 	function Delete($id, $currentcal, $deleteall) {
-		echo "Called Delete($id, $currentcal, $deleteall)<br>";
+		//echo "Called Delete($id, $currentcal, $deleteall)<br>";
 		if ($deleteall) {
-			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid = '$id'";
+			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid in (select appt_groupid from calendar_appointments where appt_id = '$id')";
 		}
 		else {
 			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = '$id'";
 		}
-		echo $sqlstring;
+		//echo $sqlstring;
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
 		Appointment deleted<br><br>
