@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 27, 2020 at 09:28 PM
+-- Generation Time: Aug 11, 2020 at 05:57 PM
 -- Server version: 10.3.22-MariaDB
 -- PHP Version: 7.2.18
 
@@ -2366,6 +2366,7 @@ CREATE TABLE `redcap_import_mapping` (
   `redcap_event` varchar(255) DEFAULT NULL,
   `redcap_form` varchar(255) DEFAULT NULL,
   `redcap_fields` text DEFAULT NULL,
+  `redcap_fieldtype` varchar(255) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
   `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
   `nidb_variablename` varchar(255) DEFAULT NULL,
@@ -3479,7 +3480,8 @@ ALTER TABLE `modality_protocol`
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
-  ADD PRIMARY KEY (`module_id`);
+  ADD PRIMARY KEY (`module_id`),
+  ADD UNIQUE KEY `module_name` (`module_name`);
 
 --
 -- Indexes for table `module_prefs`

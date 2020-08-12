@@ -59,6 +59,7 @@
 	$columns = GetVariable("columns");
 	$groupmeasures = GetVariable("groupmeasures");
 	$studylist = GetVariable("studylist");
+	$subjectlist = GetVariable("subjectlist");
 
 
 	/* determine action */
@@ -89,6 +90,10 @@
 			break;
 		case 'updatestudygroup':
 			UpdateStudyGroup($id, $studylist);
+			ViewGroup($id, $measures, $columns, $groupmeasures);
+			break;
+		case 'updatesubjectgroup':
+			UpdateSubjectGroup($id, $subjectlist);
 			ViewGroup($id, $measures, $columns, $groupmeasures);
 			break;
 		default:
@@ -299,6 +304,60 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSubjectGroup ----------------- */
+	/* -------------------------------------------- */
+	function UpdateSubjectGroup($groupid, $subjectlist) {
+		//PrintVariable($groupid);
+		//PrintVariable($subjectlist);
+		
+		$groupid = mysqli_real_escape_string($GLOBALS['linki'], $groupid);
+
+		if (trim($groupid) == "") {
+			?><div align="center"><span class="message">Group ID blank</span></div><?
+			return;
+		}
+
+		/* start transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$subjects = preg_split('/\s+/', $subjectlist);
+		$subjects = mysqli_real_escape_array($subjects);
+		$subjects = array_unique($subjects);
+		//PrintVariable($subjects);
+
+		/* delete all old group entries */
+		$sqlstring = "delete from group_data where group_id = $groupid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* loop through all the subjects and insert them */
+		foreach ($subjects as $uid) {
+			if (trim($uid) == "") { continue; }
+			//echo "$uid<br>";
+			$sqlstring = "select subject_id from subjects where uid = '$uid'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$subjectid = trim($row['subject_id']);
+
+				/* insert the studyids */
+				$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $subjectid)";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			else {
+				echo "Subject [$uid] not found. Possibly an invalid UID?<br>";
+			}
+		}
+
+		/* commit the transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+	}
 	
 
 	/* -------------------------------------------- */
@@ -412,6 +471,11 @@
 							<summary>SQL</summary>
 							<?=PrintSQL($sqlstring)?>
 						</details>
+					</td>
+				</tr>
+				<tr>
+					<td valign="top" style="padding-right:20px">
+						<?=DisplayGroupSubjectsSummary($id)?>
 					</td>
 				</tr>
 				<tr>
@@ -1303,7 +1367,6 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayGroupStudiesSummary --------- */
 	/* -------------------------------------------- */
-
 	function DisplayGroupStudiesSummary($id) {
 
 		?>
@@ -1331,6 +1394,38 @@
 		</form>
 		<?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- DisplayGroupSubjectsSummary -------- */
+	/* -------------------------------------------- */
+	function DisplayGroupSubjectsSummary($groupid) {
+
+		?>
+		<i>This is the complete list of the subjects in this group. If you delete or add any subjects, the group will be changed accordingly.</i>
+		<form action="groups.php"  method="post">
+		<input type="hidden" name="action" value="updatesubjectgroup">
+		<input type="hidden" name="id" value="<?=$groupid?>">
+
+		<?
+			$subjects = "";
+			
+			$sqlstring = "select a.subjectgroup_id, b.uid from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $groupid order by b.uid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$uid = $row['uid'];
+				$subjects .= "$uid\n";
+			}
+
+			?>
+			<br>
+			<textarea name='subjectlist' style='width:15em; margin-left:1em' rows='10'><?=$subjects?></textarea>
+			<br>
+			<input type="submit" value="Update">
+		</form>
+		<?
+	}
+	
 ?>
 <? include("footer.php") ?>
 

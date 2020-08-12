@@ -41,6 +41,8 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	//PrintVariable($_POST);
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
@@ -87,6 +89,16 @@
 			break;
 		case 'viewbidsdatatypes':
 			ViewBIDSDatatypes($id);
+			break;
+		//case 'saveprotocolmapping':
+		//	SaveProtocolMapping($id);
+		//	break;
+		case 'updateprotocolmapping':
+			UpdateProtocolMapping($id, $modalities, $oldnames, $newnames);
+			EditProtocolMapping($id);
+			break;
+		case 'editprotocolmapping':
+			EditProtocolMapping($id);
 			break;
 		case 'displayprojectinfo':
 			DisplayProjectInfo($id);
@@ -173,7 +185,6 @@
 	/* -------------------------------------------- */
 	function UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups) {
 		
-		//PrintVariable($subjectids);
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		$subjectids = mysqli_real_escape_array($subjectids);
@@ -187,7 +198,6 @@
 		$maritalstatus = mysqli_real_escape_array($maritalstatus);
 		$smokingstatus = mysqli_real_escape_array($smokingstatus);
 		$enrollgroups = mysqli_real_escape_array($enrollgroups);
-		//PrintVariable($subjectids);
 		
 		/* check to see if each array has the same number of elements */
 		if (count($subjectids) != count($altuids)) { echo "Error in number of items received"; return; }
@@ -201,7 +211,6 @@
 		if (count($maritalstatus) != count($smokingstatus)) { echo "Error in number of items received"; return; }
 		if (count($smokingstatus) != count($enrollgroups)) { echo "Error in number of items received"; return; }
 	
-		//echo "I'm here! [" . count($subjectids) . "]";
 		
 		for ($i=0;$i<count($subjectids);$i++) {
 			$subjectid = $subjectids[$i];
@@ -216,7 +225,6 @@
 			$smoking = $smokingstatus[$i];
 			$enrollgroup = $enrollgroups[$i];
 			
-			//echo "Hi! [$i]";
 			/* only do updates if its a valid subjectid */
 			if (isInteger($subjectid)) {
 				$sqlstring = "update subjects set guid = '$guid', birthdate = '$birthdate', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', education = '$education', marital_status = '$marital', smoking_status = '$smoking' where subject_id = $subjectid";
@@ -270,9 +278,7 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		$studyids = mysqli_real_escape_array($studyids);
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
-		//PrintVariable($tags);
 		$taglist = explode(',', $tags);
-		//PrintVariable($taglist);
 		
 		$studyids = implode2(",", $studyids);
 		
@@ -286,7 +292,6 @@
 
 					foreach ($taglist as $tag) {
 						$sqlstringA = "insert ignore into tags (tagtype, enrollment_id, tag) values ('dx', $enrollmentid, '$tag')";
-						//PrintSQL($sqlstringA);
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 						?><div class="message">Applied tag [<?=$tag?>] to enrollmentid [<?=$enrollmentid?>]</div><?
 					}
@@ -500,7 +505,7 @@
 				$parts = mysqli_real_escape_array(str_getcsv($line));
 				//PrintVariable($parts,'Parts');
 				if ((count($parts) == 17) || (count($parts) == 16)) {
-					PrintVariable($parts, 'Parts');
+					//PrintVariable($parts, 'Parts');
 					
 					if (count($parts) == 17) {
 						$studyid = trim($parts[0]);
@@ -638,7 +643,7 @@
 		/* delete all information about this SUBJECT from the database */
 		foreach ($studyids as $id) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
@@ -2156,6 +2161,133 @@
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- EditProtocolMapping ---------------- */
+	/* -------------------------------------------- */
+	function EditProtocolMapping($projectid) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
+		
+		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
+			$projectid = 'null';
+		}
+		//echo "Project ID [$projectid]<br>";
+			
+		/* get all studies, and all series, associated with this project */
+		if ($projectid == "null")
+			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
+		else
+			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
+		
+		//PrintSQL($sqlstring);
+			
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			$modality = strtolower($row['study_modality']);
+			
+			if (($modality != "") && ($studyid != "")) {
+				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					if ($rowA['series_desc'] != "") {
+						$seriesdesc = $rowA['series_desc'];
+					}
+					elseif ($rowA['series_protocol'] != "") {
+						$seriesdesc = $rowA['series_protocol'];
+					}
+					if ($seriesdesc != "") {
+						$seriesdescs[$modality][$seriesdesc]++;
+					}
+				}
+			}
+		}
+
+		//echo "Project ID [$projectid]<br>";
+		
+		/* get list of protocol mappings for this project */
+		if ($projectid == "null")
+			$sqlstring = "select * from protocol_mapping where project_id is null";
+		else
+			$sqlstring = "select * from protocol_mapping where project_id = $projectid";
+		
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mapping[$row['modality']][$row['protocolname']] = $row['shortname'];
+		}
+		//PrintVariable($mapping);
+		?>
+		<br><br>
+		<form action="projects.php" method="post">
+		<input type="hidden" name="action" value="updateprotocolmapping">
+		<input type="hidden" name="id" value="<?=$projectid?>">
+		<b>Protocol mapping</b>
+		<br>
+		Chose a short name, to group multiple protocols together. For example AXMPRAGE, T1w_BIC_MPR, MP_RAGE may all be "T1" images, and can be labeled as such.
+		<br><br>
+		<table class="graydisplaytable">
+			<thead>
+				<th>Modality</th>
+				<th>Protocol name</th>
+				<th>Short name</th>
+			</thead>
+		<?
+		$i=0;
+		foreach ($seriesdescs as $modality => $serieslist) {
+			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
+			foreach ($serieslist as $series => $count) {
+
+				$shortname = "";
+				$shortname = $mapping[$modality][$series];
+				?>
+				<tr>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>"></td>
+				</tr>
+				<?
+				$i++;
+			}
+		}
+		?>
+			<tr>
+				<td colspan="3" align="right"><input type="submit" value="Update"></td>
+			</tr>
+		</table>
+
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateProtocolMapping -------------- */
+	/* -------------------------------------------- */
+	function UpdateProtocolMapping($projectid, $modalities, $oldnames, $newnames) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
+		
+		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
+		else {
+			DisplayErrorMessage("Error", "Invalid project ID [$projectid]");
+			return;
+		}
+		//PrintVariable($modalities);
+		//PrintVariable($oldnames);
+		//PrintVariable($newnames);
+		
+		foreach ($modalities as $i => $modality) {
+			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+			$oldname = mysqli_real_escape_string($GLOBALS['linki'], $oldnames[$i]);
+			$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
+			if (($modality != "") && ($oldname != "") && ($newname != "")) {
+				
+				$sqlstring = "insert ignore into protocol_mapping (project_id, protocolname, shortname, modality) values ($projectid, '$oldname', '$newname', '$modality')";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayProjectInfo ----------------- */
@@ -2274,6 +2406,7 @@
 					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
 					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
 					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>
+					<a href="projects.php?action=editprotocolmapping&id=<?=$id?>">Edit Protocol Mapping</a><br>
 					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
 					<a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br>
 					<? if ($GLOBALS['isadmin']) { ?>
@@ -2470,6 +2603,8 @@
 		?>
 		<!--View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>-->
+		<a href="projects.php?action=editprotocolmapping&id=null">Edit Global Protocol Mapping</a><br>
+		
 		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
 		
 		<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
