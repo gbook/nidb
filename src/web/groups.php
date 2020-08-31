@@ -59,8 +59,9 @@
 	$columns = GetVariable("columns");
 	$groupmeasures = GetVariable("groupmeasures");
 	$studylist = GetVariable("studylist");
-	$subjectlist = GetVariable("subjectlist");
 
+	if ($groupid == "")
+		
 
 	/* determine action */
 	switch ($action) {
@@ -81,6 +82,9 @@
 			AddSeriesToGroup($seriesgroupid, $seriesids, $modality);
 			ViewGroup($seriesgroupid, $measures, $columns, $groupmeasures);
 			break;
+		case 'viewimagingsummary':
+			ViewImagingSummary($id);
+			break;
 		case 'removegroupitem':
 			RemoveGroupItem($itemid);
 			ViewGroup($id, $measures, $columns, $groupmeasures);
@@ -90,10 +94,6 @@
 			break;
 		case 'updatestudygroup':
 			UpdateStudyGroup($id, $studylist);
-			ViewGroup($id, $measures, $columns, $groupmeasures);
-			break;
-		case 'updatesubjectgroup':
-			UpdateSubjectGroup($id, $subjectlist);
 			ViewGroup($id, $measures, $columns, $groupmeasures);
 			break;
 		default:
@@ -304,60 +304,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 	}
-
-
-	/* -------------------------------------------- */
-	/* ------- UpdateSubjectGroup ----------------- */
-	/* -------------------------------------------- */
-	function UpdateSubjectGroup($groupid, $subjectlist) {
-		//PrintVariable($groupid);
-		//PrintVariable($subjectlist);
-		
-		$groupid = mysqli_real_escape_string($GLOBALS['linki'], $groupid);
-
-		if (trim($groupid) == "") {
-			?><div align="center"><span class="message">Group ID blank</span></div><?
-			return;
-		}
-
-		/* start transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-		$subjects = preg_split('/\s+/', $subjectlist);
-		$subjects = mysqli_real_escape_array($subjects);
-		$subjects = array_unique($subjects);
-		//PrintVariable($subjects);
-
-		/* delete all old group entries */
-		$sqlstring = "delete from group_data where group_id = $groupid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-		/* loop through all the subjects and insert them */
-		foreach ($subjects as $uid) {
-			if (trim($uid) == "") { continue; }
-			//echo "$uid<br>";
-			$sqlstring = "select subject_id from subjects where uid = '$uid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$subjectid = trim($row['subject_id']);
-
-				/* insert the studyids */
-				$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $subjectid)";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			else {
-				echo "Subject [$uid] not found. Possibly an invalid UID?<br>";
-			}
-		}
-
-		/* commit the transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-	}
 	
 
 	/* -------------------------------------------- */
@@ -471,11 +417,6 @@
 							<summary>SQL</summary>
 							<?=PrintSQL($sqlstring)?>
 						</details>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<?=DisplayGroupSubjectsSummary($id)?>
 					</td>
 				</tr>
 				<tr>
@@ -713,6 +654,8 @@
 				</tr>
 				<tr>
 					<td valign="top">
+						<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
+						<br>
 						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all">Include measures</a><br>
 						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min">Include measures and only UID</a><br>
 						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
@@ -1397,33 +1340,68 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayGroupSubjectsSummary -------- */
+	/* ------- ViewImagingSummary ----------------- */
 	/* -------------------------------------------- */
-	function DisplayGroupSubjectsSummary($groupid) {
+	function ViewImagingSummary($id) {
+		
+		$sqlstring = "select a.subjectgroup_id, d.uid, d.birthdate, d.gender, b.study_datetime, b.study_ageatscan, b.study_num, b.study_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			if (($studyid != "") && (strtolower($studyid) != "null")) {
+				/* get list of series for this study */
+				$studies[$studyid]['uid'] = $row['uid'];
+				$studies[$studyid]['sex'] = $row['gender'];
+				$studies[$studyid]['studynum'] = $row['study_num'];
+
+				list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
+				$studies[$studyid]['studyage'] = $studyAge;
+				$studies[$studyid]['calcstudyage'] = $calcStudyAge;
+				
+
+				$sqlstringA = "select b.* from mr_series a left join protocol_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$protocol = $rowA['shortname'];
+					//$studies[$studyid]['protocols'][$protocol] = "&#10004;";
+					$studies[$studyid]['protocols'][$protocol] = 1;
+					$protocols[$protocol] = 1;
+				}
+			}
+		}
+		echo "Loaded data<br>";
 
 		?>
-		<i>This is the complete list of the subjects in this group. If you delete or add any subjects, the group will be changed accordingly.</i>
-		<form action="groups.php"  method="post">
-		<input type="hidden" name="action" value="updatesubjectgroup">
-		<input type="hidden" name="id" value="<?=$groupid?>">
-
+		<table border=1>
+			<thead>
+				<th>UID</th>
+				<th>Sex</th>
+				<th>Age</th>
+				<th>CalcAge</th>
+				<?
+				foreach ($protocols as $prot => $val) {
+					?><th><?=$prot?></th><?
+				}
+				?>
+			</thead>
 		<?
-			$subjects = "";
-			
-			$sqlstring = "select a.subjectgroup_id, b.uid from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $groupid order by b.uid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$uid = $row['uid'];
-				$subjects .= "$uid\n";
-			}
-
+		foreach ($studies as $studyid => $study) {
 			?>
-			<br>
-			<textarea name='subjectlist' style='width:15em; margin-left:1em' rows='10'><?=$subjects?></textarea>
-			<br>
-			<input type="submit" value="Update">
-		</form>
-		<?
+			<tr>
+				<td><?=$study['uid']?></td>
+				<td><?=$study['sex']?></td>
+				<td><?=number_format($study['studyage'], 1)?></td>
+				<td><?=number_format($study['calcstudyage'], 1)?></td>
+				<?
+				foreach ($protocols as $prot => $val) {
+					?><td><?=$study['protocols'][$prot]?></td><?
+				}
+				?>
+			</tr>
+			<?
+		}
+		?></table><?
+		
 	}
 	
 ?>

@@ -1541,7 +1541,11 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 		msg = "Invalid qsub option";
 		return false;
 	}
-	else if (result.contains("directive error", Qt::CaseInsensitive)) {
+    else if (result.contains("permission denied, please try again", Qt::CaseInsensitive)) {
+        msg = "SSH passwordless submission failure";
+        return false;
+    }
+    else if (result.contains("directive error", Qt::CaseInsensitive)) {
 		msg = "Invalid qsub directive";
 		return false;
 	}

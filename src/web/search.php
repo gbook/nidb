@@ -2700,8 +2700,9 @@
 		<table class="graydisplaytable" width="100%">
 			<thead>
 				<tr>
-					<th>&nbsp;</th>
+					<!--<th>&nbsp;</th>-->
 					<th>UID</th>
+					<th>StudyNum</th>
 					<th>Project<br><span class="tiny">Enroll dates</span></th>
 					<th>DOB</th>
 					<th>Gender</th>
@@ -2715,6 +2716,7 @@
 		<?
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
+			$studynum = $row['study_num'];
 			$subject_id = $row['subject_id'];
 			$enrollment_id = $row['enrollment_id'];
 			$project_name = $row['project_name'];
@@ -2748,8 +2750,9 @@
 			//if ($handedness == '') { $handedness = '-'; }
 			?>
 			<tr>
-				<td><input type="checkbox" name="enrollmentid[]" value="<?=$enrollment_id?>"></td>
+				<!--<td><input type="checkbox" name="enrollmentid[]" value="<?=$enrollment_id?>"></td>-->
 				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$studynum?></td>
 				<td><?=$project_name?><br><span class="tiny"><?=$enroll_startdate?> - <?=$enroll_enddate?></span></td>
 				<td><?=$birthdate?></td>
 				<td><?=$gender?></td>
@@ -3671,20 +3674,22 @@
 							<tr>
 								<td align="right" style="padding: 5px">
 								<?
-									$projectids2 = array_unique(array_keys($projectids));
-									$projidlist = implode2(',', $projectids2);
-									$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
-									$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
-									//PrintSQL($sqlstring);
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$mpid = $row['minipipeline_id'];
-										$mpversion = $row['mp_version'];
-										$mpname = $row['mp_name'];
-										$projectname = $row['project_name'];
-										$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+									if (count($projectids) > 0) {
+										$projectids2 = array_unique(array_keys($projectids));
+										$projidlist = implode2(',', $projectids2);
+										$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
+										$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
+										//PrintSQL($sqlstring);
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$mpid = $row['minipipeline_id'];
+											$mpversion = $row['mp_version'];
+											$mpname = $row['mp_name'];
+											$projectname = $row['project_name'];
+											$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+										}
+										$mpselectbox .= "</select>";
 									}
-									$mpselectbox .= "</select>";
 								?>
 								<?=$mpselectbox?>
 								</td>

@@ -185,8 +185,9 @@ int modulePipeline::Run() {
 			n->WriteLog("Creating path [" + analysispath + "/pipeline]");
 			QString m;
 			if (!n->MakePath(analysispath + "/pipeline", m)) {
-				n->WriteLog("Error: unable to create directory ["+analysispath+"] - A");
-				continue;
+                n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - A");
+                //UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
+                continue;
 			}
 			else
 				n->WriteLog("Created directory [" + analysispath + "/pipeline] - A");
@@ -1190,8 +1191,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 				}
 
 				QString m;
-				if (!n->MakePath(newanalysispath, m))
+                if (!n->MakePath(newanalysispath, m)) {
 					dlog << n->WriteLog("   Error: unable to create directory [" + newanalysispath + "] message [" + m + "]");
+                    UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                }
 				else
 					dlog << n->WriteLog("   Created imaging data output directory [" + newanalysispath + "]");
 
@@ -1216,8 +1219,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 				else {
 					QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
 					QString m;
-					if (!n->MakePath(tmpdir, m))
+                    if (!n->MakePath(tmpdir, m)) {
 						dlog << n->WriteLog("   Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion");
+                        UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                    }
 					else
 						dlog << n->WriteLog("   Created temp directory [" + tmpdir + "] for DICOM conversion");
 					int numfilesconv(0);
@@ -1251,8 +1256,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 				if (behformat != "behnone") {
 					dlog << "   Copying behavioral data";
 					QString m;
-					if (!n->MakePath(behoutdir, m))
+                    if (!n->MakePath(behoutdir, m)) {
 						dlog << n->WriteLog("   Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F");
+                        UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                    }
 					else
 						dlog << n->WriteLog("   Created behavioral output directory [" + behoutdir + "] - F");
 					QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;

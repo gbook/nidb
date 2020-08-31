@@ -152,7 +152,8 @@ int moduleExport::Run() {
 			if (!SetExportStatus(exportid,status,log))
 				n->WriteLog(QString("Unable to set export status to [%1]").arg(status));
 
-		}
+            n->WriteLog(QString("Found []").arg(found));
+        }
 		n->WriteLog("Finished performing exports");
 	}
 	else {

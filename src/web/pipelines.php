@@ -118,9 +118,15 @@
 	
 	/* determine action */
 	switch ($action) {
-		case 'editpipeline': DisplayPipelineForm("edit", $id); break;
-		case 'viewversion': DisplayVersion($id, $version); break;
-		case 'addform': DisplayPipelineForm("add", ""); break;
+		case 'editpipeline':
+			DisplayPipelineForm("edit", $id);
+			break;
+		case 'viewversion':
+			DisplayVersion($id, $version);
+			break;
+		case 'addform':
+			DisplayPipelineForm("add", "");
+			break;
 		case 'updatepipelineoptions':
 			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject);
 			DisplayPipelineForm("edit", $id);
@@ -135,7 +141,8 @@
 			break;
 		case 'changeowner':
 			ChangeOwner($id,$newuserid);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineForm("edit", $id);
 			break;
 		case 'delete':
 			DeletePipeline($id);
@@ -151,7 +158,8 @@
 			break;
 		case 'resetanalyses':
 			ResetAnalyses($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineForm("edit", $id);
 			break;
 		case 'disable':
 			DisablePipeline($id);
@@ -174,9 +182,11 @@
 		case 'viewpipelinelist':
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			break;
-		case 'viewusage': DisplayPipelineUsage();
+		case 'viewusage':
+			DisplayPipelineUsage();
 			break;
-		default: DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+		default:
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
