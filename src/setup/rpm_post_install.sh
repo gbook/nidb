@@ -53,11 +53,11 @@ chown -R nidb:nidb /var/lib/php/session
 
 # change permissions of the /nidb directory
 echo 'Change ownership of /nidb contents'
-chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup /nidb/*  # change ownership of the install directory
-chown nidb:nidb /nidb/*  # change ownership of the install directory
+chown -Rv nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
+chown -v nidb:nidb /nidb/*  # change ownership of the install directory
 echo 'Change permissions of /nidb'
-chmod -R g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup /nidb/* # change permissions of the install directorys contents
-chmod g+w /nidb/* # change permissions of the install directorys contents
+chmod -Rv g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
+chmod -v g+w /nidb/* # change permissions of the install directorys contents
 echo 'Change ownership of /nidb'
 chmod 777 /nidb              # change permissions of the install directory
 

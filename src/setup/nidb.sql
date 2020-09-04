@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 5.0.1
+-- version 5.0.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 11, 2020 at 05:57 PM
--- Server version: 10.3.22-MariaDB
--- PHP Version: 7.2.18
+-- Generation Time: Sep 04, 2020 at 06:48 PM
+-- Server version: 10.3.17-MariaDB
+-- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -1013,7 +1012,7 @@ CREATE TABLE `family_members` (
 
 CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
@@ -1028,6 +1027,7 @@ CREATE TABLE `fileio_requests` (
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `merge_id` int(11) DEFAULT NULL,
   `merge_ids` varchar(255) DEFAULT NULL,
+  `merge_method` enum('sortbyseriesdate','concatbystudydateasc','concatbystudydatedesc','concatbystudynumasc','concatbystudynumdesc') DEFAULT NULL,
   `merge_name` varchar(255) DEFAULT NULL,
   `merge_dob` date DEFAULT NULL,
   `merge_sex` char(1) DEFAULT NULL,
@@ -2206,6 +2206,20 @@ CREATE TABLE `protocol_group` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `protocol_mapping`
+--
+
+CREATE TABLE `protocol_mapping` (
+  `protocolmapping_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `protocolname` varchar(255) NOT NULL,
+  `shortname` int(11) DEFAULT NULL,
+  `modality` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `pr_series`
 --
 
@@ -2366,7 +2380,6 @@ CREATE TABLE `redcap_import_mapping` (
   `redcap_event` varchar(255) DEFAULT NULL,
   `redcap_form` varchar(255) DEFAULT NULL,
   `redcap_fields` text DEFAULT NULL,
-  `redcap_fieldtype` varchar(255) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
   `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
   `nidb_variablename` varchar(255) DEFAULT NULL,
@@ -3480,8 +3493,7 @@ ALTER TABLE `modality_protocol`
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
-  ADD PRIMARY KEY (`module_id`),
-  ADD UNIQUE KEY `module_name` (`module_name`);
+  ADD PRIMARY KEY (`module_id`);
 
 --
 -- Indexes for table `module_prefs`
@@ -3717,6 +3729,13 @@ ALTER TABLE `protocolgroup_items`
 ALTER TABLE `protocol_group`
   ADD PRIMARY KEY (`protocolgroup_id`),
   ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
+
+--
+-- Indexes for table `protocol_mapping`
+--
+ALTER TABLE `protocol_mapping`
+  ADD PRIMARY KEY (`protocolmapping_id`),
+  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
 
 --
 -- Indexes for table `pr_series`
@@ -4596,6 +4615,12 @@ ALTER TABLE `protocolgroup_items`
 --
 ALTER TABLE `protocol_group`
   MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `protocol_mapping`
+--
+ALTER TABLE `protocol_mapping`
+  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pr_series`
