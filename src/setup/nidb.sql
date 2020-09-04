@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 04, 2020 at 06:48 PM
+-- Generation Time: Sep 04, 2020 at 06:55 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2380,6 +2380,7 @@ CREATE TABLE `redcap_import_mapping` (
   `redcap_event` varchar(255) DEFAULT NULL,
   `redcap_form` varchar(255) DEFAULT NULL,
   `redcap_fields` text DEFAULT NULL,
+  `redcap_fieldtype` varchar(255) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
   `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
   `nidb_variablename` varchar(255) DEFAULT NULL,
