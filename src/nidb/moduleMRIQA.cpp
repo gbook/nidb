@@ -524,15 +524,15 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
 		QTextStream fs(&af);
 		for (int i=0; i<accx.size();i++)
 			fs << QString("%1").arg(accx[i]);
-		fs << endl;
+        fs << Qt::endl;
 
 		for (int i=0; i<accy.size();i++)
 			fs << QString("%1").arg(accy[i]);
-		fs << endl;
+        fs << Qt::endl;
 
 		for (int i=0; i<accz.size();i++)
 			fs << QString("%1").arg(accz[i]);
-		fs << endl;
+        fs << Qt::endl;
 
 		af.close();
 	}

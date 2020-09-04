@@ -91,6 +91,7 @@ public:
 	QString ParseTime(QString s);
 	QString JoinIntArray(QList<int> a, QString glue);
 	QList<int> SplitStringArrayToInt(QStringList a);
+    QList<int> SplitStringToIntArray(QString a);
 	bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
 	bool GetSQLComparison(QString c, QString &comp, int &num);
 	QStringList ShellWords(QString s);

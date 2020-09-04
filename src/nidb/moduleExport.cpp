@@ -481,7 +481,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 if (d.mkpath(rootoutdir)) {
 					n->WriteLog(QString("Created rootoutdir [%1]").arg(rootoutdir));
 					msgs << "Created rootoutdir [" + rootoutdir + "]. Writing data to directory";
-                    QStringList dirparts = rootoutdir.split("/", QString::SkipEmptyParts);
+                    QStringList dirparts = rootoutdir.split("/", Qt::SkipEmptyParts);
                     QString dirpath = "";
                     foreach (QString part, dirparts) {
                         dirpath = dirpath + "/" + part;
@@ -748,7 +748,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 				QStringList lines = filecontents.split("\n");
 				QString lastline = lines.last().trimmed();
 				n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-				QStringList parts = lastline.split(QRegExp("\\s+"), QString::SkipEmptyParts); /* split on whitespace */
+                QStringList parts = lastline.split(QRegExp("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
 				int unzippedsize(0);
 				int zippedsize(0);
 				if (parts.size() >= 2) {

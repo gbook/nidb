@@ -67,14 +67,14 @@ void pipeline::LoadPipelineInfo() {
 	dirStructure = q.value("pipeline_dirstructure").toString().trimmed();
 	useTmpDir = q.value("pipeline_usetmpdir").toBool();
 	tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
-	foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", QString::SkipEmptyParts)) {
+    foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts)) {
 		parentDependencyIDs.append(did.toInt());
 	}
 
 	depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
 	depDir = q.value("pipeline_dependencydir").toString().trimmed();
 	depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
-	foreach (QString gid, q.value("pipeline_groupid").toString().trimmed().split(",", QString::SkipEmptyParts)) {
+    foreach (QString gid, q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts)) {
 		groupIDs.append(gid.toInt());
 	}
 
@@ -86,7 +86,7 @@ void pipeline::LoadPipelineInfo() {
 	lastStart = q.value("pipeline_laststart").toDateTime();
 	lastFinish = q.value("pipeline_lastfinish").toDateTime();
 	lastCheck = q.value("pipeline_lastcheck").toDateTime();
-	completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", QString::SkipEmptyParts);
+    completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", Qt::SkipEmptyParts);
 	numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
 	queue = q.value("pipeline_queue").toString().trimmed();
 	submitHost = q.value("pipeline_submithost").toString().trimmed();

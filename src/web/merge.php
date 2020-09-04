@@ -154,6 +154,71 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SubmitMergeStuidies ---------------- */
+	/* -------------------------------------------- */
+	function SubmitMergeStudies($studyids, $selectedid, $studydatetime, $altuids, $studysite) {
+
+		PrintVariable($studyids);
+		
+		/* remove the 'selectedid' */
+		foreach ($studyids as $key => $id) {
+			//echo "[$key] = $id<br>";
+			if ($id == $selectedid) {
+				//echo "About to unset studyids[$key]<br>";
+				unset($studyids[$key]);
+			}
+		}
+		$studyids = array_values($studyids);
+
+		/* perform data checks */
+		//$name = mysqli_real_escape_string($GLOBALS['linki'], $name[$selectedid]);
+		//$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob[$selectedid]);
+		//$gender = mysqli_real_escape_string($GLOBALS['linki'], $gender[$selectedid]);
+		//$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity1[$selectedid]);
+		//$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity2[$selectedid]);
+		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid[$selectedid]);
+		//$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'], $enrollgroup[$selectedid]);
+		//$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
+
+		//PrintVariable($studyids);
+		$studyids = mysqli_real_escape_array($studyids);
+		PrintVariable($studyids);
+		
+		$mergeids = implode2(",", $studyids);
+		PrintVariable($mergeids);
+		
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, merge_ids, , request_status, request_message, username, requestdate) values ('merge', 'study', $selectedid, '$mergeids', '$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$guid', '$enrollgroup', '$altuid', 'pending', 'Request submitted', '" . $GLOBALS['username'] . "', now())";
+		PrintSQL($sqlstring);
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$sqlstring = "select uid from subjects where subject_id = $selectedid";
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$finaluid = $row['uid'];
+
+		$sqlstring = "select uid from subjects where subject_id in (" . MakeSQLListFromArray($studyids) . ")";
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$uids[] = $row['uid'];
+		}
+		
+		?>
+		<table cellpadding="5">
+			<tr>
+				<td>Merging UID(s) &nbsp;</td>
+				<td style="border: 1px solid #aaa; border-radius: 5px"><?=implode2("<br>", $uids)?></td>
+				<td>&nbsp; into &rarr; </td>
+				<td><span style="border: 1px solid #aaa; padding: 5px; border-radius: 5px"><?=$finaluid?></span></td>
+			</tr>
+		</table>
+		<br>
+		<br>
+		<b>Merge queued</b>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayMergeStudies ---------------- */
 	/* -------------------------------------------- */
 	function DisplayMergeStudies($studyids, $studyid) {

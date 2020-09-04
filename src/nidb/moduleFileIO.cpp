@@ -69,7 +69,8 @@ int moduleFileIO::Run() {
 			QString dicomtags = q.value("anonymize_fields").toString().trimmed();
 			QString username = q.value("username").toString().trimmed();
 			QString merge_ids = q.value("merge_ids").toString().trimmed();
-			QString merge_name = q.value("merge_name").toString().trimmed();
+            QString merge_method = q.value("merge_method").toString().trimmed();
+            QString merge_name = q.value("merge_name").toString().trimmed();
 			QString merge_dob = q.value("merge_dob").toString().trimmed();
 			QString merge_sex = q.value("merge_sex").toString().trimmed();
 			QString merge_ethnicity1 = q.value("merge_ethnicity1").toString().trimmed();
@@ -125,7 +126,7 @@ int moduleFileIO::Run() {
 			}
 			else if (fileio_operation == "merge") {
 				if (data_type == "subject") { found = MergeSubjects(data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_altuids, msg); }
-				//if (data_type == "study") { found = MergeStudies(data_id, merge_id, msg); }
+                if (data_type == "study") { found = MergeStudies(data_id, merge_ids, merge_method, msg); }
 			}
 			else if (fileio_operation == "anonymize") {
 				//found = AnonymizeSeries(requestid, data_id, modality, dicomtags);
@@ -1005,4 +1006,126 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
 	}
 
 	return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- MergeStudies ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMethod, QString &msg) {
+    /* all mergeIDs will be merged into the studyid */
+
+    QSqlQuery q;
+    msg = "";
+
+    /* get info about first study */
+    study s(studyid, n);
+    QString modality = s.modality.toLower();
+    int finalStudyNum = s.studynum;
+
+    /* get list of all studyids */
+    QList<int> allStudyIDs;
+    allStudyIDs.append(studyid);
+    allStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+
+    /* merge by SERIES datetime */
+    if (mergeMethod == "sortbyseriesdate") {
+        QString mergeIDList = n->JoinIntArray(allStudyIDs, ",");
+
+        int newSeriesNum = 1;
+        /* get list of all series sorted by series date */
+        q.prepare(QString("select * from %1_series a left join studies b on a.study_id = b.study_id where b.study_id in (%2) order by a.series_datetime asc").arg(modality).arg(mergeIDList));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        if (q.size() > 0) {
+            while (q.next()) {
+                int studyID = q.value("study_id").toInt();
+                int studyNum = q.value("study_num").toInt();
+                int seriesID = q.value(modality + "_seriesid").toInt();
+                int seriesNum = q.value("series_num").toInt();
+                QString seriesDesc = q.value("series_desc").toString();
+                QString seriesDateTime = q.value("series_desc").toDateTime().toString();
+
+                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] to studynum [%5]. New seriesnum [%6]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(finalStudyNum).arg(newSeriesNum));
+                newSeriesNum++;
+            }
+        }
+    }
+    else if (mergeMethod == "concatbystudydateasc") {
+
+    }
+    else if (mergeMethod == "concatbystudydatedesc") {
+
+    }
+    else if (mergeMethod == "concatbystudynumasc") {
+
+    }
+    else if (mergeMethod == "concatbystudynumdesc") {
+
+    }
+
+
+//    QStringList ids = mergeIDs.split(",");
+//    if (ids.size() > 0) {
+
+//        foreach (QString id, ids) {
+
+//            /* make sure the target subjectid is not in the list of merge ids */
+//            if (id == subjectid)
+//                continue;
+
+//            /* get list of studies for this subject */
+//            q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
+//            q.bindValue(":subjectid", id.toInt());
+//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+//            if (q.size() > 0) {
+//                n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
+//                while (q.next()) {
+//                    int studyid = q.value("study_id").toInt();
+//                    QString m;
+//                    if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
+//                        n->WriteLog("Error moving study to subject [" + m + "]");
+//                        return false;
+//                    }
+//                }
+//            }
+//            n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
+
+//            /* delete the subject that has just been merged */
+//            q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
+//            q.bindValue(":subjectid", id.toInt());
+//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+//        }
+//    }
+
+//    /* update the final subject with the info */
+//    q.prepare("update subjects set name = :name, birthdate = :dob, gender = :sex, ethnicity1 = :ethnicity1, ethnicity2 = :ethnicity2, guid = :guid where subject_id = :subjectid");
+//    q.bindValue(":subjectid", subjectid);
+//    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+//    /* update the Global (subject level) alternate UIDs */
+
+//    /* delete entries for this subject from the altuid table ... */
+//    q.prepare("delete from subject_altuid where subject_id = :subjectid");
+//    q.bindValue(":subjectid",subjectid);
+//    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+//    /* ... and insert the new rows into the altuids table */
+//    QStringList altuids = mergeAltUIDs.split(",");
+//    foreach (QString altuid, altuids) {
+//        altuid = altuid.trimmed();
+//        if (altuid != "") {
+//            if (altuid.contains("*")) {
+//                altuid.replace("*","");
+//                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 1, -1)");
+//            }
+//            else {
+//                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 0, -1)");
+//            }
+//            q.bindValue(":subjectid", subjectid);
+//            q.bindValue(":altuid", altuid);
+//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+//        }
+//    }
+
+    return true;
 }

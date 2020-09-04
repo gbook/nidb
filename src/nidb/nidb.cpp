@@ -1497,11 +1497,28 @@ QString nidb::JoinIntArray(QList<int> a, QString glue) {
 QList<int> nidb::SplitStringArrayToInt(QStringList a) {
 	QList<int> i;
 
-	if (a.size() > 0)
-		foreach (QString v, a)
+    if (a.size() > 0) {
+        foreach (QString v, a) {
 			i.append(v.trimmed().toInt());
+        }
+    }
 
 	return i;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SplitStringToIntArray -------------------------- */
+/* ---------------------------------------------------------- */
+QList<int> nidb::SplitStringToIntArray(QString a) {
+    QList<int> i;
+
+    if (a.size() > 0) {
+        QStringList sl = a.split(',');
+        i = SplitStringArrayToInt(sl);
+    }
+
+    return i;
 }
 
 

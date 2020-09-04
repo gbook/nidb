@@ -971,11 +971,14 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		pixelY = pix[1].toInt();
 	}
 	QStringList amat = AcquisitionMatrix.split(" ");
-	int mat1(0), mat2(0), mat3(0), mat4(0);
+    int mat1(0);
+    //int mat2(0);
+    //int mat3(0);
+    int mat4(0);
 	if (amat.size() == 4) {
 		mat1 = amat[0].toInt();
-		mat2 = amat[1].toInt();
-		mat3 = amat[2].toInt();
+        //mat2 = amat[1].toInt();
+        //mat3 = amat[2].toInt();
 		mat4 = amat[3].toInt();
 	}
 	if (SeriesNumber == 0) {
@@ -1904,7 +1907,11 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	int RepetitionTime(0);
 	int Columns(0), Rows(0);
 	int pixelX(0), pixelY(0);
-	double SliceThickness(0.0), xspacing(0.0), yspacing(0.0), EchoTime(0.0), FlipAngle(0.0);
+    double SliceThickness(0.0);
+    //double xspacing(0.0);
+    //double yspacing(0.0);
+    double EchoTime(0.0);
+    double FlipAngle(0.0);
 
     //int importInstanceID(0);
 	int importSiteID(0);
@@ -2031,8 +2038,8 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 				if (p.size() > 9) pixelX = p[9].trimmed().toInt(); /* 10 - xsize */
 				if (p.size() > 10) pixelY = p[10].trimmed().toInt(); /* 11 - ysize */
 				if (p.size() > 22) SliceThickness = p[22].trimmed().toDouble(); /* 23 - slice thickness */
-				if (p.size() > 28) xspacing = p[28].trimmed().toDouble(); /* 29 - xspacing */
-				if (p.size() > 29) yspacing = p[29].trimmed().toDouble(); /* 30 - yspacing */
+                //if (p.size() > 28) xspacing = p[28].trimmed().toDouble(); /* 29 - xspacing */
+                //if (p.size() > 29) yspacing = p[29].trimmed().toDouble(); /* 30 - yspacing */
 				if (p.size() > 30) EchoTime = p[30].trimmed().toDouble(); /* 31 - TE */
 				if (p.size() > 35) FlipAngle = p[35].trimmed().toInt(); /* 36 - flip */
 
