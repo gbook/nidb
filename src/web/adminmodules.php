@@ -206,7 +206,7 @@
 		//print_r($files);
 		foreach ($files as $file) {
 			if (stripos($file, $scriptname) !== false) {
-				?><div class="message">Deleting lock file [<?=$file?>]</div><?
+				DisplayNotice("Notice", "Deleting lock file [$file]");
 				unlink($file);
 			}
 		}

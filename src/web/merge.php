@@ -43,7 +43,7 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
@@ -159,8 +159,6 @@
 	/* ------- SubmitMergeStuidies ---------------- */
 	/* -------------------------------------------- */
 	function SubmitMergeStudies($studyids, $selectedstudyid, $mergemethod) {
-
-		PrintVariable($studyids);
 		
 		/* remove the 'selectedid' */
 		foreach ($studyids as $key => $id) {
@@ -179,9 +177,7 @@
 		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		?>
-		<b>Merge queued</b>
-		<?
+		DisplayNotice("Notice", "Merge queued");
 	}
 
 

@@ -119,14 +119,14 @@
 		/* insert the new group */
 		$sqlstring = "insert ignore into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-		?><div align="center"><span class="message"><?=$groupname?> added</span></div><br><br><?
+		DisplayNotice("Notice", "$groupname added");
 	}
 
 	/* -------------------------------------------- */
 	/* ------- AddSubjectsToGroup ----------------- */
 	/* -------------------------------------------- */
 	function AddSubjectsToGroup($groupid, $uids, $seriesids, $modality) {
+		$msg = "";
 		/* if the request came from the subjects.php page */
 		if (!empty($uids)) {
 			foreach ($uids as $uid) {
@@ -139,13 +139,13 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> already in this group</span></div><?
+					$msg .= "$groupid-$uid already in this group<br>";
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
+					$msg .= "$groupid-$uid added<br>";
 				}
 			}
 		}
@@ -162,16 +162,17 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> already in this group</span></div><?
+					$msg .= "$groupid-$uid already in this group<br>";
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$uid?> added</span></div><?
+					$msg .= "$groupid-$uid added<br>";
 				}
 			}
 		}
+		DisplayNotice("Notice", $msg);
 	}
 
 	
@@ -181,6 +182,7 @@
 	function AddStudiesToGroup($groupid, $seriesids, $studyids, $modality) {
 		$modality = strtolower($modality);
 
+		$msg = "";
 		if (is_array($seriesids)) {
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
@@ -193,13 +195,13 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
+					$msg .= "$groupid-$studyid already in this group<br>";
 				}
 				else {
 					/* insert the seriesids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', '')";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
+					$msg .= "$groupid-$studyid added<br>";
 				}
 			}
 		}
@@ -216,16 +218,17 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> already in this group</span></div><?
+					$msg .= "$groupid-$studyid already in this group<br>";
 				}
 				else {
 					/* insert the studyids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					?><div align="center"><span class="message"><?=$groupid?>-<?=$studyid?> added</span></div><?
+					$msg .= "$groupid-$studyid added<br>";
 				}
 			}
 		}
+		DisplayNotice("Notice", $msg);
 	}
 
 	/* -------------------------------------------- */
@@ -258,7 +261,7 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		if (trim($id) == "") {
-			?><div align="center"><span class="message">ID blank</span></div><?
+			DisplayError("Error", "ID blank");
 			return;
 		}
 

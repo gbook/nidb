@@ -1023,7 +1023,7 @@
 		$msg = ValidateSearchVariables($s);
 		
 		if ($msg != "") {
-			?><div class="staticmessage"><?=$msg?></div><?
+			DisplayError("Search error", $msg);
 		}
 		else {
 		}

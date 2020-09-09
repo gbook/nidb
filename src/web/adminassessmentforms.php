@@ -100,7 +100,7 @@
 		$sqlstring = "update assessment_forms set form_title = '$formtitle', form_desc = '$formdesc' where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
+		DisplayNotice("Notice", "$formtitle updated");
 	}
 
 
@@ -117,7 +117,7 @@
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle', '$formdesc', '$username', now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><br><br><?
+		DisplayNotice("Notice", "$formtitle added");
 	}
 
 	
@@ -145,7 +145,7 @@
 			}
 		}
 		
-		?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
+		DisplayNotice("Notice", "$formtitle updated");
 	}
 	
 
@@ -155,7 +155,8 @@
 	function DeleteForm($id) {
 		$sqlstring = "delete from assessment_forms where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div align="center"><span class="message"><?=$id?> deleted</span></div><br><br><?
+
+		DisplayNotice("Notice", "$id deleted");
 	}	
 
 
@@ -165,7 +166,8 @@
 	function PublishForm($id) {
 		$sqlstring = "update assessment_forms set form_ispublished = 1 where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div align="center"><span class="message"><?=$id?> published</span></div><br><br><?
+
+		DisplayNotice("Notice", "$id published");
 	}	
 	
 	
