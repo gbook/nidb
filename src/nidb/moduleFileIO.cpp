@@ -562,6 +562,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
 	QSqlQuery q;
 	study s(studyid, n); /* get the study info */
 	if (!s.isValid) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
+    QString modality = s.modality.toLower();
 
 	QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(n->GenerateRandomString(10));
 	QDir d;
@@ -570,7 +571,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
 
 		// move all archive data to the deleted directory
 		// delete all series
-		q.prepare("delete from mr_series where study_id = :studyid");
+        q.prepare(QString("delete from %1_series where study_id = :studyid").arg(modality));
 		q.bindValue(":studyid", studyid);
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
@@ -1028,25 +1029,75 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
     allStudyIDs.append(studyid);
     allStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
 
+    int destStudyID = studyid;
     /* merge by SERIES datetime */
     if (mergeMethod == "sortbyseriesdate") {
         QString mergeIDList = n->JoinIntArray(allStudyIDs, ",");
 
         int newSeriesNum = 1;
+        int tmpSeriesNum = 100000;
+        QMap<int, int> tmpSeriesNumMap;
+        QMap<int, int> newSeriesNumMap;
         /* get list of all series sorted by series date */
         q.prepare(QString("select * from %1_series a left join studies b on a.study_id = b.study_id where b.study_id in (%2) order by a.series_datetime asc").arg(modality).arg(mergeIDList));
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
         if (q.size() > 0) {
             while (q.next()) {
-                int studyID = q.value("study_id").toInt();
+                /* renumber the series to tmp seriesNumbers, and move them to the new study */
+                int sourceStudyID = q.value("study_id").toInt();
                 int studyNum = q.value("study_num").toInt();
-                int seriesID = q.value(modality + "_seriesid").toInt();
+                int seriesID = q.value(modality + "series_id").toInt();
                 int seriesNum = q.value("series_num").toInt();
                 QString seriesDesc = q.value("series_desc").toString();
-                QString seriesDateTime = q.value("series_desc").toDateTime().toString();
+                QString seriesDateTime = q.value("series_datetime").toDateTime().toString();
 
-                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] to studynum [%5]. New seriesnum [%6]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(finalStudyNum).arg(newSeriesNum));
+                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
+
+                newSeriesNumMap[seriesID] = newSeriesNum;
+                tmpSeriesNumMap[seriesID] = tmpSeriesNum;
+                n->WriteLog(QString("Mapping seriesID [%1] to tmpSeriesNum [%2]  and newSeriesNum [%3]").arg(seriesID).arg(tmpSeriesNum).arg(newSeriesNum));
+
+                /* FIRST - move the series directory */
+                series s(seriesID, modality, n);
+                s.ChangeSeriesPath(destStudyID, tmpSeriesNum);
+
+                /* SECOND - change the studyid to the new study, and seriesnum to the tmpSeriesNum */
+                QSqlQuery q2;
+                q2.prepare(QString("update %1_series set study_id = :newstudyid, series_num = :tmpseriesnum where %1series_id = :seriesid").arg(modality));
+                q2.bindValue(":newstudyid", destStudyID);
+                q2.bindValue(":tmpseriesnum", tmpSeriesNum);
+                q2.bindValue(":seriesid", seriesID);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+
+                tmpSeriesNum++;
                 newSeriesNum++;
+            }
+
+            /* renumber series to newSeriesNum */
+            QMapIterator<int, int> it(newSeriesNumMap);
+            while (it.hasNext()) {
+                it.next();
+                int seriesID = it.key();
+                int newSeriesNum = it.value();
+
+                /* FIRST - move the series path */
+                series s(seriesID, modality, n);
+                s.ChangeSeriesPath(destStudyID, newSeriesNum);
+
+                /* SECOND - update the database with the new series number */
+                q.prepare(QString("update %1_series set series_num = :seriesnum where %1series_id = :seriesid").arg(modality));
+                q.bindValue(":seriesnum", newSeriesNum);
+                q.bindValue(":seriesid", seriesID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            }
+
+            /* delete the, now, extraneous studies */
+            QList<int> deleteStudyIDs;
+            deleteStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+            foreach (int delStudyID, deleteStudyIDs) {
+                QString m;
+                if (!DeleteStudy(delStudyID, m))
+                    n->WriteLog("Error deleting study, with message [" + m + "]");
             }
         }
     }
@@ -1063,69 +1114,10 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
 
     }
 
-
-//    QStringList ids = mergeIDs.split(",");
-//    if (ids.size() > 0) {
-
-//        foreach (QString id, ids) {
-
-//            /* make sure the target subjectid is not in the list of merge ids */
-//            if (id == subjectid)
-//                continue;
-
-//            /* get list of studies for this subject */
-//            q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
-//            q.bindValue(":subjectid", id.toInt());
-//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-//            if (q.size() > 0) {
-//                n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
-//                while (q.next()) {
-//                    int studyid = q.value("study_id").toInt();
-//                    QString m;
-//                    if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
-//                        n->WriteLog("Error moving study to subject [" + m + "]");
-//                        return false;
-//                    }
-//                }
-//            }
-//            n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
-
-//            /* delete the subject that has just been merged */
-//            q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
-//            q.bindValue(":subjectid", id.toInt());
-//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-//        }
-//    }
-
-//    /* update the final subject with the info */
-//    q.prepare("update subjects set name = :name, birthdate = :dob, gender = :sex, ethnicity1 = :ethnicity1, ethnicity2 = :ethnicity2, guid = :guid where subject_id = :subjectid");
-//    q.bindValue(":subjectid", subjectid);
-//    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-//    /* update the Global (subject level) alternate UIDs */
-
-//    /* delete entries for this subject from the altuid table ... */
-//    q.prepare("delete from subject_altuid where subject_id = :subjectid");
-//    q.bindValue(":subjectid",subjectid);
-//    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-//    /* ... and insert the new rows into the altuids table */
-//    QStringList altuids = mergeAltUIDs.split(",");
-//    foreach (QString altuid, altuids) {
-//        altuid = altuid.trimmed();
-//        if (altuid != "") {
-//            if (altuid.contains("*")) {
-//                altuid.replace("*","");
-//                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 1, -1)");
-//            }
-//            else {
-//                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 0, -1)");
-//            }
-//            q.bindValue(":subjectid", subjectid);
-//            q.bindValue(":altuid", altuid);
-//            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-//        }
-//    }
+    /* start a transaction */
+    //QSqlDatabase::database().transaction();
+    /* commit the transaction */
+    //QSqlDatabase::database().commit();
 
     return true;
 }

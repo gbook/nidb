@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "series.h"
+#include "study.h"
 #include <QSqlQuery>
 
 
@@ -33,7 +34,6 @@ series::series(int id, QString m, nidb *a)
 	seriesid = id;
 	modality = m.toLower();
 	LoadSeriesInfo();
-	//PrintSeriesInfo();
 }
 
 
@@ -120,4 +120,20 @@ void series::PrintSeriesInfo() {
 	output += QString("   datapath: [%1]\n").arg(datapath);
 
 	n->WriteLog(output);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ChangeSeriesPath ------------------------------- */
+/* ---------------------------------------------------------- */
+bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
+    study s(studyid, n);
+    QString newSeriesPath = QString("%1/%2").arg(s.studypath).arg(newSeriesNum);
+
+    n->WriteLog("Changing series path from [" + seriespath + "] to [" + newSeriesPath + "]");
+
+    if (n->RenameFile(seriespath, newSeriesPath))
+        return true;
+    else
+        return false;
 }

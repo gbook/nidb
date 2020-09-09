@@ -97,7 +97,8 @@
 				break;
 			case 'deleteprojecttemplate':
 				DeleteProjectTemplate($ptid);
-				DisplayProjectTemplateList($projectid);
+				DisplayStudyTemplateList($projectid);
+				DisplayProjectStudyTemplateList($projectid);
 				break;
 			default:
 				DisplayStudyTemplateList($projectid);
@@ -572,6 +573,27 @@
 		}
 		else {
 			?><span class="message">Invalid study template ID</span><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteProjectTemplate -------------- */
+	/* -------------------------------------------- */
+	function DeleteProjectTemplate($templateid) {
+		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
+		
+		if ($templateid > 0) {
+			$sqlstring = "delete from project_templatestudyitems where pts_id = $templateid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+			$sqlstring = "delete from project_template where projecttemplate_id = $templateid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			DisplayNotice("Notice", "Project Template deleted");
+		}
+		else {
+			DisplayError("Error", "Invalid project template ID");
 		}
 	}
 	

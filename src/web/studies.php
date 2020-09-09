@@ -216,7 +216,9 @@
 			$sqlstring1 = "update $stmod"."_series set series_datetime = '$studydatetime' where study_id = $studyid";
 			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
 		}
-		?><div align="center"><span class="message">Study Saved</span></div><br><br><?
+
+		DisplayNotice("Notice", "Study Updated");
+		
 	}	
 	
 	
@@ -268,36 +270,33 @@
 		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message">Study updated</span></div><?
+		DisplayNotice("Notice", "Study Updated");
 	}
 
 
-        /* -------------------------------------------- */
-        /* ------- UpdateStSe ------------------------ */
-        /* -------------------------------------------- */
-        function UpdateStSe($id, $studydatetime, $studytype,$copy_date,$study_modality) {
-                /* perform data checks */
-                $studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
-                $studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
+	/* -------------------------------------------- */
+	/* ------- UpdateStSe ------------------------ */
+	/* -------------------------------------------- */
+	function UpdateStSe($id, $studydatetime, $studytype,$copy_date,$study_modality) {
+		/* perform data checks */
+		$studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
+		$studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
 		$copy_date = mysqli_real_escape_string($GLOBALS['linki'], $copy_date);
 		$study_modality = mysqli_real_escape_string($GLOBALS['linki'], $study_modality);
 		$studydatetime = date("Y-m-d H:i",strtotime($studydatetime));
 
-/*		PrintVariable($studydatetime);
-		PrintVariable($study_modality);	
-		*/
-/* Update Command */
+		/* Update Command */
 		$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $id";
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		 if ($copy_date=="Y"){
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if ($copy_date=="Y"){
 			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
-                        $result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);	
-			?><div align="center"><span class="message">Study and Series Updated <?$copy_date?></span></div><br><br><?
-			}
-		else {
-                ?><div align="center"><span class="message">Study Updated <?$copy_date?></span></div><br><br><?
+			$result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);
+			DisplayNotice("Notice", "Study and series updated [$copy_date]");
 		}
-        }
+		else {
+			DisplayNotice("Notice", "Study updated [$copy_date]");
+		}
+	}
 
 
 	/* -------------------------------------------- */

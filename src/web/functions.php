@@ -2445,6 +2445,20 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNotice ---------------------- */
+	/* -------------------------------------------- */
+	function DisplayNotice($title, $msg) {
+		?>
+		<fieldset class="notice">
+			<legend class="notice"><?=$title?></legend>
+			<?=$msg?>
+		</fieldset>
+		<?
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- ValidDOB --------------------------- */
 	/* -------------------------------------------- */

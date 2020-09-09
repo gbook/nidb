@@ -52,6 +52,9 @@ public:
 
 	bool isValid = true;
 	QString msg;
+
+    bool ChangeSeriesPath(int studyid, int newSeriesNum);
+
 private:
 	void LoadSeriesInfo();
 };

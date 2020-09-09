@@ -757,11 +757,14 @@ bool nidb::RenameFile(QString filepathorig, QString filepathnew, bool force) {
 	else
 		systemstring = QString("mv %1 %2").arg(filepathorig).arg(filepathnew);
 
-
-	if (SystemCommand(systemstring, false).trimmed() == "")
+    QString output = SystemCommand(systemstring, false).trimmed();
+    /* check if there's an error message from mv */
+    if (output == "")
 		return true;
-	else
+    else {
+        WriteLog("RenameFile() error. Running [" + systemstring + "] produced output [" + output + "]");
 		return false;
+    }
 }
 
 

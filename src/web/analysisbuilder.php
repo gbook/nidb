@@ -1685,6 +1685,9 @@
 					}
 				}
 			}
+			elseif ($s == "*") {
+				$strings[] = "($variable like '%')";
+			}
 		}
 		
 		return implode2(" or ", $strings);

@@ -72,6 +72,11 @@ public:
 	void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
 	void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
 
+    /* generic nidb functions */
+    QString CreateUID(QString prefix, int numletters=3);
+    QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
+    QString GetGroupListing(int groupid);
+
 	/* generic functions */
 	void Print(QString s, bool n=true, bool pad=false);
 	QString CreateCurrentDateTime(int format=1);
@@ -82,11 +87,9 @@ public:
 	QString SystemCommand(QString s, bool detail=true, bool truncate=false);
 	bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
 	QString GenerateRandomString(int n);
-	QString CreateUID(QString prefix, int numletters=3);
 	void SortQStringListNaturally(QStringList &s);
 	bool SendEmail(QString to, QString subject, QString body);
 	QString RemoveNonAlphaNumericChars(QString s);
-	QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
 	QString ParseDate(QString s);
 	QString ParseTime(QString s);
 	QString JoinIntArray(QList<int> a, QString glue);
@@ -98,7 +101,6 @@ public:
 	bool IsInt(QString s);
 	bool IsDouble(QString s);
 	bool IsNumber(QString s);
-	QString GetGroupListing(int groupid);
 	QString WrapText(QString s, int col);
 	bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
 
