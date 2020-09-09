@@ -1,5 +1,5 @@
 Name:           nidb
-Version:        2020.9.556
+Version:        2020.9.559
 Release:        1%{?dist}
 Summary:        NeuroInformatics Database
 
