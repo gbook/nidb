@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 04, 2020 at 06:55 PM
+-- Generation Time: Sep 16, 2020 at 08:55 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2213,8 +2213,8 @@ CREATE TABLE `protocol_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
   `protocolname` varchar(255) NOT NULL,
-  `shortname` int(11) DEFAULT NULL,
-  `modality` varchar(255) DEFAULT NULL
+  `shortname` varchar(255) NOT NULL,
+  `modality` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
@@ -2770,6 +2770,81 @@ CREATE TABLE `task_series` (
   `ishidden` tinyint(1) NOT NULL,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `uploads`
+--
+
+CREATE TABLE `uploads` (
+  `upload_id` int(11) NOT NULL,
+  `upload_startdate` datetime DEFAULT NULL,
+  `upload_enddate` datetime DEFAULT NULL,
+  `upload_status` enum('uploading','error','uploadcomplete','archivecomplete') DEFAULT NULL,
+  `upload_log` text DEFAULT NULL,
+  `upload_source` enum('web','api','nfs','') DEFAULT NULL,
+  `upload_nfsdir` varchar(255) DEFAULT NULL,
+  `upload_destprojectid` int(11) NOT NULL,
+  `upload_modality` varchar(255) DEFAULT NULL,
+  `upload_guessmodality` tinyint(1) DEFAULT NULL,
+  `upload_subjectcriteria` enum('patientid','namesexdob','') DEFAULT NULL,
+  `upload_studycriteria` enum('studydate','studyuid','') DEFAULT NULL,
+  `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `upload_series`
+--
+
+CREATE TABLE `upload_series` (
+  `uploadseries_id` int(11) NOT NULL,
+  `uploadstudy_id` int(11) NOT NULL,
+  `uploadseries_desc` varchar(255) DEFAULT NULL,
+  `uploadseries_protocol` varchar(255) DEFAULT NULL,
+  `uploadseries_num` int(11) DEFAULT NULL,
+  `uploadseries_date` datetime DEFAULT NULL,
+  `uploadseries_numfiles` int(11) DEFAULT NULL,
+  `uploadseries_tr` double DEFAULT NULL,
+  `uploadseries_te` double DEFAULT NULL,
+  `uploadseries_slicespacing` double DEFAULT NULL,
+  `uploadseries_slicethickness` double DEFAULT NULL,
+  `uploadseries_rows` int(11) DEFAULT NULL,
+  `uploadseries_cols` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `upload_studies`
+--
+
+CREATE TABLE `upload_studies` (
+  `uploadstudy_id` int(11) NOT NULL,
+  `uploadsubject_id` int(11) NOT NULL,
+  `uploadstudy_desc` varchar(255) DEFAULT NULL,
+  `uploadstudy_date` datetime DEFAULT NULL,
+  `uploadstudy_modality` varchar(255) DEFAULT NULL,
+  `uploadstudy_datatype` varchar(255) DEFAULT NULL COMMENT 'dicom, parrec, etc',
+  `uploadstudy_equipment` varchar(255) DEFAULT NULL COMMENT 'aka, site',
+  `uploadstudy_operator` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `upload_subjects`
+--
+
+CREATE TABLE `upload_subjects` (
+  `uploadsubject_id` int(11) NOT NULL,
+  `upload_id` int(11) NOT NULL,
+  `uploadsubject_patientid` varchar(255) DEFAULT NULL,
+  `uploadsubject_name` varchar(255) DEFAULT NULL,
+  `uploadsubject_dob` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -3938,6 +4013,30 @@ ALTER TABLE `task_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
+-- Indexes for table `uploads`
+--
+ALTER TABLE `uploads`
+  ADD PRIMARY KEY (`upload_id`);
+
+--
+-- Indexes for table `upload_series`
+--
+ALTER TABLE `upload_series`
+  ADD PRIMARY KEY (`uploadseries_id`);
+
+--
+-- Indexes for table `upload_studies`
+--
+ALTER TABLE `upload_studies`
+  ADD PRIMARY KEY (`uploadstudy_id`);
+
+--
+-- Indexes for table `upload_subjects`
+--
+ALTER TABLE `upload_subjects`
+  ADD PRIMARY KEY (`uploadsubject_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -4778,6 +4877,30 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `uploads`
+--
+ALTER TABLE `uploads`
+  MODIFY `upload_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `upload_series`
+--
+ALTER TABLE `upload_series`
+  MODIFY `uploadseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `upload_studies`
+--
+ALTER TABLE `upload_studies`
+  MODIFY `uploadstudy_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `upload_subjects`
+--
+ALTER TABLE `upload_subjects`
+  MODIFY `uploadsubject_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
