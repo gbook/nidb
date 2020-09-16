@@ -396,8 +396,12 @@ bool moduleMRIQA::QA(int seriesid) {
 	q.bindValue(":mrqaid",mrqaid);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 
+    qint64 dirsize = 0;
+    int nfiles;
+    n->GetDirSizeAndFileCount(indir, nfiles, dirsize);
+
 	/* update the mr_series table with the image dimensions */
-	q.prepare("update mr_series set dimN = :n, dimX = :x, dimY = :y, dimZ = :z, dimT = :t, series_spacingx = :voxX, series_spacingy = :voxY, series_spacingz = :voxZ, bold_reps = :t where mrseries_id = :seriesid");
+    q.prepare("update mr_series set dimN = :n, dimX = :x, dimY = :y, dimZ = :z, dimT = :t, series_spacingx = :voxX, series_spacingy = :voxY, series_spacingz = :voxZ, bold_reps = :t, numfiles = :numfiles, series_size = :seriessize where mrseries_id = :seriesid");
 	q.bindValue(":seriesid",seriesid);
 	q.bindValue(":n", dimN);
 	q.bindValue(":x", dimX);
@@ -408,6 +412,9 @@ bool moduleMRIQA::QA(int seriesid) {
 	q.bindValue(":voxX", voxX);
 	q.bindValue(":voxY", voxY);
 	q.bindValue(":voxZ", voxZ);
+    q.bindValue(":numfiles", nfiles);
+    q.bindValue(":seriessize", dirsize);
+
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
 	msgs << n->WriteLog("======================== Finished [" + indir + "] ========================");

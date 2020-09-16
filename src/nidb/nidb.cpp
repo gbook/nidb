@@ -1636,7 +1636,12 @@ bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 		num = c.mid(1).toInt(&ok);
 		if (!ok) return false;
 	}
-	else {
+    else if (c.left(1) == "=") { /* someone will inevitably put unspecified format in there */
+        comp = "=";
+        num = c.mid(1).toInt(&ok);
+        if (!ok) return false;
+    }
+    else {
 		num = c.toInt(&ok);
 		if (ok)
 			comp = "=";

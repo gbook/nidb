@@ -22,6 +22,8 @@ INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`
 (18, 'CONSENT', 'Consent form', 1),
 (19, 'TASK', 'Task', 1);
 
+delete from modules;
+
 INSERT IGNORE INTO `modules` (`module_id`, `module_name`, `module_status`, `module_numrunning`, `module_laststart`, `module_laststop`, `module_isactive`) VALUES
 (1, 'audit', 'stopped', 0, now(), now(), 0),
 (2, 'dailybackup', 'stopped', 0, now(), now(), 0),

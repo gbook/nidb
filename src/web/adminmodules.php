@@ -91,7 +91,7 @@
 		$sqlstring = "update modules set module_name = '$modulename', module_desc = '$moduledesc', module_admin = '$admin' where module_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$modulename?> updated</span></div><br><br><?
+		DisplayNotice("Notice", "$modulename updated");
 	}
 
 
@@ -107,7 +107,7 @@
 		$sqlstring = "insert into modules (module_name, module_desc, module_admin, module_createdate, module_status) values ('$modulename', '$moduledesc', '$admin', now(), 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$modulename?> added</span></div><br><br><?
+		DisplayNotice("Notice", "$modulename added");
 	}
 
 	
@@ -190,7 +190,7 @@
 	function ResetModule($id) {
 		
 		if (($id <= 0) || ($id == "")) {
-			?><div class="message">ID was not valid [<?=$id?>]</div><?
+			DisplayError("Error", "ID was not valid [$id]");
 		}
 		
 		/* get module name */

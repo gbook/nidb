@@ -30,6 +30,7 @@ SOURCES += \
     moduleMiniPipeline.cpp \
     modulePipeline.cpp \
     moduleQC.cpp \
+    moduleUpload.cpp \
     nidb.cpp \
     pipeline.cpp \
     remotenidbconnection.cpp \
@@ -63,6 +64,7 @@ HEADERS += \
     moduleMiniPipeline.h \
     modulePipeline.h \
     moduleQC.h \
+    moduleUpload.h \
     nidb.h \
     pipeline.h \
     remotenidbconnection.h \

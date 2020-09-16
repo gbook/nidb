@@ -161,7 +161,9 @@
     $c['webdir'] = GetVariable("webdir");
     $c['webdownloaddir'] = GetVariable("webdownloaddir");
     $c['downloaddir'] = GetVariable("downloaddir");
+    $c['uploaddir'] = GetVariable("uploaddir");
     $c['uploadeddir'] = GetVariable("uploadeddir");
+    $c['uploadstagingdir'] = GetVariable("uploadstagingdir");
     $c['tmpdir'] = GetVariable("tmpdir");
     $c['deleteddir'] = GetVariable("deleteddir");
 
@@ -388,7 +390,9 @@
 [problemdir] = $problemdir
 [nidbdir] = $nidbdir
 [tmpdir] = $tmpdir
+[uploaddir] = $uploaddir
 [uploadeddir] = $uploadeddir
+[uploadstagingdir] = $uploadstagingdir
 [webdir] = $webdir
 [webdownloaddir] = $webdownloaddir
 ";
@@ -1073,10 +1077,22 @@
 				<td>Directory which stores downloads available from the website</td>
 			</tr>
 			<tr>
+				<td class="variable">uploaddir</td>
+				<td><input type="text" name="uploaddir" value="<?=$GLOBALS['cfg']['uploaddir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['uploaddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Uploaded data is placed here</td>
+			</tr>
+			<tr>
 				<td class="variable">uploadeddir</td>
 				<td><input type="text" name="uploadeddir" value="<?=$GLOBALS['cfg']['uploadeddir']?>" size="45"></td>
 				<td><? if (file_exists($GLOBALS['cfg']['uploadeddir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
 				<td>Data received from the api.php and import pages is placed here</td>
+			</tr>
+			<tr>
+				<td class="variable">uploadstagingdir</td>
+				<td><input type="text" name="uploadstagingdir" value="<?=$GLOBALS['cfg']['uploadstagingdir']?>" size="45"></td>
+				<td><? if (file_exists($GLOBALS['cfg']['uploadstagingdir'])) { ?><span style="color:green">&#x2713;</span><? } else { ?><span style="color:red">&#x2717;</span><? } ?></td>
+				<td>Data being imported into NiDB is copied here for staging and preparation for archiving. Files are unzipped, parsed, and cataloged prior to import into NiDB so that the user can view the upload contents.</td>
 			</tr>
 			<tr>
 				<td class="variable">tmpdir</td>

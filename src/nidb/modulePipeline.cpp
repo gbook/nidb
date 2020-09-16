@@ -862,7 +862,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 				sqlstring += " and image_type in (" + imagetypes + ")";
 			}
 			if (validComparisonStr)
-				sqlstring += QString(" and numfiles %1 %2").arg(comparison).arg(num);
+                sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2))").arg(comparison).arg(num);
 
 			q.prepare(sqlstring);
 			q.bindValue(":studyid", studyid);
@@ -958,7 +958,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 		if (n->GetSQLComparison(numboldreps, comparison, num))
 			validComparisonStr = true;
 
-		dlog << QString("Downloading data for step [%1]").arg(i);
+        dlog << QString("Downloading data for step [%1]  NumBoldReps [%2]  Comparison [%3]  num [%4]  valid [%5]").arg(i).arg(numboldreps).arg(comparison).arg(num).arg(validComparisonStr);
 
 		/* check to see if we should even run this step */
 		if (!enabled) {
@@ -1072,7 +1072,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 					sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
 				if (validComparisonStr)
-					sqlstring += QString(" and numfiles %1 %2").arg(comparison).arg(num);
+                    sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2))").arg(comparison).arg(num);
 
 				q.prepare(sqlstring);
 				q.bindValue(":subjectid", s.subjectid);
@@ -1087,7 +1087,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 					sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
 				if (validComparisonStr)
-					sqlstring += QString(" and numfiles %1 %2").arg(comparison).arg(num);
+                    sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2))").arg(comparison).arg(num);
 
 				sqlstring += " and `studies`.study_type = :studytype";
 

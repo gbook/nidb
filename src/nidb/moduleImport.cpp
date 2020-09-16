@@ -403,16 +403,23 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 /* ---------------------------------------------------------- */
 bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
 
-	if (!QFile::exists(file)) {
-		n->WriteLog(QString("File [%1] does not exist - check C!").arg(file));
+    QFileInfo fi(file);
+    if (!fi.exists()) {
+        n->WriteLog(QString("File [%1] does not exist").arg(file));
 		return false;
 	}
+    if (!fi.isReadable()) {
+        n->WriteLog(QString("File [%1] is not readable").arg(file));
+        return false;
+    }
 
 	/* check if the file is readable */
 	gdcm::Reader r;
 	r.SetFileName(file.toStdString().c_str());
-	if (!r.Read())
-		return false;
+    if (!r.Read()) {
+        n->WriteLog(QString("File [%1] is unreadable by GDCM").arg(file));
+        return false;
+    }
 
 	gdcm::StringFilter sf;
 	sf = gdcm::StringFilter();
