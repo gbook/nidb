@@ -1001,7 +1001,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 			else if (criteria == "smallestsize")
 				sqlstring += " order by series_size asc, numfiles asc, img_slices asc limit 1";
 			else if (criteria == "usesizecriteria")
-				sqlstring += QString(" and numfiles %1 %2 order by series_num asc").arg(comparison).arg(num);
+                sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2)) order by series_num asc").arg(comparison).arg(num);
 			else
 				sqlstring += " order by series_num asc";
 

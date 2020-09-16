@@ -346,6 +346,7 @@
 		}
 		else {
 			?>
+			<br>
 			Displaying [<?=$numrows?>] rows<br><br>
 			<table cellspacing="0" cellpadding="4" style="border-collapse:collapse; font-size:<?=$size?>pt; white-space:nowrap;">
 				<tr>
