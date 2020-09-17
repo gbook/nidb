@@ -107,15 +107,17 @@ public:
 	/* file and directory operations */
 	bool MakePath(QString p, QString &msg, bool perm777=true);
 	bool RemoveDir(QString p, QString &msg);
-	QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
+    QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 	QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
 	bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
 	bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 	bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 	bool MoveFile(QString f, QString dir);
-	void GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse=false);
-	QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
+    void GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse=false);
+    //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
+    QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
 	bool chmod(QString f, QString perm);
+    QString UnzipDirectory(QString dir, bool recurse=false);
 
 	/* DICOM functions */
 	bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);

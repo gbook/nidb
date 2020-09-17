@@ -913,6 +913,35 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
 
 
 /* ---------------------------------------------------------- */
+/* --------- UnzipDirectory --------------------------------- */
+/* ---------------------------------------------------------- */
+/* perform one pass through a directory and attempt to unzip
+ * any zipped files in it */
+QString UnzipDirectory(QString dir, bool recurse=false) {
+
+    QStringList msgs;
+    if (recurse) {
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar.gz' -exec tar -zxf {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.gz' -exec gunzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.z' -exec gunzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.zip' -exec unzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar.bz2' -exec tar -xjf {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar' -exec tar -xf {} . \;").arg(dir);
+    }
+    else {
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar.gz' -maxdepth 0 -exec tar -zxf {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.gz' -maxdepth 0 -exec gunzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.z' -maxdepth 0 -exec gunzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.zip' -maxdepth 0 -exec unzip {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar.bz2' -maxdepth 0 -exec tar -xjf {} . \;").arg(dir);
+        msgs << SystemCommand(QString("find %1 dir -name '*.tar' -maxdepth 0 -exec tar -xf {} . \;").arg(dir);
+    }
+
+    return msgs.join('\n');
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- SendEmail -------------------------------------- */
 /* ---------------------------------------------------------- */
 /* OpenSSL 1.0.x required for Qt compatibility                */

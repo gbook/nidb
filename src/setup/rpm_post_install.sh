@@ -28,6 +28,14 @@ sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
 sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
 sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& \~E_DEPRECATED \& \~E_STRICT \& \~E_NOTICE/' /etc/php.ini
 
+# change PHP-fpm users
+sed -i 's/user = apache/user = nidb/' /etc/php-fpm.d/www.conf
+sed -i 's/group = apache/group = nidb/' /etc/php-fpm.d/www.conf
+sed -i 's/;listen.owner = nobody/listen.owner = nidb/' /etc/php-fpm.d/www.conf
+sed -i 's/;listen.group = nobody/listen.group = nidb/' /etc/php-fpm.d/www.conf
+sed -i 's/;listen.mode/listen.mode/' /etc/php-fpm.d/www.conf
+sed -i 's/listen.acl_users/;listen.acl_users/' /etc/php-fpm.d/www.conf
+
 # enable and start services
 echo 'Enable and start services'
 systemctl enable httpd.service   # enable the apache web service
@@ -89,4 +97,6 @@ mkdir -p /nidb/data/ftp
 mkdir -p /nidb/data/problem
 mkdir -p /nidb/data/tmp
 mkdir -p /nidb/data/upload
+mkdir -p /nidb/data/uploaded
+mkdir -p /nidb/data/uploadstaging
 chown -R nidb:nidb /var/www/html
