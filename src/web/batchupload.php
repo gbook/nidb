@@ -135,90 +135,99 @@
 			<tbody>
 			<?
 				$seriesidlist = implode2(",", $seriesids);
-				$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				$lastuid = "";
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$uid = $row['uid'];
-					$dob = $row['birthdate'];
-					$age = $row['study_ageatscan'];
-					$studydate = $row['study_datetime'];
-					$studydate = date('M j, Y g:ia',strtotime($row['study_datetime']));
-					$studynum = $row['study_num'];
-					$studyid = $row['study_id'];
-					$seriesnum = $row['series_num'];
-					$seriesdate = date('M j, Y g:ia',strtotime($row['series_datetime']));
-					$seriesdesc = $row['series_desc'];
-					$seriesid = $row[$modality."series_id"];
-					if ($seriesdesc == "")
-						$seriesdesc = $row['series_protocol'];
-					
-					list($studyAge, $calcStudyAge) = GetStudyAge($dob, $age, $studydate);
-					
-					if ($studyAge == null)
-						$studyAge = "-";
-					else
-						$studyAge = number_format($studyAge,1);
+				if ($seriesidlist != "") {
+					$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
+					//PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					$lastuid = "";
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$uid = $row['uid'];
+						$dob = $row['birthdate'];
+						$age = $row['study_ageatscan'];
+						$studydate = $row['study_datetime'];
+						$studydate = date('M j, Y g:ia',strtotime($row['study_datetime']));
+						$studynum = $row['study_num'];
+						$studyid = $row['study_id'];
+						$seriesnum = $row['series_num'];
+						$seriesdate = date('M j, Y g:ia',strtotime($row['series_datetime']));
+						$seriesdesc = $row['series_desc'];
+						$seriesid = $row[$modality."series_id"];
+						if ($seriesdesc == "")
+							$seriesdesc = $row['series_protocol'];
+						
+						list($studyAge, $calcStudyAge) = GetStudyAge($dob, $age, $studydate);
+						
+						if ($studyAge == null)
+							$studyAge = "-";
+						else
+							$studyAge = number_format($studyAge,1);
 
-					if ($calcStudyAge == null)
-						$calcStudyAge = "-";
-					else
-						$calcStudyAge = number_format($calcStudyAge,1);
-					
-					if (($uid != $lastuid) && ($lastuid != "")) {
-						$tdclass = "newuid";
+						if ($calcStudyAge == null)
+							$calcStudyAge = "-";
+						else
+							$calcStudyAge = number_format($calcStudyAge,1);
+						
+						if (($uid != $lastuid) && ($lastuid != "")) {
+							$tdclass = "newuid";
+						}
+						else {
+							$tdclass = "";
+						}
+						?>
+						<tr class="<?=$tdclass?>">
+							<td>
+								<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>" style="margin-block-end: 0px">
+									<input name="action" type="hidden" value="upload">
+									<input name="seriesid" type="hidden" value="<?=$seriesid?>">
+									<input name="modality" type="hidden" value="<?=$modality?>">
+									<div class="fallback">
+										<input name="file" type="file" multiple />
+									</div>
+								</form>
+							</td>
+							<td><?=$uid?></td>
+							<td><?=$studyAge?></td>
+							<td><?=$calcStudyAge?></td>
+							<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+							<td><?=strtoupper($modality)?></td>
+							<td><?=$studydate?></td>
+							<td><?=$seriesnum?></td>
+							<td><?=$seriesdate?></td>
+							<td><?=$seriesdesc?></td>
+							<td>
+								<span class="tiny">
+								<?
+									list($datapath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+									if (strtolower($modality) == "mr")
+										$datapath = "$datapath/beh";
+									$filelist = array_diff(scandir($datapath), array('..', '.'));
+
+									$numfiles = count($filelist);
+									$numremain = $numfiles;
+									$i = 0;
+									foreach ($filelist as $file) {
+										echo "$file<br>";
+										$i++;
+										$numremain--;
+										if ($i >= 5)
+											break;
+									}
+									if ($numremain > 0)
+										echo "<br><b>[$numremain] additonal files not listed</b>";
+								?>
+								</span>
+							</td>
+						</tr>
+						<?
+						$lastuid = $uid;
 					}
-					else {
-						$tdclass = "";
-					}
+				}
+				else {
 					?>
-					<tr class="<?=$tdclass?>">
-						<td>
-							<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>" style="margin-block-end: 0px">
-								<input name="action" type="hidden" value="upload">
-								<input name="seriesid" type="hidden" value="<?=$seriesid?>">
-								<input name="modality" type="hidden" value="<?=$modality?>">
-								<div class="fallback">
-									<input name="file" type="file" multiple />
-								</div>
-							</form>
-						</td>
-						<td><?=$uid?></td>
-						<td><?=$studyAge?></td>
-						<td><?=$calcStudyAge?></td>
-						<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-						<td><?=strtoupper($modality)?></td>
-						<td><?=$studydate?></td>
-						<td><?=$seriesnum?></td>
-						<td><?=$seriesdate?></td>
-						<td><?=$seriesdesc?></td>
-						<td>
-							<span class="tiny">
-							<?
-								list($datapath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-								if (strtolower($modality) == "mr")
-									$datapath = "$datapath/beh";
-								$filelist = array_diff(scandir($datapath), array('..', '.'));
-
-								$numfiles = count($filelist);
-								$numremain = $numfiles;
-								$i = 0;
-								foreach ($filelist as $file) {
-									echo "$file<br>";
-									$i++;
-									$numremain--;
-									if ($i >= 5)
-										break;
-								}
-								if ($numremain > 0)
-									echo "<br><b>[$numremain] additonal files not listed</b>";
-							?>
-							</span>
-						</td>
+					<tr>
+						<td colspan="11">No series selected</td>
 					</tr>
 					<?
-					$lastuid = $uid;
 				}
 			?>
 			</tbody>

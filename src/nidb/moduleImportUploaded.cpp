@@ -210,7 +210,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 		tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
 		tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
 
-		n->AnonymizeDICOMFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags);
+        n->AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags);
 	}
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */

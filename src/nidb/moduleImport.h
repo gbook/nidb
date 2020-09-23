@@ -42,7 +42,6 @@ public:
 	int ParseDirectory(QString dir, int importid);
 	QString GetImportStatus(int importid);
 	bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
-	bool ParseDICOMFile(QString file, QHash<QString, QString> &tags);
 	bool InsertDICOMSeries(int importid, QStringList files, QString &msg);
 	bool InsertParRec(int importid, QString file, QString &msg);
 	bool InsertEEG(int importid, QString file, QString &msg);

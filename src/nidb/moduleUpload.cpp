@@ -61,7 +61,14 @@ int moduleUpload::Run() {
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_modality = q.value("upload_modality").toString();
             bool upload_guessmodality = q.value("upload_guessmodality").toBool();
+            QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
+            QString upload_studycriteria = q.value("upload_studycriteria").toString();
+            QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
+            /* create a multilevel hash [subject][study][series][files] */
+            QMap<QString, QMap<QString, QMap<QString, QStringList>>> fs;
+
+            /* create the path for the upload data */
             QString uploadpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(upload_id);
 
             /* create temporary directory in uploadstagingdir */
@@ -87,26 +94,203 @@ int moduleUpload::Run() {
             n->WriteLog(n->UnzipDirectory(uploadpath, true));
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
-            int c;
-            qint64 b;
+            c = 0;
+            b = 0;
             n->GetDirSizeAndFileCount(uploadpath, c, b, true);
-            n->WriteLog(QString("After 3 passes of unzipping files, upload directory now [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadpath).arg(c).arg(b));
+            n->WriteLog(QString("After 3 passes of UNZIPPING files, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadpath).arg(c).arg(b));
 
-            /* if modality is known, find and parse all files matching that modality. --- Also keep list of files not matching that modality --- */
-            QStringList DICOMmodalities;
-            DICOMmodalities << "MR" << "CT" << "SR" << "CR" << "US" << "XA";
-            if (DICOMmodalities.contains(upload_modality, Qt::CaseInsensitive)) {
+            /* get list of all files, and iterate through all of the files */
+            QStringList files = n->FindAllFiles(uploadpath, "*", true);
+            foreach (QString f, files) {
+                QString subject, study, series;
 
+                /* get the file info */
+                QHash<QString, QString> tags;
+                if (n->GetImageFileTags(f, tags)) {
+                    if (tags["Modality"] == upload_modality) {
+
+                        /* subject matching criteria */
+                        if (upload_subjectcriteria == "patientid")
+                            subject = tags["PatientID"];
+                        else if (upload_subjectcriteria == "namesexdob")
+                            subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
+                        else
+                            n->WriteLog("Unspecified subject criteria [" + upload_subjectcriteria + "]");
+
+                        /* study matching criteria */
+                        if (upload_studycriteria == "modalitystudydate")
+                            study = tags["Modality"] + "|" + tags["StudyDateTime"];
+                        else if (upload_studycriteria == "studyuid")
+                            study = tags["StudyInstanceUID"];
+                        else
+                            n->WriteLog("Unspecified study criteria [" + upload_studycriteria + "]");
+
+                        /* series matching criteria */
+                        if (upload_seriescriteria == "seriesnumber")
+                            series = tags["SeriesNumber"];
+                        else if (upload_seriescriteria == "seriesdate")
+                            series = tags["SeriesDate"] + "|" + tags["SeriesTime"];
+                        else if (upload_seriescriteria == "seriesuid")
+                            series = tags["SeriesInstanceUID"];
+                        else
+                            n->WriteLog("Unspecified series criteria [" + upload_seriescriteria + "]");
+
+                        /* store the file in the appropriate group */
+                        fs[subject][study][series].append(f);
+                    }
+                    else {
+                        n->WriteLog("Valid file [" + f + "] but not the modality we're looking for [" + tags["Modality"] + "]");
+                        fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
+                    }
+                }
+                else {
+                    /* the file is not readable */
+                    fs["unreadable"]["unreadable"]["unreadable"].append(f);
+                    n->WriteLog("Unable to read file [" + f + "]");
+                }
             }
 
-            /* else if modality is NOT known, search for DICOMs, ET, EEG files. ---- Also keep list of files that are still unknown ---- */
 
-            /* organize by subject -> study -> series, add record(s) to appropriate tables */
+            /* ----- iterate through the subjects ----- */
+            for(QMap<QString, QMap<QString, QMap<QString, QStringList>>>::iterator a = fs.begin(); a != fs.end(); ++a) {
+                QString subject = a.key();
 
-            /* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
-            QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>> files;
+                /* get the uploadsubject_id */
+                int subjectid(0);
 
-        }
+                if (upload_subjectcriteria == "patientid") {
+                    /* get subjectid by PatientID field */
+                    QString PatientID = subject;
+
+                    QSqlQuery q;
+                    /* check if the subjectid exists ... */
+                    q.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
+                    q.bindValue(":uploadid", upload_id);
+                    q.bindValue(":patientid", PatientID);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    if (q.size() > 0) {
+                        q.first();
+                        subjectid = q.value("uploadsubject_id").toInt();
+                    }
+                    else {
+                        /* ... otherwise create a new subject */
+                        q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
+                        q.bindValue(":uploadid", upload_id);
+                        q.bindValue(":patientid", PatientID);
+                        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                        subjectid = q.lastInsertId().toInt();
+                    }
+                }
+                else if (upload_subjectcriteria == "namesexdob") {
+                    /* get subjectid by PatientName/PatientSex/PatientBirthDate */
+                    QStringList parts = subject.split("|");
+                    QString PatientName = parts[0];
+                    QString PatientSex = parts[1];
+                    QString PatientBirthDate = parts[2];
+
+                    QSqlQuery q;
+                    /* check if the subjectid already exists ... */
+                    q.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_name = :patientname and uploadsubject_dob = :patientdob and uploadsubject_sex = :patientsex");
+                    q.bindValue(":uploadid", upload_id);
+                    q.bindValue(":patientname", PatientName);
+                    q.bindValue(":patientdob", PatientBirthDate);
+                    q.bindValue(":patientsex", PatientSex);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    if (q.size() > 0) {
+                        q.first();
+                        subjectid = q.value("uploadsubject_id").toInt();
+                    }
+                    else {
+                        /* ... otherwise create a new subject */
+                        q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientname, uploadsubject_patientdob, uploadsubject_patientsex) values (:uploadid, :patientname, :patientdob, :patientsex)");
+                        q.bindValue(":uploadid", upload_id);
+                        q.bindValue(":patientname", PatientName);
+                        q.bindValue(":patientdob", PatientBirthDate);
+                        q.bindValue(":patientsex", PatientSex);
+                        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                        subjectid = q.lastInsertId().toInt();
+                    }
+                }
+                else
+                    n->WriteLog("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
+
+                /* ----- iterate through the studies ----- */
+                for(QMap<QString, QMap<QString, QStringList>>::iterator b = fs[subject].begin(); b != fs[subject].end(); ++b) {
+                    QString study = b.key();
+
+                    /* get the uploadstudy_id */
+                    int studyid(0);
+
+                    if (upload_studycriteria == "modalitystudydate") {
+                        /* get studyid from Modality/StudyDateTime fields */
+                        QStringList parts = study.split("|");
+                        QString Modality = parts[0];
+                        QString StudyDateTime = parts[1];
+
+                        QSqlQuery q;
+                        /* check if the studyid exists ... */
+                        q.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_date = :studydatetime and uploadstudy_modality = :modality");
+                        q.bindValue(":subjectid", subjectid);
+                        q.bindValue(":studydatetime", StudyDateTime);
+                        q.bindValue(":modality", Modality);
+                        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                        if (q.size() > 0) {
+                            q.first();
+                            studyid = q.value("uploadstudy_id").toInt();
+                        }
+                        else {
+                            /* ... otherwise create a new study */
+                            q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
+                            q.bindValue(":subjectid", subjectid);
+                            q.bindValue(":patientid", StudyDateTime);
+                            q.bindValue(":modality", Modality);
+                            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                            studyid = q.lastInsertId().toInt();
+                        }
+                    }
+                    else if (upload_studycriteria == "studyuid") {
+                        /* get studyid using StudyInstanceUID field */
+                        QString StudyInstanceUID = study;
+
+                        QSqlQuery q;
+                        /* check if the studyid already exists ... */
+                        q.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_instanceuid = :studyinstanceuid");
+                        q.bindValue(":subjectid", subjectid);
+                        q.bindValue(":studyinstanceuid", StudyInstanceUID);
+                        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                        if (q.size() > 0) {
+                            q.first();
+                            studyid = q.value("uploadstudy_id").toInt();
+                        }
+                        else {
+                            /* ... otherwise create a new study */
+                            q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_instanceuid) values (:subjectid, :studyinstanceuid)");
+                            q.bindValue(":subjectid", subjectid);
+                            q.bindValue(":studyinstanceuid", StudyInstanceUID);
+                            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                            studyid = q.lastInsertId().toInt();
+                        }
+                    }
+                    else
+                        n->WriteLog("Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...");
+
+
+                    /* iterate through the series */
+                    for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
+                        QString series = c.key();
+
+                        /* get uploadseries_id */
+
+                        QStringList files = fs[subject][study][series];
+
+                        /* we've arrived at a series, so let's put it into the database */
+                        /* get tags from first file in the list to populate the subject/study/series info not included in the criteria matching */
+
+                    }
+                }
+            }
+
+        } /* end while */
     }
 
     n->WriteLog("Leaving the upload module");

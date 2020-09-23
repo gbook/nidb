@@ -314,12 +314,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 				QString filetype;
 				i++;
 
-				if (ParseDICOMFile(file, tags)) {
+                if (n->GetImageFileTags(file, tags)) {
 					dcmseries[tags["SeriesInstanceUID"]].append(file);
 				}
 				else {
 					qint64 fsize = QFileInfo(file).size();
-					n->WriteLog(QString("File [%1] - size [%2] is not a dicom file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
+                    n->WriteLog(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
 
 					QSqlQuery q;
 					QString m = "Not a DICOM file, moving to the problem directory";
@@ -395,271 +395,6 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	}
 
 	return ret;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- ParseDICOMFile --------------------------------- */
-/* ---------------------------------------------------------- */
-bool moduleImport::ParseDICOMFile(QString file, QHash<QString, QString> &tags) {
-
-    QFileInfo fi(file);
-    if (!fi.exists()) {
-        n->WriteLog(QString("File [%1] does not exist").arg(file));
-		return false;
-	}
-    if (!fi.isReadable()) {
-        n->WriteLog(QString("File [%1] is not readable").arg(file));
-        return false;
-    }
-
-	/* check if the file is readable */
-	gdcm::Reader r;
-	r.SetFileName(file.toStdString().c_str());
-    if (!r.Read()) {
-        n->WriteLog(QString("File [%1] is unreadable by GDCM").arg(file));
-        return false;
-    }
-
-	gdcm::StringFilter sf;
-	sf = gdcm::StringFilter();
-	sf.SetFile(r.GetFile());
-
-	/* get all of the DICOM tags...
-	 * we're not using an iterator because we want to know exactly what tags we have and dont have */
-
-	tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
-	tags["FileMetaInformationVersion"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0001)).c_str()).trimmed(); /* FileMetaInformationVersion */
-	tags["MediaStorageSOPClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0002)).c_str()).trimmed(); /* MediaStorageSOPClassUID */
-	tags["MediaStorageSOPInstanceUID"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0003)).c_str()).trimmed(); /* MediaStorageSOPInstanceUID */
-	tags["TransferSyntaxUID"] =					QString(sf.ToString(gdcm::Tag(0x0002,0x0010)).c_str()).trimmed(); /* TransferSyntaxUID */
-	tags["ImplementationClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0012)).c_str()).trimmed(); /* ImplementationClassUID */
-	tags["ImplementationVersionName"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0013)).c_str()).trimmed(); /* ImplementationVersionName */
-
-	tags["SpecificCharacterSet"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0005)).c_str()).trimmed(); /* SpecificCharacterSet */
-	tags["ImageType"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0008)).c_str()).trimmed(); /* ImageType */
-	tags["InstanceCreationDate"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0012)).c_str()).trimmed(); /* InstanceCreationDate */
-	tags["InstanceCreationTime"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0013)).c_str()).trimmed(); /* InstanceCreationTime */
-	tags["SOPClassUID"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0016)).c_str()).trimmed(); /* SOPClassUID */
-	tags["SOPInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0018)).c_str()).trimmed(); /* SOPInstanceUID */
-	tags["StudyDate"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0020)).c_str()).trimmed(); /* StudyDate */
-	tags["SeriesDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0021)).c_str()).trimmed(); /* SeriesDate */
-	tags["AcquisitionDate"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0022)).c_str()).trimmed(); /* AcquisitionDate */
-	tags["ContentDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0023)).c_str()).trimmed(); /* ContentDate */
-	tags["StudyTime"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0030)).c_str()).trimmed(); /* StudyTime */
-	tags["SeriesTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0031)).c_str()).trimmed(); /* SeriesTime */
-	tags["AcquisitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0032)).c_str()).trimmed(); /* AcquisitionTime */
-	tags["ContentTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0033)).c_str()).trimmed(); /* ContentTime */
-	tags["AccessionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0050)).c_str()).trimmed(); /* AccessionNumber */
-	tags["Modality"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* Modality */
-	tags["Manufacturer"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-	tags["InstitutionName"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0080)).c_str()).trimmed(); /* InstitutionName */
-	tags["InstitutionAddress"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0081)).c_str()).trimmed(); /* InstitutionAddress */
-	tags["ReferringPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x0090)).c_str()).trimmed(); /* ReferringPhysicianName */
-	tags["StationName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1010)).c_str()).trimmed(); /* StationName */
-	tags["StudyDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x1030)).c_str()).trimmed(); /* StudyDescription */
-	tags["SeriesDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x103E)).c_str()).trimmed(); /* SeriesDescription */
-	tags["InstitutionalDepartmentName"] =		QString(sf.ToString(gdcm::Tag(0x0008,0x1040)).c_str()).trimmed(); /* InstitutionalDepartmentName */
-	tags["PerformingPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x1050)).c_str()).trimmed(); /* PerformingPhysicianName */
-	tags["OperatorsName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1070)).c_str()).trimmed(); /* OperatorsName */
-	tags["ManufacturerModelName"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x1090)).c_str()).trimmed(); /* ManufacturerModelName */
-	tags["SourceImageSequence"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x2112)).c_str()).trimmed(); /* SourceImageSequence */
-
-	tags["PatientName"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0010)).c_str()).trimmed(); /* PatientName */
-	tags["PatientID"] =							QString(sf.ToString(gdcm::Tag(0x0010,0x0020)).c_str()).trimmed(); /* PatientID */
-	tags["PatientBirthDate"] =					QString(sf.ToString(gdcm::Tag(0x0010,0x0030)).c_str()).trimmed(); /* PatientBirthDate */
-	tags["PatientSex"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0040)).c_str()).trimmed().left(1); /* PatientSex */
-	tags["PatientAge"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1010)).c_str()).trimmed(); /* PatientAge */
-	tags["PatientSize"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1020)).c_str()).trimmed(); /* PatientSize */
-	tags["PatientWeight"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1030)).c_str()).trimmed(); /* PatientWeight */
-
-	tags["ContrastBolusAgent"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0010)).c_str()).trimmed(); /* ContrastBolusAgent */
-	tags["KVP"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x0060)).c_str()).trimmed(); /* KVP */
-	tags["DataCollectionDiameter"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0090)).c_str()).trimmed(); /* DataCollectionDiameter */
-	tags["ContrastBolusRoute"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1040)).c_str()).trimmed(); /* ContrastBolusRoute */
-	tags["RotationDirection"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1140)).c_str()).trimmed(); /* RotationDirection */
-	tags["ExposureTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1150)).c_str()).trimmed(); /* ExposureTime */
-	tags["XRayTubeCurrent"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1151)).c_str()).trimmed(); /* XRayTubeCurrent */
-	tags["FilterType"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1160)).c_str()).trimmed(); /* FilterType */
-	tags["GeneratorPower"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1170)).c_str()).trimmed(); /* GeneratorPower */
-	tags["ConvolutionKernel"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1210)).c_str()).trimmed(); /* ConvolutionKernel */
-
-	tags["BodyPartExamined"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0015)).c_str()).trimmed(); /* BodyPartExamined */
-	tags["ScanningSequence"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0020)).c_str()).trimmed(); /* ScanningSequence */
-	tags["SequenceVariant"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0021)).c_str()).trimmed(); /* SequenceVariant */
-	tags["ScanOptions"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0022)).c_str()).trimmed(); /* ScanOptions */
-	tags["MRAcquisitionType"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0023)).c_str()).trimmed(); /* MRAcquisitionType */
-	tags["SequenceName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0024)).c_str()).trimmed(); /* SequenceName */
-	tags["AngioFlag"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0025)).c_str()).trimmed(); /* AngioFlag */
-	tags["SliceThickness"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0050)).c_str()).trimmed(); /* SliceThickness */
-	tags["RepetitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0080)).c_str()).trimmed(); /* RepetitionTime */
-	tags["EchoTime"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0081)).c_str()).trimmed(); /* EchoTime */
-	tags["InversionTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0082)).c_str()).trimmed(); /* InversionTime */
-	tags["NumberOfAverages"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0083)).c_str()).trimmed(); /* NumberOfAverages */
-	tags["ImagingFrequency"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0084)).c_str()).trimmed(); /* ImagingFrequency */
-	tags["ImagedNucleus"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0085)).c_str()).trimmed(); /* ImagedNucleus */
-	tags["EchoNumbers"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0086)).c_str()).trimmed(); /* EchoNumbers */
-	tags["MagneticFieldStrength"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0087)).c_str()).trimmed(); /* MagneticFieldStrength */
-	tags["SpacingBetweenSlices"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0088)).c_str()).trimmed(); /* SpacingBetweenSlices */
-	tags["NumberOfPhaseEncodingSteps"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x0089)).c_str()).trimmed(); /* NumberOfPhaseEncodingSteps */
-	tags["EchoTrainLength"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0091)).c_str()).trimmed(); /* EchoTrainLength */
-	tags["PercentSampling"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0093)).c_str()).trimmed(); /* PercentSampling */
-	tags["PercentPhaseFieldOfView"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-	tags["PixelBandwidth"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0095)).c_str()).trimmed(); /* PixelBandwidth */
-	tags["DeviceSerialNumber"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1000)).c_str()).trimmed(); /* DeviceSerialNumber */
-	tags["SoftwareVersions"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1020)).c_str()).trimmed(); /* SoftwareVersions */
-	tags["ProtocolName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-	tags["TransmitCoilName"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1251)).c_str()).trimmed(); /* TransmitCoilName */
-	tags["AcquisitionMatrix"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1310)).c_str()).trimmed().left(20); /* AcquisitionMatrix */
-	tags["InPlanePhaseEncodingDirection"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x1312)).c_str()).trimmed(); /* InPlanePhaseEncodingDirection */
-	tags["FlipAngle"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x1314)).c_str()).trimmed(); /* FlipAngle */
-	tags["VariableFlipAngleFlag"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1315)).c_str()).trimmed(); /* VariableFlipAngleFlag */
-	tags["SAR"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1316)).c_str()).trimmed(); /* SAR */
-	tags["dBdt"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1318)).c_str()).trimmed(); /* dBdt */
-	tags["PatientPosition"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-
-	tags["Unknown Tag & Data"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1009)).c_str()).trimmed(); /* Unknown Tag & Data */
-	tags["NumberOfImagesInMosaic"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100A)).c_str()).trimmed(); /* NumberOfImagesInMosaic*/
-	tags["SliceMeasurementDuration"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100B)).c_str()).trimmed(); /* SliceMeasurementDuration*/
-	tags["B_value"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x100C)).c_str()).trimmed(); /* B_value*/
-	tags["DiffusionDirectionality"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100D)).c_str()).trimmed(); /* DiffusionDirectionality*/
-	tags["DiffusionGradientDirection"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x100E)).c_str()).trimmed(); /* DiffusionGradientDirection*/
-	tags["GradientMode"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x100F)).c_str()).trimmed(); /* GradientMode*/
-	tags["FlowCompensation"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1011)).c_str()).trimmed(); /* FlowCompensation*/
-	tags["TablePositionOrigin"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1012)).c_str()).trimmed(); /* TablePositionOrigin*/
-	tags["ImaAbsTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1013)).c_str()).trimmed(); /* ImaAbsTablePosition*/
-	tags["ImaRelTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1014)).c_str()).trimmed(); /* ImaRelTablePosition*/
-	tags["SlicePosition_PCS"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1015)).c_str()).trimmed(); /* SlicePosition_PCS*/
-	tags["TimeAfterStart"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1016)).c_str()).trimmed(); /* TimeAfterStart*/
-	tags["SliceResolution"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1017)).c_str()).trimmed(); /* SliceResolution*/
-	tags["RealDwellTime"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1018)).c_str()).trimmed(); /* RealDwellTime*/
-	tags["RBMoCoTrans"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1025)).c_str()).trimmed(); /* RBMoCoTrans*/
-	tags["RBMoCoRot"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1026)).c_str()).trimmed(); /* RBMoCoRot*/
-	tags["B_matrix"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1027)).c_str()).trimmed(); /* B_matrix*/
-	tags["BandwidthPerPixelPhaseEncode"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x1028)).c_str()).trimmed(); /* BandwidthPerPixelPhaseEncode*/
-	tags["MosaicRefAcqTimes"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1029)).c_str()).trimmed(); /* MosaicRefAcqTimes*/
-
-	tags["StudyInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000D)).c_str()).trimmed(); /* StudyInstanceUID */
-	tags["SeriesInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000E)).c_str()).trimmed(); /* SeriesInstanceUID */
-	tags["StudyID"] =							QString(sf.ToString(gdcm::Tag(0x0020,0x0010)).c_str()).trimmed(); /* StudyID */
-	tags["SeriesNumber"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x0011)).c_str()).trimmed(); /* SeriesNumber */
-	tags["AcquisitionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0012)).c_str()).trimmed(); /* AcquisitionNumber */
-	tags["InstanceNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0013)).c_str()).trimmed(); /* InstanceNumber */
-	tags["ImagePositionPatient"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0032)).c_str()).trimmed(); /* ImagePositionPatient */
-	tags["ImageOrientationPatient"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0037)).c_str()).trimmed(); /* ImageOrientationPatient */
-	tags["FrameOfReferenceUID"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0052)).c_str()).trimmed(); /* FrameOfReferenceUID */
-	tags["NumberOfTemporalPositions"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* NumberOfTemporalPositions */
-	tags["ImagesInAcquisition"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* ImagesInAcquisition */
-	tags["PositionReferenceIndicator"] =		QString(sf.ToString(gdcm::Tag(0x0020,0x1040)).c_str()).trimmed(); /* PositionReferenceIndicator */
-	tags["SliceLocation"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x1041)).c_str()).trimmed(); /* SliceLocation */
-
-	tags["SamplesPerPixel"] =					QString(sf.ToString(gdcm::Tag(0x0028,0x0002)).c_str()).trimmed(); /* SamplesPerPixel */
-	tags["PhotometricInterpretation"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0004)).c_str()).trimmed(); /* PhotometricInterpretation */
-	tags["Rows"] =								QString(sf.ToString(gdcm::Tag(0x0028,0x0010)).c_str()).trimmed(); /* Rows */
-	tags["Columns"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0011)).c_str()).trimmed(); /* Columns */
-	tags["PixelSpacing"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0030)).c_str()).trimmed(); /* PixelSpacing */
-	tags["BitsAllocated"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0100)).c_str()).trimmed(); /* BitsAllocated */
-	tags["BitsStored"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0101)).c_str()).trimmed(); /* BitsStored */
-	tags["HighBit"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0102)).c_str()).trimmed(); /* HighBit */
-	tags["PixelRepresentation"] =				QString(sf.ToString(gdcm::Tag(0x0028,0x0103)).c_str()).trimmed(); /* PixelRepresentation */
-	tags["SmallestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0106)).c_str()).trimmed(); /* SmallestImagePixelValue */
-	tags["LargestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0107)).c_str()).trimmed(); /* LargestImagePixelValue */
-	tags["WindowCenter"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1050)).c_str()).trimmed(); /* WindowCenter */
-	tags["WindowWidth"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1051)).c_str()).trimmed(); /* WindowWidth */
-	tags["WindowCenterWidthExplanation"] =		QString(sf.ToString(gdcm::Tag(0x0028,0x1055)).c_str()).trimmed(); /* WindowCenterWidthExplanation */
-
-	tags["RequestingPhysician"] =				QString(sf.ToString(gdcm::Tag(0x0032,0x1032)).c_str()).trimmed(); /* RequestingPhysician */
-	tags["RequestedProcedureDescription"] =		QString(sf.ToString(gdcm::Tag(0x0032,0x1060)).c_str()).trimmed(); /* RequestedProcedureDescription */
-
-	tags["PerformedProcedureStepStartDate"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0244)).c_str()).trimmed(); /* PerformedProcedureStepStartDate */
-	tags["PerformedProcedureStepStartTime"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0245)).c_str()).trimmed(); /* PerformedProcedureStepStartTime */
-	tags["PerformedProcedureStepID"] =			QString(sf.ToString(gdcm::Tag(0x0040,0x0253)).c_str()).trimmed(); /* PerformedProcedureStepID */
-	tags["PerformedProcedureStepDescription"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0254)).c_str()).trimmed(); /* PerformedProcedureStepDescription */
-	tags["CommentsOnThePerformedProcedureSte"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0280)).c_str()).trimmed(); /* CommentsOnThePerformedProcedureSte */
-
-	tags["TimeOfAcquisition"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100A)).c_str()).trimmed(); /* TimeOfAcquisition*/
-	tags["AcquisitionMatrixText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x100B)).c_str()).trimmed(); /* AcquisitionMatrixText*/
-	tags["FieldOfView"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100C)).c_str()).trimmed(); /* FieldOfView*/
-	tags["SlicePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100D)).c_str()).trimmed(); /* SlicePositionText*/
-	tags["ImageOrientation"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100E)).c_str()).trimmed(); /* ImageOrientation*/
-	tags["CoilString"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100F)).c_str()).trimmed(); /* CoilString*/
-	tags["ImaPATModeText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1011)).c_str()).trimmed(); /* ImaPATModeText*/
-	tags["TablePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1012)).c_str()).trimmed(); /* TablePositionText*/
-	tags["PositivePCSDirections"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1013)).c_str()).trimmed(); /* PositivePCSDirections*/
-	tags["ImageTypeText"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x1016)).c_str()).trimmed(); /* ImageTypeText*/
-	tags["SliceThicknessText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1017)).c_str()).trimmed(); /* SliceThicknessText*/
-	tags["ScanOptionsText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1019)).c_str()).trimmed(); /* ScanOptionsText*/
-
-	/* fix the study date */
-	if (tags["StudyDate"] == "")
-		tags["StudyDate"] = n->CreateCurrentDateTime(2);
-	else {
-		tags["StudyDate"].replace("/","-");
-		if (tags["StudyDate"].size() == 8) {
-			tags["StudyDate"].insert(6,'-');
-			tags["StudyDate"].insert(4,'-');
-		}
-	}
-
-	/* fix the series date */
-	if (tags["SeriesDate"] == "")
-		tags["SeriesDate"] = tags["StudyDate"];
-	else {
-		tags["SeriesDate"].replace("/","-");
-		if (tags["SeriesDate"].size() == 8) {
-			tags["SeriesDate"].insert(6,'-');
-			tags["SeriesDate"].insert(4,'-');
-		}
-	}
-
-	/* fix the study time */
-	if (tags["StudyTime"].size() == 13)
-		tags["StudyTime"] = tags["StudyTime"].left(6);
-
-	if (tags["StudyTime"].size() == 6) {
-		tags["StudyTime"].insert(4,':');
-		tags["StudyTime"].insert(2,':');
-	}
-
-	/* some images may not have a series date/time, so substitute the studyDateTime for seriesDateTime */
-	if (tags["SeriesTime"] == "")
-		tags["SeriesTime"] = tags["StudyTime"];
-	else {
-		if (tags["SeriesTime"].size() == 13)
-			tags["SeriesTime"] = tags["SeriesTime"].left(6);
-
-		if (tags["SeriesTime"].size() == 6) {
-			tags["SeriesTime"].insert(4,':');
-			tags["SeriesTime"].insert(2,':');
-		}
-	}
-
-	tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
-	tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
-
-	/* fix the birthdate */
-	if (tags["PatientBirthDate"] == "") tags["PatientBirthDate"] = "0001-01-01";
-	tags["PatientBirthDate"].replace("/","-");
-	if (tags["PatientBirthDate"].size() == 8) {
-		tags["PatientBirthDate"].insert(6,'-');
-		tags["PatientBirthDate"].insert(4,'-');
-	}
-
-	/* check for other undefined or blank fields */
-	if (tags["PatientSex"] == "") tags["PatientSex"] = 'U';
-	if (tags["StationName"] == "") tags["StationName"] = "Unknown";
-	if (tags["InstitutionName"] == "") tags["InstitutionName"] = "Unknown";
-	if (tags["SeriesNumber"] == "") {
-		QString timestamp = tags["SeriesTime"];
-		timestamp.remove(':').remove('-').remove(' ');
-		tags["SeriesNumber"] = timestamp;
-	}
-
-	QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
-	tags["UniqueSeriesString"] = uniqueseries;
-	//n->WriteLog("File ["+file+"]  SeriesInstanceUID ["+tags["SeriesInstanceUID"]+"]");
-	//n->WriteLog("File ["+file+"]  UniqueSeriesString ["+tags["UniqueSeriesString"]+"]");
-	return true;
 }
 
 
@@ -848,7 +583,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 		return 0;
 	}
 
-	if (ParseDICOMFile(f, tags)) {
+    if (n->GetImageFileTags(f, tags)) {
 		if (!QFile::exists(f)) {
 			msgs << n->WriteLog(QString("File [%1] does not exist - check B!").arg(f));
 			msg += msgs.join("\n");
@@ -882,7 +617,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	QString StudyTime = tags["StudyTime"];
 	int Rows = tags["Rows"].toInt();
 	int Columns = tags["Columns"].toInt();
-	int AccessionNumber = tags["AccessionNumber"].toInt();
+    //int AccessionNumber = tags["AccessionNumber"].toInt();
 	double SliceThickness = tags["SliceThickness"].toDouble();
 	QString PixelSpacing = tags["PixelSpacing"];
 	int NumberOfTemporalPositions = tags["NumberOfTemporalPositions"].toInt();
@@ -1245,11 +980,11 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	 * also checks the accession number against the study_num to see if this study was pre-registered
 	 * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
 	bool studyFound = false;
-	msgs << n->WriteLog(QString("Checking if this study exists: enrollmentID [%1] study(accession)Number [%2] StudyDateTime [%3] Modality [%4] StationName [%5]").arg(enrollmentRowID).arg(AccessionNumber).arg(StudyDateTime).arg(Modality).arg(StationName));
+    msgs << n->WriteLog(QString("Checking if this study exists: enrollmentID [%1]  StudyDateTime [%2]  Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName));
 
-	q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (study_num = :accessionnum or ((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
+    q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
 	q2.bindValue(":enrollmentid", enrollmentRowID);
-	q2.bindValue(":accessionnum", AccessionNumber);
+    //q2.bindValue(":accessionnum", AccessionNumber);
 	q2.bindValue(":modality", Modality);
 	q2.bindValue(":stationname", StationName);
 	n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -1672,7 +1407,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 
 			/* need to rename it, get the DICOM tags */
 			QHash<QString, QString> tags;
-			if (!ParseDICOMFile(file, tags))
+            if (!n->GetImageFileTags(file, tags))
 				continue;
 
 			int SliceNumber = tags["AcquisitionNumber"].toInt();
@@ -1702,7 +1437,7 @@ bool moduleImport::InsertDICOMSeries(int importid, QStringList files, QString &m
 	foreach (QString file, files) {
 		/* need to rename it, get the DICOM tags */
 		QHash<QString, QString> tags;
-		if (!ParseDICOMFile(file, tags))
+        if (!n->GetImageFileTags(file, tags))
 			continue;
 
 		int SliceNumber = tags["AcquisitionNumber"].toInt();
@@ -1899,7 +1634,7 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	QString PerformingPhysiciansName = "NotSpecified";
 	QString InstitutionName = "NotSpecified";
 	QString InstitutionAddress = "NotSpecified";
-	int AccessionNumber(0);
+    //int AccessionNumber(0);
 	QString SequenceName;
 	double MagneticFieldStrength(0.0);
 	QString ProtocolName;
@@ -2298,11 +2033,11 @@ bool moduleImport::InsertParRec(int importid, QString file, QString &msg) {
 	 * also checks the accession number against the study_num to see if this study was pre-registered
 	 * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
 	bool studyFound = false;
-	msgs << QString("Checking if this study exists: enrollmentID [%1] study(accession)Number [%2] StudyDateTime [%3] Modality [%4] StationName [%5]").arg(enrollmentRowID).arg(AccessionNumber).arg(StudyDateTime).arg(Modality).arg(StationName);
+    msgs << QString("Checking if this study exists: enrollmentID [%1] StudyDateTime [%2] Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName);
 
-	q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (study_num = :accessionnum or ((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
+    q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
 	q2.bindValue(":enrollmentid", enrollmentRowID);
-	q2.bindValue(":accessionnum", AccessionNumber);
+    //q2.bindValue(":accessionnum", AccessionNumber);
 	q2.bindValue(":modality", Modality);
 	q2.bindValue(":stationname", StationName);
 	n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -2548,13 +2283,36 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	msgs << n->WriteLog(QString("----- In InsertEEG(%1, %2) -----").arg(importid).arg(file));
 
 	/* import log variables */
-	QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
+    QString IL_modality_orig;
+    QString IL_patientname_orig;
+    QString IL_patientdob_orig;
+    QString IL_patientsex_orig;
+    QString IL_stationname_orig;
+    QString IL_institution_orig;
+    QString IL_studydatetime_orig;
+    QString IL_seriesdatetime_orig;
+    QString IL_studydesc_orig;
     //double IL_patientage_orig;
-	int IL_seriesnumber_orig;
-	QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
+    //int IL_seriesnumber_orig;
+    QString IL_modality_new;
+    QString IL_patientname_new;
+    QString IL_patientdob_new;
+    QString IL_patientsex_new;
+    QString IL_stationname_new;
+    QString IL_institution_new;
+    QString IL_studydatetime_new;
+    QString IL_seriesdatetime_new;
+    QString IL_studydesc_new;
+    QString IL_seriesdesc_orig;
+    QString IL_protocolname_orig;
 	QString IL_subject_uid;
 	QString IL_project_number;
-	int IL_seriescreated(0), IL_studycreated(0), IL_enrollmentcreated(0); // IL_subjectcreated(0), IL_familycreated(0), IL_overwrote_existing(0);
+    //int IL_seriescreated(0);
+    //int IL_studycreated(0);
+    //int IL_enrollmentcreated(0);
+    //int IL_subjectcreated(0);
+    //int IL_familycreated(0);
+    //int IL_overwrote_existing(0);
 
 	QString familyRealUID;
 
@@ -2587,12 +2345,12 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	int FileNumber(0);
 	int numfiles = 1;
 
-	int importInstanceID(0);
-	int importSiteID(0);
+    //int importInstanceID(0);
+    //int importSiteID(0);
 	int importProjectID(0);
-	int importPermanent(0);
-	int importAnonymize(0);
-	int importMatchIDOnly(0);
+    //int importPermanent(0);
+    //int importAnonymize(0);
+    //int importMatchIDOnly(0);
 	QString importUUID;
 	QString importSeriesNotes;
 	QString importAltUIDs;
@@ -2606,12 +2364,12 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		if (q.size() > 0) {
 			q.first();
 			QString status = q.value("import_status").toString();
-			importInstanceID = q.value("import_instanceid").toInt();
-			importSiteID = q.value("import_siteid").toInt();
+            //importInstanceID = q.value("import_instanceid").toInt();
+            //importSiteID = q.value("import_siteid").toInt();
 			importProjectID = q.value("import_projectid").toInt();
-			importPermanent = q.value("import_permanent").toInt();
-			importAnonymize = q.value("import_anonymize").toInt();
-			importMatchIDOnly = q.value("import_matchidonly").toInt();
+            //importPermanent = q.value("import_permanent").toInt();
+            //importAnonymize = q.value("import_anonymize").toInt();
+            //importMatchIDOnly = q.value("import_matchidonly").toInt();
 			importUUID = q.value("import_uuid").toString();
 			importSeriesNotes = q.value("import_seriesnotes").toString();
 			importAltUIDs = q.value("import_altuids").toString();
@@ -2680,7 +2438,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 	IL_institution_orig = InstitutionName + " - " + InstitutionAddress;
 	IL_studydatetime_orig = StudyDateTime;
 	IL_seriesdatetime_orig = SeriesDateTime;
-	IL_seriesnumber_orig = SeriesNumber;
+    //IL_seriesnumber_orig = SeriesNumber;
 	IL_studydesc_orig = StudyDescription;
 	IL_seriesdesc_orig = ProtocolName;
 	IL_protocolname_orig = ProtocolName;
@@ -2752,7 +2510,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q2.first();
 		enrollmentRowID = q2.value("enrollment_id").toInt();
 		msgs << QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID);
-		IL_enrollmentcreated = 0;
+        //IL_enrollmentcreated = 0;
 	}
 	else {
 		/* create enrollmentRowID if it doesn't exist */
@@ -2763,7 +2521,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		enrollmentRowID = q2.lastInsertId().toInt();
 
 		msgs << QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID);
-		IL_enrollmentcreated = 1;
+        //IL_enrollmentcreated = 1;
 	}
 
 	// now determine if this study exists or not...
@@ -2789,7 +2547,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":Institution", InstitutionName + " - " + InstitutionAddress);
 		q3.bindValue(":studyRowID", studyRowID);
 		n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-		IL_studycreated = 0;
+        //IL_studycreated = 0;
 	}
 	else {
 		/* create studyRowID if it doesn't exist */
@@ -2814,7 +2572,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":Institution", InstitutionName + " - " + InstitutionAddress);
 		n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 		studyRowID = q3.lastInsertId().toInt();
-		IL_studycreated = 1;
+        //IL_studycreated = 1;
 	}
 
 	/* ----- insert or update the series ----- */
@@ -2834,7 +2592,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":importSeriesNotes", importSeriesNotes);
 		q3.bindValue(":seriesRowID", seriesRowID);
 		n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-		IL_seriescreated = 0;
+        //IL_seriescreated = 0;
 	}
 	else {
 		/* create seriesRowID if it doesn't exist */
@@ -2848,7 +2606,7 @@ bool moduleImport::InsertEEG(int importid, QString file, QString &msg) {
 		q3.bindValue(":importSeriesNotes", importSeriesNotes);
 		n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 		seriesRowID = q3.lastInsertId().toInt();
-		IL_seriescreated = 1;
+        //IL_seriescreated = 1;
 	}
 
 	/* copy the file to the archive, update db info */
