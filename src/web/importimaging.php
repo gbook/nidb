@@ -146,8 +146,9 @@
 							<td style="border-top: #ddd 2px solid">
 								<table>
 									<tr>
-										<td style="vertical-align: middle;"><input type="radio" name="studycriteria" value="studydate" checked></td>
+										<td style="vertical-align: middle;"><input type="radio" name="studycriteria" value="modalitystudydate" checked></td>
 										<td>
+											Modality <span class="tiny">DICOM (0008, 0020)</span><br>
 											StudyDate <span class="tiny">DICOM (0008, 0020)</span><br>
 											StudyTime <span class="tiny">DICOM (0008, 0030)</span>
 										</td>
