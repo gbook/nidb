@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 16, 2020 at 08:55 PM
+-- Generation Time: Sep 25, 2020 at 02:30 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2783,13 +2783,14 @@ CREATE TABLE `uploads` (
   `upload_enddate` datetime DEFAULT NULL,
   `upload_status` enum('uploading','error','uploadcomplete','archivecomplete') DEFAULT NULL,
   `upload_log` text DEFAULT NULL,
+  `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
-  `upload_nfsdir` varchar(255) DEFAULT NULL,
+  `upload_datapath` text DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
   `upload_modality` varchar(255) DEFAULT NULL,
   `upload_guessmodality` tinyint(1) DEFAULT NULL,
   `upload_subjectcriteria` enum('patientid','namesexdob','') DEFAULT NULL,
-  `upload_studycriteria` enum('studydate','studyuid','') DEFAULT NULL,
+  `upload_studycriteria` enum('modalitystudydate','studyuid','') DEFAULT NULL,
   `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -2802,6 +2803,7 @@ CREATE TABLE `uploads` (
 CREATE TABLE `upload_series` (
   `uploadseries_id` int(11) NOT NULL,
   `uploadstudy_id` int(11) NOT NULL,
+  `uploadseries_instanceuid` varchar(255) DEFAULT NULL,
   `uploadseries_desc` varchar(255) DEFAULT NULL,
   `uploadseries_protocol` varchar(255) DEFAULT NULL,
   `uploadseries_num` int(11) DEFAULT NULL,
@@ -2812,7 +2814,8 @@ CREATE TABLE `upload_series` (
   `uploadseries_slicespacing` double DEFAULT NULL,
   `uploadseries_slicethickness` double DEFAULT NULL,
   `uploadseries_rows` int(11) DEFAULT NULL,
-  `uploadseries_cols` int(11) DEFAULT NULL
+  `uploadseries_cols` int(11) DEFAULT NULL,
+  `uploadseries_filelist` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -2824,6 +2827,7 @@ CREATE TABLE `upload_series` (
 CREATE TABLE `upload_studies` (
   `uploadstudy_id` int(11) NOT NULL,
   `uploadsubject_id` int(11) NOT NULL,
+  `uploadstudy_instanceuid` varchar(255) DEFAULT NULL,
   `uploadstudy_desc` varchar(255) DEFAULT NULL,
   `uploadstudy_date` datetime DEFAULT NULL,
   `uploadstudy_modality` varchar(255) DEFAULT NULL,
@@ -2843,6 +2847,7 @@ CREATE TABLE `upload_subjects` (
   `upload_id` int(11) NOT NULL,
   `uploadsubject_patientid` varchar(255) DEFAULT NULL,
   `uploadsubject_name` varchar(255) DEFAULT NULL,
+  `uploadsubject_sex` varchar(1) DEFAULT NULL,
   `uploadsubject_dob` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
