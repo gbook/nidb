@@ -386,18 +386,18 @@ int moduleUpload::Run() {
                             /* update study details */
                             if (upload_studycriteria == "modalitystudydate") {
                                 /* update all study details except Modality/StudyDateTime */
-                                q.prepare("update upload_subjects set uploadstudy_desc = :desc, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadsubject_id = :subjectid");
+                                q.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
                                 q.bindValue(":desc", tags["StudyDescription"]);
                                 q.bindValue(":datatype", tags["FileType"]);
                                 q.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
                                 q.bindValue(":operator", tags["OperatorsName"]);
                                 q.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
-                                q.bindValue(":subjectid", subjectid);
+                                q.bindValue(":studyid", studyid);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             }
                             else if (upload_studycriteria == "studyuid") {
                                 /* update all study details except StudyInstanceUID */
-                                q.prepare("update upload_subjects set uploadstudy_desc = :desc, uploadstudy_date = :datetime, uploadstudy_modality = :modality, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadsubject_id = :subjectid");
+                                q.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_date = :datetime, uploadstudy_modality = :modality, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
                                 q.bindValue(":desc", tags["StudyDescription"]);
                                 q.bindValue(":datetime", tags["StudyDateTime"]);
                                 q.bindValue(":modality", tags["Modality"]);
@@ -405,7 +405,7 @@ int moduleUpload::Run() {
                                 q.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
                                 q.bindValue(":operator", tags["OperatorsName"]);
                                 q.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
-                                q.bindValue(":subjectid", subjectid);
+                                q.bindValue(":studyid", studyid);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             }
                             else n->WriteLog("Unspecified study criteria [" + upload_studycriteria + "]");
@@ -414,7 +414,7 @@ int moduleUpload::Run() {
                             /* update series details */
                             if (upload_seriescriteria == "seriesnumber") {
                                 /* update all series details except SeriesNumber */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadsubject_id = :subjectid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":date", tags["SeriesDateTime"]);
@@ -427,12 +427,12 @@ int moduleUpload::Run() {
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
                                 q.bindValue(":files", files.join(","));
-                                q.bindValue(":subjectid", subjectid);
+                                q.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             }
                             else if (upload_seriescriteria == "seriesdate") {
                                 /* update all series details except SeriesDateTime */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadsubject_id = :subjectid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":num", tags["SeriesNumber"]);
@@ -445,12 +445,12 @@ int moduleUpload::Run() {
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
                                 q.bindValue(":files", files.join(","));
-                                q.bindValue(":subjectid", subjectid);
+                                q.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             }
                             else if (upload_seriescriteria == "seriesuid") {
                                 /* update all series details except SeriesInstanceUID */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_files = :files where uploadsubject_id = :subjectid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_files = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":date", tags["SeriesDateTime"]);
@@ -463,7 +463,7 @@ int moduleUpload::Run() {
                                 q.bindValue(":rows", tags["Rows"]);
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":files", files.join(","));
-                                q.bindValue(":subjectid", subjectid);
+                                q.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             }
                             else n->WriteLog("Unspecified series criteria [" + upload_seriescriteria + "]");
