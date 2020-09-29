@@ -53,6 +53,7 @@ firewall-cmd --reload
 # create nidb user if it does not exist, add nidb to the apache group, and apache to the nidb group
 echo 'Add nidb user'
 id -u nidb &>/dev/null || useradd -p $(openssl passwd -1 password) nidb
+groupadd nidb
 usermod -G apache nidb
 usermod -G nidb apache
 # set nidb as the owner of these directories
