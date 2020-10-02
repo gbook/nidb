@@ -252,6 +252,12 @@
 		mkdir($savepath, 0, true);
 		chmod($savepath, 0777);
 		
+		if ($datalocation == "web") {
+			$sqlstring = "update uploads set upload_datapath = '$savepath' where upload_id = $uploadid";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		
 		$status = "uploadcomplete";
 		echo "<ul>";
 		/* go through all the files and save them */

@@ -36,6 +36,7 @@ INSERT IGNORE INTO `modules` (`module_id`, `module_name`, `module_status`, `modu
 (9, 'notifications', 'stopped', 0, now(), now(), 0),
 (10, 'pipeline', 'stopped', 0, now(), now(), 1),
 (11, 'qc', 'stopped', 0, now(), now(), 1),
+(11, 'upload', 'stopped', 0, now(), now(), 1),
 (12, 'usage', 'stopped', 0, now(), now(), 0);
 
 INSERT IGNORE INTO `nidb_sites` (`site_id`, `site_uid`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES

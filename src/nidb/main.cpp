@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 		/* a regular module is being called */
 		if (!quiet) {
 			printf("\n\n-------------------------------------------------------------\n");
-			printf("----- Starting Neuroinformatics Database (NiDB) backend -----\n");
+            printf("----- \033[1mStarting Neuroinformatics Database (NiDB) backend\033[0m -----\n");
 			printf("-------------------------------------------------------------\n");
 		}
 
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 
 		if (!quiet) {
 			printf("-------------------------------------------------------------\n");
-			printf("----- Terminating (NiDB) backend ----------------------------\n");
+            printf("----- \033[1mTerminating (NiDB) backend\033[0m ----------------------------\n");
 			printf("-------------------------------------------------------------\n");
 		}
 	}

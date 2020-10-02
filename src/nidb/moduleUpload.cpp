@@ -51,13 +51,13 @@ int moduleUpload::Run() {
     int ret(0);
 
     /* get list of uploads that are marked as uploadcomplete, with the upload details */
-    q.prepare("select * from uploads where status = 'uploadcomplete'");
+    q.prepare("select * from uploads where upload_status = 'uploadcomplete'");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
             int upload_id = q.value("upload_id").toInt();
             QString upload_source = q.value("upload_source").toString();
-            QString upload_datadir = q.value("upload_datadir").toString();
+            QString upload_datapath = q.value("upload_datapath").toString();
             //int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_modality = q.value("upload_modality").toString();
             //bool upload_guessmodality = q.value("upload_guessmodality").toBool();
@@ -66,48 +66,54 @@ int moduleUpload::Run() {
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
             /* create a multilevel hash [subject][study][series][files] */
-            QMap<QString, QMap<QString, QMap<QString, QStringList>>> fs;
+            QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs;
 
             /* create the path for the upload data */
-            QString uploadpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(upload_id);
+            QString uploadstagingpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(upload_id);
 
             /* create temporary directory in uploadstagingdir */
             QString m;
-            if (!n->MakePath(uploadpath, m)) {
-                n->WriteLog("Error creating directory [" + uploadpath + "]  with message [" + m + "]");
+            if (!n->MakePath(uploadstagingpath, m)) {
+                n->WriteLog("Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]");
+                ret = 1;
+                continue;
+            }
+
+            if ((upload_datapath == "") || (upload_datapath == "/") || (upload_datapath == "/etc") || (upload_datapath == "/bin") || (upload_datapath == "/root")) {
+                n->WriteLog(QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
                 continue;
             }
 
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
-            QString systemstring = QString("cp -ruv %1/* %2/").arg(upload_datadir).arg(uploadpath);
+            QString systemstring = QString("cp -ruv %1/* %2/").arg(upload_datapath).arg(uploadstagingpath);
             n->SystemCommand(systemstring);
 
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
             int c;
             qint64 b;
-            n->GetDirSizeAndFileCount(uploadpath, c, b, true);
-            n->WriteLog(QString("Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadpath).arg(c).arg(b));
+            n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
+            n->WriteLog(QString("Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* unzip any files in the uploadstagingdir (3 passes) */
-            n->WriteLog(n->UnzipDirectory(uploadpath, true));
-            n->WriteLog(n->UnzipDirectory(uploadpath, true));
-            n->WriteLog(n->UnzipDirectory(uploadpath, true));
+            n->WriteLog(n->UnzipDirectory(uploadstagingpath, true));
+            n->WriteLog(n->UnzipDirectory(uploadstagingpath, true));
+            n->WriteLog(n->UnzipDirectory(uploadstagingpath, true));
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             c = 0;
             b = 0;
-            n->GetDirSizeAndFileCount(uploadpath, c, b, true);
-            n->WriteLog(QString("After 3 passes of UNZIPPING files, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadpath).arg(c).arg(b));
+            n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
+            n->WriteLog(QString("After 3 passes of UNZIPPING files, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* get list of all files, and iterate through all of the files */
-            QStringList files = n->FindAllFiles(uploadpath, "*", true);
+            QStringList files = n->FindAllFiles(uploadstagingpath, "*", true);
             foreach (QString f, files) {
                 QString subject, study, series;
 
                 /* get the file info */
                 QHash<QString, QString> tags;
                 if (n->GetImageFileTags(f, tags)) {
-                    if (tags["Modality"] == upload_modality) {
+                    if (tags["Modality"].toLower() == upload_modality.toLower()) {
 
                         /* subject matching criteria */
                         if (upload_subjectcriteria == "patientid")
@@ -129,7 +135,7 @@ int moduleUpload::Run() {
                         if (upload_seriescriteria == "seriesnumber")
                             series = tags["SeriesNumber"];
                         else if (upload_seriescriteria == "seriesdate")
-                            series = tags["SeriesDate"] + "|" + tags["SeriesTime"];
+                            series = tags["SeriesDateTime"];
                         else if (upload_seriescriteria == "seriesuid")
                             series = tags["SeriesInstanceUID"];
                         else
@@ -139,7 +145,7 @@ int moduleUpload::Run() {
                         fs[subject][study][series].append(f);
                     }
                     else {
-                        n->WriteLog("Valid file [" + f + "] but not the modality we're looking for [" + tags["Modality"] + "]");
+                        n->WriteLog("Valid file [" + f + "] but not the modality [] we're looking for [" + tags["Modality"] + "]");
                         fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
                     }
                 }
@@ -152,7 +158,7 @@ int moduleUpload::Run() {
 
 
             /* ---------- iterate through the subjects ---------- */
-            for(QMap<QString, QMap<QString, QMap<QString, QStringList>>>::iterator a = fs.begin(); a != fs.end(); ++a) {
+            for(QMap<QString, QMap<QString, QMap<QString, QStringList> > >::iterator a = fs.begin(); a != fs.end(); ++a) {
                 QString subject = a.key();
 
                 /* get the uploadsubject_id */
@@ -171,6 +177,7 @@ int moduleUpload::Run() {
                     if (q.size() > 0) {
                         q.first();
                         subjectid = q.value("uploadsubject_id").toInt();
+                        n->WriteLog(QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
@@ -179,6 +186,7 @@ int moduleUpload::Run() {
                         q.bindValue(":patientid", PatientID);
                         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q.lastInsertId().toInt();
+                        n->WriteLog(QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else if (upload_subjectcriteria == "namesexdob") {
@@ -199,24 +207,31 @@ int moduleUpload::Run() {
                     if (q.size() > 0) {
                         q.first();
                         subjectid = q.value("uploadsubject_id").toInt();
+                        n->WriteLog(QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
-                        q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientname, uploadsubject_patientdob, uploadsubject_patientsex) values (:uploadid, :patientname, :patientdob, :patientsex)");
+                        q.prepare("insert into upload_subjects (upload_id, uploadsubject_name, uploadsubject_dob, uploadsubject_sex) values (:uploadid, :patientname, :patientdob, :patientsex)");
                         q.bindValue(":uploadid", upload_id);
                         q.bindValue(":patientname", PatientName);
                         q.bindValue(":patientdob", PatientBirthDate);
                         q.bindValue(":patientsex", PatientSex);
                         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q.lastInsertId().toInt();
+                        n->WriteLog(QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else
                     n->WriteLog("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
 
+                //n->WriteLog(QString("subject [%1]  fs[%1].first() = %2  size(fs[%1]): [%3]").arg(subject).arg(fs[subject].first().key()).arg(fs[subject].size()));
+                n->WriteLog(QString("subject [%1]  size(fs[%1]): [%2]").arg(subject).arg(fs[subject].size()));
+
                 /* ---------- iterate through the studies ---------- */
-                for(QMap<QString, QMap<QString, QStringList>>::iterator b = fs[subject].begin(); b != fs[subject].end(); ++b) {
+                for(QMap<QString, QMap<QString, QStringList> >::iterator b = fs[subject].begin(); b != fs[subject].end(); ++b) {
                     QString study = b.key();
+
+                    n->WriteLog("Checkpoint A");
 
                     /* get the uploadstudy_id */
                     int studyid(0);
@@ -237,15 +252,17 @@ int moduleUpload::Run() {
                         if (q.size() > 0) {
                             q.first();
                             studyid = q.value("uploadstudy_id").toInt();
+                            n->WriteLog(QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
                             q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
                             q.bindValue(":subjectid", subjectid);
-                            q.bindValue(":patientid", StudyDateTime);
+                            q.bindValue(":studydatetime", StudyDateTime);
                             q.bindValue(":modality", Modality);
                             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q.lastInsertId().toInt();
+                            n->WriteLog(QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else if (upload_studycriteria == "studyuid") {
@@ -261,6 +278,7 @@ int moduleUpload::Run() {
                         if (q.size() > 0) {
                             q.first();
                             studyid = q.value("uploadstudy_id").toInt();
+                            n->WriteLog(QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
@@ -269,10 +287,13 @@ int moduleUpload::Run() {
                             q.bindValue(":studyinstanceuid", StudyInstanceUID);
                             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q.lastInsertId().toInt();
+                            n->WriteLog(QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else
                         n->WriteLog("Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...");
+
+                    n->WriteLog("Checkpoint B");
 
                     /* ---------- iterate through the series ---------- */
                     for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
@@ -310,9 +331,8 @@ int moduleUpload::Run() {
 
                             QSqlQuery q;
                             /* check if the seriesid already exists ... */
-                            q.prepare("select uploadseries_id from upload_series where uploadstudy_id = :studyid and uploadseries_date = :seriesdatetime");
+                            q.prepare("select uploadseries_id from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
                             q.bindValue(":studyid", studyid);
-                            q.bindValue(":seriesdatetime", SeriesDateTime);
                             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                             if (q.size() > 0) {
                                 q.first();
@@ -320,9 +340,8 @@ int moduleUpload::Run() {
                             }
                             else {
                                 /* ... otherwise create a new series */
-                                q.prepare("insert into upload_studies (uploadstudy_id, uploadseries_date) values (:studyid, :seriesdatetime)");
+                                q.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
                                 q.bindValue(":studyid", studyid);
-                                q.bindValue(":seriesdatetime", SeriesDateTime);
                                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q.lastInsertId().toInt();
                             }
@@ -355,6 +374,8 @@ int moduleUpload::Run() {
                         }
 
                         QStringList files = fs[subject][study][series];
+                        int numfiles = files.size();
+                        n->WriteLog(QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
 
                         /* we've arrived at a series, so let's put it into the database */
                         /* get tags from first file in the list to populate the subject/study/series info not included in the criteria matching */
@@ -366,7 +387,7 @@ int moduleUpload::Run() {
                             /* update subject details */
                             if (upload_subjectcriteria == "patientid") {
                                 /* update all subject details except PatientID */
-                                q.prepare("update ignore upload_subjects set uploadsubject_patientname = :name, uploadsubject_patientsex = :sex, uploadsubject_patientdob = :dob where uploadsubject_id = :subjectid");
+                                q.prepare("update ignore upload_subjects set uploadsubject_name = :name, uploadsubject_sex = :sex, uploadsubject_dob = :dob where uploadsubject_id = :subjectid");
                                 q.bindValue(":name", tags["PatientName"]);
                                 q.bindValue(":sex", tags["PatientSex"]);
                                 q.bindValue(":dob", tags["PatientBirthDate"]);
@@ -414,15 +435,15 @@ int moduleUpload::Run() {
                             /* update series details */
                             if (upload_seriescriteria == "seriesnumber") {
                                 /* update all series details except SeriesNumber */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadseries_id = :seriesid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_date = :date, uploadseries_numfiles = :NumberOfFiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_filelist = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":date", tags["SeriesDateTime"]);
-                                q.bindValue(":numfiles", files.size());
-                                q.bindValue(":tr", tags["RepetitionTime"]);
-                                q.bindValue(":te", tags["EchoTime"]);
-                                q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                                q.bindValue(":slicethickness", tags["SliceThickness"]);
+                                q.bindValue(":NumberOfFiles", numfiles);
+                                if (tags["RepetitionTime"] == "") q.bindValue(":tr", QVariant(QVariant::Double)); else q.bindValue(":tr", tags["RepetitionTime"]);
+                                if (tags["EchoTime"] == "") q.bindValue(":te", QVariant(QVariant::Double)); else q.bindValue(":te", tags["EchoTime"]);
+                                if (tags["SpacingBetweenSlices"] == "") q.bindValue(":slicespacing", QVariant(QVariant::Double)); else q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                                if (tags["SliceThickness"] == "") q.bindValue(":slicethickness", QVariant(QVariant::Double)); else q.bindValue(":slicethickness", tags["SliceThickness"]);
                                 q.bindValue(":rows", tags["Rows"]);
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -432,15 +453,15 @@ int moduleUpload::Run() {
                             }
                             else if (upload_seriescriteria == "seriesdate") {
                                 /* update all series details except SeriesDateTime */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_files = :files where uploadseries_id = :seriesid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_numfiles = :NumberOfFiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_filelist = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":num", tags["SeriesNumber"]);
-                                q.bindValue(":numfiles", files.size());
-                                q.bindValue(":tr", tags["RepetitionTime"]);
-                                q.bindValue(":te", tags["EchoTime"]);
-                                q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                                q.bindValue(":slicethickness", tags["SliceThickness"]);
+                                q.bindValue(":NumberOfFiles", numfiles);
+                                if (tags["RepetitionTime"] == "") q.bindValue(":tr", QVariant(QVariant::Double)); else q.bindValue(":tr", tags["RepetitionTime"]);
+                                if (tags["EchoTime"] == "") q.bindValue(":te", QVariant(QVariant::Double)); else q.bindValue(":te", tags["EchoTime"]);
+                                if (tags["SpacingBetweenSlices"] == "") q.bindValue(":slicespacing", QVariant(QVariant::Double)); else q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                                if (tags["SliceThickness"] == "") q.bindValue(":slicethickness", QVariant(QVariant::Double)); else q.bindValue(":slicethickness", tags["SliceThickness"]);
                                 q.bindValue(":rows", tags["Rows"]);
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -450,16 +471,16 @@ int moduleUpload::Run() {
                             }
                             else if (upload_seriescriteria == "seriesuid") {
                                 /* update all series details except SeriesInstanceUID */
-                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_date = :date, uploadseries_numfiles = :numfiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_files = :files where uploadseries_id = :seriesid");
+                                q.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_num = :num, uploadseries_date = :date, uploadseries_numfiles = :NumberOfFiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_filelist = :files where uploadseries_id = :seriesid");
                                 q.bindValue(":desc", tags["SeriesDescription"]);
                                 q.bindValue(":protocol", tags["ProtocolName"]);
                                 q.bindValue(":date", tags["SeriesDateTime"]);
                                 q.bindValue(":num", tags["SeriesNumber"]);
-                                q.bindValue(":numfiles", files.size());
-                                q.bindValue(":tr", tags["RepetitionTime"]);
-                                q.bindValue(":te", tags["EchoTime"]);
-                                q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                                q.bindValue(":slicethickness", tags["SliceThickness"]);
+                                q.bindValue(":NumberOfFiles", numfiles);
+                                if (tags["RepetitionTime"] == "") q.bindValue(":tr", QVariant(QVariant::Double)); else q.bindValue(":tr", tags["RepetitionTime"]);
+                                if (tags["EchoTime"] == "") q.bindValue(":te", QVariant(QVariant::Double)); else q.bindValue(":te", tags["EchoTime"]);
+                                if (tags["SpacingBetweenSlices"] == "") q.bindValue(":slicespacing", QVariant(QVariant::Double)); else q.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                                if (tags["SliceThickness"] == "") q.bindValue(":slicethickness", QVariant(QVariant::Double)); else q.bindValue(":slicethickness", tags["SliceThickness"]);
                                 q.bindValue(":rows", tags["Rows"]);
                                 q.bindValue(":cols", tags["Columns"]);
                                 q.bindValue(":files", files.join(","));

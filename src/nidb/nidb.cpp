@@ -49,7 +49,7 @@ nidb::nidb(QString m, bool c)
 /* --------- GetBuildString --------------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::GetBuildString() {
-	return QString("NiDB version %1.%2.%3   Build date [%4 %5]   C++ [%6]   Qt compiled [%7]   Qt runtime [%8]   Build system [%9]").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
+    return QString("   NiDB version %1.%2.%3\n   Build date [%4 %5]\n   C++ [%6]\n   Qt compiled [%7]\n   Qt runtime [%8]\n   Build system [%9]").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
 }
 
 
@@ -141,12 +141,12 @@ bool nidb::LoadConfig() {
 		configLoaded = true;
 
 		if (!runningFromCluster)
-			Print("[Ok]");
+            Print("[\033[0;32mOk\033[0m]");
 
         return true;
     }
     else {
-		Print("[Error]");
+        Print("[\033[0;31mError\033[0m]");
         return false;
     }
 }
@@ -175,11 +175,12 @@ bool nidb::DatabaseConnect(bool cluster) {
 	}
 
     if (db.open()) {
-		if (!cluster) Print("[Ok]");
+        if (!cluster)
+            Print("[\033[0;32mOk\033[0m]");
 		return true;
     }
     else {
-		QString err = "[Error]\n\tUnable to connect to database. Error message [" + db.lastError().text() + "]";
+        QString err = "[\033[0;31mError\033[0m]\n\tUnable to connect to database. Error message [" + db.lastError().text() + "]";
 
         FatalError(err);
         return false;
@@ -268,11 +269,11 @@ bool nidb::CreateLockFile() {
         QTextStream fs(&f);
         fs << d;
         f.close();
-		Print("[Ok]");
+        Print("[\033[0;32mOk\033[0m]");
         return 1;
     }
     else {
-		Print("[Error]");
+        Print("[\033[0;31mError\033[0m]");
 		return 0;
     }
 }
@@ -292,11 +293,11 @@ bool nidb::CreateLogFile () {
 		else if (pid < 10000) padding = " ";
 		else padding = "  ";
 		log.write(GetBuildString().toLatin1());
-		Print("[Ok]");
-		return 1;
+        Print("[\033[0;32mOk\033[0m]");
+        return 1;
 	}
 	else {
-		Print("[Error]");
+        Print("[\033[0;31mError\033[0m]");
 		return 0;
 	}
 }
@@ -311,9 +312,9 @@ void nidb::DeleteLockFile() {
 
 	QFile f(lockFilepath);
 	if (f.remove())
-		Print("[Ok]");
-	else
-		Print("[Error]");
+        Print("[\033[0;32mOk\033[0m]");
+    else
+        Print("[\033[0;31mError\033[0m]");
 }
 
 
@@ -326,9 +327,9 @@ void nidb::RemoveLogFile(bool keepLog) {
 		Print("Deleting log file [" + logFilepath + "]",false, true);
 		QFile f(logFilepath);
 		if (f.remove())
-			Print("[Ok]");
-		else
-			Print("[Error]");
+            Print("[\033[0;32mOk\033[0m]");
+        else
+            Print("[\033[0;31mError\033[0m]");
 	}
 	else
 		Print("Keeping log file [" + logFilepath + "]");
@@ -402,11 +403,11 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 		return sql;
 
 	/* if we get to this point, there is a SQL error */
-	QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+    QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL (1) [%5]\n\nSQL (2) [%6]\n\nDatabase error [%7]\n\nDriver error [%8]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
 	SendEmail(cfg["adminemail"], "SQL error", err);
 	qDebug() << err;
 	qDebug() << q.lastError();
-	WriteLog(err);
+    WriteLog(err);
 	WriteLog("SQL error, exiting program");
 
 	/* record error in error_log */
@@ -448,9 +449,9 @@ void nidb::ModuleDBCheckIn() {
 	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
 	if (q.numRowsAffected() > 0)
-		Print("[Ok]");
-	else
-		Print("[Error]");
+        Print("[\033[0;32mOk\033[0m]");
+    else
+        Print("[\033[0;31mError\033[0m]");
 
 	/* check if the module should be in a debug state */
 	q.prepare("select module_debug from modules where module_name = :module");
@@ -926,20 +927,20 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
 
     QStringList msgs;
     if (recurse) {
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar.gz' -exec tar -zxf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.gz' -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.z' -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.zip' -exec unzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar.bz2' -exec tar -xjf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar' -exec tar -xf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar.gz' -exec tar -zxf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.gz' -exec gunzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.z' -exec gunzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.zip' -exec unzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar.bz2' -exec tar -xjf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar' -exec tar -xf {} . \\;").arg(dir));
     }
     else {
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar.gz' -maxdepth 0 -exec tar -zxf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.gz' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.z' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.zip' -maxdepth 0 -exec unzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar.bz2' -maxdepth 0 -exec tar -xjf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 dir -name '*.tar' -maxdepth 0 -exec tar -xf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar.gz' -maxdepth 0 -exec tar -zxf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.gz' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.z' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.zip' -maxdepth 0 -exec unzip {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar.bz2' -maxdepth 0 -exec tar -xjf {} . \\;").arg(dir));
+        msgs << SystemCommand(QString("find %1 -name '*.tar' -maxdepth 0 -exec tar -xf {} . \\;").arg(dir));
     }
 
     return msgs.join('\n');
