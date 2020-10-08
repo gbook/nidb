@@ -33,6 +33,7 @@ public:
     ~moduleUpload();
 
     int Run();
+    QString AppendUploadLog(int uploadid, QString msg);
 
 private:
     nidb *n;

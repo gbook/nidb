@@ -111,7 +111,7 @@
 				
 				/* data */
 				if ($GLOBALS['cfg']['enabledatamenu']) {
-					if ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
+					if ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
 					else { $style = ""; }
 					?><a href="import.php" style="<?=$style?>"><b>Data</b></a><?
 				}
@@ -301,12 +301,16 @@
 				}
 				
 				/* data sub-menu */
-				elseif ($page=="import.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
+				elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
 					
 					if ($GLOBALS['cfg']['enabledatamenu']) {
 						if (($page == "import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="import.php" style="<?=$style?>">Import</a><?
+
+						if ($page == "importimaging.php") { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="importimaging.php" style="<?=$style?>">Import Imaging</a><?
 						
 						if (($page == "import.php") && ($action == "idmapper")) { $style = "background-color:#273f70"; }
 						else { $style = ""; }

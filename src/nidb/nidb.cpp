@@ -448,10 +448,12 @@ void nidb::ModuleDBCheckIn() {
 	q.bindValue(":module", module);
 	SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	if (q.numRowsAffected() > 0)
+    if (q.numRowsAffected() > 0) {
         Print("[\033[0;32mOk\033[0m]");
-    else
+    }
+    else {
         Print("[\033[0;31mError\033[0m]");
+    }
 
 	/* check if the module should be in a debug state */
 	q.prepare("select module_debug from modules where module_name = :module");
@@ -926,21 +928,31 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
 QString nidb::UnzipDirectory(QString dir, bool recurse) {
 
     QStringList msgs;
-    if (recurse) {
-        msgs << SystemCommand(QString("find %1 -name '*.tar.gz' -exec tar -zxf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.gz' -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.z' -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.zip' -exec unzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.tar.bz2' -exec tar -xjf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.tar' -exec tar -xf {} . \\;").arg(dir));
+
+    if (dir.trimmed() == "") {
+        msgs << "Empty directory specified. Not attempting to unzip";
     }
     else {
-        msgs << SystemCommand(QString("find %1 -name '*.tar.gz' -maxdepth 0 -exec tar -zxf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.gz' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.z' -maxdepth 0 -exec gunzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.zip' -maxdepth 0 -exec unzip {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.tar.bz2' -maxdepth 0 -exec tar -xjf {} . \\;").arg(dir));
-        msgs << SystemCommand(QString("find %1 -name '*.tar' -maxdepth 0 -exec tar -xf {} . \\;").arg(dir));
+        for (int i=0; i<3; i++) {
+            QString prefix = QString("Unzipping pass [%1]: ").arg(i);
+            QString maxdepth;
+            if (recurse)
+                maxdepth = "";
+            else
+                maxdepth = "-maxdepth 0";
+
+            QStringList cmds;
+            cmds << QString("cd %1; find . %2 -name '*.tar.gz' -exec tar -zxf {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.gz' -exec gunzip {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.z' -exec gunzip {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -iname '*.zip' -exec sh -c 'unzip -o -q -d \"${0%.*}\" \"$0\" && rm -v {}' '{}' ';'").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.tar.bz2' -exec tar -xjf {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} . \\;").arg(dir).arg(maxdepth);
+
+            foreach (QString cmd, cmds) {
+                msgs << prefix + SystemCommand(cmd);
+            }
+        }
     }
 
     return msgs.join('\n');

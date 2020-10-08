@@ -745,14 +745,19 @@
 	   parent instance. Also highlight selected IDs.
 	   width and height are in px
 	*/
-	function DisplayProjectSelectBox($currentinstanceonly,$varname,$idname,$classname,$multiselect,$selectedids,$width=350,$height=30) {
+	function DisplayProjectSelectBox($currentinstanceonly, $varname, $idname, $classname, $multiselect, $selectedids, $width=350, $height=30, $required=false) {
 
 		if (!is_array($selectedids))
 			$selectedids = array($selectedids);
 		
 		if (in_array(0, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
+		
+		if ($required)
+			$required = "required";
+		else
+			$required = "";
 		?>
-		<select name="<?=$varname?>" class="<?=$classname?>" style="width:<?=$width?>px;height:<?=$height?>px" <? if ($multiselect) { echo "multiple"; } ?>>
+		<select name="<?=$varname?>" class="<?=$classname?>" style="width:<?=$width?>px;height:<?=$height?>px" <? if ($multiselect) { echo "multiple"; } ?> <?=$required?>>
 			<option value="0" <?=$selected?>>All Projects</option>
 			<?
 				if ($currentinstanceonly) {

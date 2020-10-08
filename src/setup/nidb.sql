@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 29, 2020 at 03:20 PM
+-- Generation Time: Oct 06, 2020 at 01:43 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2781,7 +2781,7 @@ CREATE TABLE `uploads` (
   `upload_id` int(11) NOT NULL,
   `upload_startdate` datetime DEFAULT NULL,
   `upload_enddate` datetime DEFAULT NULL,
-  `upload_status` enum('uploading','error','uploadcomplete','archivecomplete') DEFAULT NULL,
+  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror') DEFAULT NULL,
   `upload_log` text DEFAULT NULL,
   `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
@@ -2804,7 +2804,7 @@ CREATE TABLE `upload_series` (
   `uploadseries_id` int(11) NOT NULL,
   `uploadstudy_id` int(11) NOT NULL,
   `uploadseries_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadseries_desc` varchar(255) DEFAULT NULL,
+  `uploadseries_desc` varchar(255) NOT NULL,
   `uploadseries_protocol` varchar(255) DEFAULT NULL,
   `uploadseries_num` int(11) DEFAULT NULL,
   `uploadseries_date` datetime DEFAULT NULL,
@@ -2828,7 +2828,7 @@ CREATE TABLE `upload_studies` (
   `uploadstudy_id` int(11) NOT NULL,
   `uploadsubject_id` int(11) NOT NULL,
   `uploadstudy_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadstudy_desc` varchar(255) DEFAULT NULL,
+  `uploadstudy_desc` varchar(255) NOT NULL,
   `uploadstudy_date` datetime DEFAULT NULL,
   `uploadstudy_modality` varchar(255) DEFAULT NULL,
   `uploadstudy_datatype` varchar(255) DEFAULT NULL COMMENT 'dicom, parrec, etc',
@@ -2848,7 +2848,7 @@ CREATE TABLE `upload_subjects` (
   `uploadsubject_patientid` varchar(255) DEFAULT NULL,
   `uploadsubject_name` varchar(255) DEFAULT NULL,
   `uploadsubject_sex` varchar(1) DEFAULT NULL,
-  `uploadsubject_dob` datetime DEFAULT NULL
+  `uploadsubject_dob` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------

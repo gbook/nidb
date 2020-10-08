@@ -126,6 +126,7 @@
 		?>
 		<ul>
 		<li><a href="import.php?action=idmapper" title="Matches a list of alternate IDs to the NiDB ID">ID mapper</a>
+		<li>Import <a href="importimaging.php">imaging</a> data
 		<li><a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader <span class="tiny">via github.com</a>
 		<li><a href="import.php?action=import">Import</a> data via website
 		<li>View <a href="importlog.php?action=viewtransactions">import logs</a>

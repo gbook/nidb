@@ -49,12 +49,12 @@
 	$action = GetVariable("action");
 	$datalocation = GetVariable("datalocation");
 	$nfspath = GetVariable("nfspath");
-	//$imagingfiles = GetVariable("imagingfiles");
 	$projectid = GetVariable("projectid");
 	$modality = GetVariable("modality");
 	$subjectcriteria = GetVariable("subjectcriteria");
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
+	$uploadid = GetVariable("uploadid");
 	
 	/* determine action */
 	switch ($action) {
@@ -64,6 +64,9 @@
 			break;
 		case 'displayimportlist':
 			DisplayImportList();
+			break;
+		case 'displayimport':
+			DisplayImport($uploadid);
 			break;
 		default:
 			DisplayNewImportForm();
@@ -92,13 +95,13 @@
 			<tr>
 				<td class="label" valign="top">Project</td>
 				<td valign="top">
-					<?=DisplayProjectSelectBox(true, "projectid", "projectid", "", false, "");?>
+					<?=DisplayProjectSelectBox(true, "projectid", "projectid", "", false, "", 350, 50, true);?>
 				</td>
 			</tr>
 			<tr>
 				<td class="label" valign="top">Modality</td>
 				<td valign="top">
-					<select name="modality">
+					<select name="modality" required>
 						<option value="">Select modality</option>
 						<?
 							$modalities = GetModalityList();
@@ -205,6 +208,7 @@
 			</tr>
 		</table>
 		<input type="submit" value="Import">
+		<br><br>
 		<?
 	}
 	
@@ -262,6 +266,7 @@
 		echo "<ul>";
 		/* go through all the files and save them */
 		foreach ($_FILES['imagingfiles']['name'] as $i => $name) {
+			$files[] = $name;
 			if (move_uploaded_file($_FILES['imagingfiles']['tmp_name'][$i], "$savepath/$name")) {
 				
 				$msg = "Received file [$name]. Size is [" . number_format($_FILES['imagingfiles']['size'][$i]) . "] bytes";
@@ -276,7 +281,7 @@
 			else {
 				$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
 				echo "<li>$msg";
-				$status = "error";
+				$status = "uploaderror";
 				
 				/* update the upload_log */
 				$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
@@ -285,9 +290,10 @@
 			}
 		}
 		echo "</ul>";
-		/* update the upload_status */
+		/* update the upload_status, upload_enddate, and upload_originalfilelist */
 		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-		$sqlstring = "update uploads set upload_status = '$status' where upload_id = $uploadid";
+		$filelist = mysqli_real_escape_string($GLOBALS['linki'], implode2(",", $files));
+		$sqlstring = "update uploads set upload_status = '$status', upload_enddate = now(), upload_originalfilelist = '$filelist' where upload_id = $uploadid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
@@ -296,17 +302,225 @@
 	/* ------- DisplayImportList ------------------ */
 	/* -------------------------------------------- */
 	function DisplayImportList() {
+		
 		$sqlstring = "select * from uploads order by upload_startdate desc limit 10";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
-			PrintSQLTable($result, "importimaging.php", "upload_startdate", 11);
-			//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				
-			//}
+			?>
+			<table class="tiered">
+				<thead>
+					<th>Date</th>
+					<th>Status</th>
+					<th>Datapath</th>
+					<th>Project</th>
+					<th>Modality</th>
+				</thead>
+			<?
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$uploadid = $row['upload_id'];
+				$startdate = $row['upload_startdate'];
+				$enddate = $row['upload_enddate'];
+				$status = $row['upload_status'];
+				$log = $row['upload_log'];
+				$originalfilelist = $row['upload_originalfilelist'];
+				$source = $row['upload_source'];
+				$datapath = $row['upload_datapath'];
+				$destprojectid = $row['upload_destprojectid'];
+				$modality = $row['upload_modality'];
+				$guessmodality = $row['upload_guessmodality'];
+				$subjectcriteria = $row['upload_subjectcriteria'];
+				$studycriteria = $row['upload_studycriteria'];
+				$seriescriteria = $row['upload_seriescriteria'];
+				?>
+				<tr>
+					<td><?=$startdate?> - <?=$enddate?></td>
+					<td><a href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><?=$status?></a></td>
+					<td><tt><?=$datapath?></tt></td>
+					<td><?=$destprojectid?></td>
+					<td><?=$modality?></td>
+				</tr>
+				<tr>
+					<td class="details" colspan="5">
+						<details>
+						<summary>Details</summary>
+						<table style="all: unset;">
+							<tr>
+								<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
+								<td><tt><pre><?=$log?></pre></tt></td>
+							</tr>
+							<tr>
+								<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
+								<td><?=$originalfilelist?></td>
+							</tr>
+							<tr>
+								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
+								<td><?=$source?></td>
+							</tr>
+							<tr>
+								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
+								<td><?=$datapath?></td>
+							</tr>
+							<tr>
+								<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
+								<td>
+									Subject: <?=$subjectcriteria?><br>
+									Study: <?=$studycriteria?><br>
+									Series: <?=$seriescriteria?>
+								</td>
+							</tr>
+						</table>
+						</details>
+					</td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+			<?
 		}
 		else {
 			?>No current or recent uploads<?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayImport ---------------------- */
+	/* -------------------------------------------- */
+	function DisplayImport($uploadid) {
+		
+		$sqlstring = "select * from uploads where upload_id = $uploadid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$uploadid = $row['upload_id'];
+			$startdate = $row['upload_startdate'];
+			$enddate = $row['upload_enddate'];
+			$status = $row['upload_status'];
+			$log = $row['upload_log'];
+			$originalfilelist = $row['upload_originalfilelist'];
+			$source = $row['upload_source'];
+			$datapath = $row['upload_datapath'];
+			$destprojectid = $row['upload_destprojectid'];
+			$modality = $row['upload_modality'];
+			$guessmodality = $row['upload_guessmodality'];
+			$subjectcriteria = $row['upload_subjectcriteria'];
+			$studycriteria = $row['upload_studycriteria'];
+			$seriescriteria = $row['upload_seriescriteria'];
+			
+			$filelist = explode(",", $originalfilelist);
+			
+			?>
+			<table style="all: unset;">
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
+					<td><tt><pre><?=$log?></pre></tt></td>
+				</tr>
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
+					<td><?=implode2("<br>", $filelist)?></td>
+				</tr>
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
+					<td><?=$source?></td>
+				</tr>
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
+					<td><?=$datapath?></td>
+				</tr>
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
+					<td>
+						Subject: <?=$subjectcriteria?><br>
+						Study: <?=$studycriteria?><br>
+						Series: <?=$seriescriteria?>
+					</td>
+				</tr>
+			</table>
+			
+			<br><br>
+			
+			Subject/Study/Series
+			<table>
+				<thead>
+					<th>PatientID</th>
+					<th>Name</th>
+					<th>DOB</th>
+					<th>Sex</th>
+				</thead>
+			<?
+			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid";
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$uploadsubjectid = $rowA['uploadsubject_id'];
+				$patientid = $rowA['uploadsubject_patientid'];
+				$name = $rowA['uploadsubject_name'];
+				$dob = $rowA['uploadsubject_dob'];
+				?>
+				<tr>
+					<td><?=$patientid?></td>
+					<td><?=$name?></td>
+					<td><?=$dob?></td>
+					<td><?=$sex?></td>
+				</tr>
+				<tr>
+					<td colspan="4" style="padding-left: 15x;">
+						<?
+							$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid";
+							while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+								$uploadstudyid = $rowB['uploadstudy_id'];
+								$instanceuid = $rowB['uploadstudy_instanceuid'];
+								$desc = $rowB['uploadstudy_desc'];
+								$date = $rowB['uploadstudy_date'];
+								$modality = $rowB['uploadstudy_modality'];
+								$datatype = $rowB['uploadstudy_datatype'];
+								$equipment = $rowB['uploadstudy_equipment'];
+								$operator = $rowB['uploadstudy_operator'];
+								?>
+								<details>
+								<summary>Study - <?=$desc?> <?=$date?> <?=$modality?> <?=$datatype?> <?=$equipment?></summary>
+								<?
+									$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid";
+									while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+										$uploadseriesid = $rowC['uploadseries_id'];
+										$instanceuid = $rowC['uploadseries_instanceuid'];
+										$desc = $rowC['uploadseries_desc'];
+										$date = $rowC['uploadseries_date'];
+										$protocol = $rowC['uploadseries_protocol'];
+										$num = $rowC['uploadseries_num'];
+										$numfiles = $rowC['uploadseries_numfiles'];
+										$tr = $rowC['uploadseries_tr'];
+										$te = $rowC['uploadseries_te'];
+										$slicespacing = $rowC['uploadseries_slicespacing'];
+										$slicethickness = $rowC['uploadseries_slicethickness'];
+										$rows = $rowC['uploadseries_rows'];
+										$cols = $rowC['uploadseries_cols'];
+										$filelist = $rowC['uploadseries_filelist'];
+										?>
+										<details>
+										<summary>Series <?=$num?> - <?=$desc?> <?=$date?> <?=$cols?>x<?=$rows?></summary>
+										<?
+											$files = explode(",", $filelist);
+											echo implode2("<br>", $files);
+										?>
+										</details>
+										<?
+									}
+								
+								?>
+								</details>
+								<?
+							}
+						?>
+					</td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+			<?
+		}
+		else {
+			?>Upload not found<?
 		}
 	}
 	
