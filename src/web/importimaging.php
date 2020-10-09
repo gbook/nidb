@@ -347,7 +347,12 @@
 						<table style="all: unset;">
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
-								<td><tt><pre><?=$log?></pre></tt></td>
+								<td>
+									<details>
+									<summary>View Log <span class="tiny"><?=strlen($log)?> bytes</span></summary>
+									<tt ><pre><?=$log?></pre></tt>
+									</details>
+								</td>
 							</tr>
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
@@ -393,6 +398,7 @@
 		$sqlstring = "select * from uploads where upload_id = $uploadid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$uploadid = $row['upload_id'];
 			$startdate = $row['upload_startdate'];
 			$enddate = $row['upload_enddate'];
@@ -411,10 +417,15 @@
 			$filelist = explode(",", $originalfilelist);
 			
 			?>
-			<table style="all: unset;">
+			<table style="border: 1px solid #aaa;">
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
-					<td><tt><pre><?=$log?></pre></tt></td>
+					<td>
+						<details>
+						<summary>View Log <span class="tiny"><?=strlen($log)?> bytes</span></summary>
+						<tt ><pre><?=$log?></pre></tt>
+						</details>
+					</td>
 				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
@@ -440,7 +451,6 @@
 			
 			<br><br>
 			
-			Subject/Study/Series
 			<table>
 				<thead>
 					<th>PatientID</th>
@@ -449,12 +459,14 @@
 					<th>Sex</th>
 				</thead>
 			<?
-			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid";
+			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid order by uploadsubject_patientid desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$uploadsubjectid = $rowA['uploadsubject_id'];
 				$patientid = $rowA['uploadsubject_patientid'];
 				$name = $rowA['uploadsubject_name'];
 				$dob = $rowA['uploadsubject_dob'];
+				$sex = $rowA['uploadsubject_sex'];
 				?>
 				<tr>
 					<td><?=$patientid?></td>
@@ -463,9 +475,10 @@
 					<td><?=$sex?></td>
 				</tr>
 				<tr>
-					<td colspan="4" style="padding-left: 15x;">
+					<td colspan="4" style="padding-left: 20px;">
 						<?
-							$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid";
+							$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
+							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 							while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 								$uploadstudyid = $rowB['uploadstudy_id'];
 								$instanceuid = $rowB['uploadstudy_instanceuid'];
@@ -476,10 +489,11 @@
 								$equipment = $rowB['uploadstudy_equipment'];
 								$operator = $rowB['uploadstudy_operator'];
 								?>
-								<details>
-								<summary>Study - <?=$desc?> <?=$date?> <?=$modality?> <?=$datatype?> <?=$equipment?></summary>
+								<details style="padding-left: 20px;">
+								<summary>Study - <b><?=$desc?></b> <?=$date?> <?=$modality?> <?=$datatype?> <?=$equipment?></summary>
 								<?
-									$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid";
+									$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
+									$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
 									while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
 										$uploadseriesid = $rowC['uploadseries_id'];
 										$instanceuid = $rowC['uploadseries_instanceuid'];
@@ -496,12 +510,14 @@
 										$cols = $rowC['uploadseries_cols'];
 										$filelist = $rowC['uploadseries_filelist'];
 										?>
-										<details>
+										<details style="padding-left: 20px;">
 										<summary>Series <?=$num?> - <?=$desc?> <?=$date?> <?=$cols?>x<?=$rows?></summary>
-										<?
-											$files = explode(",", $filelist);
-											echo implode2("<br>", $files);
-										?>
+											<div style="font-size:8pt; padding-left: 20px;"><tt>
+											<?
+												$files = explode(",", $filelist);
+												echo implode2("<br>", $files);
+											?>
+											</tt></span>
 										</details>
 										<?
 									}
