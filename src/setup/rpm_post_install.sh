@@ -60,6 +60,8 @@ usermod -G nidb apache
 chown nidb:nidb /run/php-fpm/www.sock
 chown -R nidb:nidb /var/lib/php/session
 
+systemctl restart php-fpm.service
+
 # change permissions of the /nidb directory
 echo 'Change ownership of /nidb contents'
 chown -Rv nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
@@ -100,4 +102,8 @@ mkdir -p /nidb/data/tmp
 mkdir -p /nidb/data/upload
 mkdir -p /nidb/data/uploaded
 mkdir -p /nidb/data/uploadstaging
+
+# change owner and permissions of the web directory
 chown -R nidb:nidb /var/www/html
+find /var/www -type d -exec chmod 755 {} \;
+find /var/www -type f -exec chmod 644 {} \;

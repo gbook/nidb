@@ -417,6 +417,7 @@
 			$filelist = explode(",", $originalfilelist);
 			
 			?>
+			Upload Details
 			<table style="border: 1px solid #aaa;">
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
@@ -429,7 +430,12 @@
 				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
-					<td><?=implode2("<br>", $filelist)?></td>
+					<td>
+						<details>
+						<summary>File list (<?=count($filelist);?> files)</summary>
+							<tt><?=implode2("<br>", $filelist)?></tt>
+						</details>
+					</td>
 				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
@@ -437,7 +443,7 @@
 				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
-					<td><?=$datapath?></td>
+					<td><tt><?=$datapath?></tt></td>
 				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
@@ -451,13 +457,20 @@
 			
 			<br><br>
 			
-			<table>
-				<thead>
-					<th>PatientID</th>
-					<th>Name</th>
-					<th>DOB</th>
-					<th>Sex</th>
-				</thead>
+			<style>
+				ul, #myUL { list-style-type: none; }
+				#myUL { margin: 0; padding: 0; }
+				#myUL .caret { width: 100%; padding:5px; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+				#myUL .caret::before { content: "\25B6"; color: #666; display: inline-block; margin-right: 6px; }
+				#myUL .caret-down::before { -ms-transform: rotate(90deg); -webkit-transform: rotate(90deg); transform: rotate(90deg); }
+				#myUL .nested { display: none; }
+				#myUL .active { display: block; }
+				li.level1 { background-color: #ccc; margin: 2px; padding: 10px; border-radius: 8px; }
+				li.level2 { background-color: #ddd; margin: 2px; padding: 10px; border-radius: 8px; }
+				li.level3 { background-color: #eee; margin: 2px; padding: 10px; border-radius: 8px; }
+			</style>
+			
+			<ul id="myUL">
 			<?
 			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid order by uploadsubject_patientid desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -467,72 +480,84 @@
 				$name = $rowA['uploadsubject_name'];
 				$dob = $rowA['uploadsubject_dob'];
 				$sex = $rowA['uploadsubject_sex'];
+				
+				if ($patientid == "") $patientid = "(blank)";
+				if ($name == "") $name = "(blank)";
+				if ($dob == "") $dob = "(blank)";
+				if ($sex == "") $sex = "(blank)";
 				?>
-				<tr>
-					<td><?=$patientid?></td>
-					<td><?=$name?></td>
-					<td><?=$dob?></td>
-					<td><?=$sex?></td>
-				</tr>
-				<tr>
-					<td colspan="4" style="padding-left: 20px;">
+				<li class="level1"><span class="caret"><span class="tiny">PatientID:</span> <?$patientid?> <span class="tiny">Name:</span> <?=$name?></span>
+				<ul class="nested">
+				<?
+					$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+						$uploadstudyid = $rowB['uploadstudy_id'];
+						$instanceuid = $rowB['uploadstudy_instanceuid'];
+						$desc = $rowB['uploadstudy_desc'];
+						$date = $rowB['uploadstudy_date'];
+						$modality = $rowB['uploadstudy_modality'];
+						$datatype = $rowB['uploadstudy_datatype'];
+						$equipment = $rowB['uploadstudy_equipment'];
+						$operator = $rowB['uploadstudy_operator'];
+						?>
+						<li class="level2"><span class="caret"><span class="tiny">Desc:</span> <b><?=$desc?></b> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Modality:</span> <?=$modality?> <span class="tiny">Datatype:</span> <?=$datatype?> <span class="tiny">Equipment:</span> <?=$equipment?></span>
+						<ul class="nested">
 						<?
-							$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
-							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-							while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-								$uploadstudyid = $rowB['uploadstudy_id'];
-								$instanceuid = $rowB['uploadstudy_instanceuid'];
-								$desc = $rowB['uploadstudy_desc'];
-								$date = $rowB['uploadstudy_date'];
-								$modality = $rowB['uploadstudy_modality'];
-								$datatype = $rowB['uploadstudy_datatype'];
-								$equipment = $rowB['uploadstudy_equipment'];
-								$operator = $rowB['uploadstudy_operator'];
+							$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
+							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+							while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+								$uploadseriesid = $rowC['uploadseries_id'];
+								$instanceuid = $rowC['uploadseries_instanceuid'];
+								$desc = $rowC['uploadseries_desc'];
+								$date = $rowC['uploadseries_date'];
+								$protocol = $rowC['uploadseries_protocol'];
+								$num = $rowC['uploadseries_num'];
+								$numfiles = $rowC['uploadseries_numfiles'];
+								$tr = $rowC['uploadseries_tr'];
+								$te = $rowC['uploadseries_te'];
+								$slicespacing = $rowC['uploadseries_slicespacing'];
+								$slicethickness = $rowC['uploadseries_slicethickness'];
+								$rows = $rowC['uploadseries_rows'];
+								$cols = $rowC['uploadseries_cols'];
+								$filelist = $rowC['uploadseries_filelist'];
 								?>
-								<details style="padding-left: 20px;">
-								<summary>Study - <b><?=$desc?></b> <?=$date?> <?=$modality?> <?=$datatype?> <?=$equipment?></summary>
-								<?
-									$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
-									$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
-									while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-										$uploadseriesid = $rowC['uploadseries_id'];
-										$instanceuid = $rowC['uploadseries_instanceuid'];
-										$desc = $rowC['uploadseries_desc'];
-										$date = $rowC['uploadseries_date'];
-										$protocol = $rowC['uploadseries_protocol'];
-										$num = $rowC['uploadseries_num'];
-										$numfiles = $rowC['uploadseries_numfiles'];
-										$tr = $rowC['uploadseries_tr'];
-										$te = $rowC['uploadseries_te'];
-										$slicespacing = $rowC['uploadseries_slicespacing'];
-										$slicethickness = $rowC['uploadseries_slicethickness'];
-										$rows = $rowC['uploadseries_rows'];
-										$cols = $rowC['uploadseries_cols'];
-										$filelist = $rowC['uploadseries_filelist'];
-										?>
-										<details style="padding-left: 20px;">
-										<summary>Series <?=$num?> - <?=$desc?> <?=$date?> <?=$cols?>x<?=$rows?></summary>
-											<div style="font-size:8pt; padding-left: 20px;"><tt>
-											<?
-												$files = explode(",", $filelist);
-												echo implode2("<br>", $files);
-											?>
-											</tt></span>
-										</details>
-										<?
-									}
-								
-								?>
-								</details>
+								<li class="level3"><span class="caret"><span class="tiny">Series:</span> <?=$num?> <span class="tiny">Desc:</span> <?=$desc?> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span>
+								<tt>
+									<ul class="nested" style="margin: 5px;">
+									<?
+										$files = explode(",", $filelist);
+										foreach ($files as $f) {
+											echo "<li style='font-size: 9pt; background-color: #fff; padding: 2px 5px;'><tt>$f</tt>";
+										}
+									?>
+									</ul>
+								</tt>
 								<?
 							}
 						?>
-					</td>
-				</tr>
+						</ul>
+						<?
+					}
+				?>
+				</ul>
 				<?
 			}
 			?>
-			</table>
+			</ul>
+			
+			<script>
+			var toggler = document.getElementsByClassName("caret");
+			var i;
+
+			for (i = 0; i < toggler.length; i++) {
+			  toggler[i].addEventListener("click", function() {
+				this.parentElement.querySelector(".nested").classList.toggle("active");
+				this.classList.toggle("caret-down");
+			  });
+			}
+			</script>
+			
 			<?
 		}
 		else {

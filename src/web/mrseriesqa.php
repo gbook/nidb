@@ -51,8 +51,14 @@
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>QA for <?=$uid?> study <?=$study_num?> series <?=$series_num?></title>
-		<script type="text/javascript" src="scripts/jquery-1.3.2.min.js"></script>
-		<script type="text/javascript" src="scripts/jquery.flot.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.canvaswrapper.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.colorhelpers.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.saturated.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.browser.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.drawSeries.js"></script>
+		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.uiConstants.js"></script>
 	</head>
 	
 	<body style="font-family: arial, helvetica, sans serif">

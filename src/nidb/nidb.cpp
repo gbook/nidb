@@ -950,7 +950,10 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
             cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} . \\;").arg(dir).arg(maxdepth);
 
             foreach (QString cmd, cmds) {
-                msgs << prefix + SystemCommand(cmd);
+                QString output;
+                output = SystemCommand(cmd);
+                if (output != "")
+                    cmds << prefix + output;
             }
         }
     }
