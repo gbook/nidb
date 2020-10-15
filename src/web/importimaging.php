@@ -485,8 +485,12 @@
 				if ($name == "") $name = "(blank)";
 				if ($dob == "") $dob = "(blank)";
 				if ($sex == "") $sex = "(blank)";
+				
+				/* check for existing subjects using this specified criteria */
+				$subjectmatches = GetExistingSubject($subjectcrtieria, $patientid, $name, $dob, $sex);
+				
 				?>
-				<li class="level1"><span class="caret"><span class="tiny">PatientID:</span> <?$patientid?> <span class="tiny">Name:</span> <?=$name?></span>
+				<li class="level1"><span class="caret"><span class="tiny">PatientID:</span> <?$patientid?> <span class="tiny">Name:</span> <?=$name?></span> Matches: <?print_r($subjectmatches)?>
 				<ul class="nested">
 				<?
 					$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
@@ -500,8 +504,12 @@
 						$datatype = $rowB['uploadstudy_datatype'];
 						$equipment = $rowB['uploadstudy_equipment'];
 						$operator = $rowB['uploadstudy_operator'];
+						
+						/* check for existing subjects using this specified criteria */
+						$studymatches = GetExistingStudies($studycrtieria, $subjectid, $modality, $studydate, $studyuid, $projectid);
+						
 						?>
-						<li class="level2"><span class="caret"><span class="tiny">Desc:</span> <b><?=$desc?></b> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Modality:</span> <?=$modality?> <span class="tiny">Datatype:</span> <?=$datatype?> <span class="tiny">Equipment:</span> <?=$equipment?></span>
+						<li class="level2"><span class="caret"><span class="tiny">Desc:</span> <b><?=$desc?></b> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Modality:</span> <?=$modality?> <span class="tiny">Datatype:</span> <?=$datatype?> <span class="tiny">Equipment:</span> <?=$equipment?></span> Matches: <?print_r($studymatches)?>
 						<ul class="nested">
 						<?
 							$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
@@ -521,8 +529,12 @@
 								$rows = $rowC['uploadseries_rows'];
 								$cols = $rowC['uploadseries_cols'];
 								$filelist = $rowC['uploadseries_filelist'];
+								
+								/* check for existing series using this specified criteria */
+								$seriesmatches = GetExistingSeries($seriescrtieria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid);
+								
 								?>
-								<li class="level3"><span class="caret"><span class="tiny">Series:</span> <?=$num?> <span class="tiny">Desc:</span> <?=$desc?> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span>
+								<li class="level3"><span class="caret"><span class="tiny">Series:</span> <?=$num?> <span class="tiny">Desc:</span> <?=$desc?> <span class="tiny">Date:</span> <?=$date?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> Matches: <?print_r($seriesmatches)?>
 								<tt>
 									<ul class="nested" style="margin: 5px;">
 									<?
@@ -564,6 +576,124 @@
 			?>Upload not found<?
 		}
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetExistingSubject ----------------- */
+	/* -------------------------------------------- */
+	function GetExistingSubject($subjectcrtieria, $patientid, $name, $dob, $sex) {
+		
+		$i = 0;
+		if ($subjectcriteria == "patientid") {
+			/* find existing subjects by patientid */
+			$sqlstring = "select b.subject_id, b.uid, b.isactive, a.altuid,d.project_name from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id left join projects d on c.project_id = d.project_id where (a.altuid = '$patientid' or a.altuid = sha1('$patientid') or a.altuid = sha1('$patientid ') or a.altuid = sha1(' $patientid') or a.altuid = sha1(' $patientid ') or a.altuid = sha1(upper('$patientid')) or a.altuid = sha1(lower('$patientid')))";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['subjectid'] = $row['subject_id'];
+				$matches[$i]['uid'] = $row['uid'];
+				
+				$i++;
+			}
+		}
+		elseif ($subjectcriteria == "namesexdob") {
+			/* find existing subjects by name/sex/dob */
+			$sqlstring = "select * from subjects where name = '$name' and birthdate = '$dob' and gender = '$sex'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['subjectid'] = $row['subject_id'];
+				$matches[$i]['uid'] = $row['uid'];
+				
+				$i++;
+			}
+		}
+		
+		return $matches;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetExistingStudies ----------------- */
+	/* -------------------------------------------- */
+	function GetExistingStudies($studycrtieria, $subjectid, $modality, $studydate, $studyuid, $projectid) {
+		
+		$i = 0;
+		if ($studycriteria == "modalitystudydate") {
+			/* find existing studies by modality/studydate */
+			$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = $subjectid and a.study_modality = '$modality' and (study_datetime between date_sub('$studydate', interval 31 second) and date_add('$studydate', interval 31 second))";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['subjectid'] = $row['subject_id'];
+				$matches[$i]['studyid'] = $row['study_id'];
+				$matches[$i]['studynum'] = $row['study_num'];
+				$matches[$i]['uid'] = $row['uid'];
+				
+				$i++;
+			}
+		}
+		elseif ($studycriteria == "studyuid") {
+			/* find existing studies by studyuid (rare that someone would ever do this) */
+			$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = $subjectid and a.study_uid = '$studyuid'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['subjectid'] = $row['subject_id'];
+				$matches[$i]['studyid'] = $row['study_id'];
+				$matches[$i]['studynum'] = $row['study_num'];
+				$matches[$i]['uid'] = $row['uid'];
+				
+				$i++;
+			}
+		}
+		
+		return $matches;
+	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- GetExistingSeries ------------------ */
+	/* -------------------------------------------- */
+	function GetExistingSeries($seriescrtieria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid) {
+		
+		$i = 0;
+		$modality = strtolower($modality);
+		
+		if ($seriescriteria == "seriesnum") {
+			/* find existing series by seriesnum */
+			$sqlstring = "select * from $modality" . "_series where study_id = $studyid and series_num = $seriesnum";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['modality'] = $row['modality'];
+				$matches[$i]['seriesid'] = $row[$modality + 'series_id'];
+				
+				$i++;
+			}
+		}
+		elseif ($seriescriteria == "seriesdate") {
+			/* find existing series by seriesdate */
+			$sqlstring = "select * from $modality" . "_series where study_id = $studyid and (series_datetime between date_sub('$seriesdate', interval 31 second) and date_add('$seriesdate', interval 31 second))";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['modality'] = $row['modality'];
+				$matches[$i]['seriesid'] = $row[$modality + 'series_id'];
+				
+				$i++;
+			}
+		}
+		elseif ($seriescriteria == "seriesuid") {
+			/* find existing series by seriesuid (rare that someone would do this) */
+			$sqlstring = "select * from $modality" . "_series where study_id = $studyid and series_uid = '$seriesuid'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+				$matches[$i]['modality'] = $row['modality'];
+				$matches[$i]['seriesid'] = $row[$modality + 'series_id'];
+				
+				$i++;
+			}
+		}
+		
+		return $matches;
+	}
+	
+	
 	
 ?>
 <? include("footer.php") ?>

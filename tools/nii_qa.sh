@@ -264,6 +264,9 @@ ls ${in}|while read myfile; do
 				echo $mycmd
 			fi
 
+			# run fsl_motion_outliers
+			#mymotioncmd="fsl_motion_outliers -i ${tmpbase}_in -o ${tmpbase}_motionoutliers -s ${tmpbase}_motionoutliers2"
+			#$smode $mymccmd
 
 			#Run motion correction functions
 			mymccmd="mcflirt -in ${tmpbase}_in -out ${tmpbase}_mcvol -rmsrel -rmsabs -plots -stats"

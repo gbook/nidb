@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 06, 2020 at 01:43 PM
+-- Generation Time: Oct 15, 2020 at 05:05 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2577,6 +2577,7 @@ CREATE TABLE `studies` (
   `study_experimenter` varchar(255) DEFAULT NULL,
   `study_performingphysician` varchar(100) DEFAULT NULL COMMENT 'may be necessary for an offsite exam, such as CT or PET at the hospital which was ordered and performed by a physician other than the PI',
   `study_site` varchar(45) DEFAULT NULL,
+  `study_uid` varchar(255) DEFAULT NULL,
   `study_nidbsite` int(11) DEFAULT NULL,
   `study_institution` varchar(255) DEFAULT NULL,
   `study_notes` varchar(255) DEFAULT NULL,
@@ -2815,7 +2816,8 @@ CREATE TABLE `upload_series` (
   `uploadseries_slicethickness` double DEFAULT NULL,
   `uploadseries_rows` int(11) DEFAULT NULL,
   `uploadseries_cols` int(11) DEFAULT NULL,
-  `uploadseries_filelist` longtext DEFAULT NULL
+  `uploadseries_filelist` longtext DEFAULT NULL,
+  `matchingseriesid` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -2833,7 +2835,8 @@ CREATE TABLE `upload_studies` (
   `uploadstudy_modality` varchar(255) DEFAULT NULL,
   `uploadstudy_datatype` varchar(255) DEFAULT NULL COMMENT 'dicom, parrec, etc',
   `uploadstudy_equipment` varchar(255) DEFAULT NULL COMMENT 'aka, site',
-  `uploadstudy_operator` varchar(255) DEFAULT NULL
+  `uploadstudy_operator` varchar(255) DEFAULT NULL,
+  `matchingstudyid` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -2848,7 +2851,8 @@ CREATE TABLE `upload_subjects` (
   `uploadsubject_patientid` varchar(255) DEFAULT NULL,
   `uploadsubject_name` varchar(255) DEFAULT NULL,
   `uploadsubject_sex` varchar(1) DEFAULT NULL,
-  `uploadsubject_dob` date DEFAULT NULL
+  `uploadsubject_dob` date DEFAULT NULL,
+  `matchingsubjectid` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
