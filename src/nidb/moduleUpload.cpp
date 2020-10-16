@@ -164,7 +164,7 @@ int moduleUpload::Run() {
                             n->WriteLog(AppendUploadLog(upload_id, "Unspecified study criteria [" + upload_studycriteria + "]"));
 
                         /* series matching criteria */
-                        if (upload_seriescriteria == "seriesnumber")
+                        if (upload_seriescriteria == "seriesnum")
                             series = tags["SeriesNumber"];
                         else if (upload_seriescriteria == "seriesdate")
                             series = tags["SeriesDateTime"];
@@ -333,7 +333,7 @@ int moduleUpload::Run() {
                         /* get uploadseries_id */
                         int seriesid(0);
 
-                        if (upload_seriescriteria == "seriesnumber") {
+                        if (upload_seriescriteria == "seriesnum") {
                             /* get seriesid from SeriesNumber field */
                             QString SeriesNumber = series;
 
@@ -472,7 +472,7 @@ int moduleUpload::Run() {
 
 
                             /* update series details */
-                            if (upload_seriescriteria == "seriesnumber") {
+                            if (upload_seriescriteria == "seriesnum") {
                                 /* update all series details except SeriesNumber */
                                 q3.prepare("update ignore upload_series set uploadseries_desc = :desc, uploadseries_protocol = :protocol, uploadseries_date = :date, uploadseries_numfiles = :NumberOfFiles, uploadseries_tr = :tr, uploadseries_te = :te, uploadseries_slicespacing = :slicespacing, uploadseries_slicethickness = :slicethickness, uploadseries_rows = :rows, uploadseries_cols = :cols, uploadseries_instanceuid = :seriesinstanceuid, uploadseries_filelist = :files where uploadseries_id = :seriesid");
                                 q3.bindValue(":desc", tags["SeriesDescription"]);
