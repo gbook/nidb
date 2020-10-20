@@ -788,6 +788,8 @@
 	/* -------------------------------------------- */
 	/* special implode which checks for empty array */
 	function implode2($chr, $arr) {
+		$arr = array_filter($arr);
+		
 		if (count($arr) > 1) {
 			return implode($chr,$arr);
 		}

@@ -89,7 +89,7 @@
 			$parts = explode("_", $tablename);
 			$modality = $parts[0];
 			
-			if ($modality != 'audit') {
+			if (($modality != 'audit') && ($modality != 'upload')) {
 				$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
 				$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
 				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);

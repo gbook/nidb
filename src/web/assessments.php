@@ -216,6 +216,8 @@
 	/* -------------------------------------------- */
 	function CreateForm($enrollmentid, $formid, $projectid, $username) {
 	
+		if (!ValidID($formid,'Form ID')) { return; }
+		
 		$sqlstring = "select * from assessment_forms where form_id = $formid and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -273,71 +275,76 @@
 				<td colspan="3">&nbsp;</td>
 			</tr>
 			<?
-				/* display all other rows, sorted by order */
-				$sqlstring = "select * from assessment_formfields where form_id = $formid order by formfield_order + 0";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$formfield_id = $row['formfield_id'];
-					$formfield_desc = $row['formfield_desc'];
-					$formfield_values = $row['formfield_values'];
-					$formfield_datatype = $row['formfield_datatype'];
-					$formfield_order = $row['formfield_order'];
-					$formfield_scored = $row['formfield_scored'];
-					$formfield_haslinebreak = $row['formfield_haslinebreak'];
-					
-					?>
-					<tr>
-						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
-						<? } else { ?>
-							<td class="field"><?=$formfield_desc?></td>
-							<td class="value">
-							<?
-								switch ($formfield_datatype) {
-									case "binary": ?><input type="file" name="file-<?=$formfield_id?>[]"><? break;
-									case "multichoice": ?>
-										<select multiple name="text-<?=$formfield_id?>[]" style="height:150px">
-											<?
-												$values = explode(",", $formfield_values);
-												natsort($values);
-												foreach ($values as $value) {
-													$value = trim($value);
-												?>
-													<option value="<?=$value?>"><?=$value?></option>
+				if ($formid != "") {
+					/* display all other rows, sorted by order */
+					$sqlstring = "select * from assessment_formfields where form_id = $formid order by formfield_order + 0";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$formfield_id = $row['formfield_id'];
+						$formfield_desc = $row['formfield_desc'];
+						$formfield_values = $row['formfield_values'];
+						$formfield_datatype = $row['formfield_datatype'];
+						$formfield_order = $row['formfield_order'];
+						$formfield_scored = $row['formfield_scored'];
+						$formfield_haslinebreak = $row['formfield_haslinebreak'];
+						
+						?>
+						<tr>
+							<? if ($formfield_datatype == "header") { ?>
+								<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<? } else { ?>
+								<td class="field"><?=$formfield_desc?></td>
+								<td class="value">
+								<?
+									switch ($formfield_datatype) {
+										case "binary": ?><input type="file" name="file-<?=$formfield_id?>[]"><? break;
+										case "multichoice": ?>
+											<select multiple name="text-<?=$formfield_id?>[]" style="height:150px">
 												<?
-												}
-											?>
-										</select>
-									<? break;
-									case "singlechoice": ?>
-											<?
-												$values = explode(",", $formfield_values);
-												//natsort($values);
-												foreach ($values as $value) {
-													$value = trim($value);
+													$values = explode(",", $formfield_values);
+													natsort($values);
+													foreach ($values as $value) {
+														$value = trim($value);
+													?>
+														<option value="<?=$value?>"><?=$value?></option>
+													<?
+													}
 												?>
-													<input type="radio"  name="text-<?=$formfield_id?>[]" value="<?=$value?>"><?=$value?>
+											</select>
+										<? break;
+										case "singlechoice": ?>
 												<?
-													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
-												}
-											?>
-									<? break;
-									case "date": ?><input type="date" name="date-<?=$formfield_id?>[]"><span class="tiny">date</span><? break;
-									case "number": ?><input type="text" name="number-<?=$formfield_id?>[]"><span class="tiny">number</span><? break;
-									case "string": ?><input type="text" name="string-<?=$formfield_id?>[]"><span class="tiny">string</span><? break;
-									case "text": ?><textarea name="text-<?=$formfield_id?>[]"></textarea><? break;
-								}
-							?>
-						<? } ?>
-						</td>
-						<? if ($formfield_scored) {?>
-						<td><input type="text" size="2"></td>
-						<? } ?>
-						<td class="order"><?=$formfield_order?></td>
-					</tr>
-					<?
+													$values = explode(",", $formfield_values);
+													//natsort($values);
+													foreach ($values as $value) {
+														$value = trim($value);
+													?>
+														<input type="radio"  name="text-<?=$formfield_id?>[]" value="<?=$value?>"><?=$value?>
+													<?
+														if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
+													}
+												?>
+										<? break;
+										case "date": ?><input type="date" name="date-<?=$formfield_id?>[]"><span class="tiny">date</span><? break;
+										case "number": ?><input type="text" name="number-<?=$formfield_id?>[]"><span class="tiny">number</span><? break;
+										case "string": ?><input type="text" name="string-<?=$formfield_id?>[]"><span class="tiny">string</span><? break;
+										case "text": ?><textarea name="text-<?=$formfield_id?>[]"></textarea><? break;
+									}
+								?>
+							<? } ?>
+							</td>
+							<? if ($formfield_scored) {?>
+							<td><input type="text" size="2"></td>
+							<? } ?>
+							<td class="order"><?=$formfield_order?></td>
+						</tr>
+						<?
+					}
 				}
-			?>
+				else {
+					?>Form ID was blank<?
+				}
+				?>
 			-->
 			<input type="submit" value="Create">
 		</form>

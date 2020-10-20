@@ -28,6 +28,7 @@
 
 	$nologin = true;
  	require "functions.php";
+ 	require "includes_php.php";
 	
 	/* more CAPTCHA code */
 	include_once $_SERVER['DOCUMENT_ROOT'] . '/scripts/securimage/securimage.php';
