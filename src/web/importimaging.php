@@ -465,9 +465,9 @@
 				#myUL .caret-down::before { -ms-transform: rotate(90deg); -webkit-transform: rotate(90deg); transform: rotate(90deg); }
 				#myUL .nested { display: none; }
 				#myUL .active { display: block; }
-				li.level1 { background-color: #ccc; margin: 2px; padding: 10px; border-radius: 8px; }
-				li.level2 { background-color: #ddd; margin: 2px; padding: 10px; border-radius: 8px; }
-				li.level3 { background-color: #eee; margin: 2px; padding: 10px; border-radius: 8px; }
+				li.level1 { background-color: #c0cfff; margin: 5px; padding: 10px; border-radius: 8px; }
+				li.level2 { background-color: #d0dfff; margin: 5px; padding: 10px; border-radius: 8px; }
+				li.level3 { background-color: #e0efff; margin: 5px; padding: 10px; border-radius: 8px; }
 			</style>
 			
 			<ul id="myUL">
@@ -481,10 +481,10 @@
 				$dob = $rowA['uploadsubject_dob'];
 				$sex = $rowA['uploadsubject_sex'];
 				
-				if ($patientid == "") $patientid = "(blank)";
-				if ($name == "") $name = "(blank)";
-				if ($dob == "") $dob = "(blank)";
-				if ($sex == "") $sex = "(blank)";
+				if ($patientid == "") $patientid = "(blank PatientID)";
+				if ($name == "") $name = "(blank PatientName)";
+				if ($dob == "") $dob = "(blank PatientBirthDate)";
+				if ($sex == "") $sex = "(blank PatientSex)";
 				
 				/* check for existing subjects using this specified criteria */
 				$subjectmatches = GetMatchingSubject($subjectcriteria, $patientid, $name, $dob, $sex);
@@ -494,7 +494,7 @@
 				
 				?>
 				<li class="level1">
-					<span class="caret"><span class="tiny">PatientID:</span> <b><?=$patientid?></b> <span class="tiny">Name:</span> <?=$name?></span>
+					<span class="caret"><input type="checkbox"><span class="tiny">PatientID:</span> <b><?=$patientid?></b> <span class="tiny">Name:</span> <?=$name?></span>
 					<? if ($matchsubjectid != "") { ?>Matched existing subject <a href="subjects.php?subjectid=<?=$matchsubjectid?>" target="_blank"><?=$matchsubjectuid?></a><? } ?>
 				<ul class="nested">
 				<?
@@ -509,6 +509,12 @@
 						$datatype = $rowB['uploadstudy_datatype'];
 						$equipment = $rowB['uploadstudy_equipment'];
 						$operator = $rowB['uploadstudy_operator'];
+
+						if ($desc == "") $desc = "(blankStudyDescription)";
+						if ($studydate == "") $studydate = "(blankStudyDateTime)";
+						if ($datatype == "") $datatype = "(blankDatatype)";
+						if ($equipment == "") $equipment = "(blankEquipment)";
+						if ($operator == "") $operator = "(blankOperator)";
 						
 						/* check for existing subjects using this specified criteria */
 						$studymatches = GetMatchingStudies($studycriteria, $matchsubjectid, $modality, $studydate, $studyinstanceuid, $destprojectid);
@@ -539,24 +545,29 @@
 								$rows = $rowC['uploadseries_rows'];
 								$cols = $rowC['uploadseries_cols'];
 								$filelist = $rowC['uploadseries_filelist'];
+
+								if ($desc == "") $desc = "(blankSeriesDescription)";
+								if ($protocol == "") $desc = "(blankProtocol)";
+								if ($seriesnum == "") $desc = "(blankSeriesNum)";
 								
 								/* check for existing series using this specified criteria */
 								$seriesmatches = GetMatchingSeries($seriescriteria, $matchstudyid, $modality, $seriesdate, $seriesnum, $seriesinstanceuid);
 								//PrintVariable($seriesmatches);
 								
 								?>
-								<li class="level3"><span class="caret"><span class="tiny">Series:</span> <?=$seriesnum?> <span class="tiny">Desc:</span> <?=$desc?> <span class="tiny">Date:</span> <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> Matched <?=count($seriesmatches);?> series
-								<tt>
+								<li class="level3"><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
 									<ul class="nested" style="margin: 5px;">
 									<?
 										$files = explode(",", $filelist);
 										?>
-										<li><b><?=count($files)?> files</b>
+										<li style='background-color: #fff; padding: 2px 5px;'><b><?=count($files)?> files</b>
+										<tt>
 										<?
 										foreach ($files as $f) {
-											echo "<li style='font-size: 9pt; background-color: #fff; padding: 2px 5px;'><tt>$f</tt>";
+											echo "<li style='font-size: 8pt; background-color: #fff; padding: 2px 5px;'><tt>$f</tt>";
 										}
 									?>
+										</tt>
 									</ul>
 								</tt>
 								<?
@@ -573,15 +584,15 @@
 			</ul>
 			
 			<script>
-			var toggler = document.getElementsByClassName("caret");
-			var i;
+				var toggler = document.getElementsByClassName("caret");
+				var i;
 
-			for (i = 0; i < toggler.length; i++) {
-			  toggler[i].addEventListener("click", function() {
-				this.parentElement.querySelector(".nested").classList.toggle("active");
-				this.classList.toggle("caret-down");
-			  });
-			}
+				for (i = 0; i < toggler.length; i++) {
+					toggler[i].addEventListener("click", function() {
+						this.parentElement.querySelector(".nested").classList.toggle("active");
+						this.classList.toggle("caret-down");
+					});
+				}
 			</script>
 			
 			<?
@@ -636,6 +647,13 @@
 	/* -------------------------------------------- */
 	function GetMatchingStudies($studycriteria, $subjectid, $modality, $studydate, $studyuid, $projectid) {
 		//echo "GetMatchingStudies($studycriteria, $subjectid, $modality, $studydate, $studyuid, $projectid)<br>";
+
+		if ($subjectid == "") {
+			return;
+		}
+		if (!IsNiDBModality($modality)) {
+			return;
+		}
 		
 		$i = 0;
 		if ($studycriteria == "modalitystudydate") {
@@ -681,6 +699,13 @@
 	function GetMatchingSeries($seriescriteria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid) {
 		//echo "GetMatchingSeries($seriescriteria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid)<br>";
 		
+		if ($studyid == "") {
+			return;
+		}
+		if (!IsNiDBModality($modality)) {
+			return;
+		}
+			
 		$i = 0;
 		$modality = strtolower($modality);
 		

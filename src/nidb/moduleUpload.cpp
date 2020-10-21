@@ -414,6 +414,13 @@ int moduleUpload::Run() {
                         int numfiles = files.size();
                         //n->WriteLog(AppendUploadLog(upload_id, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles)));
 
+                        /* remove the prefix for the files */
+                        for (int ii=0; ii<files.size(); ii++) {
+                            QString str = files[ii];
+                            str.replace(str.indexOf(uploadstagingpath), uploadstagingpath.size(), "");
+                            files[ii] = str;
+                        }
+
                         /* we've arrived at a series, so let's put it into the database */
                         /* get tags from first file in the list to populate the subject/study/series info not included in the criteria matching */
                         QHash<QString, QString> tags;
