@@ -145,7 +145,7 @@ int moduleUpload::Run() {
                 /* get the file info */
                 QHash<QString, QString> tags;
                 if (n->GetImageFileTags(f, tags)) {
-                    if (tags["Modality"].toLower() == upload_modality.toLower()) {
+                    if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
                         /* subject matching criteria */
                         if (upload_subjectcriteria == "patientid")
@@ -415,10 +415,11 @@ int moduleUpload::Run() {
                         //n->WriteLog(AppendUploadLog(upload_id, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles)));
 
                         /* remove the prefix for the files */
+                        QStringList filesNoPrefix;
                         for (int ii=0; ii<files.size(); ii++) {
                             QString str = files[ii];
                             str.replace(str.indexOf(uploadstagingpath), uploadstagingpath.size(), "");
-                            files[ii] = str;
+                            filesNoPrefix.append(str);
                         }
 
                         /* we've arrived at a series, so let's put it into the database */
@@ -493,7 +494,7 @@ int moduleUpload::Run() {
                                 q3.bindValue(":rows", tags["Rows"]);
                                 q3.bindValue(":cols", tags["Columns"]);
                                 q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
-                                q3.bindValue(":files", files.join(","));
+                                q3.bindValue(":files", filesNoPrefix.join(","));
                                 q3.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
@@ -511,7 +512,7 @@ int moduleUpload::Run() {
                                 q3.bindValue(":rows", tags["Rows"]);
                                 q3.bindValue(":cols", tags["Columns"]);
                                 q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
-                                q3.bindValue(":files", files.join(","));
+                                q3.bindValue(":files", filesNoPrefix.join(","));
                                 q3.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
@@ -529,7 +530,7 @@ int moduleUpload::Run() {
                                 if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QVariant::Double)); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                                 q3.bindValue(":rows", tags["Rows"]);
                                 q3.bindValue(":cols", tags["Columns"]);
-                                q3.bindValue(":files", files.join(","));
+                                q3.bindValue(":files", filesNoPrefix.join(","));
                                 q3.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
@@ -567,7 +568,7 @@ QString moduleUpload::AppendUploadLog(int uploadid, QString msg) {
     q.prepare("update uploads set upload_log = concat(upload_log, :msg) where upload_id = :uploadid");
     q.bindValue(":msg", msg);
     q.bindValue(":uploadid", uploadid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
     return msg;
 }

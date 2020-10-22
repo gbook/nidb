@@ -41,7 +41,7 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
+	PrintVariable($_POST);
 	//PrintVariable($_GET);
 	//PrintVariable($_FILES);
 	
@@ -55,12 +55,21 @@
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
 	$uploadid = GetVariable("uploadid");
+	$uploadseriesid = GetVariable("uploadseriesid");
 	
 	/* determine action */
 	switch ($action) {
 		case 'newimport':
 			NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria);
 			DisplayImportList();
+			break;
+		case 'queueforarchive':
+			QueueUploadForArchive($uploadid, $uploadseriesid);
+			DisplayImport($uploadid);
+			break;
+		case 'reparse':
+			ReParseUpload($uploadid);
+			DisplayImport($uploadid);
 			break;
 		case 'displayimportlist':
 			DisplayImportList();
@@ -69,13 +78,30 @@
 			DisplayImport($uploadid);
 			break;
 		default:
-			DisplayNewImportForm();
-			DisplayImportList();
+			DisplayImportPage();
 	}
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
+
+	/* -------------------------------------------- */
+	/* ------- DisplayImportPage ------------------ */
+	/* -------------------------------------------- */
+	function DisplayImportPage() {
+		?>
+		<table width="100%" cellpadding="5">
+			<tr>
+				<td style="font-weight: bold; font-size:16pt; color: #333;">New Import</td>
+				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent imports</td>
+			</tr>
+			<tr>
+				<td valign="top"><?DisplayNewImportForm();?></td>
+				<td valign="top"><?DisplayImportList();?></td>
+			</tr>
+		</table>
+		<?
+	}
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayNewImportForm --------------- */
@@ -95,14 +121,14 @@
 			<tr>
 				<td class="label" valign="top">Project</td>
 				<td valign="top">
-					<?=DisplayProjectSelectBox(true, "projectid", "projectid", "", false, "", 350, 50, true);?>
+					<?=DisplayProjectSelectBox(true, "projectid", "projectid", "", false, "", "", "", true);?>
 				</td>
 			</tr>
 			<tr>
-				<td class="label" valign="top">Modality</td>
+				<td class="label" valign="top">Modality<br><span class="tiny">If importing DICOM data, choose Automatic<br>Otherwise choose the data's modality.<br>Selecting a modality will only import data of that modality</td>
 				<td valign="top">
 					<select name="modality" required>
-						<option value="">Select modality</option>
+						<option value="auto" selected>Automatically Import All Modalities (Recommended)</option>
 						<?
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
@@ -391,6 +417,33 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ReParseUpload ---------------------- */
+	/* -------------------------------------------- */
+	function ReParseUpload($uploadid) {
+		
+		$sqlstring = "update uploads set upload_status = 'reparse' where upload_id = $uploadid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		DisplayNotice("Notice", "Upload will be re-parsed");
+		
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- QueueUploadForArchive -------------- */
+	/* -------------------------------------------- */
+	function QueueUploadForArchive($uploadid, $uploadseriesid) {
+		
+		$sqlstring = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
+		PrintSQL($sqlstring);
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		DisplayNotice("Notice", "Upload queued for archiving");
+		
+	}
+	
+
+	/* -------------------------------------------- */
 	/* ------- DisplayImport ---------------------- */
 	/* -------------------------------------------- */
 	function DisplayImport($uploadid) {
@@ -470,6 +523,11 @@
 				li.level3 { background-color: #e0efff; margin: 5px; padding: 10px; border-radius: 8px; }
 			</style>
 			
+			<form method="post" action="importimaging.php">
+			<input type="hidden" name="action" value="queueforarchive">
+			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" value="Archive">
+			
 			<ul id="myUL">
 			<?
 			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid order by uploadsubject_patientid desc";
@@ -494,7 +552,7 @@
 				
 				?>
 				<li class="level1">
-					<span class="caret"><input type="checkbox"><span class="tiny">PatientID:</span> <b><?=$patientid?></b> <span class="tiny">Name:</span> <?=$name?></span>
+					<span class="caret active"><span class="tiny">PatientID:</span> <b><?=$patientid?></b> <span class="tiny">Name:</span> <?=$name?></span>
 					<? if ($matchsubjectid != "") { ?>Matched existing subject <a href="subjects.php?subjectid=<?=$matchsubjectid?>" target="_blank"><?=$matchsubjectuid?></a><? } ?>
 				<ul class="nested">
 				<?
@@ -555,7 +613,7 @@
 								//PrintVariable($seriesmatches);
 								
 								?>
-								<li class="level3"><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
+								<li class="level3"><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
 									<ul class="nested" style="margin: 5px;">
 									<?
 										$files = explode(",", $filelist);
@@ -564,7 +622,7 @@
 										<tt>
 										<?
 										foreach ($files as $f) {
-											echo "<li style='font-size: 8pt; background-color: #fff; padding: 2px 5px;'><tt>$f</tt>";
+											echo "<li style='font-size: 8pt; background-color: #fff; padding: 1px 5px;'><tt>$f</tt>";
 										}
 									?>
 										</tt>
@@ -582,6 +640,7 @@
 			}
 			?>
 			</ul>
+			</form>
 			
 			<script>
 				var toggler = document.getElementsByClassName("caret");
