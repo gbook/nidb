@@ -43,6 +43,12 @@
 
 typedef QHash <int, QHash<QString, QString>> indexedHash;
 
+//namespace nidb {
+//    enum subjectMatchCriteria { PatientID, NameSexDOB };
+//    enum studyMatchCriteria { ModalityStudyDate, StudyUID };
+//    enum seriesMatchCriteria { SeriesNum, SeriesDate, SeriesUID };
+//}
+
 class nidb
 {
 public:

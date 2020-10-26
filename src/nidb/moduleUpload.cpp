@@ -29,6 +29,7 @@
 moduleUpload::moduleUpload(nidb *a)
 {
     n = a;
+    io = new archiveIO(n);
 }
 
 
@@ -48,7 +49,25 @@ int moduleUpload::Run() {
     n->WriteLog("Entering the upload module");
 
     QSqlQuery q;
-    int ret(0);
+    bool ret(false);
+
+    /* parse any uploads */
+    ret |= ParseUploads();
+
+    /* archive any uploads */
+    ret |= ArchiveParsedUploads();
+
+    n->WriteLog("Leaving the upload module");
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseUploads ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleUpload::ParseUploads() {
+    QSqlQuery q;
+    bool ret(false);
 
     /* get list of uploads that are marked as uploadcomplete, with the upload details */
     q.prepare("select * from uploads where upload_status = 'uploadcomplete'");
@@ -67,10 +86,7 @@ int moduleUpload::Run() {
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
             /* update the status */
-            QSqlQuery q2;
-            q2.prepare("update uploads set upload_status = 'parsing' where upload_id = :uploadid");
-            q2.bindValue(":uploadid", upload_id);
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+            SetUploadStatus(upload_id, "parsing");
 
             /* create a multilevel hash [subject][study][series][files] */
             QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs;
@@ -85,20 +101,23 @@ int moduleUpload::Run() {
                 ret = 1;
 
                 /* update the status */
-                q2.prepare("update uploads set upload_status = 'parsingerror' where upload_id = :uploadid");
-                q2.bindValue(":uploadid", upload_id);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                SetUploadStatus(upload_id, "parsingerror");
 
                 continue;
             }
+            /* update the upload_stagingpath */
+            QSqlQuery q2;
+            q2.prepare("update uploads set upload_stagingpath = :stagingpath where upload_id = :uploadid");
+            q2.bindValue(":stagingpath", uploadstagingpath);
+            q2.bindValue(":uploadid", upload_id);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
 
             if ((upload_datapath == "") || (upload_datapath == "/") || (upload_datapath == "/etc") || (upload_datapath == "/bin") || (upload_datapath == "/root")) {
                 n->WriteLog(AppendUploadLog(upload_id, QString("upload_datapath is invalid [%1] ").arg(upload_datapath)));
 
                 /* update the status */
-                q2.prepare("update uploads set upload_status = 'parsingerror' where upload_id = :uploadid");
-                q2.bindValue(":uploadid", upload_id);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                SetUploadStatus(upload_id, "parsingerror");
 
                 continue;
             }
@@ -109,9 +128,7 @@ int moduleUpload::Run() {
                 ret = 1;
 
                 /* update the status */
-                q2.prepare("update uploads set upload_status = 'parsingerror' where upload_id = :uploadid");
-                q2.bindValue(":uploadid", upload_id);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                SetUploadStatus(upload_id, "parsingerror");
 
                 continue;
             }
@@ -545,15 +562,78 @@ int moduleUpload::Run() {
             }
 
             /* update the status */
-            QSqlQuery q3;
-            q3.prepare("update uploads set upload_status = 'parsingcomplete' where upload_id = :uploadid");
-            q3.bindValue(":uploadid", upload_id);
-            n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+            SetUploadStatus(upload_id, "parsingcomplete");
 
         } /* end while */
     }
 
-    n->WriteLog("Leaving the upload module");
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AchiveParsedUploads ---------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleUpload::ArchiveParsedUploads() {
+    QSqlQuery q;
+    bool ret(false);
+
+    /* get list of uploads that are marked as uploadcomplete, with the upload details */
+    q.prepare("select * from uploads where upload_status = 'queueforarchive'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+            ret = 1;
+            int upload_id = q.value("upload_id").toInt();
+            QString upload_status = q.value("upload_status").toString();
+            int upload_destprojectid = q.value("upload_status").toInt();
+            QString upload_stagingpath = q.value("upload_stagingpath").toString();
+            QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
+            QString upload_studycriteria = q.value("upload_studycriteria").toString();
+            QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
+
+            n->WriteLog(AppendUploadLog(upload_id, QString("Beginning archiving of upload [%1]").arg(upload_id)));
+
+            /* set status to archiving */
+            SetUploadStatus(upload_id, "archiving");
+
+            /* get list of series which should be archived from this upload */
+            QSqlQuery q2;
+            q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                while (q.next()) {
+                    ret = 1;
+
+                    /* get any matching subject/study/series */
+                    int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
+                    if (!q.value("matchingsubjectid").isNull())
+                        matchingsubjectid = q.value("matchingsubjectid").toInt();
+                    if (!q.value("matchingstudyid").isNull())
+                        matchingstudyid = q.value("matchingstudyid").toInt();
+                    if (!q.value("matchingseriesid").isNull())
+                        matchingseriesid = q.value("matchingseriesid").toInt();
+
+                    /* get information about this series to be imported */
+                    int uploadseries_id = q.value("uploadseries_id").toInt();
+                    QStringList uploadseries_filelist = q.value("uploadseries_id").toString().split(",");
+                    for(int i=0; i<uploadseries_filelist.size(); i++) {
+                        uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
+                    }
+
+                    /* insert the series */
+                    QString m;
+                    io->InsertDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist, m);
+                }
+            }
+            else {
+
+            }
+
+            /* if error, mark status as 'archiveerror' */
+            /* otherwise, delete all of the source data and mark status as 'archivecomplete' */
+        }
+    }
     return ret;
 }
 
@@ -571,4 +651,18 @@ QString moduleUpload::AppendUploadLog(int uploadid, QString msg) {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
     return msg;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SetUploadStatus -------------------------------- */
+/* ---------------------------------------------------------- */
+void moduleUpload::SetUploadStatus(int uploadid, QString status) {
+
+    QSqlQuery q;
+
+    q.prepare("update uploads set upload_status = :status where upload_id = :uploadid");
+    q.bindValue(":status", status);
+    q.bindValue(":uploadid", uploadid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 }

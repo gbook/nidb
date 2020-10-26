@@ -23,6 +23,7 @@
 #ifndef MODULEUPLOAD_H
 #define MODULEUPLOAD_H
 #include "nidb.h"
+#include "archiveio.h"
 
 
 class moduleUpload
@@ -34,9 +35,15 @@ public:
 
     int Run();
     QString AppendUploadLog(int uploadid, QString msg);
+    bool ParseUploads();
+    bool ArchiveParsedUploads();
+    void SetUploadStatus(int uploadid, QString status);
+
 
 private:
     nidb *n;
+    archiveIO *io;
+
 };
 
 #endif // MODULEUPLOAD_H

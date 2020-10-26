@@ -23,6 +23,7 @@
 #ifndef MODULEIMPORT_H
 #define MODULEIMPORT_H
 #include "nidb.h"
+#include "archiveio.h"
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
 #include "gdcmAttribute.h"
@@ -42,16 +43,10 @@ public:
 	int ParseDirectory(QString dir, int importid);
 	QString GetImportStatus(int importid);
 	bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
-	bool InsertDICOMSeries(int importid, QStringList files, QString &msg);
-	bool InsertParRec(int importid, QString file, QString &msg);
-	bool InsertEEG(int importid, QString file, QString &msg);
-	void CreateThumbnail(QString f, QString outdir);
-	QString GetCostCenter(QString studydesc);
-	QString CreateIDSearchList(QString PatientID, QString altuids);
-	bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, QString importUUID, QStringList &msgs, int &subjectRowID, QString &subjectRealUID);
 
 private:
 	nidb *n;
+    archiveIO *io;
 
 	/* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
 	//QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
