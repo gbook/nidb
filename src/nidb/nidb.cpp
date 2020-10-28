@@ -280,6 +280,20 @@ bool nidb::CreateLockFile() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- ClearLockFiles --------------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::ClearLockFiles() {
+
+    Print("Clearing lock files [" + lockFilepath + "]",false, true);
+    QString s = QString("rm -v %1/%2*").arg(cfg["lockdir"]).arg(module);
+    SystemCommand(s, true);
+    Print("[\033[0;32mOk\033[0m]");
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- CreateLogFile ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool nidb::CreateLogFile () {
@@ -672,7 +686,7 @@ QString nidb::WriteLog(QString msg, int wrap) {
 bool nidb::MakePath(QString p, QString &msg, bool perm777) {
 
 	if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p == "/root") || (p == "/home")) {
-		msg = "Path is not valid [" + p + "]";
+        msg = "Path [" + p + "] is not valid";
 		return false;
 	}
 

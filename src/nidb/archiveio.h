@@ -32,17 +32,20 @@ public:
     archiveIO(nidb *n);
     ~archiveIO();
 
-    bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, QStringList &msgs, int &subjectRowID, QString &subjectRealUID);
+    bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, QString &msgs, int &subjectRowID, QString &subjectRealUID);
     bool InsertDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files, QString &msg);
     bool InsertParRec(int importid, QString file, QString &msg);
     bool InsertEEG(int importid, QString file, QString &msg);
-    bool GetSubject(QString matchcriteria, int subjectid, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID, bool &subjectCreated, QString &m);
+    bool GetSubject(QString matchcriteria, int subjectid, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID, bool &subjectCreated, QString &msg);
 
     /* helper functions */
     QString GetCostCenter(QString studydesc);
     QString CreateIDSearchList(QString PatientID, QString altuids);
     void CreateThumbnail(QString f, QString outdir);
     double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
+    bool GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID);
+    bool GetProject(int destProjectID, QString costcenter, int &projectRowID, QString &msg);
+    bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID, QString &msg);
 
 private:
     nidb *n;

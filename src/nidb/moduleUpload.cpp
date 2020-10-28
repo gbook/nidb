@@ -600,23 +600,26 @@ bool moduleUpload::ArchiveParsedUploads() {
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;
             q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-            if (q.size() > 0) {
-                while (q.next()) {
+            q2.bindValue(":uploadid", upload_id);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            if (q2.size() > 0) {
+                while (q2.next()) {
                     ret = 1;
+                    int uploadseries_id = q2.value("uploadseries_id").toInt();
+
+                    n->WriteLog(QString("Working on series [%1]").arg(uploadseries_id));
 
                     /* get any matching subject/study/series */
                     int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
-                    if (!q.value("matchingsubjectid").isNull())
-                        matchingsubjectid = q.value("matchingsubjectid").toInt();
-                    if (!q.value("matchingstudyid").isNull())
-                        matchingstudyid = q.value("matchingstudyid").toInt();
-                    if (!q.value("matchingseriesid").isNull())
-                        matchingseriesid = q.value("matchingseriesid").toInt();
+                    if (!q2.value("matchingsubjectid").isNull())
+                        matchingsubjectid = q2.value("matchingsubjectid").toInt();
+                    if (!q2.value("matchingstudyid").isNull())
+                        matchingstudyid = q2.value("matchingstudyid").toInt();
+                    if (!q2.value("matchingseriesid").isNull())
+                        matchingseriesid = q2.value("matchingseriesid").toInt();
 
                     /* get information about this series to be imported */
-                    int uploadseries_id = q.value("uploadseries_id").toInt();
-                    QStringList uploadseries_filelist = q.value("uploadseries_id").toString().split(",");
+                    QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
                     for(int i=0; i<uploadseries_filelist.size(); i++) {
                         uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
                     }
@@ -625,9 +628,11 @@ bool moduleUpload::ArchiveParsedUploads() {
                     QString m;
                     io->InsertDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist, m);
                 }
+
+                SetUploadStatus(upload_id, "archivecomplete");
             }
             else {
-
+                SetUploadStatus(upload_id, "archiveerror");
             }
 
             /* if error, mark status as 'archiveerror' */
@@ -645,10 +650,12 @@ QString moduleUpload::AppendUploadLog(int uploadid, QString msg) {
 
     QSqlQuery q;
 
-    q.prepare("update uploads set upload_log = concat(upload_log, :msg) where upload_id = :uploadid");
-    q.bindValue(":msg", msg);
-    q.bindValue(":uploadid", uploadid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    if (msg != "") {
+        q.prepare("update uploads set upload_log = concat(upload_log, :msg) where upload_id = :uploadid");
+        q.bindValue(":msg", QString("\n" + msg));
+        q.bindValue(":uploadid", uploadid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    }
 
     return msg;
 }

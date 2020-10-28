@@ -65,7 +65,8 @@ public:
 	int CheckNumLockFiles();
 	bool CreateLockFile();
 	bool CreateLogFile();
-	void DeleteLockFile();
+    bool ClearLockFiles();
+    void DeleteLockFile();
 	void RemoveLogFile(bool keepLog);
 	bool ModuleCheckIfActive();
 	void ModuleDBCheckIn();
