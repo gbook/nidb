@@ -41,7 +41,7 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 	//PrintVariable($_FILES);
 	
@@ -358,6 +358,9 @@
 				$subjectcriteria = $row['upload_subjectcriteria'];
 				$studycriteria = $row['upload_studycriteria'];
 				$seriescriteria = $row['upload_seriescriteria'];
+				
+				$filelist = explode(",", $originalfilelist);
+				
 				?>
 				<tr>
 					<td><?=$startdate?> - <?=$enddate?></td>
@@ -382,7 +385,12 @@
 							</tr>
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
-								<td><?=$originalfilelist?></td>
+								<td>
+									<details>
+									<summary>File list (<?=count($filelist);?> files)</summary>
+										<tt style="font-size:8pt"><?=implode2("<br>", $filelist)?></tt>
+									</details>
+								</td>
 							</tr>
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
@@ -390,7 +398,7 @@
 							</tr>
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
-								<td><?=$datapath?></td>
+								<td><tt><?=$datapath?></tt></td>
 							</tr>
 							<tr>
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
@@ -420,6 +428,7 @@
 	/* ------- ReParseUpload ---------------------- */
 	/* -------------------------------------------- */
 	function ReParseUpload($uploadid) {
+		if (!ValidID($uploadid,'UploadID')) { return; }
 		
 		$sqlstring = "update uploads set upload_status = 'reparse' where upload_id = $uploadid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -432,14 +441,39 @@
 	/* -------------------------------------------- */
 	/* ------- QueueUploadForArchive -------------- */
 	/* -------------------------------------------- */
-	function QueueUploadForArchive($uploadid, $uploadseriesid) {
+	function QueueUploadForArchive($uploadid, $uploadseriesids) {
+		if (!ValidID($uploadid,'UploadID')) { return; }
 		
-		$sqlstring = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
-		PrintSQL($sqlstring);
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		DisplayNotice("Notice", "Upload queued for archiving");
-		
+		/* get all series for this uploadid */
+		$sqlstring = "select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where c.upload_id = $uploadid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$seriesid = $row['uploadseries_id'];
+				
+				if (in_array($seriesid, $uploadseriesids)) {
+					$sqlstringA = "update upload_series set uploadseries_status = 'import' where uploadseries_id = $seriesid";
+				}
+				else {
+					$sqlstringA = "update upload_series set uploadseries_status = 'ignore' where uploadseries_id = $seriesid";
+				}
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			}
+
+			$sqlstringA = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
+			//PrintSQL($sqlstringA);
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			
+			DisplayNotice("Notice", "Upload queued for archiving");
+		}
+		else {
+			$sqlstring = "update uploads set upload_status = 'archiveerror' where upload_id = $uploadid";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			DisplayErrorMessage("Error", "No series found for this upload");
+		}		
 	}
 	
 
@@ -470,8 +504,12 @@
 			$filelist = explode(",", $originalfilelist);
 			
 			?>
-			Upload Details
-			<table style="border: 1px solid #aaa;">
+			<span style="font-weight: bold; font-size: 14pt;">Upload Details</span><br>
+			<table style="border: 1px solid #aaa;" cellpadding="5">
+				<tr>
+					<td style="text-align: right; vertical-align: top; font-weight: bold;">Status</td>
+					<td><?=$status?></td>
+				</tr>
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
 					<td>
@@ -523,10 +561,12 @@
 				li.level3 { background-color: #e0efff; margin: 5px; padding: 10px; border-radius: 8px; }
 			</style>
 			
+			<? if ($status == "parsingcomplete") { ?>
 			<form method="post" action="importimaging.php">
 			<input type="hidden" name="action" value="queueforarchive">
 			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
 			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" value="Archive">
+			<? } ?>
 			
 			<ul id="myUL">
 			<?
@@ -613,7 +653,7 @@
 								//PrintVariable($seriesmatches);
 								
 								?>
-								<li class="level3"><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
+								<li class="level3"><? if ($status == "parsingcomplete") { ?><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><?}?><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
 									<ul class="nested" style="margin: 5px;">
 									<?
 										$files = explode(",", $filelist);
@@ -640,7 +680,9 @@
 			}
 			?>
 			</ul>
+			<? if ($status == "parsingcomplete") { ?>
 			</form>
+			<? } ?>
 			
 			<script>
 				var toggler = document.getElementsByClassName("caret");
