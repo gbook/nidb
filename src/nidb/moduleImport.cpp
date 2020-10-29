@@ -54,6 +54,7 @@ int moduleImport::Run() {
 	QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 4 day)");
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    io->SetUploadID(0);
 	/* ----- Step 1 - archive all files in the main directory ----- */
 	if (ParseDirectory(n->cfg["incomingdir"], 0))
 		ret = 1;
@@ -272,7 +273,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 				QString m;
 				QString report;
 
-                if (!io->InsertParRec(importid, file, archivereport)) {
+                if (!io->InsertParRec(importid, file)) {
 					n->WriteLog(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
 
 					QSqlQuery q;
@@ -300,7 +301,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 				QString report;
 				QString m;
 
-                if (!io->InsertEEG(importid, file, archivereport)) {
+                if (!io->InsertEEG(importid, file)) {
 					n->WriteLog(QString("InsertEEG(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
 					QSqlQuery q;
 					q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, :datatype, :importid, now(), :msg)");
@@ -367,7 +368,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         QString studyMatchCriteria("ModalityStudyDate");
         QString seriesMatchCriteria("SeriesNum");
 
-        if (io->InsertDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, importSiteID, importSeriesNotes, importAltUIDs, files, archivereport))
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, importSiteID, importSeriesNotes, importAltUIDs, files))
 			iscomplete = true;
 		else
 			iscomplete = false;

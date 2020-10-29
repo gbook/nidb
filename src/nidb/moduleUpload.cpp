@@ -76,6 +76,8 @@ bool moduleUpload::ParseUploads() {
         while (q.next()) {
             ret = 1;
             int upload_id = q.value("upload_id").toInt();
+            io->SetUploadID(upload_id);
+
             QString upload_source = q.value("upload_source").toString();
             QString upload_datapath = q.value("upload_datapath").toString();
             //int upload_destprojectid = q.value("upload_destprojectid").toInt();
@@ -97,7 +99,7 @@ bool moduleUpload::ParseUploads() {
             /* create temporary directory in uploadstagingdir */
             QString m;
             if (!n->MakePath(uploadstagingpath, m)) {
-                n->WriteLog(AppendUploadLog(upload_id, "Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]"));
+                io->AppendUploadLog(__FUNCTION__, "Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]");
                 ret = 1;
 
                 /* update the status */
@@ -114,7 +116,7 @@ bool moduleUpload::ParseUploads() {
 
 
             if ((upload_datapath == "") || (upload_datapath == "/") || (upload_datapath == "/etc") || (upload_datapath == "/bin") || (upload_datapath == "/root")) {
-                n->WriteLog(AppendUploadLog(upload_id, QString("upload_datapath is invalid [%1] ").arg(upload_datapath)));
+                io->AppendUploadLog(__FUNCTION__, QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
 
                 /* update the status */
                 SetUploadStatus(upload_id, "parsingerror");
@@ -124,7 +126,7 @@ bool moduleUpload::ParseUploads() {
 
             /* if modality is blank */
             if (upload_modality == "") {
-                n->WriteLog(AppendUploadLog(upload_id, "Error. Modality was blank [" + upload_modality + "]"));
+                io->AppendUploadLog(__FUNCTION__, "Error. Modality was blank [" + upload_modality + "]");
                 ret = 1;
 
                 /* update the status */
@@ -141,18 +143,21 @@ bool moduleUpload::ParseUploads() {
             int c;
             qint64 b;
             n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
-            n->WriteLog(AppendUploadLog(upload_id, QString("Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b)));
+            io->AppendUploadLog(__FUNCTION__, QString("Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* unzip any files in the uploadstagingdir */
-            n->WriteLog("Preparing to unzip the files located in [" + uploadstagingpath + "]");
-            n->WriteLog(AppendUploadLog(upload_id, n->UnzipDirectory(uploadstagingpath, true)));
-            n->WriteLog("Finished unzipping the files located in [" + uploadstagingpath + "]");
+            io->AppendUploadLog(__FUNCTION__, "Preparing to unzip the files located in [" + uploadstagingpath + "]");
+
+            QString unzipOutput = n->UnzipDirectory(uploadstagingpath, true);
+            io->AppendUploadLog(__FUNCTION__, unzipOutput);
+
+            io->AppendUploadLog(__FUNCTION__, "Finished unzipping the files located in [" + uploadstagingpath + "]");
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             c = 0;
             b = 0;
             n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
-            n->WriteLog(AppendUploadLog(upload_id, QString("After 3 passes of UNZIPPING files, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b)));
+            io->AppendUploadLog(__FUNCTION__, QString("After 3 passes of UNZIPPING files, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* get list of all files, and iterate through all of the files */
             QStringList files = n->FindAllFiles(uploadstagingpath, "*", true);
@@ -170,7 +175,7 @@ bool moduleUpload::ParseUploads() {
                         else if (upload_subjectcriteria == "namesexdob")
                             subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
                         else
-                            n->WriteLog(AppendUploadLog(upload_id, "Unspecified subject criteria [" + upload_subjectcriteria + "]"));
+                            io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
 
                         /* study matching criteria */
                         if (upload_studycriteria == "modalitystudydate")
@@ -178,7 +183,7 @@ bool moduleUpload::ParseUploads() {
                         else if (upload_studycriteria == "studyuid")
                             study = tags["StudyInstanceUID"];
                         else
-                            n->WriteLog(AppendUploadLog(upload_id, "Unspecified study criteria [" + upload_studycriteria + "]"));
+                            io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
 
                         /* series matching criteria */
                         if (upload_seriescriteria == "seriesnum")
@@ -188,20 +193,20 @@ bool moduleUpload::ParseUploads() {
                         else if (upload_seriescriteria == "seriesuid")
                             series = tags["SeriesInstanceUID"];
                         else
-                            n->WriteLog(AppendUploadLog(upload_id, "Unspecified series criteria [" + upload_seriescriteria + "]"));
+                            io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
 
                         /* store the file in the appropriate group */
                         fs[subject][study][series].append(f);
                     }
                     else {
-                        n->WriteLog(AppendUploadLog(upload_id, "Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]"));
+                        io->AppendUploadLog(__FUNCTION__, "Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]");
                         fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
                     }
                 }
                 else {
                     /* the file is not readable */
                     fs["unreadable"]["unreadable"]["unreadable"].append(f);
-                    n->WriteLog(AppendUploadLog(upload_id, "Unable to read file [" + f + "]"));
+                    io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
                 }
             }
 
@@ -226,7 +231,7 @@ bool moduleUpload::ParseUploads() {
                     if (q3.size() > 0) {
                         q3.first();
                         subjectid = q3.value("uploadsubject_id").toInt();
-                        n->WriteLog(AppendUploadLog(upload_id, QString("Found subjectid [%1]").arg(subjectid)));
+                        io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
@@ -235,7 +240,7 @@ bool moduleUpload::ParseUploads() {
                         q3.bindValue(":patientid", PatientID);
                         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q3.lastInsertId().toInt();
-                        n->WriteLog(AppendUploadLog(upload_id, QString("subjectid [%1] created").arg(subjectid)));
+                        io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else if (upload_subjectcriteria == "namesexdob") {
@@ -256,7 +261,7 @@ bool moduleUpload::ParseUploads() {
                     if (q3.size() > 0) {
                         q3.first();
                         subjectid = q3.value("uploadsubject_id").toInt();
-                        n->WriteLog(AppendUploadLog(upload_id, QString("Found subjectid [%1]").arg(subjectid)));
+                        io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
@@ -267,7 +272,7 @@ bool moduleUpload::ParseUploads() {
                         q3.bindValue(":patientsex", PatientSex);
                         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q3.lastInsertId().toInt();
-                        n->WriteLog(AppendUploadLog(upload_id, QString("subjectid [%1] created").arg(subjectid)));
+                        io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else
@@ -302,7 +307,7 @@ bool moduleUpload::ParseUploads() {
                         if (q3.size() > 0) {
                             q3.first();
                             studyid = q3.value("uploadstudy_id").toInt();
-                            n->WriteLog(AppendUploadLog(upload_id, QString("Found studyid [%1]").arg(studyid)));
+                            io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
@@ -312,7 +317,7 @@ bool moduleUpload::ParseUploads() {
                             q3.bindValue(":modality", Modality);
                             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q3.lastInsertId().toInt();
-                            n->WriteLog(AppendUploadLog(upload_id, QString("studyid [%1] created").arg(studyid)));
+                            io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else if (upload_studycriteria == "studyuid") {
@@ -328,7 +333,7 @@ bool moduleUpload::ParseUploads() {
                         if (q3.size() > 0) {
                             q3.first();
                             studyid = q3.value("uploadstudy_id").toInt();
-                            n->WriteLog(AppendUploadLog(upload_id, QString("Found studyid [%1]").arg(studyid)));
+                            io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
@@ -337,11 +342,11 @@ bool moduleUpload::ParseUploads() {
                             q3.bindValue(":studyinstanceuid", StudyInstanceUID);
                             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q3.lastInsertId().toInt();
-                            n->WriteLog(AppendUploadLog(upload_id, QString("studyid [%1] created").arg(studyid)));
+                            io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else
-                        n->WriteLog(AppendUploadLog(upload_id, "Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here..."));
+                        io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...");
 
                     /* ---------- iterate through the series ---------- */
                     for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
@@ -363,7 +368,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("Found seriesid [%1]").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -372,7 +377,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":seriesnum", SeriesNumber);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("seriesid [%1] created").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else if (upload_seriescriteria == "seriesdate") {
@@ -387,7 +392,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("Found seriesid [%1]").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -395,7 +400,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":studyid", studyid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("seriesid [%1] created").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else if (upload_seriescriteria == "seriesuid") {
@@ -411,7 +416,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("Found seriesid [%1]").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -420,16 +425,16 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                n->WriteLog(AppendUploadLog(upload_id, QString("seriesid [%1] created").arg(seriesid)));
+                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else {
-                            n->WriteLog(AppendUploadLog(upload_id, "Unspecified seriesid criteria [" + upload_seriescriteria + "]. That's weird it would show up here..."));
+                            io->AppendUploadLog(__FUNCTION__, "Unspecified seriesid criteria [" + upload_seriescriteria + "]. That's weird it would show up here...");
                         }
 
                         QStringList files = fs[subject][study][series];
                         int numfiles = files.size();
-                        //n->WriteLog(AppendUploadLog(upload_id, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles)));
+                        //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
 
                         /* remove the prefix for the files */
                         QStringList filesNoPrefix;
@@ -465,7 +470,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":subjectid", subjectid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
-                            else n->WriteLog(AppendUploadLog(upload_id, "Unspecified subject criteria [" + upload_subjectcriteria + "]"));
+                            else io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
 
 
                             /* update study details */
@@ -493,7 +498,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":studyid", studyid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
-                            else n->WriteLog(AppendUploadLog(upload_id, "Unspecified study criteria [" + upload_studycriteria + "]"));
+                            else io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
 
 
                             /* update series details */
@@ -551,11 +556,11 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":seriesid", seriesid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             }
-                            else n->WriteLog(AppendUploadLog(upload_id, "Unspecified series criteria [" + upload_seriescriteria + "]"));
+                            else io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
 
                         }
                         else {
-                            n->WriteLog(AppendUploadLog(upload_id, "Error reading file [" + files[0] + "]. That's weird it would show up here..."));
+                            io->AppendUploadLog(__FUNCTION__, "Error reading file [" + files[0] + "]. That's weird it would show up here...");
                         }
                     }
                 }
@@ -585,6 +590,8 @@ bool moduleUpload::ArchiveParsedUploads() {
         while (q.next()) {
             ret = 1;
             int upload_id = q.value("upload_id").toInt();
+            io->SetUploadID(upload_id);
+
             QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_status").toInt();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
@@ -592,7 +599,7 @@ bool moduleUpload::ArchiveParsedUploads() {
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
-            n->WriteLog(AppendUploadLog(upload_id, QString("Beginning archiving of upload [%1]").arg(upload_id)));
+            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1]").arg(upload_id));
 
             /* set status to archiving */
             SetUploadStatus(upload_id, "archiving");
@@ -625,8 +632,7 @@ bool moduleUpload::ArchiveParsedUploads() {
                     }
 
                     /* insert the series */
-                    QString m;
-                    io->InsertDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist, m);
+                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
                 }
 
                 SetUploadStatus(upload_id, "archivecomplete");
@@ -640,24 +646,6 @@ bool moduleUpload::ArchiveParsedUploads() {
         }
     }
     return ret;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- AppendUploadLog -------------------------------- */
-/* ---------------------------------------------------------- */
-QString moduleUpload::AppendUploadLog(int uploadid, QString msg) {
-
-    QSqlQuery q;
-
-    if (msg != "") {
-        q.prepare("update uploads set upload_log = concat(upload_log, :msg) where upload_id = :uploadid");
-        q.bindValue(":msg", QString("\n" + msg));
-        q.bindValue(":uploadid", uploadid);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-    }
-
-    return msg;
 }
 
 

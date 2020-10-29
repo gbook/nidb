@@ -42,14 +42,22 @@ archiveIO::~archiveIO()
 
 
 /* ---------------------------------------------------------- */
+/* --------- SetUploadID ------------------------------------ */
+/* ---------------------------------------------------------- */
+void archiveIO::SetUploadID(int u) {
+    uploadid = u;
+
+    //n->WriteLog(QString("Set uploadid [%1]  u [%2]").arg(uploadid).arg(u));
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- CreateSubject ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, QString &msg, int &subjectRowID, QString &subjectUID) {
+bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectUID) {
     int count(0);
 
-    QStringList msgs;
-
-    msgs << n->WriteLog("Creating a new subject. Searching for an unused UID");
+    AppendUploadLog(__FUNCTION__, "Creating a new subject. Searching for an unused UID");
     /* create a new subjectUID */
     do {
         subjectUID = n->CreateUID("S",3);
@@ -60,7 +68,7 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
         count = q2.size();
     } while (count > 0);
 
-    msgs << n->WriteLog("Found an unused UID [" + subjectUID + "]");
+    AppendUploadLog(__FUNCTION__, "Found an unused UID [" + subjectUID + "]");
 
     QString sqlstring = "insert into subjects (name, birthdate, gender, weight, height, uid, uuid) values (:patientname, :patientdob, :patientsex, :weight, :size, :uid, ucase(md5(concat('" + n->RemoveNonAlphaNumericChars(PatientName) + "', '" + n->RemoveNonAlphaNumericChars(PatientBirthDate) + "','" + n->RemoveNonAlphaNumericChars(PatientSex) + "'))) )";
     QSqlQuery q2;
@@ -74,7 +82,7 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
     subjectRowID = q2.lastInsertId().toInt();
 
-    msgs << n->WriteLog("Added new subject [" + subjectUID + "]");
+    AppendUploadLog(__FUNCTION__, "Added new subject [" + subjectUID + "]");
 
     /* insert the PatientID as an alternate UID */
     if (PatientID != "") {
@@ -83,92 +91,52 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
         q2.bindValue(":subjectid",subjectRowID);
         q2.bindValue(":patientid",PatientID);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        msgs << n->WriteLog("Added alternate UID [" + PatientID + "]");
+        AppendUploadLog(__FUNCTION__, "Added alternate UID [" + PatientID + "]");
     }
-    msg = msgs.join(",");
     return true;
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertDICOMSeries ------------------------------ */
+/* --------- ArchiveDICOMSeries ------------------------------ */
 /* ---------------------------------------------------------- */
-bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, QString &msg) {
+bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files) {
 
-    QStringList msgs;
-    //msgs << n->WriteLog(QString("----- Inside InsertDICOMSeries(importID %1  uploadID %2, <array of size[%3]>) with [%3] files -----").arg(importid).arg(uploadid).arg(files.size()));
-    //msgs << n->WriteLog(QString("----- Inside InsertDICOMSeries(importID %1  <array of size[%2]>) with [%2] files -----").arg(importid).arg(files.size()));
+    //AppendUploadLog(__FUNCTION__, QString("----- Inside ArchiveDICOMSeries(importID %1  uploadID %2, <array of size[%3]>) with [%3] files -----").arg(importid).arg(uploadid).arg(files.size()));
+    //AppendUploadLog(__FUNCTION__, QString("----- Inside ArchiveDICOMSeries(importID %1  <array of size[%2]>) with [%2] files -----").arg(importid).arg(files.size()));
 
+    AppendUploadLog(__FUNCTION__ , "Beginning to archive this DICOM series");
+
+    /* check if there are any files to archive */
     if (files.size() < 1) {
-        msgs << n->WriteLog("This DICOM series has no files");
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__ , "Beginning to archive this DICOM series");
         return false;
     }
 
+    /* check if the first file exists */
     if (!QFile::exists(files[0])) {
-        msgs << n->WriteLog(QString("File [%1] does not exist - check 0!").arg(files[0]));
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check 0!").arg(files[0]));
         return 0;
     }
 
     n->SortQStringListNaturally(files);
 
+    /* check if the first file exists after sorting */
     if (!QFile::exists(files[0])) {
-        msgs << n->WriteLog(QString("File [%1] does not exist - check 1!").arg(files[0]));
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check 1!").arg(files[0]));
         return 0;
     }
 
-    /* import log variables */
-    //QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
-    //double IL_patientage_orig(0.0);
-    //int IL_seriesnumber_orig(0);
-    //QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
-    //QString IL_subject_uid;
-    //QString IL_project_number;
-    //int IL_seriescreated(0), IL_studycreated(0), IL_subjectcreated(0), IL_familycreated(0), IL_enrollmentcreated(0), IL_overwrote_existing(0);
-
     int subjectRowID(-1);
     QString subjectUID;
-    QString familyRealUID;
+    QString familyUID;
     int familyRowID(-1);
     int projectRowID(-1);
     int enrollmentRowID(-1);
     int studyRowID(-1);
     int seriesRowID(-1);
     QString costcenter;
-    int studynum(0);
-
-    //int importInstanceID(0);
-    //int importSiteID(0);
-    //int importProjectID(0);
-    //int importPermanent(0);
-    //int importAnonymize(0);
-    //int importMatchIDOnly(1); /* match by ID first, by default */
-    //QString importUUID;
-    //QString importSeriesNotes;
-    //QString importAltUIDs;
-
-    /* if there is an importid, check to see how that thing is doing */
-//    if (importid > 0) {
-//        QSqlQuery q;
-//        q.prepare("select * from import_requests where importrequest_id = :importid");
-//        q.bindValue(":importid", importid);
-//        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-//        if (q.size() > 0) {
-//            q.first();
-//            QString status = q.value("import_status").toString();
-//            //importInstanceID = q.value("import_instanceid").toInt();
-//            importSiteID = q.value("import_siteid").toInt();
-//            importProjectID = q.value("import_projectid").toInt();
-//            //importPermanent = q.value("import_permanent").toInt();
-//            //importAnonymize = q.value("import_anonymize").toInt();
-//            importMatchIDOnly = q.value("import_matchidonly").toInt();
-//            //importUUID = q.value("import_uuid").toString();
-//            importSeriesNotes = q.value("import_seriesnotes").toString();
-//            importAltUIDs = q.value("import_altuids").toString();
-//        }
-//    }
+    int studynum(1);
 
     /* get all the DICOM tags */
     QHash<QString, QString> tags;
@@ -176,15 +144,13 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
     QString f = files[0];
 
     if (!QFile::exists(f)) {
-        msgs << n->WriteLog(QString("File [%1] does not exist - check A!").arg(f));
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check A!").arg(f));
         return 0;
     }
 
     if (n->GetImageFileTags(f, tags)) {
         if (!QFile::exists(f)) {
-            msgs << n->WriteLog(QString("File [%1] does not exist - check B!").arg(f));
-            msg += msgs.join("\n");
+            AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(f));
             return 0;
         }
     }
@@ -223,6 +189,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
     QString SequenceName = tags["SequenceName"];
     QString ImageType = tags["ImageType"];
     QString ImageComments = tags["ImageComments"];
+    QString StudyInstanceUID = tags["StudyInstanceUID"];
 
     /* MR specific tags */
     double MagneticFieldStrength = tags["MagneticFieldStrength"].toDouble();
@@ -260,7 +227,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
                 }
             }
         }
-        msgs << n->WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(PhaseEncodeAngle));
+        AppendUploadLog(__FUNCTION__ , QString("Found PhaseEncodeAngle of [%1]").arg(PhaseEncodeAngle));
         df.close();
     }
 
@@ -354,23 +321,6 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
     /* get the costcenter */
     costcenter = GetCostCenter(StudyDescription);
 
-    msgs << n->WriteLog(PatientID + " - " + StudyDescription);
-
-    /* set the import log variables */
-    //IL_modality_orig = Modality;
-    //IL_patientname_orig = PatientName;
-    //IL_patientdob_orig = PatientBirthDate;
-    //IL_patientsex_orig = PatientSex;
-    //IL_stationname_orig = StationName;
-    //IL_institution_orig = InstitutionName + "-" + InstitutionAddress;
-    //IL_studydatetime_orig = StudyDate + " " + StudyTime;
-    //IL_seriesdatetime_orig = SeriesDate + " " + SeriesTime;
-    //IL_seriesnumber_orig = SeriesNumber;
-    //IL_studydesc_orig = StudyDescription;
-    //IL_seriesdesc_orig = SeriesDescription;
-    //IL_protocolname_orig = ProtocolName;
-    //IL_patientage_orig = PatientAge;
-
     /* get the ID search string */
     QString SQLIDs = CreateIDSearchList(PatientID, altUIDstr);
     QStringList altuidlist;
@@ -380,221 +330,44 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
     /* check the alternate UIDs */
     foreach (QString altuid, altuidlist) {
         if (altuid.trimmed().size() > 254)
-            msgs << "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated";
+            AppendUploadLog(__FUNCTION__ , "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated");
     }
 
     /* get the subject (create it if it wasn't found) */
-    //QString subjectCriteria("PatientID");
-    //int existingSubjectID(-1);
-    bool subjectCreated(false);
-    QString m;
-    GetSubject(subjectMatchCriteria, existingSubjectID, PatientID, PatientName, PatientSex, PatientBirthDate, PatientWeight, PatientSize, SQLIDs, subjectRowID, subjectUID, subjectCreated, m);
-
-    /* check if the project and subject exist */
-    msgs << n->WriteLog("Checking if the project exists");
-    int projectcount(0);
-    QSqlQuery q;
-    q.prepare("select count(*) from `projects` where project_costcenter = :costcenter");
-    q.bindValue(":costcenter", costcenter);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0) {
-        q.first();
-        projectcount = q.value("projectcount").toInt();
-    }
-    else {
-        costcenter = "999999";
-    }
+    GetSubject(subjectMatchCriteria, existingSubjectID, PatientID, PatientName, PatientSex, PatientBirthDate, PatientWeight, PatientSize, SQLIDs, subjectRowID, subjectUID);
 
     n->WriteLog("subjectUID [" + subjectUID + "]");
     if (subjectUID == "") {
-        msgs << n->WriteLog("Error finding/creating subject. UID is blank");
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__ , "Error finding/creating subject. UID is blank");
         return 0;
     }
 
-    QString familyUID;
-    if (GetFamily(subjectRowID, subjectUID, familyRowID, familyUID))
-        msgs << n->WriteLog(QString("GetFamily returned familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
-    else
-        msgs << n->WriteLog(QString("GetFamily returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
-
-//    /* check if the subject is part of a family, if not create a family for it */
     QSqlQuery q2;
-//    q2.prepare("select family_id from family_members where subject_id = :subjectid");
-//    q2.bindValue(":subjectid", subjectRowID);
-//    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//    if (q2.size() > 0) {
-//        q2.first();
-//        familyRowID = q2.value("family_id").toInt();
-//        IL_familycreated = 0;
-//    }
-//    else {
-//        int count = 0;
 
-//        /* create family UID */
-//        msgs << n->WriteLog("Subject is not part of family, creating a unique family UID");
-//        do {
-//            familyRealUID = n->CreateUID("F");
-//            QSqlQuery q2;
-//            q2.prepare("SELECT * FROM `families` WHERE family_uid = :familyuid");
-//            q2.bindValue(":familyuid", familyRealUID);
-//            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//            count = q2.size();
-//        } while (count > 0);
-
-//        /* create familyRowID if it doesn't exist */
-//        QSqlQuery q2;
-//        q2.prepare("insert into families (family_uid, family_createdate, family_name) values (:familyRealUID, now(), :familyname)");
-//        q2.bindValue(":familyuid", familyRealUID);
-//        q2.bindValue(":familyname", "Proband-" + subjectUID);
-//        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//        familyRowID = q2.lastInsertId().toInt();
-
-//        q2.prepare("insert into family_members (family_id, subject_id, fm_createdate) values (:familyid, :subjectid, now())");
-//        q2.bindValue(":familyid", familyRowID);
-//        q2.bindValue(":subjectid", subjectRowID);
-//        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
-//        IL_familycreated = 1;
-//    }
-
-    if (GetProject(destProjectID, costcenter, projectRowID, m))
-        msgs << n->WriteLog(QString("GetProject returned projectRowID [%1]").arg(projectRowID));
+    /* ----- get/set family ID ----- */
+    //QString familyUID;
+    if (GetFamily(subjectRowID, subjectUID, familyRowID, familyUID))
+        AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
     else
-        msgs << n->WriteLog(QString("GetProject returned error: projectRowID [%1]  with message [%2]").arg(projectRowID).arg(m));
+        AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
 
-    if (GetEnrollment(subjectRowID, projectRowID, enrollmentRowID, m))
-        msgs << n->WriteLog(QString("GetEnrollment returned enrollmentRowID [%1]").arg(enrollmentRowID));
+    /* ----- get the project ID ----- */
+    if (GetProject(destProjectID, costcenter, projectRowID))
+        AppendUploadLog(__FUNCTION__ , QString("GetProject() returned projectRowID [%1]").arg(projectRowID));
     else
-        msgs << n->WriteLog(QString("GetEnrollment returned error: enrollmentRowID [%1]  with message [%2]").arg(enrollmentRowID).arg(m));
+        AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
 
-//    /* get the projectRowID */
-//    if (destProjectID == 0) {
-//        q2.prepare("select project_id from projects where project_costcenter = :costcenter");
-//        q2.bindValue(":costcenter", costcenter);
-//        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//        if (q2.size() > 0) {
-//            q2.first();
-//            projectRowID = q2.value("project_id").toInt();
-//        }
-//    }
-//    else {
-//        /* need to create the project if it doesn't exist */
-//        msgs << n->WriteLog(QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
-//        projectRowID = destProjectID;
-//    }
+    /* ----- get/create enrollment ID ----- */
+    if (GetEnrollment(subjectRowID, projectRowID, enrollmentRowID))
+        AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned enrollmentRowID [%1]").arg(enrollmentRowID));
+    else
+        AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned error: enrollmentRowID [%1]").arg(enrollmentRowID));
 
-//    /* check if the subject is enrolled in the project */
-//    q2.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
-//    q2.bindValue(":subjectid", subjectRowID);
-//    q2.bindValue(":projectid", projectRowID);
-//    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//    if (q2.size() > 0) {
-//        q2.first();
-//        enrollmentRowID = q2.value("enrollment_id").toInt();
-//        msgs << n->WriteLog(QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID));
-//        IL_enrollmentcreated = 0;
-//    }
-//    else {
-//        /* create enrollmentRowID if it doesn't exist */
-//        q2.prepare("insert into enrollment (project_id, subject_id, enroll_startdate) values (:projectid, :subjectid, now())");
-//        q2.bindValue(":subjectid", subjectRowID);
-//        q2.bindValue(":projectid", projectRowID);
-//        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-//        enrollmentRowID = q2.lastInsertId().toInt();
+    /* set the alternate IDs for this enrollment */
+    SetAlternateIDs(subjectRowID, enrollmentRowID, altuidlist);
 
-//        msgs << n->WriteLog(QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID));
-//        IL_enrollmentcreated = 1;
-//    }
-
-    /* update alternate IDs, if there are any */
-    if (altuidlist.size() > 0) {
-        foreach (QString altuid, altuidlist) {
-            if (altuid.trimmed() != "") {
-                q2.prepare("replace into subject_altuid (subject_id, altuid, enrollment_id) values (:subjectid, :altuid, :enrollmentid)");
-                q2.bindValue(":subjectid", subjectRowID);
-                q2.bindValue(":altuid", altuid);
-                q2.bindValue(":enrollmentid", enrollmentRowID);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
-            }
-        }
-    }
-
-    /* now determine if this study exists or not...
-     * basically check for a unique studydatetime, modality, and site (StationName), because we already know this subject/project/etc is unique
-     * also checks the accession number against the study_num to see if this study was pre-registered
-     * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
-    bool studyFound = false;
-    msgs << n->WriteLog(QString("Checking if this study exists: enrollmentID [%1]  StudyDateTime [%2]  Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName));
-
-    q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
-    q2.bindValue(":enrollmentid", enrollmentRowID);
-    //q2.bindValue(":accessionnum", AccessionNumber);
-    q2.bindValue(":modality", Modality);
-    q2.bindValue(":stationname", StationName);
-    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-    if (q2.size() > 0) {
-        while (q2.next()) {
-            int study_id = q2.value("study_id").toInt();
-            studynum = q2.value("study_num").toInt();
-            studyFound = true;
-            studyRowID = study_id;
-
-            QSqlQuery q4;
-            msgs << n->WriteLog(QString("StudyID [%1] exists, updating").arg(study_id));
-            q4.prepare("update studies set study_modality = :modality, study_datetime = '" + StudyDateTime + "', study_ageatscan = :patientage, study_height = :height, study_weight = :weight, study_desc = :studydesc, study_operator = :operator, study_performingphysician = :physician, study_site = :stationname, study_nidbsite = :importsiteid, study_institution = :institution, study_status = 'complete' where study_id = :studyid");
-            q4.bindValue(":modality", Modality);
-            q4.bindValue(":patientage", PatientAge);
-            q4.bindValue(":height", PatientSize);
-            q4.bindValue(":weight", PatientWeight);
-            q4.bindValue(":studydesc", StudyDescription);
-            q4.bindValue(":operator", OperatorsName);
-            q4.bindValue(":physician", PerformingPhysiciansName);
-            q4.bindValue(":stationname", StationName);
-            q4.bindValue(":importsiteid", destSiteID);
-            q4.bindValue(":institution", InstitutionName + " - " + InstitutionAddress);
-            q4.bindValue(":studyid", studyRowID);
-            n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
-
-            //IL_studycreated = 0;
-            break;
-        }
-    }
-    if (!studyFound) {
-        msgs << n->WriteLog("Study did not exist, creating new study");
-
-        /* create studyRowID if it doesn't exist */
-        q2.prepare("select max(a.study_num) 'study_num' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id WHERE b.subject_id = :subjectid");
-        q2.bindValue(":subjectid", subjectRowID);
-        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        if (q2.size() > 0) {
-            q2.first();
-            studynum = q2.value("study_num").toInt() + 1;
-        }
-        else
-            studynum = 1;
-
-        QSqlQuery q4;
-        q4.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '" + StudyDateTime + "', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
-        q4.bindValue(":enrollmentid", enrollmentRowID);
-        q4.bindValue(":studynum", studynum);
-        q4.bindValue(":patientid", PatientID);
-        q4.bindValue(":modality", Modality);
-        q4.bindValue(":patientage", PatientAge);
-        q4.bindValue(":height", PatientSize);
-        q4.bindValue(":weight", PatientWeight);
-        q4.bindValue(":studydesc", StudyDescription);
-        q4.bindValue(":operator", OperatorsName);
-        q4.bindValue(":physician", PerformingPhysiciansName);
-        q4.bindValue(":stationname", StationName);
-        q4.bindValue(":importsiteid", destSiteID);
-        q4.bindValue(":institution", InstitutionName + " - " + InstitutionAddress);
-        q4.bindValue(":studyid", studyRowID);
-        n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
-        studyRowID = q4.lastInsertId().toInt();
-
-        //IL_studycreated = 1;
-    }
+    /* ----- get/create study ----- */
+    GetStudy(studyMatchCriteria, existingStudyID, subjectRowID, enrollmentRowID, StudyDateTime, StudyInstanceUID, Modality, PatientID, PatientAge, PatientSize, PatientWeight, StudyDescription, OperatorsName, PerformingPhysiciansName, StationName, InstitutionName, InstitutionAddress, studyRowID, studynum);
 
     /* gather series information */
     int boldreps(1);
@@ -639,7 +412,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q2.first();
             seriesRowID = q2.value("mrseries_id").toInt();
 
-            msgs << n->WriteLog(QString("This MR series [%1] exists, updating").arg(SeriesNumber));
+            AppendUploadLog(__FUNCTION__ , QString("This MR series [%1] exists, updating").arg(SeriesNumber));
 
             //int dimN(0), dimT(0), dimZ(0);
             //if (NumberOfTemporalPositions > 0) {
@@ -688,14 +461,12 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q3.bindValue(":seriesRowID", seriesRowID);
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 
-            //IL_seriescreated = 0;
-
             /* if the series is being updated, the QA information might be incorrect or be based on the wrong number of files, so delete the mr_qa row */
             q3.prepare("delete from mr_qa where mrseries_id = :seriesid");
             q3.bindValue(0,seriesRowID);
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
 
-            msgs << n->WriteLog("Deleted from mr_qa table, now deleting from qc_results");
+            AppendUploadLog(__FUNCTION__ , "Deleted from mr_qa table, now deleting from qc_results");
 
             /* delete the qc module rows */
             q3.prepare("select qcmoduleseries_id from qc_moduleseries where series_id = :seriesid and modality = 'mr'");
@@ -712,7 +483,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             }
 
-            msgs << n->WriteLog("Deleted from qc_results table, now deleting from qc_moduleseries");
+            AppendUploadLog(__FUNCTION__ , "Deleted from qc_results table, now deleting from qc_moduleseries");
 
             q3.prepare("delete from qc_moduleseries where series_id = :seriesid and modality = 'mr'");
             q3.bindValue(0,seriesRowID);
@@ -720,7 +491,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
         }
         else {
             /* create seriesRowID if it doesn't exist */
-            msgs << n->WriteLog(QString("MR series [%1] did not exist, creating").arg(SeriesNumber));
+            AppendUploadLog(__FUNCTION__ , QString("MR series [%1] did not exist, creating").arg(SeriesNumber));
             QString sqlstring = "insert ignore into mr_series (study_id, series_datetime, series_desc, series_protocol, series_sequencename, series_num, series_tr, series_te, series_flip, phaseencodedir, phaseencodeangle, PhaseEncodingDirectionPositive, series_spacingx, series_spacingy, series_spacingz, series_fieldstrength, img_rows, img_cols, img_slices, series_ti, percent_sampling, percent_phasefov, acq_matrix, slicethickness, slicespacing, bandwidth, image_type, image_comments, bold_reps, numfiles, series_notes, data_type, series_status, series_createdby, series_createdate) values (:studyRowID, :SeriesDateTime, :SeriesDescription, :ProtocolName, :SequenceName, :SeriesNumber, :RepetitionTime, :EchoTime, :FlipAngle, :InPlanePhaseEncodingDirection, :PhaseEncodeAngle, :PhaseEncodingDirectionPositive, :pixelX, :pixelY, :SliceThickness, :MagneticFieldStrength, :Rows, :Columns, :zsize, :InversionTime, :PercentSampling, :PercentPhaseFieldOfView, :AcquisitionMatrix, :SliceThickness, :SpacingBetweenSlices, :PixelBandwidth, :ImageType, :ImageComments, :boldreps, :numfiles, :importSeriesNotes, 'dicom', 'complete', 'import', now())";
             QSqlQuery q3;
             q3.prepare(sqlstring);
@@ -762,8 +533,6 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q3.bindValue(":importSeriesNotes", seriesNotes);
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             seriesRowID = q3.lastInsertId().toInt();
-
-            //IL_seriescreated = 1;
         }
     }
     else if (Modality.toUpper() == "CT") {
@@ -803,8 +572,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q5.bindValue(":ConvolutionKernel", ConvolutionKernel);
             q5.bindValue(":seriesRowID", seriesRowID);
             n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
-            msgs << n->WriteLog(QString("This CT series [%1] exists, updating").arg(SeriesNumber));
-            //IL_seriescreated = 0;
+            AppendUploadLog(__FUNCTION__ , QString("This CT series [%1] exists, updating").arg(SeriesNumber));
         }
         else {
             /* create seriesRowID if it doesn't exist */
@@ -835,8 +603,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q5.bindValue(":ConvolutionKernel", ConvolutionKernel);
             n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
             seriesRowID = q5.lastInsertId().toInt();
-            msgs << n->WriteLog(QString("CT series [%1] did not exist, creating").arg(SeriesNumber));
-            //IL_seriescreated = 1;
+            AppendUploadLog(__FUNCTION__ , QString("CT series [%1] did not exist, creating").arg(SeriesNumber));
         }
     }
     else {
@@ -856,7 +623,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
         if (q3.size() > 0) {
             q3.first();
-            msgs << n->WriteLog(QString("This %1 series [%2] exists, updating").arg(Modality).arg(SeriesNumber));
+            AppendUploadLog(__FUNCTION__ , QString("This %1 series [%2] exists, updating").arg(Modality).arg(SeriesNumber));
             seriesRowID = q3.value(dbModality + "series_id").toInt();
 
             QSqlQuery q4;
@@ -874,12 +641,10 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q4.bindValue(":numfiles", numfiles);
             q4.bindValue(":seriesRowID", seriesRowID);
             n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
-
-            //IL_seriescreated = 0;
         }
         else {
             /* create seriesRowID if it doesn't exist */
-            msgs << n->WriteLog(QString(Modality + " series [%1] did not exist, creating").arg(SeriesNumber));
+            AppendUploadLog(__FUNCTION__ , QString(Modality + " series [%1] did not exist, creating").arg(SeriesNumber));
             QSqlQuery q4;
             if (dbModality == "ot") {
                 q4.prepare(QString("insert into %1_series (study_id, series_datetime, series_desc, series_num, series_spacingx, series_spacingy, series_spacingz, img_rows, img_cols, img_slices, numfiles, modality, data_type, series_status, series_createdby) values (:studyid, :SeriesDateTime, :ProtocolName, :SeriesNumber, :pixelX, :pixelY, :SliceThickness, :Rows, :Columns, :zsize, :numfiles, :Modality, 'dicom', 'complete', 'import')").arg(dbModality));
@@ -901,26 +666,24 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
             q4.bindValue(":Modality", Modality);
             n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
             seriesRowID = q4.lastInsertId().toInt();
-
-            //IL_seriescreated = 1;
         }
     }
 
     /* copy the file to the archive, update db info */
-    msgs << n->WriteLog(QString("SeriesRowID: [%1]").arg(seriesRowID));
+    AppendUploadLog(__FUNCTION__ , QString("SeriesRowID: [%1]").arg(seriesRowID));
 
     /* create data directory if it doesn't already exist */
     QString outdir = QString("%1/%2/%3/%4/dicom").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     QString thumbdir = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    //msgs << n->WriteLog("outdir [" + outdir + "]");
-    m = "";
+    //AppendUploadLog(__FUNCTION__ , "outdir [" + outdir + "]");
+    QString m;
     if (!n->MakePath(outdir, m))
-        msgs << n->WriteLog("Unable to create output direcrory [" + outdir + "] because of error [" + m + "]");
+        AppendUploadLog(__FUNCTION__ , "Unable to create output direcrory [" + outdir + "] because of error [" + m + "]");
     else
-        msgs << n->WriteLog("Created outdir ["+outdir+"]");
+        AppendUploadLog(__FUNCTION__ , "Created outdir ["+outdir+"]");
 
     /* check if there are .dcm files already in the archive (outdir) */
-    msgs << n->WriteLog("Checking for existing files in outdir [" + outdir + "]");
+    AppendUploadLog(__FUNCTION__ , "Checking for existing files in outdir [" + outdir + "]");
     QStringList existingdcms = n->FindAllFiles(outdir, "*.dcm");
     int numexistingdcms = existingdcms.size();
 
@@ -934,7 +697,7 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
          * if they're all the same, consolidate the files into one list of new and old, remove duplicates
          */
 
-        msgs << n->WriteLog(QString("There are [%1] existing files in [%2]. Beginning renaming...").arg(numexistingdcms).arg(outdir));
+        AppendUploadLog(__FUNCTION__ , QString("There are [%1] existing files in [%2]. Beginning renaming...").arg(numexistingdcms).arg(outdir));
 
         int filecnt = 0;
         /* rename the existing files to make them unique */
@@ -970,14 +733,14 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
 
             filecnt++;
         }
-        msgs << n->WriteLog(QString("Done renaming [%1] files").arg(filecnt));
+        AppendUploadLog(__FUNCTION__ , QString("Done renaming [%1] files").arg(filecnt));
     }
 
     /* create a thumbnail of the middle slice in the dicom directory (after getting the size, so the thumbnail isn't included in the size) */
     CreateThumbnail(files[files.size()/2], thumbdir);
 
     /* renumber the **** NEWLY **** added files to make them unique */
-    msgs << n->WriteLog("Renaming new files");
+    AppendUploadLog(__FUNCTION__ , "Renaming new files");
     foreach (QString file, files) {
         /* need to rename it, get the DICOM tags */
         QHash<QString, QString> tags;
@@ -1001,51 +764,21 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
         if (QFile::exists(newfile)) {
             /* remove the existing file */
             QFile::remove(newfile);
-            //IL_overwrote_existing = true;
         }
         else {
-            //IL_overwrote_existing = false;
         }
 
         /* move & rename the file */
         QFile fr(file);
         if (!n->RenameFile(file, newfile))
-            msgs << n->WriteLog("Unable to rename newly added file [" + file + "] to [" + newfile + "]");
-
-        /* insert an import log record */
-//        QSqlQuery q5;
-//        q5.prepare("insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, modality_orig, patientid_orig, patientname_orig, stationname_orig, institution_orig, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values (:file, :newfile, 'DICOM', now(), 'successful', :importid, :importid, :importSiteID, :importProjectID, :IL_modality_orig, :PatientID, :IL_patientname_orig, :IL_stationname_orig, :IL_institution_orig, :subjectUID, :studynum, :subjectRowID, :studyRowID, :seriesRowID, :enrollmentRowID, :IL_seriescreated, :IL_studycreated, :IL_subjectcreated, :IL_familycreated, :IL_enrollmentcreated, :IL_overwrote_existing)");
-//        q5.bindValue(":file", file);
-//        q5.bindValue(":newfile", outdir+"/"+newfname);
-//        q5.bindValue(":importid", importid);
-//        q5.bindValue(":importSiteID", destSiteID);
-//        q5.bindValue(":importProjectID", destProjectID);
-//        q5.bindValue(":IL_modality_orig", IL_modality_orig);
-//        q5.bindValue(":PatientID", PatientID);
-//        q5.bindValue(":IL_patientname_orig", IL_patientname_orig);
-//        q5.bindValue(":IL_stationname_orig", IL_stationname_orig);
-//        q5.bindValue(":IL_institution_orig", IL_institution_orig);
-//        q5.bindValue(":IL_seriesnumber_orig", IL_seriesnumber_orig);
-//        q5.bindValue(":subjectUID", subjectUID);
-//        q5.bindValue(":studynum", studynum);
-//        q5.bindValue(":subjectRowID", subjectRowID);
-//        q5.bindValue(":studyRowID", studyRowID);
-//        q5.bindValue(":seriesRowID", seriesRowID);
-//        q5.bindValue(":enrollmentRowID", enrollmentRowID);
-//        q5.bindValue(":IL_seriescreated", IL_seriescreated);
-//        q5.bindValue(":IL_studycreated", IL_studycreated);
-//        q5.bindValue(":IL_subjectcreated", IL_subjectcreated);
-//        q5.bindValue(":IL_familycreated", IL_familycreated);
-//        q5.bindValue(":IL_enrollmentcreated", IL_enrollmentcreated);
-//        q5.bindValue(":IL_overwrote_existing", IL_overwrote_existing);
-//        n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
+            AppendUploadLog(__FUNCTION__ , "Unable to rename newly added file [" + file + "] to [" + newfile + "]");
     }
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize = 0;
     int nfiles;
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
-    msgs << n->WriteLog(QString("output directory [%1] is size [%2] and contains nfiles [%3]").arg(outdir).arg(dirsize).arg(nfiles));
+    AppendUploadLog(__FUNCTION__ , QString("output directory [%1] is [%2] bytes and contains [%3] files").arg(outdir).arg(dirsize).arg(nfiles));
 
     /* check if its an EPI sequence, but not a perfusion sequence */
     if (SequenceName.contains("epfid2d1_")) {
@@ -1092,13 +825,13 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
     QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
 
     if (importid > 0) {
-        msgs << n->WriteLog("Checking for behavioral data in [" + inbehdir + "]");
+        AppendUploadLog(__FUNCTION__ , "Checking for behavioral data in [" + inbehdir + "]");
         QDir bd(inbehdir);
         if (bd.exists()) {
             QString m;
             if (n->MakePath(outbehdir, m)) {
                 QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
-                msgs << n->WriteLog(n->SystemCommand(systemstring));
+                AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
 
                 qint64 behdirsize(0);
                 int behnumfiles(0);
@@ -1112,29 +845,28 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             }
             else
-                msgs << n->WriteLog("Unable to create outbehdir ["+outbehdir+"] because of error ["+m+"]");
+                AppendUploadLog(__FUNCTION__ , "Unable to create outbehdir ["+outbehdir+"] because of error ["+m+"]");
         }
     }
 
     /* change the permissions on the outdir to 777 so the webpage can read/write the directories */
     systemstring = "chmod -Rf 777 " + outdir;
-    msgs << n->WriteLog(n->SystemCommand(systemstring));
+    AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
 
     /* copy everything to the backup directory */
     QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     QDir bda(backdir);
     if (!bda.exists()) {
-        msgs << n->WriteLog("Backup directory [" + backdir + "] does not exist. About to create it...");
+        AppendUploadLog(__FUNCTION__ , "Backup directory [" + backdir + "] does not exist. About to create it...");
         QString m;
         if (!n->MakePath(backdir, m))
-            msgs << n->WriteLog("Unable to create backdir [" + backdir + "] because of error [" + m + "]");
+            AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
     }
-    msgs << n->WriteLog("Starting copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
-    msgs << n->WriteLog(n->SystemCommand(systemstring));
-    msgs << n->WriteLog("Finished copying to the backup directory");
+    AppendUploadLog(__FUNCTION__ , "Starting copy to the backup directory");
+    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+    AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
+    AppendUploadLog(__FUNCTION__ , "Finished copying to the backup directory");
 
-    msg += msgs.join("\n");
     return 1;
 }
 
@@ -1142,20 +874,9 @@ bool archiveIO::InsertDICOMSeries(int importid, int existingSubjectID, int exist
 /* ---------------------------------------------------------- */
 /* --------- InsertParRec ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
+bool archiveIO::InsertParRec(int importid, QString file) {
 
-    QStringList msgs;
-
-    msgs << n->WriteLog(QString("----- In InsertParRec(%1,%2) -----").arg(importid).arg(file));
-
-    /* import log variables */
-    //QString IL_modality_orig, IL_patientname_orig, IL_patientdob_orig, IL_patientsex_orig, IL_stationname_orig, IL_institution_orig, IL_studydatetime_orig, IL_seriesdatetime_orig, IL_studydesc_orig;
-    //double IL_patientage_orig;
-    //int IL_seriesnumber_orig;
-    //QString IL_modality_new, IL_patientname_new, IL_patientdob_new, IL_patientsex_new, IL_stationname_new, IL_institution_new, IL_studydatetime_new, IL_seriesdatetime_new, IL_studydesc_new, IL_seriesdesc_orig, IL_protocolname_orig;
-    //QString IL_subject_uid;
-    //QString IL_project_number;
-    //int IL_seriescreated(0), IL_studycreated(0), IL_subjectcreated(0), IL_familycreated(0), IL_enrollmentcreated(0), IL_overwrote_existing(0);
+    AppendUploadLog(__FUNCTION__, QString("----- In InsertParRec(%1,%2) -----").arg(importid).arg(file));
 
     QString familyRealUID;
     int familyRowID(0);
@@ -1334,37 +1055,19 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         }
     }
     else {
-        msgs << "Unable to read file [" + file + "]";
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, "Unable to read file [" + file + "]");
         return 0;
     }
 
     /* check if anything is funny, and not compatible with archiving this data */
     if (SeriesNumber == 0) {
-        msgs << "Series number is 0";
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, "Series number is 0");
         return 0;
     }
     if (PatientName == "") {
-        msgs << "PatientName (ID) is blank";
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, "PatientName (ID) is blank");
         return 0;
     }
-
-    /* set the import log variables */
-    //IL_modality_orig = Modality;
-    //IL_patientname_orig = PatientName;
-    //IL_patientdob_orig = PatientBirthDate;
-    //IL_patientsex_orig = PatientSex;
-    //IL_stationname_orig = StationName;
-    //IL_institution_orig = InstitutionName + "-" + InstitutionAddress;
-    //IL_studydatetime_orig = StudyDateTime;
-    //IL_seriesdatetime_orig = SeriesDateTime;
-    //IL_seriesnumber_orig = SeriesNumber;
-    //IL_studydesc_orig = StudyDescription;
-    //IL_seriesdesc_orig = SeriesDescription;
-    //IL_protocolname_orig = ProtocolName;
-    //IL_patientage_orig = PatientAge;
 
     /* ----- check if this subject/study/series/etc exists ----- */
     int projectRowID(0);
@@ -1379,7 +1082,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     /* get the costcenter */
     costcenter = GetCostCenter(StudyDescription);
 
-    msgs << PatientID + " - " + StudyDescription;
+    AppendUploadLog(__FUNCTION__, PatientID + " - " + StudyDescription);
 
     /* get the ID search string */
     QString SQLIDs = CreateIDSearchList(PatientID, importAltUIDs);
@@ -1390,11 +1093,11 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     /* check the alternate UIDs */
     foreach (QString altuid, altuidlist) {
         if (altuid.trimmed().size() > 254)
-            msgs << "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated";
+            AppendUploadLog(__FUNCTION__, "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated");
     }
 
     /* check if the project and subject exist */
-    msgs << "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]";
+    AppendUploadLog(__FUNCTION__, "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]");
     int projectcount(0);
     int subjectcount(0);
     QString sqlstring = QString("select (SELECT count(*) FROM `projects` WHERE project_costcenter = :costcenter) 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in (%1) or a.uid = SHA1(:patientid) or b.altuid in (%1) or b.altuid = SHA1(:patientid)) 'subjectcount'").arg(SQLIDs);
@@ -1415,7 +1118,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         /* search for an existing subject by name, dob, gender */
         if (!importMatchIDOnly) {
             QString sqlstring2 = "select subject_id, uid from subjects where name like '%" + PatientName + "%' and gender = left('" + PatientSex + "',1) and birthdate = :dob and isactive = 1";
-            msgs << "Subject not found by UID. Checking if the subject exists using PatientName [" + PatientName + "] PatientSex [" + PatientSex + "] PatientBirthDate [" + PatientBirthDate + "]";
+            AppendUploadLog(__FUNCTION__, "Subject not found by UID. Checking if the subject exists using PatientName [" + PatientName + "] PatientSex [" + PatientSex + "] PatientBirthDate [" + PatientBirthDate + "]");
             QSqlQuery q2;
             q2.prepare(sqlstring2);
             q2.bindValue(":dob", PatientBirthDate);
@@ -1424,17 +1127,13 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
                 q2.first();
                 subjectUID = q2.value("uid").toString();
                 subjectRowID = q2.value("subject_id").toInt();
-                msgs << "This subject exists. UID [" + subjectUID + "]";
-                //IL_subjectcreated = 0;
+                AppendUploadLog(__FUNCTION__, "This subject exists. UID [" + subjectUID + "]");
                 subjectFoundByName = 1;
             }
         }
         /* if it couldn't be found, create a new subject */
         if (!subjectFoundByName) {
-            QString m;
-            CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, m, subjectRowID, subjectUID);
-            msgs << m;
-            //IL_subjectcreated = 1;
+            CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
         }
     }
     else {
@@ -1449,11 +1148,10 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
             subjectRowID = q2.value("subject_id").toInt();
             subjectUID = q2.value("uid").toString().toUpper().trimmed();
 
-            msgs << QString("Found subject [subjectid %1, UID " + subjectUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID);
+            AppendUploadLog(__FUNCTION__, QString("Found subject [subjectid %1, UID " + subjectUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID));
         }
         else {
-            msgs << "Could not the find this subject. Searched for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]";
-            msg += msgs.join("\n");
+            AppendUploadLog(__FUNCTION__, "Could not the find this subject. Searched for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]");
             return 0;
         }
         /* insert the PatientID as an alternate UID */
@@ -1464,13 +1162,11 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
             q2.bindValue(":patientid", PatientID);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         }
-        //IL_subjectcreated = 0;
     }
 
     n->WriteLog("subjectUID [" + subjectUID + "]");
     if (subjectUID == "") {
-        msgs << "Error finding/creating subject. UID is blank";
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, "Error finding/creating subject. UID is blank");
         return 0;
     }
 
@@ -1482,14 +1178,13 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     if (q2.size() > 0) {
         q2.first();
         familyRowID = q2.value("family_id").toInt();
-        msgs << QString("This subject is part of a family [%1]").arg(familyRowID);
-        //IL_familycreated = 0;
+        AppendUploadLog(__FUNCTION__, QString("This subject is part of a family [%1]").arg(familyRowID));
     }
     else {
         int count = 0;
 
         /* create family UID */
-        msgs << "Subject is not part of family, creating a unique family UID";
+        AppendUploadLog(__FUNCTION__, "Subject is not part of family, creating a unique family UID");
         do {
             familyRealUID = n->CreateUID("F");
             QSqlQuery q2;
@@ -1511,8 +1206,6 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         q2.bindValue(":familyid", familyRowID);
         q2.bindValue(":subjectid", subjectRowID);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
-        //IL_familycreated = 1;
     }
 
     /* if project doesn't exist, use the generic project */
@@ -1532,7 +1225,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     }
     else {
         /* need to create the project if it doesn't exist */
-        msgs << QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(importProjectID);
+        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(importProjectID));
         projectRowID = importProjectID;
     }
 
@@ -1544,8 +1237,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     if (q2.size() > 0) {
         q2.first();
         enrollmentRowID = q2.value("enrollment_id").toInt();
-        msgs << QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID);
-        //IL_enrollmentcreated = 0;
+        AppendUploadLog(__FUNCTION__, QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID));
     }
     else {
         /* create enrollmentRowID if it doesn't exist */
@@ -1555,8 +1247,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         enrollmentRowID = q2.lastInsertId().toInt();
 
-        msgs << QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID);
-        //IL_enrollmentcreated = 1;
+        AppendUploadLog(__FUNCTION__, QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID));
     }
 
     /* update alternate IDs, if there are any */
@@ -1579,7 +1270,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
      * also checks the accession number against the study_num to see if this study was pre-registered
      * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
     bool studyFound = false;
-    msgs << QString("Checking if this study exists: enrollmentID [%1] StudyDateTime [%2] Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName);
+    AppendUploadLog(__FUNCTION__, QString("Checking if this study exists: enrollmentID [%1] StudyDateTime [%2] Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName));
 
     q2.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
     q2.bindValue(":enrollmentid", enrollmentRowID);
@@ -1595,7 +1286,7 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
             studyRowID = study_id;
 
             QSqlQuery q4;
-            msgs << QString("StudyID [%1] exists, updating").arg(study_id);
+            AppendUploadLog(__FUNCTION__, QString("StudyID [%1] exists, updating").arg(study_id));
             q4.prepare("update studies set study_modality = :modality, study_datetime = '" + StudyDateTime + "', study_ageatscan = :patientage, study_height = :height, study_weight = :weight, study_desc = :studydesc, study_operator = :operator, study_performingphysician = :physician, study_site = :stationname, study_nidbsite = :importsiteid, study_institution = :institution, study_status = 'complete' where study_id = :studyid");
             q4.bindValue(":modality", Modality);
             q4.bindValue(":patientage", PatientAge);
@@ -1610,12 +1301,11 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
             q4.bindValue(":studyid", studyRowID);
             n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
 
-            //IL_studycreated = 0;
             break;
         }
     }
     if (!studyFound) {
-        msgs << "Study did not exist, creating new study";
+        AppendUploadLog(__FUNCTION__, "Study did not exist, creating new study");
 
         /* create studyRowID if it doesn't exist */
         q2.prepare("select max(a.study_num) 'study_num' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id WHERE b.subject_id = :subjectid");
@@ -1646,8 +1336,6 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         q4.bindValue(":institution", InstitutionName + " - " + InstitutionAddress);
         n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
         studyRowID = q4.lastInsertId().toInt();
-
-        //IL_studycreated = 1;
     }
 
     n->WriteLog(QString("Going forward using the following: SubjectRowID [%1] ProjectRowID [%2] EnrollmentRowID [%3] StudyRowID [%4]").arg(subjectRowID).arg(projectRowID).arg(enrollmentRowID).arg(studyRowID));
@@ -1681,8 +1369,6 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         q3.bindValue(":numfiles",numfiles);
         q3.bindValue(":seriesRowID",seriesRowID);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-
-        //IL_seriescreated = 0;
     }
     else {
         // create seriesRowID if it doesn't exist
@@ -1707,76 +1393,21 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         q3.bindValue(":numfiles",numfiles);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
         seriesRowID = q3.lastInsertId().toInt();
-        //IL_seriescreated = 0;
     }
 
     /* copy the file to the archive, update db info */
-    msgs << n->WriteLog(QString("seriesRowID [%1]").arg(seriesRowID));
+    AppendUploadLog(__FUNCTION__, QString("seriesRowID [%1]").arg(seriesRowID));
 
     /* create data directory if it doesn't already exist */
     QString outdir = QString("%1/%2/%3/%4/parrec").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    msgs << n->WriteLog("Outdir [" + outdir + "]");
+    AppendUploadLog(__FUNCTION__, "Outdir [" + outdir + "]");
     QString m;
     if (!n->MakePath(outdir, m))
-        msgs << "Error creating outdir ["+outdir+"] because of error ["+m+"]";
+        AppendUploadLog(__FUNCTION__, "Error creating outdir ["+outdir+"] because of error ["+m+"]");
 
     /* move the files into the outdir */
     n->MoveFile(parfile, outdir);
     n->MoveFile(recfile, outdir);
-
-    /* insert an import log record (.par file) */
-//    QSqlQuery q5;
-//    q5.prepare("insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, modality_orig, patientid_orig, patientname_orig, stationname_orig, institution_orig, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values (:file, :newfile, 'PARREC', now(), 'successful', :importid, :importid, :importSiteID, :importProjectID, :IL_modality_orig, :PatientID, :IL_patientname_orig, :IL_stationname_orig, :IL_institution_orig, :subjectUID, :studynum, :subjectRowID, :studyRowID, :seriesRowID, :enrollmentRowID, :IL_seriescreated, :IL_studycreated, :IL_subjectcreated, :IL_familycreated, :IL_enrollmentcreated, :IL_overwrote_existing)");
-//    q5.bindValue(":file", file);
-//    q5.bindValue(":newfile", outdir+"/"+parfile);
-//    q5.bindValue(":importid", importid);
-//    q5.bindValue(":importSiteID", importSiteID);
-//    q5.bindValue(":importProjectID", importProjectID);
-//    q5.bindValue(":IL_modality_orig", IL_modality_orig);
-//    q5.bindValue(":PatientID", PatientID);
-//    q5.bindValue(":IL_patientname_orig", IL_patientname_orig);
-//    q5.bindValue(":IL_stationname_orig", IL_stationname_orig);
-//    q5.bindValue(":IL_institution_orig", IL_institution_orig);
-//    q5.bindValue(":IL_seriesnumber_orig", IL_seriesnumber_orig);
-//    q5.bindValue(":subjectUID", subjectUID);
-//    q5.bindValue(":studynum", studynum);
-//    q5.bindValue(":subjectRowID", subjectRowID);
-//    q5.bindValue(":studyRowID", studyRowID);
-//    q5.bindValue(":seriesRowID", seriesRowID);
-//    q5.bindValue(":enrollmentRowID", enrollmentRowID);
-//    q5.bindValue(":IL_seriescreated", IL_seriescreated);
-//    q5.bindValue(":IL_studycreated", IL_studycreated);
-//    q5.bindValue(":IL_subjectcreated", IL_subjectcreated);
-//    q5.bindValue(":IL_familycreated", IL_familycreated);
-//    q5.bindValue(":IL_enrollmentcreated", IL_enrollmentcreated);
-//    q5.bindValue(":IL_overwrote_existing", IL_overwrote_existing);
-//    n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
-
-//    q5.prepare("insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, modality_orig, patientid_orig, patientname_orig, stationname_orig, institution_orig, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values (:file, :newfile, 'PARREC', now(), 'successful', :importid, :importid, :importSiteID, :importProjectID, :IL_modality_orig, :PatientID, :IL_patientname_orig, :IL_stationname_orig, :IL_institution_orig, :subjectUID, :studynum, :subjectRowID, :studyRowID, :seriesRowID, :enrollmentRowID, :IL_seriescreated, :IL_studycreated, :IL_subjectcreated, :IL_familycreated, :IL_enrollmentcreated, :IL_overwrote_existing)");
-//    q5.bindValue(":file", file);
-//    q5.bindValue(":newfile", outdir+"/"+parfile);
-//    q5.bindValue(":importid", importid);
-//    q5.bindValue(":importSiteID", importSiteID);
-//    q5.bindValue(":importProjectID", importProjectID);
-//    q5.bindValue(":IL_modality_orig", IL_modality_orig);
-//    q5.bindValue(":PatientID", PatientID);
-//    q5.bindValue(":IL_patientname_orig", IL_patientname_orig);
-//    q5.bindValue(":IL_stationname_orig", IL_stationname_orig);
-//    q5.bindValue(":IL_institution_orig", IL_institution_orig);
-//    q5.bindValue(":IL_seriesnumber_orig", IL_seriesnumber_orig);
-//    q5.bindValue(":subjectUID", subjectUID);
-//    q5.bindValue(":studynum", studynum);
-//    q5.bindValue(":subjectRowID", subjectRowID);
-//    q5.bindValue(":studyRowID", studyRowID);
-//    q5.bindValue(":seriesRowID", seriesRowID);
-//    q5.bindValue(":enrollmentRowID", enrollmentRowID);
-//    q5.bindValue(":IL_seriescreated", IL_seriescreated);
-//    q5.bindValue(":IL_studycreated", IL_studycreated);
-//    q5.bindValue(":IL_subjectcreated", IL_subjectcreated);
-//    q5.bindValue(":IL_familycreated", IL_familycreated);
-//    q5.bindValue(":IL_enrollmentcreated", IL_enrollmentcreated);
-//    q5.bindValue(":IL_overwrote_existing", IL_overwrote_existing);
-//    n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize(0);
@@ -1793,7 +1424,6 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
     }
 
-
     /* change the permissions to 777 so the webpage can read/write the directories */
     QString systemstring = QString("chmod -Rf 777 %1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     n->SystemCommand(systemstring);
@@ -1802,19 +1432,19 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
     QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     QDir bda(backdir);
     if (!bda.exists()) {
-        msgs << "Directory [" + backdir + "] does not exist. About to create it...";
+        AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
         QString m;
         if (!n->MakePath(backdir, m))
-            msgs << "Unable to create backdir [" + backdir + "] because of error [" + m + "]";
+            AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
         else
-            msgs << "Finished creating ["+backdir+"]";
+            AppendUploadLog(__FUNCTION__, "Finished creating ["+backdir+"]");
     }
-    msgs << "About to copy to the backup directory";
+    AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
     systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
-    msgs << n->SystemCommand(systemstring);
-    msgs << "Finished copying to the backup directory";
+    QString output = n->SystemCommand(systemstring);
+    AppendUploadLog(__FUNCTION__, output);
+    AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
 
-    msg += msgs.join("\n");
     return true;
 }
 
@@ -1822,43 +1452,9 @@ bool archiveIO::InsertParRec(int importid, QString file, QString &msg) {
 /* ---------------------------------------------------------- */
 /* --------- InsertEEG -------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
+bool archiveIO::InsertEEG(int importid, QString file) {
 
-    QStringList msgs;
-
-    msgs << n->WriteLog(QString("----- In InsertEEG(%1, %2) -----").arg(importid).arg(file));
-
-    /* import log variables */
-    //QString IL_modality_orig;
-    //QString IL_patientname_orig;
-    //QString IL_patientdob_orig;
-    //QString IL_patientsex_orig;
-    //QString IL_stationname_orig;
-    //QString IL_institution_orig;
-    //QString IL_studydatetime_orig;
-    //QString IL_seriesdatetime_orig;
-    //QString IL_studydesc_orig;
-    //double IL_patientage_orig;
-    //int IL_seriesnumber_orig;
-    //QString IL_modality_new;
-    //QString IL_patientname_new;
-    //QString IL_patientdob_new;
-    //QString IL_patientsex_new;
-    //QString IL_stationname_new;
-    //QString IL_institution_new;
-    //QString IL_studydatetime_new;
-    //QString IL_seriesdatetime_new;
-    //QString IL_studydesc_new;
-    //QString IL_seriesdesc_orig;
-    //QString IL_protocolname_orig;
-    //QString IL_subject_uid;
-    //QString IL_project_number;
-    //int IL_seriescreated(0);
-    //int IL_studycreated(0);
-    //int IL_enrollmentcreated(0);
-    //int IL_subjectcreated(0);
-    //int IL_familycreated(0);
-    //int IL_overwrote_existing(0);
+    AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importid).arg(file));
 
     QString familyRealUID;
 
@@ -1922,10 +1518,10 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         }
     }
     else {
-        msgs << n->WriteLog(QString("ImportID [%1] not found. Using default import parameters").arg(importid));
+        AppendUploadLog(__FUNCTION__, QString("ImportID [%1] not found. Using default import parameters").arg(importid));
     }
 
-    msgs << n->WriteLog(file);
+    AppendUploadLog(__FUNCTION__, file);
     /* split the filename into the appropriate fields */
     /* AltUID_Date_task_operator_series.* */
     QString FileName = QFileInfo(file).baseName();
@@ -1963,7 +1559,7 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     if (parts.size() > 5)
         FileNumber = parts[5].trimmed().toInt();
 
-    msgs << n->WriteLog(QString("Before fixing: PatientID [%1], StudyDateTime [%2], SeriesDateTime [%3], SeriesDescription [%4], OperatorsName [%5], SeriesNumber [%6], FileNumber [%7]").arg(PatientID).arg(StudyDateTime).arg(SeriesDateTime).arg(SeriesDescription).arg(OperatorsName).arg(SeriesNumber).arg(FileNumber));
+    AppendUploadLog(__FUNCTION__, QString("Before fixing: PatientID [%1], StudyDateTime [%2], SeriesDateTime [%3], SeriesDescription [%4], OperatorsName [%5], SeriesNumber [%6], FileNumber [%7]").arg(PatientID).arg(StudyDateTime).arg(SeriesDateTime).arg(SeriesDescription).arg(OperatorsName).arg(SeriesNumber).arg(FileNumber));
 
     /* check if anything is still funny */
     if (StudyDateTime == "") StudyDateTime = "0000-00-00 00:00:00";
@@ -1973,24 +1569,9 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     if (OperatorsName == "") OperatorsName = "Unknown";
     if (SeriesNumber < 1) SeriesNumber = 1;
 
-    msgs << n->WriteLog(QString("Before fixing: PatientID [%1], StudyDateTime [%2], SeriesDateTime [%3], SeriesDescription [%4], OperatorsName [%5], SeriesNumber [%6], FileNumber [%7]").arg(PatientID).arg(StudyDateTime).arg(SeriesDateTime).arg(SeriesDescription).arg(OperatorsName).arg(SeriesNumber).arg(FileNumber));
+    AppendUploadLog(__FUNCTION__, QString("Before fixing: PatientID [%1], StudyDateTime [%2], SeriesDateTime [%3], SeriesDescription [%4], OperatorsName [%5], SeriesNumber [%6], FileNumber [%7]").arg(PatientID).arg(StudyDateTime).arg(SeriesDateTime).arg(SeriesDescription).arg(OperatorsName).arg(SeriesNumber).arg(FileNumber));
 
-    /* set the import log variables */
-    //IL_modality_orig = Modality;
-    //IL_patientname_orig = PatientName;
-    //IL_patientdob_orig = PatientBirthDate;
-    //IL_patientsex_orig = PatientSex;
-    //IL_stationname_orig = StationName;
-    //IL_institution_orig = InstitutionName + " - " + InstitutionAddress;
-    //IL_studydatetime_orig = StudyDateTime;
-    //IL_seriesdatetime_orig = SeriesDateTime;
-    //IL_seriesnumber_orig = SeriesNumber;
-    //IL_studydesc_orig = StudyDescription;
-    //IL_seriesdesc_orig = ProtocolName;
-    //IL_protocolname_orig = ProtocolName;
-    //IL_patientage_orig = 0;
-
-    msgs << n->WriteLog(PatientID + " - " + StudyDescription);
+    AppendUploadLog(__FUNCTION__, PatientID + " - " + StudyDescription);
 
     /* get the ID search string */
     QString SQLIDs = CreateIDSearchList(PatientID, importAltUIDs);
@@ -2001,7 +1582,7 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     }
 
     // check if the project and subject exist
-    msgs << "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]";
+    AppendUploadLog(__FUNCTION__, "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]");
     //int projectcount(0);
     //int subjectcount(0);
     QString sqlstring = QString("SELECT a.subject_id, a.uid FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in (%1) or a.uid = SHA1(:PatientID) or b.altuid in (%1) or b.altuid = SHA1(:PatientID)").arg(SQLIDs);
@@ -2016,18 +1597,16 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     }
     else {
         /* subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload because we have no age, DOB, sex. So note this failure in the import_logs table */
-        msgs << n->WriteLog(QString("Subject with ID [%1] does not exist. Subjects must exist prior to EEG/ET import").arg(PatientID));
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, QString("Subject with ID [%1] does not exist. Subjects must exist prior to EEG/ET import").arg(PatientID));
         return false;
     }
 
     if (subjectUID == "") {
-        msgs << n->WriteLog("ERROR: UID blank");
-        msg += msgs.join("\n");
+        AppendUploadLog(__FUNCTION__, "ERROR: UID blank");
         return false;
     }
     else
-        msgs << n->WriteLog("UID found [" + subjectUID + "]");
+        AppendUploadLog(__FUNCTION__, "UID found [" + subjectUID + "]");
 
     /* get the projectRowID */
     if (importProjectID == 0) {
@@ -2042,7 +1621,7 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     }
     else {
         /* need to create the project if it doesn't exist */
-        msgs << QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(importProjectID);
+        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(importProjectID));
         projectRowID = importProjectID;
     }
 
@@ -2055,8 +1634,7 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     if (q2.size() > 0) {
         q2.first();
         enrollmentRowID = q2.value("enrollment_id").toInt();
-        msgs << QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID);
-        //IL_enrollmentcreated = 0;
+        AppendUploadLog(__FUNCTION__, QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID));
     }
     else {
         /* create enrollmentRowID if it doesn't exist */
@@ -2066,8 +1644,7 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         enrollmentRowID = q2.lastInsertId().toInt();
 
-        msgs << QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID);
-        //IL_enrollmentcreated = 1;
+        AppendUploadLog(__FUNCTION__, QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID));
     }
 
     // now determine if this study exists or not...
@@ -2093,7 +1670,6 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         q3.bindValue(":Institution", InstitutionName + " - " + InstitutionAddress);
         q3.bindValue(":studyRowID", studyRowID);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-        //IL_studycreated = 0;
     }
     else {
         /* create studyRowID if it doesn't exist */
@@ -2118,7 +1694,6 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         q3.bindValue(":Institution", InstitutionName + " - " + InstitutionAddress);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
         studyRowID = q3.lastInsertId().toInt();
-        //IL_studycreated = 1;
     }
 
     /* ----- insert or update the series ----- */
@@ -2138,7 +1713,6 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         q3.bindValue(":importSeriesNotes", importSeriesNotes);
         q3.bindValue(":seriesRowID", seriesRowID);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-        //IL_seriescreated = 0;
     }
     else {
         /* create seriesRowID if it doesn't exist */
@@ -2152,28 +1726,22 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
         q3.bindValue(":importSeriesNotes", importSeriesNotes);
         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
         seriesRowID = q3.lastInsertId().toInt();
-        //IL_seriescreated = 1;
     }
 
     /* copy the file to the archive, update db info */
-    msgs << n->WriteLog(QString("seriesRowID [%1]").arg(seriesRowID));
+    AppendUploadLog(__FUNCTION__, QString("seriesRowID [%1]").arg(seriesRowID));
 
     /* create data directory if it doesn't already exist */
     QString outdir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(Modality.toLower());
-    msgs << n->WriteLog("Creating outdir ["+outdir+"]");
+    AppendUploadLog(__FUNCTION__, "Creating outdir ["+outdir+"]");
     QString m;
     if (!n->MakePath(outdir,m))
-        msgs << n->WriteLog("Unable to create directory ["+outdir+"] because of error ["+m+"]");
+        AppendUploadLog(__FUNCTION__, "Unable to create directory ["+outdir+"] because of error ["+m+"]");
 
     /* move the files into the outdir */
-    msgs << n->WriteLog("Moving ["+file+"] -> ["+outdir+"]");
+    AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
     if (!n->MoveFile(file, outdir))
         n->WriteLog("Unable to move ["+file+"] to ["+outdir+"]");
-
-    // insert an import log record
-    //$sqlstring = "insert into importlogs (filename_orig, filename_new, fileformat, importstartdate, result, importid, importgroupid, importsiteid, importprojectid, importpermanent, importanonymize, importuuid, modality_orig, patientname_orig, patientdob_orig, patientsex_orig, stationname_orig, institution_orig, studydatetime_orig, seriesdatetime_orig, seriesnumber_orig, studydesc_orig, seriesdesc_orig, protocol_orig, patientage_orig, slicenumber_orig, instancenumber_orig, slicelocation_orig, acquisitiondatetime_orig, contentdatetime_orig, sopinstance_orig, modality_new, patientname_new, patientdob_new, patientsex_new, stationname_new, studydatetime_new, seriesdatetime_new, seriesnumber_new, studydesc_new, seriesdesc_new, protocol_new, patientage_new, subject_uid, study_num, subjectid, studyid, seriesid, enrollmentid, project_number, series_created, study_created, subject_created, family_created, enrollment_created, overwrote_existing) values ('$file', '" . $cfg{'incomingdir'} . "/$importID/$file', '" . uc($Modality) . "', now(), 'successful', '$importID', '$importRowID', '$importSiteID', '$importProjectID', '$importPermanent', '$importAnonymize', '$importUUID', '$IL_modality_orig', '$IL_patientname_orig', '$IL_patientdob_orig', '$IL_patientsex_orig', '$IL_stationname_orig', '$IL_institution_orig', '$IL_studydatetime_orig', '$IL_seriesdatetime_orig', '$IL_seriesnumber_orig', '$IL_studydesc_orig', '$IL_seriesdesc_orig', '$IL_protocolname_orig', '$IL_patientage_orig', '0', '0', '0', '$SeriesDateTime', '$SeriesDateTime', 'Unknown', '$Modality', '$PatientName', '$PatientBirthDate', '$PatientSex', '$StationName', '$StudyDateTime', '$SeriesDateTime', '$SeriesNumber', '$StudyDescription', '$SeriesDescription', '$ProtocolName', '', '$subjectUID', '$study_num', '$subjectRowID', '$studyRowID', '$seriesRowID', '$enrollmentRowID', '$costcenter', '$IL_seriescreated', '$IL_studycreated', '$IL_subjectcreated', '$IL_familycreated', '$IL_enrollmentcreated', '$IL_overwrote_existing')";
-    //$report .= WriteLog("Inside InsertEEG() [$sqlstring]") . "\n";
-    //$result = SQLQuery($sqlstring, __FILE__, __LINE__);
 
     /* get the size of the files and update the DB */
     qint64 dirsize(0);
@@ -2192,19 +1760,19 @@ bool archiveIO::InsertEEG(int importid, QString file, QString &msg) {
     QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     QDir bda(backdir);
     if (!bda.exists()) {
-        msgs << "Directory [" + backdir + "] does not exist. About to create it...";
+        AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
         QString m;
         if (!n->MakePath(backdir, m))
-            msgs << "Unable to create backdir [" + backdir + "] because of error [" + m + "]";
+            AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
         else
-            msgs << "Created backdir [" + backdir + "]";
+            AppendUploadLog(__FUNCTION__, "Created backdir [" + backdir + "]");
     }
-    msgs << "About to copy to the backup directory";
+    AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
     systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
-    msgs << n->SystemCommand(systemstring);
-    msgs << "Finished copying to the backup directory";
+    QString output = n->SystemCommand(systemstring);
+    AppendUploadLog(__FUNCTION__, output);
+    AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
 
-    msg += msgs.join("\n");
     return true;
 }
 
@@ -2225,7 +1793,7 @@ QString archiveIO::GetCostCenter(QString studydesc) {
         cc = studydesc.mid(idx1+1, idx2-idx1-1);
     }
     else {
-        cc = studydesc;
+        cc = "999999"; /* generic project */
     }
 
     return cc;
@@ -2265,7 +1833,7 @@ void archiveIO::CreateThumbnail(QString f, QString outdir) {
     QString outfile = outdir + "/thumb.png";
 
     QString systemstring = "convert -normalize " + f + " " + outfile;
-    n->WriteLog(n->SystemCommand(systemstring));
+    AppendUploadLog(__FUNCTION__, n->SystemCommand(systemstring));
 }
 
 
@@ -2301,7 +1869,6 @@ double archiveIO::GetPatientAge(QString PatientAgeStr, QString StudyDate, QStrin
 bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID) {
     /* check if the subject is part of a family, if not create a family for it */
     QSqlQuery q;
-    QStringList msgs;
 
     q.prepare("select family_id from family_members where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectRowID);
@@ -2309,13 +1876,12 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
     if (q.size() > 0) {
         q.first();
         familyRowID = q.value("family_id").toInt();
-        //IL_familycreated = 0;
     }
     else {
         int count = 0;
 
         /* create family UID */
-        msgs << n->WriteLog("Subject is not part of family, creating a unique family UID");
+        AppendUploadLog(__FUNCTION__, "Subject is not part of family, creating a unique family UID");
         do {
             familyUID = n->CreateUID("F");
             QSqlQuery q2;
@@ -2337,8 +1903,6 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
         q2.bindValue(":familyid", familyRowID);
         q2.bindValue(":subjectid", subjectRowID);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
-        //IL_familycreated = 1;
     }
     return true;
 }
@@ -2347,9 +1911,8 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
 /* ---------------------------------------------------------- */
 /* --------- GetProject ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRowID, QString &msg) {
+bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRowID) {
     QSqlQuery q;
-    QStringList msgs;
 
     /* get the projectRowID */
     if (destProjectID == 0) {
@@ -2359,16 +1922,15 @@ bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRo
         if (q.size() > 0) {
             q.first();
             projectRowID = q.value("project_id").toInt();
-            msgs << n->WriteLog(QString("Found project [" + costcenter + "] with id [%1]").arg(projectRowID));
+            AppendUploadLog(__FUNCTION__, QString("Found project [" + costcenter + "] with id [%1]").arg(projectRowID));
         }
     }
     else {
         /* need to create the project if it doesn't exist */
-        msgs << n->WriteLog(QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
+        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
         projectRowID = destProjectID;
     }
 
-    msg = msgs.join(",");
     return true;
 }
 
@@ -2376,9 +1938,8 @@ bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRo
 /* ---------------------------------------------------------- */
 /* --------- GetEnrollment ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID, QString &msg) {
+bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID) {
     QSqlQuery q;
-    QStringList msgs;
 
     /* check if the subject is enrolled in the project */
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
@@ -2388,8 +1949,7 @@ bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmen
     if (q.size() > 0) {
         q.first();
         enrollmentRowID = q.value("enrollment_id").toInt();
-        msgs << n->WriteLog(QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID));
-        //IL_enrollmentcreated = 0;
+        AppendUploadLog(__FUNCTION__, QString("Subject is enrolled in this project [%1]: enrollment [%2]").arg(projectRowID).arg(enrollmentRowID));
     }
     else {
         /* create enrollmentRowID if it doesn't exist */
@@ -2399,24 +1959,40 @@ bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmen
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         enrollmentRowID = q.lastInsertId().toInt();
 
-        msgs << n->WriteLog(QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID));
-        //IL_enrollmentcreated = 1;
+        AppendUploadLog(__FUNCTION__, QString("Subject was not enrolled in this project. New enrollment [%1]").arg(enrollmentRowID));
     }
 
-    msg = msgs.join(",");
     return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SetAlternateIDs -------------------------------- */
+/* ---------------------------------------------------------- */
+void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist) {
+    /* update alternate IDs, if there are any */
+    if (altuidlist.size() > 0) {
+        foreach (QString altuid, altuidlist) {
+            if (altuid.trimmed() != "") {
+                QSqlQuery q;
+                q.prepare("replace into subject_altuid (subject_id, altuid, enrollment_id) values (:subjectid, :altuid, :enrollmentid)");
+                q.bindValue(":subjectid", subjectRowID);
+                q.bindValue(":altuid", altuid);
+                q.bindValue(":enrollmentid", enrollmentRowID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            }
+        }
+    }
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- GetSubject ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID, bool &subjectCreated, QString &msg) {
+bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID) {
     bool ret = true;
-    QStringList msgs;
     subjectRowID = -1;
     subjectUID = "";
-    subjectCreated = false;
 
     n->WriteLog("Checkpoint A");
 
@@ -2429,7 +2005,7 @@ bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString
             subjectRowID = existingSubjectID;
         }
         else {
-            msgs << n->WriteLog("Existing subjectID was not valid: [" + s.msg + "]");
+            AppendUploadLog(__FUNCTION__, "Existing subjectID was not valid: [" + s.msg + "]");
             return false;
         }
     }
@@ -2437,7 +2013,7 @@ bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString
 
     /* otherwise, try to find the subject, and create subject if necessary */
     if (matchcriteria.toLower() == "patientid") {
-        msgs << "Matching subject by PatientID";
+        AppendUploadLog(__FUNCTION__, "Matching subject by PatientID");
         n->WriteLog("Checkpoint D");
 
         /* get the existing subject ID, and UID! (the PatientID may be an alternate UID) */
@@ -2451,24 +2027,17 @@ bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString
             subjectRowID = q.value("subject_id").toInt();
             subjectUID = q.value("uid").toString().toUpper().trimmed();
 
-            msgs << n->WriteLog(QString("Found subject [%1, " + subjectUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID));
+            AppendUploadLog(__FUNCTION__, QString("Found subject [%1, " + subjectUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID));
         }
         else {
-            msgs << n->WriteLog("Could not the find this subject. Searched for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]");
+            AppendUploadLog(__FUNCTION__, "Could not the find this subject. Searched for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]");
 
-            QString m;
-            if (CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, m, subjectRowID, subjectUID)) {
-                subjectCreated = true;
-            }
-            else {
-                subjectCreated = false;
-            }
-            msgs << n->WriteLog(m);
+            CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
         }
     }
     else if (matchcriteria.toLower() == "namesexdob") {
         n->WriteLog("Checkpoint E");
-        msgs << "Matching subject by NameSexDOB";
+        AppendUploadLog(__FUNCTION__, "Matching subject by NameSexDOB");
         QString sqlstring = "select subject_id, uid from subjects where name like '%" + PatientName + "%' and gender = left('" + PatientSex + "',1) and birthdate = :dob and isactive = 1";
         QSqlQuery q;
         q.prepare(sqlstring);
@@ -2478,27 +2047,143 @@ bool archiveIO::GetSubject(QString matchcriteria, int existingSubjectID, QString
             q.first();
             subjectUID = q.value("uid").toString();
             subjectRowID = q.value("subject_id").toInt();
-            msgs << n->WriteLog("This subject exists. UID [" + subjectUID + "]");
+            AppendUploadLog(__FUNCTION__, "This subject exists. UID [" + subjectUID + "]");
         }
         else {
-            msgs << n->WriteLog("Could not the find this subject. Searched for PatientName [" + PatientName + "]  PatientSex [" + PatientSex + "]  PatientBirthDate [" + PatientBirthDate + "]");
-            QString m;
-            if (CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, m, subjectRowID, subjectUID)) {
-                subjectCreated = true;
-            }
-            else {
-                subjectCreated = false;
-            }
-            msgs << n->WriteLog(m);
+            AppendUploadLog(__FUNCTION__, "Could not the find this subject. Searched for PatientName [" + PatientName + "]  PatientSex [" + PatientSex + "]  PatientBirthDate [" + PatientBirthDate + "]");
+            CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
         }
     }
     else {
         n->WriteLog("Checkpoint F");
-        msgs << QString("Unknown subject match criteria [%1]").arg(matchcriteria);
+        AppendUploadLog(__FUNCTION__, QString("Unknown subject match criteria [%1]").arg(matchcriteria));
         ret = false;
     }
     n->WriteLog("Checkpoint G");
 
-    msg = msgs.join("\n");
     return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetStudy --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool archiveIO::GetStudy(QString matchcriteria, int existingStudyID, int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum) {
+    /* now determine if this study exists or not...
+     * basically check for a unique studydatetime, modality, and site (StationName), because we already know this subject/project/etc is unique
+     * also checks the accession number against the study_num to see if this study was pre-registered
+     * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
+
+    bool studyFound = false;
+
+    AppendUploadLog(__FUNCTION__, QString("Checking if this study exists: enrollmentID [%1]  StudyDateTime [%2]  Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName));
+
+    /* if we already know the subjectID for this subject, get the UID */
+    if (existingStudyID >= 0) {
+        n->WriteLog("Checkpoint B");
+        subject s(existingStudyID, n);
+        if (s.isValid) {
+            studyRowID = existingStudyID;
+        }
+        else {
+            AppendUploadLog(__FUNCTION__, "existingStudyID was not valid: [" + s.msg + "]");
+            return false;
+        }
+    }
+
+    QSqlQuery q;
+
+    /* try to find the study by the specified criteria */
+    if (matchcriteria.toLower() == "modalitystudydate") {
+        q.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and (((study_datetime between date_sub('" + StudyDateTime + "', interval 30 second) and date_add('" + StudyDateTime + "', interval 30 second)) and study_modality = :modality and study_site = :stationname))");
+        q.bindValue(":enrollmentid", enrollmentRowID);
+        q.bindValue(":modality", Modality);
+        q.bindValue(":stationname", StationName);
+    }
+    else if (matchcriteria.toLower() == "studyuid") {
+        q.prepare("select study_id, study_num from studies where enrollment_id = :enrollmentid and study_uid = :studyuid");
+        q.bindValue(":enrollmentid", enrollmentRowID);
+        q.bindValue(":studyuid", studyUID);
+    }
+
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+            int study_id = q.value("study_id").toInt();
+            studyNum = q.value("study_num").toInt();
+            studyFound = true;
+            studyRowID = study_id;
+
+            QSqlQuery q2;
+            AppendUploadLog(__FUNCTION__, QString("StudyID [%1] exists, updating").arg(study_id));
+            q2.prepare("update studies set study_modality = :modality, study_datetime = '" + StudyDateTime + "', study_ageatscan = :patientage, study_height = :height, study_weight = :weight, study_desc = :studydesc, study_operator = :operator, study_performingphysician = :physician, study_site = :stationname, study_nidbsite = :importsiteid, study_institution = :institution, study_status = 'complete' where study_id = :studyid");
+            q2.bindValue(":modality", Modality);
+            q2.bindValue(":patientage", PatientAge);
+            q2.bindValue(":height", PatientSize);
+            q2.bindValue(":weight", PatientWeight);
+            q2.bindValue(":studydesc", StudyDescription);
+            q2.bindValue(":operator", OperatorsName);
+            q2.bindValue(":physician", PerformingPhysiciansName);
+            q2.bindValue(":stationname", StationName);
+            //q2.bindValue(":importsiteid", destSiteID);
+            q2.bindValue(":institution", InstitutionName + " - " + InstitutionAddress);
+            q2.bindValue(":studyid", studyRowID);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
+            break;
+        }
+    }
+    else {
+        AppendUploadLog(__FUNCTION__, "Study not found by matching criteria [" + matchcriteria + "], creating new study");
+
+        /* create studyRowID if it doesn't exist */
+        q.prepare("select max(a.study_num) 'study_num' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id WHERE b.subject_id = :subjectid");
+        q.bindValue(":subjectid", subjectRowID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            studyNum = q.value("study_num").toInt() + 1;
+        }
+        else
+            studyNum = 1;
+
+        QSqlQuery q2;
+        q2.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '" + StudyDateTime + "', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now())");
+        q2.bindValue(":enrollmentid", enrollmentRowID);
+        q2.bindValue(":studynum", studyNum);
+        q2.bindValue(":patientid", PatientID);
+        q2.bindValue(":modality", Modality);
+        q2.bindValue(":patientage", PatientAge);
+        q2.bindValue(":height", PatientSize);
+        q2.bindValue(":weight", PatientWeight);
+        q2.bindValue(":studydesc", StudyDescription);
+        q2.bindValue(":operator", OperatorsName);
+        q2.bindValue(":physician", PerformingPhysiciansName);
+        q2.bindValue(":stationname", StationName);
+        //q2.bindValue(":importsiteid", destSiteID);
+        q2.bindValue(":institution", InstitutionName + " - " + InstitutionAddress);
+        q2.bindValue(":studyid", studyRowID);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        studyRowID = q2.lastInsertId().toInt();
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendUploadLog -------------------------------- */
+/* ---------------------------------------------------------- */
+void archiveIO::AppendUploadLog(QString func, QString m) {
+    if ((uploadid >= 0) && (m.trimmed() != "")) {
+        QString str = func + "() " + m;
+
+        QSqlQuery q;
+        q.prepare("insert ignore into upload_logs (upload_id, log_date, log_msg) values (:uploadid, now(), :msg)");
+        q.bindValue(":uploadid", uploadid);
+        q.bindValue(":msg", str);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+        n->WriteLog(str);
+    }
 }

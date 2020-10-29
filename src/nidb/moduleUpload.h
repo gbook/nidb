@@ -34,7 +34,7 @@ public:
     ~moduleUpload();
 
     int Run();
-    QString AppendUploadLog(int uploadid, QString msg);
+    //QString AppendUploadLog(int uploadid, QString msg);
     bool ParseUploads();
     bool ArchiveParsedUploads();
     void SetUploadStatus(int uploadid, QString status);
