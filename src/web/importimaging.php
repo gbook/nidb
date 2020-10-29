@@ -514,8 +514,18 @@
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
 					<td>
 						<details>
-						<summary>View Log <span class="tiny"><?=strlen($log)?> bytes</span></summary>
-						<tt ><pre><?=$log?></pre></tt>
+						<?
+							$sqlstring = "select * from upload_logs where upload_id = $uploadid";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						?>
+						<summary>View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span></summary>
+						<tt><pre><?
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$date = $row['log_date'];
+								$msg = $row['log_msg'];
+								echo "[$date] $msg\n";
+							}
+						?></pre></tt>
 						</details>
 					</td>
 				</tr>
