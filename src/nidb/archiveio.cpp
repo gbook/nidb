@@ -1915,7 +1915,12 @@ bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRo
     QSqlQuery q;
 
     /* get the projectRowID */
-    if (destProjectID == 0) {
+    if (destProjectID >= 0) {
+        /* need to create the project if it doesn't exist */
+        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
+        projectRowID = destProjectID;
+    }
+    else {
         q.prepare("select project_id from projects where project_costcenter = :costcenter");
         q.bindValue(":costcenter", costcenter);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1924,11 +1929,6 @@ bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRo
             projectRowID = q.value("project_id").toInt();
             AppendUploadLog(__FUNCTION__, QString("Found project [" + costcenter + "] with id [%1]").arg(projectRowID));
         }
-    }
-    else {
-        /* need to create the project if it doesn't exist */
-        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
-        projectRowID = destProjectID;
     }
 
     return true;

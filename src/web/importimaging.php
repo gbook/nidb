@@ -867,6 +867,17 @@
 	}
 	
 	
-	
+	/* ---------------------------------------------------------- */
+	/* --------- AppendUploadLog -------------------------------- */
+	/* ---------------------------------------------------------- */
+	function AppendUploadLog($uploadid, $m) {
+		if (($uploadid >= 0) && (trim($m) != "")) {
+			$str = "ImportImaging.php  " + mysqli_real_escape_string($GLOBALS['linki'], $m);
+
+			$sqlstring = "insert ignore into upload_logs (upload_id, log_date, log_msg) values ($uploadid, now(), '$str')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+	}
+
 ?>
 <? include("footer.php") ?>

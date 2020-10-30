@@ -139,6 +139,17 @@ bool moduleUpload::ParseUploads() {
             QString systemstring = QString("cp -ruv %1/* %2/").arg(upload_datapath).arg(uploadstagingpath);
             n->SystemCommand(systemstring);
 
+            /* remove the uploadtmp directory, if it was uploaded from the web */
+            if (upload_source == "web") {
+                QString m;
+                if (n->RemoveDir(upload_datapath, m)) {
+                    io->AppendUploadLog(__FUNCTION__, "Removed upload_tmp directory [" + upload_datapath + "]");
+                }
+                else {
+                    io->AppendUploadLog(__FUNCTION__, "Error: Unable to remove upload_tmp directory [" + upload_datapath + "]");
+                }
+            }
+
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
             int c;
             qint64 b;
@@ -149,7 +160,7 @@ bool moduleUpload::ParseUploads() {
             io->AppendUploadLog(__FUNCTION__, "Preparing to unzip the files located in [" + uploadstagingpath + "]");
 
             QString unzipOutput = n->UnzipDirectory(uploadstagingpath, true);
-            io->AppendUploadLog(__FUNCTION__, unzipOutput);
+            io->AppendUploadLog(__FUNCTION__, "Unzip command output" + unzipOutput);
 
             io->AppendUploadLog(__FUNCTION__, "Finished unzipping the files located in [" + uploadstagingpath + "]");
 
@@ -205,7 +216,7 @@ bool moduleUpload::ParseUploads() {
                 }
                 else {
                     /* the file is not readable */
-                    fs["unreadable"]["unreadable"]["unreadable"].append(f);
+                    fs["unreadable"]["unreadable"]["0"].append(f);
                     io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
                 }
             }
@@ -231,7 +242,7 @@ bool moduleUpload::ParseUploads() {
                     if (q3.size() > 0) {
                         q3.first();
                         subjectid = q3.value("uploadsubject_id").toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
+                        //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
@@ -240,7 +251,7 @@ bool moduleUpload::ParseUploads() {
                         q3.bindValue(":patientid", PatientID);
                         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q3.lastInsertId().toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
+                        //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else if (upload_subjectcriteria == "namesexdob") {
@@ -261,7 +272,7 @@ bool moduleUpload::ParseUploads() {
                     if (q3.size() > 0) {
                         q3.first();
                         subjectid = q3.value("uploadsubject_id").toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
+                        //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
                     }
                     else {
                         /* ... otherwise create a new subject */
@@ -272,7 +283,7 @@ bool moduleUpload::ParseUploads() {
                         q3.bindValue(":patientsex", PatientSex);
                         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                         subjectid = q3.lastInsertId().toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
+                        //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
                     }
                 }
                 else
@@ -307,7 +318,7 @@ bool moduleUpload::ParseUploads() {
                         if (q3.size() > 0) {
                             q3.first();
                             studyid = q3.value("uploadstudy_id").toInt();
-                            io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
+                            //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
@@ -317,7 +328,7 @@ bool moduleUpload::ParseUploads() {
                             q3.bindValue(":modality", Modality);
                             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q3.lastInsertId().toInt();
-                            io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
+                            //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else if (upload_studycriteria == "studyuid") {
@@ -333,7 +344,7 @@ bool moduleUpload::ParseUploads() {
                         if (q3.size() > 0) {
                             q3.first();
                             studyid = q3.value("uploadstudy_id").toInt();
-                            io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
+                            //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
                         }
                         else {
                             /* ... otherwise create a new study */
@@ -342,7 +353,7 @@ bool moduleUpload::ParseUploads() {
                             q3.bindValue(":studyinstanceuid", StudyInstanceUID);
                             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                             studyid = q3.lastInsertId().toInt();
-                            io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
+                            //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
                         }
                     }
                     else
@@ -368,7 +379,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -377,7 +388,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":seriesnum", SeriesNumber);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else if (upload_seriescriteria == "seriesdate") {
@@ -392,7 +403,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -400,7 +411,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":studyid", studyid);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else if (upload_seriescriteria == "seriesuid") {
@@ -416,7 +427,7 @@ bool moduleUpload::ParseUploads() {
                             if (q3.size() > 0) {
                                 q3.first();
                                 seriesid = q3.value("uploadseries_id").toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
                             }
                             else {
                                 /* ... otherwise create a new series */
@@ -425,7 +436,7 @@ bool moduleUpload::ParseUploads() {
                                 q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
                                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                                 seriesid = q3.lastInsertId().toInt();
-                                io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                                //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
                             }
                         }
                         else {
@@ -446,8 +457,11 @@ bool moduleUpload::ParseUploads() {
 
                         /* we've arrived at a series, so let's put it into the database */
                         /* get tags from first file in the list to populate the subject/study/series info not included in the criteria matching */
+
+                        /* if subject and study are unreadable, put those files into the appropriate bin */
+                        //if ()
                         QHash<QString, QString> tags;
-                        if (n->GetImageFileTags(files[0], tags)) {
+                        n->GetImageFileTags(files[0], tags);
 
                             QSqlQuery q3;
 
@@ -558,10 +572,10 @@ bool moduleUpload::ParseUploads() {
                             }
                             else io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
 
-                        }
-                        else {
-                            io->AppendUploadLog(__FUNCTION__, "Error reading file [" + files[0] + "]. That's weird it would show up here...");
-                        }
+                        //}
+                        //else {
+                        //    io->AppendUploadLog(__FUNCTION__, "Error reading file [" + files[0] + "]. That's weird it would show up here...");
+                        //}
                     }
                 }
             }
@@ -589,11 +603,12 @@ bool moduleUpload::ArchiveParsedUploads() {
     if (q.size() > 0) {
         while (q.next()) {
             ret = 1;
+            bool error = false;
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
 
             QString upload_status = q.value("upload_status").toString();
-            int upload_destprojectid = q.value("upload_status").toInt();
+            int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
             QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
@@ -635,14 +650,25 @@ bool moduleUpload::ArchiveParsedUploads() {
                     io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
                 }
 
-                SetUploadStatus(upload_id, "archivecomplete");
+                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(upload_id));
             }
             else {
-                SetUploadStatus(upload_id, "archiveerror");
+                error = true;
+                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(upload_id));
             }
 
-            /* if error, mark status as 'archiveerror' */
-            /* otherwise, delete all of the source data and mark status as 'archivecomplete' */
+            if (error) {
+                SetUploadStatus(upload_id, "archiveerror");
+            }
+            else {
+                SetUploadStatus(upload_id, "archivecomplete");
+                /* delete all of the source data and mark status as 'archivecomplete' */
+                QString m;
+                if (n->RemoveDir(upload_stagingpath, m))
+                    io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
+                else
+                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(upload_id));
+            }
         }
     }
     return ret;

@@ -166,7 +166,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	QString importModality;
 	QString importDatatype;
     int importSiteID;
-    int importProjectID;
+    int importProjectID(-1);
     int importMatchIDOnly;
     QString importSeriesNotes;
     QString importAltUIDs;

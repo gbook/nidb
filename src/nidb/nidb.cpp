@@ -947,6 +947,7 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
         msgs << "Empty directory specified. Not attempting to unzip";
     }
     else {
+        //msgs << "Directory before unzipping [" + dir + "] contains " + SystemCommand("ls " + dir, false);
         for (int i=0; i<3; i++) {
             QString prefix = QString("Unzipping pass [%1]: ").arg(i);
             QString maxdepth;
@@ -956,20 +957,22 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
                 maxdepth = "-maxdepth 0";
 
             QStringList cmds;
-            cmds << QString("cd %1; find . %2 -name '*.tar.gz' -exec tar -zxf {} . \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.gz' -exec gunzip {} . \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.z' -exec gunzip {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.tar.gz' -exec tar -zxf {} \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.gz' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.z' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
             cmds << QString("cd %1; find . %2 -iname '*.zip' -exec sh -c 'unzip -o -q -d \"${0%.*}\" \"$0\" && rm -v {}' '{}' ';'").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.tar.bz2' -exec tar -xjf {} . \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} . \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.tar.bz2' -exec tar -xjf {} \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.bz2' -exec bunzip {} \\;").arg(dir).arg(maxdepth);
+            cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} \\;").arg(dir).arg(maxdepth);
 
             foreach (QString cmd, cmds) {
                 QString output;
                 output = SystemCommand(cmd);
                 if (output != "")
-                    cmds << prefix + output;
+                    msgs << prefix + output;
             }
         }
+        //msgs << "Directory after unzipping [" + dir + "] contains " + SystemCommand("ls " + dir, false);
     }
 
     return msgs.join('\n');
