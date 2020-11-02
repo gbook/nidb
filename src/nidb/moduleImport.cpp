@@ -165,9 +165,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 	QString importStatus;
 	QString importModality;
 	QString importDatatype;
-    int importSiteID;
+    int importSiteID(-1);
     int importProjectID(-1);
-    int importMatchIDOnly;
+    //int importMatchIDOnly(-1);
     QString importSeriesNotes;
     QString importAltUIDs;
 
@@ -184,7 +184,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 			QString importDatatype = q.value("import_datatype").toString();
             importSiteID = q.value("import_siteid").toInt();
             importProjectID = q.value("import_projectid").toInt();
-            importMatchIDOnly = q.value("import_matchidonly").toInt();
+            //importMatchIDOnly = q.value("import_matchidonly").toInt();
             importSeriesNotes = q.value("import_seriesnotes").toString();
             importAltUIDs = q.value("import_altuids").toString();
 

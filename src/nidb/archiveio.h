@@ -46,7 +46,7 @@ public:
     double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
     bool GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID);
-    bool GetProject(int destProjectID, QString costcenter, int &projectRowID);
+    bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
     bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
 
     void SetUploadID(int u);

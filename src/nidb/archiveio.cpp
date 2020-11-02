@@ -318,9 +318,6 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     if (PatientSex == "")
         PatientName = "U";
 
-    /* get the costcenter */
-    costcenter = GetCostCenter(StudyDescription);
-
     /* get the ID search string */
     QString SQLIDs = CreateIDSearchList(PatientID, altUIDstr);
     QStringList altuidlist;
@@ -352,7 +349,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
 
     /* ----- get the project ID ----- */
-    if (GetProject(destProjectID, costcenter, projectRowID))
+    if (GetProject(destProjectID, StudyDescription, projectRowID))
         AppendUploadLog(__FUNCTION__ , QString("GetProject() returned projectRowID [%1]").arg(projectRowID));
     else
         AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
@@ -1911,16 +1908,19 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
 /* ---------------------------------------------------------- */
 /* --------- GetProject ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRowID) {
+bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &projectRowID) {
     QSqlQuery q;
+
 
     /* get the projectRowID */
     if (destProjectID >= 0) {
-        /* need to create the project if it doesn't exist */
-        AppendUploadLog(__FUNCTION__, QString("Project [" + costcenter + "] does not exist, assigning import project id [%1]").arg(destProjectID));
+        AppendUploadLog(__FUNCTION__, QString("Destination project [%1] specified").arg(destProjectID));
         projectRowID = destProjectID;
     }
     else {
+        /* get the costcenter */
+        QString costcenter = GetCostCenter(StudyDescription);
+
         q.prepare("select project_id from projects where project_costcenter = :costcenter");
         q.bindValue(":costcenter", costcenter);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1928,6 +1928,18 @@ bool archiveIO::GetProject(int destProjectID, QString costcenter, int &projectRo
             q.first();
             projectRowID = q.value("project_id").toInt();
             AppendUploadLog(__FUNCTION__, QString("Found project [" + costcenter + "] with id [%1]").arg(projectRowID));
+        }
+        else {
+            AppendUploadLog(__FUNCTION__, QString("Project with cost center [" + costcenter + "] not found, using Generic Project instead"));
+            q.prepare("select project_id from projects where project_costcenter = '999999'");
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                q.first();
+                projectRowID = q.value("project_id").toInt();
+            }
+            else {
+                AppendUploadLog(__FUNCTION__, QString("Project with cost center [999999] not found. That's trouble. Generic project does not exist."));
+            }
         }
     }
 
@@ -2074,7 +2086,7 @@ bool archiveIO::GetStudy(QString matchcriteria, int existingStudyID, int subject
      * also checks the accession number against the study_num to see if this study was pre-registered
      * HOWEVER, if there is an instanceID specified, we should only match a study that's part of an enrollment in the same instance */
 
-    bool studyFound = false;
+    //bool studyFound = false;
 
     AppendUploadLog(__FUNCTION__, QString("Checking if this study exists: enrollmentID [%1]  StudyDateTime [%2]  Modality [%3] StationName [%4]").arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StationName));
 
@@ -2111,7 +2123,7 @@ bool archiveIO::GetStudy(QString matchcriteria, int existingStudyID, int subject
         while (q.next()) {
             int study_id = q.value("study_id").toInt();
             studyNum = q.value("study_num").toInt();
-            studyFound = true;
+            //studyFound = true;
             studyRowID = study_id;
 
             QSqlQuery q2;
