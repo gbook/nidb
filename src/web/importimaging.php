@@ -56,12 +56,16 @@
 	$seriescriteria = GetVariable("seriescriteria");
 	$uploadid = GetVariable("uploadid");
 	$uploadseriesid = GetVariable("uploadseriesid");
+	$displayall = GetVariable("displayall");
+	$datestart = GetVariable("datestart");
+	$dateend = GetVariable("dateend");
+	$keyword = GetVariable("keyword");
 	
 	/* determine action */
 	switch ($action) {
 		case 'newimport':
 			NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria);
-			DisplayImportList();
+			DisplayImportList($displayall);
 			break;
 		case 'queueforarchive':
 			QueueUploadForArchive($uploadid, $uploadseriesid);
@@ -72,7 +76,10 @@
 			DisplayImport($uploadid);
 			break;
 		case 'displayimportlist':
-			DisplayImportList();
+			DisplayImportList($displayall);
+			break;
+		case 'viewdcmrcvlogs':
+			DisplayDcmRcvLogs($datestart, $dateend, $keyword);
 			break;
 		case 'displayimport':
 			DisplayImport($uploadid);
@@ -93,11 +100,11 @@
 		<table width="100%" cellpadding="5">
 			<tr>
 				<td style="font-weight: bold; font-size:16pt; color: #333;">New Import</td>
-				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent imports</td>
+				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent 10 imports<br>View <a href="importimaging.php?action=displayimportlist&displayall=1">all</a></td>
 			</tr>
 			<tr>
 				<td valign="top"><?DisplayNewImportForm();?></td>
-				<td valign="top"><?DisplayImportList();?></td>
+				<td valign="top"><?DisplayImportList(0);?></td>
 			</tr>
 		</table>
 		<?
@@ -259,21 +266,20 @@
 			$guessmodality = 'null';
 		
 		/* uploads table:
-		   upload_startdate, upload_enddate, upload_status, upload_log, upload_source, upload_nfsdir, upload_destprojectid, upload_modality, upload_guessmodality
+		   upload_startdate, upload_enddate, upload_status, upload_source, upload_nfsdir, upload_destprojectid, upload_modality, upload_guessmodality
 		  */
 		
 		/* create the upload and get the upload_id */
-		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_log, upload_source, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria) values (now(), 'uploading', 'Beginning upload', '$datalocation', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria')";
+		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria) values (now(), 'uploading', '$datalocation', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadid = mysqli_insert_id($GLOBALS['linki']);
 		
+		AppendUploadLog($uploadid, "Beginning upload from IP address [" . $_SERVER['REMOTE_ADDR'] . "]");
+		
 		/* create a temp directory in upload */
 		if ($GLOBALS['cfg']['uploaddir'] == "") {
-			/* update the upload_log */
-			$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-			$sqlstring = "update uploads set upload_status = 'error', upload_enddate = now(), upload_log = concat(upload_log, 'NiDB upload directory [uploaddir] is not set\n') where upload_id = $uploadid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			AppendUploadLog($uploadid, "NiDB upload directory [uploaddir] is not set");
 			
 			DisplayErrorMessage("NiDB Configuration Error", "Variable [uploaddir] is not set. Contact NiDB system administrator.");
 			return;
@@ -299,20 +305,14 @@
 				echo "<li>$msg";
 				chmod("$savepath/$name", 0777);
 				
-				/* update the upload_log */
-				$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-				$sqlstring = "update uploads set upload_log = concat(upload_log, '$msg\n') where upload_id = $uploadid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				AppendUploadLog($uploadid, $msg);
 			}
 			else {
 				$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
 				echo "<li>$msg";
 				$status = "uploaderror";
 				
-				/* update the upload_log */
-				$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-				$sqlstring = "update uploads set upload_log = concat(upload_log, '$msg\n') where upload_id = $uploadid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				AppendUploadLog($uploadid, $msg);
 			}
 		}
 		echo "</ul>";
@@ -325,11 +325,64 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DisplayDcmRcvLogs ------------------ */
+	/* -------------------------------------------- */
+	function DisplayDcmRcvLogs($datestart, $dateend, $keyword) {
+		$datestart = mysqli_real_escape_string($GLOBALS['linki'], $datestart);
+		$dateend = mysqli_real_escape_string($GLOBALS['linki'], $dateend);
+		$keyword = mysqli_real_escape_string($GLOBALS['linki'], $keyword);
+		
+		$sqlstring = "select * from upload_logs where upload_id = 0";
+		if ($datestart != "")
+			$sqlstring .= " and log_date > '$datestart'";
+		
+		if ($dateend != "")
+			$sqlstring .= " and log_date < '$dateend'";
+
+		if ($keyword != "")
+			$sqlstring .= " and log_msg like '%$keyword%'";
+		
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		?>
+		<form method="post" action="importimaging.php">
+		<input type="hidden" name="action" value="viewdcmrcvlogs">
+		<table class="entrytable">
+			<tr>
+				<td>Date</td>
+				<td><input type="date" name="datestart" value="<?=$datestart?>"> - <input type="date" name="dateend" value="<?=$dateend?>"></td>
+			</tr>
+			<tr>
+				<td>Keyword</td>
+				<td><input type="text" name="keyword" value="<?=$keyword?>"></td>
+			</tr>
+		</table>
+		<input type="submit" value="Update">
+		</form>
+		
+		<?=mysqli_num_rows($result)?> entries</span>
+		<tt><pre><?
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$date = $row['log_date'];
+				$msg = $row['log_msg'];
+				echo "[$date] $msg\n";
+			}
+		?>
+		</pre></tt>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayImportList ------------------ */
 	/* -------------------------------------------- */
-	function DisplayImportList() {
+	function DisplayImportList($displayall) {
 		
-		$sqlstring = "select * from uploads order by upload_startdate desc limit 10";
+		if ($displayall == "1") {
+			$sqlstring = "select * from uploads order by upload_startdate desc";
+		}
+		else {
+			$sqlstring = "select * from uploads order by upload_startdate desc limit 10";
+		}
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
@@ -348,7 +401,7 @@
 				$startdate = $row['upload_startdate'];
 				$enddate = $row['upload_enddate'];
 				$status = $row['upload_status'];
-				$log = $row['upload_log'];
+				//$log = $row['upload_log'];
 				$originalfilelist = $row['upload_originalfilelist'];
 				$source = $row['upload_source'];
 				$datapath = $row['upload_datapath'];
@@ -378,8 +431,18 @@
 								<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
 								<td>
 									<details>
-									<summary>View Log <span class="tiny"><?=strlen($log)?> bytes</span></summary>
-									<tt ><pre><?=$log?></pre></tt>
+									<?
+										$sqlstring = "select * from upload_logs where upload_id = $uploadid";
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									?>
+									<summary>View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span></summary>
+									<tt><pre><?
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$date = $row['log_date'];
+											$msg = $row['log_msg'];
+											echo "[$date] $msg\n";
+										}
+									?></pre></tt>
 									</details>
 								</td>
 							</tr>
@@ -490,7 +553,6 @@
 			$startdate = $row['upload_startdate'];
 			$enddate = $row['upload_enddate'];
 			$status = $row['upload_status'];
-			$log = $row['upload_log'];
 			$originalfilelist = $row['upload_originalfilelist'];
 			$source = $row['upload_source'];
 			$datapath = $row['upload_datapath'];

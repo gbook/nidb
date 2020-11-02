@@ -349,9 +349,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
 
     /* ----- get the project ID ----- */
-    if (GetProject(destProjectID, StudyDescription, projectRowID))
-        AppendUploadLog(__FUNCTION__ , QString("GetProject() returned projectRowID [%1]").arg(projectRowID));
-    else
+    if (!GetProject(destProjectID, StudyDescription, projectRowID))
         AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
 
     /* ----- get/create enrollment ID ----- */

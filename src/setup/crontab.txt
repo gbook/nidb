@@ -1,4 +1,4 @@
-# modules
+# NiDB modules
 * * * * * cd /nidb/bin; ./nidb modulemanager > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb import > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb export > /dev/null 2>&1
@@ -8,6 +8,7 @@
 * * * * * cd /nidb/bin; ./nidb qc > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb pipeline > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb minipipeline > /dev/null 2>&1
+* * * * * cd /nidb/bin; ./nidb upload > /dev/null 2>&1
 
-# cleanup
+# NiDB cleanup
 @hourly find /nidb/bin/logs/*.log -mtime +4 -exec rm {} \;

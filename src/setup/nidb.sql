@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 15, 2020 at 05:05 PM
+-- Generation Time: Nov 02, 2020 at 06:31 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2782,11 +2782,11 @@ CREATE TABLE `uploads` (
   `upload_id` int(11) NOT NULL,
   `upload_startdate` datetime DEFAULT NULL,
   `upload_enddate` datetime DEFAULT NULL,
-  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror') DEFAULT NULL,
-  `upload_log` text DEFAULT NULL,
+  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse') DEFAULT NULL,
   `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
   `upload_datapath` text DEFAULT NULL,
+  `upload_stagingpath` varchar(255) DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
   `upload_modality` varchar(255) DEFAULT NULL,
   `upload_guessmodality` tinyint(1) DEFAULT NULL,
@@ -2798,14 +2798,28 @@ CREATE TABLE `uploads` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `upload_logs`
+--
+
+CREATE TABLE `upload_logs` (
+  `uploadlog_id` bigint(20) NOT NULL,
+  `upload_id` int(11) NOT NULL,
+  `log_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `log_msg` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `upload_series`
 --
 
 CREATE TABLE `upload_series` (
   `uploadseries_id` int(11) NOT NULL,
   `uploadstudy_id` int(11) NOT NULL,
+  `uploadseries_status` enum('','import','ignore','archiving','archived') NOT NULL DEFAULT '',
   `uploadseries_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadseries_desc` varchar(255) NOT NULL,
+  `uploadseries_desc` varchar(255) DEFAULT NULL,
   `uploadseries_protocol` varchar(255) DEFAULT NULL,
   `uploadseries_num` int(11) DEFAULT NULL,
   `uploadseries_date` datetime DEFAULT NULL,
@@ -2830,7 +2844,7 @@ CREATE TABLE `upload_studies` (
   `uploadstudy_id` int(11) NOT NULL,
   `uploadsubject_id` int(11) NOT NULL,
   `uploadstudy_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadstudy_desc` varchar(255) NOT NULL,
+  `uploadstudy_desc` varchar(255) DEFAULT NULL,
   `uploadstudy_date` datetime DEFAULT NULL,
   `uploadstudy_modality` varchar(255) DEFAULT NULL,
   `uploadstudy_datatype` varchar(255) DEFAULT NULL COMMENT 'dicom, parrec, etc',
@@ -4028,6 +4042,14 @@ ALTER TABLE `uploads`
   ADD PRIMARY KEY (`upload_id`);
 
 --
+-- Indexes for table `upload_logs`
+--
+ALTER TABLE `upload_logs`
+  ADD PRIMARY KEY (`uploadlog_id`),
+  ADD KEY `upload_id` (`upload_id`,`log_date`);
+ALTER TABLE `upload_logs` ADD FULLTEXT KEY `log_msg` (`log_msg`);
+
+--
 -- Indexes for table `upload_series`
 --
 ALTER TABLE `upload_series`
@@ -4892,6 +4914,12 @@ ALTER TABLE `task_series`
 --
 ALTER TABLE `uploads`
   MODIFY `upload_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `upload_logs`
+--
+ALTER TABLE `upload_logs`
+  MODIFY `uploadlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `upload_series`
