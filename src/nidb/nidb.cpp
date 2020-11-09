@@ -967,7 +967,7 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
 
             foreach (QString cmd, cmds) {
                 QString output;
-                output = SystemCommand(cmd);
+                output = SystemCommand(cmd,false);
                 if (output != "")
                     msgs << prefix + output;
             }

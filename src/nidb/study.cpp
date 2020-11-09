@@ -30,9 +30,52 @@
 study::study(int id, nidb *a)
 {
 	n = a;
-	studyid = id;
-	LoadStudyInfo();
-	//PrintStudyInfo();
+    searchCriteria = rowid;
+
+    _studyid = id;
+
+    LoadStudyInfo();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- study ------------------------------------------ */
+/* ---------------------------------------------------------- */
+study::study(QString uidStudyNum, nidb *a) {
+    n = a;
+    searchCriteria = uidstudynum;
+
+    _uid = uidStudyNum.left(8);
+    _studynum = uidStudyNum.mid(8).toInt();
+
+    LoadStudyInfo();
+}
+
+/* ---------------------------------------------------------- */
+/* --------- study ------------------------------------------ */
+/* ---------------------------------------------------------- */
+study::study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a) {
+    n = a;
+    searchCriteria = studydatetimemodality;
+
+    _enrollmentid = enrollmentRowID;
+    _studydatetime.fromString(studyDateTime);
+    _modality = modality;
+
+    LoadStudyInfo();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- study ------------------------------------------ */
+/* ---------------------------------------------------------- */
+study::study(int enrollmentRowID, QString studyUID, nidb *a) {
+    n = a;
+    _enrollmentid = enrollmentRowID;
+    _studyuid = studyUID;
+    searchCriteria = studyuid;
+
+    LoadStudyInfo();
 }
 
 
@@ -43,49 +86,69 @@ void study::LoadStudyInfo() {
 
 	QStringList msgs;
 
-	if (studyid < 1) {
+    if (_studyid < 0) {
 		msgs << "Invalid study ID";
-		isValid = false;
+        _isValid = false;
 	}
 	else {
 		QSqlQuery q;
-		q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
-		q.bindValue(":studyid", studyid);
+        switch (searchCriteria) {
+            case rowid:
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
+                q.bindValue(":studyid", _studyid);
+                break;
+            case uidstudynum:
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid a.study_num = :studynum");
+                q.bindValue(":uid", _uid);
+                q.bindValue(":studynum", _studynum);
+                break;
+            case studydatetimemodality:
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid a.study_datetime = :datetime a.study_modality = :modality");
+                q.bindValue(":enrollmentid", _enrollmentid);
+                q.bindValue(":studydate", _studydatetime.toLocalTime());
+                q.bindValue(":modality", _modality);
+                break;
+            case studyuid:
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_uid = :studyuid");
+                q.bindValue(":studyuid", _studyuid);
+                break;
+        }
+
 		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid study ID or recently deleted?";
-			isValid = false;
+            _isValid = false;
 		}
 		else {
 			q.first();
-			uid = q.value("uid").toString().trimmed();
-			studynum = q.value("study_num").toInt();
-			projectid = q.value("project_id").toInt();
-			subjectid = q.value("subject_id").toInt();
-			enrollmentid = q.value("enrollment_id").toInt();
-			studydatetime = q.value("study_datetime").toDateTime();
-			modality = q.value("study_modality").toString().trimmed();
-			studytype = q.value("study_type").toString().trimmed();
+            _uid = q.value("uid").toString().trimmed();
+            _studynum = q.value("study_num").toInt();
+            _projectid = q.value("project_id").toInt();
+            _subjectid = q.value("subject_id").toInt();
+            _enrollmentid = q.value("enrollment_id").toInt();
+            _studydatetime = q.value("study_datetime").toDateTime();
+            _modality = q.value("study_modality").toString().trimmed();
+            _studytype = q.value("study_type").toString().trimmed();
 
 			/* check to see if anything isn't valid or is blank */
-			if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
-			if (uid == "") { msgs << "uid was blank"; isValid = false; }
-			if (studynum < 1) { msgs << "studynum is not valid"; isValid = false; }
+            if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }
+            if (_uid == "") { msgs << "uid was blank"; _isValid = false; }
+            if (_studynum < 1) { msgs << "studynum is not valid"; _isValid = false; }
 
-			studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(uid).arg(studynum);
+            _studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(_uid).arg(_studynum);
 
-			QDir d(studypath);
+            QDir d(_studypath);
 			if (d.exists()) {
-				msgs << QString("Study path [%1] exists").arg(studypath);
-				studyPathExists = true;
+                msgs << QString("Study path [%1] exists").arg(_studypath);
+                _studyPathExists = true;
 			}
 			else {
-				msgs << QString("Study path [%1] does not exist").arg(studypath);
-				studyPathExists = false;
+                msgs << QString("Study path [%1] does not exist").arg(_studypath);
+                _studyPathExists = false;
 			}
 		}
 	}
-	msg = msgs.join(" | ");
+    _msg = msgs.join("\n");
 }
 
 
@@ -93,20 +156,20 @@ void study::LoadStudyInfo() {
 /* --------- PrintSubjectInfo ------------------------------- */
 /* ---------------------------------------------------------- */
 void study::PrintStudyInfo() {
-	QString	output = QString("***** Subject - [%1] *****\n").arg(studyid);
+    QString	output = QString("***** Subject - [%1] *****\n").arg(_studyid);
 
-	output += QString("   uid: [%1]\n").arg(uid);
-	output += QString("   subjectid: [%1]\n").arg(subjectid);
-	output += QString("   studyid: [%1]\n").arg(studyid);
-	output += QString("   studynum: [%1]\n").arg(studynum);
-	output += QString("   studytype: [%1]\n").arg(studytype);
-	output += QString("   modality: [%1]\n").arg(modality);
-	output += QString("   projectid: [%1]\n").arg(projectid);
-	output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
-	output += QString("   isValid: [%1]\n").arg(isValid);
-	output += QString("   msg: [%1]\n").arg(msg);
-	output += QString("   studypath: [%1]\n").arg(studypath);
-	output += QString("   studydatetime: [%1]\n").arg(studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
+    output += QString("   uid: [%1]\n").arg(_uid);
+    output += QString("   subjectid: [%1]\n").arg(_subjectid);
+    output += QString("   studyid: [%1]\n").arg(_studyid);
+    output += QString("   studynum: [%1]\n").arg(_studynum);
+    output += QString("   studytype: [%1]\n").arg(_studytype);
+    output += QString("   modality: [%1]\n").arg(_modality);
+    output += QString("   projectid: [%1]\n").arg(_projectid);
+    output += QString("   enrollmentid: [%1]\n").arg(_enrollmentid);
+    output += QString("   isValid: [%1]\n").arg(_isValid);
+    output += QString("   msg: [%1]\n").arg(_msg);
+    output += QString("   studypath: [%1]\n").arg(_studypath);
+    output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
 
 	n->WriteLog(output);
 }

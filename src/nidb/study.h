@@ -25,33 +25,56 @@
 #include <QString>
 #include "nidb.h"
 
+enum criteria {rowid, uidstudynum, studydatetimemodality, studyuid};
 
 class study
 {
 public:
 	study();
-	study(int id, nidb *a);
-	nidb *n;
+    study(int studyRowID, nidb *a); /* get study by studyID */
+    study(QString uidStudyNum, nidb *a);
+    study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a);
+    study(int enrollmentRowID, QString studyUID, nidb *a);
+
+    nidb *n;
 
 	void PrintStudyInfo();
 
-	int studynum;
-	QString uid;
-	int studyid;
-	QString studytype;
-	int subjectid;
-	QString studypath;
-	bool studyPathExists;
-	int enrollmentid;
-	int projectid;
-	QDateTime studydatetime;
-	QString modality;
+    int studyRowID() { return _studyid; }
+    int subjectRowID() { return _subjectid; }
+    int enrollmentRowID() { return _enrollmentid; }
+    int projectRowID() { return _projectid; }
+    QString UID() { return _uid; }
+    int studyNum() { return _studynum; }
+    QString type() { return _studytype; }
+    QString path() { return _studypath; }
+    bool pathExists() { return _studyPathExists; }
+    QDateTime dateTime() { return _studydatetime; }
+    QString modality() { return _modality; }
+    QString msg() { return _msg; }
 
-	bool isValid = true;
-	QString msg;
+    bool valid() { return _isValid; }
 
 private:
-	void LoadStudyInfo();
+    criteria searchCriteria;
+    void LoadStudyInfo();
+
+    int _studyid;
+    int _studynum;
+    QString _uid;
+    QString _studytype;
+    int _subjectid;
+    QString _studypath;
+    bool _studyPathExists;
+    int _enrollmentid;
+    int _projectid;
+    QDateTime _studydatetime;
+    QString _modality;
+    QString _studyuid;
+
+    bool _isValid = true;
+    QString _msg;
+
 };
 
 #endif // STUDY_H

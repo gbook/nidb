@@ -32,20 +32,30 @@ public:
 	subject();
 	subject(int id, nidb *a);
 	subject(QString uid, nidb *a);
-	nidb *n;
+    subject(QString name, QString sex, QString dob, nidb *a);
+    nidb *n;
 
 	void PrintSubjectInfo();
 
-	int subjectid;
-	QString uid;
-	QStringList altuids;
-	QString subjectpath;
-	bool dataPathExists;
+    int subjectRowID() { return _subjectid; }
+    QString UID() { return _uid; }
+    QStringList altUIDs() { return _altuids; }
+    QString path() { return _subjectpath; }
+    bool dataPathExists() { return _dataPathExists; }
+    bool valid() { return _isValid; }
+    QString msg() { return _msg; }
 
-	bool isValid = true;
-	QString msg;
 private:
 	void LoadSubjectInfo();
+
+    int _subjectid = -1;
+    QString _uid;
+    QStringList _altuids;
+    QString _subjectpath;
+    bool _dataPathExists;
+    bool _isValid = true;
+    QString _msg;
+
 };
 
 #endif // SUBJECT_H

@@ -128,7 +128,7 @@ void series::PrintSeriesInfo() {
 /* ---------------------------------------------------------- */
 bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
     study s(studyid, n);
-    QString newSeriesPath = QString("%1/%2").arg(s.studypath).arg(newSeriesNum);
+    QString newSeriesPath = QString("%1/%2").arg(s.path()).arg(newSeriesNum);
 
     n->WriteLog("Changing series path from [" + seriespath + "] to [" + newSeriesPath + "]");
 

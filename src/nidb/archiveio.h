@@ -32,14 +32,19 @@ public:
     archiveIO(nidb *n);
     ~archiveIO();
 
+    /* archive functions */
     bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectRealUID);
     bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files);
     bool InsertParRec(int importid, QString file);
     bool InsertEEG(int importid, QString file);
-    bool GetSubject(QString matchcriteria, int subjectid, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID);
-    bool GetStudy(QString matchcriteria, int existingStudyID, int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
 
-    /* helper functions */
+    bool GetSubject(QString subjectMatchCriteria, int existingSubjectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID);
+    bool CreateSubject(QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID);
+
+    bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
+    bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
+
+    /* archive helper functions */
     QString GetCostCenter(QString studydesc);
     QString CreateIDSearchList(QString PatientID, QString altuids);
     void CreateThumbnail(QString f, QString outdir);
@@ -49,6 +54,7 @@ public:
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
     bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
 
+    /* class helper functions */
     void SetUploadID(int u);
     void AppendUploadLog(QString func, QString m);
 

@@ -100,7 +100,7 @@
 		<table width="100%" cellpadding="5">
 			<tr>
 				<td style="font-weight: bold; font-size:16pt; color: #333;">New Import</td>
-				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent 10 imports<br>View <a href="importimaging.php?action=displayimportlist&displayall=1">all</a></td>
+				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent 10 imports<br><span style="font-size: 12pt; font-weight: normal"><a href="importimaging.php?action=displayimportlist&displayall=1">View all</a></span></td>
 			</tr>
 			<tr>
 				<td valign="top"><?DisplayNewImportForm();?></td>
@@ -135,7 +135,7 @@
 				<td class="label" valign="top">Modality<br><span class="tiny">If importing DICOM data, choose Automatic<br>Otherwise choose the data's modality.<br>Selecting a modality will only import data of that modality</td>
 				<td valign="top">
 					<select name="modality" required>
-						<option value="auto" selected>Automatically Import All Modalities (Recommended)</option>
+						<option value="auto" selected>Automatically detect (DICOM only)</option>
 						<?
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
@@ -432,14 +432,14 @@
 								<td>
 									<details>
 									<?
-										$sqlstring = "select * from upload_logs where upload_id = $uploadid";
-										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$sqlstringA = "select * from upload_logs where upload_id = $uploadid";
+										$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 									?>
-									<summary>View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span></summary>
+									<summary>View Log <span class="tiny"><?=mysqli_num_rows($resultA)?> entries</span></summary>
 									<tt><pre><?
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$date = $row['log_date'];
-											$msg = $row['log_msg'];
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$date = $rowA['log_date'];
+											$msg = $rowA['log_msg'];
 											echo "[$date] $msg\n";
 										}
 									?></pre></tt>
@@ -520,19 +520,16 @@
 				else {
 					$sqlstringA = "update upload_series set uploadseries_status = 'ignore' where uploadseries_id = $seriesid";
 				}
-				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			}
 
 			$sqlstringA = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
-			//PrintSQL($sqlstringA);
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			
 			DisplayNotice("Notice", "Upload queued for archiving");
 		}
 		else {
 			$sqlstring = "update uploads set upload_status = 'archiveerror' where upload_id = $uploadid";
-			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			DisplayErrorMessage("Error", "No series found for this upload");
@@ -595,9 +592,26 @@
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
 					<td>
 						<details>
-						<summary>File list (<?=count($filelist);?> files)</summary>
+						<summary>Original file list (<?=count($filelist);?> files)</summary>
 							<tt><?=implode2("<br>", $filelist)?></tt>
 						</details>
+						
+						<?
+							$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$errorfiles = array();
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
+							}
+							if (count($errorfiles) > 0) {
+								?>
+								<details style="color: red">
+								<summary>Unreadable files (<?=count($errorfiles);?> files)</summary>
+									<tt><?=implode2("<br>", $errorfiles)?></tt>
+								</details>
+								<?
+							}
+							?>
 					</td>
 				</tr>
 				<tr>
@@ -611,9 +625,9 @@
 				<tr>
 					<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
 					<td>
-						Subject: <?=$subjectcriteria?><br>
-						Study: <?=$studycriteria?><br>
-						Series: <?=$seriescriteria?>
+						Subject: <i><?=$subjectcriteria?></i><br>
+						Study: <i><?=$studycriteria?></i><br>
+						Series: <i><?=$seriescriteria?></i>
 					</td>
 				</tr>
 			</table>
@@ -642,7 +656,7 @@
 			
 			<ul id="myUL">
 			<?
-			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid order by uploadsubject_patientid desc";
+			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid and uploadsubject_patientid <> 'unreadable' and uploadsubject_patientid <> 'NiDBunreadable' order by uploadsubject_patientid desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$uploadsubjectid = $rowA['uploadsubject_id'];

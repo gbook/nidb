@@ -114,7 +114,7 @@ bool moduleUpload::ParseUploads() {
             q2.bindValue(":uploadid", upload_id);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
-
+            /* check if the upload path is valid */
             if ((upload_datapath == "") || (upload_datapath == "/") || (upload_datapath == "/etc") || (upload_datapath == "/bin") || (upload_datapath == "/root")) {
                 io->AppendUploadLog(__FUNCTION__, QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
 
@@ -157,12 +157,9 @@ bool moduleUpload::ParseUploads() {
             io->AppendUploadLog(__FUNCTION__, QString("Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* unzip any files in the uploadstagingdir */
-            io->AppendUploadLog(__FUNCTION__, "Preparing to unzip the files located in [" + uploadstagingpath + "]");
-
+            io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploadstagingpath + "]");
             QString unzipOutput = n->UnzipDirectory(uploadstagingpath, true);
-            io->AppendUploadLog(__FUNCTION__, "Unzip command output" + unzipOutput);
-
-            io->AppendUploadLog(__FUNCTION__, "Finished unzipping the files located in [" + uploadstagingpath + "]");
+            io->AppendUploadLog(__FUNCTION__, "Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             c = 0;
@@ -216,7 +213,7 @@ bool moduleUpload::ParseUploads() {
                 }
                 else {
                     /* the file is not readable */
-                    fs["unreadable"]["unreadable"]["0"].append(f);
+                    fs["NiDBunreadable"]["NiDBunreadable"]["0"].append(f);
                     io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
                 }
             }
