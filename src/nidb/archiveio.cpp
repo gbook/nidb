@@ -122,9 +122,11 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     int SeriesNumber = tags["SeriesNumber"].toInt();
     QString SeriesTime = tags["SeriesTime"];
     QString StudyDate = tags["StudyDate"];
+    QString SeriesDateTime = tags["SeriesDateTime"];
     QString StudyDescription = tags["StudyDescription"];
     QString SeriesDescription = tags["SeriesDescription"];
     QString StudyTime = tags["StudyTime"];
+    QString StudyDateTime = tags["StudyDateTime"];
     int Rows = tags["Rows"].toInt();
     int Columns = tags["Columns"].toInt();
     //int AccessionNumber = tags["AccessionNumber"].toInt();
@@ -136,6 +138,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     QString ImageType = tags["ImageType"];
     QString ImageComments = tags["ImageComments"];
     QString StudyInstanceUID = tags["StudyInstanceUID"];
+    int mat1 = tags["mat1"].toInt();
+    int mat4 = tags["mat4"].toInt();
+    int pixelX = tags["pixelX"].toInt();
+    int pixelY = tags["pixelY"].toInt();
 
     /* MR specific tags */
     double MagneticFieldStrength = tags["MagneticFieldStrength"].toDouble();
@@ -149,48 +155,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     double PercentPhaseFieldOfView = tags["PercentPhaseFieldOfView"].toDouble();
     double PixelBandwidth = tags["PixelBandwidth"].toDouble();
     double SpacingBetweenSlices = tags["SpacingBetweenSlices"].toDouble();
-    QString PhaseEncodeAngle;
-    QString PhaseEncodingDirectionPositive;
-
-    /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
-    QFile df(files[0]);
-
-    /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
-    if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
-
-        QTextStream in(&df);
-        while (!in.atEnd()) {
-            QString line = in.readLine();
-            if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
-                /* make sure the line does not contain any non-printable ASCII control characters */
-                if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
-                    int idx = line.indexOf(".dInPlaneRot");
-                    line = line.mid(idx,23);
-                    QStringList vals = line.split(QRegExp("\\s+"));
-                    if (vals.size() > 0)
-                        PhaseEncodeAngle = vals.last().trimmed();
-                    break;
-                }
-            }
-        }
-        AppendUploadLog(__FUNCTION__ , QString("Found PhaseEncodeAngle of [%1]").arg(PhaseEncodeAngle));
-        df.close();
-    }
-
-    /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-    QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(n->cfg["nidbdir"]).arg(f);
-    QString csaheader = n->SystemCommand(systemstring, false);
-    QStringList parts = csaheader.split(",");
-    QString val;
-    if (parts.size() == 5) {
-        val = parts[4];
-        val.replace("Data '","",Qt::CaseInsensitive);
-        val.replace("'","");
-        if (val.trimmed() == "Data")
-            val = "";
-        PhaseEncodingDirectionPositive = val.trimmed();
-    }
-    AppendUploadLog(__FUNCTION__ , QString("Found PhaseEncodingDirectionPositive of [%1]").arg(PhaseEncodingDirectionPositive));
+    QString PhaseEncodeAngle = tags["PhaseEncodeAngle"];
+    QString PhaseEncodingDirectionPositive = tags["PhaseEncodingDirectionPositive"];
 
     /* CT specific tags */
     QString ContrastBolusAgent = tags["ContrastBolusAgent"];
@@ -206,67 +172,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     double GeneratorPower = tags["GeneratorPower"].toDouble();
     QString ConvolutionKernel = tags["ConvolutionKernel"];
 
-    /* fix some of the fields to be amenable to the DB */
-    if (Modality == "")
-        Modality = "OT";
-    StudyDate = n->ParseDate(StudyDate);
-    StudyTime = n->ParseTime(StudyTime);
-    SeriesDate = n->ParseDate(SeriesDate);
-    SeriesTime = n->ParseTime(SeriesTime);
 
-    QString StudyDateTime = tags["StudyDateTime"] = StudyDate + " " + StudyTime;
-    QString SeriesDateTime = tags["SeriesDateTime"] = SeriesDate + " " + SeriesTime;
-    QStringList pix = PixelSpacing.split("\\");
-    int pixelX(0);
-    int pixelY(0);
-    if (pix.size() == 2) {
-        pixelX = pix[0].toInt();
-        pixelY = pix[1].toInt();
-    }
-    QStringList amat = AcquisitionMatrix.split(" ");
-    int mat1(0);
-    //int mat2(0);
-    //int mat3(0);
-    int mat4(0);
-    if (amat.size() == 4) {
-        mat1 = amat[0].toInt();
-        //mat2 = amat[1].toInt();
-        //mat3 = amat[2].toInt();
-        mat4 = amat[3].toInt();
-    }
-    if (SeriesNumber == 0) {
-        QString timestamp = SeriesTime;
-        timestamp.replace(":","").replace("-","").replace(" ","");
-        SeriesNumber = timestamp.toInt();
-    }
-
-    /* fix patient birthdate */
-    PatientBirthDate = n->ParseDate(PatientBirthDate);
-
-    /* get patient age */
-    PatientAge = GetPatientAge(PatientAgeStr, StudyDate, PatientBirthDate);
-
-    /* remove any non-printable ASCII control characters */
-    PatientName.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
-    PatientSex.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
-
-    if (PatientID == "") {
-        PatientID = "(empty)";
-        QString output = n->SystemCommand("exiftool " + f);
-        AppendUploadLog(__FUNCTION__ , output);
-    }
-
-    if (PatientName == "")
-        PatientName = "(empty)";
-
-    if (StudyDescription == "")
-        StudyDescription = "(empty)";
-
-    if (PatientSex == "")
-        PatientName = "U";
 
     /* get the ID search string */
-    QString SQLIDs = CreateIDSearchList(PatientID, altUIDstr);
+    //QString SQLIDs = CreateIDSearchList(PatientID, altUIDstr);
     QStringList altuidlist;
     if (altUIDstr != "")
         altuidlist = altUIDstr.split(",");
@@ -282,8 +191,6 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__, QString("SubjectRowID [%1] found").arg(subjectRowID));
     else
         CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
-
-    QSqlQuery q2;
 
     /* ----- get/set family ID ----- */
     if (GetFamily(subjectRowID, subjectUID, familyRowID, familyUID))
@@ -350,6 +257,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* insert or update the series based on modality */
     QString dbModality;
     if (Modality.toUpper() == "MR") {
+        QSqlQuery q2;
         dbModality = "mr";
         q2.prepare("select mrseries_id from mr_series where study_id = :studyid and series_num = :seriesnum");
         q2.bindValue(":studyid", studyRowID);
@@ -794,6 +702,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
                 AppendUploadLog(__FUNCTION__ , "Unable to create outbehdir ["+outbehdir+"] because of error ["+m+"]");
         }
     }
+
+    QString systemstring;
 
     /* change the permissions on the outdir to 777 so the webpage can read/write the directories */
     systemstring = "chmod -Rf 777 " + outdir;
@@ -1780,32 +1690,6 @@ void archiveIO::CreateThumbnail(QString f, QString outdir) {
 
     QString systemstring = "convert -normalize " + f + " " + outfile;
     AppendUploadLog(__FUNCTION__, n->SystemCommand(systemstring));
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- GetPatientAge ---------------------------------- */
-/* ---------------------------------------------------------- */
-double archiveIO::GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
-    double PatientAge(0.0);
-
-    /* check if the patient age contains any characters */
-    if (PatientAgeStr.contains('Y')) PatientAge = PatientAgeStr.replace("Y","").toDouble();
-    if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/12.0;
-    if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/52.0;
-    if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/365.25;
-
-    /* fix patient age */
-    if (PatientAge < 0.001) {
-        QDate studydate;
-        QDate dob;
-        studydate.fromString(StudyDate);
-        dob.fromString(PatientBirthDate);
-
-        PatientAge = dob.daysTo(studydate)/365.25;
-    }
-
-    return PatientAge;
 }
 
 

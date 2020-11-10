@@ -48,7 +48,6 @@ public:
     QString GetCostCenter(QString studydesc);
     QString CreateIDSearchList(QString PatientID, QString altuids);
     void CreateThumbnail(QString f, QString outdir);
-    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
     bool GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID);
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);

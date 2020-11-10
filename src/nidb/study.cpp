@@ -59,9 +59,12 @@ study::study(int enrollmentRowID, QString studyDateTime, QString modality, nidb 
     searchCriteria = studydatetimemodality;
 
     _enrollmentid = enrollmentRowID;
-    _studydatetime.fromString(studyDateTime);
+    _studydatetime = QDateTime::fromString(studyDateTime, "yyyy-MM-dd hh:mm:ss");
     _modality = modality;
 
+    //n->WriteLog("studyDateTime [" + studyDateTime + "]");
+    //n->WriteLog("_studyDateTime.toLocalTime().toString() [" + _studydatetime.toLocalTime().toString("yyyy-MM-dd hh:mm:ss") + "]");
+    //n->WriteLog("_studyDateTime.toString() [" + _studydatetime.toString("yyyy-MM-dd hh:mm:ss") + "]");
     LoadStudyInfo();
 }
 
@@ -98,14 +101,14 @@ void study::LoadStudyInfo() {
                 q.bindValue(":studyid", _studyid);
                 break;
             case uidstudynum:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid a.study_num = :studynum");
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid and a.study_num = :studynum");
                 q.bindValue(":uid", _uid);
                 q.bindValue(":studynum", _studynum);
                 break;
             case studydatetimemodality:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid a.study_datetime = :datetime a.study_modality = :modality");
+                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid and a.study_datetime = :studydate and a.study_modality = :modality");
                 q.bindValue(":enrollmentid", _enrollmentid);
-                q.bindValue(":studydate", _studydatetime.toLocalTime());
+                q.bindValue(":studydate", _studydatetime.toString("yyyy-MM-dd hh:mm:ss"));
                 q.bindValue(":modality", _modality);
                 break;
             case studyuid:

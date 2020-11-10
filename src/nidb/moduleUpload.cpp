@@ -365,7 +365,10 @@ bool moduleUpload::ParseUploads() {
 
                         if (upload_seriescriteria == "seriesnum") {
                             /* get seriesid from SeriesNumber field */
-                            QString SeriesNumber = series;
+                            bool ok = false;
+                            int SeriesNumber = series.toInt(&ok);
+                            if (!ok)
+                                SeriesNumber = 0;
 
                             QSqlQuery q3;
                             /* check if the studyid exists ... */

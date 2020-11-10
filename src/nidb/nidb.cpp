@@ -2072,6 +2072,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
     if (r.Read()) {
+        /* ---------- it's a readable DICOM file ---------- */
         gdcm::StringFilter sf;
         sf = gdcm::StringFilter();
         sf.SetFile(r.GetFile());
@@ -2310,9 +2311,51 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
 
         QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
         tags["UniqueSeriesString"] = uniqueseries;
+
+        /* attempt to get the Siemens CSA header info */
+
+        /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
+        QFile df(f);
+
+        /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
+        if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
+
+            QTextStream in(&df);
+            while (!in.atEnd()) {
+                QString line = in.readLine();
+                if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
+                    /* make sure the line does not contain any non-printable ASCII control characters */
+                    if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
+                        int idx = line.indexOf(".dInPlaneRot");
+                        line = line.mid(idx,23);
+                        QStringList vals = line.split(QRegExp("\\s+"));
+                        if (vals.size() > 0)
+                            tags["PhaseEncodeAngle"] = vals.last().trimmed();
+                        break;
+                    }
+                }
+            }
+            WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
+            df.close();
+        }
+
+        /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
+        QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(cfg["nidbdir"]).arg(f);
+        QString csaheader = SystemCommand(systemstring, false);
+        QStringList parts = csaheader.split(",");
+        QString val;
+        if (parts.size() == 5) {
+            val = parts[4];
+            val.replace("Data '","",Qt::CaseInsensitive);
+            val.replace("'","");
+            if (val.trimmed() == "Data")
+                val = "";
+            tags["PhaseEncodingDirectionPositive"] = val.trimmed();
+        }
+        WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
     }
     else {
-        /* not a DICOM file, so see what other type of file it may be */
+        /* ---------- not a DICOM file, so see what other type of file it may be ---------- */
         WriteLog(QString("File [%1] is not a DICOM file").arg(f));
 
         /* check if EEG, and Polhemus */
@@ -2372,5 +2415,91 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
         }
     }
 
+
+    /* fix some of the fields to be amenable to the DB */
+    if (tags["Modality"] == "")
+        tags["Modality"] = "OT";
+    QString StudyDate = ParseDate(tags["StudyDate"]);
+    QString StudyTime = ParseTime(tags["StudyTime"]);
+    QString SeriesDate = ParseDate(tags["SeriesDate"]);
+    QString SeriesTime = ParseTime(tags["SeriesTime"]);
+
+    tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
+    tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
+    QStringList pix = tags["PixelSpacing"].split("\\");
+    int pixelX(0);
+    int pixelY(0);
+    if (pix.size() == 2) {
+        pixelX = pix[0].toInt();
+        pixelY = pix[1].toInt();
+    }
+    QStringList amat = tags["AcquisitionMatrix"].split(" ");
+    //int mat1(0);
+    //int mat2(0);
+    //int mat3(0);
+    //int mat4(0);
+    if (amat.size() == 4) {
+        tags["mat1"] = amat[0].toInt();
+        //mat2 = amat[1].toInt();
+        //mat3 = amat[2].toInt();
+        tags["mat4"] = amat[3].toInt();
+    }
+    //if (SeriesNumber == 0) {
+    //    QString timestamp = SeriesTime;
+    //    timestamp.replace(":","").replace("-","").replace(" ","");
+    //    tags["SeriesNumber"] = timestamp.toInt();
+    //}
+
+    /* fix patient birthdate */
+    QString PatientBirthDate = ParseDate(tags["PatientBirthDate"]);
+
+    /* get patient age */
+    tags["PatientAge"] = QString("%1").arg(GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
+
+    /* remove any non-printable ASCII control characters */
+    tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
+    tags["PatientSex"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
+
+    if (tags["PatientID"] == "") {
+        tags["PatientID"] = "(empty)";
+        //QString output = SystemCommand("exiftool " + f);
+        //AppendUploadLog(__FUNCTION__ , output);
+    }
+
+    if (tags["PatientName"] == "")
+        tags["PatientName"] = "(empty)";
+
+    if (tags["StudyDescription"] == "")
+        tags["StudyDescription"] = "(empty)";
+
+    if (tags["PatientSex"] == "")
+        tags["PatientName"] = "U";
+
     return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetPatientAge ---------------------------------- */
+/* ---------------------------------------------------------- */
+double nidb::GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
+    double PatientAge(0.0);
+
+    /* check if the patient age contains any characters */
+    if (PatientAgeStr.contains('Y')) PatientAge = PatientAgeStr.replace("Y","").toDouble();
+    if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/12.0;
+    if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/52.0;
+    if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/365.25;
+
+    /* fix patient age */
+    if (PatientAge < 0.001) {
+        QDate studydate;
+        QDate dob;
+        studydate.fromString(StudyDate);
+        dob.fromString(PatientBirthDate);
+
+        PatientAge = dob.daysTo(studydate)/365.25;
+    }
+
+    return PatientAge;
 }

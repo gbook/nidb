@@ -136,6 +136,7 @@ public:
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetImageFileTags(QString f, QHash<QString, QString> &tags);
+    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 
 private:
     void FatalError(QString err);
