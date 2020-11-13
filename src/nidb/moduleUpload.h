@@ -43,7 +43,6 @@ public:
 private:
     nidb *n;
     archiveIO *io;
-
 };
 
 #endif // MODULEUPLOAD_H

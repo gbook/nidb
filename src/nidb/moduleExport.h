@@ -23,6 +23,7 @@
 #ifndef MODULEEXPORT_H
 #define MODULEEXPORT_H
 #include "nidb.h"
+#include "archiveio.h"
 #include "remotenidbconnection.h"
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
@@ -61,6 +62,7 @@ public:
 
 private:
     nidb *n;
+    archiveIO *io;
 };
 
 #endif // MODULEEXPORT_H

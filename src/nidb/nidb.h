@@ -42,6 +42,7 @@
 #include "gdcmAnonymizer.h"
 
 typedef QHash <int, QHash<QString, QString>> indexedHash;
+typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
 //namespace nidb {
 //    enum subjectMatchCriteria { PatientID, NameSexDOB };

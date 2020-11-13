@@ -39,7 +39,7 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	require 'kashi.php';
+	//require 'kashi.php';
 
 	/* set debugging on/off only for this page */
 	$GLOBALS['cfg']['debug'] = 0;
@@ -752,8 +752,8 @@
 													<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
 													<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
 													<br>
-													<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
-													<br>
+													<!--<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
+													<br>-->
 													<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
 												</td>
 											</tr>
@@ -2374,7 +2374,7 @@
 					<? } ?>
 				</tr>
 				<?
-					$kashi = new Kashi();
+					/* $kashi = new Kashi();
 					foreach ($lists as $label => $vals1) {
 						for ($i=0;$i<count($vals1);$i++) {
 							if ($vals1[$i] == 0) { $vals1[$i] = 0.000001; }
@@ -2385,7 +2385,7 @@
 						<?
 						foreach ($lists as $label => $vals2) {
 							$starttime1 = microtime(true);
-							/* compare vals1 to vals2 */
+							// compare vals1 to vals2
 							//$coeff = Correlation($vals1,$vals2);
 							for ($i=0;$i<count($vals2);$i++) {
 								if ($vals2[$i] == 0) { $vals2[$i] = 0.000001; }
@@ -2396,7 +2396,7 @@
 							$cindex = round((($coeff - (-1))/2)*100);
 							//echo "[$val, $range, $cindex]<br>";
 							if ($cindex > 100) { $cindex = 100; }
-							/* display correlation coefficient */
+							// display correlation coefficient
 							?>
 							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <?=$colors2[$cindex]?>"><?=number_format($coeff,3);?></td>
 							<?
@@ -2406,6 +2406,7 @@
 						</tr>
 						<?
 					}
+					*/
 				?>
 			</table>
 			<?
