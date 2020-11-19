@@ -1362,7 +1362,7 @@
 				$studies[$studyid]['calcstudyage'] = $calcStudyAge;
 				
 
-				$sqlstringA = "select b.* from mr_series a left join protocol_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''";
+				$sqlstringA = "select b.* from mr_series a left join bids_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$protocol = $rowA['shortname'];

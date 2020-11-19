@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 02, 2020 at 06:31 PM
+-- Generation Time: Nov 19, 2020 at 03:39 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -392,6 +392,20 @@ CREATE TABLE `audit_subject` (
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bids_mapping`
+--
+
+CREATE TABLE `bids_mapping` (
+  `protocolmapping_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `protocolname` varchar(255) NOT NULL,
+  `shortname` varchar(255) NOT NULL,
+  `modality` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
 
@@ -2206,20 +2220,6 @@ CREATE TABLE `protocol_group` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `protocol_mapping`
---
-
-CREATE TABLE `protocol_mapping` (
-  `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
-  `protocolname` varchar(255) NOT NULL,
-  `shortname` varchar(255) NOT NULL,
-  `modality` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `pr_series`
 --
 
@@ -3238,6 +3238,13 @@ ALTER TABLE `audit_subject`
   ADD KEY `subject_id` (`subject_id`);
 
 --
+-- Indexes for table `bids_mapping`
+--
+ALTER TABLE `bids_mapping`
+  ADD PRIMARY KEY (`protocolmapping_id`),
+  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
+
+--
 -- Indexes for table `binary_series`
 --
 ALTER TABLE `binary_series`
@@ -3830,13 +3837,6 @@ ALTER TABLE `protocol_group`
   ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
 
 --
--- Indexes for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  ADD PRIMARY KEY (`protocolmapping_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
-
---
 -- Indexes for table `pr_series`
 --
 ALTER TABLE `pr_series`
@@ -4254,6 +4254,12 @@ ALTER TABLE `audit_study`
 --
 ALTER TABLE `audit_subject`
   MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `bids_mapping`
+--
+ALTER TABLE `bids_mapping`
+  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `binary_series`
@@ -4746,12 +4752,6 @@ ALTER TABLE `protocolgroup_items`
 --
 ALTER TABLE `protocol_group`
   MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pr_series`

@@ -1999,10 +1999,11 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 /* ---------------------------------------------------------- */
 /* --------- WriteBIDS ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString outdir, bool gzipFiles, bool zipExport, QString bidsreadme, QString &msg) {
+bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString &msg) {
     n->WriteLog("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
+    QString bidsver = "1.4.1";
     subjectStudySeriesContainer s;
 
     QStringList msgs;
@@ -2011,23 +2012,32 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
         return false;
     }
 
-    QString rootoutdir = outdir;
-
+    /* create the output directory */
+    QString outdir = odir;
     QString m;
-    QDir d(rootoutdir);
-    if (d.exists()) {
-        n->WriteLog("rootoutdir [" + rootoutdir + "] already exists");
+    if (n->MakePath(outdir, m)) {
+        n->WriteLog("Created outdir [" + outdir + "]");
     }
     else {
-        if (n->MakePath(rootoutdir, m)) {
-            n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
-        }
-        else {
-            exportstatus = "error";
-            msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
-            return false;
-        }
+        exportstatus = "error";
+        msg = n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
+        return false;
     }
+
+    /* create dataset description */
+    QJsonObject root;
+    root["BIDSVersion"] = bidsver;
+    root["License"] = "This dataset was written by the Neuroinformatics Database. Licensing should be included with this dataset";
+    root["Date"] = n->CreateLogDate();
+    root["README"] = bidsreadme;
+    QByteArray j = QJsonDocument(root).toJson();
+    QFile fout("dataset_description.json");
+    fout.open(QIODevice::WriteOnly);
+    fout.write(j);
+
+    /* write the participants.csv file */
+    QString pfile = outdir + "/participants.tsv";
+    if (!n->WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->WriteLog("Error writing " + pfile);
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
@@ -2036,6 +2046,11 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
         int j = 1; /* the session (study) counter */
 
         n->WriteLog("Working on [" + uid + "]");
+        QString subjectSex = s[uid][0][0]["subjectsex"];
+        double subjectAge = s[uid][0][0]["subjectage"].toDouble();
+
+        /* write subject to participants file */
+        if (!n->WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->WriteLog("Error writing " + pfile);
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2068,7 +2083,7 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
                 QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
-                QString indir = s[uid][studynum][seriesnum]["datadir"];
+                QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
                 QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
@@ -2095,16 +2110,16 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 /* remove any non-alphanumeric characters */
                 seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
 
-                QString outdir = QString("%1/%2/%3/%4").arg(rootoutdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+                QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
                 QString m;
-                if (n->MakePath(outdir, m)) {
-                    n->WriteLog("Created outdir [" + outdir + "]");
+                if (n->MakePath(seriesoutdir, m)) {
+                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
                 }
                 else {
                     exportstatus = "error";
-                    n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
-                    msg = "Unable to create output directory [" + outdir + "]";
+                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
+                    msg = "Unable to create output directory [" + seriesoutdir + "]";
                     return false;
                 }
 
@@ -2115,11 +2130,11 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                         if (n->MakePath(tmpdir, m)) {
 
                             int numfilesconv(0), numfilesrenamed(0);
-                            if (!n->ConvertDicom("bids", indir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!n->ConvertDicom("bids", datadir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
-                            n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
-                            QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
+                            n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
+                            QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->WriteLog(n->SystemCommand(systemstring));
                             n->WriteLog("Done copying files...");
                             n->RemoveDir(tmpdir,m);
@@ -2131,41 +2146,35 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                     else {
                         seriesstatus = "error";
                         exportstatus = "error";
-                        n->WriteLog("ERROR [" + indir + "] is empty");
-                        msgs << "Directory [" + indir + "] is empty";
+                        n->WriteLog("ERROR [" + datadir + "] is empty");
+                        msgs << "Directory [" + datadir + "] is empty";
                     }
                 }
                 else {
                     seriesstatus = "error";
                     exportstatus = "error";
-                    n->WriteLog("ERROR indir [" + indir + "] does not exist");
-                    msgs << "Directory [" + indir + "] does not exist";
+                    n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
+                    msgs << "Directory [" + datadir + "] does not exist";
                 }
 
                 /* copy the beh data */
                 if (behdirexists) {
                     QString systemstring;
-                    systemstring = "cp -R " + behindir + "/* " + outdir;
+                    systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
                     n->WriteLog(n->SystemCommand(systemstring, true));
-                    systemstring = "chmod -Rf 777 " + outdir;
+                    systemstring = "chmod -Rf 777 " + seriesoutdir;
                     n->WriteLog(n->SystemCommand(systemstring, true));
                 }
 
                 //SetExportSeriesStatus(exportseriesid, seriesstatus);
             }
+            j++;
         }
+        i++;
     }
 
     /* write the readme file */
-    QString readmefilename = rootoutdir + "/README";
-    QFile f(readmefilename);
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream fs(&f);
-        fs << bidsreadme;
-        f.close();
-    }
-    else
-        msgs << "Unable to create BIDS README file [" + readmefilename + "]";
+    if (!n->WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteBIDS()...");
@@ -2184,7 +2193,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
         int seriesid = seriesids[i];
         QString modality = modalities[i];
 
-        q.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, e.uid, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
+        q.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, d.project_id, e.uid, e.gender, e.birthdate, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
         q.bindValue(":seriesid",seriesid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
@@ -2193,15 +2202,19 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
             while (q.next()) {
                 QString uid = q.value("uid").toString();
                 int subjectid = q.value("subject_id").toInt();
+                QString subjectsex = q.value("gender").toString();
+                QString subjectdob = q.value("birthdate").toString();
                 int studynum = q.value("study_num").toInt();
                 int studyid = q.value("study_id").toInt();
                 QString studydatetime = q.value("study_datetime").toDateTime().toString("yyyyMMdd_HHmmss");
+                QString studydate = q.value("study_datetime").toString();
                 int seriesnum = q.value("series_num").toInt();
                 int seriessize = q.value("series_size").toInt();
                 QString seriesnotes = q.value("series_notes").toString();
                 QString seriesdesc = q.value("series_desc").toString();
                 QString seriesaltdesc = q.value("series_altdesc").toString();
                 QString projectname = q.value("project_name").toString();
+                int projectid = q.value("project_id").toInt();
                 QString studyaltid = q.value("study_alternateid").toString();
                 QString studytype = q.value("study_type").toString();
                 QString datatype = q.value("data_type").toString();
@@ -2213,6 +2226,21 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 int numfilesbeh = q.value("numfiles_beh").toInt();
                 int enrollmentid = q.value("enrollment_id").toInt();
 
+                double subjectAge = n->GetPatientAge("", studydate, subjectdob);
+
+                QSqlQuery q2;
+                q2.prepare("select * from bids_mapping where projectid = :project_id and protocolname = :protocol and modality = :modality");
+                q2.bindValue(":projectid", projectid);
+                q2.bindValue(":protocol", seriesdesc);
+                q2.bindValue(":modality", modality);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
+                QString bidsname = "";
+                if (q2.size() > 0) {
+                    q2.first();
+                    bidsname = q.value("shortname").toString();
+                }
+
                 QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
                 QString behdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
                 QString qcdir = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
@@ -2221,12 +2249,16 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
                 s[uid][studynum][seriesnum]["subjectid"] = QString("%1").arg(subjectid);
                 s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
+                s[uid][studynum][seriesnum]["projectid"] = QString("%1").arg(projectid);
+                s[uid][studynum][seriesnum]["subjectsex"] = subjectsex;
+                s[uid][studynum][seriesnum]["subjectage"] = subjectAge;
                 s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                 s[uid][studynum][seriesnum]["modality"] = modality;
                 s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
                 s[uid][studynum][seriesnum]["seriesnotes"] = seriesnotes;
                 s[uid][studynum][seriesnum]["seriesdesc"] = seriesdesc;
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
+                s[uid][studynum][seriesnum]["bidsname"] = bidsname;
                 s[uid][studynum][seriesnum]["numfilesbeh"] = QString("%1").arg(numfilesbeh);
                 s[uid][studynum][seriesnum]["numfiles"] = QString("%1").arg(numfiles);
                 s[uid][studynum][seriesnum]["projectname"] = projectname;
@@ -2275,7 +2307,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 QStringList altuids;
                 QString primaryaltuid;
 
-                QSqlQuery q2;
+                //QSqlQuery q2;
                 q2.prepare("select altuid, isprimary from subject_altuid where enrollment_id = :enrollmentid and subject_id = :subjectid");
                 q2.bindValue(":enrollmentid",enrollmentid);
                 q2.bindValue(":subjectid",subjectid);

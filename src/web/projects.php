@@ -93,12 +93,12 @@
 		//case 'saveprotocolmapping':
 		//	SaveProtocolMapping($id);
 		//	break;
-		case 'updateprotocolmapping':
-			UpdateProtocolMapping($id, $modalities, $oldnames, $newnames);
-			EditProtocolMapping($id);
+		case 'updatebidsmapping':
+			UpdateBIDSMapping($id, $modalities, $oldnames, $newnames);
+			EditBIDSMapping($id);
 			break;
-		case 'editprotocolmapping':
-			EditProtocolMapping($id);
+		case 'editbidsmapping':
+			EditBIDSMapping($id);
 			break;
 		case 'displayprojectinfo':
 			DisplayProjectInfo($id);
@@ -783,15 +783,18 @@
 				$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 				$oldname = mysqli_real_escape_string($GLOBALS['linki'], $oldnames[$i]);
 				$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
-				if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
-					$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
-					$numupdates = 0;
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$numupdates = mysqli_affected_rows();
-					$numrowsaffected += $numupdates;
-					if ($numupdates > 0) {
-						//echo "[$sqlstringA]<br>";
-						echo "<b>Added alternate series description for $uid$studynum. $oldname &rarr; $newname</b><br>";
+				
+				if (IsNiDBModality($modality)) {
+					if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
+						$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
+						$numupdates = 0;
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						$numupdates = mysqli_affected_rows();
+						$numrowsaffected += $numupdates;
+						if ($numupdates > 0) {
+							//echo "[$sqlstringA]<br>";
+							echo "<b>Added alternate series description for $uid$studynum. $oldname &rarr; $newname</b><br>";
+						}
 					}
 				}
 			}
@@ -2009,23 +2012,25 @@
 			$studyid = $row['study_id'];
 			$modality = strtolower($row['study_modality']);
 			
-			if (($modality != "") && ($studyid != "")) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$seriesaltdesc = $rowA['series_altdesc'];
-					if ($rowA['series_desc'] != "") {
-						$seriesdesc = $rowA['series_desc'];
+			if (IsNiDBModality($modality)) {
+				if (($modality != "") && ($studyid != "")) {
+					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
+					//PrintSQL($sqlstringA);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						$seriesaltdesc = $rowA['series_altdesc'];
+						if ($rowA['series_desc'] != "") {
+							$seriesdesc = $rowA['series_desc'];
+						}
+						elseif ($rowA['series_protocol'] != "") {
+							$seriesdesc = $rowA['series_protocol'];
+						}
+						if ($seriesdesc != "") {
+							$seriesdescs[$modality][$seriesdesc]++;
+						}
+						
+						$altdesc[$seriesdesc][$modality] = $seriesaltdesc;
 					}
-					elseif ($rowA['series_protocol'] != "") {
-						$seriesdesc = $rowA['series_protocol'];
-					}
-					if ($seriesdesc != "") {
-						$seriesdescs[$modality][$seriesdesc]++;
-					}
-					
-					$altdesc[$seriesdesc][$modality] = $seriesaltdesc;
 				}
 			}
 		}
@@ -2096,14 +2101,16 @@
 				$uid = $row['uid'];
 				$modality = strtolower($row['study_modality']);
 				
-				if (($modality != "") && ($studyid != "")) {
-					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						$seriesaltdesc = $rowA['series_altdesc'];
-						if ($seriesaltdesc != "") {
-							$seriesdescs[$uid][$modality][$seriesaltdesc]++;
-							$uniqueseries[$modality][$seriesaltdesc]++;
+				if (IsNiDBModality($modality)) {
+					if (($modality != "") && ($studyid != "")) {
+						$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+							$seriesaltdesc = $rowA['series_altdesc'];
+							if ($seriesaltdesc != "") {
+								$seriesdescs[$uid][$modality][$seriesaltdesc]++;
+								$uniqueseries[$modality][$seriesaltdesc]++;
+							}
 						}
 					}
 				}
@@ -2163,15 +2170,14 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- EditProtocolMapping ---------------- */
+	/* ------- EditBIDSMapping -------------------- */
 	/* -------------------------------------------- */
-	function EditProtocolMapping($projectid) {
+	function EditBIDSMapping($projectid) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
 		
 		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
 			$projectid = 'null';
 		}
-		//echo "Project ID [$projectid]<br>";
 			
 		/* get all studies, and all series, associated with this project */
 		if ($projectid == "null")
@@ -2179,58 +2185,57 @@
 		else
 			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
 		
-		//PrintSQL($sqlstring);
-			
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$studyid = $row['study_id'];
 			$modality = strtolower($row['study_modality']);
 			
-			if (($modality != "") && ($studyid != "")) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					if ($rowA['series_desc'] != "") {
-						$seriesdesc = $rowA['series_desc'];
-					}
-					elseif ($rowA['series_protocol'] != "") {
-						$seriesdesc = $rowA['series_protocol'];
-					}
-					if ($seriesdesc != "") {
-						$seriesdescs[$modality][$seriesdesc]++;
+			if (IsNiDBModality($modality)) {
+				if (($modality != "") && ($studyid != "")) {
+					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						if ($rowA['series_desc'] != "") {
+							$seriesdesc = $rowA['series_desc'];
+						}
+						elseif ($rowA['series_protocol'] != "") {
+							$seriesdesc = $rowA['series_protocol'];
+						}
+						if ($seriesdesc != "") {
+							$seriesdescs[$modality][$seriesdesc]++;
+						}
 					}
 				}
 			}
 		}
 
-		//echo "Project ID [$projectid]<br>";
-		
-		/* get list of protocol mappings for this project */
+		/* get list of BIDS protocol mappings for this project */
 		if ($projectid == "null")
-			$sqlstring = "select * from protocol_mapping where project_id is null";
+			$sqlstring = "select * from bids_mapping where project_id is null";
 		else
-			$sqlstring = "select * from protocol_mapping where project_id = $projectid";
+			$sqlstring = "select * from bids_mapping where project_id = $projectid";
 		
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$mapping[$row['modality']][$row['protocolname']] = $row['shortname'];
 		}
-		//PrintVariable($mapping);
 		?>
 		<br><br>
 		<form action="projects.php" method="post">
-		<input type="hidden" name="action" value="updateprotocolmapping">
+		<input type="hidden" name="action" value="updatebidsmapping">
 		<input type="hidden" name="id" value="<?=$projectid?>">
-		<b>Protocol mapping</b>
+		<b>BIDS mapping</b>
 		<br>
-		Chose a short name, to group multiple protocols together. For example AXMPRAGE, T1w_BIC_MPR, MP_RAGE may all be "T1" images, and can be labeled as such.
+		This mapping is used in exporting of BIDS format. This can also be used to group protocol names together: for example, protocols named <tt>AXMPRAGE</tt> and <tt>T1w</tt> are both <tt>anat</tt>.
 		<br><br>
 		<table class="graydisplaytable">
 			<thead>
 				<th>Modality</th>
 				<th>Protocol name</th>
-				<th>Short name</th>
+				<th>
+					BIDS name<br>
+					<span class="tiny">Possible BIDS names are <tt><b>anat</b></tt>, <tt><b>func</b></tt>, <tt><b>dwi</b></tt>, <tt><b>fmap</b></tt></span>
+				</th>
 			</thead>
 		<?
 		$i=0;
@@ -2261,9 +2266,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- UpdateProtocolMapping -------------- */
+	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
-	function UpdateProtocolMapping($projectid, $modalities, $oldnames, $newnames) {
+	function UpdateBIDSMapping($projectid, $modalities, $oldnames, $newnames) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
@@ -2281,7 +2286,7 @@
 			$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
 			if (($modality != "") && ($oldname != "") && ($newname != "")) {
 				
-				$sqlstring = "insert ignore into protocol_mapping (project_id, protocolname, shortname, modality) values ($projectid, '$oldname', '$newname', '$modality')";
+				$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, shortname, modality) values ($projectid, '$oldname', '$newname', '$modality')";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
@@ -2404,9 +2409,9 @@
 					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates</a><br>
 					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
 					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
-					<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
-					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>
-					<a href="projects.php?action=editprotocolmapping&id=<?=$id?>">Edit Protocol Mapping</a><br>
+					<!--<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
+					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>-->
+					<a href="projects.php?action=editbidsmapping&id=<?=$id?>">Edit BIDS Protocol Mapping</a><br>
 					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
 					<a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br>
 					<? if ($GLOBALS['isadmin']) { ?>
@@ -2603,7 +2608,7 @@
 		?>
 		<!--View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>-->
-		<a href="projects.php?action=editprotocolmapping&id=null">Edit Global Protocol Mapping</a><br>
+		<a href="projects.php?action=editbidsmapping&id=null">Edit Global BIDS Protocol Mapping</a><br>
 		
 		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
 		
@@ -2684,9 +2689,11 @@
 									$count = $row2['count'];
 									
 									$projectModalitySize = 0;
-									if ($modality != "") {
-										$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-										$projectModalitySize = $row3['modalitysize'];
+									if (IsNiDBModality($modality)) {
+										if ($modality != "") {
+											$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
+											$projectModalitySize = $row3['modalitysize'];
+										}
 									}
 									
 									$totalstudies += $count;
