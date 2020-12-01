@@ -92,6 +92,8 @@ bool nidb::LoadConfig() {
             << binpath + "/../../prod/programs/nidb.cfg"
             << binpath + "/../../../../prod/programs/nidb.cfg"
             << binpath + "/../programs/nidb.cfg"
+            << "/nidb/nidb.cfg"
+            << "/nidb/bin/nidb.cfg"
             << "/home/nidb/programs/nidb.cfg"
             << "/nidb/programs/nidb.cfg"
             << "M:/programs/nidb.cfg";
@@ -2245,8 +2247,9 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
         tags["ScanOptionsText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1019)).c_str()).trimmed(); /* ScanOptionsText*/
 
         /* fix the study date */
-        if (tags["StudyDate"] == "")
-            tags["StudyDate"] = CreateCurrentDateTime(2);
+        if (tags["StudyDate"] == "") {
+            tags["StudyDate"] = "0000-00-00";
+        }
         else {
             tags["StudyDate"].replace("/","-");
             if (tags["StudyDate"].size() == 8) {
@@ -2267,12 +2270,17 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
         }
 
         /* fix the study time */
-        if (tags["StudyTime"].size() == 13)
-            tags["StudyTime"] = tags["StudyTime"].left(6);
+        if (tags["StudyTime"] == "") {
+            tags["StudyTime"] = "00:00:00";
+        }
+        else {
+            if (tags["StudyTime"].size() == 13)
+                tags["StudyTime"] = tags["StudyTime"].left(6);
 
-        if (tags["StudyTime"].size() == 6) {
-            tags["StudyTime"].insert(4,':');
-            tags["StudyTime"].insert(2,':');
+            if (tags["StudyTime"].size() == 6) {
+                tags["StudyTime"].insert(4,':');
+                tags["StudyTime"].insert(2,':');
+            }
         }
 
         /* some images may not have a series date/time, so substitute the studyDateTime for seriesDateTime */
@@ -2335,7 +2343,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                     }
                 }
             }
-            WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
+            //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
             df.close();
         }
 
@@ -2352,7 +2360,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                 val = "";
             tags["PhaseEncodingDirectionPositive"] = val.trimmed();
         }
-        WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
+        //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
     }
     else {
         /* ---------- not a DICOM file, so see what other type of file it may be ---------- */
@@ -2420,9 +2428,9 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     if (tags["Modality"] == "")
         tags["Modality"] = "OT";
     QString StudyDate = ParseDate(tags["StudyDate"]);
-    QString StudyTime = ParseTime(tags["StudyTime"]);
-    QString SeriesDate = ParseDate(tags["SeriesDate"]);
-    QString SeriesTime = ParseTime(tags["SeriesTime"]);
+    //QString StudyTime = ParseTime(tags["StudyTime"]);
+    //QString SeriesDate = ParseDate(tags["SeriesDate"]);
+    //QString SeriesTime = ParseTime(tags["SeriesTime"]);
 
     tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
     tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
@@ -2460,14 +2468,17 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
     tags["PatientSex"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
 
-    if (tags["PatientID"] == "") {
+    if (tags["PatientID"] == "")
         tags["PatientID"] = "(empty)";
-        //QString output = SystemCommand("exiftool " + f);
-        //AppendUploadLog(__FUNCTION__ , output);
-    }
+
+    /* get parent directory of this file */
+    QFileInfo finfo(f);
+    QDir d = finfo.dir();
+    QString dirname = d.dirName().trimmed();
+    tags["ParentDirectory"] = dirname;
 
     if (tags["PatientName"] == "")
-        tags["PatientName"] = "(empty)";
+        tags["PatientName"] = tags["PatientID"];
 
     if (tags["StudyDescription"] == "")
         tags["StudyDescription"] = "(empty)";

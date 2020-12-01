@@ -28,9 +28,12 @@
 /* ---------------------------------------------------------- */
 subject::subject(int id, nidb *a)
 {
-	n = a;
+    n = a;
     _subjectid = id;
-	LoadSubjectInfo();
+
+    n->WriteLog(QString("Constructor A - found subjectRowID [%1]").arg(_subjectid));
+
+    LoadSubjectInfo();
 }
 
 
@@ -39,22 +42,24 @@ subject::subject(int id, nidb *a)
 /* ---------------------------------------------------------- */
 subject::subject(QString uid, nidb *a)
 {
-	n = a;
+    n = a;
 
-	QSqlQuery q;
-	q.prepare("select subject_id from subjects where uid = :uid");
-	q.bindValue(":uid", uid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() < 1) {
+    QSqlQuery q;
+    q.prepare("select subject_id from subjects where uid = :uid");
+    q.bindValue(":uid", uid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() < 1) {
         _msg = "Subject not found by UID [" + uid + "] could not be found";
         _isValid = false;
-	}
-	else {
-		q.first();
+    }
+    else {
+        q.first();
         _subjectid = q.value("subject_id").toInt();
-	}
 
-	LoadSubjectInfo();
+        n->WriteLog(QString("Constructor B - found subjectRowID [%1]").arg(_subjectid));
+    }
+
+    LoadSubjectInfo();
 }
 
 
@@ -78,6 +83,8 @@ subject::subject(QString name, QString sex, QString dob, nidb *a)
     else {
         q.first();
         _subjectid = q.value("subject_id").toInt();
+
+        n->WriteLog(QString("Constructor C - found subjectRowID [%1]").arg(_subjectid));
     }
 
     LoadSubjectInfo();
@@ -89,43 +96,43 @@ subject::subject(QString name, QString sex, QString dob, nidb *a)
 /* ---------------------------------------------------------- */
 void subject::LoadSubjectInfo() {
 
-	QStringList msgs;
+    QStringList msgs;
 
     if (_subjectid < 1) {
         msgs << "Subject not found by subjectRowID";
         _isValid = false;
-	}
-	else {
-		/* get the path to the analysisroot */
-		QSqlQuery q;
-		q.prepare("select uid from subjects where subject_id = :subjectid");
+    }
+    else {
+        /* get the path to the analysisroot */
+        QSqlQuery q;
+        q.prepare("select uid from subjects where subject_id = :subjectid");
         q.bindValue(":subjectid", _subjectid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-		if (q.size() < 1) {
-			msgs << "Query returned no results. Possibly invalid subject ID or recently deleted?";
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() < 1) {
+            msgs << "Query returned no results. Possibly invalid subject ID or recently deleted?";
             _isValid = false;
-		}
-		else {
-			q.first();
+        }
+        else {
+            q.first();
             _uid = q.value("uid").toString().trimmed();
 
-			/* check to see if anything isn't valid or is blank */
+            /* check to see if anything isn't valid or is blank */
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }
             if (_uid == "") { msgs << "uid was blank"; _isValid = false; }
 
             _subjectpath = QString("%1/%2").arg(n->cfg["archivedir"]).arg(_uid);
 
             QDir d(_subjectpath);
-			if (!d.exists()) {
+            if (!d.exists()) {
                 msgs << QString("Subject path does not exist [%1]").arg(_subjectpath);
                 _dataPathExists = false;
-			}
-			else {
+            }
+            else {
                 _dataPathExists = true;
-			}
-		}
+            }
+        }
         _isValid = true;
-	}
+    }
     _msg = msgs.join("\n");
 }
 
@@ -142,5 +149,5 @@ void subject::PrintSubjectInfo() {
     output += QString("   msg: [%1]\n").arg(_msg);
     output += QString("   analysispath: [%1]\n").arg(_subjectpath);
 
-	n->WriteLog(output);
+    n->WriteLog(output);
 }

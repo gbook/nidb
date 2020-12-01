@@ -74,6 +74,10 @@ bool moduleUpload::ParseUploads() {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
+            /* check if this module should be running */
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
             ret = 1;
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
@@ -81,6 +85,7 @@ bool moduleUpload::ParseUploads() {
             QString upload_source = q.value("upload_source").toString();
             QString upload_datapath = q.value("upload_datapath").toString();
             //int upload_destprojectid = q.value("upload_destprojectid").toInt();
+            QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_modality = q.value("upload_modality").toString();
             //bool upload_guessmodality = q.value("upload_guessmodality").toBool();
             QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
@@ -180,6 +185,10 @@ bool moduleUpload::ParseUploads() {
                         /* subject matching criteria */
                         if (upload_subjectcriteria == "patientid")
                             subject = tags["PatientID"];
+                        else if (upload_subjectcriteria == "specificpatientid")
+                            subject = upload_patientid;
+                        else if (upload_subjectcriteria == "patientidfromdir")
+                            subject = tags["ParentDirectory"];
                         else if (upload_subjectcriteria == "namesexdob")
                             subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
                         else
@@ -226,8 +235,8 @@ bool moduleUpload::ParseUploads() {
                 /* get the uploadsubject_id */
                 int subjectid(0);
 
-                if (upload_subjectcriteria == "patientid") {
-                    /* get subjectid by PatientID field */
+                if ((upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir")) {
+                    /* get subjectid by PatientID field (or the specific PatientID, or from the parent directory) */
                     QString PatientID = subject;
 
                     QSqlQuery q3;
@@ -468,7 +477,7 @@ bool moduleUpload::ParseUploads() {
                             /* don't overwrite the tags in the databse that were used to group the subject/study/series */
 
                             /* update subject details */
-                            if (upload_subjectcriteria == "patientid") {
+                            if ( (upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir") ) {
                                 /* update all subject details except PatientID */
                                 q3.prepare("update ignore upload_subjects set uploadsubject_name = :name, uploadsubject_sex = :sex, uploadsubject_dob = :dob where uploadsubject_id = :subjectid");
                                 q3.bindValue(":name", tags["PatientName"]);
@@ -602,22 +611,36 @@ bool moduleUpload::ArchiveParsedUploads() {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
+
+            //io->AppendUploadLog(__FUNCTION__, "Checkpoint A");
+
+            /* check if this module should be running */
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
+            //io->AppendUploadLog(__FUNCTION__, "Checkpoint B");
+
             ret = 1;
             bool error = false;
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
 
+            //io->AppendUploadLog(__FUNCTION__, "Checkpoint C");
+
             QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
+            QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
             QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
-            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1]").arg(upload_id));
+            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(upload_id).arg(upload_destprojectid));
 
             /* set status to archiving */
             SetUploadStatus(upload_id, "archiving");
+
+            //io->AppendUploadLog(__FUNCTION__, "Checkpoint D");
 
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;
@@ -625,11 +648,14 @@ bool moduleUpload::ArchiveParsedUploads() {
             q2.bindValue(":uploadid", upload_id);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
             if (q2.size() > 0) {
+                //io->AppendUploadLog(__FUNCTION__, "Checkpoint E");
                 while (q2.next()) {
+                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint F");
                     ret = 1;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
                     n->WriteLog(QString("Working on series [%1]").arg(uploadseries_id));
+                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint G");
 
                     /* get any matching subject/study/series */
                     int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
@@ -640,14 +666,17 @@ bool moduleUpload::ArchiveParsedUploads() {
                     if (!q2.value("matchingseriesid").isNull())
                         matchingseriesid = q2.value("matchingseriesid").toInt();
 
+                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint H");
+
                     /* get information about this series to be imported */
                     QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
                     for(int i=0; i<uploadseries_filelist.size(); i++) {
                         uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
                     }
+                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint I");
 
                     /* insert the series */
-                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
+                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
                 }
 
                 io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(upload_id));

@@ -29,13 +29,13 @@
 class subject
 {
 public:
-	subject();
-	subject(int id, nidb *a);
-	subject(QString uid, nidb *a);
+    subject();
+    subject(int id, nidb *a);
+    subject(QString uid, nidb *a);
     subject(QString name, QString sex, QString dob, nidb *a);
     nidb *n;
 
-	void PrintSubjectInfo();
+    void PrintSubjectInfo();
 
     int subjectRowID() { return _subjectid; }
     QString UID() { return _uid; }
@@ -46,15 +46,15 @@ public:
     QString msg() { return _msg; }
 
 private:
-	void LoadSubjectInfo();
+    void LoadSubjectInfo();
 
     int _subjectid = -1;
-    QString _uid;
+    QString _uid = "";
     QStringList _altuids;
-    QString _subjectpath;
-    bool _dataPathExists;
-    bool _isValid = true;
-    QString _msg;
+    QString _subjectpath = "";
+    bool _dataPathExists = false;
+    bool _isValid = false;
+    QString _msg = "";
 
 };
 

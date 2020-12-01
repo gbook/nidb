@@ -78,6 +78,7 @@
     $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
     $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
     $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
+    $c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
 	
     $c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
@@ -299,6 +300,7 @@
 [modulepipelinethreads] = $modulepipelinethreads
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
+[moduleuploadthreads] = $moduleuploadthreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
@@ -646,6 +648,12 @@
 				<td><input type="number" name="moduleqcthreads" value="<?=$GLOBALS['cfg']['moduleqcthreads']?>"></td>
 				<td></td>
 				<td><b>qc</b> module. Recommended is 2</td>
+			</tr>
+			<tr>
+				<td class="variable">moduleuploadthreads</td>
+				<td><input type="number" name="moduleuploadthreads" value="<?=$GLOBALS['cfg']['moduleuploadthreads']?>"></td>
+				<td></td>
+				<td><b>upload</b> module. Recommended is 1</td>
 			</tr>
 
 			<tr>

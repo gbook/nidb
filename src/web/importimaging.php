@@ -151,17 +151,39 @@
 				<td valign="top">
 					<table cellspacing="0" cellpadding="10">
 						<tr>
-							<td style="background-color: #ddd; color: #333" class="label">Subject</td>
-							<td style="border-top: #ddd 2px solid">
+							<td style="background-color: #ddd; color: #333; border-top: #aaa 3px solid; padding: 10px" class="label">
+								<span style="font-size: larger">Subject</span><br>
+								<span class="tiny"><br>If DICOM Patient field(s) are blank then<br>PatientID will be read from DICOM file's parent directory</span>
+							</td>
+							<td style="border-top: #aaa 3px solid">
 								<table>
 									<tr>
-										<td><input type="radio" name="subjectcriteria" value="patientid" checked></td>
+										<td style="vertical-align: middle;"><input type="radio" name="subjectcriteria" value="patientid" checked></td>
 										<td style="vertical-align: middle;">
 											Patient<b>ID</b> <span class="tiny">DICOM (0010, 0020)</span>
 										</td>
 									</tr>
 									<tr>
-										<td colspan="2" align="center">- or -</td>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
+									</tr>
+									<tr>
+										<td style="vertical-align: middle;"><input type="radio" name="subjectcriteria" value="specificpatientid"></td>
+										<td style="vertical-align: middle;">
+											Specific PatientID <input type="text" name="userspecifiedpatientid" placeholder="Enter PatientID"><br><span class="tiny">This PatientID will be applied to all imported data</span>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
+									</tr>
+									<tr>
+										<td style="vertical-align: middle;"><input type="radio" name="subjectcriteria" value="patientidfromdir"></td>
+										<td style="vertical-align: middle;">
+											PatientID from directory name
+										</td>
+									</tr>
+									<tr>
+									<tr>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
 									</tr>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="subjectcriteria" value="namesexdob"></td>
@@ -178,8 +200,11 @@
 							<td colspan="2"></td>
 						</tr>
 						<tr>
-							<td style="background-color: #ddd; color: #333" class="label">Study</td>
-							<td style="border-top: #ddd 2px solid">
+							<td style="background-color: #ddd; color: #333; border-top: #aaa 3px solid; padding: 10px" class="label">
+								<span style="font-size: larger">Study</span><br>
+								<span class="tiny"><br>If DICOM Study Date/Time field(s) are blank then<br>StudyInstanceUID will be used to uniquely identify studies</span>
+							</td>
+							<td style="border-top: #aaa 3px solid">
 								<table>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="studycriteria" value="modalitystudydate" checked></td>
@@ -190,12 +215,21 @@
 										</td>
 									</tr>
 									<tr>
-										<td colspan="2" align="center">- or -</td>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
 									</tr>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="studycriteria" value="studyuid"></td>
 										<td>
 											StudyInstanceUID <span class="tiny">DICOM (0020,000D)</span>
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
+									</tr>
+									<tr>
+										<td style="vertical-align: middle;"><input type="radio" name="studycriteria" value="studyid"></td>
+										<td>
+											StudyID <span class="tiny">DICOM (0020,0010)</span>
 										</td>
 									</tr>
 								</table>
@@ -205,8 +239,11 @@
 							<td colspan="2"></td>
 						</tr>
 						<tr>
-							<td style="background-color: #ddd; color: #333" class="label">Series</td>
-							<td style="border-top: #ddd 2px solid">
+							<td style="background-color: #ddd; color: #333; border-top: #aaa 3px solid; padding: 10px" class="label">
+								<span style="font-size: larger">Series</span><br>
+								<span class="tiny"><br>If DICOM SeriesNumber or Date/Time field(s) are blank then<br>SeriesInstanceUID will be used to uniquely identify series</span>
+							</td>
+							<td style="border-top: #aaa 3px solid">
 								<table>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="seriescriteria" value="seriesnum" checked></td>
@@ -215,7 +252,7 @@
 										</td>
 									</tr>
 									<tr>
-										<td colspan="2" align="center">- or -</td>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
 									</tr>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="seriescriteria" value="seriesdate"></td>
@@ -225,7 +262,7 @@
 										</td>
 									</tr>
 									<tr>
-										<td colspan="2" align="center">- or -</td>
+										<td colspan="2" align="center" style="padding: 8px;">- or -</td>
 									</tr>
 									<tr>
 										<td style="vertical-align: middle;"><input type="radio" name="seriescriteria" value="seriesuid"></td>
@@ -293,29 +330,37 @@
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
+		else {
+			$sqlstring = "update uploads set upload_datapath = '$nfspath' where upload_id = $uploadid";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
 		
 		$status = "uploadcomplete";
-		echo "<ul>";
-		/* go through all the files and save them */
-		foreach ($_FILES['imagingfiles']['name'] as $i => $name) {
-			$files[] = $name;
-			if (move_uploaded_file($_FILES['imagingfiles']['tmp_name'][$i], "$savepath/$name")) {
-				
-				$msg = "Received file [$name]. Size is [" . number_format($_FILES['imagingfiles']['size'][$i]) . "] bytes";
-				echo "<li>$msg";
-				chmod("$savepath/$name", 0777);
-				
-				AppendUploadLog($uploadid, $msg);
+		if ($datalocation == "web") {		
+			echo "<ul>";
+			/* go through all the files and save them */
+			foreach ($_FILES['imagingfiles']['name'] as $i => $name) {
+				$files[] = $name;
+				if (move_uploaded_file($_FILES['imagingfiles']['tmp_name'][$i], "$savepath/$name")) {
+					
+					$msg = "Received file [$name]. Size is [" . number_format($_FILES['imagingfiles']['size'][$i]) . "] bytes";
+					echo "<li>$msg";
+					chmod("$savepath/$name", 0777);
+					
+					AppendUploadLog($uploadid, $msg);
+				}
+				else {
+					$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
+					echo "<li>$msg";
+					$status = "uploaderror";
+					
+					AppendUploadLog($uploadid, $msg);
+				}
 			}
-			else {
-				$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
-				echo "<li>$msg";
-				$status = "uploaderror";
-				
-				AppendUploadLog($uploadid, $msg);
-			}
+			echo "</ul>";
 		}
-		echo "</ul>";
+		
 		/* update the upload_status, upload_enddate, and upload_originalfilelist */
 		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
 		$filelist = mysqli_real_escape_string($GLOBALS['linki'], implode2(",", $files));
