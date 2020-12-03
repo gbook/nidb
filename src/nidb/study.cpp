@@ -29,7 +29,7 @@
 /* ---------------------------------------------------------- */
 study::study(int id, nidb *a)
 {
-	n = a;
+    n = a;
     searchCriteria = rowid;
 
     _studyid = id;
@@ -87,43 +87,45 @@ study::study(int enrollmentRowID, QString studyUID, nidb *a) {
 /* ---------------------------------------------------------- */
 void study::LoadStudyInfo() {
 
-	QStringList msgs;
+    QStringList msgs;
 
-    if (_studyid < 0) {
-		msgs << "Invalid study ID";
-        _isValid = false;
-	}
-	else {
-		QSqlQuery q;
+    //if (_studyid < 0) {
+    //    msgs << "Invalid study ID";
+    //    _isValid = false;
+    //}
+    //else {
+        QSqlQuery q;
         switch (searchCriteria) {
             case rowid:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
+                q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
                 q.bindValue(":studyid", _studyid);
                 break;
             case uidstudynum:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid and a.study_num = :studynum");
+                q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid and a.study_num = :studynum");
                 q.bindValue(":uid", _uid);
                 q.bindValue(":studynum", _studynum);
                 break;
             case studydatetimemodality:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid and a.study_datetime = :studydate and a.study_modality = :modality");
+                q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid and a.study_datetime = :studydate and a.study_modality = :modality");
                 q.bindValue(":enrollmentid", _enrollmentid);
                 q.bindValue(":studydate", _studydatetime.toString("yyyy-MM-dd hh:mm:ss"));
                 q.bindValue(":modality", _modality);
                 break;
             case studyuid:
-                q.prepare("select c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_uid = :studyuid");
+                q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_uid = :studyuid");
                 q.bindValue(":studyuid", _studyuid);
                 break;
         }
 
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-		if (q.size() < 1) {
-			msgs << "Query returned no results. Possibly invalid study ID or recently deleted?";
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() < 1) {
+            msgs << "Query returned no results. Possibly invalid study ID or recently deleted?";
             _isValid = false;
-		}
-		else {
-			q.first();
+        }
+        else {
+            q.first();
+            _isValid = true;
+            _studyid = q.value("study_id").toInt();
             _uid = q.value("uid").toString().trimmed();
             _studynum = q.value("study_num").toInt();
             _projectid = q.value("project_id").toInt();
@@ -133,7 +135,7 @@ void study::LoadStudyInfo() {
             _modality = q.value("study_modality").toString().trimmed();
             _studytype = q.value("study_type").toString().trimmed();
 
-			/* check to see if anything isn't valid or is blank */
+            /* check to see if anything isn't valid or is blank */
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }
             if (_uid == "") { msgs << "uid was blank"; _isValid = false; }
             if (_studynum < 1) { msgs << "studynum is not valid"; _isValid = false; }
@@ -141,16 +143,16 @@ void study::LoadStudyInfo() {
             _studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(_uid).arg(_studynum);
 
             QDir d(_studypath);
-			if (d.exists()) {
+            if (d.exists()) {
                 msgs << QString("Study path [%1] exists").arg(_studypath);
                 _studyPathExists = true;
-			}
-			else {
+            }
+            else {
                 msgs << QString("Study path [%1] does not exist").arg(_studypath);
                 _studyPathExists = false;
-			}
-		}
-	}
+            }
+        }
+    //}
     _msg = msgs.join("\n");
 }
 
@@ -174,5 +176,5 @@ void study::PrintStudyInfo() {
     output += QString("   studypath: [%1]\n").arg(_studypath);
     output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
 
-	n->WriteLog(output);
+    n->WriteLog(output);
 }

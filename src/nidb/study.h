@@ -30,7 +30,7 @@ enum criteria {rowid, uidstudynum, studydatetimemodality, studyuid};
 class study
 {
 public:
-	study();
+    study();
     study(int studyRowID, nidb *a); /* get study by studyID */
     study(QString uidStudyNum, nidb *a);
     study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a);
@@ -38,7 +38,7 @@ public:
 
     nidb *n;
 
-	void PrintStudyInfo();
+    void PrintStudyInfo();
 
     int studyRowID() { return _studyid; }
     int subjectRowID() { return _subjectid; }
@@ -59,20 +59,20 @@ private:
     criteria searchCriteria;
     void LoadStudyInfo();
 
-    int _studyid;
-    int _studynum;
-    QString _uid;
-    QString _studytype;
-    int _subjectid;
-    QString _studypath;
-    bool _studyPathExists;
-    int _enrollmentid;
-    int _projectid;
+    int _studyid = -1;
+    int _studynum = -1;
+    QString _uid = "";
+    QString _studytype = "";
+    int _subjectid = -1;
+    QString _studypath = "";
+    bool _studyPathExists = false;
+    int _enrollmentid = -1;
+    int _projectid = -1;
     QDateTime _studydatetime;
-    QString _modality;
-    QString _studyuid;
+    QString _modality = "";
+    QString _studyuid = "";
 
-    bool _isValid = true;
+    bool _isValid = false;
     QString _msg;
 
 };

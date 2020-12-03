@@ -2325,7 +2325,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 double subjectAge = n->GetPatientAge("", studydate, subjectdob);
 
                 QSqlQuery q2;
-                q2.prepare("select * from bids_mapping where projectid = :project_id and protocolname = :protocol and modality = :modality");
+                q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and modality = :modality");
                 q2.bindValue(":projectid", projectid);
                 q2.bindValue(":protocol", seriesdesc);
                 q2.bindValue(":modality", modality);
