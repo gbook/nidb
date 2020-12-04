@@ -303,7 +303,6 @@ bool moduleUpload::ParseUploads() {
                     int studyid(0);
 
                     if (upload_studycriteria == "modalitystudydate") {
-                        //n->WriteLog("Checkpoint A.2");
                         /* get studyid from Modality/StudyDateTime fields */
                         QStringList parts = study.split("|");
                         QString Modality;
@@ -612,20 +611,14 @@ bool moduleUpload::ArchiveParsedUploads() {
     if (q.size() > 0) {
         while (q.next()) {
 
-            //io->AppendUploadLog(__FUNCTION__, "Checkpoint A");
-
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
-
-            //io->AppendUploadLog(__FUNCTION__, "Checkpoint B");
 
             ret = 1;
             bool error = false;
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
-
-            //io->AppendUploadLog(__FUNCTION__, "Checkpoint C");
 
             QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
@@ -640,22 +633,17 @@ bool moduleUpload::ArchiveParsedUploads() {
             /* set status to archiving */
             SetUploadStatus(upload_id, "archiving");
 
-            //io->AppendUploadLog(__FUNCTION__, "Checkpoint D");
-
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;
             q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
             q2.bindValue(":uploadid", upload_id);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
             if (q2.size() > 0) {
-                //io->AppendUploadLog(__FUNCTION__, "Checkpoint E");
                 while (q2.next()) {
-                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint F");
                     ret = 1;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
                     n->WriteLog(QString("Working on series [%1]").arg(uploadseries_id));
-                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint G");
 
                     /* get any matching subject/study/series */
                     int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
@@ -666,14 +654,11 @@ bool moduleUpload::ArchiveParsedUploads() {
                     if (!q2.value("matchingseriesid").isNull())
                         matchingseriesid = q2.value("matchingseriesid").toInt();
 
-                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint H");
-
                     /* get information about this series to be imported */
                     QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
                     for(int i=0; i<uploadseries_filelist.size(); i++) {
                         uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
                     }
-                    //io->AppendUploadLog(__FUNCTION__, "Checkpoint I");
 
                     /* insert the series */
                     io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist);

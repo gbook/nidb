@@ -68,24 +68,20 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__ , "No DICOM files to archive");
         return false;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 2");
 
     /* check if the first file exists */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check A!").arg(files[0]));
         return 0;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 3");
 
     n->SortQStringListNaturally(files);
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 4");
 
     /* check if the first file exists after sorting */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(files[0]));
         return 0;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 5");
 
     int subjectRowID(-1);
     QString subjectUID;
@@ -97,18 +93,14 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     int seriesRowID(-1);
     int studynum(1);
 
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 6");
-
     /* get all the DICOM tags */
     QHash<QString, QString> tags;
     QString f = files[0];
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 7");
 
     if (!QFile::exists(f)) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check C!").arg(f));
         return 0;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 8");
 
     if (n->GetImageFileTags(f, tags)) {
         if (!QFile::exists(f)) {
@@ -187,8 +179,6 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     double GeneratorPower = tags["GeneratorPower"].toDouble();
     QString ConvolutionKernel = tags["ConvolutionKernel"];
 
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9");
-
     if (subjectMatchCriteria == "specificpatientid")
         PatientID = specificPatientID;
     else if (subjectMatchCriteria == "patientidfromdir")
@@ -201,58 +191,48 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     if (altUIDstr != "")
         altuidlist = altUIDstr.split(",");
 
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9a");
-
     /* check the alternate UIDs */
     foreach (QString altuid, altuidlist) {
         if (altuid.trimmed().size() > 254)
             AppendUploadLog(__FUNCTION__ , "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated");
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9b");
 
     /* ----- get/set the subjectID */
     if (GetSubject(subjectMatchCriteria, existingSubjectID, PatientID, PatientName, PatientSex, PatientBirthDate, subjectRowID, subjectUID))
         AppendUploadLog(__FUNCTION__, QString("SubjectRowID [%1] found").arg(subjectRowID));
     else
         CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9c");
 
     /* ----- get/set family ID ----- */
     if (GetFamily(subjectRowID, subjectUID, familyRowID, familyUID))
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
     else
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9d");
 
     /* ----- get the project ID ----- */
     if (!GetProject(destProjectID, StudyDescription, projectRowID))
         AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9e");
 
     /* ----- get/create enrollment ID ----- */
     if (GetEnrollment(subjectRowID, projectRowID, enrollmentRowID))
         AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned enrollmentRowID [%1]").arg(enrollmentRowID));
     else
         AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned error: enrollmentRowID [%1]").arg(enrollmentRowID));
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9f");
 
     /* set the alternate IDs for this enrollment */
     SetAlternateIDs(subjectRowID, enrollmentRowID, altuidlist);
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9g");
 
     /* ----- get/create studyID ----- */
     if (GetStudy(studyMatchCriteria, existingStudyID, enrollmentRowID, StudyDateTime, Modality, StudyInstanceUID, studyRowID))
         AppendUploadLog(__FUNCTION__, QString("StudyRowID [%1] found").arg(studyRowID));
     else
         CreateStudy(subjectRowID, enrollmentRowID, StudyDateTime, StudyInstanceUID, Modality, PatientID, PatientAge, PatientSize, PatientWeight, StudyDescription, OperatorsName, PerformingPhysiciansName, StationName, InstitutionName, InstitutionAddress, studyRowID, studynum);
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 9h");
 
     /* ----- if we couldn't find/create any of the: subjectRowID, projectRowID, enrollmentRowID, studyRowID, then there's nothing more to do in this function, and we have to exit ----- */
     if ((subjectRowID < 0) || (projectRowID < 0) || (enrollmentRowID < 0) || (studyRowID < 0)) {
         AppendUploadLog(__FUNCTION__ , QString("Error finding/creating one of the rowIDs:  subjectRowID [%1]  projectRowID [%2]  enrollmentRowID [%3]  studyRowID [%4]").arg(subjectRowID).arg(projectRowID).arg(enrollmentRowID).arg(studyRowID));
         return 0;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 10");
 
     /* gather series information */
     int boldreps(1);
@@ -279,7 +259,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     else {
         zsize = numfiles;
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint 11");
+
     /* if any of the DICOM fields were populated, use those instead */
     if (ImagesInAcquisition > 0)
         zsize = ImagesInAcquisition;
@@ -1755,8 +1735,6 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
             count = q2.size();
         } while (count > 0);
 
-        //AppendUploadLog(__FUNCTION__, "Checkpoint GF.0");
-
         /* create familyRowID if it doesn't exist */
         QSqlQuery q2;
         q2.prepare("insert into families (family_uid, family_createdate, family_name) values (:familyuid, now(), :familyname)");
@@ -1765,14 +1743,10 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         familyRowID = q2.lastInsertId().toInt();
 
-        //AppendUploadLog(__FUNCTION__, "Checkpoint GF.1");
-
         q2.prepare("insert into family_members (family_id, subject_id, fm_createdate) values (:familyid, :subjectid, now())");
         q2.bindValue(":familyid", familyRowID);
         q2.bindValue(":subjectid", subjectRowID);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
-        //AppendUploadLog(__FUNCTION__, "Checkpoint GF.2");
 
     }
 

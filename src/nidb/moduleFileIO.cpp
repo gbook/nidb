@@ -447,12 +447,8 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) {
     QSqlQuery q;
 
-    //n->WriteLog("Checkpoint A");
-
     subject s(subjectid, n); /* get the subject info */
     if (!s.valid()) { msg = "Subject was not valid: [" + s.msg() + "]"; return false; }
-
-    //n->WriteLog("Checkpoint B");
 
     QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(n->GenerateRandomString(10));
     QDir d;
@@ -475,29 +471,24 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     else {
         n->WriteLog(QString("Subject has no path on disk"));
     }
-    //n->WriteLog("Checkpoint C");
 
     /* remove all database entries about this subject:
        TABLES: subjects, subject_altuid, subject_relation, studies, *_series, enrollment, family_members, mostrecent */
     q.prepare("delete from mostrecent where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    //n->WriteLog(QString("Checkpoint C.1 - delete from mostrecent - [%1] rows deleted").arg(q.numRowsAffected()));
 
     q.prepare("delete from family_members where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    //n->WriteLog(QString("Checkpoint C.2 - delete from family_members - [%1] rows deleted").arg(q.numRowsAffected()));
 
     q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    //n->WriteLog(QString("Checkpoint C.3 - delete from subject_relation - [%1] rows deleted").arg(q.numRowsAffected()));
 
     q.prepare("delete from subject_altuid where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    //n->WriteLog(QString("Checkpoint C.4 - delete from subject_altuid - [%1] rows deleted").arg(q.numRowsAffected()));
 
     /* get enrollment_ids for the subject */
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid");
@@ -513,27 +504,24 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
         q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        //n->WriteLog(QString("Checkpoint C.5 - delete from mr_series - [%1] rows deleted").arg(q.numRowsAffected()));
+
         q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        //n->WriteLog(QString("Checkpoint C.6 - delete from et_series - [%1] rows deleted").arg(q.numRowsAffected()));
+
         q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        //n->WriteLog(QString("Checkpoint C.7 - delete from eeg_series - [%1] rows deleted").arg(q.numRowsAffected()));
 
         /* delete all studies */
         q.prepare("delete from studies where enrollment_id in (" + enrollmentIDs.join(",") + ")");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        //n->WriteLog(QString("Checkpoint C.8 - delete from studies - [%1] rows deleted").arg(q.numRowsAffected()));
 
         /* delete all enrollments */
         q.prepare("delete from enrollment where subject_id = :subjectid");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        //n->WriteLog(QString("Checkpoint C.9 - [%1] rows deleted").arg(q.numRowsAffected()));
     }
     else {
         n->WriteLog("No enrollments found");
@@ -543,11 +531,8 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     q.prepare("delete from subjects where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    //n->WriteLog(QString("Checkpoint C.10 - [%1] rows deleted").arg(q.numRowsAffected()));
 
     n->InsertSubjectChangeLog(username, s.UID(), "", "obliterate", msg);
-
-    //n->WriteLog("Checkpoint D");
 
     return true;
 }

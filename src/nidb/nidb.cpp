@@ -828,22 +828,14 @@ bool nidb::FindFirstFile(QString dir, QString pattern, QString &f, QString &msg,
     f = "";
 
     if (recursive) {
-        //WriteLog("Checkpoint A");
         QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-        //WriteLog("Checkpoint B");
-        if (it.hasNext()) {
-            //WriteLog("Checkpoint C");
+        if (it.hasNext())
             f = it.next();
-        }
     }
     else {
-        //WriteLog("Checkpoint D");
         QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-        //WriteLog("Checkpoint E");
-        if (it.hasNext()) {
-            //WriteLog("Checkpoint F");
+        if (it.hasNext())
             f = it.next();
-        }
     }
 
     if (f.size() == 0)
