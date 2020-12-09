@@ -91,7 +91,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     int enrollmentRowID(-1);
     int studyRowID(-1);
     int seriesRowID(-1);
-    int studynum(1);
+    int studynum(-1);
 
     /* get all the DICOM tags */
     QHash<QString, QString> tags;
@@ -531,9 +531,17 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* copy the file to the archive, update db info */
     AppendUploadLog(__FUNCTION__ , QString("SeriesRowID: [%1]").arg(seriesRowID));
 
+    study *s = NULL;
+    s = new study(studyRowID, n);
+    if ((s == NULL) || (!s->valid())) {
+        AppendUploadLog(__FUNCTION__ , QString("Error getting study information. StudyRowID [%1] not valid").arg(studyRowID));
+        return false;
+    }
+    studynum = s->studyNum();
+
     /* create data directory if it doesn't already exist */
-    QString outdir = QString("%1/%2/%3/%4/dicom").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    QString thumbdir = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+    QString outdir = QString("%1/%2/dicom").arg(s->path()).arg(SeriesNumber);
+    QString thumbdir = QString("%1/%4").arg(s->path()).arg(SeriesNumber);
 
     QString m;
     if (!n->MakePath(outdir, m))
