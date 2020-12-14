@@ -946,7 +946,7 @@
 							if ($isbadseries) { $cellcolor = "red"; }
 							if ($istestseries) { $cellcolor = "#aaa"; }
 							
-							?><td style="border: 1px solid #aaa; padding-left: 8px;"><span style="color: <?$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
+							?><td style="border: 1px solid #aaa; padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
 							
 							/* check basic QC */
 							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', io_snr, pv_snr from mr_qa where mrseries_id = '$seriesid'";

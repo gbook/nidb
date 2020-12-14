@@ -771,7 +771,7 @@ bool nidb::MoveFile(QString f, QString dir) {
 bool nidb::RenameFile(QString filepathorig, QString filepathnew, bool force) {
 
     if (filepathorig == filepathnew) {
-        WriteLog("RenameFile - old and new filename are the same");
+        //WriteLog("RenameFile - old and new filename are the same");
         return true;
     }
 

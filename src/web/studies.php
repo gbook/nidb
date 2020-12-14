@@ -91,6 +91,10 @@
 	$copy_date = GetVariable("copy_date");
 	$study_modality = GetVariable("study_modality");
 
+	$newseriesdesc = GetVariable("newseriesdesc");
+	$newseriesprotocol = GetVariable("newseriesprotocol");
+
+
 	$studytype = GetVariable("studytype");
 	$studydatetime = GetVariable("studydatetime");
 	$Sdate = GetVariable("Sdate");
@@ -163,6 +167,20 @@
 			break;
 		case 'rateseries':
 			AddRating($seriesid, $modality, $value, $username);
+			DisplayStudy($studyid);
+			break;
+		case 'renameseriesform':
+			RenameSeriesForm($studyid, $seriesids);
+			break;
+		case 'renameseries':
+			RenameSeries($studyid, $newseriesdesc, $newseriesprotocol);
+			DisplayStudy($studyid);
+			break;
+		case 'addseriesnoteform':
+			AddSeriesNoteForm($studyid, $seriesids);
+			break;
+		case 'addseriesnote':
+			AddSeriesNote($studyid, $seriesids, $notes);
 			DisplayStudy($studyid);
 			break;
 		case 'hideseries':
@@ -564,6 +582,99 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		echo "</ol>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RenameSeriesForm ------------------- */
+	/* -------------------------------------------- */
+	function RenameSeriesForm($studyid, $seriesids) {
+		$seriesids = mysqli_real_escape_array($seriesids);
+		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+
+		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+		$modality = strtolower($modality);
+
+		?>
+		<form method="post" action="studies.php">
+		<input type="hidden" name="action" value="renameseries">
+		<input type="hidden" name="studyid" value="<?=$studyid?>">
+		<table class="graydisplaytable">
+			<thead>
+				<tr>
+					<th></th>
+					<th colspan="2" style="text-align:center; border-right: 1px solid #aaa">Current</th>
+					<th colspan="2" style="text-align:center;">New</th>
+				</tr>
+				<tr>
+					<th>Series</th>
+					<th>Description<br><span class="tiny">DICOM field <i>SeriesDescription</i></span></th>
+					<th style="border-right: 1px solid #aaa">Protocol<br><span class="tiny">DICOM field <i>ProtocolName</i></span></th>
+					<th>Description</th>
+					<th>Protocol</th>
+				</tr>
+			</thead>
+			<tbody>
+			<?
+			foreach ($seriesids as $seriesid) {
+				if ((is_numeric($seriesid)) && ($seriesid != "")) {
+					$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+					$seriesnum = $row['series_num'];
+					$seriesdesc = $row['series_desc'];
+					$seriesprotocol = $row['series_protocol'];
+					?>
+					<tr>
+						<td><?=$seriesnum?></td>
+						<td><tt><?=$seriesdesc?></tt></td>
+						<td style="border-right: 1px solid #aaa"><tt><?=$seriesprotocol?></tt></td>
+						<td><input type="text" name="newseriesdesc[<?=$seriesid?>]" value="<?=$seriesdesc?>" style="font-family: monospace;"></td>
+						<td><input type="text" name="newseriesprotocol[<?=$seriesid?>]" value="<?=$seriesprotocol?>" style="font-family: monospace;"></td>
+					</tr>
+					<?
+				}
+				else {
+					?>
+					<tr>
+						<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
+					</tr>
+					<?
+				}
+			}
+		?>
+			<tr>
+				<td colspan="5" align="right"><input type="submit" value="Rename"></td>
+			</tr>
+		</table>
+		</form>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RenameSeries ----------------------- */
+	/* -------------------------------------------- */
+	function RenameSeries($studyid, $newseriesdesc, $newseriesprotocol) {
+		$newseriesdesc = mysqli_real_escape_array($newseriesdesc);
+		$newseriesprotocol = mysqli_real_escape_array($newseriesprotocol);
+		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+
+		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+		$modality = strtolower($modality);
+		
+		foreach ($newseriesdesc as $seriesid => $desc) {
+			$sqlstring = "update $modality"."_series set series_desc = '$desc' where $modality"."series_id = $seriesid";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		foreach ($newseriesprotocol as $seriesid => $protocol) {
+			$sqlstring = "update $modality"."_series set series_protocol = '$protocol' where $modality"."series_id = $seriesid";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		
+		DisplayNotice("Notice", "Series names updated");
 	}
 	
 	
@@ -1990,9 +2101,13 @@
 				<tr>
 					<td colspan="20" align="right" style="background-color: #fff; font-size: 12pt">
 					<br>
-					<b style="color: #444;">With selected &nbsp; &nbsp; </b>
+					<b style="color: #444;">With Selected Series...&nbsp; &nbsp; </b>
 					<br><br>
-					<input type="button" name="moveseriestonewstudy" value="Move to new study" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">
+					<input type="button" name="renameseriesform" value="Rename" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();">
+					<br>
+					<!--<input type="button" name="addseriesnoteform" value="Add note" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='addseriesnoteform';document.serieslist.submit();">
+					<br>-->
+					<input type="button" name="moveseriestonewstudy" value="Move to New Study" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">
 					<br>
 					<input type="button" name="hideseries" value="Hide" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results">
 					<br>
@@ -2034,7 +2149,7 @@
 		}
 	
 		?>
-		<!--<a href="studies.php?studyid=<?$studyid?>&action=addseries&modality=CT">Add Series</a>-->
+		<!--<a href="studies.php?studyid=<?=$studyid?>&action=addseries&modality=CT">Add Series</a>-->
 		<style type="text/css">
             .edit_inline { background-color: lightyellow; padding-left: 2pt; padding-right: 2pt; }
             .edit_textarea { background-color: lightyellow; }

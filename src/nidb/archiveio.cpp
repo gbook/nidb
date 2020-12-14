@@ -594,7 +594,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             QString newfname = QString("%1_%2_%3_%4_%5_%6_%7_%8.dcm").arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(SliceNumber, 5, 10, QChar('0')).arg(InstanceNumber, 5, 10, QChar('0')).arg(AcquisitionTime).arg(ContentTime).arg(SOPInstance);
             QString newfile = outdir + "/" + newfname;
 
-            n->RenameFile(file, newfile); /* don't care about return value here, because the old filename may have been the same as the new one */
+            if (file == newfile)
+                logmsg += "?";
+            else
+                n->RenameFile(file, newfile); /* don't care about return value here, because the old filename may have been the same as the new one */
 
             logmsg += ".";
             filecnt++;
