@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 19, 2020 at 03:39 PM
+-- Generation Time: Dec 15, 2020 at 03:48 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2788,9 +2788,10 @@ CREATE TABLE `uploads` (
   `upload_datapath` text DEFAULT NULL,
   `upload_stagingpath` varchar(255) DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
+  `upload_patientid` varchar(255) DEFAULT NULL,
   `upload_modality` varchar(255) DEFAULT NULL,
   `upload_guessmodality` tinyint(1) DEFAULT NULL,
-  `upload_subjectcriteria` enum('patientid','namesexdob','') DEFAULT NULL,
+  `upload_subjectcriteria` enum('patientid','namesexdob','specificpatientid','patientidfromdir','') DEFAULT NULL,
   `upload_studycriteria` enum('modalitystudydate','studyuid','') DEFAULT NULL,
   `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
