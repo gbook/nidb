@@ -39,26 +39,25 @@ public:
     ~moduleExport();
     int Run();
 
-	QString GetExportStatus(int exportid);
-	bool SetExportStatus(int exportid, QString status, QString msg = "");
-	bool SetExportSeriesStatus(int exportseriesid, QString status, QString msg = "");
+    QString GetExportStatus(int exportid);
+    bool SetExportStatus(int exportid, QString status, QString msg = "");
 
-	bool GetExportSeriesList(int exportid);
+    bool GetExportSeriesList(int exportid);
 
-	bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString &status, QString &msg);
-	bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
-	bool ExportBIDS(int exportid, QString bidsreadme, QString &exportstatus, QString &msg);
-	bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
-	bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
+    bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString &status, QString &msg);
+    bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
+    bool ExportBIDS(int exportid, QString bidsreadme, QString &outdir, QString &exportstatus, QString &msg);
+    bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
+    bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
 
-	bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
-	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log);
+    bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
+    bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log);
 
-	int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
-	void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
+    int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
+    void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
 
     /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
-	QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> s;
+    QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> s;
 
 private:
     nidb *n;

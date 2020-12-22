@@ -470,7 +470,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
 
         n->WriteLog(QString("Modality [%1] numfiles [%2] zsize [%3]").arg(Modality).arg(numfiles).arg(zsize));
 
-        if (n->ValidNiDBModality(Modality))
+        if (n->isValidNiDBModality(Modality))
             dbModality = Modality.toLower();
         else
             dbModality = "ot";
@@ -2137,11 +2137,18 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
+            if (studynum == 0)
+                continue;
+
             n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
+
+                /* skip the series that contained only a placeholder for the subject/study info */
+                if (seriesnum == 0)
+                    continue;
 
                 n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
 
@@ -2151,7 +2158,7 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 QString seriesstatus = "complete";
                 QString statusmessage;
 
-                //int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+                int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
                 QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 QString altuids = s[uid][studynum][seriesnum]["altuids"];
@@ -2247,7 +2254,19 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                     n->WriteLog(n->SystemCommand(systemstring, true));
                 }
 
+                n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
+
+                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
                 //SetExportSeriesStatus(exportseriesid, seriesstatus);
+
+                QSqlQuery q2;
+                q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
+                q2.bindValue(":id", seriesid);
+                q2.bindValue(":status", seriesstatus);
+                q2.bindValue(":modality", modality);
+                n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
+
             }
             j++;
         }

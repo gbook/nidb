@@ -1482,7 +1482,7 @@ QString nidb::ParseTime(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- ValidNiDBModality ------------------------------ */
 /* ---------------------------------------------------------- */
-bool nidb::ValidNiDBModality(QString m) {
+bool nidb::isValidNiDBModality(QString m) {
     QSqlQuery q;
     QString sqlstring = QString("show tables like '%1_series'").arg(m.toLower());
     q.prepare(sqlstring);
@@ -2527,4 +2527,33 @@ bool nidb::WriteTextFile(QString filepath, QString str, bool append) {
     }
     else
         return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SetExportSeriesStatus -------------------------- */
+/* ---------------------------------------------------------- */
+bool nidb::SetExportSeriesStatus(int exportseriesid, QString status, QString msg) {
+
+    if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (exportseriesid > 0)) {
+        if (msg.trimmed() == "") {
+            QSqlQuery q;
+            q.prepare("update exportseries set status = :status where exportseries_id = :id");
+            q.bindValue(":id", exportseriesid);
+            q.bindValue(":status", status);
+            WriteLog(SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+        }
+        else {
+            QSqlQuery q;
+            q.prepare("update exportseries set status = :status, statusmessage = :msg where exportseries_id = :id");
+            q.bindValue(":id", exportseriesid);
+            q.bindValue(":msg", msg);
+            q.bindValue(":status", status);
+            WriteLog(SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
 }

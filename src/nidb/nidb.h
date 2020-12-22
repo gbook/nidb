@@ -134,11 +134,14 @@ public:
     bool IsDICOMFile(QString f);
     bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
     bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags);
-    bool ValidNiDBModality(QString m);
+    bool isValidNiDBModality(QString m);
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetImageFileTags(QString f, QHash<QString, QString> &tags);
     double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
+
+    /* other */
+    bool SetExportSeriesStatus(int exportseriesid, QString status, QString msg = "");
 
 private:
     void FatalError(QString err);
