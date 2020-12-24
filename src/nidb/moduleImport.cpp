@@ -38,7 +38,7 @@ moduleImport::moduleImport(nidb *a)
 /* ---------------------------------------------------------- */
 moduleImport::~moduleImport()
 {
-
+    delete io;
 }
 
 

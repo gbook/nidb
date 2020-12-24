@@ -197,8 +197,12 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             AppendUploadLog(__FUNCTION__ , "Alternate UID [" + altuid.left(255) + "...] is longer than 255 characters and will be truncated");
     }
 
+    /* ----- get the project ID ----- */
+    if (!GetProject(destProjectID, StudyDescription, projectRowID))
+        AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
+
     /* ----- get/set the subjectID */
-    if (GetSubject(subjectMatchCriteria, existingSubjectID, PatientID, PatientName, PatientSex, PatientBirthDate, subjectRowID, subjectUID))
+    if (GetSubject(subjectMatchCriteria, existingSubjectID, projectRowID, PatientID, PatientName, PatientSex, PatientBirthDate, subjectRowID, subjectUID))
         AppendUploadLog(__FUNCTION__, QString("SubjectRowID [%1] found").arg(subjectRowID));
     else
         CreateSubject(PatientID, PatientName, PatientBirthDate, PatientSex, PatientWeight, PatientSize, subjectRowID, subjectUID);
@@ -208,10 +212,6 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
     else
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
-
-    /* ----- get the project ID ----- */
-    if (!GetProject(destProjectID, StudyDescription, projectRowID))
-        AppendUploadLog(__FUNCTION__ , QString("GetProject() returned error: projectRowID [%1]").arg(projectRowID));
 
     /* ----- get/create enrollment ID ----- */
     if (GetEnrollment(subjectRowID, projectRowID, enrollmentRowID))
@@ -1819,7 +1819,7 @@ bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmen
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
     q.bindValue(":subjectid", subjectRowID);
     q.bindValue(":projectid", projectRowID);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     if (q.size() > 0) {
         q.first();
         enrollmentRowID = q.value("enrollment_id").toInt();
@@ -1863,7 +1863,7 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
 /* ---------------------------------------------------------- */
 /* --------- GetSubject ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID) {
+bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID) {
     subjectMatchCriteria = subjectMatchCriteria.toLower();
 
     subject *s = NULL;
@@ -1873,6 +1873,9 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
     }
     else {
         if ( (subjectMatchCriteria == "") || (subjectMatchCriteria == "patientid") || (subjectMatchCriteria == "specificpatientid") || (subjectMatchCriteria == "patientidfromdir")) {
+            s = new subject(PatientID, projectID, n);
+        }
+        else if (subjectMatchCriteria == "uid") {
             s = new subject(PatientID, n);
         }
         else if (subjectMatchCriteria == "namesexdob") {
@@ -1886,35 +1889,26 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
         }
     }
 
-    //if (s->valid()) {
-    //    subjectRowID = s->subjectRowID();
-    //    subjectUID = s->UID();
-    //    return true;
-    //}
-    //else {
-    //    subjectRowID = -1;
-    //    subjectUID = "";
-    //    AppendUploadLog(__FUNCTION__, "Subject found, but not valid");
-    //    return false;
-    //}
-
     if (s) {
         if (s->valid()) {
             subjectRowID = s->subjectRowID();
             subjectUID = s->UID();
             AppendUploadLog(__FUNCTION__, QString("Subject [%1] with subjectRowID [%2] found by criteria [%3]").arg(s->UID()).arg(s->subjectRowID()).arg(subjectMatchCriteria));
+            delete s;
             return true;
         }
         else {
             subjectRowID = -1;
             subjectUID = "";
-            AppendUploadLog(__FUNCTION__, QString("Subject [%1] with subjectRowID [%2] found by criteria [%3], but is not valid").arg(s->UID()).arg(s->subjectRowID()).arg(subjectMatchCriteria));
+            //existingSubjectID, PatientID, PatientName, PatientSex, PatientBirthDate
+            AppendUploadLog(__FUNCTION__, QString("Subject not found by criteria [%1] and search values existingSubjectID [%2], PatientID [%3], PatientName [%4], PatientSex [%5], PatientBirthDate [%6]").arg(subjectMatchCriteria).arg(existingSubjectID).arg(PatientID).arg(PatientName).arg(PatientSex).arg(PatientBirthDate));
+            delete s;
             return false;
         }
     }
     else {
         subjectRowID = -1;
-        AppendUploadLog(__FUNCTION__, "Study not found. Study object is still NULL");
+        AppendUploadLog(__FUNCTION__, "Subject not found. Subject object is still NULL");
         return false;
     }
 }
@@ -1964,11 +1958,11 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
     }
 
     if (subjectRowID >= 0) {
-        AppendUploadLog(__FUNCTION__, "Created new subject [" + subjectUID + "] with subjectRowID [" + subjectRowID + "]");
+        AppendUploadLog(__FUNCTION__, QString("Created new subject [%1] with subjectRowID [%2]").arg(subjectUID).arg(subjectRowID));
         return true;
     }
     else {
-        AppendUploadLog(__FUNCTION__, "Error creating new subject [" + subjectUID + "] with subjectRowID [" + subjectRowID + "]");
+        AppendUploadLog(__FUNCTION__, QString("Error creating new subject [%1] with subjectRowID [%2]").arg(subjectUID).arg(subjectRowID));
         return false;
     }
 }
@@ -2005,17 +1999,20 @@ bool archiveIO::GetStudy(QString studyMatchCriteria, int existingStudyID, int en
         if (s->valid()) {
             studyRowID = s->studyRowID();
             AppendUploadLog(__FUNCTION__, QString("Study [%1%2] with studyRowID [%3] found by criteria [%4]").arg(s->UID()).arg(s->studyNum()).arg(s->studyRowID()).arg(studyMatchCriteria));
+            delete s;
             return true;
         }
         else {
             studyRowID = -1;
-            AppendUploadLog(__FUNCTION__, QString("Study [%1%2] with studyRowID [%3] found by criteria [%4], but is not valid").arg(s->UID()).arg(s->studyNum()).arg(s->studyRowID()).arg(studyMatchCriteria));
+            //int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID
+            AppendUploadLog(__FUNCTION__, QString("Study not found by criteria [%1] using variables existingStudyID [%2], enrollmentRowID [%3], StudyDateTime [%4], Modality [%5], StudyInstanceUID [%6]").arg(studyMatchCriteria).arg(existingStudyID).arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StudyInstanceUID));
+            delete s;
             return false;
         }
     }
     else {
         studyRowID = -1;
-        AppendUploadLog(__FUNCTION__, "Study not found. Study object is still NULL");
+        AppendUploadLog(__FUNCTION__, "Study not found. Study object is still NULL somehow");
         return false;
     }
 }

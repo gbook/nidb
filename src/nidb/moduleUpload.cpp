@@ -38,7 +38,7 @@ moduleUpload::moduleUpload(nidb *a)
 /* ---------------------------------------------------------- */
 moduleUpload::~moduleUpload()
 {
-
+    delete io;
 }
 
 

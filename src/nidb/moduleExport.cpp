@@ -39,7 +39,7 @@ moduleExport::moduleExport(nidb *a)
 /* ---------------------------------------------------------- */
 moduleExport::~moduleExport()
 {
-
+    delete io;
 }
 
 
