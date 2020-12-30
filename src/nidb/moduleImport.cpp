@@ -364,7 +364,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         n->WriteLog(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
         QStringList files = dcmseries[seriesuid];
 
-        QString subjectMatchCriteria("PatientID");
+        QString subjectMatchCriteria("uid");
         QString studyMatchCriteria("ModalityStudyDate");
         QString seriesMatchCriteria("SeriesNum");
 

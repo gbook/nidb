@@ -344,7 +344,7 @@
 					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
 					
 					/* valdiate and build the SQL update statement */
-					$sqlupdates = "";
+					$sqlupdates = array();
 					if ($guid != "") { $sqlupdates[] = "guid = '$guid'"; }
 					if (($dob != "") && (strtotime($dob) != false)) { $sqlupdates[] = "birthdate = '$dob'"; }
 					if (in_array($sex,array('F','M','O','U','T'))) { $sqlupdates[] = "gender = '$sex'"; }
@@ -2317,6 +2317,8 @@
 		$numstudies = mysqli_num_rows($result);
 		
 		/* get some stats about the project */
+		$siteids = array();
+		$ages = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$siteids[] = $row['study_nidbsite'];

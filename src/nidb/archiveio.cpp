@@ -43,7 +43,7 @@ archiveIO::~archiveIO()
 
 
 /* ---------------------------------------------------------- */
-/* --------- Setr  ------------------------------------ */
+/* --------- SetUploadID ------------------------------------ */
 /* ---------------------------------------------------------- */
 void archiveIO::SetUploadID(int u) {
     uploadid = u;
@@ -121,24 +121,24 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     QString PatientSex = tags["PatientSex"];
     double PatientWeight = tags["PatientWeight"].toDouble();
     double PatientSize = tags["PatientSize"].toDouble();
-    QString PatientAgeStr = tags["PatientAge"];
+    //QString PatientAgeStr = tags["PatientAge"];
     double PatientAge(0.0);
     QString PerformingPhysiciansName = tags["PerformingPhysicianName"];
     QString ProtocolName = tags["ProtocolName"];
-    QString SeriesDate = tags["SeriesDate"];
+    //QString SeriesDate = tags["SeriesDate"];
     int SeriesNumber = tags["SeriesNumber"].toInt();
-    QString SeriesTime = tags["SeriesTime"];
-    QString StudyDate = tags["StudyDate"];
+    //QString SeriesTime = tags["SeriesTime"];
+    //QString StudyDate = tags["StudyDate"];
     QString SeriesDateTime = tags["SeriesDateTime"];
     QString StudyDescription = tags["StudyDescription"];
     QString SeriesDescription = tags["SeriesDescription"];
-    QString StudyTime = tags["StudyTime"];
+    //QString StudyTime = tags["StudyTime"];
     QString StudyDateTime = tags["StudyDateTime"];
     int Rows = tags["Rows"].toInt();
     int Columns = tags["Columns"].toInt();
     //int AccessionNumber = tags["AccessionNumber"].toInt();
     double SliceThickness = tags["SliceThickness"].toDouble();
-    QString PixelSpacing = tags["PixelSpacing"];
+    //QString PixelSpacing = tags["PixelSpacing"];
     int NumberOfTemporalPositions = tags["NumberOfTemporalPositions"].toInt();
     int ImagesInAcquisition = tags["ImagesInAcquisition"].toInt();
     QString SequenceName = tags["SequenceName"];
@@ -666,15 +666,15 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             boldreps = nfiles;
 
             /* this method works ... sometimes */
-            if ((mat1 > 0) && (mat4 > 0))
-                zsize = (Rows/mat1)*(Columns/mat4); /* example (384/64)*(384/64) = 6*6 = 36 possible slices in a mosaic */
-            else
-                zsize = nfiles;
+            //if ((mat1 > 0) && (mat4 > 0))
+            //    zsize = (Rows/mat1)*(Columns/mat4); /* example (384/64)*(384/64) = 6*6 = 36 possible slices in a mosaic */
+            //else
+            //    zsize = nfiles;
         }
     }
-    else {
-        zsize = nfiles;
-    }
+    //else {
+    //    zsize = nfiles;
+    //}
 
     /* update the database with the correct number of files/BOLD reps */
     if (dbModality == "mr") {
@@ -789,7 +789,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     int zsize(0);
     int boldreps(0);
     int numfiles(2); /* should always be 2 for .par/.rec */
-    QString seriessequencename;
+    //QString seriessequencename;
     int RepetitionTime(0);
     int Columns(0), Rows(0);
     int pixelX(0), pixelY(0);
@@ -817,7 +817,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
-            QString status = q.value("import_status").toString();
+            //QString status = q.value("import_status").toString();
             //importInstanceID = q.value("import_instanceid").toInt();
             importSiteID = q.value("import_siteid").toInt();
             importProjectID = q.value("import_projectid").toInt();
@@ -1872,7 +1872,7 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
         s = new subject(existingSubjectID, n);
     }
     else {
-        if ( (subjectMatchCriteria == "") || (subjectMatchCriteria == "patientid") || (subjectMatchCriteria == "specificpatientid") || (subjectMatchCriteria == "patientidfromdir")) {
+        if (((subjectMatchCriteria == "") || (subjectMatchCriteria == "patientid") || (subjectMatchCriteria == "specificpatientid") || (subjectMatchCriteria == "patientidfromdir")) && (projectID > -1)) {
             s = new subject(PatientID, projectID, n);
         }
         else if (subjectMatchCriteria == "uid") {
