@@ -1335,7 +1335,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 
     AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importid).arg(file));
 
-    QString familyRealUID;
+    //QString familyRealUID;
 
     int projectRowID(0);
     QString subjectUID;
@@ -1346,10 +1346,10 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     QString costcenter;
     int studynum(0);
 
-    QString PatientName = "NotSpecified";
-    QString PatientBirthDate = "0001-01-01";
+    //QString PatientName = "NotSpecified";
+    //QString PatientBirthDate = "0001-01-01";
     QString PatientID = "NotSpecified";
-    QString PatientSex = "U";
+    //QString PatientSex = "U";
     QString StudyDescription = "NotSpecified";
     QString SeriesDescription;
     QString StationName = "";
@@ -1357,7 +1357,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     QString PerformingPhysiciansName = "NotSpecified";
     QString InstitutionName = "NotSpecified";
     QString InstitutionAddress = "NotSpecified";
-    QString SequenceName;
+    //QString SequenceName;
     QString ProtocolName;
     QString StudyDateTime;
     QString SeriesDateTime;
@@ -1384,7 +1384,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
-            QString status = q.value("import_status").toString();
+            //QString status = q.value("import_status").toString();
             //importInstanceID = q.value("import_instanceid").toInt();
             //importSiteID = q.value("import_siteid").toInt();
             importProjectID = q.value("import_projectid").toInt();
@@ -2157,12 +2157,12 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
-                QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
-                QString altuids = s[uid][studynum][seriesnum]["altuids"];
-                QString projectname = s[uid][studynum][seriesnum]["projectname"];
+                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                //QString altuids = s[uid][studynum][seriesnum]["altuids"];
+                //QString projectname = s[uid][studynum][seriesnum]["projectname"];
                 //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
@@ -2170,7 +2170,7 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
-                QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
                 bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
                 //bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();

@@ -59,11 +59,11 @@ int moduleExport::Run() {
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
             bool found = false;
-            QString msg;
+            //QString msg;
             i++;
 
             int exportid = q.value("export_id").toInt();
-            QString username = q.value("username").toString().trimmed();
+            //QString username = q.value("username").toString().trimmed();
             QString exporttype = q.value("destinationtype").toString().trimmed();
             bool downloadimaging = q.value("download_imaging").toBool();
             bool downloadbeh = q.value("download_beh").toBool();
@@ -84,7 +84,7 @@ int moduleExport::Run() {
             QString remoteftppath = q.value("remoteftp_path").toString().trimmed();
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
-            QString bidsreadme = q.value("bidsreadme").toString().trimmed();
+            //QString bidsreadme = q.value("bidsreadme").toString().trimmed();
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")
@@ -227,7 +227,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
             QString modality = q.value("modality").toString().toLower();
             int seriesid = q.value("series_id").toInt();
             int exportseriesid = q.value("exportseries_id").toInt();
-            QString status = q.value("status").toString();
+            //QString status = q.value("status").toString();
 
             QSqlQuery q2;
             q2.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, e.uid, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
@@ -395,11 +395,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
                     int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                     QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
-                    QString altuids = s[uid][studynum][seriesnum]["altuids"];
-                    QString projectname = s[uid][studynum][seriesnum]["projectname"];
+                    //QString altuids = s[uid][studynum][seriesnum]["altuids"];
+                    //QString projectname = s[uid][studynum][seriesnum]["projectname"];
                     //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                    QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                    QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                    //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                    //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                     QString modality = s[uid][studynum][seriesnum]["modality"];
                     //int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
                     QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
@@ -808,7 +808,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
         return false;
     }
 
-    QString systemstring;
+    //QString systemstring;
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
@@ -828,17 +828,17 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                 QString statusmessage;
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
-                QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
-                QString altuids = s[uid][studynum][seriesnum]["altuids"];
-                QString projectname = s[uid][studynum][seriesnum]["projectname"];
-                QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                //QString altuids = s[uid][studynum][seriesnum]["altuids"];
+                //QString projectname = s[uid][studynum][seriesnum]["projectname"];
+                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 int numfilesbeh = s[uid][studynum][seriesnum]["numfilesbeh"].toInt();
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString indir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
-                QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
 
                 QStringList logs;
@@ -1255,7 +1255,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             int subjectid = q.value("subject_id").toInt();
             int enrollmentid = q.value("enrollment_id").toInt();
             QString guid = q.value("guid").toString().trimmed();
-            QString seriesdatetime = q.value("series_datetime").toString().trimmed();
+            //QString seriesdatetime = q.value("series_datetime").toString().trimmed();
             double seriestr = q.value("series_tr").toDouble();
             double serieste = q.value("series_te").toDouble();
             double seriesflip = q.value("series_flip").toDouble();
@@ -1263,7 +1263,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             QString seriessequence = q.value("series_sequencename").toString().trimmed();
             QString seriesnotes = q.value("series_notes").toString().trimmed();
             QString imagetype = q.value("image_type").toString().trimmed();
-            QString imagecomments = q.value("image_comments").toString().trimmed();
+            //QString imagecomments = q.value("image_comments").toString().trimmed();
             double seriesspacingx = q.value("series_spacingx").toDouble();
             double seriesspacingy = q.value("series_spacingy").toDouble();
             double seriesspacingz = q.value("series_spacingz").toDouble();
@@ -1272,8 +1272,8 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             int imgcols = q.value("img_cols").toInt();
             int imgslices = q.value("img_slices").toInt();
             QString datatype = q.value("data_type").toString().trimmed().toUpper();
-            QString studydatetime = q.value("study_datetime").toString().trimmed();
-            QString birthdate = q.value("birthdate").toString().trimmed();
+            QString studydatetime = q.value("study_datetime").toDate().toString("MM/dd/yyyy");
+            //QString birthdate = q.value("birthdate").toString().trimmed();
             QString gender = q.value("gender").toString().trimmed();
             QString uid = q.value("uid").toString().trimmed();
             double ageatscan = q.value("ageatscan").toDouble();
@@ -1391,6 +1391,8 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     scantype = "MR diffusion";
                 if (seriesdesc.contains("T2"))
                     scantype = "MR structural (T2)";
+                if (seriesdesc.contains("fieldmap",Qt::CaseInsensitive) || seriesdesc.contains("field map",Qt::CaseInsensitive))
+                    scantype = "Fieldmap";
 
                 /* build the aquisition matrix */
                 if (AcquisitionMatrix.trimmed() == "") {
