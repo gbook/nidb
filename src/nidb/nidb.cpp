@@ -1572,6 +1572,22 @@ QList<int> nidb::SplitStringArrayToInt(QStringList a) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- SplitStringArrayToDouble ----------------------- */
+/* ---------------------------------------------------------- */
+QList<double> nidb::SplitStringArrayToDouble(QStringList a) {
+    QList<double> i;
+
+    if (a.size() > 0) {
+        foreach (QString v, a) {
+            i.append(v.trimmed().toDouble());
+        }
+    }
+
+    return i;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- SplitStringToIntArray -------------------------- */
 /* ---------------------------------------------------------- */
 QList<int> nidb::SplitStringToIntArray(QString a) {
@@ -2556,4 +2572,28 @@ bool nidb::SetExportSeriesStatus(int exportseriesid, QString status, QString msg
     else {
         return false;
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ReadTextFileIntoArray -------------------------- */
+/* ---------------------------------------------------------- */
+QStringList nidb::ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines) {
+    QStringList a;
+
+    QFile inputFile(filepath);
+    inputFile.open(QIODevice::ReadOnly);
+    if (inputFile.isOpen()) {
+        QTextStream in(&inputFile);
+
+        QString line;
+        while (in.readLineInto(&line)) {
+            line = line.trimmed();
+            if (ignoreEmptyLines && (line.size() == 0)) {}
+            else
+                a.append(line);
+        }
+    }
+
+    return a;
 }

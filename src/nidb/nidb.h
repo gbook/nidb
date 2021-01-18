@@ -102,6 +102,7 @@ public:
     QString ParseTime(QString s);
     QString JoinIntArray(QList<int> a, QString glue);
     QList<int> SplitStringArrayToInt(QStringList a);
+    QList<double> SplitStringArrayToDouble(QStringList a);
     QList<int> SplitStringToIntArray(QString a);
     bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
     bool GetSQLComparison(QString c, QString &comp, int &num);
@@ -127,6 +128,7 @@ public:
     bool chmod(QString f, QString perm);
     QString UnzipDirectory(QString dir, bool recurse=false);
     bool WriteTextFile(QString filepath, QString str, bool append=true);
+    QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
 
     /* DICOM functions */
     bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);

@@ -48,12 +48,12 @@ subject::subject(QString uid, nidb *a)
 {
     n = a;
 
-    //n->WriteLog("Constructor B");
+    n->WriteLog("Constructor B");
 
     QSqlQuery q;
     q.prepare("select subject_id from subjects where uid = :uid");
     q.bindValue(":uid", uid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
     if (q.size() < 1) {
         _msg = "Subject not found by UID [" + uid + "] could not be found";
         _isValid = false;
@@ -62,7 +62,7 @@ subject::subject(QString uid, nidb *a)
         q.first();
         _subjectid = q.value("subject_id").toInt();
 
-        //n->WriteLog(QString("Constructor B - found subjectRowID [%1]").arg(_subjectid));
+        n->WriteLog(QString("Constructor B - found subjectRowID [%1]").arg(_subjectid));
     }
 
     LoadSubjectInfo();

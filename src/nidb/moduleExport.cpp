@@ -1025,24 +1025,24 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                 n->SetExportSeriesStatus(exportseriesid, "processing");
 
                 QString seriesstatus = "complete";
-                QString statusmessage;
+                //QString statusmessage;
 
                 //int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
-                QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 QString altuids = s[uid][studynum][seriesnum]["altuids"];
-                QString projectname = s[uid][studynum][seriesnum]["projectname"];
+                //QString projectname = s[uid][studynum][seriesnum]["projectname"];
                 //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
                 QString seriesnotes = s[uid][studynum][seriesnum]["seriesnotes"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString indir = s[uid][studynum][seriesnum]["datadir"];
-                QString behindir = s[uid][studynum][seriesnum]["behdir"];
-                QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+                //QString behindir = s[uid][studynum][seriesnum]["behdir"];
+                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
                 bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
                 //bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
@@ -1060,7 +1060,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                         int numfails = 0;
                         int error = 1;
-                        QString results;
+                        //QString results;
                         QString systemstring;
 
                         int numretry = 5;
@@ -1405,7 +1405,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
                 QString str;
-                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << ageatscan << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
 
                 fs << str;
             }
@@ -1453,13 +1453,13 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 }
 
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
                 fs << str;
             }
             else if (modality == "ET") {
                 int expid = 0;
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << ageatscan << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;
             }
             else {
