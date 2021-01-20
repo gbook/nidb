@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminprojects.php
- // Copyright (C) 2004 - 2020
+ // Copyright (C) 2004 - 2021
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -412,14 +412,13 @@
 					</table>
 					</details>
 				</td>
-			</tr>
+			</tr>-->
 			<? } ?>
 			<tr>
 				<td colspan="2" align="center">
 					<input type="submit" value="<?=$submitbuttonlabel?>">
 				</td>
 			</tr>
-			-->
 			</form>
 		</table>
 		<br><br><br>

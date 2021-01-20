@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB status.php
- // Copyright (C) 2004 - 2020
+ // Copyright (C) 2004 - 2021
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -136,7 +136,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td class="label">Versions</td>
+				<td class="label">Software versions</td>
 				<td>
 					<b>OS</b> <tt><?=php_uname()?></tt><br>
 					<b>PHP</b> <tt><?=phpversion()?></tt><br>
@@ -295,6 +295,10 @@ echo $value . "\n";
 					</tbody>
 					</table>
 				</td>
+			</tr>
+			<tr>
+				<td class="label">phpinfo()</td>
+				<td><? phpinfo(); ?></td>
 			</tr>
 		</table>
 		</div>

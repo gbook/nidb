@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB index.php
- // Copyright (C) 2004 - 2020
+ // Copyright (C) 2004 - 2021
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -74,17 +74,18 @@
 </script>
 
 <?
-$sqlstring = "select user_email, user_logincount from users where username = '" . $GLOBALS['username'] . "'";
-//PrintSQL($sqlstring);
-$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-$email = $row['user_email'];
-$logincount = $row['user_logincount'];
-if ($email == "") {
+	$q = mysqli_stmt_init($GLOBALS['linki']);
+	mysqli_stmt_prepare($q, "select user_email, user_logincount from users where username = ?");
+	mysqli_stmt_bind_param($q, 's', $GLOBALS['username']);
+	$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	$email = $row['user_email'];
+	$logincount = $row['user_logincount'];
+
+	if ($email == "") {
+		DisplayNotice("Notice", "Your email address is currently blank. Please <a href='users.php'>update</a>.");
+	}
 ?>
-<div style="background-color: #e45a48; color: white; padding:10px">Your email address is currently blank. Please <a href="users.php">update</a> your email address. Thank you!
-</div><br>
-<? } ?>
 
 <table width="100%">
 	<tr>
@@ -212,9 +213,10 @@ if ($email == "") {
 					<td class="subheader"><span class="tiny">Date Accessed</span></td>
 				</tr>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') order by a.mostrecent_date desc";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$q = mysqli_stmt_init($GLOBALS['linki']);
+				mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
+				mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
+				$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studyid = $row['study_id'];
