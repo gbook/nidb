@@ -23,8 +23,8 @@
 #ifndef NIDB_H
 #define NIDB_H
 
-#define VERSION_MAJ "2020"
-#define VERSION_MIN "12"
+#define VERSION_MAJ "2021"
+#define VERSION_MIN "1"
 #define BUILD_NUM "602"
 
 #include <QFile>
@@ -112,6 +112,11 @@ public:
     bool IsNumber(QString s);
     QString WrapText(QString s, int col);
     bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
+
+    /* math */
+    double Mean(QList<double> a);
+    double Variance(QList<double> a);
+    double StdDev(QList<double> a);
 
     /* file and directory operations */
     bool MakePath(QString p, QString &msg, bool perm777=true);

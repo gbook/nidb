@@ -371,23 +371,28 @@ bool moduleMRIQA::QA(int seriesid) {
     QStringList fd = n->ReadTextFileIntoArray(qapath + "/fd.txt");
     QList<double> fdDouble = n->SplitStringArrayToDouble(fd);
     std::sort(fdDouble.begin(), fdDouble.end());
-    double fdMin = fdDouble[1];
-    //double fdMean = mean(fdDouble);
+    //double fdMin = fdDouble[1];
+    double fdMean = n->Mean(fdDouble);
     double fdMax = fdDouble.last();
-
+    double fdStdev = n->StdDev(fdDouble);
 
     /* run fsl_motion_outliers for FD */
     systemstring = QString("fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
     msgs << n->WriteLog(n->SystemCommand(systemstring));
     QStringList dvars = n->ReadTextFileIntoArray(qapath + "/fd.txt");
-    QList<double> dvarsInt = n->SplitStringArrayToDouble(dvars);
+    QList<double> dvarsDouble = n->SplitStringArrayToDouble(dvars);
+    std::sort(dvarsDouble.begin(), dvarsDouble.end());
+    //double dvarsMin = dvarsDouble[1];
+    double dvarsMean = n->Mean(dvarsDouble);
+    double dvarsMax = dvarsDouble.last();
+    double dvarsStdev = n->StdDev(dvarsDouble);
 
     /* delete the 4D file and temp directory */
     if (!n->RemoveDir(tmpdir, m))
         msgs << n->WriteLog("Unable to remove directory ["+tmpdir+"] because of error ["+m+"]");
 
     /* insert this row into the DB */
-    q.prepare("update mr_qa set mrseries_id = :seriesid, io_snr = :iosnr, pv_snr = :pvsnr, move_minx = :mintx, move_miny = :minty, move_minz = :mintz, move_maxx = :maxtx, move_maxy = :maxty, move_maxz = :maxtz, acc_minx = :minax, acc_miny = :minay, acc_minz = :minaz, acc_maxx = :maxax, acc_maxy = :maxay, acc_maxz = :maxaz, rot_minp = :minrx, rot_minr = :minry, rot_miny = :minrz, rot_maxp = :maxrx, rot_maxr = :maxry, rot_maxy = :maxrz, motion_rsq = :motion_rsq, cputime = 0.0 where mrqa_id = :mrqaid");
+    q.prepare("update mr_qa set mrseries_id = :seriesid, io_snr = :iosnr, pv_snr = :pvsnr, move_minx = :mintx, move_miny = :minty, move_minz = :mintz, move_maxx = :maxtx, move_maxy = :maxty, move_maxz = :maxtz, acc_minx = :minax, acc_miny = :minay, acc_minz = :minaz, acc_maxx = :maxax, acc_maxy = :maxay, acc_maxz = :maxaz, rot_minp = :minrx, rot_minr = :minry, rot_miny = :minrz, rot_maxp = :maxrx, rot_maxr = :maxry, rot_maxy = :maxrz, motion_rsq = :motion_rsq, fd_max = :fdmax, fd_mean = :fdmean, fd_stdev = :fdstdev, dvars_max = :dvarsmax, dvars_mean = :dvarsmean, dvars_stdev = :dvarsstdev, cputime = 0.0 where mrqa_id = :mrqaid");
     q.bindValue(":seriesid",seriesid);
     q.bindValue(":iosnr",iosnr);
     q.bindValue(":pvsnr",pvsnr);
@@ -410,6 +415,12 @@ bool moduleMRIQA::QA(int seriesid) {
     q.bindValue(":minay",minay);
     q.bindValue(":minaz",minaz);
     q.bindValue(":motion_rsq",motion_rsq);
+    q.bindValue(":fdmax",fdMax);
+    q.bindValue(":fdmean",fdMean);
+    q.bindValue(":fdstdev",fdStdev);
+    q.bindValue(":dvarsmax",dvarsMax);
+    q.bindValue(":dvarsmean",dvarsMean);
+    q.bindValue(":dvarsstdev",dvarsStdev);
     q.bindValue(":mrqaid",mrqaid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 

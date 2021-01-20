@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 15, 2020 at 03:48 PM
+-- Generation Time: Jan 20, 2021 at 02:33 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1570,6 +1570,12 @@ CREATE TABLE `mr_qa` (
   `rot_maxr` double DEFAULT NULL,
   `rot_maxy` double DEFAULT NULL,
   `motion_rsq` double DEFAULT NULL,
+  `fd_max` double DEFAULT NULL,
+  `fd_mean` double DEFAULT NULL,
+  `fd_sd` double DEFAULT NULL,
+  `dvars_max` double DEFAULT NULL,
+  `dvars_mean` double DEFAULT NULL,
+  `dvars_stdev` double DEFAULT NULL,
   `cputime` double DEFAULT NULL,
   `status` varchar(25) NOT NULL DEFAULT '',
   `lastupdate` timestamp NULL DEFAULT current_timestamp()

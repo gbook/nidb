@@ -2597,3 +2597,37 @@ QStringList nidb::ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines)
 
     return a;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- Mean ------------------------------------------- */
+/* ---------------------------------------------------------- */
+double nidb::Mean(QList<double> a) {
+    double sum = 0.0;
+    foreach( double n, a )
+        sum += n;
+
+    return sum/a.size();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Variance --------------------------------------- */
+/* ---------------------------------------------------------- */
+double nidb::Variance(QList<double> a) {
+    double mean = Mean(a);
+    double temp = 0.0;
+
+    foreach (double d, a)
+        temp += (d-mean)*(d-mean);
+
+    return temp/(a.size()-1);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- StdDev ----------------------------------------- */
+/* ---------------------------------------------------------- */
+double nidb::StdDev(QList<double> a) {
+    return sqrt(Variance(a));
+}

@@ -1392,7 +1392,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 if (seriesdesc.contains("T2"))
                     scantype = "MR structural (T2)";
                 if (seriesdesc.contains("fieldmap",Qt::CaseInsensitive) || seriesdesc.contains("field map",Qt::CaseInsensitive))
-                    scantype = "Fieldmap";
+                    scantype = "Field Map";
 
                 /* build the aquisition matrix */
                 if (AcquisitionMatrix.trimmed() == "") {
