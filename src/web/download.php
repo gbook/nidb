@@ -35,34 +35,34 @@
 
 	$modality = strtolower($modality);
 	
-	if (IsNiDBModality($modality)) {
-		if ($type == "file") {
-			if (substr($filename,0,5) != "/tmp/") {
-				?><div class="staticmessage">You are attempting to download a file [<?=$filename?>] from an incorrect location</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+	if ($type == "file") {
+		if (substr($filename,0,5) != "/tmp/") {
+			?><div class="staticmessage">You are attempting to download a file [<?=$filename?>] from an incorrect location</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+		}
+		else {
+			if (!file_exists($filename)) {
+				?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] does not exist</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
 			}
 			else {
-				if (!file_exists($filename)) {
-					?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] does not exist</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+				if (filesize($filename) == 0) {
+					/* this may not correctly check files larger than 2GB in size... not sure if they'd ever return 0 size if they did exist though... */
+					?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] exists, but is empty</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
 				}
 				else {
-					if (filesize($filename) == 0) {
-						/* this may not correctly check files larger than 2GB in size... not sure if they'd ever return 0 size if they did exist though... */
-						?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] exists, but is empty</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
-					}
-					else {
-						header("Content-Description: File Transfer");
-						header("Content-Disposition: attachment; filename=$filename");
-						header("Content-Type: text/csv");
-						header("Content-length: " . filesize($filename) . "\n\n");
-						header("Content-Transfer-Encoding: binary");
-						// output data to the browser
-						readfile($filename);
-						unlink($filename);
-					}
+					header("Content-Description: File Transfer");
+					header("Content-Disposition: attachment; filename=$filename");
+					header("Content-Type: text/csv");
+					header("Content-length: " . filesize($filename) . "\n\n");
+					header("Content-Transfer-Encoding: binary");
+					// output data to the browser
+					readfile($filename);
+					unlink($filename);
 				}
 			}
 		}
-		else {
+	}
+	else {
+		if (IsNiDBModality($modality)) {
 			/* get the path to the QA info */
 			$sqlstring = "select a.*, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = $seriesid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -118,8 +118,8 @@
 				}
 			}
 		}
-	}
-	else {
-		?><div class="staticmessage">Invalid modality [<?=$modality?>]<?
+		else {
+			?><div class="staticmessage">Invalid modality [<?=$modality?>]<?
+		}
 	}
 ?>

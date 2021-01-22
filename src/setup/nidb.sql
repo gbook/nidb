@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 20, 2021 at 02:33 PM
+-- Generation Time: Jan 22, 2021 at 06:20 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1711,6 +1711,20 @@ CREATE TABLE `mr_studyqa` (
   `cputime` double DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `nda_mapping`
+--
+
+CREATE TABLE `nda_mapping` (
+  `protocolmapping_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `protocolname` varchar(255) NOT NULL,
+  `experiment_id` int(11) NOT NULL,
+  `modality` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
 
@@ -3671,6 +3685,13 @@ ALTER TABLE `mr_studyqa`
   ADD KEY `mriseries_id` (`study_id`);
 
 --
+-- Indexes for table `nda_mapping`
+--
+ALTER TABLE `nda_mapping`
+  ADD PRIMARY KEY (`protocolmapping_id`),
+  ADD KEY `project_id` (`project_id`,`protocolname`,`experiment_id`,`modality`);
+
+--
 -- Indexes for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
@@ -4615,6 +4636,12 @@ ALTER TABLE `mr_series`
 --
 ALTER TABLE `mr_studyqa`
   MODIFY `mrstudyqa_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `nda_mapping`
+--
+ALTER TABLE `nda_mapping`
+  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `nidb_sites`

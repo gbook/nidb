@@ -52,6 +52,8 @@
 	$modalities = GetVariable("modalities");
 	$oldnames = GetVariable("oldname");
 	$newnames = GetVariable("newname");
+	$protocolnames = GetVariable("protocolname");
+	$experimentids = GetVariable("experimentid");
 	$subjectids = GetVariable("subjectid");
 	$altuids = GetVariable("altuids");
 	$guids = GetVariable("guids");
@@ -99,6 +101,13 @@
 			break;
 		case 'editbidsmapping':
 			EditBIDSMapping($id);
+			break;
+		case 'updatendamapping':
+			UpdateNDAMapping($id, $modalities, $protocolnames, $experimentids);
+			EditNDAMapping($id);
+			break;
+		case 'editndamapping':
+			EditNDAMapping($id);
 			break;
 		case 'displayprojectinfo':
 			DisplayProjectInfo($id);
@@ -2268,7 +2277,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
-	function UpdateBIDSMapping($projectid, $modalities, $oldnames, $newnames) {
+	function UpdateBIDSMapping($projectid, $modalities, $experimentids) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
@@ -2282,11 +2291,139 @@
 		
 		foreach ($modalities as $i => $modality) {
 			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-			$oldname = mysqli_real_escape_string($GLOBALS['linki'], $oldnames[$i]);
-			$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
+			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
 			if (($modality != "") && ($oldname != "") && ($newname != "")) {
 				
-				$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, shortname, modality) values ($projectid, '$oldname', '$newname', '$modality')";
+				$sqlstring = "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$oldname', '$newname', '$modality')";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- EditNDAMapping --------------------- */
+	/* -------------------------------------------- */
+	function EditNDAMapping($projectid) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
+		
+		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
+			$projectid = 'null';
+		}
+			
+		/* get all studies, and all series, associated with this project */
+		if ($projectid == "null")
+			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
+		else
+			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
+		
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			$modality = strtolower($row['study_modality']);
+			
+			if (IsNiDBModality($modality)) {
+				if (($modality != "") && ($studyid != "")) {
+					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						if ($rowA['series_desc'] != "") {
+							$seriesdesc = $rowA['series_desc'];
+						}
+						elseif ($rowA['series_protocol'] != "") {
+							$seriesdesc = $rowA['series_protocol'];
+						}
+						if ($seriesdesc != "") {
+							$seriesdescs[$modality][$seriesdesc]++;
+						}
+					}
+				}
+			}
+		}
+
+		/* get list of NDA experimentid mappings for this project */
+		if ($projectid == "null")
+			$sqlstring = "select * from nda_mapping where project_id is null";
+		else
+			$sqlstring = "select * from nda_mapping where project_id = $projectid";
+
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mapping[$row['modality']][$row['protocolname']] = $row['experiment_id'];
+		}
+		?>
+		<br><br>
+		<form action="projects.php" method="post">
+		<input type="hidden" name="action" value="updatendamapping">
+		<input type="hidden" name="id" value="<?=$projectid?>">
+		<b>NDA mapping</b>
+		<br>
+		This mapping is used in exporting of NDA format
+		<br><br>
+		<table class="graydisplaytable">
+			<thead>
+				<th>Modality</th>
+				<th>Protocol name</th>
+				<th>
+					NDA experiment_id (integer)
+				</th>
+			</thead>
+		<?
+		//PrintVariable($seriesdescs);
+		//PrintVariable($mapping);
+		$i=0;
+		foreach ($seriesdescs as $modality => $serieslist) {
+			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
+			foreach ($serieslist as $series => $count) {
+
+				$experiment_id = "";
+				$experiment_id = $mapping[$modality][$series];
+				?>
+				<tr>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td>
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+					</td>
+				</tr>
+				<?
+				$i++;
+			}
+		}
+		?>
+			<tr>
+				<td colspan="3" align="right"><input type="submit" value="Update"></td>
+			</tr>
+		</table>
+
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateNDAMapping ------------------- */
+	/* -------------------------------------------- */
+	function UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
+		
+		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
+		else {
+			DisplayErrorMessage("Error", "Invalid project ID [$projectid]");
+			return;
+		}
+		//PrintVariable($modalities);
+		//PrintVariable($protocolnames);
+		//PrintVariable($experimentids);
+		
+		foreach ($modalities as $i => $modality) {
+			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+			$protocolname = mysqli_real_escape_string($GLOBALS['linki'], $protocolnames[$i]);
+			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
+			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
+				
+				$sqlstring = "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$protocolname', '$modality', '$experimentid')";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
@@ -2408,12 +2545,13 @@
 					<b>Project options</b><br><br>
 					<a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br>
 					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
-					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates</a><br>
-					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit scan criteria</a><br>
-					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC criteria</a><br>
+					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study Templates</a><br>
+					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Scan Criteria</a><br>
+					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">QC Criteria</a><br>
 					<!--<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
 					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>-->
-					<a href="projects.php?action=editbidsmapping&id=<?=$id?>">Edit BIDS Protocol Mapping</a><br>
+					<a href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS Protocol Mapping</a><br>
+					<a href="projects.php?action=editndamapping&id=<?=$id?>">NDA Mapping</a><br>
 					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
 					<a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br>
 					<? if ($GLOBALS['isadmin']) { ?>
