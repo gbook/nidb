@@ -2602,6 +2602,10 @@ QStringList nidb::ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines)
 /* ---------------------------------------------------------- */
 /* --------- Mean ------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * Calculates the mean value from a list of doubles
+ * @param a array of doubles
+*/
 double nidb::Mean(QList<double> a) {
     double sum = 0.0;
     foreach( double n, a )

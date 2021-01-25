@@ -1820,12 +1820,12 @@
 					if ($s_usealtseriesdesc) {
 						//$csv .= "$series_num, $series_altdesc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
 
-						$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
+						$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					else {
 						//$csv .= "$series_num, $series_desc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
 						
-						$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
+						$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					if (count($measurenames) > 0) {
 						foreach ($measurenames as $measure) {
@@ -4569,7 +4569,7 @@
 			<?
 		}
 		/* return a header for the csv file */
-		return "UID, SeriesNum, SeriesDesc, Protocol, Sex, AgeAtScan, AltUIDs, StudyID, AltStudyID, StudyNum, StudyDate, StudyType, Project, Height, Weight, BMI, SeriesTime, XMoveMin, YMoveMin, ZMoveMin, XMoveMax, YMoveMax, ZMoveMax, XMoveTotal, YMoveTotal, ZMoveTotal, PitchTotal, RollTotal, YawTotal, PVSNR, IOSNR, nDim, xDim, yDim, zDim, tDim, NumFiles, SeriesSize, SequenceName, ImageType, ImageComment, TR, NumBehFiles, BehSize";
+		return "UID, SeriesNum, SeriesDesc, Protocol, Sex, studyAge, calcStudyAge, AltUIDs, StudyID, AltStudyID, StudyNum, StudyDate, StudyType, Project, Height, Weight, BMI, SeriesTime, XMoveMin, YMoveMin, ZMoveMin, XMoveMax, YMoveMax, ZMoveMax, XMoveTotal, YMoveTotal, ZMoveTotal, PitchTotal, RollTotal, YawTotal, PVSNR, IOSNR, nDim, xDim, yDim, zDim, tDim, NumFiles, SeriesSize, SequenceName, ImageType, ImageComment, TR, NumBehFiles, BehSize";
 	}
 
 	

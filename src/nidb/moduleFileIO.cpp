@@ -820,7 +820,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
         }
     }
     else {
-        newsubject = new subject(newuid, n); /* get the new subject info, by UID */
+        newsubject = new subject(newuid, false, n); /* get the new subject info, by UID */
         if (!newsubject->valid()) {
             msg = n->WriteLog("New subject was not valid: [" + newsubject->msg() + "]");
             delete newsubject;

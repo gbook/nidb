@@ -171,8 +171,16 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     QString importSeriesNotes;
     QString importAltUIDs;
 
+    QString subjectMatchCriteria("uid");
+    QString studyMatchCriteria("ModalityStudyDate");
+    QString seriesMatchCriteria("SeriesNum");
+
     /* if there is an importRowID, check to see how that thing is doing */
     if (importid > 0) {
+        subjectMatchCriteria = "uid";
+        studyMatchCriteria = "ModalityStudyDate";
+        seriesMatchCriteria = "SeriesNum";
+
         QSqlQuery q;
         q.prepare("select * from import_requests where importrequest_id = :importid");
         q.bindValue(":importid",importid);
@@ -180,8 +188,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         if (q.size() > 0) {
             q.first();
             QString importStatus = q.value("import_status").toString();
-            QString importModality = q.value("import_modality").toString();
-            QString importDatatype = q.value("import_datatype").toString();
+            //QString importModality = q.value("import_modality").toString();
+            //QString importDatatype = q.value("import_datatype").toString();
             importSiteID = q.value("import_siteid").toInt();
             importProjectID = q.value("import_projectid").toInt();
             //importMatchIDOnly = q.value("import_matchidonly").toInt();
@@ -197,6 +205,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 return 0;
             }
         }
+    }
+    else {
+        subjectMatchCriteria = "uidOrAltUID";
+        studyMatchCriteria = "ModalityStudyDate";
+        seriesMatchCriteria = "SeriesNum";
     }
 
     SetImportStatus(importid, "archiving", "", "", false);
@@ -323,7 +336,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             else {
                 /* check if this is a DICOM file */
                 QHash<QString, QString> tags;
-                QString filetype;
+                //QString filetype;
                 i++;
 
                 if (n->GetImageFileTags(file, tags)) {
@@ -363,10 +376,6 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
         n->WriteLog(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
         QStringList files = dcmseries[seriesuid];
-
-        QString subjectMatchCriteria("uid");
-        QString studyMatchCriteria("ModalityStudyDate");
-        QString seriesMatchCriteria("SeriesNum");
 
         if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files))
             iscomplete = true;

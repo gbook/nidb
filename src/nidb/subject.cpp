@@ -33,8 +33,6 @@ subject::subject(int id, nidb *a)
     n = a;
     _subjectid = id;
 
-    //n->WriteLog(QString("Constructor A - found subjectRowID [%1]").arg(_subjectid));
-
     LoadSubjectInfo();
 }
 
@@ -42,27 +40,42 @@ subject::subject(int id, nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- subject ---------------------------------------- */
 /* ---------------------------------------------------------- */
-/*     find subject by UID                                    */
+/*     find subject by UID, or AltUID                         */
 /* ---------------------------------------------------------- */
-subject::subject(QString uid, nidb *a)
+subject::subject(QString uid, bool checkAltUID, nidb *a)
 {
     n = a;
-
-    n->WriteLog("Constructor B");
 
     QSqlQuery q;
     q.prepare("select subject_id from subjects where uid = :uid");
     q.bindValue(":uid", uid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
     if (q.size() < 1) {
-        _msg = "Subject not found by UID [" + uid + "] could not be found";
-        _isValid = false;
+
+        if (checkAltUID) {
+            msgs << "Subject not found by UID [" + uid + "]. Checking for alternate UID";
+            /* check for alternate UID */
+            q.prepare("select * from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id WHERE (a.uid = :altuid or a.uid = SHA1(:altuid) or b.altuid = :altuid or b.altuid = SHA1(:altuid))");
+            q.bindValue(":altuid", uid);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            if (q.size() < 1) {
+                msgs << "Subject not found by AltUID [" + uid + "]. Subject could not be found";
+
+                _isValid = false;
+            }
+            else {
+                q.first();
+                _subjectid = q.value("subject_id").toInt();
+            }
+        }
+        else {
+            msgs << "Subject not found by UID [" + uid + "]. Subject could not be found";
+            _isValid = false;
+        }
     }
     else {
         q.first();
         _subjectid = q.value("subject_id").toInt();
-
-        n->WriteLog(QString("Constructor B - found subjectRowID [%1]").arg(_subjectid));
     }
 
     LoadSubjectInfo();
@@ -93,7 +106,7 @@ subject::subject(QString altuid, int projectid, nidb *a)
     }
     else {
         n->WriteLog(QString("Subject not found by:  altuid [%2]  projectid [%3]").arg(altuid).arg(projectid));
-        _msg = QString("Subject not found by altUID [" + altuid + "] within project [%1]").arg(projectid);
+        msgs << QString("Subject not found by altUID [" + altuid + "] within project [%1]").arg(projectid);
         _isValid = false;
     }
 
@@ -125,7 +138,7 @@ subject::subject(QString name, QString sex, QString dob, nidb *a)
         //n->WriteLog(QString("Constructor C - found subjectRowID [%1]").arg(_subjectid));
     }
     else {
-        _msg = "Subject not found by  Name [" + name + "], Sex [" + sex + "], DOB [" + dob + "]  could not be found";
+        msgs << "Subject not found by  Name [" + name + "], Sex [" + sex + "], DOB [" + dob + "]  could not be found";
         _isValid = false;
     }
 
@@ -137,8 +150,6 @@ subject::subject(QString name, QString sex, QString dob, nidb *a)
 /* --------- LoadSubjectInfo -------------------------------- */
 /* ---------------------------------------------------------- */
 void subject::LoadSubjectInfo() {
-
-    QStringList msgs;
 
     if (_subjectid < 1) {
         msgs << "Subject not found by subjectRowID";

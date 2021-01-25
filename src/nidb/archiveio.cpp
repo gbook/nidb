@@ -1876,7 +1876,10 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
             s = new subject(PatientID, projectID, n);
         }
         else if (subjectMatchCriteria == "uid") {
-            s = new subject(PatientID, n);
+            s = new subject(PatientID, false, n);
+        }
+        else if (subjectMatchCriteria == "uidoraltuid") {
+            s = new subject(PatientID, true, n);
         }
         else if (subjectMatchCriteria == "namesexdob") {
             s = new subject(PatientName, PatientSex, PatientBirthDate, n);

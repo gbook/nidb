@@ -31,7 +31,7 @@ class subject
 public:
     subject();
     subject(int id, nidb *a);
-    subject(QString uid, nidb *a);
+    subject(QString uid, bool checkAltUID, nidb *a);
     subject(QString altuid, int projectid, nidb *a);
     subject(QString name, QString sex, QString dob, nidb *a);
     nidb *n;
@@ -56,6 +56,7 @@ private:
     bool _dataPathExists = false;
     bool _isValid = false;
     QString _msg = "";
+    QStringList msgs;
 
 };
 

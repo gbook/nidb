@@ -152,14 +152,14 @@ public:
 
 private:
     void FatalError(QString err);
-    qint64 pid = 0;
-    bool checkedin = false;
+    qint64 pid = 0;                 /*!< Currently running process id */
+    bool checkedin = false;         /*!< process id */
     bool configLoaded = false;
-    QString module;
+    QString module;                 /*!< module name */
     QString logFilepath;
     QString lockFilepath;
     QFile log;
-    bool runningFromCluster;
+    bool runningFromCluster;        /*!< This nidb executable is being run from a cluster or location other than the main NiDB instance */
 };
 
 #endif // NIDB_H
