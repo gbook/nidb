@@ -107,3 +107,5 @@ mkdir -p /nidb/data/uploadstaging
 chown -R nidb:nidb /var/www/html
 find /var/www -type d -exec chmod 755 {} \;
 find /var/www -type f -exec chmod 644 {} \;
+
+echo "IMPORTANT! - visit http://localhost/setup.php to finish the upgrade process"
