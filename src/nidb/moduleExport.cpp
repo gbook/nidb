@@ -84,7 +84,8 @@ int moduleExport::Run() {
             QString remoteftppath = q.value("remoteftp_path").toString().trimmed();
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
-            //QString bidsreadme = q.value("bidsreadme").toString().trimmed();
+            QString bidsreadme = q.value("bidsreadme").toString().trimmed();
+            QString bidsflags = q.value("bids_flags").toString().trimmed();
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")
@@ -115,16 +116,16 @@ int moduleExport::Run() {
                 //if (filetype == "bids")
 
                 //else
-                    found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, "", status, log);
+                    found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-                found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, "", status, log);
+                found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
             }
             else if (exporttype == "nfs") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, "", status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
             }
             else if (exporttype == "localftp") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, "", status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -352,14 +353,14 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString bidsflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
     QString tmpexportdir;
 
     if (filetype == "bids") {
         QString log;
-        ExportBIDS(exportid, bidsreadme, tmpexportdir, exportstatus, log);
+        ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
         msgs << log;
     }
     else {
@@ -924,7 +925,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 /* ---------------------------------------------------------- */
 /* --------- ExportBIDS ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &outdir, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflags, QString &outdir, QString &exportstatus, QString &msg) {
     n->WriteLog("Entering ExportBIDS()...");
 
     exportstatus = "complete";
@@ -958,7 +959,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString &outdir,
         }
 
         n->WriteLog(QString("Calling WriteBIDS(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteBIDS(seriesids, modalities, rootoutdir, bidsreadme, m))
+        if (io->WriteBIDS(seriesids, modalities, rootoutdir, bidsreadme, bidsflags, m))
             n->WriteLog("WriteBIDS() returned true");
         else
             n->WriteLog("WriteBIDS() returned false");

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 22, 2021 at 06:20 PM
+-- Generation Time: Feb 04, 2021 at 03:45 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -748,7 +748,7 @@ CREATE TABLE `data_requests` (
   `req_status` varchar(25) DEFAULT NULL,
   `req_results` text DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Deprecated' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -963,6 +963,7 @@ CREATE TABLE `exports` (
   `remotenidb_transactionid` int(11) DEFAULT NULL,
   `publicdownloadid` int(11) DEFAULT NULL,
   `bidsreadme` text DEFAULT NULL,
+  `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `completedate` datetime DEFAULT NULL,

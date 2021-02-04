@@ -2080,12 +2080,14 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 /* ---------------------------------------------------------- */
 /* --------- WriteBIDS ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString &msg) {
+bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg) {
     n->WriteLog("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
     QString bidsver = "1.4.1";
     subjectStudySeriesContainer s;
+
+    QStringList flags = bidsflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2182,10 +2184,18 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
                 /* create the subject identifier */
-                QString subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
+                QString subjectdir;
+                if (flags.contains("BIDS_USEUID",Qt::CaseInsensitive))
+                    subjectdir = uid;
+                else
+                    subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
                 /* create the session (study) identifier */
-                QString sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
+                QString sessiondir;
+                if (flags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
+                    subjectdir = QString("%1").arg(studynum);
+                else
+                    sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
 
                 /* determine the datatype (what BIDS calls the 'modality') */
                 QString seriesdir;

@@ -143,6 +143,8 @@
     $requestvars['seriesdata'] = GetVariable("seriesdata");
     $requestvars['allsubject'] = GetVariable("allsubject");
     $requestvars['bidsreadme'] = GetVariable("bidsreadme");
+    $requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
+    $requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
 
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
@@ -3923,6 +3925,13 @@
 														<td>README</td>
 														<td><textarea name="bidsreadme" class="bids"></textarea></td>
 													</tr>
+													<tr>
+														<td>BIDS options</td>
+														<td>
+															<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
+															<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
+														</td>
+													</tr>
 												</table>
 												
 												<div class="dicom" style="padding-left: 15px;">
@@ -4722,6 +4731,8 @@
 		$publicdownloadregisterrequired = ($r['publicdownloadregisterrequired'] == 1) ? 1 : 0;
 		$publicdownloadexpire = $r['publicdownloadexpire'];
 		$bidsreadme = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsreadme']);
+		$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
+		$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
 		if ($r['preserveseries'] == '') { $preserveseries = 0; } else { $preserveseries = $r['preserveseries']; }
 		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $r['filetype']);
 		$gzip = ($r['gzip'] == 1) ? 1 : 0;
@@ -4817,8 +4828,15 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
-		
-		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', now(), 'submitted')";
+		$flags = array();
+		if ($bidsflaguseuid) $flags[] = "BIDS_USEUID";
+		if ($bidsflagusestudyid) $flags[] = "BIDS_USESTUDYID";
+		if (count($flags) > 0)
+			$bidsflagstr = "('" . implode2(",",$flags) . "')";
+		else
+			$bidsflagstr = "null";
+
+		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);

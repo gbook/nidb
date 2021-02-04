@@ -2607,6 +2607,9 @@ QStringList nidb::ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines)
  * @param a array of doubles
 */
 double nidb::Mean(QList<double> a) {
+    if (a.isEmpty())
+        return 0.0;
+
     double sum = 0.0;
     foreach( double n, a )
         sum += n;
@@ -2619,6 +2622,9 @@ double nidb::Mean(QList<double> a) {
 /* --------- Variance --------------------------------------- */
 /* ---------------------------------------------------------- */
 double nidb::Variance(QList<double> a) {
+    if (a.isEmpty())
+        return 0.0;
+
     double mean = Mean(a);
     double temp = 0.0;
 
@@ -2633,5 +2639,8 @@ double nidb::Variance(QList<double> a) {
 /* --------- StdDev ----------------------------------------- */
 /* ---------------------------------------------------------- */
 double nidb::StdDev(QList<double> a) {
+    if (a.isEmpty())
+        return 0.0;
+
     return sqrt(Variance(a));
 }
