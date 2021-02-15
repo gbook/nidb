@@ -2450,6 +2450,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			<legend class="error"><?=$title?></legend>
 			<?=$msg?>
 		</fieldset>
+		<br>
 		<?
 	}
 
@@ -2463,6 +2464,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			<legend class="notice"><?=$title?></legend>
 			<?=$msg?>
 		</fieldset>
+		<br>
 		<?
 	}
 

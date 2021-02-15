@@ -111,7 +111,7 @@
 				
 				/* data */
 				if ($GLOBALS['cfg']['enabledatamenu']) {
-					if ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") { $style = "background-color:#3B5998"; }
+					if ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") { $style = "background-color:#3B5998"; }
 					else { $style = ""; }
 					?><a href="import.php" style="<?=$style?>"><b>Data</b></a><?
 				}
@@ -301,7 +301,7 @@
 				}
 				
 				/* data sub-menu */
-				elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php") {
+				elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") {
 					
 					if ($GLOBALS['cfg']['enabledatamenu']) {
 						if (($page == "import.php") && ($action != "idmapper")) { $style = "background-color:#273f70"; }
@@ -327,6 +327,10 @@
 						if ($page == "downloads.php") { $style = "background-color:#273f70"; }
 						else { $style = ""; }
 						?><a href="downloads.php" style="<?=$style?>">Downloads</a><?
+						
+						if ($page == "datasetrequests.php") { $style = "background-color:#273f70"; }
+						else { $style = ""; }
+						?><a href="datasetrequests.php" style="<?=$style?>">Request a Dataset</a><?
 					}
 					
 				}

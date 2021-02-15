@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 04, 2021 at 03:45 PM
+-- Generation Time: Feb 15, 2021 at 08:45 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -698,6 +698,29 @@ CREATE TABLE `ct_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dataset_requests`
+--
+
+CREATE TABLE `dataset_requests` (
+  `datasetrequest_id` int(11) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `institution` varchar(255) DEFAULT NULL,
+  `shortname` varchar(255) NOT NULL,
+  `idlist` longtext NOT NULL,
+  `dataformat` text NOT NULL,
+  `deliverymethod` text NOT NULL,
+  `notes` text NOT NULL,
+  `request_submitdate` datetime NOT NULL,
+  `request_startdate` datetime DEFAULT NULL,
+  `request_completedate` datetime DEFAULT NULL,
+  `request_status` enum('submitted','processing','complete','error','assigned','cancelled','') NOT NULL,
+  `admin_username` varchar(255) DEFAULT NULL COMMENT 'username of the admin who will be responsible for fulfilling this request'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -3357,6 +3380,12 @@ ALTER TABLE `ct_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `dataset_requests`
+--
+ALTER TABLE `dataset_requests`
+  ADD PRIMARY KEY (`datasetrequest_id`);
+
+--
 -- Indexes for table `data_requests`
 --
 ALTER TABLE `data_requests`
@@ -4373,6 +4402,12 @@ ALTER TABLE `cr_series`
 --
 ALTER TABLE `ct_series`
   MODIFY `ctseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `dataset_requests`
+--
+ALTER TABLE `dataset_requests`
+  MODIFY `datasetrequest_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `data_requests`

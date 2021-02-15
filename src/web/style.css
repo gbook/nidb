@@ -455,6 +455,14 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 .tablepage a { text-decoration: none;}
 .tablepage a:hover { text-decoration: underline;}
 
+/* tiered table */
+.tiered { border-spacing: 0px; padding: 0px; border: 2px solid #666; border-collapse: collapse; }
+.tiered th { border-bottom: 1px solid #666; border-right: 1px solid #666; padding: 4px 10px; }
+.tiered td { padding: 4px 10px; }
+.tiered td.details { padding-left: 15px; padding-top: 0px; border-bottom: 1px solid #aaa; }
+.tiered td summary { font-size: 9pt; border: 0px; }
+.tiered td details { border: 1px solid #ccc; }
+
 .question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }
 
 .invalid { background-color: #ffe3e0; border: 1px solid darkred; border-radius: 3px; padding: 1px 5px; }
@@ -556,3 +564,13 @@ input.required:hover { border: 1px solid #000; background-color: #FBFFC4}
     background: transparent !important;
 	font-weight: normal !important;
 }
+
+/* Subject/Study/Series display - tree view
+ul, #myUL { list-style-type: none; }
+#myUL { margin: 0; padding: 0; border: 1px solid #ccc; }
+#myUL .caret { width: 100%; padding-left: 5px; border: 1px solid #aaa; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+#myUL .caret::before { content: "\25B6"; color: #666; display: inline-block; margin-right: 6px; }
+#myUL .caret-down::before { -ms-transform: rotate(90deg); -webkit-transform: rotate(90deg); transform: rotate(90deg); }
+#myUL .nested { display: none; }
+#myUL .active { display: block; }
+*/
