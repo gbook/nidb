@@ -48,6 +48,7 @@
     $a['pipelineseriesdatetime'] = GetVariable("pipelineseriesdatetime");
     $a['includeprotocolparms'] = GetVariable("includeprotocolparms");
     $a['includemrqa'] = GetVariable("includemrqa");
+    $a['groupmrbyvisittype'] = GetVariable("groupmrbyvisittype");
     $a['includeallmeasures'] = GetVariable("includeallmeasures");
     $a['measurename'] = GetVariable("measurename");
     $a['includeallvitals'] = GetVariable("includeallvitals");
@@ -59,6 +60,7 @@
     $a['dosevariable'] = GetVariable("dosevariable");
     $a['dosetimerange'] = GetVariable("dosetimerange");
     $a['dosedisplaytime'] = GetVariable("dosedisplaytime");
+    $a['groupbydate'] = GetVariable("groupbydate");
     $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
     $a['blankvalueplaceholder'] = GetVariable("blankvalueplaceholder");
     $a['missingvalueplaceholder'] = GetVariable("missingvalueplaceholder");
@@ -142,6 +144,7 @@
 		$pipelineseriesdatetime = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineseriesdatetime']);
 		$includeprotocolparms = mysqli_real_escape_string($GLOBALS['linki'], $a['includeprotocolparms']);
 		$includemrqa = mysqli_real_escape_string($GLOBALS['linki'], $a['includemrqa']);
+		$groupmrbyvisittype = mysqli_real_escape_string($GLOBALS['linki'], $a['groupmrbyvisittype']);
 		$includeallmeasures = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallmeasures']);
 		$includeallvitals = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallvitals']);
 		$includedrugdetails = mysqli_real_escape_string($GLOBALS['linki'], $a['includedrugdetails']);
@@ -149,6 +152,7 @@
 		$dosevariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
 		$dosetimerange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
 		$dosedisplaytime = mysqli_real_escape_string($GLOBALS['linki'], $a['dosedisplaytime']);
+		$groupbydate = mysqli_real_escape_string($GLOBALS['linki'], $a['groupbydate']);
 		$includeemptysubjects = mysqli_real_escape_string($GLOBALS['linki'], $a['includeemptysubjects']);
 		$reportformat = mysqli_real_escape_string($GLOBALS['linki'], $a['reportformat']);
 		$outputformat = mysqli_real_escape_string($GLOBALS['linki'], $a['outputformat']);
@@ -184,6 +188,7 @@
 		$a['pipelineseriesdatetime'] = $row['search_pipelineseriesdatetime'];
 		$a['includeprotocolparms'] = $row['search_includeprotocolparms'];
 		$a['includemrqa'] = $row['search_includemrqa'];
+		$a['groupmrbyvisittype'] = $row['search_groupmrbyvisittype'];
 		$a['includeallmeasures'] = $row['search_includeallmeasures'];
 		$a['measurename'] = $row['search_measurename'];
 		$a['includeallvitals'] = $row['search_includeallvitals'];
@@ -195,6 +200,7 @@
 		$a['dosevariable'] = $row['search_dosevariable'];
 		$a['dosetimerange'] = $row['search_dosetimerange'];
 		$a['dosedisplaytime'] = $row['search_dosedisplaytime'];
+		$a['groupbydate'] = $row['search_groupbydate'];
 		$a['includeemptysubjects'] = $row['search_includeemptysubjects'];
 		$a['reportformat'] = $row['search_reportformat'];
 		$a['outputformat'] = $row['search_outputformat'];
@@ -211,7 +217,7 @@
 		
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 
-		$a['includeemptysubjects'] = GetVariable("includeemptysubjects");
+		//$a['includeemptysubjects'] = GetVariable("includeemptysubjects");
 		
 		if ($a['blankvalueplaceholder'] == "")
 			$a['blankvalueplaceholder'] = "BlankValue";
@@ -275,7 +281,7 @@
 			
 			/* MRI */
 			function CheckForMRICriteria() {
-				if ( (document.getElementById("includeprotocolparms").checked == true) || (document.getElementById("includemrqa").checked == true) || (document.getElementById("mr_protocols").value != "NONE") ) {
+				if ( (document.getElementById("includeprotocolparms").checked == true) || (document.getElementById("includemrqa").checked == true) || (document.getElementById("groupmrbyvisittype").checked == true) || (document.getElementById("mr_protocols").value != "NONE") ) {
 					document.getElementById("mriIndicator").innerHTML = "Search criteria entered";
 				}
 				else {
@@ -371,7 +377,8 @@
 									<div style="padding: 10px">
 									<input type="checkbox" name="includeprotocolparms" id="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include protocol parameters
 									<br>
-									<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includerqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA
+									<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includemrqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA<br>
+									<input type="checkbox" name="groupmrbyvisittype" id="groupmrbyvisittype" <? if ($a['groupmrbyvisittype']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Separate by study visit type
 									<br>
 									MR Protocol<br>
 									<select name="mr_protocols[]" id="mr_protocols" multiple style="width: 400px" size="10" onChange="CheckForMRICriteria()">
@@ -535,7 +542,7 @@
 								<details>
 									<summary><b>Drugs/Dosing</b>&nbsp;<span id="drugIndicator" class="indicator"></span></summary>
 									<div style="padding: 10px">
-									Drug variable name(s)<br>
+									Drug variable name(s) <img src="images/help.png" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"><br>
 									<select class="js-example-basic-multiple" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
 										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
@@ -559,7 +566,7 @@
 									<br>
 									<br>
 									<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
-									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b><br>
+									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <img src="images/help.png" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"><br>
 									Dose variable(s)
 									<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
@@ -599,15 +606,19 @@
 								</details>
 								
 								<br>
+								<b>Grouping Options</b>
+								<br>
+								<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>Group by event DATE <img src="images/help.png" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."><br>
+								<br>
 								<b>Output Options</b>
 								<br>
-								<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data<br>
-								Blank values placeholder <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required><br>
-								Missing values placeholder <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>"><br>
-								<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration<br>
-								<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime<br>
-								<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight<br>
-								<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>Include subject date of birth<br>
+								<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data <img src="images/help.png" title="Includes subjects which are part of this project, but have none of the selected data"><br>
+								Blank values placeholder <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <img src="images/help.png" title="If a value exists, but the value is blank, display this string instead"><br>
+								Missing values placeholder <img src="images/help.png" title="If a value is missing, display this string instead"> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>"><br>
+								<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration <img src="images/help.png" title="If an event has a start and stop time, include the duration in the output"><br>
+								<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime <img src="images/help.png" title="If an event has a end date, include the end date in the output"><br>
+								<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight <img src="images/help.png" title="Include the subject's height and weight in the output"><br>
+								<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>Include subject date of birth <img src="images/help.png" title="Include the subject's date of birth in the output"><br>
 								<br>
 								<table>
 									<tr>
@@ -648,6 +659,8 @@
 							list($h, $t) = CreateWideReport($projectid, $a);
 						}
 						
+						//PrintVariable($t);
+						
 						if ($a['outputformat'] == "table")
 							PrintTable($h, $t, $a);
 						elseif ($a['outputformat'] == "csv")
@@ -676,6 +689,7 @@
 		$includedob = $a['includedob'];
 		$blankvalueplaceholder = $a['blankvalueplaceholder'];
 		$missingvalueplaceholder = $a['missingvalueplaceholder'];
+		$groupbydate = $a['groupbydate'];
 		
 		/* create the table */
 		$t;
@@ -685,15 +699,15 @@
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$i = 0;
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjects[$i]['subjectid'] = $row['subject_id'];
-			$subjects[$i]['uid'] = $row['uid'];
-			$subjects[$i]['enrollmentid'] = $row['enrollment_id'];
-			$subjects[$i]['dob'] = $row['birthdate'];
-			$subjects[$i]['sex'] = $row['gender'];
-			$subjects[$i]['height'] = $row['height'];
-			$subjects[$i]['weight'] = $row['weight'];
-			$subjects[$i]['enrollgroup'] = $row['enroll_subgroup'];
+		while ($rowA = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjects[$i]['subjectid'] = $rowA['subject_id'];
+			$subjects[$i]['uid'] = $rowA['uid'];
+			$subjects[$i]['enrollmentid'] = $rowA['enrollment_id'];
+			$subjects[$i]['dob'] = $rowA['birthdate'];
+			$subjects[$i]['sex'] = $rowA['gender'];
+			$subjects[$i]['height'] = $rowA['height'];
+			$subjects[$i]['weight'] = $rowA['weight'];
+			$subjects[$i]['enrollgroup'] = $rowA['enroll_subgroup'];
 			
 			$altuids = GetAlternateUIDs($subjects[$i]['subjectid'], $subjects[$i]['enrollmentid']);
 			$subjects[$i]['altuids'] = implode2(" | ", $altuids);
@@ -707,7 +721,11 @@
 			$hasdata = false;
 			
 			$uid = $subj['uid'];
-			$row = $uid . "0000-00-00 00:00:00";
+			if ($groupbydate)
+				$row = $uid . "0000-00-00";
+			else
+				$row = $uid . "0000-00-00 00:00:00";
+				
 			$enrollmentid = $subj['enrollmentid'];
 			$age = "";
 			
@@ -736,7 +754,8 @@
 				}
 				else {
 					$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
-					$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
+					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist)";
+					//$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
 				}
 			
 				/* add in the protocols */
@@ -765,7 +784,6 @@
 					$studyage = $rowA['study_ageatscan'];
 					$studynotes = $rowA['study_notes'];
 					$studyvisit = $rowA['study_type'];
-
 					
 					list($studyAge, $calcStudyAge) = GetStudyAge($subj['dob'], $studyage, $studydatetime);
 					
@@ -788,9 +806,16 @@
 						$weight = $subj['weight'];
 					else
 						$weight = $studyweight;
+						
+					if ($a['groupmrbyvisittype'])
+						$seriesdesc = "$seriesdesc" . "_$studyvisit";
 					
 					/* need to add the demographic info to every row */
-					$row = "$uid$studydate";
+					if ($groupbydate)
+						$row = $uid . substr($studydatetime, 0, 10);
+					else
+						$row = "$uid$studydatetime";
+						
 					$t[$row]['UID'] = $subj['uid'];
 					$t[$row]['Sex'] = $subj['sex'];
 					$t[$row]['AgeAtEvent'] = $studyAge;
@@ -811,8 +836,8 @@
 					$t[$row]["$seriesdesc-StudyDateTime"] = $studydatetime;
 					$t[$row]['EventDateTime'] = $seriesdatetime;
 					$t[$row]["$seriesdesc-StudyID"] = $subj['uid'] . $studynum;
-					$t[$row]["$seriesdesc-NumSeries"] = $numseries;
-					$t[$row]["$seriesdesc-Notes"] = $studynotes;
+					//$t[$row]["$seriesdesc-NumSeries"] = $numseries;
+					//$t[$row]["$seriesdesc-Notes"] = $studynotes;
 					
 					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $seriesdatetime, $dosedisplaytime);
 					if ($timeSinceDose != null) {
@@ -877,7 +902,11 @@
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-					$row = $uid . $rowA['measure_startdate'];
+					if ($groupbydate)
+						$row = $uid . substr($rowA['measure_startdate'], 0, 10);
+					else
+						$row = $uid . $rowA['measure_startdate'];
+					
 					$measurevalue = $rowA['measure_value'];
 					
 					$dob = date_create($subj['dob']);
@@ -933,7 +962,11 @@
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-					$row = $uid . $rowA['vital_startdate'];
+					if ($groupbydate)
+						$row = $uid . substr($rowA['vital_startdate'], 0, 10);
+					else
+						$row = $uid . $rowA['vital_startdate'];
+
 					$vitalvalue = $rowA['vital_value'];
 					
 					$dob = date_create($subj['dob']);
@@ -1005,7 +1038,11 @@
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-						$row = $uid . $rowA['drug_startdate'];
+						if ($groupbydate)
+							$row = $uid . substr($rowA['drug_startdate'], 0, 10);
+						else
+							$row = $uid . $rowA['drug_startdate'];
+							
 						$drugvalue = $rowA['drug_value'];
 						
 						$dob = date_create($subj['dob']);
@@ -1103,11 +1140,19 @@
 								if (mysqli_num_rows($resultB) > 0) {
 									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 									$variabledatetime = $rowB['series_datetime'];
-									$row = $uid . $rowA['drug_startdate'];
+
+									if ($groupbydate)
+										$row = $uid . substr($rowA['drug_startdate'], 0, 10);
+									else
+										$row = $uid . $rowA['drug_startdate'];
+									
 									//$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
 								}
 							}
-							$row = $uid . $variabledatetime;
+							if ($groupbydate)
+								$row = $uid . substr($variabledatetime, 0, 10);
+							else
+								$row = $uid . $variabledatetime;
 							
 							/* need to add the demographic info to every row */
 							$t[$row]['UID'] = $subj['uid'];
@@ -1561,7 +1606,7 @@
 		}
 		
 		?>
-		Displaying <b><?=$numcols?></b> cols by <b><?=$numrows?></b> rows in <b><?=$format?></b> format
+		Displaying <b><?=$numrows?></b> rows by <b><?=$numcols?></b> columns
 		<br><br>
 		<table class="summarytable">
 			<thead>
