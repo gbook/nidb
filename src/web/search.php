@@ -3922,7 +3922,7 @@
 												<input type="radio" name="filetype" id="filetype" value="bids">BIDS<br>
 												<table class="bids">
 													<tr>
-														<td>README</td>
+														<td valign="top">README</td>
 														<td><textarea name="bidsreadme" class="bids"></textarea></td>
 													</tr>
 													<tr>
