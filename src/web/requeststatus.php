@@ -157,22 +157,19 @@
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList($viewall) {
-		$urllist['Search'] = "search.php";
-		NavigationBar("Data export status", $urllist);
 		
 		if ($viewall) {
 			?>
-			<b>Showing all exports</b> <a href="requeststatus.php?viewall=0">(show only most recent 30)</a>
+			<h3 class="ui header">Showing all exports</h3> <a href="requeststatus.php?viewall=0">(show only most recent 30)</a>
 			<?
 		}
 		else {
 			?>
-			<b>Showing 30 most recent exports</b> <a href="requeststatus.php?viewall=1">(show all)</a>
+			<h3 class="ui header">Showing 30 most recent exports</h3> <a href="requeststatus.php?viewall=1">(show all)</a>
 			<?
 		}
 		?>
-		<br><br>
-		<table class="graydisplaytable" width="100%">
+		<table class="ui small celled selectable grey compact table">
 			<thead>
 				<th align="left">Request date</th>
 				<th align="left">Format</th>

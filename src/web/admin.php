@@ -62,31 +62,35 @@
 	
 
 		?>
-		<i class="users large icon"></i><a href="adminusers.php">Users</a>
-		<br><br>
-		<i class="clipboard list large icon"></i><a href="adminprojects.php">Projects</a>
-		<br><br><br>
-		<i class="clipboard large icon"></i><a href="reports.php">Reports</a>
-		<br><br>
-		<i class="clipboard check large icon"></i><a href="adminaudits.php">Audits</a>
-		<br><br>
-		<i class="eraser large icon"></i><a href="cleanup.php">Clean-up data</a>
-		<br><br>
-		<i class="users large icon"></i><a href="longqc.php">Longitudinal QC</a>
-		<br><br>
-		<i class="thermometer half large icon"></i><a href="stats.php">System Usage Statistics</a>
-		<br><br><br>
-		<li><a href="adminmodules.php">Modules</a>
-		<li><a href="adminmodalities.php">Modalities</a>
-		<li><a href="adminsites.php">Sites</a>
-		<li><a href="adminqc.php">QC Modules</a>
-		<!--<li><a href="importlog.php">Import Logs</a>-->
-		<li><a href="admininstances.php">Instances</a>
-		<li><a href="status.php">System status</a>
-		<li><a href="adminemail.php">Mass email</a>
-
-		<br><br>
-		<i class="cog icon large red"></i><a href="system.php"><b>System Settings</b></a>
+		<div class="ui text container grid">
+			<div class="ui eight wide column">
+				<i class="users icon"></i><a href="adminusers.php">Users</a>
+				<br><br>
+				<i class="clipboard list icon"></i><a href="adminprojects.php">Projects</a>
+				<br><br><br>
+				<i class="clipboard icon"></i><a href="reports.php">Reports</a>
+				<br><br>
+				<i class="clipboard check icon"></i><a href="adminaudits.php">Audits</a>
+				<br><br>
+				<i class="eraser icon"></i><a href="cleanup.php">Clean-up data</a>
+				<br><br>
+				<i class="check circle icon"></i><a href="longqc.php">Longitudinal QC</a>
+				<br><br>
+				<i class="thermometer half icon"></i><a href="stats.php">System Usage Statistics</a>
+			</div>
+			<div class="ui eight wide column">
+				<li><a href="adminmodules.php">Modules</a>
+				<li><a href="adminmodalities.php">Modalities</a>
+				<li><a href="adminsites.php">Sites</a>
+				<li><a href="adminqc.php">QC Modules</a>
+				<!--<li><a href="importlog.php">Import Logs</a>-->
+				<li><a href="admininstances.php">Instances</a>
+				<li><a href="status.php">System status</a>
+				<li><a href="adminemail.php">Mass email</a>
+				<br><br><br>
+				<i class="cog icon large red"></i><a href="system.php"><b>System Settings</b></a>
+			</div>
+		</div>
 		<?
 	}
 ?>

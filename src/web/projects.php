@@ -2413,9 +2413,6 @@
 			DisplayErrorMessage("Error", "Invalid project ID [$projectid]");
 			return;
 		}
-		//PrintVariable($modalities);
-		//PrintVariable($protocolnames);
-		//PrintVariable($experimentids);
 		
 		foreach ($modalities as $i => $modality) {
 			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
@@ -2755,39 +2752,37 @@
 		<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
 			<tr>
 				<td style="background-color: #DDD; padding:5px">
-		<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
-		<script type="text/javascript">
-			function filterTable(event) {
-				var filter = event.target.value.toUpperCase();
-				var rows = document.querySelector("#projecttable tbody").rows;
-				
-				for (var i = 0; i < rows.length; i++) {
-					var firstCol = rows[i].cells[0].textContent.toUpperCase();
-					var secondCol = rows[i].cells[1].textContent.toUpperCase();
-					if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-						rows[i].style.display = "";
-					} else {
-						rows[i].style.display = "none";
-					}      
-				}
-			}
+					<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
+					<script type="text/javascript">
+						function filterTable(event) {
+							var filter = event.target.value.toUpperCase();
+							var rows = document.querySelector("#projecttable tbody").rows;
+							
+							for (var i = 0; i < rows.length; i++) {
+								var firstCol = rows[i].cells[0].textContent.toUpperCase();
+								var secondCol = rows[i].cells[1].textContent.toUpperCase();
+								if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+									rows[i].style.display = "";
+								} else {
+									rows[i].style.display = "none";
+								}      
+							}
+						}
 
-			document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
-		</script>
+						document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
+					</script>
 				</td>
 			</tr>
 		</table>
-		<table class="sortable graydisplaytable" width="100%" id="projecttable">
+		<table class="ui small celled selectable grey compact table" id="projecttable">
 			<thead>
-				<tr>
-					<th data-sort="string-ins">Name</th>
-					<th data-sort="string-ins">UID</th>
-					<th data-sort="string-ins">Cost Center</th>
-					<th data-sort="string-ins">Admin</th>
-					<th data-sort="string-ins">PI</th>
-					<th data-sort="int">Studies</th>
-					<th data-sort="string-ins">RDoC Submission</th>
-				</tr>
+				<th data-sort="string-ins">Name</th>
+				<th data-sort="string-ins">UID</th>
+				<th data-sort="string-ins">Cost Center</th>
+				<th data-sort="string-ins">Admin</th>
+				<th data-sort="string-ins">PI</th>
+				<th data-sort="int">Studies</th>
+				<th data-sort="string-ins">RDoC Submission</th>
 			</thead>
 			<tbody>
 				<?
