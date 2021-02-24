@@ -2446,11 +2446,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayErrorMessage($title, $msg) {
 		?>
-		<fieldset class="error">
-			<legend class="error"><?=$title?></legend>
-			<?=$msg?>
-		</fieldset>
-		<br>
+		<div class="ui message red compact">
+			<!--<i class="close icon"></i>-->
+			<p><?=$msg?></p>
+		</div>
 		<?
 	}
 
@@ -2460,11 +2459,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayNotice($title, $msg) {
 		?>
-		<fieldset class="notice">
-			<legend class="notice"><?=$title?></legend>
+		<div class="ui message compact">
+			<!--<i class="close icon"></i>-->
 			<?=$msg?>
-		</fieldset>
-		<br>
+		</div>
 		<?
 	}
 

@@ -62,31 +62,31 @@
 	
 
 		?>
-		<ul>
-			<li><a href="adminusers.php">Users</a>
-			<li><a href="adminprojects.php">Projects</a>
-		</ul>
-		
-		<ul>
-			<li><a href="reports.php">Reports</a>
-			<li><a href="adminaudits.php">Audits</a>
-			<li><a href="cleanup.php">Clean-up data</a>
-			<li><a href="longqc.php">Longitudinal QC</a>
-			<li><a href="stats.php">System Usage Statistics</a>
-		</ul>
-		
-		<ul>
-			<li><a href="adminmodules.php">Modules</a>
-			<li><a href="adminmodalities.php">Modalities</a>
-			<li><a href="adminsites.php">Sites</a>
-			<li><a href="adminqc.php">QC Modules</a>
-			<!--<li><a href="importlog.php">Import Logs</a>-->
-			<li><a href="admininstances.php">Instances</a>
-			<li><a href="status.php">System status</a>
-			<li><a href="adminemail.php">Mass email</a>
-			<li><a href="setup.php">Update</a>
-			<li><a href="system.php">NiDB Settings...</a>
-		</ul>
+		<i class="users large icon"></i><a href="adminusers.php">Users</a>
+		<br><br>
+		<i class="clipboard list large icon"></i><a href="adminprojects.php">Projects</a>
+		<br><br><br>
+		<i class="clipboard large icon"></i><a href="reports.php">Reports</a>
+		<br><br>
+		<i class="clipboard check large icon"></i><a href="adminaudits.php">Audits</a>
+		<br><br>
+		<i class="eraser large icon"></i><a href="cleanup.php">Clean-up data</a>
+		<br><br>
+		<i class="users large icon"></i><a href="longqc.php">Longitudinal QC</a>
+		<br><br>
+		<i class="thermometer half large icon"></i><a href="stats.php">System Usage Statistics</a>
+		<br><br><br>
+		<li><a href="adminmodules.php">Modules</a>
+		<li><a href="adminmodalities.php">Modalities</a>
+		<li><a href="adminsites.php">Sites</a>
+		<li><a href="adminqc.php">QC Modules</a>
+		<!--<li><a href="importlog.php">Import Logs</a>-->
+		<li><a href="admininstances.php">Instances</a>
+		<li><a href="status.php">System status</a>
+		<li><a href="adminemail.php">Mass email</a>
+
+		<br><br>
+		<i class="cog icon large red"></i><a href="system.php"><b>System Settings</b></a>
 		<?
 	}
 ?>

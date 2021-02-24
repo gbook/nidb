@@ -2443,12 +2443,12 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
     tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
     QStringList pix = tags["PixelSpacing"].split("\\");
-    int pixelX(0);
-    int pixelY(0);
-    if (pix.size() == 2) {
-        pixelX = pix[0].toInt();
-        pixelY = pix[1].toInt();
-    }
+    //int pixelX(0);
+    //int pixelY(0);
+    //if (pix.size() == 2) {
+    //    pixelX = pix[0].toInt();
+    //    pixelY = pix[1].toInt();
+    //}
     QStringList amat = tags["AcquisitionMatrix"].split(" ");
     //int mat1(0);
     //int mat2(0);

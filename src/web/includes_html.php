@@ -44,6 +44,9 @@
 <!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 
+<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.min.css">
+<script src="scripts/semantic/semantic.min.js"></script>
+
 <!-- file uploader -->
 <script src="scripts/fileuploader.js" type="text/javascript"></script>
 <link href="scripts/fileuploader.css" rel="stylesheet" type="text/css">	
@@ -87,8 +90,11 @@
 
 <script>
 	$(document).ready(function() {
-		$('.message').fadeOut(7500);
-		
+		//$('.message').fadeOut(7500);
+		$('.message .close').on('click', function() {
+				$(this).closest('.message');
+			  });
+			  
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.
         var date_from_string = function(str) {

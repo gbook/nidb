@@ -96,22 +96,18 @@
 				if ($GLOBALS['cfg']['displayrecentstudies']) {
 					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];
 			?>
-			<table class="graydisplaytable" width="90%">
-				<tr>
-					<th colspan="7">
-						<b>New Imaging Studies</b><br>
-						<span class="sublabel">Collected in past <?=$numrecentdays?> days</span>
-					</th>
-				</tr>
-				<tr>
-					<td class="subheader">Subject UID</td>
-					<td class="subheader">Study #</td>
-					<td class="subheader">Date</td>
-					<td class="subheader">Modality</td>
-					<td class="subheader">Site</td>
-					<td class="subheader"># of Series</td>
-					<td class="subheader">Project</td>
-				</tr>
+			<h3 class="ui header">New Studies</h3>
+			<span class="tiny">Collected in past <?=$numrecentdays?> days</span>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th class="subheader">Subject UID</th>
+					<th class="subheader">Study #</th>
+					<th class="subheader">Date</th>
+					<th class="subheader">Modality</th>
+					<th class="subheader">Site</th>
+					<th class="subheader"># of Series</th>
+					<th class="subheader">Project</th>
+				</thead>
 			<?
 				$sqlstring = "select a.*, c.*, d.uid, d.subject_id, f.family_uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id left join family_members e on d.subject_id = e.subject_id left join families f on e.family_id = f.family_id where d.isactive = 1 and (a.study_datetime > now() - interval $numrecentdays day) and a.study_datetime <= now() and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') and a.study_modality <> '' order by a.study_datetime desc";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -168,16 +164,14 @@
 			?>
 		</td>
 		<td valign="top">
-			<table class="graydisplaytable" width="90%">
-				<tr>
-					<th colspan="4">Recently Viewed Subjects</th>
-				</tr>
-				<tr>
-					<td class="subheader">UID</td>
-					<td class="subheader">Sex</td>
-					<td class="subheader">DOB</td>
-					<td class="subheader"><span class="tiny">Date Accessed</span></td>
-				</tr>
+			<h3 class="ui header">Recently Viewed Subjects</h3>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th>UID</th>
+					<th>Sex</th>
+					<th>DOB</th>
+					<th><span class="tiny">Date Accessed</span></th>
+				</thead>
 				<?
 				$sqlstring = "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.uid order by a.mostrecent_date desc";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -201,16 +195,14 @@
 				?>
 			</table>
 			<br>
-			<table class="graydisplaytable" width="90%">
-				<tr>
-					<th colspan="6">Recently Viewed Imaging studies</th>
-				</tr>
-				<tr>
-					<td class="subheader">UID-Number</td>
-					<td class="subheader">Date</td>
-					<td class="subheader">Modality</td>
-					<td class="subheader">Site</td>
-					<td class="subheader"><span class="tiny">Date Accessed</span></td>
+			<h3 class="ui header">Recently Viewed Studies</h3>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th>StudyID</th>
+					<th>Date</th>
+					<th>Modality</th>
+					<th>Site</th>
+					<th><span class="tiny">Date Accessed</span></th>
 				</tr>
 				<?
 				$q = mysqli_stmt_init($GLOBALS['linki']);

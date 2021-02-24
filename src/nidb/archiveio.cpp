@@ -2193,7 +2193,7 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
                 /* create the session (study) identifier */
                 QString sessiondir;
                 if (flags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
-                    subjectdir = QString("%1").arg(studynum);
+                    sessiondir = QString("%1").arg(studynum);
                 else
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
 
@@ -2308,7 +2308,8 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
         if (q.size() > 0) {
-            n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
+            if (q.size() > 1)
+                n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
             while (q.next()) {
                 QString uid = q.value("uid").toString();
                 int subjectid = q.value("subject_id").toInt();

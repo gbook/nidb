@@ -942,8 +942,9 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflag
         while (q.next()) {
             seriesids.append(q.value("series_id").toInt());
             modalities.append(q.value("modality").toString().toLower());
-            n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
+            //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
+        n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
         QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + n->CreateLogDate();
         outdir = rootoutdir;

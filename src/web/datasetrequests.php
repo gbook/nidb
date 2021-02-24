@@ -201,51 +201,68 @@
 		}
 		
 	?>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="datasetrequests.php" autocomplete="off">
+		<div class="ui text container">
+			<div class="ui attached visible message">
+			  <div class="header">Submit a new data request</div>
+			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
+			</div>		
+			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="datasetrequestid" value="<?=$id?>">
-			<tr>
-				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
-				</td>
-			</tr>
-			<tr>
-				<td>Email</td>
-				<td><input type="email" name="email" value="<?=$email?>" maxlength="255" required></td>
-			</tr>
-			<tr>
-				<td>Institution</td>
-				<td><input type="text" name="institution" value="<?=$institution?>" maxlength="255" required></td>
-			</tr>
-			<tr>
-				<td>Short name</td>
-				<td><input type="text" name="shortname" value="<?=$shortname?>" maxlength="255" required></td>
-			</tr>
-			<tr>
-				<td>ID list<br><span class="tiny">List of IDs you are requesting. Specifiy the type of ID</span></td>
-				<td><textarea name="idlist" required><?=$idlist?></textarea></td>
-			</tr>
-			<tr>
-				<td>Data Format<br><span class="tiny">BIDS, Nifti, anonymized DICOM, directory structure, etc.</span></td>
-				<td><textarea name="dataformat" required><?=$dataformat?></textarea></td>
-			</tr>
-			<tr>
-				<td>Delivery method<br><span class="tiny">How do you want to get the data. Email passwords separately</span></td>
-				<td><textarea name="deliverymethod" required><?=$deliverymethod?></textarea></td>
-			</tr>
-			<tr>
-				<td>Notes<br><span class="tiny">List of IDs you are requesting. Specifiy the type of ID</span></td>
-				<td><textarea name="notes" required><?=$notes?></textarea></td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
-				</td>
-			</tr>
+			<h3 class="ui dividing header"><?=$formtitle?></h3>
+			
+			<div class="two fields">
+				<div class="field">
+					<label>Email</label>
+					<div class="field">
+						<input type="email" name="email" value="<?=$email?>" maxlength="255" required>
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Institution</label>
+					<div class="field">
+						<input type="text" name="institution" value="<?=$institution?>" maxlength="255" required>
+					</div>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Short name</label>
+				<div class="field">
+					<input type="text" name="shortname" value="<?=$shortname?>" maxlength="255" required>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Data Requested <i class="question circle outline icon" title="IDs/project(s) and data protocol names"></i></label>
+				<div class="field">
+					<textarea name="idlist" rows="4" required><?=$idlist?></textarea>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Data Format <i class="question circle outline icon" title="BIDS, Nifti, anonymized DICOM, directory structure, etc"></i></label>
+				<div class="field">
+					<textarea name="dataformat" rows="4" required><?=$dataformat?></textarea>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Delivery Method <i class="question circle outline icon" title="include all details of how to get the data to you. Email passwords separately"></i></label>
+				<div class="field">
+					<textarea name="deliverymethod" rows="4" required><?=$deliverymethod?></textarea>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Notes</label>
+				<div class="field">
+					<textarea name="notes" rows="4" required><?=$notes?></textarea>
+				</div>
+			</div>
+			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 			</form>
-		</table>
 		</div>
 	<?
 	}
@@ -256,24 +273,24 @@
 	function DisplayDatasetRequestList() {
 	?>
 
-	<a href="datasetrequests.php?action=addform" class="linkbutton">Submit New Dataset Request</a>
+	<div style="padding: 0px 50px">
+	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'">Submit New Dataset Request</button>
 	<br><br><br>
 	
-	My Requests
-	<br><br>
-	<table class="graydisplaytable">
+	<h3 class="ui header">My Requests</h3>
+	<table class="ui small celled selectable grey compact table">
 		<thead>
 			<tr>
-				<th style="padding: 10px;">Shortname</th>
-				<th style="padding: 10px;">Submit Date</th>
-				<th style="padding: 10px;">Admin Username</th>
-				<th style="padding: 10px;">Status</th>
-				<th style="padding: 10px;">Start Date</th>
-				<th style="padding: 10px;">Complete Date</th>
-				<th style="padding: 10px;">ID List</th>
-				<th style="padding: 10px;">Data Format</th>
-				<th style="padding: 10px;">Delivery Method</th>
-				<th style="padding: 10px;">Cancel</th>
+				<th>Short Name</th>
+				<th>Submit Date</th>
+				<th>Admin Username</th>
+				<th>Status</th>
+				<th>Start Date</th>
+				<th>Complete Date</th>
+				<th>ID List</th>
+				<th>Data Format</th>
+				<th>Delivery Method</th>
+				<th>Cancel</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -293,22 +310,29 @@
 					$request_submitdate = $row['request_submitdate'];
 					$request_startdate = $row['request_startdate'];
 					$request_completedate = $row['request_completedate'];
-					$request_status = $row['request_status'];
+					$status = $row['request_status'];
 					$admin_username = $row['admin_username'];
+
+					switch ($status) {
+						case 'complete': $statustd = "positive"; break;
+						case 'submitted': $statustd = "warning"; break;
+						case 'assigned': $statustd = "negative"; break;
+						default: $statustd = "";
+					}
 
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
-						<td style="padding: 8px;"><?=$request_submitdate?></td>
-						<td style="padding: 8px;"><?=$admin_username?></td>
-						<td style="padding: 8px;"><?=$request_status?></td>
-						<td style="padding: 8px;"><?=$request_startdate?></td>
-						<td style="padding: 8px;"><?=$request_completedate?></td>
-						<td style="padding: 8px;"><?=$idlist?></td>
-						<td style="padding: 8px;"><?=$dataformat?></td>
-						<td style="padding: 8px;"><?=$deliverymethod?></td>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$admin_username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
 					<? 
 				}
@@ -319,22 +343,21 @@
 	<?
 		if ($GLOBALS['isadmin']) {
 	?>
-	<br><br>
-	Requests Assigned to Me
-	<br><br>
-	<table class="graydisplaytable">
+	<br>
+	<h3 class="ui header">Requests Assigned to Me</h3>
+	<table class="ui small celled selectable grey compact table">
 		<thead>
 			<tr>
-				<th style="padding: 10px;">Shortname</th>
-				<th style="padding: 10px;">Submit Date</th>
-				<th style="padding: 10px;">Username</th>
-				<th style="padding: 10px;">Status</th>
-				<th style="padding: 10px;">Start Date</th>
-				<th style="padding: 10px;">Complete Date</th>
-				<th style="padding: 10px;">ID List</th>
-				<th style="padding: 10px;">Data Format</th>
-				<th style="padding: 10px;">Delivery Method</th>
-				<th style="padding: 10px;">Mark Complete</th>
+				<th>Short Name</th>
+				<th>Submit Date</th>
+				<th>Username</th>
+				<th>Status</th>
+				<th>Start Date</th>
+				<th>Complete Date</th>
+				<th>ID List</th>
+				<th>Data Format</th>
+				<th>Delivery Method</th>
+				<th>Mark Complete</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -354,21 +377,28 @@
 					$request_submitdate = $row['request_submitdate'];
 					$request_startdate = $row['request_startdate'];
 					$request_completedate = $row['request_completedate'];
-					$request_status = $row['request_status'];
+					$status = $row['request_status'];
 
-					if ($shortname == "") { $shortname = "(blank)"; }
+					switch ($status) {
+						case 'complete': $statustd = "positive"; break;
+						case 'submitted': $statustd = "warning"; break;
+						case 'assigned': $statustd = "negative"; break;
+						default: $statustd = "";
+					}
+					
+					if ($shortname == "") { $shortname = "(shortname is blank)"; }
 					?>
 					<tr>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
-						<td style="padding: 8px;"><?=$request_submitdate?></td>
-						<td style="padding: 8px;"><?=$username?></td>
-						<td style="padding: 8px;"><?=$request_status?></td>
-						<td style="padding: 8px;"><?=$request_startdate?></td>
-						<td style="padding: 8px;"><?=$request_completedate?></td>
-						<td style="padding: 8px;"><?=$idlist?></td>	
-						<td style="padding: 8px;"><?=$dataformat?></td>
-						<td style="padding: 8px;"><?=$deliverymethod?></td>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Mark as complete</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>	
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Mark as complete</a></td>
 					</tr>
 					<? 
 				}
@@ -377,21 +407,20 @@
 	</table>
 	
 	<br><br>
-	Unassigned Requests
-	<br><br>
-	<table class="graydisplaytable">
+	<h3 class="ui header">Unassigned Requests</h3>
+	<table class="ui small celled selectable grey compact table">
 		<thead>
 			<tr>
-				<th style="padding: 10px;">Shortname</th>
-				<th style="padding: 10px;">Submit Date</th>
-				<th style="padding: 10px;">Username</th>
-				<th style="padding: 10px;">Status</th>
-				<th style="padding: 10px;">Start Date</th>
-				<th style="padding: 10px;">Complete Date</th>
-				<th style="padding: 10px;">ID List</th>
-				<th style="padding: 10px;">Data Format</th>
-				<th style="padding: 10px;">Delivery Method</th>
-				<th style="padding: 10px;">Take ownership</th>
+				<th>Short Name</th>
+				<th>Submit Date</th>
+				<th>Username</th>
+				<th>Status</th>
+				<th>Start Date</th>
+				<th>Complete Date</th>
+				<th>ID List</th>
+				<th>Data Format</th>
+				<th>Delivery Method</th>
+				<th>Take ownership</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -411,28 +440,35 @@
 					$request_submitdate = $row['request_submitdate'];
 					$request_startdate = $row['request_startdate'];
 					$request_completedate = $row['request_completedate'];
-					$request_status = $row['request_status'];
+					$status = $row['request_status'];
 
+					switch ($status) {
+						case 'complete': $statustd = "positive"; break;
+						case 'submitted': $statustd = "warning"; break;
+						case 'assigned': $statustd = "negative"; break;
+						default: $statustd = "";
+					}
+					
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
-						<td style="padding: 8px;"><?=$request_submitdate?></td>
-						<td style="padding: 8px;"><?=$username?></td>
-						<td style="padding: 8px;"><?=$request_status?></td>
-						<td style="padding: 8px;"><?=$request_startdate?></td>
-						<td style="padding: 8px;"><?=$request_completedate?></td>
-						<td style="padding: 8px;"><?=$idlist?></td>
-						<td style="padding: 8px;"><?=$dataformat?></td>
-						<td style="padding: 8px;"><?=$deliverymethod?></td>
-						<td style="padding: 8px;"><a href="datasetrequests.php?action=takeownership&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Take ownership</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Take ownership</a></td>
 					</tr>
 					<? 
 				}
 			?>
 		</tbody>
 	</table>
-	
+	</div>
 	<?
 		}
 	}
