@@ -205,7 +205,7 @@
 			<div class="ui attached visible message">
 			  <div class="header">Submit a new data request</div>
 			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
-			</div>		
+			</div>
 			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="datasetrequestid" value="<?=$id?>">

@@ -138,7 +138,7 @@
 			}
 		}
 		
-		?><div align="center"><span class="message"><?=$projectname?> updated</span></div><br><br><?
+		DisplayNotice("title", "$projectname updated");
 	}
 
 
@@ -166,7 +166,7 @@
 		$sqlstring = "insert into projects (project_uid, project_name, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$projectname?> added</span></div><br><br><?
+		DisplayNotice("title", "$projectname added");
 	}
 
 
@@ -201,7 +201,7 @@
 			$usecustomid = $row['project_usecustomid'];
 		
 			$formaction = "update";
-			$formtitle = "Updating $name";
+			$formtitle = "$name";
 			$submitbuttonlabel = "Update";
 
 			//echo "admin is $admin and $ pi is $pi";
@@ -227,33 +227,46 @@
 			//echo "username: $username and userid is $userid ";
 		}
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['Projects'] = "adminprojects.php";
-		$urllist[$name] = "adminprojects.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Projects'] = "adminprojects.php";
+		//$urllist[$name] = "adminprojects.php?action=editform&id=$id";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="adminprojects.php">
+		<div class="ui text container">
+			<div class="ui attached visible message">
+			  <div class="header"><?=$formtitle?></div>
+			</div>
+			<form method="post" action="adminprojects.php" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
-			<tr>
-				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Name</td>
-				<td><input type="text" name="projectname" required value="<?=$name?>" size="60" maxlength="60"></td>
-			</tr>
-			<tr>
-				<td class="label">Use Custom IDs?</td>
-				<td><input type="checkbox" name="usecustomid" value="1" <? if ($usecustomid) { echo "checked"; } ?>></td>
-			</tr>
-			<tr>
-				<td class="label">Instance</td>
-				<td>
+
+			<div class="two fields">
+				<div class="field">
+					<label>Name</label>
+					<div class="field">
+						<input type="text" name="projectname" value="<?=$name?>" maxlength="255" required>
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Project number</label>
+					<div class="field">
+						<input type="text" name="costcenter" value="<?=$costcenter?>" maxlength="255" required placeholder="6 digit cost center">
+					</div>
+				</div>
+			</div>
+			
+			<div class="field">
+				<label>Use Custom IDs?</label>
+				<div class="field">
+					<input type="checkbox" name="usecustomid" value="1" <? if ($usecustomid) { echo "checked"; } ?>>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Instance</label>
+				<div class="field">
 					<select name="instanceid" required>
 						<option value="">Select Instance...</option>
 					<?
@@ -264,21 +277,37 @@
 							$instance_uid = $row['instance_uid'];
 							$instance_name = $row['instance_name'];
 							if ($instanceid == $instance_id) { $selected = "selected"; } else { $selected = ''; }
-							?>
-							<option value="<?=$instance_id?>" <?=$selected?>><?=$instance_name?></option>
-							<?
+							?><option value="<?=$instance_id?>" <?=$selected?>><?=$instance_name?></option><?
 						}
 					?>
 					</select>
-				</td>
-			</tr>
+				</div>
+			</div>
 
-			
-			<!-- That was for only edit option, now for create, too, Feb 2 2017, OOO -->
-			<? if (($type == "edit")||($type == "add")) { ?> 
-			<tr>
-				<td class="label">Administrator</td>
-				<td>
+			<div class="field">
+				<label>Principle Investigator</label>
+				<div class="field">
+					<select name="pi">
+						<option value="">Select Principal Investigator...</option>
+						<?
+							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$userid = $row['user_id'];
+								$username = $row['username'];
+								$fullname = $row['user_fullname'];
+								if ($userid == $pi) { $selected = "selected"; } else { $selected = ""; }
+								?>
+								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?> (<?=$username?>)</option>
+								<?
+							}
+						?>
+					</select>
+				</div>
+			</div>
+			<div class="field">
+				<label>Administrator</label>
+				<div class="field">
 					<select name="admin">
 						<option value="">Select Administrator...</option>
 						<?
@@ -296,64 +325,46 @@
 							}
 						?>
 					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Principle Investigator</td>
-				<td>
-					<select name="pi">
-						<option value="">Select Principal Investigator...</option>
-						<?
-							$sqlstring = "select * from users WHERE username NOT LIKE '' order by user_fullname, username";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$userid = $row['user_id'];
-								$username = $row['username'];
-								$fullname = $row['user_fullname'];
-								if ($userid == $pi) { $selected = "selected"; } else { $selected = ""; }
-								?>
-								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?> (<?=$username?>)</option>
-								<?
-							}
-						?>
-					</select>
-				</td>
-			</tr>
-			<? } ?>
-			<tr>
-				<td class="label">Project Number<br><span class="tiny">Cost Center</span></td>
-				<td><input type="text" name="costcenter" required value="<?=$costcenter?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Start Date</td>
-				<td><input type="text" name="startdate" value="<?=$startdate?>"></td>
-			</tr>
-			<tr>
-				<td class="label">End Date</td>
-				<td><input type="text" name="enddate" value="<?=$enddate?>"></td>
-			</tr>
-				<script type="text/javascript">
-				$(document).ready(function() {
-					$("#alldatausers").click(function() {
-						var checked_status = this.checked;
-						$(".datausers").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
-					});
-					$("#allphiusers").click(function() {
-						var checked_status = this.checked;
-						$(".phiusers").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
-					});
-					$("#allnoneprojects").click(function() {
-						var checked_status = this.checked;
-						$(".noneprojects").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
+				</div>
+			</div>
+			<div class="field">
+				<label>Start Date</label>
+				<div class="field">
+					<input type="text" name="startdate" value="<?=$startdate?>">
+				</div>
+			</div>
+			<div class="field">
+				<label>End Date</label>
+				<div class="field">
+					<input type="text" name="enddate" value="<?=$enddate?>">
+				</div>
+			</div>
+			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+			</form>
+		</div>
+
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$("#alldatausers").click(function() {
+					var checked_status = this.checked;
+					$(".datausers").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
 					});
 				});
-				</script>
+				$("#allphiusers").click(function() {
+					var checked_status = this.checked;
+					$(".phiusers").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+				});
+				$("#allnoneprojects").click(function() {
+					var checked_status = this.checked;
+					$(".noneprojects").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+				});
+			});
+			</script>
 			<? if ($type == "edit") { ?>
 			<!--
 			<tr>
@@ -414,13 +425,7 @@
 				</td>
 			</tr>-->
 			<? } ?>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
-				</td>
-			</tr>
 			</form>
-		</table>
 		<br><br><br>
 			<? if ($type == "edit") { ?>
 				<div style="font-size:11pt; color: #333;">
@@ -443,34 +448,26 @@
 	/* ------- DisplayProjectList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
-	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Projects'] = "adminprojects.php";
-		$urllist['Add Project'] = "adminprojects.php?action=addform";
-		NavigationBar("Admin", $urllist);
-		
-		//$instanceid = GetInstanceID();
-		$instancename = GetInstanceName($instanceid);
 	?>
 
-	<table class="graydisplaytable">
+	<div style="padding: 0px 50px">
+	<button class="ui primary large button" onClick="window.location.href='adminprojects.php?action=addform'"><i class="plus square outline icon"></i>Create Project</button>
+	<br><br>
+	
+	<h3 class="ui header">Projects</h3>
+	<table class="ui small celled selectable grey compact table">
 		<thead>
-			<tr>
-				<th>Name</th>
-				<? if ($GLOBALS['issiteadmin']) { ?><th>Instance</th><? } ?>
-				<th>UID</th>
-				<th>Cost Center</th>
-				<th>Admin</th>
-				<th>PI</th>
-				<th>Start date</th>
-				<th>End date</th>
-				<th>Status</th>
-			</tr>
+			<th>Name</th>
+			<? if ($GLOBALS['issiteadmin']) { ?><th>Instance</th><? } ?>
+			<th>UID</th>
+			<th>Cost Center</th>
+			<th>Admin</th>
+			<th>PI</th>
+			<th>Start date</th>
+			<th>End date</th>
+			<th>Status</th>
 		</thead>
 		<tbody>
-			<!--<tr>
-				<td class="subheader" colspan="8">Projects within <?=$instancename?></td>
-			</tr>-->
 			<?
 				if ($GLOBALS['issiteadmin']) {
 					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.instance_name from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id left join instance d on a.instance_id = d.instance_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";

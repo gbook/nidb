@@ -2446,9 +2446,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayErrorMessage($title, $msg) {
 		?>
-		<div class="ui message red compact">
-			<!--<i class="close icon"></i>-->
-			<p><?=$msg?></p>
+		<div align="center" width="50%">
+			<div class="ui message red compact">
+				<!--<i class="close icon"></i>-->
+				<p><?=$msg?></p>
+			</div>
 		</div>
 		<?
 	}
@@ -2459,9 +2461,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayNotice($title, $msg) {
 		?>
-		<div class="ui message compact">
-			<!--<i class="close icon"></i>-->
-			<?=$msg?>
+		<div align="center" width="50%">
+			<div class="ui message yellow compact">
+				<!--<i class="close icon"></i>-->
+				<?=$msg?>
+			</div>
 		</div>
 		<?
 	}
