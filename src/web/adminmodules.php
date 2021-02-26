@@ -91,7 +91,7 @@
 		$sqlstring = "update modules set module_name = '$modulename', module_desc = '$moduledesc', module_admin = '$admin' where module_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Notice", "$modulename updated");
+		DisplayNotice("$modulename updated");
 	}
 
 
@@ -107,7 +107,7 @@
 		$sqlstring = "insert into modules (module_name, module_desc, module_admin, module_createdate, module_status) values ('$modulename', '$moduledesc', '$admin', now(), 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Notice", "$modulename added");
+		DisplayNotice("$modulename added");
 	}
 
 	
@@ -206,7 +206,7 @@
 		//print_r($files);
 		foreach ($files as $file) {
 			if (stripos($file, $scriptname) !== false) {
-				DisplayNotice("Notice", "Deleting lock file [$file]");
+				DisplayNotice("Deleting lock file [$file]");
 				unlink($file);
 			}
 		}

@@ -175,7 +175,7 @@
 		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		DisplayNotice("Notice", "Merge queued");
+		DisplayNotice("Merge queued");
 	}
 
 

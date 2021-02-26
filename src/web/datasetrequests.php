@@ -105,7 +105,7 @@
 		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', now(), 'submitted')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Dataset Request", "$shortname submitted");
+		DisplayNotice("$shortname submitted");
 	}
 
 	
@@ -127,7 +127,7 @@
 		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes' where datasetrequest_id = $datasetrequestid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Dataset Request", "$shortname updated");
+		DisplayNotice("$shortname updated");
 	}
 	
 
@@ -138,7 +138,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'cancelled' where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Dataset Request", "$id cancelled");
+		DisplayNotice("$id cancelled");
 	}
 
 
@@ -149,7 +149,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'assigned', admin_username = '" . $GLOBALS['username'] . "', request_startdate = now() where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Dataset Request", "$id assigned");
+		DisplayNotice("$id assigned");
 	}
 
 
@@ -160,7 +160,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'complete', request_completedate = now() where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Dataset Request", "$id marked as complete");
+		DisplayNotice("$id marked as complete");
 	}
 	
 	
@@ -274,7 +274,7 @@
 	?>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'">Submit New Dataset Request</button>
+	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'; return false;">Submit New Dataset Request</button>
 	<br><br><br>
 	
 	<h3 class="ui header">My Requests</h3>

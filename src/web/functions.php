@@ -477,6 +477,18 @@
 	
 	
 	/* -------------------------------------------- */
+	/* ------- GetUsernameFromID ------------------ */
+	/* -------------------------------------------- */
+	function GetUsernameFromID($id) {
+		$sqlstring = "select username from users where user_id = '$id'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['username'];
+		return $name;
+	}
+	
+	
+	/* -------------------------------------------- */
 	/* ------- GetInstanceID ---------------------- */
 	/* -------------------------------------------- */
 	function GetInstanceID() {
@@ -497,7 +509,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$n = $row['instance_name'];
 		return $n;
-	}	
+	}
 
 
 	/* -------------------------------------------- */
@@ -2444,13 +2456,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- DisplayErrorMessage ---------------- */
 	/* -------------------------------------------- */
-	function DisplayErrorMessage($title, $msg) {
+	function DisplayErrorMessage($msg) {
 		?>
-		<div align="center" width="50%">
-			<div class="ui message red compact">
-				<!--<i class="close icon"></i>-->
-				<p><?=$msg?></p>
-			</div>
+		<div class="ui message red compact">
+			<i class="close icon"></i>
+			<p><?=$msg?></p>
 		</div>
 		<?
 	}
@@ -2459,13 +2469,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- DisplayNotice ---------------------- */
 	/* -------------------------------------------- */
-	function DisplayNotice($title, $msg) {
+	function DisplayNotice($msg) {
 		?>
-		<div align="center" width="50%">
-			<div class="ui message yellow compact">
-				<!--<i class="close icon"></i>-->
-				<?=$msg?>
-			</div>
+		<div class="ui message yellow">
+			<i class="close icon"></i>
+			<div class="header">Notice</div>
+			<p><?=$msg?></p>
 		</div>
 		<?
 	}

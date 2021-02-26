@@ -231,7 +231,7 @@
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message"><?=$username?> updated</span></div><br><br><?
+		DisplayNotice("$username updated");
 	}
 
 
@@ -263,7 +263,7 @@
 		
 		/* don't assign any permissions to a new user by default, it must be done manually */
 
-		?><div align="center"><span class="message"><?=$username?> added</span></div><br><br><?
+		DisplayNotice("$username added");
 	}
 
 
@@ -273,7 +273,10 @@
 	function DeleteUser($id) {
 		$sqlstring = "update users set user_deleted = 1, user_enabled = 0 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}	
+
+		$username = GetUsernameFromID($id);
+		DisplayNotice("$username deleted");
+	}
 
 
 	/* -------------------------------------------- */
@@ -282,6 +285,9 @@
 	function EnableUser($id) {
 		$sqlstring = "update users set user_enabled = 1 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$username = GetUsernameFromID($id);
+		DisplayNotice("$username enabled");
 	}
 
 
@@ -291,6 +297,9 @@
 	function DisableUser($id) {
 		$sqlstring = "update users set user_enabled = 0 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$username = GetUsernameFromID($id);
+		DisplayNotice("$username disabled");
 	}
 
 
@@ -300,6 +309,9 @@
 	function MakeAdminUser($id) {
 		$sqlstring = "update users set user_isadmin = 1 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$username = GetUsernameFromID($id);
+		DisplayNotice("$username set as admin");
 	}
 
 
@@ -309,6 +321,9 @@
 	function MakeNotAdminUser($id) {
 		$sqlstring = "update users set user_isadmin = 0 where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$username = GetUsernameFromID($id);
+		DisplayNotice("$username unset as admin");
 	}
 	
 	
@@ -342,11 +357,6 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['User List'] = "adminusers.php";
-		$urllist[$username] = "adminusers.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
-		
 	?>
 		<style type="text/css">
 			td label { 
@@ -356,51 +366,68 @@
 				border-left: 1px solid #ccc;
 			}
 		</style>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="adminusers.php" autocomplete="off">
+		<div class="ui text container">
+			<div class="ui attached visible message">
+			  <div class="header"><?=$formtitle?></div>
+			</div>
+
+			<form method="post" action="adminusers.php" autocomplete="off" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
-			<tr>
-				<td class="heading" colspan="2" align="center">
-					<b><?=$formtitle?></b>
-				</td>
-			</tr>
-			<tr>
+
+			<h3 class="ui header">User Information</h3>
+			
 			<? if ($type != 'edit') { ?>
-				<td class="label">Username</td>
-				<td><input type="text" name="username" value="<?=$username?>"></td>
-			<? } else { ?>
-				<td><input type="hidden" name="username" value="<?=$username?>"></td>
-				<td><div align="right"><a href="adminusers.php?action=delete&id=<?=$id?>" title="Delete this user account" class="adminbutton2">Delete</a></div></td>
+			<div class="field">
+				<label>Username</label>
+				<div class="field">
+					<input type="text" name="username" value="<?=$username?>">
+				</div>
+			</div>
 			<? } ?>
-			</tr>
-			<tr>
-				<td class="label">Full name</td>
-				<td><input type="text" name="fullname" value="<?=$fullname?>" required></td>
-			</tr>
+
+			<div class="field">
+				<label>Full name</label>
+				<div class="field">
+					<input type="text" name="fullname" value="<?=$fullname?>" required placeholder="Full name">
+				</div>
+			</div>
 			<? if (($login_type == "Standard") || ($type == "add")) { ?>
-			<tr>
-				<td class="label">Password</td>
-				<td><input type="password" name="password" id="password" autocomplete="new-password"></td>
-			</tr>
-			<tr>
-				<td class="label">Re-enter Password</td>
-				<td><input type="password" name="password-check" id="password-check" autocomplete="new-password"></td>
-			</tr>
+			<div class="two fields">
+				<div class="field">
+					<label>Password</label>
+					<div class="field">
+						<input type="password" name="password" id="password" autocomplete="new-password">
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Re-enter password</label>
+					<div class="field">
+						<input type="password" name="password-check" id="password-check" autocomplete="new-password">
+					</div>
+				</div>
+			</div>
 			<? } ?>
-			<tr>
-				<td class="label">Email</td>
-				<td><input type="text" name="email" value="<?=$email?>" required></td>
-			</tr>
-			<tr>
-				<td class="label">Enabled</td>
-				<td><input type="checkbox" name="enabled" value="1" <?=$enabledcheck?>></td>
-			</tr>
-			<tr>
-				<td class="label">NiDB Admin</td>
-				<td><input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>></td>
-			</tr>
+			<div class="field">
+				<label>Email</label>
+				<div class="field">
+					<input type="text" name="email" value="<?=$email?>" required placeholder="Email">
+				</div>
+			</div>
+			<div class="field">
+				<label>Enabled</label>
+				<div class="field">
+					<input type="checkbox" name="enabled" value="1" <?=$enabledcheck?>>
+				</div>
+			</div>
+			<div class="field">
+				<label>NiDB admin</label>
+				<div class="field">
+					<input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>>
+				</div>
+			</div>
+
 			<? if ($type == 'edit') { ?>
 				<script type="text/javascript">
 				$(document).ready(function() {
@@ -417,13 +444,6 @@
 						}
 						if(hasError == true) {return false;}
 					});
-	
-					/* to disable the autofill thing in Chrome */
-					//if ($.browser.webkit) {
-					//	$('input[name="username"]').attr('autocomplete', 'off');
-					//	$('input[name="fullname"]').attr('autocomplete', 'off');
-					//	$('input[name="password"]').attr('autocomplete', 'off');
-					//}
 					$("#allprojectadmin").click(function() {
 						var checked_status = this.checked;
 						$(".projectadmin").find("input[type='checkbox']").each(function() {
@@ -456,15 +476,12 @@
 					});
 					/* show/hide projects for each instance */
 					$(".instances").click(function() {
-						//console.log("I've been clicked!" + this.value);
 						if (this.checked) {
-							//console.log("Now I'm checked");
 							$(".chkInstance" + this.value).attr("disabled",false);
 							$(".projects" + this.value).css("background-color","#fff");
 							$(".projects" + this.value).css("color", 'darkblue');
 						}
 						else {
-							//console.log("Now I'm not checked");
 							$(".chkInstance" + this.value).attr("disabled",true);
 							$(".projects" + this.value).css("background-color", '#eee');
 							$(".projects" + this.value).css("color", '#777');
@@ -472,34 +489,36 @@
 					});
 				});
 				</script>
-			<tr>
-				<td class="label" valign="top">Project permissions</td>
-				<td>
-					<table cellspacing="0" cellpadding="1" class="smallgraydisplaytable">
-						<thead>
-						<tr>
-							<th></th>
-							<th></th>
-							<th colspan="2" align="center">Data</th>
-							<th colspan="2" align="center">PHI/PII</th>
-						</tr>
-						<tr>
-							<th></th>
-							<th align="center">Project admin <img src="images/help.gif" title="<b>Project admin</b><br><br>User has the following permissions for the selected projects:<ul><li>Assign admin permissions to users<li>Modify all data<li>View all data<li>Modify PHI/PII<li>View PHI/PII"> &nbsp;</th>
-							<th align="center">Modify <img src="images/help.gif" title="User has permissions to modify, upload/import data, delete subjects/studies/series. Excluding PHI/PII"> &nbsp;</th>
-							<th align="center" title="User has permissions to view all data, excluding PHI/PII">View &nbsp;</th>
-							<th align="center" title="User has permissions to modify PHI/PII">Modify &nbsp;</th>
-							<th align="center" title="User has permissions to view, but not modify PHI/PII">View &nbsp;</th>
-						</tr>
-						</thead>
-						<tr style="color: darkblue; font-size:11pt; font-weight: bold">
-							<td>Select/unselect all<br><br></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allprojectadmin"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allmodifydata"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allviewdata"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allmodifyphi"></label></td>
-							<td valign="top" align="center" class="checkcell"><label><input type="checkbox" id="allviewphi"></label></td>
-						</tr>
+				
+			<h3 class="ui header">Project Permissions</h3>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th></th>
+					<th></th>
+					<th colspan="2" align="center">Data</th>
+					<th colspan="2" align="center">PHI/PII</th>
+				</thead>
+				<tbody>
+					<tr>
+						<td></td>
+						<td>
+							Project admin <i class="question circle outline icon" title="<b>Project admin</b><br><br>User has the following permissions for the selected projects:<ul><li>Assign admin permissions to users<li>Modify all data<li>View all data<li>Modify PHI/PII<li>View PHI/PII"></i>
+						</td>
+						<td>
+							Modify <i class="question circle outline icon" title="User has permissions to modify, upload/import data, delete subjects/studies/series. Excluding PHI/PII"></i>
+						</td>
+						<td title="User has permissions to view all data, excluding PHI/PII">View</td>
+						<td title="User has permissions to modify PHI/PII">Modify</td>
+						<td title="User has permissions to view, but not modify PHI/PII">View</td>
+					</tr>
+					<tr>
+						<td>Select/unselect all</td>
+						<td class="checkcell"><label><input type="checkbox" id="allprojectadmin"></label></td>
+						<td class="checkcell"><label><input type="checkbox" id="allmodifydata"></label></td>
+						<td class="checkcell"><label><input type="checkbox" id="allviewdata"></label></td>
+						<td class="checkcell"><label><input type="checkbox" id="allmodifyphi"></label></td>
+						<td class="checkcell"><label><input type="checkbox" id="allviewphi"></label></td>
+					</tr>
 				<?
 					$sqlstring = "select * from user_instance where user_id = '$id'";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -528,7 +547,7 @@
 						}
 						?>
 						<tr>
-							<td colspan="7"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>><b><?=$instance_name?></b></label></td>
+							<td colspan="7"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>> <b><?=$instance_name?></b></label></td>
 						</tr>
 						<?
 							$bgcolor = "#EEFFEE";
@@ -562,19 +581,19 @@
 								?>
 								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
 									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
-									<td align="center" class="projectadmin checkcell">
+									<td class="projectadmin checkcell">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td align="center" class="modifydata checkcell">
+									<td class="modifydata checkcell">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifydata[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td align="center" class="viewdata checkcell">
+									<td class="viewdata checkcell">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewdata[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td align="center" class="modifyphi checkcell">
+									<td class="modifyphi checkcell">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifyphi[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td align="center" class="viewphi checkcell">
+									<td class="viewphi checkcell">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewphi[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 								</tr>
@@ -585,18 +604,22 @@
 						}
 					?>
 					</table>
-				</td>
-			</tr>
 			<? } ?>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" id="submit" value="<?=$submitbuttonlabel?>">
-				</td>
-			</tr>
+			<br><br>
+			<div class="ui two column grid">
+				<div class="column">
+					<? if ($type == 'edit') { ?>
+						<input type="hidden" name="username" value="<?=$username?>">
+						<button class="ui red button" onClick="window.location.href='adminusers.php?action=delete&id=<?=$id?>; return false;'"><i class="minus square outline icon"></i>Delete User</button>
+					<? } ?>
+				</div>
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='adminusers.php'; return false;">Cancel</button>
+					<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
+				</div>
+			</div>
 			</form>
-		</table>
 		</div>
-		<br><br><br>
 	<?
 	}
 
@@ -604,165 +627,173 @@
 	/* ------- DisplayUserList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayUserList() {
-	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Uses'] = "adminusers.php";
-		NavigationBar("Admin", $urllist);
-		
 	?>
-	<div align="center">
-	<table class="graydisplaytable dropshadow" id="usertable" width="80%">
-		<thead>
-			<tr>
-				<th colspan="7" align="left" style="padding: 14px; background-color: #fff; border-bottom: 1px solid #666">
-					<a href="adminusers.php?action=addform" class="adminbutton2">Add User</a>
-				</th>
-			</tr>
-			<tr>
-				<th align="left">Username <input id="usernamefilter" type="text" placeholder="Filter by username or name"/></th>
-				<th>Full name</th>
-				<th>Email</th>
-				<th>Login type</th>
-				<th>Last Login</th>
-				<th>Login Count</th>
-				<th>Enabled</th>
-			</tr>
-		</thead>
-		<script type="text/javascript">
-			function filterTable(event) {
-				var filter = event.target.value.toUpperCase();
-				var rows = document.querySelector("#usertable tbody").rows;
-				
-				for (var i = 0; i < rows.length; i++) {
-					var firstCol = rows[i].cells[0].textContent.toUpperCase();
-					var secondCol = rows[i].cells[1].textContent.toUpperCase();
-					if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-						rows[i].style.display = "";
-					} else {
-						rows[i].style.display = "none";
-					}      
-				}
-			}
 
-			document.querySelector('#usernamefilter').addEventListener('keyup', filterTable, false);
-		</script>
-		<tbody>
-			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>Users in this project group (<?=$_SESSION['instancename']?>)</b></td></tr>
-			<?
-				$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' and (a.user_deleted is null or a.user_deleted <> 1) order by a.username";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['user_id'];
-					$username = trim($row['username']);
-					$fullname = trim($row['user_fullname']);
-					$email = trim($row['user_email']);
-					$login_type = $row['login_type'];
-					$lastlogin = $row['user_lastlogin'];
-					$logincount = $row['user_logincount'];
-					$enabled = $row['user_enabled'];
-					
-					if ($username == "") {
-						$username = "(blank)";
-					}
-			?>
-			<tr>
-				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-				<td><?=$fullname?></td>
-				<td><?=$email?></td>
-				<td><?=$login_type?></td>
-				<td><?=$lastlogin?></td>
-				<td><?=$logincount?></td>
-				<td>
-					<?
-						if ($enabled) {
-							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
-						}
-					?>
-				</td>
-			</tr>
-			<? } ?>
-			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All other users</b></td></tr>
-			<?
-				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' group by username order by username";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['user_id'];
-					$username = $row['username'];
-					$fullname = $row['user_fullname'];
-					$email = $row['user_email'];
-					$login_type = $row['login_type'];
-					$instancename = $row['instance_name'];
-					$lastlogin = $row['user_lastlogin'];
-					$logincount = $row['user_logincount'];
-					$enabled = $row['user_enabled'];
-					$isadmin = $row['user_isadmin'];
-			?>
-			<tr>
-				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-				<td><?=$fullname?></td>
-				<td><?=$email?></td>
-				<td><?=$login_type?></td>
-				<td><?=$lastlogin?></td>
-				<td><?=$logincount?></td>
-				<td>
-					<?
-						if ($enabled) {
-							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td>
-			</tr>
-			<? 
-				}
-			?>
-			<tr><td colspan="8" align="center" style="border-top: 1px solid gray; border-bottom: 1px solid gray; padding: 5px; background-color: #fff"><b>All deleted users</b></td></tr>
-			<?
-				$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where a.user_deleted = 1 group by a.username order by a.username";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['user_id'];
-					$username = $row['username'];
-					$fullname = $row['user_fullname'];
-					$email = $row['user_email'];
-					$login_type = $row['login_type'];
-					$instancename = $row['instance_name'];
-					$lastlogin = $row['user_lastlogin'];
-					$logincount = $row['user_logincount'];
-					$enabled = $row['user_enabled'];
-					$isadmin = $row['user_isadmin'];
-			?>
-			<tr>
-				<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-				<td><?=$fullname?></td>
-				<td><?=$email?></td>
-				<td><?=$login_type?></td>
-				<td><?=$lastlogin?></td>
-				<td><?=$logincount?></td>
-				<td>
-					<?
-						if ($enabled) {
-							?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-						}
-						else {
-							?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-						}
-					?>
-				</td>
-			</tr>
-			<? 
-				}
-			?>
-		</tbody>
-	</table>
+	<div style="padding: 0px 50px">
+	<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
+	<br><br>
+	
+	<div class="ui top attached tabular menu large">
+		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance</a>
+		<a class="item" data-tab="second">All Other Users</a>
+		<a class="item" data-tab="third">Deleted Users</a>
 	</div>
-	<br><br><br><br><br><br>
+	<div class="ui bottom attached tab segment active" data-tab="first">
+		<table class="ui celled selectable compact table">
+			<thead>
+				<tr>
+					<th align="left">Username</th>
+					<th>Full name</th>
+					<th>Email</th>
+					<th>Login type</th>
+					<th>Last Login</th>
+					<th>Login Count</th>
+					<th>Enabled</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' and (a.user_deleted is null or a.user_deleted <> 1) order by a.username";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['user_id'];
+						$username = trim($row['username']);
+						$fullname = trim($row['user_fullname']);
+						$email = trim($row['user_email']);
+						$login_type = $row['login_type'];
+						$lastlogin = $row['user_lastlogin'];
+						$logincount = $row['user_logincount'];
+						$enabled = $row['user_enabled'];
+						
+						if ($username == "")
+							$username = "(blank)";
+				?>
+				<tr>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
+					<td><?=$fullname?></td>
+					<td><?=$email?></td>
+					<td><?=$login_type?></td>
+					<td><?=$lastlogin?></td>
+					<td><?=$logincount?></td>
+					<td>
+						<?
+							if ($enabled) {
+								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+							}
+							else {
+								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+							}
+						?>
+					</td>
+				</tr>
+				<? } ?>
+			</tbody>
+		</table>
+	</div>
+	<div class="ui bottom attached tab segment" data-tab="second">
+		<table class="ui celled selectable compact table">
+			<thead>
+				<tr>
+					<th align="left">Username</th>
+					<th>Full name</th>
+					<th>Email</th>
+					<th>Login type</th>
+					<th>Last Login</th>
+					<th>Login Count</th>
+					<th>Enabled</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' group by username order by username";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['user_id'];
+						$username = trim($row['username']);
+						$fullname = trim($row['user_fullname']);
+						$email = trim($row['user_email']);
+						$login_type = $row['login_type'];
+						$lastlogin = $row['user_lastlogin'];
+						$logincount = $row['user_logincount'];
+						$enabled = $row['user_enabled'];
+						
+						if ($username == "")
+							$username = "(blank)";
+				?>
+				<tr>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
+					<td><?=$fullname?></td>
+					<td><?=$email?></td>
+					<td><?=$login_type?></td>
+					<td><?=$lastlogin?></td>
+					<td><?=$logincount?></td>
+					<td>
+						<?
+							if ($enabled) {
+								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+							}
+							else {
+								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+							}
+						?>
+					</td>
+				</tr>
+				<? } ?>
+			</tbody>
+		</table>
+	</div>
+	<div class="ui bottom attached tab segment" data-tab="third">
+		<table class="ui celled selectable compact table">
+			<thead>
+				<tr>
+					<th align="left">Username</th>
+					<th>Full name</th>
+					<th>Email</th>
+					<th>Login type</th>
+					<th>Last Login</th>
+					<th>Login Count</th>
+					<th>Enabled</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where a.user_deleted = 1 group by a.username order by a.username";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['user_id'];
+						$username = trim($row['username']);
+						$fullname = trim($row['user_fullname']);
+						$email = trim($row['user_email']);
+						$login_type = $row['login_type'];
+						$lastlogin = $row['user_lastlogin'];
+						$logincount = $row['user_logincount'];
+						$enabled = $row['user_enabled'];
+						
+						if ($username == "")
+							$username = "(blank)";
+				?>
+				<tr>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
+					<td><?=$fullname?></td>
+					<td><?=$email?></td>
+					<td><?=$login_type?></td>
+					<td><?=$lastlogin?></td>
+					<td><?=$logincount?></td>
+					<td>
+						<?
+							if ($enabled) {
+								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+							}
+							else {
+								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+							}
+						?>
+					</td>
+				</tr>
+				<? } ?>
+			</tbody>
+		</table>
+	</div>
 	<?
 	}
 ?>

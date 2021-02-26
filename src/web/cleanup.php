@@ -523,7 +523,7 @@
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		DisplayNotice("Notice", "Subjects [" . implode(', ',$uids) . "] queued for obliteration");
+		DisplayNotice("Subjects [" . implode(', ',$uids) . "] queued for obliteration");
 	}
 
 

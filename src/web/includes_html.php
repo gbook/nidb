@@ -90,11 +90,11 @@
 
 <script>
 	$(document).ready(function() {
-		//$('.message').fadeOut(7500);
 		$('.message .close').on('click', function() {
-				$(this).closest('.message');
+				$(this).closest('.message').transition('fade');
 			  });
-			  
+		$('.menu .item').tab();
+		
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.
         var date_from_string = function(str) {

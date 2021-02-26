@@ -203,34 +203,21 @@
 			$formaction = "update";
 			$formtitle = "$name";
 			$submitbuttonlabel = "Update";
-
-			//echo "admin is $admin and $ pi is $pi";
-
 		}
 		else {
-                        //echo "<br>admin is $id and pi is $pi </br>";
-                        //echo "<br>userid is $userid </br>";
-
 			$formaction = "add";
 			$formtitle = "Add new project";
 			$submitbuttonlabel = "Add";
 
 			// find userid, added Feb 1, 2017, OOO
-                        $username = $id; // username and id are different things but i used it just not to change the old code too much
+			$username = $id; // username and id are different things but i used it just not to change the old code too much
 			$sqlstring = "select * from users where username = '$username'";
                 	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                 	if (mysqli_num_rows($result) > 0) {
                         	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
                         	$userid = $row['user_id'];
 			}
-			//$admin = $userid;
-			//echo "username: $username and userid is $userid ";
 		}
-		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Projects'] = "adminprojects.php";
-		//$urllist[$name] = "adminprojects.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div class="ui text container">
@@ -339,7 +326,10 @@
 					<input type="text" name="enddate" value="<?=$enddate?>">
 				</div>
 			</div>
-			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+			<div align="right">
+				<button class="ui button" onClick="window.location.href='adminprojects.php'; return false;">Cancel</button>
+				<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+			</div>
 			</form>
 		</div>
 
@@ -451,7 +441,7 @@
 	?>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='adminprojects.php?action=addform'"><i class="plus square outline icon"></i>Create Project</button>
+	<button class="ui primary large button" onClick="window.location.href='adminprojects.php?action=addform'; return false;"><i class="plus square outline icon"></i>Create Project</button>
 	<br><br>
 	
 	<h3 class="ui header">Projects</h3>

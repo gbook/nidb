@@ -590,7 +590,7 @@
 			$sqlstring = "delete from project_template where projecttemplate_id = $templateid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			DisplayNotice("Notice", "Project Template deleted");
+			DisplayNotice("Project Template deleted");
 		}
 		else {
 			DisplayError("Error", "Invalid project template ID");

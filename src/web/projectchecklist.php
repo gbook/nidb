@@ -147,7 +147,7 @@
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		DisplayNotice("Notice", "Checklist updated");		
+		DisplayNotice("Checklist updated");		
 	}
 
 	/* -------------------------------------------- */

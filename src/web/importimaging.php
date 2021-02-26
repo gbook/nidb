@@ -541,7 +541,7 @@
 		$sqlstring = "update uploads set upload_status = 'reparse' where upload_id = $uploadid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Notice", "Upload will be re-parsed");
+		DisplayNotice("Upload will be re-parsed");
 		
 	}
 
@@ -571,7 +571,7 @@
 			$sqlstringA = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			
-			DisplayNotice("Notice", "Upload queued for archiving");
+			DisplayNotice("Upload queued for archiving");
 		}
 		else {
 			$sqlstring = "update uploads set upload_status = 'archiveerror' where upload_id = $uploadid";

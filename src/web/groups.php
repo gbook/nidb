@@ -119,7 +119,7 @@
 		/* insert the new group */
 		$sqlstring = "insert ignore into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		DisplayNotice("Notice", "$groupname added");
+		DisplayNotice("$groupname added");
 	}
 
 	/* -------------------------------------------- */
@@ -172,7 +172,7 @@
 				}
 			}
 		}
-		DisplayNotice("Notice", $msg);
+		DisplayNotice($msg);
 	}
 
 	
@@ -228,7 +228,7 @@
 				}
 			}
 		}
-		DisplayNotice("Notice", $msg);
+		DisplayNotice($msg);
 	}
 
 	/* -------------------------------------------- */

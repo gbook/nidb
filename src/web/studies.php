@@ -235,7 +235,7 @@
 			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
 		}
 
-		DisplayNotice("Notice", "Study Updated");
+		DisplayNotice("Study Updated");
 		
 	}	
 	
@@ -288,7 +288,7 @@
 		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Notice", "Study Updated");
+		DisplayNotice("Study Updated");
 	}
 
 
@@ -309,10 +309,10 @@
 		if ($copy_date=="Y"){
 			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
 			$result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);
-			DisplayNotice("Notice", "Study and series updated [$copy_date]");
+			DisplayNotice("Study and series updated [$copy_date]");
 		}
 		else {
-			DisplayNotice("Notice", "Study updated [$copy_date]");
+			DisplayNotice("Study updated [$copy_date]");
 		}
 	}
 
@@ -674,7 +674,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
-		DisplayNotice("Notice", "Series names updated");
+		DisplayNotice("Series names updated");
 	}
 
 
@@ -752,7 +752,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 
-		DisplayNotice("Notice", "Series notes updated");
+		DisplayNotice("Series notes updated");
 	}
 	
 	
