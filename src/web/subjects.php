@@ -1367,16 +1367,16 @@
 									<details>
 										<summary class="tiny" style="color:darkred">Admin functions</summary>
 										<div style="padding:5px; font-size:11pt">
-										<a href="subjects.php?action=editform&id=<?=$id?>" class="linkbutton" style="width: 70px; text-align: center">Edit</a> demographics<br>
-										<a href="merge.php?action=mergesubjectform&subjectuid=<?=$uid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with existing subject
+										<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;">Edit Demographics</button>
+										<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<?=$uid?>'; return false;">Merge with...</button>
 										<br><br><br>
 										<?
 											if ($GLOBALS['isadmin']) {
 												if ($isactive) {
 												?>
-													<a href="subjects.php?action=deleteconfirm&id=<?=$id?>" class="redlinkbutton" style="width: 70px; text-align: center">Delete</a>
+													<button class="ui red button" onClick="window.location.href='subjects.php?action=deleteconfirm&id=<?=$id?>'; return false;">Delete</button>
 												<? } else { ?>
-													<a href="subjects.php?action=undelete&id=<?=$id?>" class="redlinkbutton" style="width: 70px; text-align: center">Undelete</a>
+													<button class="ui red button" onClick="window.location.href='subjects.php?action=undelete&id=<?=$id?>'; return false;">Undelete</button>
 												<?
 												}
 											}
@@ -1397,12 +1397,13 @@
 				<td valign="top" align="center">
 					<table width="100%">
 						<tr>
-							<form action="subjects.php" method="post">
+							<form class="ui" action="subjects.php" method="post">
 							<td style="padding: 10px; background-color: #444; color: #fff; border-radius: 8px">
 								<input type="hidden" name="id" value="<?=$id?>">
 								<input type="hidden" name="action" value="enroll">
 								<b>Enroll in project</b> &nbsp; 
-								<select name="projectid">
+								<div class="ui action input">
+								<select style="border-radius: ''" class="ui fluid dropdown" name="projectid">
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1421,7 +1422,7 @@
 									}
 								?>
 								</select>
-								<input type="submit" value="Enroll">
+								<button class="ui primary button" type="submit" value="Enroll">Enroll</button>
 							</td>
 							</form>
 						</tr>
@@ -2181,9 +2182,9 @@
 		}
 
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$formtitle", $urllist, $perms);
+		//$urllist['Subjects'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		//NavigationBar("$formtitle", $urllist, $perms);
 
 		if (GetPerm($perms, 'projectadmin', $projectid)) { $projectadmin = 1; } else { $projectadmin = 0; }
 		if (GetPerm($perms, 'modifyphi', $projectid)) { $modifyphi = 1; } else { $modifyphi = 0; }
@@ -2203,9 +2204,11 @@
 				$("#form1").validate();
 			});
 		</script>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" id="form1" action="subjects.php">
+		<div class="ui text container">
+			<div class="ui attached visible message">
+				<div class="header"><?=$formtitle?></div>
+			</div>
+			<form method="post" action="subjects.php" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="uid" value="<?=$uid?>">
@@ -2215,49 +2218,71 @@
 				<td><input type="checkbox" name="encrypt" value="1"></td>
 			</tr>
 			<? } ?>
-			<tr>
-				<td class="requiredlabel">First name</td>
-				<td>
-					<? if ($modifyphi) { ?>
-					<input type="text" size="50" name="firstname" value="<?=$firstname?>" style="background-color: lightyellow; border: 1px solid gray">
-					<? } else { ?>
-					<input type="text" size="50" name="firstname" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-					<? } ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="requiredlabel">Last name</td>
-				<td>
-					<? if ($modifyphi) { ?>
-					<input type="text" size="50" name="lastname" value="<?=$lastname?>" required style="background-color: lightyellow; border: 1px solid gray">
-					<? } else { ?>
-					<input type="text" size="50" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-					<? } ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="requiredlabel">Date of birth</td>
-				<td>
-					<? if ($modifyphi) { ?>
-					<input type="date" name="dob" value="<?=$dob?>" required style="background-color: lightyellow; border: 1px solid gray"><!--&nbsp;<span class="subtlemessage">YYYY-MM-DD</span>-->
-					<? } else { ?>
-					<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-					<? } ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="requiredlabel">IDs<br><span class="tiny">comma separated list</span></td>
-				<td>
-					<table style="border: 1px solid #ddd; border-radius:3px; color: #555; font-size: 11pt">
+			
+			<h3 class="ui dividing header">Basic Information</h3>
+			<div class="two fields">
+				<div class="field">
+					<label>First name</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+						<input type="text" size="50" name="firstname" value="<?=$firstname?>">
+						<? } else { ?>
+						<input type="text" size="50" name="firstname" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Last name</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+						<input type="text" size="50" name="lastname" value="<?=$lastname?>" required>
+						<? } else { ?>
+						<input type="text" size="50" name="" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+			</div>
+
+			<div class="two fields">
+				<div class="field">
+					<label>Sex</label>
+					<div class="field">
+						<select name="gender">
+							<option value="" <? if ($gender == "") echo "selected"; ?>>(Select sex)</option>
+							<option value="U" <? if ($gender == "U") echo "selected"; ?>>Unknown</option>
+							<option value="F" <? if ($gender == "F") echo "selected"; ?>>Female</option>
+							<option value="M" <? if ($gender == "M") echo "selected"; ?>>Male</option>
+							<option value="O" <? if ($gender == "O") echo "selected"; ?>>Other</option>
+						</select>
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Date of Birth</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+						<input type="date" name="dob" value="<?=$dob?>" required>
+						<? } else { ?>
+						<input type="text" name="" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+			</div>
+			
+			<h3 class="ui dividing header">IDs</h3>
+			<div class="field">
+				<div class="field">
+					<table class="ui compact table">
 						<thead>
 							<tr>
-								<th align="right" style="padding-right: 8px"><b>Project</b></th>
-								<th align="left" title="Use asterisk next to primary ID (Example *PrimaryID1, otherID1, otherID23)"><b>IDs</b></th>
+								<th><b>Project</b></th>
+								<th title="Use asterisk next to primary ID (Example *PrimaryID1, otherID1, otherID23)">Comma separated list of <b>IDs</b></th>
 							</tr>
 						</thead>
 						<tr>
-							<td align="right" style="padding-right: 8px">All projects</td>
-							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,0))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
+							<td>All projects</td>
+							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,0))?>"></td>
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
@@ -2269,8 +2294,10 @@
 								$projectname = $row['project_name'];
 								?>
 								<tr>
-									<td align="right" style="padding-right: 8px"><?=$projectname?></td>
-									<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,$enrollmentid))?>" style="background-color: lightyellow; border: 1px solid gray"></td>
+									<td><?=$projectname?></td>
+									<td>
+										<div class="ui input"><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,$enrollmentid))?>"></div>
+									</td>
 									<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
 								</tr>
 								<?
@@ -2278,113 +2305,125 @@
 						}
 						?>
 					</table>
-				</td>
-			</tr>
-			<tr>
-				<td class="requiredlabel">Sex</td>
-				<td>
-					<select name="gender" style="background-color: lightyellow; border: 1px solid gray">
-						<option value="" <? if ($gender == "") echo "selected"; ?>>(Select sex)</option>
-						<option value="U" <? if ($gender == "U") echo "selected"; ?>>Unknown</option>
-						<option value="F" <? if ($gender == "F") echo "selected"; ?>>Female</option>
-						<option value="M" <? if ($gender == "M") echo "selected"; ?>>Male</option>
-						<option value="O" <? if ($gender == "O") echo "selected"; ?>>Other</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Ethnicity</td>
-				<td>
-					<select name="ethnicity1">
-						<option value="" <? if ($ethnicity1 == "") echo "selected"; ?>>(Select ethnicity)</option>
-						<option value="hispanic" <? if ($ethnicity1 == "hispanic") echo "selected"; ?>>Hispanic/Latino</option>
-						<option value="nothispanic" <? if ($ethnicity1 == "nothispanic") echo "selected"; ?>>Not hispanic/latino</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Race</td>
-				<td>
-					<select name="ethnicity2">
-						<option value="" <? if ($ethnicity2 == "") echo "selected"; ?>>(Select race)</option>
-						<option value="indian" <? if ($ethnicity2 == "indian") echo "selected"; ?>>American Indian/Alaska Native</option>
-						<option value="asian" <? if ($ethnicity2 == "asian") echo "selected"; ?>>Asian</option>
-						<option value="black" <? if ($ethnicity2 == "black") echo "selected"; ?>>Black/African American</option>
-						<option value="islander" <? if ($ethnicity2 == "islander") echo "selected"; ?>>Hawaiian/Pacific Islander</option>
-						<option value="white" <? if ($ethnicity2 == "white") echo "selected"; ?>>White</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Handedness</td>
-				<td>
-					<select name="handedness">
-						<option value="" <? if ($handedness == "") echo "selected"; ?>>(Select a status)</option>
-						<option value="U" <? if ($handedness == "U") echo "selected"; ?>>Unknown</option>
-						<option value="R" <? if ($handedness == "R") echo "selected"; ?>>Right</option>
-						<option value="L" <? if ($handedness == "L") echo "selected"; ?>>Left</option>
-						<option value="A" <? if ($handedness == "A") echo "selected"; ?>>Ambidextrous</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Education<br><span class="tiny">highest level completed</span></td>
-				<td>
-					<select name="education">
-						<option value="" <? if ($education == "") echo "selected"; ?>>(Select a status)</option>
-						<option value="0" <? if ($education == "0") echo "selected"; ?>>Unknown</option>
-						<option value="1" <? if ($education == "1") echo "selected"; ?>>Grade School</option>
-						<option value="2" <? if ($education == "2") echo "selected"; ?>>Middle School</option>
-						<option value="3" <? if ($education == "3") echo "selected"; ?>>High School/GED</option>
-						<option value="4" <? if ($education == "4") echo "selected"; ?>>Trade School</option>
-						<option value="5" <? if ($education == "5") echo "selected"; ?>>Associates Degree</option>
-						<option value="6" <? if ($education == "6") echo "selected"; ?>>Bachelors Degree</option>
-						<option value="7" <? if ($education == "7") echo "selected"; ?>>Masters Degree</option>
-						<option value="8" <? if ($education == "8") echo "selected"; ?>>Doctoral Degree</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Phone</td>
-				<td>
-					<? if ($modifyphi) { ?>
-					<input type="text" name="phone" value="<?=$phone1?>"> <?=$phone1?>
-					<? } else { ?>
-					<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-					<? } ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">E-mail</td>
-				<td>
-				<? if ($modifyphi) { ?>
-				<input type="text" name="email" value="<?=$email?>">
-				<? } else { ?>
-				<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-				<? } ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Marital Status</td>
-				<td>
-				<? if ($modifyphi) { ?>
-					<select name="maritalstatus">
-						<option value="" <? if ($maritalstatus == "") echo "selected"; ?>>(Select a status)</option>
-						<option value="unknown" <? if ($maritalstatus == "unknown") echo "selected"; ?>>Unknown</option>
-						<option value="single" <? if ($maritalstatus == "single") echo "selected"; ?>>Single</option>
-						<option value="married" <? if ($maritalstatus == "married") echo "selected"; ?>>Married</option>
-						<option value="divorced" <? if ($maritalstatus == "divorced") echo "selected"; ?>>Divorced</option>
-						<option value="separated" <? if ($maritalstatus == "separated") echo "selected"; ?>>Separated</option>
-						<option value="civilunion" <? if ($maritalstatus == "civilunion") echo "selected"; ?>>Civil Union</option>
-						<option value="cohabitating" <? if ($maritalstatus == "cohabitating") echo "selected"; ?>>Cohabitating</option>
-						<option value="widowed" <? if ($maritalstatus == "widowed") echo "selected"; ?>>Widowed</option>
-					</select>
-				<? } else { ?>
-				<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
-				<? } ?>
-				</td>
-			</tr>
-			<tr>
+				</div>
+				<div class="field">
+					<label>GUID</label>
+					<div class="field">
+						<input type="text" name="guid" value="<?=$guid?>">
+					</div>
+				</div>
+			</div>
+
+			<h3 class="ui dividing header">Extra Information</h3>
+  
+			<div class="two fields">
+				<div class="field">
+					<label>Race</label>
+					<div class="field">
+						<select name="ethnicity2">
+							<option value="" <? if ($ethnicity2 == "") echo "selected"; ?>>(Select race)</option>
+							<option value="indian" <? if ($ethnicity2 == "indian") echo "selected"; ?>>American Indian/Alaska Native</option>
+							<option value="asian" <? if ($ethnicity2 == "asian") echo "selected"; ?>>Asian</option>
+							<option value="black" <? if ($ethnicity2 == "black") echo "selected"; ?>>Black/African American</option>
+							<option value="islander" <? if ($ethnicity2 == "islander") echo "selected"; ?>>Hawaiian/Pacific Islander</option>
+							<option value="white" <? if ($ethnicity2 == "white") echo "selected"; ?>>White</option>
+						</select>
+					</div>
+				</div>
+				<div class="field">
+					<label>Ethnicity</label>
+					<div class="field">
+						<select name="ethnicity1">
+							<option value="" <? if ($ethnicity1 == "") echo "selected"; ?>>(Select ethnicity)</option>
+							<option value="hispanic" <? if ($ethnicity1 == "hispanic") echo "selected"; ?>>Hispanic/Latino</option>
+							<option value="nothispanic" <? if ($ethnicity1 == "nothispanic") echo "selected"; ?>>Not hispanic/latino</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div class="three fields">
+				<div class="field">
+					<label>Handedness</label>
+					<div class="field">
+						<select name="handedness">
+							<option value="" <? if ($handedness == "") echo "selected"; ?>>(Select a status)</option>
+							<option value="U" <? if ($handedness == "U") echo "selected"; ?>>Unknown</option>
+							<option value="R" <? if ($handedness == "R") echo "selected"; ?>>Right</option>
+							<option value="L" <? if ($handedness == "L") echo "selected"; ?>>Left</option>
+							<option value="A" <? if ($handedness == "A") echo "selected"; ?>>Ambidextrous</option>
+						</select>
+					</div>
+				</div>
+				<div class="field">
+					<label>Education</label>
+					<div class="field">
+						<select name="education">
+							<option value="" <? if ($education == "") echo "selected"; ?>>(Select a status)</option>
+							<option value="0" <? if ($education == "0") echo "selected"; ?>>Unknown</option>
+							<option value="1" <? if ($education == "1") echo "selected"; ?>>Grade School</option>
+							<option value="2" <? if ($education == "2") echo "selected"; ?>>Middle School</option>
+							<option value="3" <? if ($education == "3") echo "selected"; ?>>High School/GED</option>
+							<option value="4" <? if ($education == "4") echo "selected"; ?>>Trade School</option>
+							<option value="5" <? if ($education == "5") echo "selected"; ?>>Associates Degree</option>
+							<option value="6" <? if ($education == "6") echo "selected"; ?>>Bachelors Degree</option>
+							<option value="7" <? if ($education == "7") echo "selected"; ?>>Masters Degree</option>
+							<option value="8" <? if ($education == "8") echo "selected"; ?>>Doctoral Degree</option>
+						</select>
+					</div>
+				</div>
+				<div class="field">
+					<label>Marital Status</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+							<select name="maritalstatus">
+								<option value="" <? if ($maritalstatus == "") echo "selected"; ?>>(Select a status)</option>
+								<option value="unknown" <? if ($maritalstatus == "unknown") echo "selected"; ?>>Unknown</option>
+								<option value="single" <? if ($maritalstatus == "single") echo "selected"; ?>>Single</option>
+								<option value="married" <? if ($maritalstatus == "married") echo "selected"; ?>>Married</option>
+								<option value="divorced" <? if ($maritalstatus == "divorced") echo "selected"; ?>>Divorced</option>
+								<option value="separated" <? if ($maritalstatus == "separated") echo "selected"; ?>>Separated</option>
+								<option value="civilunion" <? if ($maritalstatus == "civilunion") echo "selected"; ?>>Civil Union</option>
+								<option value="cohabitating" <? if ($maritalstatus == "cohabitating") echo "selected"; ?>>Cohabitating</option>
+								<option value="widowed" <? if ($maritalstatus == "widowed") echo "selected"; ?>>Widowed</option>
+							</select>
+						<? } else { ?>
+						<input type="text" name="" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+			</div>
+
+			<div class="three fields">
+				<div class="field">
+					<label>Phone</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+						<input type="tel" name="phone" value="<?=$phone1?>"> <?=$phone1?>
+						<? } else { ?>
+						<input type="tel" name="" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+				<div class="field">
+					<label>Email</label>
+					<div class="field">
+						<? if ($modifyphi) { ?>
+						<input type="email" name="email" value="<?=$email?>">
+						<? } else { ?>
+						<input type="email" name="" value="" disabled>
+						<? } ?>
+					</div>
+				</div>
+				<div class="field">
+					<label>Can Contact?</label>
+					<div class="field">
+						<input type="checkbox" name="cancontact" value="1" <? if ($cancontact) echo "checked"; ?>>
+					</div>
+				</div>
+			</div>
+			
+			<!--<tr>
 				<td class="label">Smoking Status</td>
 				<td>
 				<? if ($modifyphi) { ?>
@@ -2396,29 +2435,25 @@
 						<option value="current" <? if ($smokingstatus == "current") echo "selected"; ?>>Current</option>
 					</select>
 				<? } else { ?>
-				<input type="text" name="" value="" disabled style="background-color: lightgray; border: 1px solid gray">
+				<input type="text" name="" value="" disabled>
 				<? } ?>
 				</td>
-			</tr>
-			<tr>
-				<td class="label">GUID<br><span class="tiny">NDAR format</span></td>
-				<td><input type="text" name="guid" value="<?=$guid?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Can contact?</td>
-				<td><input type="checkbox" name="cancontact" value="1" <? if ($cancontact) echo "checked"; ?>></td>
-			</tr>
-			<tr>
-				<td class="label">Tags<br><span class="tiny">comma separated list</span></td>
-				<td><input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>"></td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="reset" title="Reset the form the original values"> &nbsp; <input type="submit" value="<?=$submitbuttonlabel?>">
-				</td>
-			</tr>
+			</tr>-->
+
+				<div class="field">
+					<label>Tags</label>
+					<div class="field">
+						<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
+					</div>
+				</div>
+				
+				<br><br>
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='subjects.php?id=<?=$id?>'; return false;">Cancel</button>
+					<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
+				</div>
+
 			</form>
-		</table>
 		</div>
 	<?
 	}

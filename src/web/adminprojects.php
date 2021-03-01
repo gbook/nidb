@@ -222,7 +222,7 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-			  <div class="header"><?=$formtitle?></div>
+				<div class="header"><?=$formtitle?></div>
 			</div>
 			<form method="post" action="adminprojects.php" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">

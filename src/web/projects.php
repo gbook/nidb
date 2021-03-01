@@ -2486,6 +2486,30 @@
 		<table cellpadding="15px">
 			<tr>
 				<td>
+					<h2 class="ui header"><?=$name?></h2>
+					<table class="ui very basic compact collapsing celled table">
+						<thead>
+							<tr>
+								<th class="right aligned">Employee</th>
+								<th>Correct Guesses</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<h4 class="ui header">Testing</h4>
+								</td>
+								<td>22</td>
+					</tr>
+					<tr>
+						<td>
+						</td>
+						<td>
+						15
+						</td>
+					</tr>
+				</table>
+					
 					<table class="twocoltable dropshadow">
 						<thead>
 							<tr>

@@ -2529,21 +2529,21 @@
 		});
 		</script>
 		
-		<table class="graydisplaytable" width="100%">
+		<table class="ui celled selectable compact grey table">
 			<thead>
 				<tr>
-					<th>Series<br><span class="tiny">Click to edit series</span></th>
+					<th>Series<br><span class="tiny" style="font-weight: normal">Click to edit series</span></th>
 					<th>Protocol</th>
 					<th>Date</th>
 					<th>Notes</th>
-					<th>Files<br><span class="tiny">Click to manage files</span></th>
+					<th>Files<br><span class="tiny" style="font-weight: normal">Click to manage files</span></th>
 					<th>Size</th>
-					<th>Upload <?=strtoupper($modality)?> files<br><span class="tiny">Click button or Drag & Drop</span></th>
+					<th>Upload <?=strtoupper($modality)?> files<br><span class="tiny" style="font-weight: normal">Click button or Drag & Drop</span></th>
 					<th>Download</th>
-					<th align="left">Operations<br><input type="checkbox" id="seriesall"><span class="tiny">Select All</span></th>
+					<th align="left">Operations<br><input type="checkbox" id="seriesall"><span class="tiny" style="font-weight: normal"> Select All</span></th>
 				</tr>
 			</thead>
-			<form method="post" name="serieslist" id="serieslist" action="studies.php">
+			<form method="post" name="serieslist" id="serieslist" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="" id="serieslistaction">
 			<input type="hidden" name="studyid" value="<?=$id?>">
 			<tbody>
@@ -2580,17 +2580,17 @@
 									});
 								});
 							</script>
-							<tr onMouseOver="this.style.backgroundColor='#9EBDFF';" onMouseOut="this.style.backgroundColor='';">
+							<tr>
 								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
 								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
-								<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><?=$numfiles?></a></td>
+								<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><i class="file outline icon"></i> <?=$numfiles?> file(s)</a></td>
 								<td><?=$series_size?></td>
 								<td>
 								<span id="uploader<?=$series_id?>"></span>
 								</td>
-								<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><img src="images/download16.png" title="Download <?=$modality?> data"></a></td>
+								<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><i class="download icon" title="Download <?=$modality?> data"></i></a></td>
 								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<?=$series_id?>"></td>
 							</tr>
 						<?
@@ -2652,7 +2652,7 @@
 					</td>
 					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>"></td>
 					<td><input type="text" name="notes"></td>
-					<td><input type="submit" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"></td>
+					<td><input type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"></td>
 					<td></td>
 					<td></td>
 					<td></td>
@@ -2662,9 +2662,10 @@
 		</table>
 		<div align="right" style="padding: 10px">
 			<b>With Selected</b> &nbsp; &nbsp; <br>
-			<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.serieslist.action.value='deleteseries';return confirm('Are you absolutely sure you want to DELETE the selected series?')">
+			<br>
+			<input type="button" value="Delete" class="ui red button" style="width:150px" onclick="document.serieslist.action.value='deleteseries';return confirm('Are you absolutely sure you want to DELETE the selected series?')">
 			<br><br>
-			<input type="button" name="minipipelineform" value="Run mini-pipeline" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()">
+			<input type="button" class="ui button" style="width:150px" name="minipipelineform" value="Run mini-pipeline" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()">
 		</div>
 		</form>
 

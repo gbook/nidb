@@ -963,6 +963,7 @@
 		$perms = array();
 		$userid = $_SESSION['userid'];
 		
+		$projectids = array_filter($projectids);
 		$projectidlist = implode2(',', $projectids);
 		
 		if ($projectidlist != "") {
