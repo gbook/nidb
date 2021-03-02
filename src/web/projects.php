@@ -2556,7 +2556,7 @@
 					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br><br>
 					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br><br>
 					<? if ($GLOBALS['isadmin']) { ?>
-					<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
+					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>
 
 				</td>

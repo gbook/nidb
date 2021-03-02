@@ -98,7 +98,7 @@
 			?>
 			<h3 class="ui header">New Studies</h3>
 			<span class="tiny">Collected in past <?=$numrecentdays?> days</span>
-			<table class="ui small celled selectable grey compact table">
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th class="subheader">Subject UID</th>
 					<th class="subheader">Study #</th>
@@ -165,12 +165,12 @@
 		</td>
 		<td valign="top">
 			<h3 class="ui header">Recently Viewed Subjects</h3>
-			<table class="ui small celled selectable grey compact table">
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th>UID</th>
 					<th>Sex</th>
 					<th>DOB</th>
-					<th><span class="tiny">Date Accessed</span></th>
+					<th>Date Accessed</th>
 				</thead>
 				<?
 				$sqlstring = "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.uid order by a.mostrecent_date desc";
@@ -187,7 +187,7 @@
 							<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 							<td><?=$sex?></td>
 							<td><?=$dob?></td>
-							<td><span class="tiny"><?=$date?></span></td>
+							<td><?=$date?></td>
 						</tr>
 						<?
 					}
@@ -196,13 +196,13 @@
 			</table>
 			<br>
 			<h3 class="ui header">Recently Viewed Studies</h3>
-			<table class="ui small celled selectable grey compact table">
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th>StudyID</th>
 					<th>Date</th>
 					<th>Modality</th>
 					<th>Site</th>
-					<th><span class="tiny">Date Accessed</span></th>
+					<th>Date Accessed</th>
 				</tr>
 				<?
 				$q = mysqli_stmt_init($GLOBALS['linki']);
@@ -224,7 +224,7 @@
 							<td><?=$studydate?></td>
 							<td><?=$modality?></td>
 							<td><?=$site?></td>
-							<td><span class="tiny"><?=$date?></span></td>
+							<td><?=$date?></td>
 						</tr>
 						<?
 					}

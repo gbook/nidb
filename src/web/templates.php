@@ -125,51 +125,52 @@
 		$name = $row['project_name'];
 	
 		?>
-		<div style="color: #444; font-weight: bold">Study Templates</div>
-		<span class="tiny">Creates <b>single</b> studies</span>
-		<br><br>
-		<table class="graydisplaytable">
-			<thead>
-				<th>Name</th>
-				<th>Modality</th>
-				<th></th>
-			</thead>
-			<form action="templates.php" method="post" name="theform" id="theform">
-			<input type="hidden" name="action" value="createstudytemplate">
-			<input type="hidden" name="projectid" value="<?=$projectid?>">
-			<tr>
-				<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-				<td>
-					<select name="newtemplatemodality">
-						<option value="">Select modality</option>
-					<?
-						$modalities = GetModalityList();
-						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
-						}
-					?>
-					</select>
-				</td>
-				<td><input type="submit" value="Create Study Template"></td>
-			</tr>
-			</form>
-		<?
-		$sqlstring = "select * from study_template where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$templateid = $row['studytemplate_id'];
-			$templatename = $row['template_name'];
-			$templatemodality = $row['template_modality'];
-			?>
-			<tr>
-				<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
-				<td><?=$templatemodality?></td>
-				<td><a href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>" style="color: red">X</a></td>
-			</tr>
+		<div class="ui container">
+			<h3 class="ui header">Study Templates</h3>
+			<span class="tiny">Creates <b>single</b> studies</span>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th>Name</th>
+					<th>Modality</th>
+					<th></th>
+				</thead>
+				<form action="templates.php" method="post" name="theform" id="theform">
+				<input type="hidden" name="action" value="createstudytemplate">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<tr>
+					<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
+					<td>
+						<select name="newtemplatemodality">
+							<option value="">Select modality</option>
+						<?
+							$modalities = GetModalityList();
+							foreach ($modalities as $modality) {
+								?><option value="<?=$modality?>"><?=$modality?></option><?
+							}
+						?>
+						</select>
+					</td>
+					<td><input type="submit" value="Create Study Template" class="ui button primary"></td>
+				</tr>
+				</form>
 			<?
-		}
-		?>
-		</table>
+			$sqlstring = "select * from study_template where project_id = $projectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$templateid = $row['studytemplate_id'];
+				$templatename = $row['template_name'];
+				$templatemodality = $row['template_modality'];
+				?>
+				<tr>
+					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
+					<td><?=$templatemodality?></td>
+					<td><i class="close icon red"></i> <a href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>" style="color: red">delete</a></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+		</div>
 		<?
 	}
 
@@ -187,68 +188,68 @@
 	
 		?>
 		<br><br><br>
-		<div style="color: #444; font-weight: bold">Project Study Templates</div>
-		<span class="tiny">Creates <b>groups</b> of studies</span>
-		<br>
-		<br>
-		<table class="graydisplaytable">
-			<thead>
+		<div class="ui container">
+			<h3 class="ui header">Project Study Templates</h3>
+			<span class="tiny">Creates <b>groups</b> of studies</span>
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<tr>
+						<th></th>
+						<th colspan="2" style="text-align: center">Number of...</th>
+						<th colspan="3"></th>
+					</tr>
+					<tr>
+						<th>Name</th>
+						<th>Studies</th>
+						<th>Series</th>
+						<th>Create Date</th>
+						<th>Modify Date</th>
+						<th></th>
+					</tr>
+				</thead>
+				<form action="templates.php" method="post" name="theform" id="theform">
+				<input type="hidden" name="action" value="createprojecttemplate">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
 				<tr>
-					<th></th>
-					<th colspan="2" style="text-align: center">Number of...</th>
-					<th colspan="3"></th>
+					<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
+					<td></td>
+					<td></td>
+					<td><input type="submit" value="Create Project Template" class="ui button primary"></td>
 				</tr>
-				<tr>
-					<th>Name</th>
-					<th>Studies</th>
-					<th>Series</th>
-					<th>Create Date</th>
-					<th>Modify Date</th>
-					<th></th>
-				</tr>
-			</thead>
-			<form action="templates.php" method="post" name="theform" id="theform">
-			<input type="hidden" name="action" value="createprojecttemplate">
-			<input type="hidden" name="projectid" value="<?=$projectid?>">
-			<tr>
-				<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-				<td></td>
-				<td></td>
-				<td><input type="submit" value="Create Project Template"></td>
-			</tr>
-			</form>
-		<?
-		$sqlstring = "select * from project_template where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$ptid = $row['projecttemplate_id'];
-			$name = $row['template_name'];
-			$createdate = $row['template_createdate'];
-			$modifydate = $row['template_modifydate'];
-			
-			$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numstudies = $rowA['count'];
-			
-			$sqlstringA = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numseries = $rowA['count'];
-			
-			?>
-			<tr>
-				<td><a href="templates.php?action=editprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>"><?=$name?></td>
-				<td><?=$numstudies?></td>
-				<td><?=$numseries?></td>
-				<td><?=$createdate?></td>
-				<td><?=$modifydate?></td>
-				<td><a href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" style="color: red">X</a></td>
-			</tr>
+				</form>
 			<?
-		}
-		?>
-		</table>
+			$sqlstring = "select * from project_template where project_id = $projectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$ptid = $row['projecttemplate_id'];
+				$name = $row['template_name'];
+				$createdate = $row['template_createdate'];
+				$modifydate = $row['template_modifydate'];
+				
+				$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+				$numstudies = $rowA['count'];
+				
+				$sqlstringA = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+				$numseries = $rowA['count'];
+				
+				?>
+				<tr>
+					<td><a href="templates.php?action=editprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>"><?=$name?></td>
+					<td><?=$numstudies?></td>
+					<td><?=$numseries?></td>
+					<td><?=$createdate?></td>
+					<td><?=$modifydate?></td>
+					<td><i class="close icon red"></i><a href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" style="color: red">delete</a></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+		</div>
 		<?
 	}
 	
@@ -284,42 +285,57 @@
 		}
 		?>
 		
-		<b><?=$templatename?></b> - <?=$templatemodality?>
-		<br><br>
-		<form action="templates.php" method="post" name="theform" id="theform">
-		<input type="hidden" name="action" value="updatetemplate">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
-		<input type="hidden" name="templateid" value="<?=$templateid?>">
-		<span class="tiny">Leave protocol blank to delete</span>
-		<table class="graydisplaytable">
-			<thead>
-				<th>Series protocol</th>
-			</thead>
-			<tr>
-		<?
-		$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by item_order";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$itemprotocol = $row['item_protocol'];
-			?>
-			<tr>
-				<td><input type="text" name="itemprotocol[]" value="<?=$itemprotocol?>" size="50"></td>
-			</tr>
+		<div class="ui text container">
+			<div class="ui attached visible message">
+			  <div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
+			</div>
+			<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
+			<input type="hidden" name="action" value="updatetemplate">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<input type="hidden" name="templateid" value="<?=$templateid?>">
+			<span class="tiny">Leave protocol blank to delete</span>
+			<table class="ui selectable grey compact table">
+				<thead>
+					<th>Series</th>
+					<th>Protocol</th>
+				</thead>
+				<tr>
 			<?
-		}
-		for($i=0;$i<5;$i++) {
+			$n=1;
+			$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by item_order";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$itemprotocol = $row['item_protocol'];
+				?>
+				<tr>
+					<td><?=$n++?></td>
+					<td><input type="text" name="itemprotocol[]" value="<?=$itemprotocol?>" size="50"></td>
+				</tr>
+				<?
+			}
+			for($i=0;$i<5;$i++) {
+				?>
+				<tr>
+					<td><?=$n++?></td>
+					<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
+				</tr>
+				<?
+			}
 			?>
-			<tr>
-				<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
-			</tr>
-			<?
-		}
-		?>
-			<tr>
-				<td colspan="2" align="right"><input type="submit" value="Save"></td>
-			</tr>
-		</table>
-		</form>
+			</table>
+			
+			<div class="ui two column grid">
+				<div class="column">
+					<input type="hidden" name="username" value="<?=$username?>">
+					<button class="ui red button" onClick="window.location.href='templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>; return false;'"><i class="minus square outline icon"></i>Delete</button>
+				</div>
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='templates.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<input type="submit" value="Save" class="ui button primary">
+				</div>
+			</div>
+			</form>
+		</div>
 		<?
 	}
 
@@ -351,14 +367,17 @@
 		}
 		?>
 		
-		<b><?=$templatename?></b>
-		<br><br>
-		<form action="templates.php" method="post" name="theform" id="theform">
+		<div class="ui container">
+			<div class="ui attached visible message">
+			  <div class="header"><?=$templatename?></div>
+			</div>
+
+		<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 		<input type="hidden" name="action" value="updateprojecttemplate">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="ptid" value="<?=$ptid?>">
 		<span class="tiny">Leave protocol blank to delete</span>
-		<table class="graydisplaytable">
+		<table class="ui selectable grey very compact table">
 			<thead>
 				<th>Visit Type</th>
 				<th>Modality</th>
@@ -448,10 +467,17 @@
 			<?
 		}
 		?>
-			<tr>
-				<td colspan="2" align="right"><input type="submit" value="Save"></td>
-			</tr>
 		</table>
+			<div class="ui two column grid">
+				<div class="column">
+					<input type="hidden" name="username" value="<?=$username?>">
+					<button class="ui red button" onClick="window.location.href='templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>; return false;'"><i class="minus square outline icon"></i>Delete</button>
+				</div>
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='templates.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<input type="submit" value="Save" class="ui button primary">
+				</div>
+			</div>
 		</form>
 		<?
 	}

@@ -122,10 +122,6 @@
 	/* -------------------------------------------- */
 	function EditModality($id) {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Modalities'] = "adminmodalities.php";
-		NavigationBar("Admin", $urllist);
-	
 		$sqlstring = "select mod_code from modalities where mod_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -137,7 +133,16 @@
 		$fields_num = mysqli_num_fields($result);
 
 		?>
-		<table class="graydisplaytable">
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header"><tt><?=$modality?>_series</tt> SQL Schema</h2>
+				</div>
+				<div class="column" style="text-align: right">
+					<button class="ui button primary" onClick="window.location.href='adminmodalities.php'; return false;">Back</button>
+				</div>
+			</div>
+			<table class="ui small celled selectable grey very compact table">
 			<thead>
 			<tr>
 		<?
@@ -380,13 +385,11 @@
 	/* -------------------------------------------- */
 	function DisplayModalityList() {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Modalities'] = "adminmodalities.php";
-		NavigationBar("Admin", $urllist);
-		
 	?>
 
-	<table class="graydisplaytable">
+	<div class="ui container">
+		<h2 class="ui header">Modalities</h2>
+		<table class="ui small celled selectable grey very compact table">
 		<thead>
 			<tr>
 				<th>Name<br><span class="tiny">View table schema</span></th>
@@ -428,7 +431,7 @@
 					?>
 					<tr style="color: <?=$color?>">
 						<td><a href="adminmodalities.php?action=edit&id=<?=$id?>"><?=$name?></a></td>
-						<td><a href="adminmodalities.php?action=editprotocolgroups&id=<?=$id?>">View</a></td>
+						<td><i class="sitemap icon"></i> <a href="adminmodalities.php?action=editprotocolgroups&id=<?=$id?>">View</a></td>
 						<td><?=$desc?></td>
 						<td align="right"><?=number_format($rows,0)?></td>
 						<td align="right"><?=number_format($tablesize+$indexsize)?></td>

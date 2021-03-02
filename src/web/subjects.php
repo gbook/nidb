@@ -2181,7 +2181,7 @@
 			$modifyphi = $viewphi = 1;
 		}
 
-		$perms = GetCurrentUserProjectPermissions($projectids);
+		//$perms = GetCurrentUserProjectPermissions($projectids);
 		//PrintVariable($perms);
 		//$urllist['Subjects'] = "subjects.php";
 		//$urllist[$uid] = "subjects.php?action=display&id=$id";
@@ -2193,12 +2193,13 @@
 		if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
 		if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
 
+		if ($type == 'add') { $modifyphi = 1; }
+		
 		/* kick them out if they shouldn't be seeing anything on this page */
 		if ((!$modifyphi) && (!$viewphi) && ($type != 'add')) {
 			//return;
 		}
 		
-		if ($type == 'add') { $modifyphi = 1; }
 	?>
 		<script type="text/javascript">
 			$(document).ready(function() {
@@ -2214,10 +2215,10 @@
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="uid" value="<?=$uid?>">
 			<? if ($type == "add") { ?>
-			<tr title="This will encrypt the name and alternate UIDs.<br>It will also change the DOB to year only (ex. 1980-00-00)">
+			<!--<tr title="This will encrypt the name and alternate UIDs.<br>It will also change the DOB to year only (ex. 1980-00-00)">
 				<td class="label">Encrypt</td>
 				<td><input type="checkbox" name="encrypt" value="1"></td>
-			</tr>
+			</tr>-->
 			<? } ?>
 			
 			<h3 class="ui dividing header">Basic Information</h3>
@@ -2226,7 +2227,7 @@
 					<label>First name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="text" size="50" name="firstname" value="<?=$firstname?>">
+						<input class="ui input focus" type="text" size="50" name="firstname" value="<?=$firstname?>">
 						<? } else { ?>
 						<input type="text" size="50" name="firstname" value="" disabled>
 						<? } ?>
@@ -2424,35 +2425,18 @@
 				</div>
 			</div>
 			
-			<!--<tr>
-				<td class="label">Smoking Status</td>
-				<td>
-				<? if ($modifyphi) { ?>
-					<select name="smokingstatus">
-						<option value="" <? if ($smokingstatus == "") echo "selected"; ?>>(Select a status)</option>
-						<option value="unknown" <? if ($smokingstatus == "unknown") echo "selected"; ?>>Unknown</option>
-						<option value="never" <? if ($smokingstatus == "never") echo "selected"; ?>>Never</option>
-						<option value="past" <? if ($smokingstatus == "past") echo "selected"; ?>>Past</option>
-						<option value="current" <? if ($smokingstatus == "current") echo "selected"; ?>>Current</option>
-					</select>
-				<? } else { ?>
-				<input type="text" name="" value="" disabled>
-				<? } ?>
-				</td>
-			</tr>-->
-
+			<div class="field">
+				<label>Tags</label>
 				<div class="field">
-					<label>Tags</label>
-					<div class="field">
-						<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
-					</div>
+					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
 				</div>
-				
-				<br><br>
-				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='subjects.php?id=<?=$id?>'; return false;">Cancel</button>
-					<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
-				</div>
+			</div>
+			
+			<br><br>
+			<div class="column" align="right">
+				<button class="ui button" onClick="window.location.href='subjects.php?id=<?=$id?>'; return false;">Cancel</button>
+				<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
+			</div>
 
 			</form>
 		</div>
@@ -2488,33 +2472,16 @@
 		$searchdob = mysqli_real_escape_string($GLOBALS['linki'], $searchdob);
 		$searchactive = mysqli_real_escape_string($GLOBALS['linki'], $searchactive);
 	?>
-	<script>
-		$(document).ready(function() {
-			$('#newsubjecttext').hide();
-			
-			$('#newsubject').hover(
-				function () { $('#newsubjecttext').show(); }, 
-				function () { $('#newsubjecttext').hide(); }
-			);
-		});
-	</script>
+	<div class="ui two column grid">
+		<div class="column">
+			<h2 class="ui header">Subjects</h2>
+		</div>
+		<div class="column" align="right">
+			<button class="ui primary button" onClick="window.location.href='subjects.php?action=addform'; return false;" title="Search on this page before creating a new subject to make sure they don't already exist!"><i class="plus square outline icon"></i> Create Subject</button>
+		</div>
+	</div>
 	
-	<table width="100%" cellspacing="0" class="headertable">
-		<tbody>
-			<tr>
-				<td class="header1">Subjects</td>
-				<td class="header2" align="right">
-					<a href="subjects.php">Subject List</a> &gt; 
-					<a href="subjects.php?action=addform" id="newsubject"> New Subject </a><br>
-					<div align="right" id="newsubjecttext" style="color:darkred; background-color: yellow; font-size:9pt; border: 1px solid red; padding:5px; border-radius:5px"><b>Search on this page before creating a new subject</b><br>to make sure they do not already exist!</div>
-				</td>
-			</tr>
-		</tbody>
-	</table>
-
-	<br><br>
-	
-	<table class="graydisplaytable" width="100%">
+	<table class="ui small celled selectable grey very compact table">
 		<thead>
 			<tr>
 				<th align="left">&nbsp;</th>

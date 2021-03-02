@@ -441,7 +441,7 @@
 	?>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='adminprojects.php?action=addform'; return false;"><i class="plus square outline icon"></i>Create Project</button>
+	<button class="ui primary large button" onClick="window.location.href='adminprojects.php?action=addform'; return false;"><i class="plus square outline icon"></i> Create Project</button>
 	<br><br>
 	
 	<h3 class="ui header">Projects</h3>

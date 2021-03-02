@@ -231,115 +231,120 @@
 	<!--NiDB version <b><? //echo GetNiDBVersion();?></b>-->
 	<br><br>
 	
-	<table class="graydisplaytable">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>&nbsp;</th>
-				<th>Status</th>
-				<th>Instances</th>
-				<th>Last finish</th>
-				<th>Run time</th>
-				<th>Enabled</th>
-				<th title="Enable debugging will always save the log file, and will output all SQL statements to the log file" style="text-decoration: underline; text-decoration-style: dotted">Debug</th>
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from modules order by module_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['module_id'];
-					$module_name = $row['module_name'];
-					$module_status = $row['module_status'];
-					$module_numrunning = $row['module_numrunning'];
-					$module_laststart = $row['module_laststart'];
-					$module_laststop = $row['module_laststop'];
-					$module_isactive = $row['module_isactive'];
-					$module_debug = $row['module_debug'];
-					
-					/* calculate the status color */
-					if (!$module_isactive) { $color = "gray"; }
-					else {
-						if ($module_status == "running") { $color = "green"; }
-						if ($module_status == "stopped") { $color = "darkblue"; }
-					}
-					
-					/* calculate and format the run time */
-					if ($module_status == "stopped") {
-						$runtime = (strtotime($module_laststop) - strtotime($module_laststart));
+	<div class="ui container">
+		<h2 class="ui header">Modules</h2>
+		<table class="ui small celled selectable grey very compact table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>View Logs</th>
+					<th>Status</th>
+					<th>Instances</th>
+					<th>Last finish</th>
+					<th>Run time</th>
+					<th>Enabled</th>
+					<th title="Enable debugging will always save the log file, and will output all SQL statements to the log file" style="text-decoration: underline; text-decoration-style: dotted">Debug</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select * from modules order by module_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['module_id'];
+						$module_name = $row['module_name'];
+						$module_status = $row['module_status'];
+						$module_numrunning = $row['module_numrunning'];
+						$module_laststart = $row['module_laststart'];
+						$module_laststop = $row['module_laststop'];
+						$module_isactive = $row['module_isactive'];
+						$module_debug = $row['module_debug'];
 						
-						if ($runtime > 3600) {
-							$runtime = number_format($runtime/3600,2) . " hr";
+						/* calculate the status color */
+						if (!$module_isactive) { $color = "gray"; }
+						else {
+							if ($module_status == "running") { $color = "green"; }
+							if ($module_status == "stopped") { $color = "darkblue"; }
 						}
-						elseif ($runtime > 60) {
-							$runtime = number_format($runtime/60,2) . " min";
+						
+						/* calculate and format the run time */
+						if ($module_status == "stopped") {
+							$runtime = (strtotime($module_laststop) - strtotime($module_laststart));
+							
+							if ($runtime > 3600) {
+								$runtime = number_format($runtime/3600,2) . " hr";
+							}
+							elseif ($runtime > 60) {
+								$runtime = number_format($runtime/60,2) . " min";
+							}
+							else {
+								$runtime = $runtime . " sec";
+							}
 						}
 						else {
-							$runtime = $runtime . " sec";
+							$runtime = "-";
 						}
-					}
-					else {
-						$runtime = "-";
-					}
-					
-					$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
-			?>
-			<tr>
-				<td><b><?=$module_name?></b></td>
-				<td>[<a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a>]</td>
-				<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>
-				<td><?=$module_numrunning?></td>
-				<td><?=$module_laststop?></td>
-				<td><?=$runtime?></td>
-				<td>
-					<?
-						if ($module_isactive) {
-							?><a href="adminmodules.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
-						}
-						else {
-							?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
-						}
-					?>
-				</td>
-				<td>
-					<?
-						if ($module_debug) {
-							?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
-						}
-						else {
-							?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
-						}
-					?>
-				</td>
-			</tr>
-			<? 
-					/* get the list of threads/processes that are running */
-					$sqlstringA = "select *, abs(time_to_sec(timediff(last_checkin, now()))) 'timediff', timediff(now(), last_checkin) 'timediff2' from module_procs where module_name = '$module_name' order by last_checkin";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						$lastcheckin = $rowA['last_checkin'];
-						$timediff = $rowA['timediff'];
-						$timediff2 = $rowA['timediff2'];
-						$pid = $rowA['process_id'];
 						
-						/* get color index for the size */
-						$maxtime = 2*60*60; /* 2 hours */
-						$timeindex = round(($timediff/$maxtime)*100.0);
-						if ($timeindex > 100) { $timeindex = 100; }
-						$timecolor = $colors[$timeindex];
+						$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
 						
-						?>
-						<tr style="font-size: 9pt">
-							<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=$module_name?>:<?=$pid?></td>
-							<td colspan="3" style="background-color: <?=$timecolor?>">Checked in <?=$lastcheckin?> &nbsp; (<?=$timediff2?> ago)</td>
-						</tr>
+						if (!$module_isactive) { $rowclass = "disabled"; } else { $rowclass = ""; }
+				?>
+				<tr class="<?=$rowclass?>">
+					<td><b><?=$module_name?></b></td>
+					<td><i class="file alternate outline icon"></i> <a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a></td>
+					<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>
+					<td><?=$module_numrunning?></td>
+					<td><?=$module_laststop?></td>
+					<td><?=$runtime?></td>
+					<td>
 						<?
+							if ($module_isactive) {
+								?><a href="adminmodules.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
+							}
+							else {
+								?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
+							}
+						?>
+					</td>
+					<td>
+						<?
+							if ($module_debug) {
+								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
+							}
+							else {
+								?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
+							}
+						?>
+					</td>
+				</tr>
+				<? 
+						/* get the list of threads/processes that are running */
+						$sqlstringA = "select *, abs(time_to_sec(timediff(last_checkin, now()))) 'timediff', timediff(now(), last_checkin) 'timediff2' from module_procs where module_name = '$module_name' order by last_checkin";
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+							$lastcheckin = $rowA['last_checkin'];
+							$timediff = $rowA['timediff'];
+							$timediff2 = $rowA['timediff2'];
+							$pid = $rowA['process_id'];
+							
+							/* get color index for the size */
+							$maxtime = 2*60*60; /* 2 hours */
+							$timeindex = round(($timediff/$maxtime)*100.0);
+							if ($timeindex > 100) { $timeindex = 100; }
+							$timecolor = $colors[$timeindex];
+							
+							?>
+							<tr style="font-size: 9pt">
+								<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=$module_name?>:<?=$pid?></td>
+								<td colspan="3" style="background-color: <?=$timecolor?>">Checked in <?=$lastcheckin?> &nbsp; (<?=$timediff2?> ago)</td>
+							</tr>
+							<?
+						}
 					}
-				}
-			?>
-		</tbody>
-	</table>
+				?>
+			</tbody>
+		</table>
+	</div>
 	<?
 	}
 ?>
