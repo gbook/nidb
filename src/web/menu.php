@@ -139,7 +139,7 @@
 				else { $style = ""; }
 				?><a href="users.php" style="<?=$style?>"><b>My Account</b></a><?
 			?>
-				<a href="login.php?action=logout"></b>Logout<b></a>
+				<a href="login.php?action=logout"></b>Logout<b></a><i class="sign out alternate icon inverted"></i>
 			</td>
 		</tr>
 		<tr>

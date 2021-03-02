@@ -94,7 +94,7 @@
 		
 	?>
 
-	<table class="graydisplaytable">
+	<table class="ui small celled selectable grey compact table">
 		<thead>
 			<tr>
 				<th>Description</th>
@@ -102,11 +102,11 @@
 				<th>Created</th>
 				<th>Expires</th>
 				<th>Release notes</th>
-				<th>Zip size<br><span class="tiny">bytes</span></th>
-				<th>Unzipped size<br><span class="tiny">bytes</span></th>
+				<th>Zip size<br><span class="tiny" style="font-weight: normal">bytes</span></th>
+				<th>Unzipped size<br><span class="tiny" style="font-weight: normal">bytes</span></th>
 				<th>Creator</th>
 				<th>Password</th>
-				<th>Download link<br><span class="tiny">Copy link to use</span></th>
+				<th>Download link<br><span class="tiny" style="font-weight: normal">Copy link to use</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -137,11 +137,11 @@
 				<td><?=$status?></td>
 				<td style="font-size:9pt"><?=$createdate?></td>
 				<td style="font-size:9pt"><?=$expiredate?></td>
-				<td><img src="images/preview.gif" title="<?=$notes?>"></td>
+				<td><i class="sticky note outline icon" title="<?=$notes?>"></i></td>
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($zipsize)?></td>
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
 				<td><?=$createdby?></td>
-				<td style="font-size:8pt"><?=$password?></td>
+				<td style="font-size:8pt"><tt><?=$password?></tt></td>
 				<td><input type="text" size="80" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>"></td>
 			</tr>
 			<? 

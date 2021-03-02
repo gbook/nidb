@@ -176,7 +176,7 @@
 				<th align="left">Username</th>
 				<th align="right">Number of series</th>
 				<th align="right">Size</th>
-				<th align="left">Progress<img src="images/help.gif" title="Progress from data sent to a remote site may not be visible if your login information has changed on the remote server, or if the remote server has deleted its log files"></th>
+				<th align="left">Progress <i class="question circle outline grey icon" title="Progress from data sent to a remote site may not be visible if your login information has changed on the remote server, or if the remote server has deleted its log files"></i></th>
 				<th align="left">Status</th>
 				<th align="left">Actions</th>
 				<th align="left">Download</th>

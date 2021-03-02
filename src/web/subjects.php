@@ -2182,6 +2182,7 @@
 		}
 
 		$perms = GetCurrentUserProjectPermissions($projectids);
+		//PrintVariable($perms);
 		//$urllist['Subjects'] = "subjects.php";
 		//$urllist[$uid] = "subjects.php?action=display&id=$id";
 		//NavigationBar("$formtitle", $urllist, $perms);
@@ -2194,7 +2195,7 @@
 
 		/* kick them out if they shouldn't be seeing anything on this page */
 		if ((!$modifyphi) && (!$viewphi) && ($type != 'add')) {
-			return;
+			//return;
 		}
 		
 		if ($type == 'add') { $modifyphi = 1; }

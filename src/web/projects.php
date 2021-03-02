@@ -2229,7 +2229,7 @@
 			$mapping[$row['modality']][$row['protocolname']] = $row['shortname'];
 		}
 		?>
-		<br><br>
+		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatebidsmapping">
 		<input type="hidden" name="id" value="<?=$projectid?>">
@@ -2237,13 +2237,13 @@
 		<br>
 		This mapping is used in exporting of BIDS format. This can also be used to group protocol names together: for example, protocols named <tt>AXMPRAGE</tt> and <tt>T1w</tt> are both <tt>anat</tt>.
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="ui small celled selectable grey compact table">
 			<thead>
 				<th>Modality</th>
 				<th>Protocol name</th>
 				<th>
 					BIDS name<br>
-					<span class="tiny">Possible BIDS names are <tt><b>anat</b></tt>, <tt><b>func</b></tt>, <tt><b>dwi</b></tt>, <tt><b>fmap</b></tt></span>
+					<span class="tiny" style="font-weight: normal">Possible BIDS names are <tt><b>anat</b></tt>, <tt><b>func</b></tt>, <tt><b>dwi</b></tt>, <tt><b>fmap</b></tt></span>
 				</th>
 			</thead>
 		<?
@@ -2266,10 +2266,15 @@
 		}
 		?>
 			<tr>
-				<td colspan="3" align="right"><input type="submit" value="Update"></td>
+				<td colspan="3" align="right">
+					<div class="column" align="right">
+						<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+						<input class="ui primary button" type="submit" id="submit" value="Update">
+					</div>
+				</td>
 			</tr>
 		</table>
-
+		</div>
 		<?
 	}
 
@@ -2354,6 +2359,7 @@
 		}
 		?>
 		<br><br>
+		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatendamapping">
 		<input type="hidden" name="id" value="<?=$projectid?>">
@@ -2361,7 +2367,7 @@
 		<br>
 		This mapping is used in exporting of NDA format
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="ui small celled selectable grey compact table">
 			<thead>
 				<th>Modality</th>
 				<th>Protocol name</th>
@@ -2394,7 +2400,12 @@
 		}
 		?>
 			<tr>
-				<td colspan="3" align="right"><input type="submit" value="Update"></td>
+				<td colspan="3">
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+					<input class="ui primary button" type="submit" id="submit" value="Update">
+				</div>
+				</td>
 			</tr>
 		</table>
 
@@ -2488,93 +2499,62 @@
 				<td>
 					<h2 class="ui header"><?=$name?></h2>
 					<table class="ui very basic compact collapsing celled table">
-						<thead>
-							<tr>
-								<th class="right aligned">Employee</th>
-								<th>Correct Guesses</th>
-							</tr>
-						</thead>
 						<tbody>
 							<tr>
-								<td>
-									<h4 class="ui header">Testing</h4>
-								</td>
-								<td>22</td>
-					</tr>
-					<tr>
-						<td>
-						</td>
-						<td>
-						15
-						</td>
-					</tr>
-				</table>
-					
-					<table class="twocoltable dropshadow">
-						<thead>
-							<tr>
-								<th colspan="2"><?=$name?></th>
+								<td class="right aligned"><h4 class="ui header">Subjects</h4></td>
+								<td><?=count($uids)?></td>
 							</tr>
-						</thead>
-						<tr>
-							<td class="left">Subjects</td>
-							<td class="right"><?=count($uids)?></td>
-						</tr>
-						<tr>
-							<td class="left">Studies</td>
-							<td class="right"><?=$numstudies?></td>
-						</tr>
-						<tr>
-							<td class="left">Age (years)</td>
-							<td class="right">
-								<table border="0">
-									<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
-									<tr>
-										<td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
-									</tr>
-									<?
-										foreach ($genders as $sex => $a) {
-											list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
-											?>
-											<tr>
-												<td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range: <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
-											</tr>
-											<?
-										}
-									?>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<td class="left">Study date range</td>
-							<td class="right"><?=$lowdate?> to <?=$highdate?></td>
-						</tr>
-						<tr>
-							<td colspan="2">&nbsp;</td>
-						</tr>
-						<tr>
-							<td class="left">Remote connection params</td>
-							<td class="right">
-								Project ID: <?=$id?><br>
-								Instance ID: <?=$instanceid?><br>
-								Site IDs: <?=implode2(",",$siteids)?><br>
-							</td>
-						</tr>
+							<tr>
+								<td class="right aligned"><h4 class="ui header">Studies</h4></td>
+								<td><?=$numstudies?></td>
+							</tr>
+							<tr>
+								<td class="right aligned top aligned"><h4 class="ui header">Age (years)</h4></td>
+								<td>
+									<table class="ui small very basic table">
+										<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
+										<tr>
+											<td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
+										</tr>
+										<?
+											foreach ($genders as $sex => $a) {
+												list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
+												?>
+												<tr>
+													<td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range: <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
+												</tr>
+												<?
+											}
+										?>
+									</table>
+								</td>
+							</tr>
+							<tr>
+								<td class="right aligned"><h4 class="ui header">Study date range</h4></td>
+								<td><?=$lowdate?> to <?=$highdate?></td>
+							</tr>
+							<tr>
+								<td class="right aligned"><h4 class="ui header">Remote connection params</h4></td>
+								<td>
+									Project ID: <?=$id?><br>
+									Instance ID: <?=$instanceid?><br>
+									Site IDs: <?=implode2(",",$siteids)?><br>
+								</td>
+							</tr>
+						</tbody>
 					</table>
 				</td>
-				<td valign="top">
-					<b>Project options</b><br><br>
-					<a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br>
-					<a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br>
-					<a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study Templates</a><br>
-					<a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Scan Criteria</a><br>
-					<a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">QC Criteria</a><br>
-					<!--<a href="projects.php?action=viewbidsdatatypes&id=<?=$id?>">View BIDS datatypes</a><br>
-					<a href="projects.php?action=editbidsdatatypes&id=<?=$id?>">Edit BIDS datatypes</a><br>-->
-					<a href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS Protocol Mapping</a><br>
-					<a href="projects.php?action=editndamapping&id=<?=$id?>">NDA Mapping</a><br>
-					<a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br>
-					<a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br>
+				<td valign="top" style="padding-left: 40px">
+					<h3 class="ui header">Project options</h3><br>
+					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br><br>
+					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Summary</a><br><br>
+					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study Templates</a><br><br>
+					<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Scan Criteria</a><br><br>
+					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">QC Criteria</a><br><br>
+					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS Protocol Mapping</a><br><br>
+					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>">NDA Mapping</a><br><br>
+					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>">Manage behavioral data analysis pipelines</a><br><br>
+					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br><br>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>
@@ -2773,10 +2753,14 @@
 		
 		<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
 		
-		<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
-			<tr>
-				<td style="background-color: #DDD; padding:5px">
-					<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
+		<table class="ui small celled selectable grey compact table" id="projecttable">
+			<thead>
+				<th data-sort="string-ins">Name &nbsp; 
+					<div class="ui icon input">
+						<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
+						<i class="search icon"></i>
+					</div>
+
 					<script type="text/javascript">
 						function filterTable(event) {
 							var filter = event.target.value.toUpperCase();
@@ -2795,12 +2779,7 @@
 
 						document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
 					</script>
-				</td>
-			</tr>
-		</table>
-		<table class="ui small celled selectable grey compact table" id="projecttable">
-			<thead>
-				<th data-sort="string-ins">Name</th>
+				</th>
 				<th data-sort="string-ins">UID</th>
 				<th data-sort="string-ins">Cost Center</th>
 				<th data-sort="string-ins">Admin</th>
