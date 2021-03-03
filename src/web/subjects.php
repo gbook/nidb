@@ -1403,7 +1403,7 @@
 								<input type="hidden" name="action" value="enroll">
 								<b>Enroll in project</b> &nbsp; 
 								<div class="ui action input">
-								<select style="border-radius: ''" class="ui fluid dropdown" name="projectid">
+								<select class="ui fluid dropdown" name="projectid">
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1423,6 +1423,7 @@
 								?>
 								</select>
 								<button class="ui primary button" type="submit" value="Enroll">Enroll</button>
+								</div>
 							</td>
 							</form>
 						</tr>
@@ -2223,7 +2224,7 @@
 			
 			<h3 class="ui dividing header">Basic Information</h3>
 			<div class="two fields">
-				<div class="field">
+				<div class="required field">
 					<label>First name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
@@ -2234,7 +2235,7 @@
 					</div>
 				</div>
 				
-				<div class="field">
+				<div class="required field">
 					<label>Last name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
@@ -2247,7 +2248,7 @@
 			</div>
 
 			<div class="two fields">
-				<div class="field">
+				<div class="required field">
 					<label>Sex</label>
 					<div class="field">
 						<select name="gender">
@@ -2275,7 +2276,7 @@
 			<h3 class="ui dividing header">IDs</h3>
 			<div class="field">
 				<div class="field">
-					<table class="ui compact table">
+					<table class="ui very compact table">
 						<thead>
 							<tr>
 								<th><b>Project</b></th>

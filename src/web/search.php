@@ -1204,7 +1204,7 @@
 		}
 		?>
 		<br><br>
-		<form name="subjectlist" method="post" action="search.php">
+		<form name="subjectlist" method="post" action="search.php" class="ui form">
 		<input type="hidden" name="modality" value="<?=$s_studymodality?>">
 		<input type="hidden" name="action" value="submit">
 		<?
@@ -3599,116 +3599,93 @@
 				});
 			</script>
 			
-			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="5" cellspacing="0" width="60%">
-				<tr>
-					<td style="background-color: #444; color: #fff; padding: 5px">
-						<b>Operations</b>
-					</td>
-				</tr>
-				<tr>
-					<td><span style="font-weight: bold; color: #444">With Selected Studies:</span></td>
-				</tr>
-				<tr>
-					<td>
-						<table>
-							<tr>
-								<td align="right" style="padding: 5px">
-									<select name="subjectgroupid" style="width:150px">
-										<?
-											$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$groupid = $row['group_id'];
-												$groupname = $row['group_name'];
-												?>
-												<option value="<?=$groupid?>"><?=$groupname?>
-												<?
-											}
-										?>
-									</select>
-								</td>
-								<td style="padding: 5px">
-									<input type="submit" name="addtogroup" value="Add to Subject Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
-								</td>
-							</tr>
-							<tr>
-								<td align="right" style="padding: 5px">
-									<select name="studygroupid" style="width:150px">
-										<?
-											$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$groupid = $row['group_id'];
-												$groupname = $row['group_name'];
-												?>
-												<option value="<?=$groupid?>"><?=$groupname?>
-												<?
-											}
-										?>
-									</select>
-								</td>
-								<td style="padding: 5px">
-									<input type="submit" name="addtogroup" value="Add to Study Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup'">
-								</td>
-							</tr>
-							<tr>
-								<td align="right" style="padding: 5px">
-									<select name="seriesgroupid" style="width:150px">
-										<?
-											$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$groupid = $row['group_id'];
-												$groupname = $row['group_name'];
-												?>
-												<option value="<?=$groupid?>"><?=$groupname?>
-												<?
-											}
-										?>
-									</select>
-								</td>
-								<td style="padding: 5px">
-									<input type="submit" name="addtogroup" value="Add to Series Group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup'">
-								</td>
-							</tr>
-							<tr>
-								<td align="right" style="padding: 5px">
-								<?
-									if (count($projectids) > 0) {
-										$projectids2 = array_unique(array_keys($projectids));
-										$projidlist = implode2(',', $projectids2);
-										$mpselectbox = "<select name='minipipelineid'><option value='0' selected>(none)";
-										$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
-										//PrintSQL($sqlstring);
-										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$mpid = $row['minipipeline_id'];
-											$mpversion = $row['mp_version'];
-											$mpname = $row['mp_name'];
-											$projectname = $row['project_name'];
-											$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
-										}
-										$mpselectbox .= "</select>";
-									}
+			<div class="ui text container">
+				<h3 class="ui top attached header secondary inverted black segment">
+					Operations
+				</h3>
+				<div class="ui bottom attached segment">
+					<h4 class="ui header">With Selected Studies:</h4>
+					<div class="ui horizontal divider">Add to group</div>
+					<div class="ui labeled action input">
+						<label for="subjectgroupid" class="ui label" style="width: 150px">Subject Group</label>
+						<select name="subjectgroupid" id="subjectgroupid" class="ui selection dropdown">
+						<?
+							$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$groupid = $row['group_id'];
+								$groupname = $row['group_name'];
 								?>
-								<?=$mpselectbox?>
-								</td>
-								<td style="padding: 5px">
-									<input type="submit" value="Run Mini-pipelines" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">
-								</td>
-							</tr>
-							<tr>
-								<td style="padding: 5px">
-									&nbsp;
-								</td>
-								<td style="padding: 5px">
-									<input type="submit" value="Batch Upload Data" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist'">
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-			</table>
+								<option value="<?=$groupid?>"><?=$groupname?>
+								<?
+							}
+						?>
+						</select>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">Add</div>
+					</div>
+					<br><br>
+					<div class="ui labeled action input">
+						<label for="studygroupid" class="ui label" style="width: 150px">Study Group</label>
+						<select name="studygroupid" id="studygroupid" class="ui selection dropdown">
+						<?
+							$sqlstring = "select * from groups where group_type = 'study' order by group_name";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$groupid = $row['group_id'];
+								$groupname = $row['group_name'];
+								?>
+								<option value="<?=$groupid?>"><?=$groupname?>
+								<?
+							}
+						?>
+						</select>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiesstogroup'">Add</div>
+					</div>
+					<br><br>
+					<div class="ui labeled action input">
+						<label for="seriesgroupid" class="ui label" style="width: 150px">Series Group</label>
+						<select name="seriesgroupid" id="seriesgroupid" class="ui selection dropdown">
+						<?
+							$sqlstring = "select * from groups where group_type = 'series' order by group_name";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$groupid = $row['group_id'];
+								$groupname = $row['group_name'];
+								?>
+								<option value="<?=$groupid?>"><?=$groupname?>
+								<?
+							}
+						?>
+						</select>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriesstogroup'">Add</div>
+					</div>
+					<div class="ui horizontal divider">Mini-pipelines</div>
+					<div class="ui action input">
+						<?
+							if (count($projectids) > 0) {
+								$projectids2 = array_unique(array_keys($projectids));
+								$projidlist = implode2(',', $projectids2);
+								$mpselectbox = "<select name='minipipelineid' class='ui selection dropdown'><option value='0' selected>(none)";
+								$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
+								//PrintSQL($sqlstring);
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$mpid = $row['minipipeline_id'];
+									$mpversion = $row['mp_version'];
+									$mpname = $row['mp_name'];
+									$projectname = $row['project_name'];
+									$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+								}
+								$mpselectbox .= "</select>";
+							}
+						?>
+						<?=$mpselectbox?>
+						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">Run</div>
+					</div>
+					<div class="ui horizontal divider">Batch Upload Data</div>
+					<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist'">Upload</div>
+				</div>
+			</div>
 			
 			<br><br>
 			

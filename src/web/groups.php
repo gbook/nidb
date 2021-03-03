@@ -1244,69 +1244,67 @@
 	/* -------------------------------------------- */
 	function DisplayGroupList() {
 
-		$urllist['Groups'] = "groups.php";
-		$urllist['Add Group'] = "groups.php?action=addform";
-		NavigationBar("Groups", $urllist,0);
-
 		?>
-
-		<table class="graydisplaytable">
-			<thead>
-			<tr>
-				<th>Name</th>
-				<th>Type</th>
-				<th>Owner</th>
-				<th>Group size</th>
-				<th></th>
-			</tr>
-			</thead>
-			<tbody>
-			<form action="groups.php" method="post">
-				<input type="hidden" name="action" value="add">
+		<div class="ui container">
+			<h2 class="ui header">Groups</h2>
+			<table class="ui small celled selectable grey very compact table">
+				<thead>
 				<tr>
-					<td style="border-bottom: 2pt solid gray"><input type="text" name="groupname"></td>
-					<td style="border-bottom: 2pt solid gray">
-						<select name="grouptype">
-							<option value="subject">Subject
-							<option value="study">Study
-							<option value="series">Series
-						</select>
-					</td>
-					<td style="border-bottom: 2pt solid gray"><?=$GLOBALS['username']?></td>
-					<td style="border-bottom: 2pt solid gray"><input type="submit" value="Create group"></td>
-					<td style="border-bottom: 2pt solid gray">Delete group</td>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Owner</th>
+					<th>Group size</th>
+					<th></th>
 				</tr>
-			</form>
-			<?
-			$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$id = $row['group_id'];
-				$name = $row['group_name'];
-				$ownerusername = $row['ownerusername'];
-				$grouptype = $row['group_type'];
-
-				$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
-				$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-				$count = $row2['count'];
-				?>
-				<tr style="<?=$style?>">
-					<td><a href="groups.php?action=viewgroup&id=<?=$id?>"><?=$name?></a></td>
-					<td><?=$grouptype?></td>
-					<td><?=$ownerusername?></td>
-					<td><?=$count?></td>
-					<td align="right">
-						<? if ($ownerusername == $GLOBALS['username']) { ?>
-							<a href="groups.php?action=delete&id=<?=$id?>" style="color:red">X</a>
-						<? } ?>
-					</td>
-				</tr>
+				</thead>
+				<tbody>
+				<form action="groups.php" method="post">
+					<input type="hidden" name="action" value="add">
+					<tr>
+						<td style="border-bottom: 2pt solid gray"><input type="text" name="groupname"></td>
+						<td style="border-bottom: 2pt solid gray">
+							<select name="grouptype">
+								<option value="subject">Subject
+								<option value="study">Study
+								<option value="series">Series
+							</select>
+						</td>
+						<td style="border-bottom: 2pt solid gray"><?=$GLOBALS['username']?></td>
+						<td style="border-bottom: 2pt solid gray"><input type="submit" value="Create group"></td>
+						<td style="border-bottom: 2pt solid gray">Delete group</td>
+					</tr>
+				</form>
 				<?
-			}
-			?>
-			</tbody>
-		</table>
+				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['group_id'];
+					$name = $row['group_name'];
+					$ownerusername = $row['ownerusername'];
+					$grouptype = $row['group_type'];
+
+					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
+					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+					$count = $row2['count'];
+					?>
+					<tr style="<?=$style?>">
+						<td><a href="groups.php?action=viewgroup&id=<?=$id?>"><?=$name?></a></td>
+						<td><?=$grouptype?></td>
+						<td><?=$ownerusername?></td>
+						<td><?=$count?></td>
+						<td align="right">
+							<? if ($ownerusername == $GLOBALS['username']) { ?>
+								<a href="groups.php?action=delete&id=<?=$id?>" style="color:red">X</a>
+							<? } ?>
+						</td>
+					</tr>
+					<?
+				}
+				?>
+				</tbody>
+			</table>
+		</div>
 		<?
 	}
 
