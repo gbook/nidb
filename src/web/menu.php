@@ -394,8 +394,10 @@
 			<form action="subjects.php" method="post" style="margin: 0px">
 			<input type="hidden" name="action" value="search">
 			<input type="hidden" name="searchactive" value="1">
-			<input placeholder="Search by UID" name="searchuid" type="search" size="17" autocomplete="on" style="background-color: white; color: black; border: 1px solid #526FAA">
-			<input type="submit" style="display:none; width: 0px height: 0px">
+			<div class="ui small icon input">
+			<i class="search icon"></i>
+			<input type="text" name="searchuid" placeholder="Search by UID...">
+			</div>
 			</form>
 		</td>
 	</tr>

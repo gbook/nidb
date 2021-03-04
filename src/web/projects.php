@@ -1763,7 +1763,7 @@
 		Displaying <?=mysqli_num_rows($result)?> enrollments
 		</div>
 		<br>
-		<table class="testgrid dropshadow" id='table1'>
+		<table class="testgrid ui small celled selectable grey very compact table" id='table1'>
 			<thead>
 				<th></th>
 				<th>UID</th>

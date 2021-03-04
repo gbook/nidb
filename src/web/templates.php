@@ -126,21 +126,19 @@
 	
 		?>
 		<div class="ui container">
-			<h3 class="ui header">Study Templates</h3>
-			<span class="tiny">Creates <b>single</b> studies</span>
-			<table class="ui small celled selectable grey compact table">
-				<thead>
-					<th>Name</th>
-					<th>Modality</th>
-					<th></th>
-				</thead>
-				<form action="templates.php" method="post" name="theform" id="theform">
-				<input type="hidden" name="action" value="createstudytemplate">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
-				<tr>
-					<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-					<td>
-						<select name="newtemplatemodality">
+
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">Study Templates</h2>
+					<span class="tiny">Creates <b>single</b> studies</span>
+				</div>
+				<div class="column" align="right">
+					<form action="templates.php" method="post" name="theform" id="theform">
+					<input type="hidden" name="action" value="createstudytemplate">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<div class="ui labeled action input">
+						<input type="text" name="newtemplatename" placeholder="New template name" required>
+						<select name="newtemplatemodality" class="ui selection dropdown" required>
 							<option value="">Select modality</option>
 						<?
 							$modalities = GetModalityList();
@@ -149,10 +147,17 @@
 							}
 						?>
 						</select>
-					</td>
-					<td><input type="submit" value="Create Study Template" class="ui button primary"></td>
-				</tr>
-				</form>
+						<button type="submit" class="ui button primary"><i class="plus square outline icon"></i> Create Study Template</button>
+					</div>
+					</form>
+				</div>
+			</div>
+
+			<table class="ui small celled selectable grey compact table">
+				<thead>
+					<th>Name</th>
+					<th>Modality</th>
+				</thead>
 			<?
 			$sqlstring = "select * from study_template where project_id = $projectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -164,7 +169,6 @@
 				<tr>
 					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
 					<td><?=$templatemodality?></td>
-					<td><i class="close icon red"></i> <a href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>" style="color: red">delete</a></td>
 				</tr>
 				<?
 			}
@@ -189,8 +193,22 @@
 		?>
 		<br><br><br>
 		<div class="ui container">
-			<h3 class="ui header">Project Study Templates</h3>
-			<span class="tiny">Creates <b>groups</b> of studies</span>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">Project Study Templates</h2>
+					<span class="tiny">Creates <b>groups</b> of studies</span>
+				</div>
+				<div class="column" align="right">
+					<form action="templates.php" method="post" name="theform" id="theform">
+					<input type="hidden" name="action" value="createprojecttemplate">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<div class="ui labeled action input">
+						<input type="text" name="newtemplatename" placeholder="New template name" required>
+						<button type="submit" value="Create Project Template" class="ui button primary"><i class="plus square outline icon"></i> Create Project Template</button>
+					</div>
+					</form>
+				</div>
+			</div>
 			<table class="ui small celled selectable grey compact table">
 				<thead>
 					<tr>
@@ -204,19 +222,8 @@
 						<th>Series</th>
 						<th>Create Date</th>
 						<th>Modify Date</th>
-						<th></th>
 					</tr>
 				</thead>
-				<form action="templates.php" method="post" name="theform" id="theform">
-				<input type="hidden" name="action" value="createprojecttemplate">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
-				<tr>
-					<td><input type="text" name="newtemplatename" placeholder="Enter new template name"></td>
-					<td></td>
-					<td></td>
-					<td><input type="submit" value="Create Project Template" class="ui button primary"></td>
-				</tr>
-				</form>
 			<?
 			$sqlstring = "select * from project_template where project_id = $projectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -243,7 +250,6 @@
 					<td><?=$numseries?></td>
 					<td><?=$createdate?></td>
 					<td><?=$modifydate?></td>
-					<td><i class="close icon red"></i><a href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" style="color: red">delete</a></td>
 				</tr>
 				<?
 			}
@@ -287,7 +293,7 @@
 		
 		<div class="ui text container">
 			<div class="ui attached visible message">
-			  <div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
+				<div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
 			</div>
 			<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="updatetemplate">

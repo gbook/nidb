@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 15, 2021 at 08:45 PM
+-- Generation Time: Mar 04, 2021 at 05:43 PM
 -- Server version: 10.3.17-MariaDB
 -- PHP Version: 7.2.24
 
@@ -720,6 +720,24 @@ CREATE TABLE `dataset_requests` (
   `request_completedate` datetime DEFAULT NULL,
   `request_status` enum('submitted','processing','complete','error','assigned','cancelled','') NOT NULL,
   `admin_username` varchar(255) DEFAULT NULL COMMENT 'username of the admin who will be responsible for fulfilling this request'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `data_dictionary`
+--
+
+CREATE TABLE `data_dictionary` (
+  `datadict_id` int(11) NOT NULL,
+  `datadict_type` varchar(255) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `datadict_varname` varchar(255) DEFAULT NULL,
+  `datadict_desc` varchar(255) DEFAULT NULL,
+  `datadict_valuekey` varchar(255) DEFAULT NULL,
+  `datadict_expectedtimepoints` int(11) DEFAULT NULL,
+  `datadict_rangelow` double DEFAULT NULL,
+  `datadict_rangehigh` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -3386,6 +3404,12 @@ ALTER TABLE `dataset_requests`
   ADD PRIMARY KEY (`datasetrequest_id`);
 
 --
+-- Indexes for table `data_dictionary`
+--
+ALTER TABLE `data_dictionary`
+  ADD PRIMARY KEY (`datadict_id`);
+
+--
 -- Indexes for table `data_requests`
 --
 ALTER TABLE `data_requests`
@@ -4408,6 +4432,12 @@ ALTER TABLE `ct_series`
 --
 ALTER TABLE `dataset_requests`
   MODIFY `datasetrequest_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `data_dictionary`
+--
+ALTER TABLE `data_dictionary`
+  MODIFY `datadict_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `data_requests`
