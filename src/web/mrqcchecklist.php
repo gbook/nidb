@@ -671,7 +671,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) < 1){
 			?>
-			<p align="center">No QC criteria specified for this project. Add them <a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">here</a>.</p>
+			<p align="center">No QC criteria specified for this project. Add them <a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">here</a>.</p>
 			<?
 		}
 		else {
@@ -697,15 +697,17 @@
 			
 			?>
 			<br><br>
-			<div align="center">
-			<table style="border: 2px solid black; border-collapse: collapse; padding: 2px 5px;">
-				<tr>
+			<table class="ui small celled selectable grey very compact table">
+				<thead>
+					<th colspan="5">
 					<form action="mrqcchecklist.php" action="post">
 					<input type="hidden" name="action" value="viewqcparams">
 					<input type="hidden" name="id" value="<?=$id?>">
-					<td colspan="5" style="padding: 6px">Filter by protocol name <input type="input" name="protocolfilter" value="<?=$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter"></td>
+					Filter by protocol name <input type="input" name="protocolfilter" value="<?=$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter">
 					</form>
-				</tr>
+					</th>
+				</thead>
+				<tbody>
 			<?
 			
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -733,11 +735,11 @@
 						
 						?>
 							<tr>
-								<td style="border: 1px solid black; padding: 2px 6px"><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a> &nbsp;Primary alt UID: <b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b></td>
-								<td style="border: 1px solid black; padding: 2px 6px"><b>Params</b></td>
-								<td style="border: 1px solid black; padding: 2px 6px"><b>Files on disk</b></td>
-								<td style="border: 1px solid black; padding: 2px 6px"><b>Avg Rating</b></td>
-								<td style="border: 1px solid black; padding: 2px 6px"><b>Basic QC</b></td>
+								<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a> &nbsp;Primary alt UID: &nbsp; <b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b></td>
+								<td><b>Params</b></td>
+								<td><b>Files on disk</b></td>
+								<td><b>Avg Rating</b></td>
+								<td><b>Basic QC</b></td>
 								<!--<td style="border: 1px solid black">Advanced QC</td>-->
 							</tr>
 						<?
@@ -768,7 +770,7 @@
 							
 							?>
 							<tr>
-								<td style="border: 1px solid #aaa">
+								<td>
 									 &nbsp; <?=$seriesnum?> - <?=$p1?>
 									<? if (file_exists($thumbpath)) { ?>
 									<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
@@ -874,17 +876,17 @@
 							}
 							
 							if ($matched == 1) { /* passed the checks */
-								?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: #cbf7be"> </td><?
+								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
 							}
 							elseif ($matched == -2) { /* missing parameter criteria */
-								?><td style="border: 1px solid #aaa; padding-left: 8px;" title="No MR parameter criteria specified for this protocol">&mdash;</td><?
+								?><td style="padding-left: 8px;" title="No MR parameter criteria specified for this protocol">&mdash;</td><?
 							}
 							elseif ($matched == -1) { /* ambiguous or missing parameter criteria */
-								?><td style="border: 1px solid #aaa; padding-left: 8px;" title="Parameter criteria is blank">?</td><?
+								?><td style="padding-left: 8px;" title="Parameter criteria is blank">?</td><?
 							}
 							else { /* failed the checks */
 								?>
-								<td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666">
+								<td style="padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666">
 								<details>
 								<summary>out of spec</summary>
 								<ul>
@@ -900,13 +902,13 @@
 							$files = glob($datapath . "/*");
 							if ($files){ $fcount = count($files); }
 							if ($fcount == $numfiles) {
-								?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: #cbf7be"> </td><?
+								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
 							}
 							elseif ($fcount == 0) {
-								?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1;" title="No files on disk in [<?=$datapath?>]"> </td><?
+								?><td style="padding-left: 8px; background-color: #ffddd1;" title="No files on disk in [<?=$datapath?>]"> </td><?
 							}
 							else {
-								?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">&#9898;</td><?
+								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">&#9898;</td><?
 							}
 
 							/* check user ratings */
@@ -946,7 +948,7 @@
 							if ($isbadseries) { $cellcolor = "red"; }
 							if ($istestseries) { $cellcolor = "#aaa"; }
 							
-							?><td style="border: 1px solid #aaa; padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
+							?><td style="padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
 							
 							/* check basic QC */
 							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', io_snr, pv_snr from mr_qa where mrseries_id = '$seriesid'";
@@ -1019,8 +1021,8 @@
 				//break;
 			}
 			?>
+				</tbody>
 			</table>
-			</div>
 			<?
 		}
 		else {
@@ -1091,7 +1093,7 @@
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updateqcparams">
 		<input type="hidden" name="id" value="<?=$projectid?>">
-		<table class="smallgraydisplaytable">
+		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<tr>
 					<th>Protocol<br><span class="tiny">Leave blank to remove the row</span></th>
@@ -1384,12 +1386,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		//$urllist['Edit MR Scan Parameters'] = "projects.php?action=editmrparams&id=$projectid";
-		//NavigationBar("$name", $urllist);
-		
-		DisplayProjectsMenu('mrqc', $projectid);
+		//DisplayProjectsMenu('mrqc', $projectid);
 		
 		?>
 		<br><br>
@@ -1406,23 +1403,21 @@
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updatemrparams">
 		<input type="hidden" name="id" value="<?=$projectid?>">
-		<table class="smallgraydisplaytable">
+		<table class="ui small celled selectable grey very compact table">
 			<thead>
-				<tr>
-					<th>Protocol<br><span class="tiny">Leave blank to remove the row</span></th>
-					<th>Sequence</th>
-					<th>TR</th>
-					<th>TE</th>
-					<th>TI</th>
-					<th>Flip &ang;</th>
-					<th>X dim</th>
-					<th>Y dim</th>
-					<th>Z dim</th>
-					<th>T dim<br><span class="tiny">#BOLD reps</span></th>
-					<th>Slice thickness</th>
-					<th>Spacing between<br>slice centers</th>
-					<th>Bandwidth</th>
-				</tr>
+				<th>Protocol<br><span class="tiny">Leave blank to remove the row</span></th>
+				<th>Sequence</th>
+				<th>TR</th>
+				<th>TE</th>
+				<th>TI</th>
+				<th>Flip &ang;</th>
+				<th>X dim</th>
+				<th>Y dim</th>
+				<th>Z dim</th>
+				<th>T dim<br><span class="tiny">#BOLD reps</span></th>
+				<th>Slice thickness</th>
+				<th>Spacing between<br>slice centers</th>
+				<th>Bandwidth</th>
 			</thead>
 		<?
 	}

@@ -641,15 +641,13 @@
 	<div class="ui bottom attached tab segment active" data-tab="first">
 		<table class="ui celled selectable compact table">
 			<thead>
-				<tr>
-					<th align="left">Username</th>
-					<th>Full name</th>
-					<th>Email</th>
-					<th>Login type</th>
-					<th>Last Login</th>
-					<th>Login Count</th>
-					<th>Enabled</th>
-				</tr>
+				<th align="left">Username</th>
+				<th>Full name</th>
+				<th>Email</th>
+				<th>Login type</th>
+				<th>Last Login</th>
+				<th>Login Count</th>
+				<th>Enabled</th>
 			</thead>
 			<tbody>
 				<?
@@ -693,15 +691,13 @@
 	<div class="ui bottom attached tab segment" data-tab="second">
 		<table class="ui celled selectable compact table">
 			<thead>
-				<tr>
-					<th align="left">Username</th>
-					<th>Full name</th>
-					<th>Email</th>
-					<th>Login type</th>
-					<th>Last Login</th>
-					<th>Login Count</th>
-					<th>Enabled</th>
-				</tr>
+				<th align="left">Username</th>
+				<th>Full name</th>
+				<th>Email</th>
+				<th>Login type</th>
+				<th>Last Login</th>
+				<th>Login Count</th>
+				<th>Enabled</th>
 			</thead>
 			<tbody>
 				<?
@@ -745,15 +741,13 @@
 	<div class="ui bottom attached tab segment" data-tab="third">
 		<table class="ui celled selectable compact table">
 			<thead>
-				<tr>
-					<th align="left">Username</th>
-					<th>Full name</th>
-					<th>Email</th>
-					<th>Login type</th>
-					<th>Last Login</th>
-					<th>Login Count</th>
-					<th>Enabled</th>
-				</tr>
+				<th align="left">Username</th>
+				<th>Full name</th>
+				<th>Email</th>
+				<th>Login type</th>
+				<th>Last Login</th>
+				<th>Login Count</th>
+				<th>Enabled</th>
 			</thead>
 			<tbody>
 				<?
