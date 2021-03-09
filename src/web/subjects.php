@@ -2173,6 +2173,7 @@
 		if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
 
 		if ($type == 'add') { $modifyphi = 1; }
+		$modifyphi = 1;
 		
 		/* kick them out if they shouldn't be seeing anything on this page */
 		if ((!$modifyphi) && (!$viewphi) && ($type != 'add')) {
@@ -2206,9 +2207,9 @@
 					<label>First name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input class="ui input focus" type="text" size="50" name="firstname" value="<?=$firstname?>">
+						<input class="ui input focus" type="text" name="firstname" value="<?=$firstname?>">
 						<? } else { ?>
-						<input type="text" size="50" name="firstname" value="" disabled>
+						<input type="text" name="" value="" disabled>
 						<? } ?>
 					</div>
 				</div>
@@ -2217,9 +2218,9 @@
 					<label>Last name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="text" size="50" name="lastname" value="<?=$lastname?>" required>
+						<input type="text" name="lastname" value="<?=$lastname?>" required>
 						<? } else { ?>
-						<input type="text" size="50" name="" value="" disabled>
+						<input type="text" name="" value="" disabled>
 						<? } ?>
 					</div>
 				</div>

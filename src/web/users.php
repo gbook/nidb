@@ -100,6 +100,9 @@
 			$c[$key] = mysqli_real_escape_string($GLOBALS['linki'], $val);
 		}
 		
+		if ($sendmail_dailysummary == "") { $sendmail_dailysummary = 0; }
+		if ($enablebeta == "") { $enablebeta = 0; }
+		
 		$sqlstring = "select * from users where username = '$username'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
@@ -712,25 +715,28 @@
 				</div>
 			</div>
 			
-			<h3 class="ui header">Password</h3>
-			<div class="two fields">
-				<div class="field">
-					<label>Password</label>
+			<div class="ui grey segment">
+				<h3 class="ui header">Password</h3>
+				<span class="tiny">Only enter password if you want to change it</span>
+				<div class="two fields">
 					<div class="field">
-						<input type="password" name="password" id="password" autocomplete="new-password">
+						<label>Password</label>
+						<div class="field">
+							<input type="password" name="password" id="password" autocomplete="new-password">
+						</div>
 					</div>
-				</div>
-				
-				<div class="field">
-					<label>Re-enter password</label>
+					
 					<div class="field">
-						<input type="password" name="password-check" id="password-check" autocomplete="new-password">
+						<label>Re-enter password</label>
+						<div class="field">
+							<input type="password" name="password-check" id="password-check" autocomplete="new-password">
+						</div>
 					</div>
 				</div>
 			</div>
 
 			<div class="ui grey segment">
-				<h3 class="ui blue header">Options</h3>
+				<h3 class="ui header">Options</h3>
 				<div class="field">
 					<label>Project notifications</label>
 					<div class="field">

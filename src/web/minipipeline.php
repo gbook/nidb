@@ -176,7 +176,22 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	function DisplayMiniPipelineJobs($mpid, $projectid) {
 		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Study', 'Modality', 'Rows inserted'), "smallgraydisplaytable");
+		//StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Study', 'Modality', 'Rows inserted'), "ui celled selectable grey compact table");
+		?>
+		<table class="ui celled selectable grey compact table">
+			<thead>
+				<th>Mini-pipeline</th>
+				<th>Queue date</th>
+				<th>Start date</th>
+				<th>Complete date</th>
+				<th>Status</th>
+				<th>Logs</th>
+				<th>Study</th>
+				<th>Modality</th>
+				<th>Rows inserted</th>
+			</thead>
+			<tbody>
+		<?
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$mpname = $row['mp_name'];
 			$queuedate = $row['mp_queuedate'];
@@ -205,7 +220,10 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			</tr>
 			<?
 		}
-		EndHTMLTable();
+		?>
+			</tbody>
+		</table>
+		<?
 	}
 
 
@@ -287,7 +305,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	?>
 		<div align="center">
 		<table class="entrytable" cellspacing="0" cellpadding="5">
-			<form method="post" action="minipipeline.php" enctype="multipart/form-data">
+			<form method="post" action="minipipeline.php" enctype="multipart/form-data" class="ui form">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="mpid" value="<?=$mpid?>">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
@@ -305,7 +323,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 				<td style="font-weight: bold; color: #444; text-align: right">Script(s)</td>
 				<td>
 					<? if ($type == "edit") { ?>
-					<table cellpadding="4" cellspacing="0">
+					<table class="ui celled selectable grey compact table">
 						<thead>
 							<tr>
 								<th>Script</th>
@@ -395,9 +413,10 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 		if (!ValidID($projectid,'Project ID')) { return; }
 		
 		?>
-		<a href="minipipeline.php?projectid=<?=$projectid?>&action=addform">Add Mini-pipeline</a>
+		<div class="ui container">
+		<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Add mini-pipeline</button>
 		<br><br>
-		<table style="border: 2px solid #666; border-collapse: collapse" cellpadding="6" cellspacing="0">
+		<table class="ui celled selectable grey compact table">
 			<thead>
 				<tr>
 					<th style="border: 1px solid #999; ">Name</th>
@@ -476,6 +495,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 				?>
 			</tbody>
 		</table>
+		</div>
 		<?
 	}
 	
