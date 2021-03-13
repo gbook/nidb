@@ -293,48 +293,45 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			$name = $row['mp_name'];
 		
 			$formaction = "update";
-			$formtitle = "Updating $name";
+			$formtitle = "$name";
 			$submitbuttonlabel = "Update";
 		}
 		else {
 			$formaction = "add";
-			$formtitle = "Add new mini-pipeline";
+			$formtitle = "New mini-pipeline";
 			$submitbuttonlabel = "Add";
 		}
 		
 	?>
-		<div align="center">
-		<table class="entrytable" cellspacing="0" cellpadding="5">
-			<form method="post" action="minipipeline.php" enctype="multipart/form-data" class="ui form">
+		<div class="ui container">
+			<div class="ui attached visible message">
+				<div class="header"><?=$formtitle?></div>
+			</div>
+			<form method="post" action="minipipeline.php" enctype="multipart/form-data" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="mpid" value="<?=$mpid?>">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
-			<tr>
-				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
-					<br><br>
-				</td>
-			</tr>
-			<tr>
-				<td style="font-weight: bold; color: #444; text-align: right">Name</td>
-				<td><input type="text" name="minipipelinename" value="<?=$name?>"></td>
-			</tr>
-			<tr>
-				<td style="font-weight: bold; color: #444; text-align: right">Script(s)</td>
-				<td>
+
+			<div class="field">
+				<label>Name</label>
+				<div class="field">
+					<input type="text" name="minipipelinename" value="<?=$name?>" maxlength="255" required>
+				</div>
+			</div>
+			
+			<div class="field">
+				<label>Script(s)</label>
+				<div class="field">
 					<? if ($type == "edit") { ?>
-					<table class="ui celled selectable grey compact table">
+					<table class="ui celled selectable small very compact table">
 						<thead>
-							<tr>
-								<th>Script</th>
-								<th>Size</th>
-								<th>Executable?</th>
-								<th>Entry point?</th>
-								<!--<th title="{behfilelist} - alphabetically sorted list of all beh files">Parameter list<br><span class="tiny">{filelist} - alphabetically sorted list of all beh files</span></th>-->
-								<th>Create date</th>
-								<th>Modify date</th>
-								<th>Remove?</th>
-							</tr>
+							<th>Script</th>
+							<th>Size</th>
+							<th>Executable?</th>
+							<th>Entry point?</th>
+							<th>Create date</th>
+							<th>Modify date</th>
+							<th>Remove?</th>
 						</thead>
 						<?
 						$sqlstring = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
@@ -363,45 +360,52 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					</table>
 					<br>
 					<? } ?>
-					Add script(s) <input type="file" name="scripts[]" multiple><br>
+					Add script(s) <input type="file" name="scripts[]" multiple>
 					<span class="tiny">Max individual file size 4GB. Max filename length 255 characters</span>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
-				</td>
-			</tr>
+				</div>
+			</div>
+			<div class="ui two column grid">
+				<div class="column">
+					<button class="ui red button" onClick="window.location.href='minipipeline.php?mpid=1&projectid=1&action=delete'; return false;"><i class="minus square outline icon"></i>Delete</button>
+				</div>
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+				</div>
 			</form>
-		</table>
-		<br><br><br>
-		<div style="width: 50%">
-		<details style="text-align: left">
-			<summary>How to make a mini-pipeline</summary>
-			<p>A mini-pipeline is meant to be a small script that extracts values from behavioral data files. Because it not meant to process images, the execution time of the mini-pipeline is limited to 5 minutes. It also does not have access to the cluster or any shared network resources.</p>
-			<p>One script is identified as the entry point into the mini-pipeline. This script must accept as input through the command line a list of all of the files in the data or beh directory. The filenames will be sorted alphabetically. This is the script that will be called, and it can call any of the other scripts/files that are part of the mini-pipeline.
-			<p>All scripts and behavioral files are copied to a temporary directory for the mini-pipeline to run. The output of the mini-pipeline must be in the following format, output to the console</p>
-			<div style="border: 1px dashed #777; padding-left: 15px">
-			<tt><pre>Type, VariableName, StartDate, EndDate, Duration, Value, Units, Notes, Instrument
+			<div class="ui attached segment">
+				<br>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						How to make a mini-pipeline
+					</div>
+					<div class="content">
+						<p>A mini-pipeline is meant to be a small script that extracts values from behavioral data files. Because it not meant to process images, the execution time of the mini-pipeline is limited to 5 minutes. It also does not have access to the cluster or any shared network resources.</p>
+						<p>One script is identified as the entry point into the mini-pipeline. This script must accept as input through the command line a list of all of the files in the data or beh directory. The filenames will be sorted alphabetically. This is the script that will be called, and it can call any of the other scripts/files that are part of the mini-pipeline.
+						<p>All scripts and behavioral files are copied to a temporary directory for the mini-pipeline to run. The output of the mini-pipeline must be in the following format, output to the console</p>
+						<div style="border: 1px dashed #777; padding-left: 15px">
+						<tt><pre>Type, VariableName, StartDate, EndDate, Duration, Value, Units, Notes, Instrument
 measure, EyeContact, 2012-10-22, , 3000, 34.9, , "Sneezed at minute 3", ADOS
 vital, BloodPressure, 2019-11-06 09:23, , , "122/70", , ,
 drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine", 
 ... </pre></tt>
+						</div>
+						<p>Notes about the output formats
+						<ul>
+							<li>Format must be in .csv, blank values still need a comma even if no values
+							<li>Header must be on the first row
+							<li>Possible types are <b>measure</b>, <b>vital</b>, <b>drug</b>
+							<li>Dates must be in <tt>YYYY-MM-DD</tt> format, with leading zeros (ex, <tt>03</tt> for March)
+							<li>Dates can include times, but time must be 24hr format, with leading zeros (<tt>14:03</tt>), with or without seconds (<tt>12:45:11</tt>)
+							<li>Duration is in seconds
+							<li>Any strings with spaces must be enclosed in double quotes
+							<li>If <i>VariableName</i> already exists for a study, it will be updated to the value from the latest run of the mini-pipeline
+							<li><tt>Type</tt>, <tt>VariableName</tt>, <tt>Value</tt> are the only required columns
+						</ul>
+					</div>
+				</div>
 			</div>
-			<p>Notes about the output formats
-			<ul>
-				<li>Format must be in .csv, blank values still need a comma even if no values
-				<li>Header must be on the first row
-				<li>Possible types are <b>measure</b>, <b>vital</b>, <b>drug</b>
-				<li>Dates must be in <tt>YYYY-MM-DD</tt> format, with leading zeros (ex, <tt>03</tt> for March)
-				<li>Dates can include times, but time must be 24hr format, with leading zeros (<tt>14:03</tt>), with or without seconds (<tt>12:45:11</tt>)
-				<li>Duration is in seconds
-				<li>Any strings with spaces must be enclosed in double quotes
-				<li>If <i>VariableName</i> already exists for a study, it will be updated to the value from the latest run of the mini-pipeline
-				<li><tt>Type</tt>, <tt>VariableName</tt>, <tt>Value</tt> are the only required columns
-			</ul>
-		</details>
-		</div>
 		</div>
 	<?
 	}

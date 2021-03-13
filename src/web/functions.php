@@ -1148,9 +1148,7 @@
 	/* ------- PrintSQL --------------------------- */
 	/* -------------------------------------------- */
 	function PrintSQL($sql) {
-		?><div style="border:1px solid #CCCCCC"><?
 		echo getFormattedSQL($sql);
-		echo "</div>";
 	}
 	
 	

@@ -610,7 +610,7 @@
 				<div class="column">
 					<? if ($type == 'edit') { ?>
 						<input type="hidden" name="username" value="<?=$username?>">
-						<button class="ui red button" onClick="window.location.href='adminusers.php?action=delete&id=<?=$id?>; return false;'"><i class="minus square outline icon"></i>Delete User</button>
+						<button class="ui red button" onClick="window.location.href='adminusers.php?action=delete&id=<?=$id?>'; return false;"><i class="minus square outline icon"></i>Delete User</button>
 					<? } ?>
 				</div>
 				<div class="column" align="right">

@@ -127,12 +127,12 @@
 		?>
 		<div class="ui container">
 
-			<div class="ui two column grid">
-				<div class="column">
+			<div class="ui grid">
+				<div class="six wide column">
 					<h2 class="ui header">Study Templates</h2>
 					<span class="tiny">Creates <b>single</b> studies</span>
 				</div>
-				<div class="column" align="right">
+				<div class="ten wide column" align="right">
 					<form action="templates.php" method="post" name="theform" id="theform">
 					<input type="hidden" name="action" value="createstudytemplate">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">

@@ -60,7 +60,7 @@
 	$groupmeasures = GetVariable("groupmeasures");
 	$studylist = GetVariable("studylist");
 
-	if ($groupid == "")
+	//if ($groupid == "")
 		
 
 	/* determine action */
@@ -126,7 +126,9 @@
 	/* ------- AddSubjectsToGroup ----------------- */
 	/* -------------------------------------------- */
 	function AddSubjectsToGroup($groupid, $uids, $seriesids, $modality) {
-		$msg = "";
+
+		$numadded = 0;
+		$numexisting = 0;
 		/* if the request came from the subjects.php page */
 		if (!empty($uids)) {
 			foreach ($uids as $uid) {
@@ -139,13 +141,13 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$msg .= "$groupid-$uid already in this group<br>";
+					$numexisting++;
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$msg .= "$groupid-$uid added<br>";
+					$numadded++;
 				}
 			}
 		}
@@ -162,17 +164,17 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$msg .= "$groupid-$uid already in this group<br>";
+					$numexisting++;
 				}
 				else {
 					/* insert the uidids */
 					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$msg .= "$groupid-$uid added<br>";
+					$numadded++;
 				}
 			}
 		}
-		DisplayNotice($msg);
+		DisplayNotice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
 	}
 
 	
@@ -182,7 +184,8 @@
 	function AddStudiesToGroup($groupid, $seriesids, $studyids, $modality) {
 		$modality = strtolower($modality);
 
-		$msg = "";
+		$numadded = 0;
+		$numexisting = 0;
 		if (is_array($seriesids)) {
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
@@ -195,13 +198,13 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$msg .= "$groupid-$studyid already in this group<br>";
+					$numexisting++;
 				}
 				else {
 					/* insert the seriesids */
-					$sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', '')";
+					$sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', now())";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$msg .= "$groupid-$studyid added<br>";
+					$numadded++;
 				}
 			}
 		}
@@ -218,38 +221,42 @@
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
-					$msg .= "$groupid-$studyid already in this group<br>";
+					$numexisting++;
 				}
 				else {
 					/* insert the studyids */
 					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$msg .= "$groupid-$studyid added<br>";
+					$numadded++;
 				}
 			}
 		}
-		DisplayNotice($msg);
+		DisplayNotice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
 	}
+
 
 	/* -------------------------------------------- */
 	/* ------- AddSeriesToGroup ------------------- */
 	/* -------------------------------------------- */
 	function AddSeriesToGroup($groupid, $seriesids, $modality) {
 
+		$numadded = 0;
+		$numexisting = 0;
 		foreach ($seriesids as $seriesid) {
 			/* check if its already in the db */
 			$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $seriesid and modality = '$modality'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
-				?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> already in this group</span></div><?
+				$numexisting++;
 			}
 			else {
 				/* insert the seriesids */
 				$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $seriesid, '$modality')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				?><div align="center"><span class="message"><?=$groupid?>-<?=$seriesid?> added</span></div><?
+				$numadded++;
 			}
 		}
+		DisplayNotice("<b>$numadded</b> series added<br><b>$numexisting</b> series already in group");
 	}
 
 	
@@ -313,7 +320,7 @@
 	/* ------- RemoveGroupItem -------------------- */
 	/* -------------------------------------------- */
 	function RemoveGroupItem($itemid) {
-		PrintVariable($itemid,'ItemID');
+		//PrintVariable($itemid,'ItemID');
 
 		foreach ($itemid as $item) {
 			$sqlstring = "delete from group_data where subjectgroup_id = $item";
@@ -323,6 +330,7 @@
 		return;
 	}
 
+
 	/* -------------------------------------------- */
 	/* ------- DeleteGroup ------------------------ */
 	/* -------------------------------------------- */
@@ -330,6 +338,7 @@
 		$sqlstring = "delete from groups where group_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
+
 
 	/* -------------------------------------------- */
 	/* ------- ViewGroup -------------------------- */
@@ -343,15 +352,33 @@
 		$groupname = $row['group_name'];
 		$grouptype = $row['group_type'];
 
-		$urllist['Groups'] = "groups.php";
-		NavigationBar("$groupname - <span style='font-weight:normal'>$grouptype<span>", $urllist);
+		//PrintVariable($groupname);
+		//PrintVariable($grouptype);
+		
+		if ($grouptype == 'series')
+			ViewSeriesGroup($id, $groupname, $measures, $columns, $groupmeasures);
+		if ($grouptype == 'study')
+			ViewStudyGroup($id, $groupname, $measures, $columns, $groupmeasures);
+		if ($grouptype == 'subject')
+			ViewSubjectGroup($id, $groupname, $measures, $columns, $groupmeasures);
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ViewSeriesGroup -------------------- */
+	/* -------------------------------------------- */
+	function ViewSeriesGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+
+		/* get the general group information */
+		$sqlstring = "select * from groups where group_id = '$id'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupname = $row['group_name'];
+		$grouptype = $row['group_type'];
+
 		?>
 		<script>
-			$(document).ready(function()
-				{
-					$("#studytable").tablesorter();
-				}
-			);
+			$(document).ready(function() { $("#studytable").tablesorter(); } );
 		</script>
 
 		<?
@@ -362,11 +389,241 @@
 		$numweight = 0;
 		$n = 0;
 
-		//print_r(get_defined_vars());
+		/* get a distinct list of modalities... then get a list of series for each modality */
+		$sqlstring = "select distinct(modality) from group_data where group_id = $id order by modality";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modalities[] = $row['modality'];
+		}
+		
+		PrintVariable($modalities);
+		foreach ($modalities as $modality) {
+			$modality = strtolower($modality);
+			/* get the demographics (series level) */
+			$sqlstring = "select b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//PrintSQL($sqlstring);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$studyid = $row['study_id'];
+				$studynum = $row['study_num'];
+				$studydesc = $row['study_desc'];
+				$studyalternateid = $row['study_alternateid'];
+				$studymodality = $row['study_modality'];
+				$studydatetime = $row['study_datetime'];
+				$studyoperator = $row['study_operator'];
+				$studyperformingphysician = $row['study_performingphysician'];
+				$studysite = $row['study_site'];
+				$studyinstitution = $row['study_institution'];
+				$studynotes = $row['study_notes'];
+				$subgroup = $row['enroll_subgroup'];
+				$seriesnum = $row['series_num'];
 
-		/* ------------------ subject group type ------------------- */
-		if ($grouptype == "subject") {
-		/* get the actual group data (subject level) */
+				$subjectid = $row['subject_id'];
+				$name = $row['name'];
+				$birthdate = $row['birthdate'];
+				$age = $row['age'];
+				$gender = $row['gender'];
+				$ethnicity1 = $row['ethnicity1'];
+				$ethnicity2 = $row['ethnicity2'];
+				$weight = $row['weight'];
+				$handedness = $row['handedness'];
+				$education = $row['education'];
+				$uid = $row['uid'];
+
+				$serieslist[] = "$uid$studynum" . "_$seriesnum";
+				/* do some demographics calculations */
+				$n++;
+				if ($age > 0) {
+					$totalage += $age;
+					$numage++;
+					$ages[] = $age;
+				}
+				if ($weight > 0) {
+					$totalweight += $weight;
+					$numweight++;
+					$weights[] = $weight;
+				}
+				$genders{$gender}++;
+				$educations{$education}++;
+				$ethnicity1s{$ethnicity1}++;
+				$ethnicity2s{$ethnicity2}++;
+				$handednesses{$handedness}++;
+			}
+		}
+		/* calculate some stats */
+		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
+		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
+		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
+		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
+			
+		?>
+		<div class="ui top attached grey segment">
+			<div class="ui two column grid">
+				<div class="ui column">
+					<h2 class="ui header"><?=$groupname?></h2>
+				</div>
+				<div class="ui right aligned column">
+					<button class="ui tiny red button">Delete Group</button>
+				</div>
+			</div>
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<h3 class="ui header">Summary</h3>
+					<?
+						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+					?>
+						<br>
+					<div class="ui styled accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							SQL
+						</div>
+						<div class="content">
+							<tt><?=PrintSQL($sqlstring)?></tt>
+						</div>
+					</div>
+				</div>
+				<div class="ui four wide column">
+					<h3 class="ui header">Options</h3>
+					<p>No options available</p>
+				</div>
+				<div class="ui eight wide column">
+					<h3 class="ui header">Group members</h3>
+					
+					<form class="ui form" action="groups.php" method="get">
+						<textarea><?=$serieslist?></textarea>
+						<br><br>
+						<div align="right">
+							<button class="ui primary button">Save</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div class="ui bottom attached segment">
+
+		<table class="ui celled selectable grey very compact table">
+			<thead>
+				<th>Initials</th>
+				<th>UID</th>
+				<th>DOB</th>
+				<th>Age<br><span class="tiny" style="font-weight: normal;">from DICOM header</span></th>
+				<th>Age<br><span class="tiny" style="font-weight: normal;">calculated</span></th>
+				<th>Sex</th>
+				<th>Sub-group</th>
+				<th>Weight</th>
+				<th>Alt UIDs</th>
+				<th>Study ID</th>
+				<th>Description/Protocol</th>
+				<th>Modality</th>
+				<th>Date/time</th>
+				<th>Series #</th>
+				<th>Remove<br>from group</th>
+			</thead>
+			<?
+			/* get a distinct list of modalities... then get a list of series for each modality */
+
+			/* reset the result pointer to 0 to iterate through the results again */
+			foreach ($modalities as $modality) {
+				$modality = strtolower($modality);
+				/* get the demographics (series level) */
+				$sqlstring = "select b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				mysqli_data_seek($result,0);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$seriesdesc = $row['series_desc'];
+					$seriesprotocol = $row['series_protocol'];
+					$seriesdatetime = $row['series_datetime'];
+					$seriesnum = $row['series_num'];
+					$studynum = $row['study_num'];
+					$studydatetime = $row['study_datetime'];
+					$studyage = $row['study_ageatscan'];
+					$seriesmodality = strtoupper($modality);
+
+					$itemid = $row['subjectgroup_id'];
+					$subjectid = $row['subject_id'];
+					$name = $row['name'];
+					$birthdate = $row['birthdate'];
+					//$age = $row['age'];
+					$gender = $row['gender'];
+					$ethnicity1 = $row['ethnicity1'];
+					$ethnicity2 = $row['ethnicity2'];
+					$weight = $row['weight'];
+					$handedness = $row['handedness'];
+					$education = $row['education'];
+					$uid = $row['uid'];
+					/* get list of alternate subject UIDs */
+					$altuids = GetAlternateUIDs($subjectid,'');
+
+					list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $studyage, $studydatetime);
+					
+					if ($studyAge == null)
+						$studyAge = "<span class='tiny'>null</span>";
+					else
+						$studyAge = number_format($studyAge,1);
+
+					if ($calcStudyAge == null)
+						$calcStudyAge = "<span class='tiny'>null</span>";
+					else
+						$calcStudyAge = number_format($calcStudyAge,1);
+					
+					$parts = explode("^",$name);
+					$name = substr($parts[1],0,1) . substr($parts[0],0,1);
+					?>
+					<tr>
+						<td><?=$name?></td>
+						<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+						<td><?=$birthdate?></td>
+						<td><?=$studyAge?></td>
+						<td><?=$calcStudyAge?></td>
+						<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
+						<td style="color:<?=$color?>"><?=$gender?></td>
+						<td style="font-size:8pt"><?=$subgroup?></td>
+						<? if ($weight <= 0) {$color = "red";} else {$color="black";} ?>
+						<td style="color:<?=$color?>"><?=number_format($weight,1)?>kg</td>
+						<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
+						<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+						<td style="font-size:8pt"><?=$seriesdesc?> <?=$seriesprotocol?></td>
+						<td><?=$seriesmodality?></td>
+						<td style="font-size:8pt"><?=$seriesdatetime?></td>
+						<td><?=$seriesnum?></td>
+						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red">X</a></td>
+					</tr>
+					<?
+				}
+			}
+			?>
+		</table>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ViewStudyGroup --------------------- */
+	/* -------------------------------------------- */
+	function ViewStudyGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+
+		/* get the general group information */
+		$sqlstring = "select * from groups where group_id = '$id'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupname = $row['group_name'];
+		$grouptype = $row['group_type'];
+
+		?>
+		<script>
+			$(document).ready(function() { $("#studytable").tablesorter(); } );
+		</script>
+
+		<?
+		/* (subject level) group statistics */
+		$totalage = 0;
+		$numage = 0;
+		$totalweight = 0;
+		$numweight = 0;
+		$n = 0;
+		
 		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -381,6 +638,7 @@
 			$handedness = $row['handedness'];
 			$education = $row['education'];
 			$uid = $row['uid'];
+			$studylist[] = $studyid;
 
 			/* do some demographics calculations */
 			$n++;
@@ -404,95 +662,80 @@
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
 		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
-
+		
 		?>
-			<table>
-				<tr>
-					<td valign="top" style="padding-right:20px">
+		<div class="ui top attached grey segment">
+			<div class="ui two column grid">
+				<div class="ui column">
+					<h2 class="ui header"><?=$groupname?></h2>
+				</div>
+				<div class="ui right aligned column">
+					<button class="ui tiny red button">Delete Group</button>
+				</div>
+			</div>
+			<div class="ui grid">
+				<div class="ui five wide column">
+					<h3 class="ui header">Summary</h3>
+					<div class="ui styled accordion">
+						<div class="active title">
+							<i class="dropdown icon"></i>
+							Group contains <b><?=$n?></b> studies
+						</div>
+						<div class="active content">
+							<?DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);?>
+						</div>
+						<div class="title">
+							<i class="dropdown icon"></i>
+							SQL
+						</div>
+						<div class="content">
+							<tt><?=PrintSQL($sqlstring)?></tt>
+						</div>
+						<div class="title">
+							<i class="dropdown icon"></i>
+							MR summary
+						</div>
+						<div class="content">
 						<?
-						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+							DisplayMRProtocolSummary($studylist);
 						?>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<details>
-							<summary>SQL</summary>
-							<?=PrintSQL($sqlstring)?>
-						</details>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top">
-						<form action="groups.php" method="post">
-							<input type="hidden" name="id" value="<?=$id?>">
-							<input type="hidden" name="action" value="removegroupitem">
-							<table class="smallgraydisplaytable">
-								<th>Initials</th>
-								<th>UID</th>
-								<th>Age<br><span class="tiny">current</span></th>
-								<th>Sex</th>
-								<th>Ethnicity 1</th>
-								<th>Ethnicity 2</th>
-								<th>Weight</th>
-								<th>Handedness</th>
-								<th>Education</th>
-								<th>Alt UIDs</th>
-								<th>Remove<br>from group</th>
-								<?
-								/* reset the result pointer to 0 to iterate through the results again */
-								mysqli_data_seek($result,0);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$itemid = $row['subjectgroup_id'];
-									$subjectid = $row['subject_id'];
-									$name = $row['name'];
-									$birthdate = $row['birthdate'];
-									$age = $row['age'];
-									$gender = $row['gender'];
-									$ethnicity1 = $row['ethnicity1'];
-									$ethnicity2 = $row['ethnicity2'];
-									$weight = $row['weight'];
-									$handedness = $row['handedness'];
-									$education = $row['education'];
-									$uid = $row['uid'];
-
-									/* get list of alternate subject UIDs */
-									$altuids = GetAlternateUIDs($subjectid,'');
-
-									$parts = explode("^",$name);
-									$name = substr($parts[1],0,1) . substr($parts[0],0,1);
-									?>
-									<tr>
-										<td><?=$name?></td>
-										<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-										<? if ($age <= 0) {$color = "red";} else {$color="black";} ?>
-										<td style="color:<?=$color?>"><?=number_format($age,1)?>Y</td>
-										<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
-										<td style="color:<?=$color?>"><?=$gender?></td>
-										<td><?=$ethnicitiy1?></td>
-										<td><?=$ethnicitiy1?></td>
-										<td><?=number_format($weight,1)?>kg</td>
-										<td><?=$handedness?></td>
-										<td><?=$education?></td>
-										<td><?=implode(', ',$altuids)?></td>
-										<!--<td><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red">X</a></td>-->
-										<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
-									</tr>
-									<?
-								}
-								?>
-								<tr>
-									<td colspan="100" align="right">
-										<input type="submit" value="Remove">
-						</form>
-					</td>
-				</tr>
-			</table>
-			</td>
-			</tr>
-			</table>
+						</div>
+					</div>
+				</div>
+				<div class="ui five wide column">
+					<h3 class="ui header">Options</h3>
+					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
+					<br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all">Include measures</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min">Include measures and only UID</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
+				</div>
+				<div class="ui six wide column">
+					<h3 class="ui header">Edit group members</h3>
+					<form action="groups.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="updatestudygroup">
+					<input type="hidden" name="id" value="<?=$id?>">
+					<?
+						$studies = "";
+						$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$studynum = $row['study_num'];
+							$uid = $row['uid'];
+							$studies .=  $uid . $studynum . "\n";
+						}
+						?>
+						<textarea name='studylist' style="font-family: monospace; font-size: larger;"><?=$studies?></textarea>
+						<br><br>
+						<div align="right">
+							<button class="ui primary button" type="submit">Update</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div class="ui bottom attached segment">
 		<?
-		}
 
 		/* ------------------ study group type ------------------- */
 		if ($grouptype == "study") {
@@ -628,48 +871,17 @@
 			<table>
 				<tr>
 					<td valign="top" style="padding-right:20px">
-						<?
-						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<?
-						DisplayMRProtocolSummary($studylist);
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<?
-						DisplayGroupStudiesSummary($id);
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<details>
-							<summary>SQL</summary>
-							<?=PrintSQL($sqlstring)?>
-						</details>
 					</td>
 				</tr>
 				<tr>
 					<td valign="top">
-						<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
-						<br>
-						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all">Include measures</a><br>
-						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min">Include measures and only UID</a><br>
-						<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
-						<br><br>
 						<span class="tiny">Click columns to sort. May be slow for large tables</span>
 
 						<form action="groups.php" method="post">
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="action" value="removegroupitem">
 
-							<table id="studytable" class="graydisplaytable">
+							<table id="studytable" class="ui small celled selectable grey very compact table">
 								<thead>
 								<tr>
 									<? if ($columns != "min") { ?>
@@ -705,7 +917,7 @@
 										}
 									}
 									?>
-									<th>Remove<br>from group</th>
+									<th>Remove</th>
 								</tr>
 								</thead>
 								<tbody>
@@ -776,7 +988,7 @@
 										<? if ($columns != "min") { ?>
 											<td><?=$name?></td>
 										<? } ?>
-										<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+										<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 										<? if ($columns != "min") { ?>
 											<td><?=$birthdate?></td>
 											<td><?=$studydatetime?></td>
@@ -860,185 +1072,182 @@
 			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
 				Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
 			</div>
+		</div>
 		<?
 		}
+	}
 
-		/* ------------------ series group type ------------------- */
-		if ($grouptype == "series") {
-		/* get a distinct list of modalities... then get a list of series for each modality */
-		$sqlstring = "select distinct(modality) from group_data where group_id = $id order by modality";
+
+	/* -------------------------------------------- */
+	/* ------- ViewSubjectGroup ------------------- */
+	/* -------------------------------------------- */
+	function ViewSubjectGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+
+		/* get the general group information */
+		$sqlstring = "select * from groups where group_id = '$id'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupname = $row['group_name'];
+		$grouptype = $row['group_type'];
+
+		?>
+		<script>
+			$(document).ready(function() { $("#studytable").tablesorter(); } );
+		</script>
+
+		<?
+		/* (subject level) group statistics */
+		$totalage = 0;
+		$numage = 0;
+		$totalweight = 0;
+		$numweight = 0;
+		$n = 0;
+
+		/* get the actual group data (subject level) */
+		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$modalities[] = $row['modality'];
-		}
+			$subjectid = $row['subject_id'];
+			$name = $row['name'];
+			$birthdate = $row['birthdate'];
+			$age = $row['age'];
+			$gender = $row['gender'];
+			$ethnicity1 = $row['ethnicity1'];
+			$ethnicity2 = $row['ethnicity2'];
+			$weight = $row['weight'];
+			$handedness = $row['handedness'];
+			$education = $row['education'];
+			$uid = $row['uid'];
 
-		foreach ($modalities as $modality) {
-			$modality = strtolower($modality);
-			/* get the demographics (series level) */
-			$sqlstring = "select b.*, d.enroll_subgroup, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null group by e.uid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				$studynum = $row['study_num'];
-				$studydesc = $row['study_desc'];
-				$studyalternateid = $row['study_alternateid'];
-				$studymodality = $row['study_modality'];
-				$studydatetime = $row['study_datetime'];
-				$studyoperator = $row['study_operator'];
-				$studyperformingphysician = $row['study_performingphysician'];
-				$studysite = $row['study_site'];
-				$studyinstitution = $row['study_institution'];
-				$studynotes = $row['study_notes'];
-				$subgroup = $row['enroll_subgroup'];
-
-				$subjectid = $row['subject_id'];
-				$name = $row['name'];
-				$birthdate = $row['birthdate'];
-				$age = $row['age'];
-				$gender = $row['gender'];
-				$ethnicity1 = $row['ethnicity1'];
-				$ethnicity2 = $row['ethnicity2'];
-				$weight = $row['weight'];
-				$handedness = $row['handedness'];
-				$education = $row['education'];
-				$uid = $row['uid'];
-
-				/* do some demographics calculations */
-				$n++;
-				if ($age > 0) {
-					$totalage += $age;
-					$numage++;
-					$ages[] = $age;
-				}
-				if ($weight > 0) {
-					$totalweight += $weight;
-					$numweight++;
-					$weights[] = $weight;
-				}
-				$genders{$gender}++;
-				$educations{$education}++;
-				$ethnicity1s{$ethnicity1}++;
-				$ethnicity2s{$ethnicity2}++;
-				$handednesses{$handedness}++;
+			/* do some demographics calculations */
+			$n++;
+			if ($age > 0) {
+				$totalage += $age;
+				$numage++;
+				$ages[] = $age;
 			}
+			if ($weight > 0) {
+				$totalweight += $weight;
+				$numweight++;
+				$weights[] = $weight;
+			}
+			$genders{$gender}++;
+			$educations{$education}++;
+			$ethnicity1s{$ethnicity1}++;
+			$ethnicity2s{$ethnicity2}++;
+			$handednesses{$handedness}++;
 		}
-		/* calculate some stats */
 		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
 		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
 		?>
-			<table>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-						<?
-						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+		<div class="ui top attached grey segment">
+			<div class="ui two column grid">
+				<div class="ui column">
+					<h2 class="ui header"><?=$groupname?></h2>
+				</div>
+				<div class="ui right aligned column">
+					<button class="ui tiny red button">Delete Group</button>
+				</div>
+			</div>
+			<div class="ui grid">
+				<div class="ui four wide column">
+					Summary
+					<?
+					DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+					?>
+					<div class="ui styled accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							SQL
+						</div>
+						<div class="content">
+							<tt><?=PrintSQL($sqlstring)?></tt>
+						</div>
+					</div>
+				</div>
+				<div class="ui four wide column">
+					Options
+				</div>
+				<div class="ui eight wide column">
+					Group members
+				</div>
+			</div>
+		</div>
+		<div class="ui bottom attached segment">
+			<form action="groups.php" method="post">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="action" value="removegroupitem">
+				<table class="ui celled selectable grey very compact table">
+					<thead>
+						<th>Initials</th>
+						<th>UID</th>
+						<th>Age<br><span class="tiny">current</span></th>
+						<th>Sex</th>
+						<th>Ethnicity 1</th>
+						<th>Ethnicity 2</th>
+						<th>Weight</th>
+						<th>Handedness</th>
+						<th>Education</th>
+						<th>Alt UIDs</th>
+						<th>Remove<br>from group</th>
+					</thead>
+					<?
+					/* reset the result pointer to 0 to iterate through the results again */
+					mysqli_data_seek($result,0);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$itemid = $row['subjectgroup_id'];
+						$subjectid = $row['subject_id'];
+						$name = $row['name'];
+						$birthdate = $row['birthdate'];
+						$age = $row['age'];
+						$gender = $row['gender'];
+						$ethnicity1 = $row['ethnicity1'];
+						$ethnicity2 = $row['ethnicity2'];
+						$weight = $row['weight'];
+						$handedness = $row['handedness'];
+						$education = $row['education'];
+						$uid = $row['uid'];
+
+						/* get list of alternate subject UIDs */
+						$altuids = GetAlternateUIDs($subjectid,'');
+
+						$parts = explode("^",$name);
+						$name = substr($parts[1],0,1) . substr($parts[0],0,1);
 						?>
-					</td>
-					<td valign="top" style="padding-right:20px">
-						<details>
-							<summary>SQL</summary>
-							<?=PrintSQL($sqlstring)?>
-						</details>
-					</td>
-					<td valign="top">
-						<table class="smallgraydisplaytable">
-							<th>Initials</th>
-							<th>UID</th>
-							<th>DOB</th>
-							<th>Age<br><span class="tiny">from DICOM header</span></th>
-							<th>Age<br><span class="tiny">calculated</span></th>
-							<th>Sex</th>
-							<th>SubGroup</th>
-							<th>Weight</th>
-							<th>Alt UIDs</th>
-							<th>Study ID</th>
-							<th>Description/Protocol</th>
-							<th>Modality</th>
-							<th>Date/time</th>
-							<th>Series #</th>
-							<th>Remove<br>from group</th>
-							<?
-							/* get a distinct list of modalities... then get a list of series for each modality */
-
-							/* reset the result pointer to 0 to iterate through the results again */
-							foreach ($modalities as $modality) {
-								$modality = strtolower($modality);
-								/* get the demographics (series level) */
-								$sqlstring = "select b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = 3 and a.modality = '".$modality."' and e.subject_id is not null";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								mysqli_data_seek($result,0);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$seriesdesc = $row['series_desc'];
-									$seriesprotocol = $row['series_protocol'];
-									$seriesdatetime = $row['series_datetime'];
-									$seriesnum = $row['series_num'];
-									$studynum = $row['study_num'];
-									$studydatetime = $row['study_datetime'];
-									$studyage = $row['study_ageatscan'];
-									$seriesmodality = strtoupper($modality);
-
-									$itemid = $row['subjectgroup_id'];
-									$subjectid = $row['subject_id'];
-									$name = $row['name'];
-									$birthdate = $row['birthdate'];
-									//$age = $row['age'];
-									$gender = $row['gender'];
-									$ethnicity1 = $row['ethnicity1'];
-									$ethnicity2 = $row['ethnicity2'];
-									$weight = $row['weight'];
-									$handedness = $row['handedness'];
-									$education = $row['education'];
-									$uid = $row['uid'];
-									/* get list of alternate subject UIDs */
-									$altuids = GetAlternateUIDs($subjectid,'');
-
-									list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $studyage, $studydatetime);
-									
-									if ($studyAge == null)
-										$studyAge = "<span class='tiny'>null</span>";
-									else
-										$studyAge = number_format($studyAge,1);
-
-									if ($calcStudyAge == null)
-										$calcStudyAge = "<span class='tiny'>null</span>";
-									else
-										$calcStudyAge = number_format($calcStudyAge,1);
-									
-									$parts = explode("^",$name);
-									$name = substr($parts[1],0,1) . substr($parts[0],0,1);
-									?>
-									<tr>
-										<td><?=$name?></td>
-										<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-										<td><?=$birthdate?></td>
-										<td><?=$studyAge?></td>
-										<td><?=$calcStudyAge?></td>
-										<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
-										<td style="color:<?=$color?>"><?=$gender?></td>
-										<td style="font-size:8pt"><?=$subgroup?></td>
-										<? if ($weight <= 0) {$color = "red";} else {$color="black";} ?>
-										<td style="color:<?=$color?>"><?=number_format($weight,1)?>kg</td>
-										<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
-										<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-										<td style="font-size:8pt"><?=$seriesdesc?> <?=$seriesprotocol?></td>
-										<td><?=$seriesmodality?></td>
-										<td style="font-size:8pt"><?=$seriesdatetime?></td>
-										<td><?=$seriesnum?></td>
-										<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red">X</a></td>
-									</tr>
-									<?
-								}
-							}
-							?>
-						</table>
-					</td>
-				</tr>
-			</table>
-			<?
-		}
+						<tr>
+							<td><?=$name?></td>
+							<td>
+								<a href="subjects.php?id=<?=$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$uid?></a>
+							</td>
+							<? if ($age <= 0) {$color = "red";} else {$color="black";} ?>
+							<td style="color:<?=$color?>"><?=number_format($age,1)?>Y</td>
+							<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
+							<td style="color:<?=$color?>"><?=$gender?></td>
+							<td><?=$ethnicitiy1?></td>
+							<td><?=$ethnicitiy1?></td>
+							<td><?=number_format($weight,1)?>kg</td>
+							<td><?=$handedness?></td>
+							<td><?=$education?></td>
+							<td><span style="font-family: monospace; font-size: larger;"><?=implode(', ',$altuids)?></span></td>
+							<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
+						</tr>
+						<?
+					}
+					?>
+					<tr>
+						<td colspan="100" align="right">
+							<input type="submit" value="Remove">
+						</td>
+					</tr>
+				</table>
+			</form>
+		</div>
+		<?
 	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayMRProtocolSummary ----------- */
@@ -1117,125 +1326,119 @@
 	/* -------------------------------------------- */
 	function DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight) {
 		?>
-		<details>
-			<summary>Demographics</summary>
-			<table class="demographicstable">
-				<tr>
-					<td colspan="2" class="title">Demographics</td>
-				</tr>
-				<tr>
-					<td class="label">N</td>
-					<td class="value"><?=$n?></td>
-				</tr>
-				<tr>
-					<td class="label">Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
-					<td class="value"><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
-				</tr>
-				<tr>
-					<td class="label">Sex</td>
-					<td class="value">
-						<?
-						foreach ($genders as $key => $value) {
-							$pct = number_format(($value/$n)*100, 1);
-							echo "$key: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+		<table class="ui attached very basic very compact collapsing celled table">
+			<tr>
+				<td>N</td>
+				<td><?=$n?></td>
+			</tr>
+			<tr>
+				<td>Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
+				<td><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
+			</tr>
+			<tr>
+				<td>Sex</td>
+				<td>
+					<?
+					foreach ($genders as $key => $value) {
+						$pct = number_format(($value/$n)*100, 1);
+						echo "$key: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+					}
+					?>
+				</td>
+			</tr>
+			<!--<tr>
+				<td>Ethnicity 1</td>
+				<td>
+					<?
+					//print_r($educations);
+					foreach ($ethnicity1s as $key => $value) {
+						$key = "$key";
+						switch ($key) {
+							case "": $ethnicity1 = "Not specified"; break;
+							case "hispanic": $ethnicity1 = "Hispanic/Latino"; break;
+							case "nothispanic": $ethnicity1 = "Not hispanic/Latino"; break;
 						}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label">Ethnicity 1</td>
-					<td class="value">
-						<?
-						//print_r($educations);
-						foreach ($ethnicity1s as $key => $value) {
-							$key = "$key";
+						$pct = number_format(($value/$n)*100, 1);
+						echo "$ethnicity1: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+					}
+					?>
+				</td>
+			</tr>
+			<tr>
+				<td>Ethnicity 2</td>
+				<td>
+					<?
+					//print_r($educations);
+					foreach ($ethnicity2s as $key => $value) {
+						$key = "$key";
+						switch ($key) {
+							case "": $ethnicity2 = "Not specified"; break;
+							case "indian": $ethnicity2 = "American Indian/Alaska Native"; break;
+							case "asian": $ethnicity2 = "Asian"; break;
+							case "black": $ethnicity2 = "Black/African American"; break;
+							case "islander": $ethnicity2 = "Hawaiian/Pacific Islander"; break;
+							case "white": $ethnicity2 = "White"; break;
+							case "mixed": $ethnicity2 = "Mixed"; break;
+						}
+						$pct = number_format(($value/$n)*100, 1);
+						echo "$ethnicity2: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+					}
+					?>
+				</td>
+			</tr>
+			<tr>
+				<td>Education</td>
+				<td>
+					<?
+					//print_r($educations);
+					foreach ($educations as $key => $value) {
+						$key = "$key";
+						if (trim($key == "")) { $education = "Not specified"; }
+						else {
 							switch ($key) {
-								case "": $ethnicity1 = "Not specified"; break;
-								case "hispanic": $ethnicity1 = "Hispanic/Latino"; break;
-								case "nothispanic": $ethnicity1 = "Not hispanic/Latino"; break;
+								case "0": $education = "Unknown"; break;
+								case "1": $education = "Grade School"; break;
+								case "2": $education = "Middle School"; break;
+								case "3": $education = "High School/GED"; break;
+								case "4": $education = "Trade School"; break;
+								case "5": $education = "Associates Degree"; break;
+								case "6": $education = "Bachelors Degree"; break;
+								case "7": $education = "Masters Degree"; break;
+								case "8": $education = "Doctoral Degree"; break;
 							}
-							$pct = number_format(($value/$n)*100, 1);
-							echo "$ethnicity1: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
 						}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label">Ethnicity 2</td>
-					<td class="value">
-						<?
-						//print_r($educations);
-						foreach ($ethnicity2s as $key => $value) {
-							$key = "$key";
-							switch ($key) {
-								case "": $ethnicity2 = "Not specified"; break;
-								case "indian": $ethnicity2 = "American Indian/Alaska Native"; break;
-								case "asian": $ethnicity2 = "Asian"; break;
-								case "black": $ethnicity2 = "Black/African American"; break;
-								case "islander": $ethnicity2 = "Hawaiian/Pacific Islander"; break;
-								case "white": $ethnicity2 = "White"; break;
-								case "mixed": $ethnicity2 = "Mixed"; break;
-							}
-							$pct = number_format(($value/$n)*100, 1);
-							echo "$ethnicity2: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-						}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label">Education</td>
-					<td class="value">
-						<?
-						//print_r($educations);
-						foreach ($educations as $key => $value) {
-							$key = "$key";
-							if (trim($key == "")) { $education = "Not specified"; }
-							else {
-								switch ($key) {
-									case "0": $education = "Unknown"; break;
-									case "1": $education = "Grade School"; break;
-									case "2": $education = "Middle School"; break;
-									case "3": $education = "High School/GED"; break;
-									case "4": $education = "Trade School"; break;
-									case "5": $education = "Associates Degree"; break;
-									case "6": $education = "Bachelors Degree"; break;
-									case "7": $education = "Masters Degree"; break;
-									case "8": $education = "Doctoral Degree"; break;
-								}
-							}
 
-							$pct = number_format(($value/$n)*100, 1);
-							echo "$education: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+						$pct = number_format(($value/$n)*100, 1);
+						echo "$education: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+					}
+					?>
+				</td>
+			</tr>
+			<tr>
+				<td>Handedness</td>
+				<td>
+					<?
+					//print_r($educations);
+					foreach ($handednesses as $key => $value) {
+						$key = "$key";
+						switch ($key) {
+							case "": $handedness = "Not specified"; break;
+							case "U": $handedness = "Unknown"; break;
+							case "R": $handedness = "Right"; break;
+							case "L": $handedness = "Left"; break;
+							case "A": $handedness = "Ambidextrous"; break;
 						}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label">Handedness</td>
-					<td class="value">
-						<?
-						//print_r($educations);
-						foreach ($handednesses as $key => $value) {
-							$key = "$key";
-							switch ($key) {
-								case "": $handedness = "Not specified"; break;
-								case "U": $handedness = "Unknown"; break;
-								case "R": $handedness = "Right"; break;
-								case "L": $handedness = "Left"; break;
-								case "A": $handedness = "Ambidextrous"; break;
-							}
-							$pct = number_format(($value/$n)*100, 1);
-							echo "$handedness: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-						}
-						?>
-					</td>
-				</tr>
-				<tr>
-					<td class="label">Weight<br><span class="tiny">computed from<br>non-zero weights</span></td>
-					<td class="value"><?=number_format($avgweight,1)?>kg <span class="small">&plusmn;<?=number_format($varweight,1)?>kg</span></td>
-				</tr>
-			</table>
-		</details>
+						$pct = number_format(($value/$n)*100, 1);
+						echo "$handedness: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+					}
+					?>
+				</td>
+			</tr>
+			<tr>
+				<td>Weight<br><span class="tiny">computed from<br>non-zero weights</span></td>
+				<td><?=number_format($avgweight,1)?>kg <span class="small">&plusmn;<?=number_format($varweight,1)?>kg</span></td>
+			</tr>-->
+		</table>
 		<?
 	}
 
@@ -1246,7 +1449,28 @@
 
 		?>
 		<div class="ui container">
-			<h2 class="ui header">Groups</h2>
+
+			<div class="ui grid">
+				<div class="six wide column">
+					<h1 class="ui header">Groups</h1>
+				</div>
+				<div class="ten wide column" align="right">
+					<form action="groups.php" method="post" name="theform" id="theform">
+					<input type="hidden" name="action" value="add">
+					<div class="ui labeled action input">
+						<input type="text" name="groupname" placeholder="Group name" required>
+						<select name="grouptype" class="ui selection dropdown" required>
+							<option value="">(select group type)
+							<option value="subject">Subject
+							<option value="study">Study
+							<option value="series">Series
+						</select>
+						<button type="submit" class="ui button primary"><i class="plus square outline icon"></i> Create Group</button>
+					</div>
+					</form>
+				</div>
+			</div>
+			
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
 				<tr>
@@ -1258,22 +1482,6 @@
 				</tr>
 				</thead>
 				<tbody>
-				<form action="groups.php" method="post">
-					<input type="hidden" name="action" value="add">
-					<tr>
-						<td style="border-bottom: 2pt solid gray"><input type="text" name="groupname"></td>
-						<td style="border-bottom: 2pt solid gray">
-							<select name="grouptype">
-								<option value="subject">Subject
-								<option value="study">Study
-								<option value="series">Series
-							</select>
-						</td>
-						<td style="border-bottom: 2pt solid gray"><?=$GLOBALS['username']?></td>
-						<td style="border-bottom: 2pt solid gray"><input type="submit" value="Create group"></td>
-						<td style="border-bottom: 2pt solid gray">Delete group</td>
-					</tr>
-				</form>
 				<?
 				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1308,37 +1516,6 @@
 		<?
 	}
 
-	/* -------------------------------------------- */
-	/* ------- DisplayGroupStudiesSummary --------- */
-	/* -------------------------------------------- */
-	function DisplayGroupStudiesSummary($id) {
-
-		?>
-		<i>This is the complete list of the studies in this group. If you delete or add any study, the group will be changed accordingly.</i>
-		<form action="groups.php"  method="post">
-		<input type="hidden" name="action" value="updatestudygroup">
-		<input type="hidden" name="id" value="<?=$id?>">
-
-		<?
-			$studies = "";
-			
-			$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studynum = $row['study_num'];
-				$uid = $row['uid'];
-				$studies .=  $uid . $studynum . "\n";
-			}
-
-			?>
-			<br>
-			<textarea name='studylist' style='width:15em; margin-left:1em' rows='10'><?=$studies?></textarea>
-			<br>
-			<input type="submit" value="Update">
-		</form>
-		<?
-	}
-	
 	
 	/* -------------------------------------------- */
 	/* ------- ViewImagingSummary ----------------- */

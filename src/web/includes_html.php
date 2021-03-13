@@ -90,10 +90,13 @@
 
 <script>
 	$(document).ready(function() {
+		/* Semantic UI functions */
 		$('.message .close').on('click', function() {
-				$(this).closest('.message').transition('fade');
-			  });
+			$(this).closest('.message').transition('fade');
+		});
 		$('.menu .item').tab();
+		$('.ui.accordion').accordion();
+		$('.ui.dropdown').dropdown({duration: 50});
 		
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.

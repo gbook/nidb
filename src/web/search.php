@@ -268,8 +268,9 @@
 	</div>
 	<br>
 	<? } ?>
-	
-	<a href="search.php" class="linkbutton" style="font-weight: bold; padding: 5px;">New Search</a><br>
+
+	<button class="ui primary large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i></i> New Search</button>
+	<br>
 	<? DisplaySearchHistory(); ?>
 	<br><br>
 	
@@ -3621,7 +3622,7 @@
 							}
 						?>
 						</select>
-						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">Add</div>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup';document.subjectlist.submit();">Add</div>
 					</div>
 					<br><br>
 					<div class="ui labeled action input">
@@ -3639,7 +3640,7 @@
 							}
 						?>
 						</select>
-						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiesstogroup'">Add</div>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup';document.subjectlist.submit();">Add</div>
 					</div>
 					<br><br>
 					<div class="ui labeled action input">
@@ -3657,7 +3658,7 @@
 							}
 						?>
 						</select>
-						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriesstogroup'">Add</div>
+						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup';document.subjectlist.submit();">Add</div>
 					</div>
 					<div class="ui horizontal divider">Mini-pipelines</div>
 					<div class="ui action input">
