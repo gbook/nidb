@@ -95,7 +95,7 @@
 			$(this).closest('.message').transition('fade');
 		});
 		$('.menu .item').tab();
-		$('.ui.accordion').accordion();
+		$('.ui.accordion').accordion({exclusive: false});
 		$('.ui.dropdown').dropdown({duration: 50});
 		
 		/* below are the table sorting functions */

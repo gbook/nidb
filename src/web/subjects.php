@@ -1213,30 +1213,29 @@
 		
 		<table width="100%">
 			<tr>
-				<td valign="top" width="25%">
-					<h3 class="ui top attached header inverted black secondary segment">
-						Demographics
-					</h3>
-					<div class="ui bottom attached segment" style="border: 2px solid #494949">
+				<td valign="top" width="20%">
+					<h1 class="ui top attached header inverted blue segment">
+						<?=$uid?>
+					</h1>
+					<div class="ui bottom attached segment">
 							
 					<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
 					
-					<br>
-					<table class="reviewtable">
+					<table class="ui very basic celled collapsing very compact table">
 						<tr>
-							<td class="label">Subject initials</td>
-							<td class="value"><?=$name?></td>
+							<td class="right aligned"><b>Subject initials</td>
+							<td><?=$name?></td>
 						</tr>
 						<tr>
-							<td class="label">Date of birth</td>
-							<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+							<td class="right aligned"><b>Date of birth</td>
+							<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
 						</tr>
 						<tr>
-							<td class="label">Gender</td>
-							<td class="value"><?=$gender?></td>
+							<td class="right aligned"><b>Gender</td>
+							<td><?=$gender?></td>
 						</tr>
 						<tr>
-							<td class="label" style="white-space:nowrap;">Alternate UIDs</td>
+							<td class="right aligned"><b style="white-space:nowrap;">Alternate UIDs</td>
 							<td class="value tt">
 							<?
 								foreach ($altuids as $altid) {
@@ -1251,125 +1250,122 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label">Ethnicity1&2</td>
-							<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
+							<td class="right aligned"><b>Ethnicity1&2</td>
+							<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
 						</tr>
 						<tr>
-							<td class="label">Handedness</td>
-							<td class="value"><?=$handedness?></td>
+							<td class="right aligned"><b>Handedness</td>
+							<td><?=$handedness?></td>
 						</tr>
 						<tr>
-							<td class="label">Education</td>
-							<td class="value"><?=$education?></td>
+							<td class="right aligned"><b>Education</td>
+							<td><?=$education?></td>
 						</tr>
 						<tr>
-							<td class="label">GUID</td>
-							<td class="value"><?=$guid?></td>
+							<td class="right aligned"><b>GUID</td>
+							<td><?=$guid?></td>
 						</tr>
 						<tr>
-							<td class="label">Can contact?</td>
-							<td class="value"><?=$cancontact?></td>
+							<td class="right aligned"><b>Can contact?</td>
+							<td><?=$cancontact?></td>
 						</tr>
 						<tr>
-							<td class="label">Subject tags</td>
-							<td class="value"><?=DisplayTags($tags, '', 'subject')?></td>
+							<td class="right aligned"><b>Subject tags</td>
+							<td><?=DisplayTags($tags, '', 'subject')?></td>
 						</tr>
 					</table>
 					<br>
-					
-					<br><br>
-					<div align="left" style="font-weight: bold; font-size: 12pt">Family</div>
-					<div align="left">
-					<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
-					<details>
-					<summary class="tiny" style="color:darkred">Add family members</summary>
-						<table style="font-size: 10pt">
-						<?
-							/* display existing subject relations */
-							$sqlstring = "select a.*, b.uid from subject_relation a left join subjects b on a.subjectid2 = b.subject_id where a.subjectid1 = $id";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$subjectid2 = $row['subjectid2'];
-								$relation = $row['relation'];
-								$uid2 = $row['uid'];
-								
-								switch ($relation) {
-									case "siblingf": $relation = "half-sibling (same father)"; break;
-									case "siblingm": $relation = "half-sibling (same mother)"; break;
-									case "sibling": $relation = "sibling"; break;
-									case "parent": $relation = "parent"; break;
-									case "child": $relation = "child"; break;
-								}
-								
-								?>
-								<tr>
-									<td><?=$uid?> is the <b><?=$relation?></b> of <a href="subjects.php?id=<?=$subjectid2?>"><?=$uid2?></a></td>
-								</tr>
-								<?
-							}
-						?>
-							<tr>
-								<form action="subjects.php" method="post">
-								<input type="hidden" name="id" value="<?=$id?>">
-								<input type="hidden" name="action" value="addrelation">
-								<td>
-									<br><br>
-									<?=$uid?> is the
-									<br>
-									<select name="relation">
-									<option value="siblingm">Half-sibling (same mother)</option>
-									<option value="siblingf">Half-sibling (same father)</option>
-									<option value="sibling">Sibling</option>
-									<option value="parent">Parent</option>
-									<option value="child">Child</option>
-								</select> of <input type="text" size="10" name="uid2" id="uid2"/>
-								<br>
-								<input type="checkbox" name="makesymmetric" value="1" checked title="If subject 1 is the parent of subject 2, a corresponding relation will also show subject 2 is a child of subject 1">Make symmetric 
-								<input type="submit" value="Add relation"></td>
-								</form>
-							</tr>
-						</table>
-					</details>
-					<? } ?>
-					</div>
-					<br>
-					<table class="reviewtable">
-						<tr>
-							<td class="label">Family UID</td>
-							<td class="value"><?=$familyuid?></td>
-						</tr>
-						<tr>
-							<td class="label">Family name</td>
-							<td class="value"><?=$familyname?></td>
-						</tr>
-					</table>
-					<br>
-					<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
-						<details>
-							<summary class="tiny" style="color:darkred">Admin functions</summary>
-							<div style="padding:5px; font-size:11pt">
-							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;">Edit Demographics</button>
-							<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<?=$uid?>'; return false;">Merge with...</button>
-							<br><br><br>
+					<div class="ui styled accordion">
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>
+						</div>
+						<div class="content">
+							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
+							<table style="font-size: 10pt">
 							<?
-								if ($GLOBALS['isadmin']) {
-									if ($isactive) {
-									?>
-										<button class="ui red button" onClick="window.location.href='subjects.php?action=deleteconfirm&id=<?=$id?>'; return false;">Delete</button>
-									<? } else { ?>
-										<button class="ui red button" onClick="window.location.href='subjects.php?action=undelete&id=<?=$id?>'; return false;">Undelete</button>
-									<?
+								/* display existing subject relations */
+								$sqlstring = "select a.*, b.uid from subject_relation a left join subjects b on a.subjectid2 = b.subject_id where a.subjectid1 = $id";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$subjectid2 = $row['subjectid2'];
+									$relation = $row['relation'];
+									$uid2 = $row['uid'];
+									
+									switch ($relation) {
+										case "siblingf": $relation = "half-sibling (same father)"; break;
+										case "siblingm": $relation = "half-sibling (same mother)"; break;
+										case "sibling": $relation = "sibling"; break;
+										case "parent": $relation = "parent"; break;
+										case "child": $relation = "child"; break;
 									}
+									
+									?>
+									<tr>
+										<td><?=$uid?> is the <b><?=$relation?></b> of <a href="subjects.php?id=<?=$subjectid2?>"><?=$uid2?></a></td>
+									</tr>
+									<?
 								}
 							?>
-							</div>
-						</details>
-					<? }
-					}
-					else {
-						echo "No permissions to view PHI";
-					}
-					?>
+								<tr>
+									<form action="subjects.php" method="post">
+									<input type="hidden" name="id" value="<?=$id?>">
+									<input type="hidden" name="action" value="addrelation">
+									<td>
+										<?=$uid?> is the
+										<br>
+										<select name="relation">
+										<option value="siblingm">Half-sibling (same mother)</option>
+										<option value="siblingf">Half-sibling (same father)</option>
+										<option value="sibling">Sibling</option>
+										<option value="parent">Parent</option>
+										<option value="child">Child</option>
+									</select> of <input type="text" size="10" name="uid2" id="uid2"/>
+									<br>
+									<input type="checkbox" name="makesymmetric" value="1" checked title="If subject 1 is the parent of subject 2, a corresponding relation will also show subject 2 is a child of subject 1">Make symmetric 
+									<input type="submit" value="Add relation"></td>
+									</form>
+								</tr>
+							</table>
+							<? } ?>
+							<table class="ui very basic celled collapsing very compact table">
+								<tr>
+									<td class="right aligned"><b>Family UID</b></td>
+									<td class="value"><?=$familyuid?></td>
+								</tr>
+								<tr>
+									<td class="right aligned">Family name</td>
+									<td class="value"><?=$familyname?></td>
+								</tr>
+							</table>
+						</div>
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Options</h3>
+						</div>
+						<div class="content">
+							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
+								<div style="padding:5px; font-size:11pt">
+								<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;">Edit Demographics</button>
+								<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<?=$uid?>'; return false;">Merge with...</button>
+								<br><br><br>
+								<?
+									if ($GLOBALS['isadmin']) {
+										if ($isactive) {
+										?>
+											<button class="ui red button" onClick="window.location.href='subjects.php?action=deleteconfirm&id=<?=$id?>'; return false;">Delete</button>
+										<? } else { ?>
+											<button class="ui red button" onClick="window.location.href='subjects.php?action=undelete&id=<?=$id?>'; return false;">Undelete</button>
+										<?
+										}
+									}
+								?>
+								</div>
+							<? }
+							}
+							else {
+								echo "No permissions to view PHI";
+							}
+							?>
+						</div>
 					</div>
 				</td>
 				<td valign="top" align="center">

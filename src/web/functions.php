@@ -1047,34 +1047,42 @@
 						
 						//echo "$projectname - $admin, $modifyphi, $modifydata, $viewphi, $viewdata<br>";
 						if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
-							$msg .= "<li>No permissions to access $projectname";
+							$msg .= "<div class='item'>No permissions to access $projectname";
 						}
 						else {
-							$msg .= "<li><b>$projectname</b>";
+							$msg .= "<div class='item'><b>$projectname</b>";
 							
 							if ($admin != '')
-								$msg .= " <span class='adminperms'>$admin</span> ";
+								$msg .= " <div class='ui mini red label'>$admin</div> ";
 							if ($modifyphi != '')
-								$msg .= " <span class='perms'>$modifyphi</span> ";
+								$msg .= " <div class='ui mini blue label'>$modifyphi</div> ";
 							if ($viewphi != '')
-								$msg .= " <span class='perms'>$viewphi</span> ";
+								$msg .= " <div class='ui mini blue label'>$viewphi</div> ";
 							if ($modifydata != '')
-								$msg .= " <span class='perms'>$modifydata</span> ";
+								$msg .= " <div class='ui mini blue label'>$modifydata</div> ";
 							if ($viewdata != '')
-								$msg .= " <span class='perms'>$viewdata</span> ";
+								$msg .= " <div class='ui mini blue label'>$viewdata</div> ";
 						}
 					}
 					
 					?>
+					<!--
 					<details style="font-size:8pt; margin-left:15px;">
 					<summary>Permissions summary</summary>
-					<div style="border: 1px solid #aaa; padding:5px; margin: 2px">
-					Your access permissions for this subject
-					<ul>
-					<?=$msg?>
-					</ul>
+					<div style="border: 1px solid #aaa; padding:5px; margin: 2px"> -->
+					
+					<div class="ui accordion">
+						<div class="title">
+							<span style="font-size: smaller"><i class="dropdown icon"></i>Your access permissions for this subject</span>
+						</div>
+						<div class="content">
+							<div class="ui list">
+							<?=$msg?>
+							</div>
+						</div>
 					</div>
-					</details>
+					
+					<!--</details>-->
 					<?
 				}
 				if (trim($title != "")) {
