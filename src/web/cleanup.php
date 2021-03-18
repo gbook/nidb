@@ -103,11 +103,13 @@
 		NavigationBar("Admin", $urllist);
 		
 		?>
-		View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a> <span class="tiny">Subjects without any enrollments</span><br>
-		View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a> <span class="tiny">Enrollments without any studies</span><br>
-		View empty <a href="cleanup.php?action=vieworphanstudies">studies</a> <span class="tiny">Studies with invalid or missing enrollments</span><br>
-		View duplicate <a href="cleanup.php?action=viewduplicatestudies">studies</a> <span class="tiny">Studies within the same subject and enrollment with duplicated <b>study numbers</b></span><br>
-		View duplicate <a href="cleanup.php?action=viewallduplicatestudies">studies</a> <span class="tiny">Studies across the entire database</span>
+		<div class="ui container">
+			View empty <a href="cleanup.php?action=viewemptysubjects">subjects</a> <span class="tiny">Subjects without any enrollments</span><br>
+			View empty <a href="cleanup.php?action=viewemptyenrollments">enrollments</a> <span class="tiny">Enrollments without any studies</span><br>
+			View empty <a href="cleanup.php?action=vieworphanstudies">studies</a> <span class="tiny">Studies with invalid or missing enrollments</span><br>
+			View duplicate <a href="cleanup.php?action=viewduplicatestudies">studies</a> <span class="tiny">Studies within the same subject and enrollment with duplicated <b>study numbers</b></span><br>
+			View duplicate <a href="cleanup.php?action=viewallduplicatestudies">studies</a> <span class="tiny">Studies across the entire database</span>
+		</div>
 		<br><br>
 		<?
 	}
@@ -122,16 +124,18 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result)
 		?>
+
+		<div class="ui container">
 		
 		Found <?=$numrows?> duplicate study numbers
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>UID</th>
 					<th>Study</th>
 					<th>Date</th>
-					<th>Modality</th>
 					<th>Path</th>
+					<th>Modality</th>
 					<th>Series in DB</th>
 					<th>Series on disk</th>
 				</tr>
@@ -187,6 +191,7 @@
 		}
 		?>
 		</table>
+		</div>
 		<?
 	}
 
@@ -201,15 +206,17 @@
 		$numrows = mysqli_num_rows($result)
 		?>
 		
+		<div class="ui container">
+		
 		Found <?=$numrows?> duplicate study datetimes
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>UID</th>
 					<th>Study</th>
 					<th>Date</th>
-					<th>Modality</th>
 					<th>Path</th>
+					<th>Modality</th>
 					<th>Series in DB</th>
 					<th>Series on disk</th>
 				</tr>
@@ -269,6 +276,7 @@
 		}
 		?>
 		</table>
+		</div>
 		<?
 	}
 
@@ -283,10 +291,12 @@
 		$numrows = mysqli_num_rows($result)
 		?>
 		
+		<div class="ui container">
+
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deactivatesubjects">
 		Found <?=$numrows?> empty subjects
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>UID</th>
@@ -339,6 +349,7 @@
 			</tbody>
 		</table>
 		</form>
+		</div>
 		<?
 	}
 
@@ -348,15 +359,16 @@
 	/* -------------------------------------------- */
 	function DisplayEmptyEnrollments() {
 
-		$sqlstring = "select a.*, b.uid, b.subject_id, b.isactive, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from measures) and a.enrollment_id not in (select enrollment_id from prescriptions) order by a.lastupdate";
+		$sqlstring = "select a.*, b.uid, b.subject_id, b.isactive, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from measures) and a.enrollment_id not in (select enrollment_id from drugs) order by a.lastupdate";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result)
 		?>
+		<div class="ui container">
 		
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deleteenrollments">
 		Found <?=$numrows?> empty enrollments
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>Enrollment ID</th>
@@ -411,6 +423,7 @@
 			</tr>
 			</tbody>
 		</table>
+		</div>
 		<?
 	}
 
@@ -425,12 +438,13 @@
 		$numrows = mysqli_num_rows($result)
 		?>
 		
+		<div class="ui container">
 		<!--
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deletestudies">
 		-->
 		Found <?=$numrows?> orphaned studies
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>Enrollment ID</th>
@@ -483,7 +497,8 @@
 			</tr>
 			</tbody>
 		</table>
-		<form>
+		</form>
+		</div>
 		<?
 	}
 	

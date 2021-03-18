@@ -56,11 +56,11 @@ input:hover { box-shadow: 0px 0px 0px 2px #444; border-radius:6px; padding: 4px;
 textarea { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; }
 textarea:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; }
 textarea:hover { box-shadow: 0px 0px 0px 2px #444; }
-select { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; }
+/*select { outline: none; border: 1px solid #999; border-radius:6px; padding: 4px; } */
 select:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; }
 select:hover { box-shadow: 0px 0px 0px 2px #444; }
 
-input[type=submit] {
+/*input[type=submit] {
 	padding:4px 7px; background:#ccc; border:1px solid #ccc;
 	cursor:pointer;
 	-webkit-border-radius: 6px;
@@ -74,7 +74,7 @@ input[type=button] {
 	-webkit-border-radius: 6px;
 	border-radius: 6px;
 }
-input[type=button]:hover { border: 1px solid #666; }
+input[type=button]:hover { border: 1px solid #666; }*/
 
 input[type=reset] {
 	padding:4px 7px; background:#ccc; border:1px solid #ccc;
@@ -84,19 +84,19 @@ input[type=reset] {
 }
 input[type=reset]:hover { border: 1px solid #666; }
 
-/* for the fixed menu at the top of each page */
+/* for the fixed menu at the top of each page
 div.menu {
 	margin-left: -8px;
 	position: fixed;
 	top: 0px;
 	left: 0px;
 	width: 100%;
-	}
+	} */
 
-a { text-decoration: none; color: #224ea5; }
-a:hover { text-decoration: underline; color: #224ea5; }
+/*a { text-decoration: none; color: #224ea5; }
+a:hover { text-decoration: underline; color: #224ea5; }*/
 
-div.title { font-weight: bold; color: white; background-color: darkblue; }
+/*div.title { font-weight: bold; color: white; background-color: darkblue; }*/
 
 span.label { font-size: 8pt; font-weight: bold }
 
@@ -323,7 +323,7 @@ table.subdownload td.label { font-weight: bold; background-color: white; padding
 table.subdownload td.main { padding: 8px; vertical-align: top; border-top: 1px solid #888 }
 table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; border-top: 1px solid #888 }
 
-.tiny { font-size: 8pt; color: #666666; }
+.tiny { font-size: 8pt; color: #666666; font-weight: normal; }
 /*.staticmessage { font-size: 9pt; color: darkred; }*/
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
 

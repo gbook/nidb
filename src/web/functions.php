@@ -1013,22 +1013,9 @@
 		
 		$msg = "";
 		?>
-		<style>
-			.adminperms { background-color: #fc8171; padding: 1px 8px; color: #000; }
-			.perms { background-color: #91b7ff; padding: 1px 8px; color: #000; }
-		</style>
 		<table width="100%" cellspacing="0">
 			<tr>
 				<td>
-				<span class="headertable2">
-				<?
-				foreach ($urllist as $label => $url) {
-					?>
-					<a href="<?=$url?>"><?=$label?></a> <span style="color: #ccc">&gt;</span> 
-					<?
-				}
-				?>
-				</span>
 				<?
 				if (count($perms) > 0) {
 					foreach ($perms as $projectid => $data) {
@@ -1066,11 +1053,6 @@
 					}
 					
 					?>
-					<!--
-					<details style="font-size:8pt; margin-left:15px;">
-					<summary>Permissions summary</summary>
-					<div style="border: 1px solid #aaa; padding:5px; margin: 2px"> -->
-					
 					<div class="ui accordion">
 						<div class="title">
 							<span style="font-size: smaller"><i class="dropdown icon"></i>Your access permissions for this subject</span>
@@ -1081,19 +1063,12 @@
 							</div>
 						</div>
 					</div>
-					
-					<!--</details>-->
 					<?
 				}
-				if (trim($title != "")) {
 				?>
-				<div align="center" class="headertable1"><?=$title?></div>
-				</td>
-				<?}?>
 			</tr>
 		</table>
-
-		<br><br>
+		<br>
 		<?
 	}
 	
@@ -1542,7 +1517,7 @@
 	function DisplayTags($tags, $idtype, $tagtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<span class='tag'><a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
+			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' class='ui small yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
 		}
 		return $html;
 	}
@@ -2498,5 +2473,101 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		
 		return true;
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- EnablePipeline --------------------- */
+	/* -------------------------------------------- */
+	function EnablePipeline($id) {
+		if (!ValidID($id,'Pipeline ID - H')) { return; }
+		
+		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisablePipeline -------------------- */
+	/* -------------------------------------------- */
+	function DisablePipeline($id) {
+		if (!ValidID($id,'Pipeline ID - I')) { return; }
+		
+		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelineStatus -------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $returnpage, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
+		if (!ValidID($id,'Pipeline ID - M')) { return; }
+
+		?>
+		<div class="ui container">
+			<div class="ui top attached inverted segment">
+				<h1 class="ui inverted header"><?=$pipelinename?></h1>
+			</div>
+			<div class="ui attached segment">
+			<? if ($isenabled) { ?>
+				<div class="ui header"><a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a> Enabled</div>
+			<? } else { ?>
+				<div class="ui header"><a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big red toggle off icon" title="Pipeline disabled, click to enable"></i></a> Disabled</div>
+			<? } ?>
+			</div>
+			<? if ($status == "running") { ?>
+			<div class="ui three bottom attached steps">
+				<div class="step">
+					<div class="content">
+						<div class="title">Start</div>
+						<div class="description">Started <?=$pipeline_laststart?></div>
+					</div>
+				</div>
+				<div class="active step">
+					<div class="content">
+						<div class="title">Running</div>
+						<div class="description">Checked in <?=$pipeline_lastcheck?></div>
+						<?=$pipeline_statusmessage?>
+					</div>
+				</div>
+				<div class="disabled step">
+					<div class="content">
+						<div class="title">Finish</div>
+						<div class="description"></div>
+					</div>
+				</div>
+			</div>
+			<? } else { ?>
+			<div class="ui four bottom attached steps">
+				<div class="active step">
+					<div class="content">
+						<div class="title">Idle</div>
+						<div class="description"></div>
+					</div>
+				</div>
+				<div class="disabled step">
+					<div class="content">
+						<div class="title">Start</div>
+						<div class="description">Last started <?=$pipeline_laststart?></div>
+					</div>
+				</div>
+				<div class="disabled step">
+					<div class="content">
+						<div class="title">Running</div>
+						<div class="description">Last checked in <?=$pipeline_lastcheck?></div>
+						<?=$pipeline_statusmessage?>
+					</div>
+				</div>
+				<div class="disabled step">
+					<div class="content">
+						<div class="title">Finish</div>
+						<div class="description">Last finished <?=$pipeline_lastfinish?></div>
+					</div>
+				</div>
+			</div>
+			<? } ?>
+		</div>
+		<?
+	}
+
 ?>

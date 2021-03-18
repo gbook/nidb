@@ -362,7 +362,7 @@
 				<td>
 					<details>
 						<summary>View user access list</summary>
-					<table class="smallgraydisplaytable">
+					<table class="ui very small very compact celled selectable grey table">
 						<thead>
 							<tr>
 								<th>Data &nbsp;</th>

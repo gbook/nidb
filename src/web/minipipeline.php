@@ -456,7 +456,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 								$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 								if (mysqli_num_rows($resultA) > 0) {
 							?>
-								<table style="font-size: 9pt" width="100%" class="smallgraydisplaytable">
+								<table style="font-size: 9pt" width="100%" class="ui very small very compact celled selectable grey table">
 									<thead>
 										<tr>
 											<th>Script</th>

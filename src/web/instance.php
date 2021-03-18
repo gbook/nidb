@@ -662,7 +662,7 @@
 	?>
 	<details style="border: 1px solid #ddd">
 		<summary style="width:100%">Manage Contacts</summary>
-		<table class="smallgraydisplaytable" style="margin:15px">
+		<table class="ui very small very compact celled selectable grey table" style="margin:15px">
 			<thead>
 				<tr>
 					<th>Name</th>
@@ -701,7 +701,7 @@
 	
 	<details style="border: 1px solid #ddd">
 		<summary style="width:100%">Pricing</summary>
-		<table class="smallgraydisplaytable" style="margin:15px">
+		<table class="ui very small very compact celled selectable grey table" style="margin:15px">
 			<thead>
 				<tr>
 					<th>Item</th>
@@ -774,7 +774,7 @@
 	
 	<details style="border: 1px solid #ddd">
 		<summary style="width:100%">Current usage</summary>
-		<table class="smallgraydisplaytable" style="margin:15px">
+		<table class="ui very small very compact celled selectable grey table" style="margin:15px">
 			<thead>
 				<tr>
 					<th>Date</th>

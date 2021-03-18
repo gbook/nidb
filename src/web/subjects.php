@@ -1214,74 +1214,79 @@
 		<table width="100%">
 			<tr>
 				<td valign="top" width="20%">
-					<h1 class="ui top attached header inverted blue segment">
-						<?=$uid?>
+					<h1 class="ui top attached header center aligned secondary inverted black segment">
+						<tt style="font-size: larger;"><?=$uid?></tt>
 					</h1>
 					<div class="ui bottom attached segment">
-							
-					<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
-					
-					<table class="ui very basic celled collapsing very compact table">
-						<tr>
-							<td class="right aligned"><b>Subject initials</td>
-							<td><?=$name?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Date of birth</td>
-							<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Gender</td>
-							<td><?=$gender?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b style="white-space:nowrap;">Alternate UIDs</td>
-							<td class="value tt">
-							<?
-								foreach ($altuids as $altid) {
-									if (strlen($altid) > 20) {
-										echo "<span title='$altid'>" . substr($altid,0,20) . "...</span> ";
-									}
-									else {
-										echo "$altid ";
-									}
-								}
-							?>
-							</td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Ethnicity1&2</td>
-							<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Handedness</td>
-							<td><?=$handedness?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Education</td>
-							<td><?=$education?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>GUID</td>
-							<td><?=$guid?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Can contact?</td>
-							<td><?=$cancontact?></td>
-						</tr>
-						<tr>
-							<td class="right aligned"><b>Subject tags</td>
-							<td><?=DisplayTags($tags, '', 'subject')?></td>
-						</tr>
-					</table>
-					<br>
 					<div class="ui styled accordion">
+							
+						<? if (GetPerm($perms, 'viewphi', $projectid)) { ?>
+						<div class="active title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Demographics</h3>
+						</div>
+						<div class="active content">
+							<table class="ui very basic celled collapsing very compact table">
+								<tr>
+									<td class="right aligned"><b>Subject initials</td>
+									<td><?=$name?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Date of birth</td>
+									<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Gender</td>
+									<td><?=$gender?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b style="white-space:nowrap;">Alternate UIDs</td>
+									<td class="value tt">
+									<?
+										foreach ($altuids as $altid) {
+											if (strlen($altid) > 20) {
+												echo "<span title='$altid'>" . substr($altid,0,20) . "...</span> ";
+											}
+											else {
+												echo "$altid ";
+											}
+										}
+									?>
+									</td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Ethnicity1&2</td>
+									<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Handedness</td>
+									<td><?=$handedness?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Education</td>
+									<td><?=$education?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>GUID</td>
+									<td><?=$guid?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Can contact?</td>
+									<td><?=$cancontact?></td>
+								</tr>
+								<tr>
+									<td class="right aligned"><b>Subject tags</td>
+									<td><?=DisplayTags($tags, '', 'subject')?></td>
+								</tr>
+							</table>
+							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;">Edit</button>
+						</div>
+					
+					
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>
 						</div>
 						<div class="content">
 							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
-							<table style="font-size: 10pt">
 							<?
 								/* display existing subject relations */
 								$sqlstring = "select a.*, b.uid from subject_relation a left join subjects b on a.subjectid2 = b.subject_id where a.subjectid1 = $id";
@@ -1306,26 +1311,25 @@
 									<?
 								}
 							?>
-								<tr>
-									<form action="subjects.php" method="post">
-									<input type="hidden" name="id" value="<?=$id?>">
-									<input type="hidden" name="action" value="addrelation">
-									<td>
-										<?=$uid?> is the
-										<br>
-										<select name="relation">
-										<option value="siblingm">Half-sibling (same mother)</option>
-										<option value="siblingf">Half-sibling (same father)</option>
-										<option value="sibling">Sibling</option>
-										<option value="parent">Parent</option>
-										<option value="child">Child</option>
-									</select> of <input type="text" size="10" name="uid2" id="uid2"/>
-									<br>
-									<input type="checkbox" name="makesymmetric" value="1" checked title="If subject 1 is the parent of subject 2, a corresponding relation will also show subject 2 is a child of subject 1">Make symmetric 
-									<input type="submit" value="Add relation"></td>
-									</form>
-								</tr>
-							</table>
+								<form action="subjects.php" method="post">
+								<input type="hidden" name="id" value="<?=$id?>">
+								<input type="hidden" name="action" value="addrelation">
+								<input type="hidden" name="makesymmetric" value="1">
+								<div class="ui small labeled action input">
+								<label for="relation" class="ui label grey"><?=$uid?> is the </label>
+								<select class="ui selection dropdown" name="relation" id="relation">
+									<option value="siblingm">Half-sibling (same mother)</option>
+									<option value="siblingf">Half-sibling (same father)</option>
+									<option value="sibling">Sibling</option>
+									<option value="parent">Parent</option>
+									<option value="child">Child</option>
+								</select>
+								<label for="uid2" class="ui label grey">of</label>
+								<input type="text" size="10" name="uid2" id="uid2" placeholder="UID">
+								<button class="ui primary button" type="submit" value="Enroll">Add</button>
+								</div>
+								<br>
+								</form>
 							<? } ?>
 							<table class="ui very basic celled collapsing very compact table">
 								<tr>
@@ -1344,7 +1348,6 @@
 						<div class="content">
 							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
 								<div style="padding:5px; font-size:11pt">
-								<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;">Edit Demographics</button>
 								<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<?=$uid?>'; return false;">Merge with...</button>
 								<br><br><br>
 								<?
@@ -1552,23 +1555,26 @@
 											<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">
 											<table width="100%">
 												<tr>
-													<td valign="top" style="padding-bottom: 8px"><b>Imaging studies</b></td>
+													<td valign="top" style="padding-bottom: 8px; width: 25%"><b>Imaging studies</b></td>
 													<td align="right">
 														<? if (!$enrolled) { ?>
 														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
 														<? } else { ?>
-														<details>
-														<summary>Create new studies</summary>
-														<table>
-															<tr>
+
+														<div class="ui accordion">
+															<div class="title">
+																<i class="dropdown icon"></i>
+																Create New Studies
+															</div>
+															<div class="content">
 																<form action="subjects.php" method="post">
-																<td align="right">
-																	<input type="hidden" name="id" value="<?=$id?>">
-																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-																	<input type="hidden" name="action" value="newstudy">
-																	<span style="font-size:10pt">New <u>empty</u> study</span>
-																	<select name="modality">
-																		<option value="" style="<?=$style?>">(Select modality)</option>
+																<input type="hidden" name="id" value="<?=$id?>">
+																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="action" value="newstudy">
+																<div class="ui small labeled action input">
+																	<label for="modality" class="ui label grey">New <u>empty</u> study</label>
+																	<select class="ui selection dropdown" name="modality" required>
+																		<option value="">(Select modality)</option>
 																		<?
 																		$sqlstring = "select * from modalities order by mod_code";
 																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1576,24 +1582,23 @@
 																			$mod_code = $row['mod_code'];
 																			$mod_desc = $row['mod_desc'];
 																			?>
-																			<option value="<?=$mod_code?>" style="<?=$style?>">[<?=$mod_code?>] <?=$mod_desc?></option>
+																			<option value="<?=$mod_code?>">[<?=$mod_code?>] <?=$mod_desc?></option>
 																			<?
 																		}
 																	?>
 																	</select>
-																	<input type="submit" value="Create">
-																</td>
-																</form>														
-															</tr>
-															<tr>
+																	<button class="ui small primary button" type="submit">Create</button>
+																</div>
+																</form>
+
 																<form action="subjects.php" method="post">
-																<td align="right">
-																	<input type="hidden" name="id" value="<?=$id?>">
-																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-																	<input type="hidden" name="action" value="newstudyfromtemplate">
-																	<span style="font-size:10pt">New study from <u>template</u></span>
-																	<select name="templateid">
-																		<option value="" style="<?=$style?>">(Select template)</option>
+																<input type="hidden" name="id" value="<?=$id?>">
+																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="action" value="newstudyfromtemplate">
+																<div class="ui small labeled action input">
+																	<label for="templateid" class="ui label grey">New study from <u>template</u></label>
+																	<select class="ui selection dropdown" name="templateid" required>
+																		<option value="">(Select template)</option>
 																		<?
 																		$sqlstring = "select * from study_template where project_id = $projectid order by template_name asc";
 																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1602,24 +1607,23 @@
 																			$templatename = $row['template_name'];
 																			$templatemodality = $row['template_modality'];
 																			?>
-																			<option value="<?=$templateid?>" style="<?=$style?>"><?=$templatename?> (<?=$templatemodality?>)</option>
+																			<option value="<?=$templateid?>"><?=$templatename?> (<?=$templatemodality?>)</option>
 																			<?
 																		}
 																	?>
 																	</select>
-																	<input type="submit" value="Create">
-																</td>
-																</form>														
-															</tr>
-															<tr>
+																	<button class="ui small primary button" type="submit">Create</button>
+																</div>
+																</form>
+
 																<form action="subjects.php" method="post">
-																<td align="right">
-																	<input type="hidden" name="id" value="<?=$id?>">
-																	<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-																	<input type="hidden" name="action" value="newstudygroupfromtemplate">
-																	<span style="font-size:10pt">New study group from <u>template</u></span>
-																	<select name="grouptemplateid">
-																		<option value="" style="<?=$style?>">(Select group template)</option>
+																<input type="hidden" name="id" value="<?=$id?>">
+																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="action" value="newstudygroupfromtemplate">
+																<div class="ui small labeled action input">
+																	<label for="grouptemplateid" class="ui label grey">New study group from <u>template</u></label>
+																	<select class="ui selection dropdown" name="grouptemplateid" required>
+																		<option value="">(Select group template)</option>
 																		<?
 																		$sqlstring = "select * from project_template where project_id = $projectid order by template_name asc";
 																		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1639,17 +1643,17 @@
 																			$numseries = $rowC['count'];
 																			
 																			?>
-																			<option value="<?=$ptid?>" style="<?=$style?>"><?=$templatename?> (<?=$numstudies?> studies, <?=$numseries?> total series)</option>
+																			<option value="<?=$ptid?>"><?=$templatename?> (<?=$numstudies?> studies, <?=$numseries?> total series)</option>
 																			<?
 																		}
 																	?>
 																	</select>
-																	<input type="submit" value="Create">
-																</td>
-																</form>														
-															</tr>
-														</table>
-														</details>
+																	<button class="ui small primary button" type="submit">Create</button>
+																</div>
+																</form>
+																
+															</div>
+														</div>
 														<? } ?>
 													</td>
 												</tr>
@@ -1659,7 +1663,7 @@
 												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 												if (mysqli_num_rows($result2) > 0) {
 												?>
-												<table width="100%" class="smalldisplaytable" style="border: 0px; width: 100%; padding:5px; border-radius: 0px;">
+												<table width="100%" class="ui small very compact selectable celled grey table">
 													<thead>
 														<th style="background-color: #273F70; color: #fff">Study</th>
 														<th>Modality</th>
@@ -1755,23 +1759,26 @@
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 														<input type="hidden" name="projectid" value="<?=$projectid?>">
 														<input type="hidden" name="action" value="create">
-														<span style="font-size: 10pt">Add assessment:</span>
-														<select name="formid" <?=$disabled?>>
-															<option value="">(Select assessment)</option>
-														<?
-															$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
-															$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-															while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-																$form_id = $rowB['form_id'];
-																$form_title = $rowB['form_title'];
-																$projectid = $rowB['project_id'];
-															?>
-																<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
+														
+														<div class="ui small labeled action input">
+															<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
+															<select class="ui selection dropdown" name="formid" <?=$disabled?>>
+																<option value="">(Select assessment)</option>
 																<?
-															}
-														?>
-														</select>
-														<input type="submit" value="Create"  <?=$disabled?>>
+																	$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
+																	$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+																	while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+																		$form_id = $rowB['form_id'];
+																		$form_title = $rowB['form_title'];
+																		$projectid = $rowB['project_id'];
+																	?>
+																	<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
+																	<?
+																	}
+																?>
+															</select>
+															<button class="ui small primary button" type="submit" value="Enroll" <?=$disabled?>>Create</button>
+														</div>
 													</td>
 													</form>
 

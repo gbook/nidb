@@ -117,7 +117,7 @@
    vertical-align: middle;
   }
 </style>		
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th valign="bottom">Initials</th>
@@ -367,7 +367,7 @@
 		<style>
 			.highlighted:hover { border: 1px solid orange; }
 		</style>
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th> </th>
@@ -601,7 +601,7 @@
    vertical-align: middle;
   }
 </style>		
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th valign="bottom">Initials</th>

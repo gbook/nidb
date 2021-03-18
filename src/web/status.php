@@ -156,7 +156,7 @@ echo $value . "\n";
 				<td class="label">All NiDB modules</td>
 				<td>
 				
-					<table class="smallgraydisplaytable">
+					<table class="ui very small very compact celled selectable grey table">
 						<thead>
 							<tr>
 								<th>Name</th>
@@ -256,7 +256,7 @@ echo $value . "\n";
 			<tr>
 				<td class="label"><a href="adminmodules.php?action=viewlogs&modulename=pipeline" title="View pipeline.pl logs">Pipeline module</a></td>
 				<td>
-					<table class="smallgraydisplaytable">
+					<table class="ui very small very compact celled selectable grey table">
 					<thead>
 						<tr>
 							<th>Process ID</th>

@@ -87,6 +87,7 @@
 	$level = GetVariable("level");
 	$ishidden = GetVariable("pipelineishidden");
 	$groupbysubject = GetVariable("groupbysubject");
+	$outputbids = GetVariable("outputbids");
 
 	$newname = GetVariable("newname");
 	$newuserid = GetVariable("newuserid");
@@ -115,34 +116,35 @@
 	$dd_usephasedir = GetVariable("dd_usephasedir");
 	
 	$returnpage = GetVariable("returnpage");
+	$returntab = GetVariable("returntab");
 	
 	/* determine action */
 	switch ($action) {
 		case 'editpipeline':
-			DisplayPipelineForm("edit", $id);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'viewversion':
 			DisplayVersion($id, $version);
 			break;
 		case 'addform':
-			DisplayPipelineForm("add", "");
+			DisplayPipelineForm("add", "", $returntab);
 			break;
 		case 'updatepipelineoptions':
-			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject);
-			DisplayPipelineForm("edit", $id);
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'update':
 			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
-			DisplayPipelineForm("edit", $id);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject);
-			DisplayPipelineForm("edit", $id);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'changeowner':
 			ChangeOwner($id,$newuserid);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
-			DisplayPipelineForm("edit", $id);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'delete':
 			DeletePipeline($id);
@@ -159,15 +161,19 @@
 		case 'resetanalyses':
 			ResetAnalyses($id);
 			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
-			DisplayPipelineForm("edit", $id);
+			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'disable':
 			DisablePipeline($id);
 			if ($returnpage == "home") {
 				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			}
+			elseif ($returnpage == "analysis") {
+				/* redirect to analysis page */
+				DisplayPipelineForm("edit", $id, $returntab);
+			}
 			else {
-				DisplayPipelineForm("edit", $id);
+				DisplayPipelineForm("edit", $id, $returntab);
 			}
 			break;
 		case 'enable':
@@ -176,7 +182,7 @@
 				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			}
 			else {
-				DisplayPipelineForm("edit", $id);
+				DisplayPipelineForm("edit", $id, $returntab);
 			}
 			break;
 		case 'viewpipelinelist':
@@ -237,7 +243,7 @@
 	/* -------------------------------------------- */
 	/* this function CHANGES the version number     */
 	/* -------------------------------------------- */
-	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject) {
+	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
 
@@ -270,6 +276,7 @@
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
 		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
+		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
 
 		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
 		else { $dependencies = $dependency; }
@@ -281,7 +288,7 @@
 		else { $projectids = $projectid; }
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		echo "<li>Updated pipelines table";
 		
@@ -293,9 +300,11 @@
 		if ($dependency != '') {
 			if (is_array($dependency)) {
 				foreach ($dependency as $dep) {
-					$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dep')";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					echo "<li>Inserted dependency ($dep)";
+					if ($dep != "") {
+						$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dep')";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						echo "<li>Inserted dependency ($dep)";
+					}
 				}
 			}
 			else {
@@ -306,7 +315,7 @@
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$completefiles', '$pipelineresultscript')";
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$completefiles', '$pipelineresultscript')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		echo "<li>Updated pipeline_options table";
 		
@@ -503,7 +512,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
@@ -525,6 +534,7 @@
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
 		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
+		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], trim($deplinktype));
@@ -553,7 +563,7 @@
 		$userid = $row['user_id'];
 		
 		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject)";
+		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -855,31 +865,9 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- EnablePipeline --------------------- */
-	/* -------------------------------------------- */
-	function EnablePipeline($id) {
-		if (!ValidID($id,'Pipeline ID - H')) { return; }
-		
-		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DisablePipeline -------------------- */
-	/* -------------------------------------------- */
-	function DisablePipeline($id) {
-		if (!ValidID($id,'Pipeline ID - I')) { return; }
-		
-		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
-	function DisplayPipelineForm($type, $id) {
+	function DisplayPipelineForm($type, $id, $returntab) {
 		if ($type != "add") { 
 			if (!ValidID($id,'Pipeline ID - L')) { return; }
 		}
@@ -925,6 +913,7 @@
 			$owner = $row['username'];
 			$ishidden = $row['pipeline_ishidden'];
 			$groupbysubject = $row['pipeline_groupbysubject'];
+			$outputbids = $row['pipeline_outputbids'];
 			$isenabled = $row['pipeline_enabled'];
 			
 			if ((strtolower($owner) == strtolower($GLOBALS['username'])) || ($GLOBALS['issiteadmin'])) {
@@ -936,7 +925,7 @@
 			
 			$formaction = "update";
 			$formtitle = "$title";
-			$submitbuttonlabel = "Save Pipeline";
+			$submitbuttonlabel = "Save Settings";
 		}
 		else {
 			$formaction = "add";
@@ -1030,20 +1019,318 @@
 	
 		<?
 			if ($type != "add") {
-				DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+				DisplayPipelineStatus($title, $isenabled, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+			}
+			
+			$tab_oneactive = "";
+			$tab_twoactive = "";
+			$tab_threeactive = "";
+			$tab_fouractive = "";
+			switch ($returntab) {
+				case 'settings': $tab_twoactive = "active"; break;
+				case 'datascripts': $tab_threeactive = "active"; break;
+				case 'operations': $tab_fouractive = "active"; break;
+				default: $tab_oneactive = "active";
 			}
 		?>
 		<br>
-		<table width="100%">
-			<tr>
-				<td style="padding-right:40px" valign="top" width="50%">
-					<fieldset style="border: 3px solid #999; border-radius:5px">
-					<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> <b><?=$formtitle?></b> v<?=$version?> Settings</legend>
-				
+		
+		<div class="ui top attached inverted black tabular menu">
+			<a class="<?=$tab_oneactive?> item" data-tab="first">Information</a>
+			<a class="<?=$tab_twoactive?> item" data-tab="second">Settings</a>
+			<a class="<?=$tab_threeactive?> item" data-tab="third">Data & Scripts</a>
+			<a class="<?=$tab_fouractive?> item" data-tab="fourth">Operations</a>
+		</div>
+
+		<!-- -------------------- Information tab -------------------- -->
+
+		<div class="ui bottom attached <?=$tab_oneactive?> tab segment" data-tab="first">
+			<table class="entrytable" style="border:0px">
+				<tr>
+					<td class="label" valign="top">View</td>
+					<td valign="top" style="padding-bottom: 10pt">
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><b>Analyses</b></a><br>
+						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis">Ignored studies<br>
+						<a href="pipelines.php?action=viewversion&id=<?=$id?>">Pipeline versions<br>
+						<br>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Analysis statistics</td>
+					<td valign="top" style="padding-bottom: 10pt">
+					<?
+						/* gather statistics about the analyses */
+						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$totaltime = $row['cluster_time'];
+						$totaltime = number_format(($totaltime/60/60),2);
+						
+						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$totaltimesuccess = $row['cluster_timesuccess'];
+						$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
+						
+						$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$numcomplete = $row['numcomplete'];
+
+						$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$numcompletesuccess = $row['numcompletesuccess'];
+						
+						$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$numprocessing = $row['numprocessing'];
+						
+						$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$numpending = $row['numpending'];
+						
+						/* get mean processing times */
+						$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
+						//PrintSQL($sqlstring);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							//$analysis_id = $row['analysis_id'];
+							$analysistimes[] = $row['analysis_time'];
+							$clustertimes[] = $row['cluster_time'];
+						}
+						if (count($clustertimes) == 0) {
+							$clustertimes[] = 0;
+						}
+						if (count($analysistimes) == 0) {
+							$analysistimes[] = 0;
+						}
+						
+						?>
+						<div class="ui mini five statistics">
+							<div class="ui tiny statistic">
+								<div class="value"><?=$numcomplete?></div>
+								<div class="label">Completed</div>
+							</div>
+							<div class="ui tiny statistic">
+								<div class="value"><?=$numcompletesuccess?></div>
+								<div class="label">Completed<br>Successfuly</div>
+							</div>
+							<div class="ui tiny statistic">
+								<div class="value"><?=$numprocessing?></div>
+								<div class="label">Processing</div>
+							</div>
+							<div class="ui tiny statistic">
+								<div class="value"><?=$numpending?></div>
+								<div class="label">Pending</div>
+							</div>
+							<div class="ui tiny statistic">
+								<div class="value"><?=$totaltime?> hr</div>
+								<div class="label">Total CPU Time</div>
+							</div>
+						</div>
+						<br><br>
+
+						<!--
+						<tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
+							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
+						</tr>
+						<tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
+							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
+						</tr>
+						<tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
+							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
+						</tr>
+						<tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
+							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
+						</tr>
+						</tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
+							<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
+							<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
+						</tr>
+						<tr>
+							<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
+							<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
+							<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
+						</tr>-->
+						<div class="ui accordion">
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Computing Performance
+							</div>
+							<div class="content">
+								<table class="ui very compact very small celled table">
+									<thead>
+										<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+									</thead>
+									<tr>
+										<td><b>Hostname</b></td>
+										<td><b>Avg CPU</b></td>
+										<td><b>Count</b></td>
+									</tr>
+								<?
+									$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+										$count = $row['count'];
+										$hostname = $row['hostname'];
+										?>
+										<tr>
+											<td><?=$hostname?></td>
+											<td><?=$cpuhrs?> hrs</td>
+											<td><?=$count?></td>
+										</tr>
+										<?
+									}
+								?>
+								</table>
+							</div>
+						</div>
+
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Dependency</td>
+					<td valign="top" style="padding-bottom: 10pt">
+					<?
+						if ($dependency != "") {
+							$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$parentid = $row['pipeline_id'];
+								$parents[$parentid]['name'] = $row['pipeline_name'];
+								$parents[$parentid]['desc'] = $row['pipeline_desc'];
+								$parents[$parentid]['notes'] = $row['pipeline_notes'];
+							}
+						}
+						$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id')";
+						//PrintSQL($sqlstring);
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$childid = $row['pipeline_id'];
+							$children[$childid]['name'] = $row['pipeline_name'];
+							$children[$childid]['desc'] = $row['pipeline_desc'];
+							$children[$childid]['notes'] = $row['pipeline_notes'];
+						}
+					?>
+					<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
+						<tr>
+							<td align="right" valign="middle">Parent pipeline(s)</td>
+							<td align="center">
+								<table style="font-size:10pt">
+									<tr>
+									<?
+										if (count($parents) > 0) {
+											foreach ($parents as $parentid => $info) {
+												?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
+											}
+										}
+										else {
+											?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
+										}
+									?>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td></td>
+							<td align='center' style="font-weight: bold; font-size: 14pt; background-color:#eee" title="This pipeline"><?=$title?></td>
+						</tr>
+						<tr>
+							<td align="right" valign="middle">Child pipeline(s)</td>
+							<td align="center">
+								<table style="font-size:10pt">
+									<tr>
+									<?
+										if (count($children) > 0) {
+											foreach ($children as $child => $info) {
+												?>
+												<tr>
+													<td align="left" style="padding: 2px 10px">
+													&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+													</td>
+												</tr>
+												<?
+											}
+										}
+										else {
+											?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
+										}
+									?>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Data location</td>
+					<td valign="top" style="padding-bottom: 10pt">
+						<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
+						<?
+							if ($directory != "") {
+								echo $directory;
+							} else {
+								if ($dirstructure == "b") {
+									echo $GLOBALS['cfg']['analysisdirb'];
+								}
+								else {
+									echo $GLOBALS['cfg']['analysisdir'];
+								}
+							}
+						?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
+						</span>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Help</td>
+					<td valign="top" style="padding-bottom: 10pt">
+					<details style="font-size:10pt">
+						<summary style="color: #3B5998"> Pipeline not working? </summary>
+						There are several things that can cause the pipeline not to (or appear not to) process your data
+						<ol>
+							<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
+								<ul>
+									<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
+									<li>Check the "Image type". For MR, this can also vary over time.
+									<li>Make sure the data items are enabled and at least one item is not optional
+									<li>Make sure at least one data item is at the study level
+									<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
+									<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
+								</ul>
+							<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
+							<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
+							<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
+							<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
+							<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
+						</ol>
+						The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
+					</details>
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<!-- -------------------- Settings tab -------------------- -->
+		
+		<div class="ui bottom attached <?=$tab_twoactive?> tab segment" data-tab="second">
+			<div class="ui two column grid">
+				<div class="column">
 					<table class="entrytable" style="border:0px">
 						<form method="post" action="pipelines.php">
 						<input type="hidden" name="action" value="<?=$formaction?>">
 						<input type="hidden" name="id" value="<?=$id?>">
+						<input type="hidden" name="returntab" value="settings">
 						<tr>
 							<td class="label" valign="top">Title</td>
 							<td valign="top">
@@ -1062,7 +1349,7 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Directory <img src="images/help.gif" title="<b>Directory</b><br><br>A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and will contain all of the analyses for this pipeline.<br><br>If blank, the analyses for this pipeline will be written to the default pipeline directory: <span style='color: #E8FFFF'>[<?=$GLOBALS['cfg']['analysisdirb']?>]</span>"></td>
+							<td class="label" valign="top">Directory</td>
 							<td valign="top">
 								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
 							</td>
@@ -1075,7 +1362,7 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Pipeline group <img src="images/help.gif" title="<b>Pipeline group</b><br><br>Pipelines can be grouped together using a group name. This is different than a group of subjects or studies"></td>
+							<td class="label" valign="top">Pipeline group</td>
 							<td valign="top">
 								<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
 							</td>
@@ -1095,14 +1382,14 @@
 							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Data transfer method <img src="images/help.gif" title="<b>Data transfer method</b><br><br><b>NFS</b> copies via the the <tt>cp</tt> command assumes the filesystem you want to write to is mounted on this server<br><br>Copying via <b>scp</b> uses secure copy and assumes you have a passwordless login setup between this server and the one you are copying to"></td>
+							<td class="label" valign="top">Data transfer method</td>
 							<td valign="top">
 								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>NFS <span class="tiny">default</span><br>
 								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>scp <span class="tiny">requires passwordless ssh</span><br>
 							</td>
 						</tr>
 						<tr class="level1">
-							<td class="label" valign="top">Concurrent processes <img src="images/help.gif" title="<b>Concurrent processes</b><br><br>This is the number of concurrent jobs allowed to be submitted to the cluster at a time. This number is separate from the number of slots available in the cluster queue, which specified in the grid engine setup"></td>
+							<td class="label" valign="top">Concurrent processes</td>
 							<td valign="top"><input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350"></td>
 						</tr>
 						<tr>
@@ -1110,31 +1397,31 @@
 								<option value="sge">
 								<option value="slurm">
 							</datalist>
-							<td class="label" valign="top">Cluster type <img src="images/help.gif" title="<b>Cluster type</b><br><br>SGE (default) or slurm"></td>
+							<td class="label" valign="top">Cluster type</td>
 							<td valign="top"><input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Cluster user <img src="images/help.gif" title="<b>Cluster user</b><br><br>The username under which data copying and cluster job submission should be done. This user must already have ssh keys setup for password-less login between this sever and the cluster submit server. If blank, the default username is used (<?=$GLOBALS['cfg']['clusteruser']?>)"></td>
+							<td class="label" valign="top">Cluster user</td>
 							<td valign="top"><input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Submit hostname <img src="images/help.gif" title="<b>Submit host</b><br><br>The hostname of the cluster node to submit to. This host will also be used for scp copy. If blank, the default submit host is used (<?=$GLOBALS['cfg']['clustersubmithost']?>)"></td>
+							<td class="label" valign="top">Submit hostname</td>
 							<td valign="top"><input type="text" name="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>"></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Max wall time <img src="images/help.gif" title="<b>Max wall time</b><br><br>Maximum wall time each analysis is allowed to run before being terminated"></td>
+							<td class="label" valign="top">Max wall time</td>
 							<td valign="top"><input type="text" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>" size="5" maxlength="7"> <span class="tiny">time in minutes (24 hours = 1440 minutes)</span></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Submit delay <img src="images/help.gif" title="<b>Submit delay</b><br><br>Number of hours after the study datetime that the job will be submitted. Default is 6 hours"></td>
+							<td class="label" valign="top">Submit delay</td>
 							<td valign="top"><input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7"> <span class="tiny">time in hours</span></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Queue name <img src="images/help.gif" title="<b>Queue name</b><br><br>The sun grid (SGE) queue to submit to"></td>
+							<td class="label" valign="top">Queue name</td>
 							<td valign="top"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required> <span class="tiny">Comma separated list</span></td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Use temporary directory <img src="images/help.gif" title="<b>Use tmp directory</b><br><br>This option will copy all data into the temporary directory first, process it there, and copy it back to its final location"></td>
+							<td class="label" valign="top">Use temporary directory</td>
 							<td valign="top"><input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>> <input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="56"><br>
 							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 						</tr>
@@ -1144,1259 +1431,981 @@
 						</tr>
 						
 						<tr>
-							<td colspan="2" align="center">
+							<td colspan="2" align="right">
 								<br>
-								<input type="submit" <?=$disabled?> value="<?=$submitbuttonlabel?>">
+								<button class="ui primary button" type="submit" <?=$disabled?>><?=$submitbuttonlabel?></button>
 							</td>
 						</tr>
 						</form>
 					</table>
-				</td>
-				
-				<? if ($formaction == "update") { ?>
-					<script>
-						function GetNewPipelineName(){
-							var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
-							if (newname != null){
-							  $("#newname").attr("value", newname);
-							  document.copypipeline.submit();
-						   }
-						}
-					</script>
-					<form action="pipelines.php" method="post" name="copypipeline">
-					<input type="hidden" name="action" value="copy">
-					<input type="hidden" name="id" value="<?=$id?>">
-					<input type="hidden" name="newname" id="newname" value="<?=$id?>">
-					</form>
-				<td valign="top">
-					<fieldset style="border: 3px solid #999; border-radius:5px">
-					<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> Operations </legend>
-					
-					
-					<table class="entrytable" style="border:0px">
-						<tr>
-							<td class="label" valign="top">View</td>
-							<td valign="top" style="padding-bottom: 10pt">
-								<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><b>Analyses</b></a><br>
-								<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis">Ignored studies<br>
-								<a href="pipelines.php?action=viewversion&id=<?=$id?>">Pipeline versions<br>
-								<br>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Operations</td>
-							<td valign="top" style="padding-bottom: 10pt">
-								<a href="pipelines.php?action=resetanalyses&id=<?=$id?>" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><img src="images/reset16.png"> Reprocess ignored studies</a>
-								<br>
-								<img src="images/copy16.gif"> <a href="#" onClick="GetNewPipelineName();">Copy to new pipeline...</a>
-								<? if (!$readonly) { ?>
-								<br><br>
-								<form style="margin-left: 23px">
-								<input type="hidden" name="action" value="changeowner">
-								<input type="hidden" name="id" value="<?=$id?>">
-								Change pipeline owner to: <select name="newuserid">
-									<option value="">(Select new owner)</option>
-									<?
-										$sqlstring="select * from users where user_enabled = 1 order by username";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$userid = $row['user_id'];
-											$username = $row['username'];
-											$userfullname = $row['user_fullname'];
-											if ($username != "") {
-												if ($userfullname != "") {
-													$userfullname = "[$userfullname]";
-												}
-												?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
-											}
-										}
-									?>
-								</select>
-								<input type="submit" value="Change">
-								</form>
-								<a href="pipelines.php?action=detach$id=<?=$id?>" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><img src="images/disconnect16.png"> Detach entire pipeline</a><br>
-								<a href="pipelines.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this pipeline?')"><img src="images/delete16.png"> Delete this pipeline</a>
-								<? } ?>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Analysis statistics</td>
-							<td valign="top" style="padding-bottom: 10pt">
-							<?
-								/* gather statistics about the analyses */
-								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$totaltime = $row['cluster_time'];
-								$totaltime = number_format(($totaltime/60/60),2);
-								
-								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$totaltimesuccess = $row['cluster_timesuccess'];
-								$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
-								
-								$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numcomplete = $row['numcomplete'];
+				</div>
+				<div class="column">
+					<div class="ui styled accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							Help
+						</div>
+						<div class="content">
+							<h3 class="ui header">Title</h3>
+							The pipeline name. This will be the directory name on disk. Limit of 255 characters.
 
-								$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numcompletesuccess = $row['numcompletesuccess'];
-								
-								$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numprocessing = $row['numprocessing'];
-								
-								$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numpending = $row['numpending'];
-								
-								/* get mean processing times */
-								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
-								//PrintSQL($sqlstring);
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									//$analysis_id = $row['analysis_id'];
-									$analysistimes[] = $row['analysis_time'];
-									$clustertimes[] = $row['cluster_time'];
-								}
-								if (count($clustertimes) == 0) {
-									$clustertimes[] = 0;
-								}
-								if (count($analysistimes) == 0) {
-									$analysistimes[] = 0;
-								}
-								
-								?>
-							<table>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
-								</tr>
-								</tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
-									<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
-									<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
-									<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
-									<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
-								</tr>
-								<tr>
-									<td colspan="2">
-										<!-- display performance by hostname -->
-										<details>
-											<summary style="color: #3B5998"> Computing Performance </summary>
-											<table class="smallgraydisplaytable">
-												<tr>
-													<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
-												</tr>
-												<tr>
-													<td><b>Hostname</b></td>
-													<td><b>Avg CPU</b></td>
-													<td><b>Count</b></td>
-												</tr>
-											<?
-												$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
-												$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-													$count = $row['count'];
-													$hostname = $row['hostname'];
-													?>
-													<tr>
-														<td><?=$hostname?></td>
-														<td><?=$cpuhrs?> hrs</td>
-														<td><?=$count?></td>
-													</tr>
-													<?
-												}
-											?>
-											</table>
-										</details>
-									</td>
-								</tr>
-							</table>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Dependency</td>
-							<td valign="top" style="padding-bottom: 10pt">
-							<?
-								if ($dependency != "") {
-									$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$parentid = $row['pipeline_id'];
-										$parents[$parentid]['name'] = $row['pipeline_name'];
-										$parents[$parentid]['desc'] = $row['pipeline_desc'];
-										$parents[$parentid]['notes'] = $row['pipeline_notes'];
-									}
-								}
-								$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id')";
-								//PrintSQL($sqlstring);
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$childid = $row['pipeline_id'];
-									$children[$childid]['name'] = $row['pipeline_name'];
-									$children[$childid]['desc'] = $row['pipeline_desc'];
-									$children[$childid]['notes'] = $row['pipeline_notes'];
-								}
-							?>
-							<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
-								<tr>
-									<td align="right" valign="middle">Parent pipeline(s)</td>
-									<td align="center">
-										<table style="font-size:10pt">
-											<tr>
-											<?
-												if (count($parents) > 0) {
-													foreach ($parents as $parentid => $info) {
-														?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
+							<h3 class="ui header">Description</h3>
+							Longer description.
+
+							<h3 class="ui header">Stats level</h3>
+								<ul>
+									<li><b>First</b> Subject level, from individual studies
+									<li><b>Second</b> Group level, from first-level pipelines
+								</ul>
+
+							<h3 class="ui header">Directory</h3>
+							Full path into which this pipeline will be stored. A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and that directory will contain all of the analyses for this pipeline. If this option is blank (the default), analyses for this pipeline will be written to the default pipeline directory <code>/nidb/data/pipelineb</code>	
+
+							<h3 class="ui header">Directory structure</h3>
+							<ul>
+								<li><b>pipeline</b> <code>/S1234ABC/1/ThisPipeline</code>
+								<li><b>pipelineb</b> <code>/ThisPipeline/S1234ABC/1</code>
+							</ul>
+
+							<h3 class="ui header">Pipeline group</h3>
+							Pipelines can be grouped together using a group name. This is different than a group of subjects or studies.
+
+							<h3 class="ui header">Notes</h3>
+							Any notes for the pipeline.
+
+							<h3 class="ui header">Data transfer method</h3>
+							<ul>
+								<li><b>NFS</b> copies via the the <tt>cp</tt> command assumes the filesystem you want to write to is mounted on this server
+								<li><b>scp</b> uses secure copy and assumes you have a passwordless login setup between this server and the one you are copying to
+							</ul>
+
+							<h3 class="ui header">Concurrent processes</h3>This is the number of concurrent jobs allowed to be submitted to the cluster at a time. This number is separate from the number of slots available in the cluster queue, which specified in the grid engine setup	
+
+							<h3 class="ui header">Cluster type</h3>SGE (default) or slurm	
+
+							<h3 class="ui header">Cluster user</h3>The username under which data copying and cluster job submission should be done. This user must already have ssh keys setup for password-less login between this sever and the cluster submit server. If blank, the default username is used ()	
+
+							<h3 class="ui header">Submit hostname</h3>The hostname of the cluster node to submit to. This host will also be used for scp copy. If blank, the default submit host is used ()	
+
+							<h3 class="ui header">Max wall time</h3>
+							Maximum wall time (in minutes) that each analysis is allowed to run before being terminated. 24 hours = 1440 minutes. Default is unlimited.
+
+							<h3 class="ui header">Submit delay</h3>
+							Number of hours after the study datetime that the job will be submitted. This option exists to allow a manual data import process to occur. For example, MRI data will be automatically imported into NiDB and is available for analysis immediately, but behavioral data may need to to be manually uploaded and may take a certain number of hours to be available. Default delay is 6 hours.
+
+							<h3 class="ui header">Queue name</h3>
+							The sun grid (SGE) queue to submit t (Comma separated list)
+
+							<h3 class="ui header">Use temporary directory</h3>
+							This option will copy all data into the temporary directory first, process it there, and copy it back to its final location. Usually <code>/tmp</code>. Check with your sysadmin
+
+							<h3 class="ui header">Hidden?</h3>
+							Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up in the main list.
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- -------------------- Data & Scripts tab -------------------- -->
+		<div class="ui bottom attached <?=$tab_threeactive?> tab segment" data-tab="third">
+			<form method="post" action="pipelines.php" name="stepsform" id="stepsform">
+			<input type="hidden" name="action" value="updatepipelineoptions">
+			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="returntab" value="datascripts">
+			<?
+				if (($level == 1) || (($level == 2) && ($dependency == ''))) {
+			?>
+			<br>
+			<style>
+				td.dataheader { padding: 7px; border-bottom: 2px solid #aaa; background-color: #eee; text-align: center }
+			</style>
+			
+			<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;" class="level1">Options</div>
+			<br>
+
+			<table class="entrytable">
+				<tr>
+					<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></td>
+					<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
+					<span class="tiny">Comma seperated list of files (relative paths)</span></td>
+				</tr>
+				<tr>
+					<td class="label" valign="top">Results script <img src="images/help.gif" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></td>
+					<td valign="top">
+						<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top">Pipeline dependency<br>
+					</td>
+					<td valign="top">
+						<table class="entrytable">
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">it is a child pipeline of...</span></td>
+								<td valign="top">
+									<select name="dependency[]" id="dependency" <?=$disabled?> multiple="multiple" class="ui dropdown">
+										<option value="" <? if ($dependency == "") { echo "selected"; } ?>>(Select dependency)</option>
+										<?
+											$sqlstring = "select * from pipelines order by pipeline_name";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$d_name = $row['pipeline_name'];
+												$d_id = $row['pipeline_id'];
+												$d_ver = $row['pipeline_version'];
+												
+												if (($d_name != "") && ($d_id != "")) {
+													/* get the number of analyses in the pipeline */
+													$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
+													$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+													$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+													$nummembers = $rowA['count'];
+													
+													if (in_array($d_id, explode(",",$dependency))) {
+														$selected = "selected";
+														$dependencies[] = $d_name;
 													}
-												}
-												else {
-													?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
-												}
-											?>
-											</tr>
-										</table>
-									</td>
-								</tr>
-								<tr>
-									<td></td>
-									<td align='center' style="font-weight: bold; font-size: 14pt; background-color:#eee" title="This pipeline"><?=$title?></td>
-								</tr>
-								<tr>
-									<td align="right" valign="middle">Child pipeline(s)</td>
-									<td align="center">
-										<table style="font-size:10pt">
-											<tr>
-											<?
-												if (count($children) > 0) {
-													foreach ($children as $child => $info) {
+													else { $selected = ""; }
+													
+													if ($id != $d_id) {
 														?>
-														<tr>
-															<td align="left" style="padding: 2px 10px">
-															&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
-															</td>
-														</tr>
+														<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?>  [<?=$nummembers?>]</option>
 														<?
 													}
 												}
-												else {
-													?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
-												}
-											?>
-											</tr>
-										</table>
+											}
+										?>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
+								<td valign="top">
+									<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
+									<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
+								<td valign="top">
+									<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>> root directory <img src="images/help.gif" title="copies all files into the analysis root directory <code>{analysisrootdir}/*</code>"><br>
+									<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>> sub-directory <img src="images/help.gif" title="copies dependency into a subdirectory of the analysis <code>{analysisrootdir}/<i>DependencyName</i>/*</code>">
+								</td>
+							</tr>
+							<tr>
+								<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">File linking type</td>
+								<td valign="top">
+									<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
+									<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
+									<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top">Study Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
+					<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
+					</td>
+					<td valign="top">
+						<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" class="ui dropdown">
+							<option value="" <? if ($groupid == "") { echo "selected"; } ?>>(Select group)</option>
+							<?
+								$sqlstring = "select * from groups where group_type = 'study' order by group_name";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$g_name = $row['group_name'];
+									$g_id = $row['group_id'];
+									
+									/* get the number of members of the group */
+									$sqlstringA = "select count(*) 'count' from group_data where group_id = $g_id";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+									$nummembers = $rowA['count'];
+									
+									if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
+									else { $selected = ""; }
+									?>
+									<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
+									<?
+								}
+							?>
+						</select>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top">Project(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></td>
+					<td valign="top">
+						<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" class="ui dropdown">
+							<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Select project)</option>
+							<?
+								$sqlstring = "select * from projects order by project_name";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$p_name = $row['project_name'];
+									$p_id = $row['project_id'];
+									
+									if (in_array($p_id, explode(",",$projectid))) { $selected = "selected"; }
+									else { $selected = ""; }
+									?>
+									<option value="<?=$p_id?>" <?=$selected?>><?=$p_name?></option>
+									<?
+								}
+							?>
+						</select><br>
+					</td>
+				</tr>
+				<tr class="level2">
+					<td class="label" valign="top">Group by Subject <img src="images/help.gif" title="<b>Group by Subject</b><br><br>Useful for longitudinal analyses. <u>Second level pipelines only</u>"><br>
+					<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
+					</td>
+					<td valign="top" title="<b>Group by Subject</b><br><br>Useful for longitudinal studies"><input type="checkbox" name="groupbysubject" value="1" <? if ($groupbysubject) { echo "checked"; } ?>></td>
+				</tr>
+			</table>
+
+			<br>
+			<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;" class="level1">Data</div>
+			<br>
+			
+			<table>
+				<tr>
+					<td style="vertical-align: top; padding: 2px 10px;">
+						<details>
+						<summary>Data Graph</summary>
+						<?=GetDataGraph($id, $version, $dependencies)?>
+						</details>
+					</td>
+					<td style="vertical-align: top; padding: 2px 10px;">
+						<details>
+						<summary>Test Search<br><span class="tiny">Check how many studies will be found based on the search criteria. This search has a 30 sec time limit.</span></summary>
+							<script>
+								function TestDataSearch() {
+									var xhttp = new XMLHttpRequest();
+
+									document.getElementById("searchwaiting").innerHTML = "Searching... <img src='images/SpinningSquirrel.gif'>";
+									
+									/* setup the callback function to get the response */
+									xhttp.onreadystatechange = function() {
+										if (this.readyState == 4 && this.status == 200) {
+											document.getElementById("testsearchresult").innerHTML = this.responseText;
+											document.getElementById("searchwaiting").innerHTML = "Done searching";
+										}
+									};
+									
+									/* create the XML http request */
+									var pipelineid = <?=$id?>;
+									var dependency = $('#dependency').val().join();
+									var deplevel = $('#deplevel').val();
+									var groupid = $('#groupid').val().join();
+									var projectid = $('#projectid').val().join();
+
+									var dd_isprimary = $('#dd_isprimary').val();
+									
+									var dd_enabled = $("input[name^='dd_enabled']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+									
+									var dd_optional = $("input[name^='dd_optional']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									var dd_order = $("input[name^='dd_order']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+									
+									var dd_protocol = $("input[name^='dd_protocol']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+									
+									var dd_modality = $("select[name^='dd_modality']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									var dd_datalevel = $("select[name^='dd_datalevel']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									var dd_studyassoc = $("select[name^='dd_studyassoc']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									var dd_imagetype = $("input[name^='dd_imagetype']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join("|");
+
+									var dd_seriescriteria = $("input[name^='dd_seriescriteria']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									var dd_numboldreps = $("input[name^='dd_numboldreps']").map(function (idx, ele) {
+									   return $(ele).val();
+									}).get().join();
+
+									xhttp.open("GET", "ajaxapi.php?action=pipelinetestsearch&pipelineid=" + pipelineid + "&dependency=" + dependency + "&deplevel=" + deplevel + "&groupid=" + groupid + "&projectid=" + projectid + "&dd_isprimary=" + dd_isprimary + "&dd_enabled=" + dd_enabled + "&dd_optional=" + dd_optional + "&dd_order=" + dd_order + "&dd_protocol=" + dd_protocol + "&dd_modality=" + dd_modality + "&dd_datalevel=" + dd_datalevel + "&dd_studyassoc=" + dd_studyassoc + "&dd_imagetype=" + dd_imagetype + "&dd_seriescriteria=" + dd_seriescriteria + "&dd_numboldreps=" + dd_numboldreps, true);
+									xhttp.send();
+								}
+							</script>
+							<input type="button" value="Run test search" onClick="TestDataSearch()"> <span id="searchwaiting" style="color: red; font-weight: bold;"></span>
+							<br>
+							<div id="testsearchresult" style="padding: 15px;"></div>
+						</details>
+					</td>
+				</tr>
+			</table>
+			
+			<table class="level1 ui very compact celled table" cellspacing="0" style="border: 1px solid #aaa;">
+				<thead>
+					<th>Enabled</th>
+					<th>Optional</th>
+					<th title="<b>Primary</b> This flag indicates which criteria will specify the primary study which will be later used in the analysis listing. The primary study determines the primary modality, which also determines how other modalities and data steps are related to the primary study. Primary study also determines how dependent pipelines act.">Primary <i class="question circle outline icon"></i></td>
+					<th>Order</th>
+					<th>Protocol</th>
+					<th>Modality</th>
+					<th title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1.">Data source <img src="images/help.gif"></th>
+					<th title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level">Subject linkage <img src="images/help.gif"></th>
+					<th>Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="question circle outline icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i></th>
+				</thead>
+			<?
+			$neworder = 1;
+			/* display all other rows, sorted by order */
+			$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$pipelinedatadef_id = $row['pipelinedatadef_id'];
+				$dd_order = $row['pdd_order'];
+				$dd_isprimaryprotocol = $row['pdd_isprimaryprotocol'];
+				$dd_seriescriteria = $row['pdd_seriescriteria'];
+				$dd_protocol = $row['pdd_protocol'];
+				$dd_modality = $row['pdd_modality'];
+				$dd_dataformat = $row['pdd_dataformat'];
+				$dd_imagetype = $row['pdd_imagetype'];
+				$dd_gzip = $row['pdd_gzip'];
+				$dd_location = $row['pdd_location'];
+				$dd_useseries = $row['pdd_useseries'];
+				$dd_preserveseries = $row['pdd_preserveseries'];
+				$dd_usephasedir = $row['pdd_usephasedir'];
+				$dd_behformat = $row['pdd_behformat'];
+				$dd_behdir = $row['pdd_behdir'];
+				$dd_numboldreps = $row['pdd_numboldreps'];
+				$dd_enabled = $row['pdd_enabled'];
+				$dd_assoctype = $row['pdd_assoctype'];
+				$dd_optional = $row['pdd_optional'];
+				$dd_datalevel = $row['pdd_level'];
+				$dd_numimagescriteria = $row['pdd_numimagescriteria'];
+				
+				$dd[$dd_order]['isprimaryprotocol'] = $row['pdd_isprimaryprotocol'];
+				$dd[$dd_order]['seriescriteria'] = $row['pdd_seriescriteria'];
+				$dd[$dd_order]['protocol'] = $row['pdd_protocol'];
+				$dd[$dd_order]['modality'] = $row['pdd_modality'];
+				$dd[$dd_order]['dataformat'] = $row['pdd_dataformat'];
+				$dd[$dd_order]['imagetype'] = $row['pdd_imagetype'];
+				$dd[$dd_order]['gzip'] = $row['pdd_gzip'];
+				$dd[$dd_order]['location'] = $row['pdd_location'];
+				$dd[$dd_order]['useseries'] = $row['pdd_useseries'];
+				$dd[$dd_order]['preserveseries'] = $row['pdd_preserveseries'];
+				$dd[$dd_order]['usephasedir'] = $row['pdd_usephasedir'];
+				$dd[$dd_order]['behformat'] = $row['pdd_behformat'];
+				$dd[$dd_order]['behdir'] = $row['pdd_behdir'];
+				$dd[$dd_order]['numboldreps'] = $row['pdd_numboldreps'];
+				$dd[$dd_order]['enabled'] = $row['pdd_enabled'];
+				$dd[$dd_order]['assoctype'] = $row['pdd_assoctype'];
+				$dd[$dd_order]['optional'] = $row['pdd_optional'];
+				$dd[$dd_order]['datalevel'] = $row['pdd_level'];
+				$dd[$dd_order]['numimagescriteria'] = $row['pdd_numimagescriteria'];
+				
+				?>
+				<script>
+					$(document).ready(function() {
+						$('.row<?=$neworder?>').mouseover(function() {
+							$('.row<?=$neworder?>').css('background-color','#eee');
+						})
+						.mouseout(function() {
+							$('.row<?=$neworder?>').css('background-color','');
+						});
+					});
+				</script>
+				<style>
+					.row1 { background-color: lightyellow; }
+				</style>
+				<tr class="row<?=$neworder?>">
+					<td width="10">
+						<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>>
+					</td>
+					<td align="center">
+						<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>>
+					</td>
+					<td align="center">
+						<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($dd_isprimaryprotocol) { echo "checked"; } ?>>
+					</td>
+					<td>
+						<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
+					</td>
+					<td>
+						<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+					</td>
+					<td id="row<?=$neworder?>">
+						<select class="ui dropdown" name="dd_modality[<?=$neworder?>]">
+							<option value="">(Select modality)</option>
+						<?
+							$sqlstringA = "select * from modalities order by mod_desc";
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								$mod_code = $rowA['mod_code'];
+								$mod_desc = $rowA['mod_desc'];
+								
+								/* check if the modality table exists */
+								$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
+								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+								if (mysqli_num_rows($result2) > 0) {
+								
+									/* if the table does exist, allow the user to search on it */
+									if ($mod_code == $dd_modality) {
+										$selected = "selected";
+									}
+									else {
+										$selected = "";
+									}
+									?>
+									<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
+									<?
+								}
+							}
+						?>
+						</select>
+					</td>
+					<td>
+						<select class="ui dropdown" name="dd_datalevel[<?=$neworder?>]" class="ui dropdown">
+							<option value="">(select data level)
+							<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
+							<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
+						</select>
+					</td>
+					<td>
+						<select class="ui dropdown" name="dd_studyassoc[<?=$neworder?>]">
+							<option value="">(select study link)
+							<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
+							<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
+						</select>
+					</td>
+					<td>
+						<details class="level1" style="padding:0px;margin:0px">
+							<summary style="padding:0px; font-size:9pt">Options</summary>
+							<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
+								<tr>
+									<td class="label">Image type</td>
+									<td title="Comma separated list of image types"><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
+								</tr>
+								<tr>
+									<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+									<td>
+										<select class="ui dropdown" name="dd_seriescriteria[<?=$neworder?>]">
+											<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
+											<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
+											<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
+											<option value="largestsize" <? if ($dd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
+											<option value="smallestsize" <? if ($dd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
+											<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use size criteria below</option>
+										</select>
 									</td>
 								</tr>
+								<tr>
+									<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
+									<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
+									<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
+								</tr>
+								<tr>
+									<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
+								</tr>
+								<tr>
+									<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+									<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
+								</tr>
+								<tr>
+									<td class="label">Data format</td>
+									<td style="font-size:9pt;">
+										<select class="ui dropdown" name="dd_dataformat[<?=$neworder?>]">
+											<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
+											<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
+											<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
+											<option value="nifti4d" <? if ($dd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
+											<option value="analyze3d" <? if ($dd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
+											<option value="analyze4d" <? if ($dd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
+											<option value="bids" <? if ($dd_dataformat == "bids") { echo "selected"; } ?>>BIDS</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">g-zip</td>
+									<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
+								</tr>
+								<tr>
+									<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></td>
+									<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>></td>
+								</tr>
+								<tr>
+									<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
+									<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>></td>
+								</tr>
+								<tr>
+									<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></td>
+									<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>></td>
+								</tr>
+								<tr>
+									<td class="label">Behavioral data directory format</td>
+									<td style="font-size:9pt;">
+										<select class="ui dropdown" name="dd_behformat[<?=$neworder?>]">
+											<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
+											<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
+											<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
+											<option value="behseries" <? if ($dd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
+											<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">Behavioral data directory name</td>
+									<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>"></td>
+								</tr>
 							</table>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Data location</td>
-							<td valign="top" style="padding-bottom: 10pt">
-								<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
-								<?
-									if ($directory != "") {
-										echo $directory;
-									} else {
-										if ($dirstructure == "b") {
-											echo $GLOBALS['cfg']['analysisdirb'];
-										}
-										else {
-											echo $GLOBALS['cfg']['analysisdir'];
-										}
-									}
-								?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
-								</span>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Help</td>
-							<td valign="top" style="padding-bottom: 10pt">
-							<details style="font-size:10pt">
-								<summary style="color: #3B5998"> Pipeline not working? </summary>
-								There are several things that can cause the pipeline not to (or appear not to) process your data
-								<ol>
-									<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
-										<ul>
-											<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
-											<li>Check the "Image type". For MR, this can also vary over time.
-											<li>Make sure the data items are enabled and at least one item is not optional
-											<li>Make sure at least one data item is at the study level
-											<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
-											<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
-										</ul>
-									<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
-									<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
-									<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
-									<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
-									<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
-								</ol>
-								The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
-							</details>
-							</td>
-						</tr>
-					</table>
-
-					<!-- <a href="pipelines.php?action=viewversion&id=<?=$id?>"><img src="images/printer16.png" border="0"> View previous versions</a><br> -->
-					</fieldset>
-				</td>
-					<?
-				}
+							<br>
+						</details>
+					</td>
+				</tr>
+				<?
+				$neworder++;
+			}
+			for ($ii=0;$ii<5;$ii++) {
 			?>
-			</tr>
-		</table>
-
-		<?
-		if ($type == "edit") {
-		?>
-		<br><br>
+				<script>
+					$(document).ready(function() {
+						$('.row<?=$neworder?>').mouseover(function() {
+							$('.row<?=$neworder?>').css('background-color','#eee');
+						})
+						.mouseout(function() {
+							$('.row<?=$neworder?>').css('background-color','');
+						});
+					});
+				</script>
+				<tr class="row<?=$neworder?>">
+					<td>
+						<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1">
+					</td>
+					<td>
+						<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1">
+					</td>
+					<td>
+						<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($neworder == 1) { echo "checked"; } ?>>
+					</td>
+					<td>
+						<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
+					</td>
+					<td>
+						<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+					</td>
+					<td>
+						<select class="ui dropdown" name="dd_modality[<?=$neworder?>]">
+							<option value="">(Select modality)</option>
+						<?
+							$sqlstringA = "select * from modalities order by mod_desc";
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								$mod_code = $rowA['mod_code'];
+								$mod_desc = $rowA['mod_desc'];
+								
+								/* check if the modality table exists */
+								$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
+								//echo $sqlstring2;
+								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+								if (mysqli_num_rows($result2) > 0) {
+									?>
+									<option value="<?=$mod_code?>"><?=$mod_code?></option>
+									<?
+								}
+							}
+						?>
+						</select>
+					</td>
+					<td valign="top">
+						<select class="ui dropdown" name="dd_datalevel[<?=$neworder?>]">
+							<option value="">(select data level)
+							<option value="study" selected>Study
+							<option value="subject">Subject
+						</select>
+					</td>
+					<td valign="top">
+						<select class="ui dropdown" name="dd_studyassoc[<?=$neworder?>]">
+							<option value="">(select study link)
+							<option value="nearestintime" selected>Nearest in time
+							<option value="samestudytype">Same study type
+						</select>
+					</td>
+					<td valign="middle">
+						<details class="level1" style="padding:0px;margin:0px">
+							<summary style="padding:0px; font-size:9pt">Options</summary>
+							<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
+								<tr>
+									<td class="label">Image type</td>
+									<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30"></td>
+								</tr>
+								<tr>
+									<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
+									<td>
+										<select class="ui dropdown" class="small" name="dd_seriescriteria[<?=$neworder?>]">
+											<option value="all" selected>All</option>
+											<option value="first">First</option>
+											<option value="last">Last</option>
+											<option value="largestsize">Largest</option>
+											<option value="smallestsize">Smallest</option>
+											<option value="usesizecriteria">Use size criteria below</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
+									<td><input type="text" name="dd_numboldreps[<?=$neworder?>]"></td>
+								</tr>
+								<tr>
+									<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
+								</tr>
+								<tr>
+									<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
+									<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
+								</tr>
+								<tr>
+									<td class="label">Data format</td>
+									<td>
+										<select class="small" name="dd_dataformat[<?=$neworder?>]">
+											<option value="native" selected>Native</option>
+											<option value="dicom">DICOM</option>
+											<option value="nifti3d">Nifti 3D</option>
+											<option value="nifti4d">Nifti 4D</option>
+											<option value="analyze3d">Analyze 3D</option>
+											<option value="analyze4d">Analyze 4D</option>
+											<option value="bids">BIDS</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">g-zip</td>
+									<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
+								</tr>
+								<tr>
+									<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"</td>
+									<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1"></td>
+								</tr>
+								<tr>
+									<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
+									<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1"></td>
+								</tr>
+								<tr>
+									<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, noPE"></td>
+									<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1"></td>
+								</tr>
+								<tr>
+									<td class="label">Behavioral data directory format</td>
+									<td>
+										<select class="small" name="dd_behformat[<?=$neworder?>]">
+											<option value="behnone" selected>Don't download behavioral data</option>
+											<option value="behroot">Place in root (file.log)</option>
+											<option value="behrootdir">Place in directory in root (beh/file.log)</option>
+											<option value="behseries">Place in series (2/file.log)</option>
+											<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="label">Behavioral data directory name</td>
+									<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]"></td>
+								</tr>
+							</table>
+							<br>
+						</details>
+					</td>
+				</tr>
+				<? $neworder++; ?>
+				<? } ?>
+			</table>
+			<?
+			} /* end of the check to display the data specs */ ?>
+			
+			<br><br>
+			<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></div>
+			<br><br>
+			
+			<style type="text/css" media="screen">
+				#commandlist { 
+					position: relative;
+					width: 1000px;
+					height: 700px;
+					top: 0;
+					right: 0;
+					bottom: 0;
+					left: 0;
+				}
+				#supplementcommandlist { 
+					position: relative;
+					width: 1000px;
+					height: 300px;
+					top: 0;
+					right: 0;
+					bottom: 0;
+					left: 0;
+				}
+			</style>
+			</b>
+			<table>
+				<tr>
+					<td valign="top">
+					<?
+				$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				//PrintSQLTable($result);
+				?>
+			<textarea name="commandlist" style="font-weight:normal"><?
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$pipelinestep_id = $row['pipelinestep_id'];
+					$ps_desc = $row['ps_description'];
+					$ps_order = $row['ps_order'];
+					$ps_command = $row['ps_command'];
+					$ps_workingdir = $row['ps_workingdir'];
+					$ps_enabled = $row['ps_enabled'];
+					$ps_logged = $row['ps_logged'];
+					if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
+					if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
+					if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+echo "$ps_command $logged $ps_desc\n";
+					}
+					elseif ($ps_enabled) {
+echo "$ps_command     # $logged $ps_desc\n";
+					}
+					else {
+echo "#$ps_command     $logged $ps_desc\n";
+					}
+				}
+			?></textarea>
+			<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
+					</td>
+					<td valign="top" align="center">
+					<b>Available pipeline variables</b><br>
+					<span class="tiny">Click variable to insert at current editor location</span>
+					<br><br>
+					<table>
+						<tr><td class="pipelinevariable" onclick="insertText('{analysisrootdir}');" title="Full path to the root directory of the analysis">{analysisrootdir}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{last_ext_file}');" title="Finds last file (alphabetically) with extension">{last_ext_file}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{all_ext_files}');" title="Finds all files matching the extension">{all_ext_files}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{subjectuids}');" title="Space separated list of UIDs. For group analyses">{subjectuids}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{studydatetimes}');" title="Space separated list of datetimes, ordered by datetime. For group analyses">{studydatetimes}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{analysisgroupid}');" title="Group analysis ID">{analysisgroupid}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums}');" title="Space separated list of uidstudynums for all groups">{uidstudynums}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{numsubjects}');" title="Number of subjects from all groups">{numsubjects}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{groups}');" title="Space separated list of groups">{groups}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{numsubjects_groupname}');" title="Number of subjects (sessions) in the group specified">{numsubjects_groupname}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums_groupname}');" title="Space separated list of uidstudynums for the group specified">{uidstudynums_groupname}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
+						<tr><td class="pipelinevariable" onclick="insertText('{PROFILE}');" title="Enable profiling (measure RAM, CPU, disk IO usage) for this step using the <tt>time<tt> command. Will not work with certain linux commands such as <tt>export, for, while</tt>, etc">{PROFILE}</td></tr>
+					</table>
+					<br><br>
+					<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6" align="left">
+						<?
+							$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
+							$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+							if (mysqli_num_rows($result2) > 0) {
+								$open = "open";
+							}
+							else {
+								$open = "";
+							}
+						?>
+						<details <?=$open?>>
+						<summary style="text-align:left; font-size:14pt; font-weight: bold; color:#214282;">Supplementary script commands</summary>
+						<br>
+						<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
+						<textarea name="supplementcommandlist"><?
+							while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+								$pipelinestep_id = $row2['pipelinestep_id'];
+								$ps_desc = $row2['ps_description'];
+								$ps_order = $row2['ps_order'];
+								$ps_command = $row2['ps_command'];
+								$ps_workingdir = $row2['ps_workingdir'];
+								$ps_enabled = $row2['ps_enabled'];
+								$ps_logged = $row2['ps_logged'];
+								if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
+								if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
+								if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+echo "$ps_command $logged $ps_desc\n";
+								}
+								elseif ($ps_enabled) {
+echo "$ps_command     # $logged $ps_desc\n";
+								}
+								else {
+echo "#$ps_command     $logged $ps_desc\n";
+								}
+							}
+						?></textarea>
+						<span class="editoroptions" onClick="toggleWrap2()">Toggle text wrap</span>
+						</details>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6" align="center">
+						<br><br>
+						<input type="submit" <?=$disabled?> value="Save Pipeline Details">
+					</td>
+				</tr>
+				</form>
+			</table>
+			</fieldset>
+			<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>
+			<script>
+				var editor = ace.edit("commandlist");
+				var textarea = $('textarea[name="commandlist"]').hide();
+				editor.setFontSize(12);
+				editor.getSession().setMode("ace/mode/sh");
+				editor.getSession().setUseWrapMode(false);
+				editor.getSession().setValue(textarea.val());
+				<?if ($readonly) { ?>
+				editor.setReadOnly();
+				<? } ?>
+				editor.getSession().on('change', function(){
+				  textarea.val(editor.getSession().getValue());
+				});
+				editor.setTheme("ace/theme/xcode");
+				
+				function insertText(text) {
+					editor.insert(text);
+				}
+				function toggleWrap() {
+					if (editor.getSession().getUseWrapMode()) {
+						editor.getSession().setUseWrapMode(false);
+					}
+					else {
+						editor.getSession().setUseWrapMode(true);
+					}
+				}
+				$(window).bind('keydown', function(event) {
+					if (event.ctrlKey || event.metaKey) {
+						switch (String.fromCharCode(event.which).toLowerCase()) {
+							case 's':
+								event.preventDefault();
+								//alert('ctrl-s');
+								document.getElementById('stepsform').submit();
+								break;
+						}
+					}
+				});
+				
+				var editor2 = ace.edit("supplementcommandlist");
+				var textarea2 = $('textarea[name="supplementcommandlist"]').hide();
+				editor2.setFontSize(12);
+				editor2.getSession().setMode("ace/mode/sh");
+				editor2.getSession().setUseWrapMode(false);
+				editor2.getSession().setValue(textarea2.val());
+				<?if ($readonly) { ?>
+				editor2.setReadOnly();
+				<? } ?>
+				editor2.getSession().on('change', function(){
+				  textarea2.val(editor2.getSession().getValue());
+				});
+				editor2.setTheme("ace/theme/xcode");
+				
+				function insertText2(text) {
+					editor2.insert(text);
+				}
+				function toggleWrap2() {
+					if (editor2.getSession().getUseWrapMode()) {
+						editor2.getSession().setUseWrapMode(false);
+					}
+					else {
+						editor2.getSession().setUseWrapMode(true);
+					}
+				};
+			</script>
+		</div>
+		<!-- operations tab -->
+		<div class="ui bottom attached <?=$tab_fouractive?> tab segment" data-tab="fourth">
+			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reprocess ignored studies</a>
+			</p>
+			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
+			<? if (!$readonly) { ?>
+			<p>
+			<form action="pipelines.php" method="post">
+			<input type="hidden" name="action" value="changeowner">
+			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="returntab" value="operations">
+			<div class="ui labeled action input">
+				<label for="modality" class="ui label grey"><i class="exchange alternate icon"></i> New pipeline owner</label>
+				<select class="ui selection dropdown" name="newuserid" id="newuserid" required>
+				<option value="">(Select new owner)</option>
+				<?
+					$sqlstring="select * from users where user_enabled = 1 order by username";
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$userid = $row['user_id'];
+						$username = $row['username'];
+						$userfullname = $row['user_fullname'];
+						if ($username != "") {
+							if ($userfullname != "") {
+								$userfullname = "[$userfullname]";
+							}
+							?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+						}
+					}
+				?>
+				</select>
+				<button class="ui button" type="submit">Change</button>
+			</div>
+			</form>
+			</p>
+			<br><br>
+			<p><a href="pipelines.php?action=detach$id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
+			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
+			<? } ?>
+		</div>
 		
+		<? if ($formaction == "update") { ?>
+			<script>
+				function GetNewPipelineName(){
+					var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
+					if (newname != null){
+					  $("#newname").attr("value", newname);
+					  document.copypipeline.submit();
+				   }
+				}
+			</script>
+			<form action="pipelines.php" method="post" name="copypipeline">
+			<input type="hidden" name="action" value="copy">
+			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="newname" id="newname" value="<?=$id?>">
+			</form>
+		<? } ?>
+
+		<? if ($type == "edit") { ?>
 		<script>
 			function addParam(value,id){
 				var TheTextBox = document.getElementById(id);
 				TheTextBox.value = TheTextBox.value + ' ' + value;
 			}
 		</script>
-
-		
-		<fieldset style="border: 3px solid #999; border-radius:5px; background-color: #fff;">
-			<legend style="background-color: #3B5998; color:white; padding:5px 10px; border-radius:5px"> Pipeline Details </legend>
-		<form method="post" action="pipelines.php" name="stepsform" id="stepsform">
-		<input type="hidden" name="action" value="updatepipelineoptions">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<?
-			if (($level == 1) || (($level == 2) && ($dependency == ''))) {
-		?>
-		<br>
-		<style>
-			td.dataheader { padding: 7px; border-bottom: 2px solid #aaa; background-color: #eee; text-align: center }
-		</style>
-		
-		<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;" class="level1">Options</div>
-		<br>
-
-		<table class="entrytable">
-			<tr>
-				<td class="label" valign="top">Successful files <img src="images/help.gif" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></td>
-				<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
-				<span class="tiny">Comma seperated list of files (relative paths)</span></td>
-			</tr>
-			<tr>
-				<td class="label" valign="top">Results script <img src="images/help.gif" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></td>
-				<td valign="top">
-					<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
-				</td>
-			</tr>
-			<tr class="level1">
-				<td class="label" valign="top">Pipeline dependency<br>
-				</td>
-				<td valign="top">
-					<table class="entrytable">
-						<tr>
-							<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">it is a child pipeline of...</span></td>
-							<td valign="top">
-								<select name="dependency[]" id="dependency" <?=$disabled?> multiple="multiple" size="7">
-									<option value="" <? if ($dependency == "") { echo "selected"; } ?>>(No dependency)</option>
-									<?
-										$sqlstring = "select * from pipelines order by pipeline_name";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$d_name = $row['pipeline_name'];
-											$d_id = $row['pipeline_id'];
-											$d_ver = $row['pipeline_version'];
-											
-											if (($d_name != "") && ($d_id != "")) {
-												/* get the number of analyses in the pipeline */
-												$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
-												$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-												$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-												$nummembers = $rowA['count'];
-												
-												if (in_array($d_id, explode(",",$dependency))) {
-													$selected = "selected";
-													$dependencies[] = $d_name;
-												}
-												else { $selected = ""; }
-												
-												if ($id != $d_id) {
-													?>
-													<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?>  [<?=$nummembers?>]</option>
-													<?
-												}
-											}
-										}
-									?>
-								</select><br>
-								<span class="tiny"><u>Ctrl+click</u> to select multiple</span>
-							</td>
-						</tr>
-						<tr>
-							<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
-							<td valign="top">
-								<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
-								<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
-							</td>
-						</tr>
-						<tr>
-							<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
-							<td valign="top">
-								<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>> root directory <img src="images/help.gif" title="copies all files into the analysis root directory <code>{analysisrootdir}/*</code>"><br>
-								<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>> sub-directory <img src="images/help.gif" title="copies dependency into a subdirectory of the analysis <code>{analysisrootdir}/<i>DependencyName</i>/*</code>">
-							</td>
-						</tr>
-						<tr>
-							<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">File linking type</td>
-							<td valign="top">
-								<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
-								<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
-								<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-			<tr class="level1">
-				<td class="label" valign="top">Study Group(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified groups"><br>
-				<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
-				</td>
-				<td valign="top">
-					<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" size="7">
-						<option value="" <? if ($groupid == "") { echo "selected"; } ?>>(No group)</option>
-						<?
-							$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$g_name = $row['group_name'];
-								$g_id = $row['group_id'];
-								
-								/* get the number of members of the group */
-								$sqlstringA = "select count(*) 'count' from group_data where group_id = $g_id";
-								$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-								$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-								$nummembers = $rowA['count'];
-								
-								if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
-								else { $selected = ""; }
-								?>
-								<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
-								<?
-							}
-						?>
-					</select><br>
-					<span class="tiny"><u>Ctrl+click</u> to select multiple</span>
-				</td>
-			</tr>
-			<tr class="level1">
-				<td class="label" valign="top">Project(s) <img src="images/help.gif" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></td>
-				<td valign="top">
-					<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" size="7">
-						<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Any project)</option>
-						<?
-							$sqlstring = "select * from projects order by project_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$p_name = $row['project_name'];
-								$p_id = $row['project_id'];
-								
-								if (in_array($p_id, explode(",",$projectid))) { $selected = "selected"; }
-								else { $selected = ""; }
-								?>
-								<option value="<?=$p_id?>" <?=$selected?>><?=$p_name?></option>
-								<?
-							}
-						?>
-					</select><br>
-					<span class="tiny"><u>Ctrl+click</u> to select multiple</span>
-				</td>
-			</tr>
-			<tr class="level2">
-				<td class="label" valign="top">Group by Subject <img src="images/help.gif" title="<b>Group by Subject</b><br><br>Useful for longitudinal analyses. <u>Second level pipelines only</u>"><br>
-				<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
-				</td>
-				<td valign="top" title="<b>Group by Subject</b><br><br>Useful for longitudinal studies"><input type="checkbox" name="groupbysubject" value="1" <? if ($groupbysubject) { echo "checked"; } ?>></td>
-			</tr>
-		</table>
-
-		<br>
-		<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;" class="level1">Data</div>
-		<br>
-		
-		<table>
-			<tr>
-				<td style="vertical-align: top; padding: 2px 10px;">
-					<details>
-					<summary>Data Graph</summary>
-					<?=GetDataGraph($id, $version, $dependencies)?>
-					</details>
-				</td>
-				<td style="vertical-align: top; padding: 2px 10px;">
-					<details>
-					<summary>Test Search<br><span class="tiny">Check how many studies will be found based on the search criteria. This search has a 30 sec time limit.</span></summary>
-						<script>
-							function TestDataSearch() {
-								var xhttp = new XMLHttpRequest();
-
-								document.getElementById("searchwaiting").innerHTML = "Searching... <img src='images/SpinningSquirrel.gif'>";
-								
-								/* setup the callback function to get the response */
-								xhttp.onreadystatechange = function() {
-									if (this.readyState == 4 && this.status == 200) {
-										document.getElementById("testsearchresult").innerHTML = this.responseText;
-										document.getElementById("searchwaiting").innerHTML = "Done searching";
-									}
-								};
-								
-								/* create the XML http request */
-								var pipelineid = <?=$id?>;
-								var dependency = $('#dependency').val().join();
-								var deplevel = $('#deplevel').val();
-								var groupid = $('#groupid').val().join();
-								var projectid = $('#projectid').val().join();
-
-								var dd_isprimary = $('#dd_isprimary').val();
-								
-								var dd_enabled = $("input[name^='dd_enabled']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-								
-								var dd_optional = $("input[name^='dd_optional']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								var dd_order = $("input[name^='dd_order']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-								
-								var dd_protocol = $("input[name^='dd_protocol']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-								
-								var dd_modality = $("select[name^='dd_modality']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								var dd_datalevel = $("select[name^='dd_datalevel']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								var dd_studyassoc = $("select[name^='dd_studyassoc']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								var dd_imagetype = $("input[name^='dd_imagetype']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join("|");
-
-								var dd_seriescriteria = $("input[name^='dd_seriescriteria']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								var dd_numboldreps = $("input[name^='dd_numboldreps']").map(function (idx, ele) {
-								   return $(ele).val();
-								}).get().join();
-
-								xhttp.open("GET", "ajaxapi.php?action=pipelinetestsearch&pipelineid=" + pipelineid + "&dependency=" + dependency + "&deplevel=" + deplevel + "&groupid=" + groupid + "&projectid=" + projectid + "&dd_isprimary=" + dd_isprimary + "&dd_enabled=" + dd_enabled + "&dd_optional=" + dd_optional + "&dd_order=" + dd_order + "&dd_protocol=" + dd_protocol + "&dd_modality=" + dd_modality + "&dd_datalevel=" + dd_datalevel + "&dd_studyassoc=" + dd_studyassoc + "&dd_imagetype=" + dd_imagetype + "&dd_seriescriteria=" + dd_seriescriteria + "&dd_numboldreps=" + dd_numboldreps, true);
-								xhttp.send();
-							}
-						</script>
-						<input type="button" value="Run test search" onClick="TestDataSearch()"> <span id="searchwaiting" style="color: red; font-weight: bold;"></span>
-						<br>
-						<div id="testsearchresult" style="padding: 15px;"></div>
-					</details>
-				</td>
-			</tr>
-		</table>
-		
-		<table class="level1" cellspacing="0" style="border: 1px solid #aaa;">
-			<tr style="color:#444; font-size:10pt;">
-				<td class="dataheader"><b>Enabled</b></td>
-				<td class="dataheader"><b>Optional</b></td>
-				<td class="dataheader" title="<b>Primary</b> This flag indicates which criteria will specify the primary study which will be later used in the analysis listing. The primary study determines the primary modality, which also determines how other modalities and data steps are related to the primary study. Primary study also determines how dependent pipelines act."><b>Primary</b> <img src="images/help.gif"></td>
-				<td class="dataheader"><b>Order</b></td>
-				<td class="dataheader"><b>Protocol</b></td>
-				<td class="dataheader"><b>Modality</b></td>
-				<td class="dataheader" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."><b>Data source</b> <img src="images/help.gif"></td>
-				<td class="dataheader" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"><b>Subject linkage</b> <img src="images/help.gif"></td>
-				<td class="dataheader">Output</td>
-			</tr>
-		<?
-		$neworder = 1;
-		/* display all other rows, sorted by order */
-		$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$pipelinedatadef_id = $row['pipelinedatadef_id'];
-			$dd_order = $row['pdd_order'];
-			$dd_isprimaryprotocol = $row['pdd_isprimaryprotocol'];
-			$dd_seriescriteria = $row['pdd_seriescriteria'];
-			$dd_protocol = $row['pdd_protocol'];
-			$dd_modality = $row['pdd_modality'];
-			$dd_dataformat = $row['pdd_dataformat'];
-			$dd_imagetype = $row['pdd_imagetype'];
-			$dd_gzip = $row['pdd_gzip'];
-			$dd_location = $row['pdd_location'];
-			$dd_useseries = $row['pdd_useseries'];
-			$dd_preserveseries = $row['pdd_preserveseries'];
-			$dd_usephasedir = $row['pdd_usephasedir'];
-			$dd_behformat = $row['pdd_behformat'];
-			$dd_behdir = $row['pdd_behdir'];
-			$dd_numboldreps = $row['pdd_numboldreps'];
-			$dd_enabled = $row['pdd_enabled'];
-			$dd_assoctype = $row['pdd_assoctype'];
-			$dd_optional = $row['pdd_optional'];
-			$dd_datalevel = $row['pdd_level'];
-			$dd_numimagescriteria = $row['pdd_numimagescriteria'];
-			
-			$dd[$dd_order]['isprimaryprotocol'] = $row['pdd_isprimaryprotocol'];
-			$dd[$dd_order]['seriescriteria'] = $row['pdd_seriescriteria'];
-			$dd[$dd_order]['protocol'] = $row['pdd_protocol'];
-			$dd[$dd_order]['modality'] = $row['pdd_modality'];
-			$dd[$dd_order]['dataformat'] = $row['pdd_dataformat'];
-			$dd[$dd_order]['imagetype'] = $row['pdd_imagetype'];
-			$dd[$dd_order]['gzip'] = $row['pdd_gzip'];
-			$dd[$dd_order]['location'] = $row['pdd_location'];
-			$dd[$dd_order]['useseries'] = $row['pdd_useseries'];
-			$dd[$dd_order]['preserveseries'] = $row['pdd_preserveseries'];
-			$dd[$dd_order]['usephasedir'] = $row['pdd_usephasedir'];
-			$dd[$dd_order]['behformat'] = $row['pdd_behformat'];
-			$dd[$dd_order]['behdir'] = $row['pdd_behdir'];
-			$dd[$dd_order]['numboldreps'] = $row['pdd_numboldreps'];
-			$dd[$dd_order]['enabled'] = $row['pdd_enabled'];
-			$dd[$dd_order]['assoctype'] = $row['pdd_assoctype'];
-			$dd[$dd_order]['optional'] = $row['pdd_optional'];
-			$dd[$dd_order]['datalevel'] = $row['pdd_level'];
-			$dd[$dd_order]['numimagescriteria'] = $row['pdd_numimagescriteria'];
-			
-			?>
-			<script>
-				$(document).ready(function() {
-					$('.row<?=$neworder?>').mouseover(function() {
-						$('.row<?=$neworder?>').css('background-color','#eee');
-					})
-					.mouseout(function() {
-						$('.row<?=$neworder?>').css('background-color','');
-					});
-				});
-			</script>
-			<style>
-				.row1 { background-color: lightyellow; }
-			</style>
-			<tr class="row<?=$neworder?>">
-				<td width="10" valign="top" style="padding: 5px;" align="center">
-					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>>
-				</td>
-				<td valign="top" style="padding: 5px" align="center">
-					<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>>
-				</td>
-				<td valign="top" style="padding: 5px" align="center">
-					<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($dd_isprimaryprotocol) { echo "checked"; } ?>>
-				</td>
-				<td style="padding: 5px" valign="top">
-					<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
-				</td>
-				<td valign="top" style="padding: 5px">
-					<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-				</td>
-				<td id="row<?=$neworder?>" valign="top" style="padding: 5px">
-					<select class="small" name="dd_modality[<?=$neworder?>]">
-						<option value="">(Select modality)</option>
-					<?
-						$sqlstringA = "select * from modalities order by mod_desc";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$mod_code = $rowA['mod_code'];
-							$mod_desc = $rowA['mod_desc'];
-							
-							/* check if the modality table exists */
-							$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-							$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-							if (mysqli_num_rows($result2) > 0) {
-							
-								/* if the table does exist, allow the user to search on it */
-								if ($mod_code == $dd_modality) {
-									$selected = "selected";
-								}
-								else {
-									$selected = "";
-								}
-								?>
-								<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
-								<?
-							}
-						}
-					?>
-					</select>
-				</td>
-				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<select name="dd_datalevel[<?=$neworder?>]">
-						<option value="">(select data level)
-						<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
-						<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
-					</select>
-				</td>
-				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<select name="dd_studyassoc[<?=$neworder?>]">
-						<option value="">(select study link)
-						<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
-						<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
-					</select>
-				</td>
-				<td valign="middle" style="padding-left:5px">
-					<details class="level1" style="padding:0px;margin:0px">
-						<summary style="padding:0px; font-size:9pt">Options</summary>
-						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
-							<tr>
-								<td class="label">Image type</td>
-								<td title="Comma separated list of image types"><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
-							</tr>
-							<tr>
-								<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
-								<td>
-									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
-										<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
-										<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
-										<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
-										<option value="largestsize" <? if ($dd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
-										<option value="smallestsize" <? if ($dd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
-										<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use size criteria below</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
-								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
-								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
-							</tr>
-							<tr>
-								<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
-							</tr>
-							<tr>
-								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
-								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>"></td>
-							</tr>
-							<tr>
-								<td class="label">Data format</td>
-								<td>
-									<select class="small" name="dd_dataformat[<?=$neworder?>]">
-										<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
-										<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
-										<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
-										<option value="nifti4d" <? if ($dd_dataformat == "nifti4d") { echo "selected"; } ?>>Nifti 4D</option>
-										<option value="analyze3d" <? if ($dd_dataformat == "analyze3d") { echo "selected"; } ?>>Analyze 3D</option>
-										<option value="analyze4d" <? if ($dd_dataformat == "analyze4d") { echo "selected"; } ?>>Analyze 4D</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">g-zip</td>
-								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>></td>
-							</tr>
-							<tr>
-								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></td>
-								<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>></td>
-							</tr>
-							<tr>
-								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
-								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>></td>
-							</tr>
-							<tr>
-								<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></td>
-								<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>></td>
-							</tr>
-							<tr>
-								<td class="label">Behavioral data directory format</td>
-								<td>
-									<select class="small" name="dd_behformat[<?=$neworder?>]">
-										<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
-										<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
-										<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
-										<option value="behseries" <? if ($dd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
-										<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Behavioral data directory name</td>
-								<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>"></td>
-							</tr>
-						</table>
-						<br>
-					</details>
-				</td>
-			</tr>
-			<?
-			$neworder++;
-		}
-		for ($ii=0;$ii<5;$ii++) {
-		?>
-			<script>
-				$(document).ready(function() {
-					$('.row<?=$neworder?>').mouseover(function() {
-						$('.row<?=$neworder?>').css('background-color','#eee');
-					})
-					.mouseout(function() {
-						$('.row<?=$neworder?>').css('background-color','');
-					});
-				});
-			</script>
-			<tr class="row<?=$neworder?>">
-				<td width="10" valign="top" style="padding: 5px;" align="center">
-					<input class="small" type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1">
-				</td>
-				<td valign="top" style="padding: 5px" align="center">
-					<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1">
-				</td>
-				<td valign="top" style="padding: 5px" align="center">
-					<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($neworder == 1) { echo "checked"; } ?>>
-				</td>
-				<td style="padding: 5px" valign="top">
-					<input class="small" type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
-				</td>
-				<td valign="top" style="padding: 5px">
-					<input class="small" type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
-				</td>
-				<td valign="top" style="padding: 5px">
-					<select class="small" name="dd_modality[<?=$neworder?>]">
-						<option value="">(Select modality)</option>
-					<?
-						$sqlstringA = "select * from modalities order by mod_desc";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$mod_code = $rowA['mod_code'];
-							$mod_desc = $rowA['mod_desc'];
-							
-							/* check if the modality table exists */
-							$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-							//echo $sqlstring2;
-							$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-							if (mysqli_num_rows($result2) > 0) {
-								?>
-								<option value="<?=$mod_code?>"><?=$mod_code?></option>
-								<?
-							}
-						}
-					?>
-					</select>
-				</td>
-				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<select name="dd_datalevel[<?=$neworder?>]">
-						<option value="">(select data level)
-						<option value="study" selected>Study
-						<option value="subject">Subject
-					</select>
-				</td>
-				<td valign="top" style="font-size:8pt; padding: 5px" align="left">
-					<select name="dd_studyassoc[<?=$neworder?>]">
-						<option value="">(select study link)
-						<option value="nearestintime" selected>Nearest in time
-						<option value="samestudytype">Same study type
-					</select>
-				</td>
-				<td valign="middle" style="padding-left:5px;">
-					<details class="level1" style="padding:0px;margin:0px">
-						<summary style="padding:0px; font-size:9pt">Options</summary>
-						<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
-							<tr>
-								<td class="label">Image type</td>
-								<td><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30"></td>
-							</tr>
-							<tr>
-								<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
-								<td>
-									<select class="small" name="dd_seriescriteria[<?=$neworder?>]">
-										<option value="all" selected>All</option>
-										<option value="first">First</option>
-										<option value="last">Last</option>
-										<option value="largestsize">Largest</option>
-										<option value="smallestsize">Smallest</option>
-										<option value="usesizecriteria">Use size criteria below</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
-								<td><input type="text" name="dd_numboldreps[<?=$neworder?>]"></td>
-							</tr>
-							<tr>
-								<td colspan="2" style="font-weight:bold; border-top: 1px solid gray">Output Format</td>
-							</tr>
-							<tr>
-								<td class="label">Directory <img src="images/help.gif" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"><br><span class="tiny">Relative to analysis root</span></td>
-								<td><input class="small" type="text" name="dd_location[<?=$neworder?>]" size="30"></td>
-							</tr>
-							<tr>
-								<td class="label">Data format</td>
-								<td>
-									<select class="small" name="dd_dataformat[<?=$neworder?>]">
-										<option value="native" selected>Native</option>
-										<option value="dicom">DICOM</option>
-										<option value="nifti3d">Nifti 3D</option>
-										<option value="nifti4d">Nifti 4D</option>
-										<option value="analyze3d">Analyze 3D</option>
-										<option value="analyze4d">Analyze 4D</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">g-zip</td>
-								<td><input class="small" type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1"></td>
-							</tr>
-							<tr>
-								<td class="label">Use series directories <img src="images/help.gif" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"</td>
-								<td><input class="small" type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1"></td>
-							</tr>
-							<tr>
-								<td class="label">Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></td>
-								<td><input class="small" type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1"></td>
-							</tr>
-							<tr>
-								<td class="label">Phase encoding direction <img src="images/help.gif" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, noPE"></td>
-								<td><input class="small" type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1"></td>
-							</tr>
-							<tr>
-								<td class="label">Behavioral data directory format</td>
-								<td>
-									<select class="small" name="dd_behformat[<?=$neworder?>]">
-										<option value="behnone" selected>Don't download behavioral data</option>
-										<option value="behroot">Place in root (file.log)</option>
-										<option value="behrootdir">Place in directory in root (beh/file.log)</option>
-										<option value="behseries">Place in series (2/file.log)</option>
-										<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Behavioral data directory name</td>
-								<td><input class="small" type="text" name="dd_behdir[<?=$neworder?>]"></td>
-							</tr>
-						</table>
-						<br>
-					</details>
-				</td>
-			</tr>
-			<? $neworder++; ?>
-			<? } ?>
-		</table>
-		<?
-		} /* end of the check to display the data specs */ ?>
-		
-		<br><br>
-		<div style="text-align:left; font-size:16pt; padding: 3px 6px; font-weight: bold; color:#214282; border-bottom: 2px solid #ccc;">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></div>
-		<br><br>
-		
-		<style type="text/css" media="screen">
-			#commandlist { 
-				position: relative;
-				width: 1000px;
-				height: 700px;
-				top: 0;
-				right: 0;
-				bottom: 0;
-				left: 0;
-			}
-			#supplementcommandlist { 
-				position: relative;
-				width: 1000px;
-				height: 300px;
-				top: 0;
-				right: 0;
-				bottom: 0;
-				left: 0;
-			}
-		</style>
-		</b>
-		<table>
-			<tr>
-				<td valign="top">
-				<?
-			$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			//PrintSQLTable($result);
-			?>
-		<textarea name="commandlist" style="font-weight:normal"><?
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$pipelinestep_id = $row['pipelinestep_id'];
-				$ps_desc = $row['ps_description'];
-				$ps_order = $row['ps_order'];
-				$ps_command = $row['ps_command'];
-				$ps_workingdir = $row['ps_workingdir'];
-				$ps_enabled = $row['ps_enabled'];
-				$ps_logged = $row['ps_logged'];
-				if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-				if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-				if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
-echo "$ps_command $logged $ps_desc\n";
-				}
-				elseif ($ps_enabled) {
-echo "$ps_command     # $logged $ps_desc\n";
-				}
-				else {
-echo "#$ps_command     $logged $ps_desc\n";
-				}
-			}
-		?></textarea>
-		<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
-				</td>
-				<td valign="top" align="center">
-				<b>Available pipeline variables</b><br>
-				<span class="tiny">Click variable to insert at current editor location</span>
-				<br><br>
-				<table>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisrootdir}');" title="Full path to the root directory of the analysis">{analysisrootdir}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{last_ext_file}');" title="Finds last file (alphabetically) with extension">{last_ext_file}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{all_ext_files}');" title="Finds all files matching the extension">{all_ext_files}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{subjectuids}');" title="Space separated list of UIDs. For group analyses">{subjectuids}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{studydatetimes}');" title="Space separated list of datetimes, ordered by datetime. For group analyses">{studydatetimes}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{analysisgroupid}');" title="Group analysis ID">{analysisgroupid}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums}');" title="Space separated list of uidstudynums for all groups">{uidstudynums}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects}');" title="Number of subjects from all groups">{numsubjects}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{groups}');" title="Space separated list of groups">{groups}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{numsubjects_groupname}');" title="Number of subjects (sessions) in the group specified">{numsubjects_groupname}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{uidstudynums_groupname}');" title="Space separated list of uidstudynums for the group specified">{uidstudynums_groupname}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
-					<tr><td class="pipelinevariable" onclick="insertText('{PROFILE}');" title="Enable profiling (measure RAM, CPU, disk IO usage) for this step using the <tt>time<tt> command. Will not work with certain linux commands such as <tt>export, for, while</tt>, etc">{PROFILE}</td></tr>
-				</table>
-				<br><br>
-				<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="6" align="left">
-					<?
-						$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
-						$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-						if (mysqli_num_rows($result2) > 0) {
-							$open = "open";
-						}
-						else {
-							$open = "";
-						}
-					?>
-					<details <?=$open?>>
-					<summary style="text-align:left; font-size:14pt; font-weight: bold; color:#214282;">Supplementary script commands</summary>
-					<br>
-					<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
-					<textarea name="supplementcommandlist"><?
-						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-							$pipelinestep_id = $row2['pipelinestep_id'];
-							$ps_desc = $row2['ps_description'];
-							$ps_order = $row2['ps_order'];
-							$ps_command = $row2['ps_command'];
-							$ps_workingdir = $row2['ps_workingdir'];
-							$ps_enabled = $row2['ps_enabled'];
-							$ps_logged = $row2['ps_logged'];
-							if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-							if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-							if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
-echo "$ps_command $logged $ps_desc\n";
-							}
-							elseif ($ps_enabled) {
-echo "$ps_command     # $logged $ps_desc\n";
-							}
-							else {
-echo "#$ps_command     $logged $ps_desc\n";
-							}
-						}
-					?></textarea>
-					<span class="editoroptions" onClick="toggleWrap2()">Toggle text wrap</span>
-					</details>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="6" align="center">
-					<br><br>
-					<input type="submit" <?=$disabled?> value="Save Pipeline Details">
-				</td>
-			</tr>
-			</form>
-		</table>
-		</fieldset>
-		<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>
-		<script>
-			var editor = ace.edit("commandlist");
-			var textarea = $('textarea[name="commandlist"]').hide();
-			editor.setFontSize(12);
-			editor.getSession().setMode("ace/mode/sh");
-			editor.getSession().setUseWrapMode(false);
-			editor.getSession().setValue(textarea.val());
-			<?if ($readonly) { ?>
-			editor.setReadOnly();
-			<? } ?>
-			editor.getSession().on('change', function(){
-			  textarea.val(editor.getSession().getValue());
-			});
-			editor.setTheme("ace/theme/xcode");
-			
-			function insertText(text) {
-				editor.insert(text);
-			}
-			function toggleWrap() {
-				if (editor.getSession().getUseWrapMode()) {
-					editor.getSession().setUseWrapMode(false);
-				}
-				else {
-					editor.getSession().setUseWrapMode(true);
-				}
-			}
-			$(window).bind('keydown', function(event) {
-				if (event.ctrlKey || event.metaKey) {
-					switch (String.fromCharCode(event.which).toLowerCase()) {
-						case 's':
-							event.preventDefault();
-							//alert('ctrl-s');
-							document.getElementById('stepsform').submit();
-							break;
-					}
-				}
-			});
-			
-			var editor2 = ace.edit("supplementcommandlist");
-			var textarea2 = $('textarea[name="supplementcommandlist"]').hide();
-			editor2.setFontSize(12);
-			editor2.getSession().setMode("ace/mode/sh");
-			editor2.getSession().setUseWrapMode(false);
-			editor2.getSession().setValue(textarea2.val());
-			<?if ($readonly) { ?>
-			editor2.setReadOnly();
-			<? } ?>
-			editor2.getSession().on('change', function(){
-			  textarea2.val(editor2.getSession().getValue());
-			});
-			editor2.setTheme("ace/theme/xcode");
-			
-			function insertText2(text) {
-				editor2.insert(text);
-			}
-			function toggleWrap2() {
-				if (editor2.getSession().getUseWrapMode()) {
-					editor2.getSession().setUseWrapMode(false);
-				}
-				else {
-					editor2.getSession().setUseWrapMode(true);
-				}
-			};
-		</script>
-		
-		<br><br>
-		<br><br>
-		
 		<?
 		}
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayPipelineStatus -------------- */
-	/* -------------------------------------------- */
-	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
-		if (!ValidID($id,'Pipeline ID - M')) { return; }
-
-		?>
-		<div align="center">
-			<table width="60%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #444;">
-				<tr>
-					<td style="color: #fff; background-color: #444; font-weight: bold; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
-				</tr>
-				<tr>
-					<td align="center">
-					<table cellspacing="0" cellpadding="5" width="100%">
-						<tr>
-							<?
-								if ($isenabled) {
-									?>
-									<td align="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkgreen">
-										<table>
-											<tr>
-												<td valign="middle">
-													<a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-on.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline enabled, click to disable"></a>
-												</td>
-												<td valign="middle" style="padding-left: 20px">
-													<b>Enabled</b>
-												</td>
-											</tr>
-										</table>
-									</td>
-									<?
-								}
-								else {
-									?>
-									<td align="center" valign="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkred">
-										<table>
-											<tr>
-												<td valign="middle">
-													<a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-off.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline disabled, click to enable"></a>
-												</td>
-												<td valign="middle" style="padding-left: 20px">
-													<b>Disabled</b>
-												</td>
-											</tr>
-										</table>
-									</td>
-									<?
-								}
-							?>
-							<?
-							if ($pipeline_status == "running") {
-								?>
-								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"><b>Status:</b> Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)<br>
-								<span style="font-size: 8pt">Jobs are being (or waiting to be) submitted</span>
-								</td>
-							<? } else { ?>
-								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><b>Status:</b><?=$pipeline_status ?><br>
-								<span style="font-size: 8pt">Jobs are not being submitted</span>
-								</td>
-							<? } ?>
-							<td align="center"><b>Last status message:</b><br><?=$pipeline_statusmessage ?></td>
-							<td style="font-size:8pt">
-								<b>Last start</b> <?=$pipeline_laststart ?><br>
-								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
-								<b>Last check</b> <?=$pipeline_lastcheck ?><br>
-							</td>
-						</tr>
-					</table>
-					</td>
-				</tr>
-			</table>
-			<br><br>
-		</div>
-		<?
-	}
-	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayVersion --------------------- */
@@ -2464,6 +2473,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						$projectid = $row['pipeline_projectid'];
 						$grouptype = $row['pipeline_grouptype'];
 						$groupbysubject = $row['pipeline_groupbysubject'];
+						$outputbids = $row['pipeline_outputbids'];
 						$dynamicgroupid = $row['pipeline_dynamicgroupid'];
 						$completefiles = $row['pipeline_completefiles'];
 						$resultsscript = $row['pipeline_resultsscript'];
@@ -2498,6 +2508,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<tr>
 								<td>Group by subject</td>
 								<td><?=$groupbysubject?></td>
+							</tr>
+							<tr>
+								<td>Output BIDS</td>
+								<td><?=$outputbids?></td>
 							</tr>
 							<tr>
 								<td>Dependency Dir</td>
@@ -2770,10 +2784,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 			if (trim($username) == "") { $username = "(blank)"; }
 			?>
 			<br><br>
+			<!--
 			<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
 				<tr>
 					<td style="background-color: #DDD; padding:5px">
 			<b style="color: #00008B;font-size:14pt"><?=$username?></b> &nbsp; &nbsp; <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/>
+			-->
 			<script type="text/javascript">
 				function filterTable(event) {
 					var filter = event.target.value.toUpperCase();
@@ -2792,14 +2808,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 				document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
 			</script>
-					</td>
+			<!--		</td>
 				</tr>
-			</table>
-			<table class="smallgraydisplaytable" id="pipelinetable<?=$username?>" width="100%">
+			</table>-->
+			<a href="pipelines.php?action=addform" class="ui primary button"><i class="plus square outline icon"></i>New Pipeline</a>
+			<table class="ui selectable table" id="pipelinetable<?=$username?>" width="100%">
 				<thead>
 					<tr style="vertical-align: top;text-align:left">
 						<th style="font-size:12pt">Pipeline Group</th>
-						<th style="font-size:12pt">Name <span class="tiny">Mouseover for description</span></th>
+						<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/></th>
 						<th style="font-size:12pt" align="right">Level</th>
 						<th style="font-size:12pt">Owner<br></th>
 						<th style="font-size:12pt">Status</th>

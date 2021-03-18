@@ -241,7 +241,7 @@
 				});
 				</script>
 			
-				<table class="smallgraydisplaytable">
+				<table class="ui small celled selectable grey very compact table">
 					<thead>
 						<tr>
 							<th>Add to Instance &nbsp;</th>
@@ -310,7 +310,7 @@
 		
 	?>
 
-	<table class="graydisplaytable">
+	<table class="ui celled selectable grey compact table">
 		<thead>
 			<tr>
 				<th>UID</th>
@@ -353,7 +353,7 @@
 	
 	<br><Br>
 	
-	<table class="graydisplaytable">
+	<table class="ui celled selectable grey compact table">
 		<thead>
 			<tr>
 				<th>Instance</th>

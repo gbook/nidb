@@ -128,6 +128,14 @@
 			RecheckSuccess($analysisids);
 			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
 			break;
+		case 'disable':
+			DisablePipeline($id);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			break;
+		case 'enable':
+			EnablePipeline($id);
+			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
 		case 'setanalysisnotes':
@@ -371,18 +379,6 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- DisablePipeline -------------------- */
-	/* -------------------------------------------- */
-	function DisablePipeline($id) {
-		/* check input parameters */
-		if (!ValidID($id,'Pipeline ID')) { return; }
-		
-		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- DisplayPipelineLists --------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineLists($id, $listtype) {
@@ -450,7 +446,7 @@
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		//NavigationBar("Analyses", $urllist);
 
-		DisplayPipelineStatus($pipeline_name, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($pipeline_name, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }
@@ -1032,7 +1028,7 @@
 		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		//NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
-		DisplayPipelineStatus($title, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($title, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 1000; }
@@ -1553,83 +1549,7 @@
 		}
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayPipelineStatus -------------- */
-	/* -------------------------------------------- */
-	function DisplayPipelineStatus($pipelinename, $isenabled, $id, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
-		
-		if (!ValidID($id,'Pipeline ID')) { return; }
-		
-		?>
-		<div align="center">
-			<table width="70%" cellspacing="0" cellpadding="0" style="border: 1px solid #444;">
-				<tr>
-					<td style="color: #fff; background-color: #444; font-size: 18pt; text-align: center; padding: 10px"><?=$pipelinename?></td>
-				</tr>
-				<tr>
-					<td align="center">
-					<table cellspacing="0" cellpadding="5" width="100%">
-						<tr>
-							<?
-								if ($isenabled) {
-									?>
-									<td align="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkgreen">
-										<table>
-											<tr>
-												<td valign="middle">
-													<a href="pipelines.php?action=disable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-on.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline enabled, click to disable"></a>
-												</td>
-												<td valign="middle" style="padding-left: 20px">
-													<b>Enabled</b>
-												</td>
-											</tr>
-										</table>
-									</td>
-									<?
-								}
-								else {
-									?>
-									<td align="center" valign="center" style="padding: 2px 30px; font-size:11pt; border: 1px solid darkred">
-										<table>
-											<tr>
-												<td valign="middle">
-													<a href="pipelines.php?action=enable&returnpage=pipeline&id=<?=$id?>"><img src="images/toggle-off.png" style="mix-blend-mode: multiply;" width="60px" title="Pipeline disabled, click to enable"></a>
-												</td>
-												<td valign="middle" style="padding-left: 20px">
-													<b>Disabled</b>
-												</td>
-											</tr>
-										</table>
-									</td>
-									<?
-								}
-							?>
-							<?
-							if ($pipeline_status == "running") {
-								?>
-								<td  align="center" style="padding: 2px 30px; background-color: #229320; color: #fff; font-size:11pt; border: 1px solid darkgreen"><b>Status:</b> Running (<a href="pipelines.php?action=reset&id=<?=$id?>" style="color: #ccc" title="Reset the status if you KNOW the pipeline has stopped running... ie, it hasn't updated the status in a couple days">reset</a>)
-								</td>
-							<? } else { ?>
-								<td  align="center" style="padding: 2px 30px; background-color: #8e3023; color: #fff; font-size:11pt; border: 1px solid darkred"><b>Status:</b><?=$pipeline_status ?></td>
-							<? } ?>
-							<td align="center"><b>Last status message:</b><br><?=$pipeline_statusmessage ?></td>
-							<td style="font-size:8pt">
-								<b>Last start</b> <?=$pipeline_laststart ?><br>
-								<b>Last finish</b> <?=$pipeline_lastfinish ?><br>
-								<b>Last check</b> <?=$pipeline_lastcheck ?><br>
-							</td>
-						</tr>
-					</table>
-					</td>
-				</tr>
-			</table>
-			<br><br>
-		</div>
-		<?
-	}
-	
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplayJob ------------------------- */
 	/* -------------------------------------------- */

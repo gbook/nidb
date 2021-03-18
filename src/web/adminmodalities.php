@@ -354,7 +354,7 @@
 								<td>
 									<details>
 										<summary style="font-size:9pt"><?=$count?> protocols</summary>
-										<table class="smallgraydisplaytable">
+										<table class="ui very small very compact celled selectable grey table">
 										<?
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$p = $rowA['pgitem_protocol'];

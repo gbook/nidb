@@ -1617,7 +1617,7 @@
 		
 		?>
 		The following LOCAL series were not found in the REMOTE database
-		<table class="smallgraydisplaytable">
+		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
 					<th>UID</th>

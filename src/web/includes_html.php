@@ -97,6 +97,7 @@
 		$('.menu .item').tab();
 		$('.ui.accordion').accordion({exclusive: false});
 		$('.ui.dropdown').dropdown({duration: 50});
+		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
 		
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.
