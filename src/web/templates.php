@@ -40,6 +40,7 @@
 	require "menu.php";
 
 	//PrintVariable($_POST);
+	//PrintVariable($_GET);
 
 	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
@@ -58,6 +59,7 @@
 	$newtemplatemodality = GetVariable("newtemplatemodality");
 	$visittype = GetVariable("visittype");
 	$modality = GetVariable("modality");
+	$itemprotocol = GetVariable("itemprotocol");
 	$protocols = GetVariable("protocols");
 	$studydesc = GetVariable("studydesc");
 	$studyoperator = GetVariable("studyoperator");
@@ -274,13 +276,26 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 	
+		//echo "function StudyTemplateForm($projectid, $templateid, $newtemplatename, $newtemplatemodality)";
 		
 		if (($templateid == "") || ($templateid == 0)) {
-			$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
+			/* check if this item name already exists */
+			$sqlstring = "select * from study_template where template_name = '$newtemplatename'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$templateid = mysqli_insert_id($GLOBALS['linki']);
-			$templatename = $newtemplatename;
-			$templatemodality = $newtemplatemodality;
+			if (mysqli_num_rows($result) > 1) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$templateid = $row['studytemplate_id'];
+				$templatename = $row['template_name'];
+				$templatemodality = $row['template_modality'];
+				DisplayNotice("Template named <b>$templatename</b> already exists. Displaying that template");
+			}
+			else {
+				$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$templateid = mysqli_insert_id($GLOBALS['linki']);
+				$templatename = $newtemplatename;
+				$templatemodality = $newtemplatemodality;
+			}
 		}
 		else {
 			$sqlstring = "select * from study_template where studytemplate_id = $templateid";
@@ -296,7 +311,7 @@
 				<div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
 			</div>
 			<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="updatetemplate">
+			<input type="hidden" name="action" value="updatestudytemplate">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
 			<input type="hidden" name="templateid" value="<?=$templateid?>">
 			<span class="tiny">Leave protocol blank to delete</span>
@@ -309,7 +324,9 @@
 			<?
 			$n=1;
 			$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by item_order";
+			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//PrintSQLTable($result);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$itemprotocol = $row['item_protocol'];
 				?>
@@ -319,6 +336,7 @@
 				</tr>
 				<?
 			}
+			/* add 5 blank rows */
 			for($i=0;$i<5;$i++) {
 				?>
 				<tr>
@@ -493,6 +511,7 @@
 	/* ------- UpdateStudyTemplate ---------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyTemplate($projectid, $templateid, $itemprotocol) {
+		//PrintVariable($itemprotocol);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
 		$itemprotocol = mysqli_real_escape_array($itemprotocol);
@@ -505,12 +524,14 @@
 		$sqlstring = "delete from study_templateitems where studytemplate_id = $templateid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
+		//PrintVariable($itemprotocol);
 		$i = 0;
 		foreach ($itemprotocol as $protocol) {
 			if (trim($protocol) != "") {
 				$sqlstring = "insert into study_templateitems (studytemplate_id, item_order, item_protocol) values ($templateid, $i, '$protocol')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$i++;
+				//PrintSQL($sqlstring);
 			}
 		}
 		

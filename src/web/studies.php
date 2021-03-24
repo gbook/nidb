@@ -2507,6 +2507,7 @@
 		if (!ValidID($id,'Study ID')) { return; }
 		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
+			DisplayErrorMessage("Modality was blank. Unable to display data");
 			return;
 		}
 		

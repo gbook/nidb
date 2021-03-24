@@ -241,7 +241,7 @@
 
 		CommitSQLTransaction();
 		
-		?><div align="center"><span class="staticmessage"><?=$uid?> updated</span></div><br><br><?
+		DisplayNotice("$uid updated");
 	}
 
 
@@ -313,7 +313,7 @@
 		}
 
 		
-		?><div align="center"><span style="background-color: darkred; color: white"><?=$subjectname?> added <?=$uid?></span></div><br><br><?
+		DisplayNotice("$subjectname added $uid");
 		
 		return $SubjectRowID;
 	}
@@ -330,10 +330,10 @@
 		$id2 = $row['subject_id'];
 		
 		if ($id == $id2) {
-			?><div align="center"><span class="message">Subject cannot be related to him/herself</span></div><br><br><?
+			DisplayNotice("Subject cannot be related to him/herself");
 		}
 		elseif ($id2 == "") {
-			?><div align="center"><span class="message">Subject <?=$uid2?> could not be found</span></div><br><br><?
+			DisplayNotice("Subject $uid2 could not be found");
 		}
 		else {
 			/* insert the primary relation */
@@ -354,7 +354,7 @@
 				$sqlstring = "insert into subject_relation (subjectid1, subjectid2, relation) values ($id2, $id, '$symrelation')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			?><div align="center"><span class="message">Relation added</span></div><br><br><?
+			DisplayNotice("Relation added");
 		}
 	}
 
@@ -377,7 +377,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$project_id = $row['project_id'];
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, '$modality', now(), '', '', '', 'pending')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, '$modality', now(), 'New $modality study', '', '', '', 'pending')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -394,12 +394,8 @@
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$uid", $urllist,$perms);
 		
-		?>
-		<div align="center">
-		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
-		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
-		</div>
-		<?
+		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 
 	
@@ -463,12 +459,8 @@
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$uid", $urllist,$perms);
 		
-		?>
-		<div align="center">
-		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
-		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
-		</div>
-		<?
+		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 
 
@@ -565,15 +557,8 @@
 		/* commit a transaction */
 		CommitSQLTransaction();
 		
-		return;
-		
-		
-		?>
-		<div align="center">
-		Study <?=$study_num?> has been created for subject <?=$uid?> in <?=$projectname?> (<?=$projectcostcenter?>)<br>
-		<a href="studies.php?id=<?=$studyRowID?>">View Study</a>
-		</div>
-		<?
+		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 	
 	
@@ -581,14 +566,18 @@
 	/* ------- EnrollSubject ---------------------- */
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectid, $projectid) {
+		if ($projectid == "") {
+			DisplayErrorMessage("Project not specified");
+			return;
+		}
+		
 		$sqlstring = "select * from enrollment where project_id = $projectid and subject_id = $subjectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) < 1) {
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectid, $subjectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?>
-			<span class="message">Subject enrolled in the project</span>
-			<?
+			
+			DisplayNotice("Subject enrolled in the project");
 		}
 		else {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -596,9 +585,8 @@
 			
 			$sqlstring = "update enrollment set enroll_enddate = '0000-00-00 00:00:00' where enrollment_id = '$enrollmentid'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?>
-			<span class="message">Subject re-enrolled in the project</span>
-			<?
+			
+			DisplayNotice("Subject re-enrolled in the project");
 		}
 	}
 
@@ -640,9 +628,7 @@
 			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			?>
-			<span class="message">Subject moved to new project</span>
-			<?
+			DisplayNotice("Subject moved to new project");
 		}
 		else {
 			$new_spid = $row['enrollment_id'];
@@ -654,9 +640,8 @@
 			$sqlstring = "update assessments set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
 			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?>
-			<span class="message">Subject already enrolled in this project. Studies moved to new project</span>
-			<?
+
+			DisplayNotice("Subject already enrolled in this project. Studies moved to new project");
 		}
 		?></ol><?
 	}
@@ -669,10 +654,8 @@
 		/* get all existing info about this subject */
 		$sqlstring = "update subjects set isactive = 0 where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		?>
-		<div align="center" class="message">Subject deleted</div>
-		<?
+
+		DisplayNotice("Subject deleted (marked as inactive)");
 	}
 
 	
@@ -685,10 +668,8 @@
 		/* get all existing info about this subject */
 		$sqlstring = "update subjects set isactive = 1 where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		?>
-		<div align="center" class="message">Subject undeleted</div>
-		<?
+
+		DisplayNotice("Subject undeleted (marked as active)");
 	}
 	
 
@@ -701,9 +682,8 @@
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $_SESSION['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		?>
-		<div align="center" class="message">Subject(s) queued for obliteration</div>
-		<?
+
+		DisplayNotice("Subject(s) queued for obliteration");
 	}
 	
 	
@@ -1374,13 +1354,14 @@
 				<td valign="top" align="center">
 					<table width="100%">
 						<tr>
-							<form class="ui" action="subjects.php" method="post">
 							<td>
+								<form class="ui" action="subjects.php" method="post">
 								<input type="hidden" name="id" value="<?=$id?>">
 								<input type="hidden" name="action" value="enroll">
 								<div class="ui labeled action input">
-								<label for="projectid" class="ui label grey" style="width: 150px">Enroll in Project</label>
-								<select class="ui selection dropdown" name="projectid" id="projectid">
+								<label for="projectid" class="ui label grey">Enroll in Project</label>
+								<select class="ui dropdown" name="projectid" required>
+									<option value="">Select project...</option>
 								<?
 									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1400,9 +1381,9 @@
 								?>
 								</select>
 								<button class="ui primary button" type="submit" value="Enroll">Enroll</button>
+								</form>
 								</div>
 							</td>
-							</form>
 						</tr>
 						<tr>
 							<td>&nbsp;</td>
@@ -1582,7 +1563,7 @@
 																			$mod_code = $row['mod_code'];
 																			$mod_desc = $row['mod_desc'];
 																			?>
-																			<option value="<?=$mod_code?>">[<?=$mod_code?>] <?=$mod_desc?></option>
+																			<option value="<?=$mod_code?>"><b><?=$mod_code?></b> <?=$mod_desc?></option>
 																			<?
 																		}
 																	?>
@@ -1718,7 +1699,7 @@
 														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'; this.style.cursor='pointer';" onMouseOut="this.style.backgroundColor=''; this.style.cursor='auto';" onClick="window.location='studies.php?id=<?=$study_id?>'">
 															<td style="text-align: center;"><a href="studies.php?id=<?=$study_id?>" style="font-size: larger; font-weight: bold"><?=$study_num?></a></td>
 															<td><?
-															 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
+															 if ($study_modality == "") { ?><div class="ui tiny inverted red label">Blank</div><? }
 															 else { echo $study_modality; }
 															?></td>
 															<td><?=$study_datetime?></td>
@@ -1753,16 +1734,16 @@
 											<table width="100%">
 												<tr>
 													<td><b>Assessments</b></td>
-													<form action="assessments.php" method="post">
 													<td align="right">
 														<? if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
+														<form action="assessments.php" method="post">
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 														<input type="hidden" name="projectid" value="<?=$projectid?>">
 														<input type="hidden" name="action" value="create">
 														
 														<div class="ui small labeled action input">
 															<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
-															<select class="ui selection dropdown" name="formid" <?=$disabled?>>
+															<select class="ui selection dropdown" name="formid" <?=$disabled?> required>
 																<option value="">(Select assessment)</option>
 																<?
 																	$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";

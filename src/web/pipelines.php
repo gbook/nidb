@@ -1890,7 +1890,7 @@
 					<td>
 						<details class="level1" style="padding:0px;margin:0px">
 							<summary style="padding:0px; font-size:9pt">Options</summary>
-							<table class="entrytable" style="background-color: #EEE; border-radius:4px; border: 1px solid #999">
+							<table class="ui basic table">
 								<tr>
 									<td class="label">Image type</td>
 									<td title="Comma separated list of image types"><input class="small" type="text" name="dd_imagetype[<?=$neworder?>]" size="30" value="<?=$dd_imagetype?>"></td>
@@ -1898,7 +1898,7 @@
 								<tr>
 									<td class="label">Series criteria <img src="images/help.gif" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></td>
 									<td>
-										<select class="ui dropdown" name="dd_seriescriteria[<?=$neworder?>]">
+										<select name="dd_seriescriteria[<?=$neworder?>]">
 											<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
 											<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
 											<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
@@ -1909,7 +1909,6 @@
 									</td>
 								</tr>
 								<tr>
-									<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
 									<td class="label">Number of BOLD reps <img src="images/help.gif" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></td>
 									<td><input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>"></td>
 								</tr>
@@ -1923,7 +1922,7 @@
 								<tr>
 									<td class="label">Data format</td>
 									<td style="font-size:9pt;">
-										<select class="ui dropdown" name="dd_dataformat[<?=$neworder?>]">
+										<select name="dd_dataformat[<?=$neworder?>]">
 											<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
 											<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
 											<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
@@ -1953,7 +1952,7 @@
 								<tr>
 									<td class="label">Behavioral data directory format</td>
 									<td style="font-size:9pt;">
-										<select class="ui dropdown" name="dd_behformat[<?=$neworder?>]">
+										<select name="dd_behformat[<?=$neworder?>]">
 											<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
 											<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
 											<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>

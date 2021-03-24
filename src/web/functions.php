@@ -2440,8 +2440,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function DisplayErrorMessage($msg) {
 		?>
-		<div class="ui message red compact">
+		<div class="ui message red">
 			<i class="close icon"></i>
+			<div class="header">Error</div>
 			<p><?=$msg?></p>
 		</div>
 		<?
@@ -2515,7 +2516,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<div class="ui header"><a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big red toggle off icon" title="Pipeline disabled, click to enable"></i></a> Disabled</div>
 			<? } ?>
 			</div>
-			<? if ($status == "running") { ?>
+			<? if ($pipeline_status == "running") { ?>
 			<div class="ui three bottom attached steps">
 				<div class="step">
 					<div class="content">
