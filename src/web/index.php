@@ -128,19 +128,27 @@
 <table width="100%">
 	<tr>
 		<td valign="top" width="50%">
-			<img src="images/NIDB_logo.png" width="300px">
-			<div class="ui tiny statistics">
-				<div class="statistic">
-					<div class="value"><?=number_format($numsubjects)?></div>
-					<div class="label">Subjects</div>
+			<div class="ui two column grid">
+				<div class="column">
+					<img src="images/NIDB_logo.png" width="300px">
+					<div class="ui tiny statistics">
+						<div class="statistic">
+							<div class="value"><?=number_format($numsubjects)?></div>
+							<div class="label">Subjects</div>
+						</div>
+						<div class="statistic">
+							<div class="value"><?=number_format($numstudies)?></div>
+							<div class="label">Studies</div>
+						</div>
+						<div class="statistic">
+							<div class="value"><?=number_format($totalseries)?></div>
+							<div class="label">Series</div>
+						</div>
+					</div>
 				</div>
-				<div class="statistic">
-					<div class="value"><?=number_format($numstudies)?></div>
-					<div class="label">Studies</div>
-				</div>
-				<div class="statistic">
-					<div class="value"><?=number_format($totalseries)?></div>
-					<div class="label">Series</div>
+				<div class="column">
+					<a class="ui primary big button" href="import.php"><i class="cloud upload icon"></i> Import</a> &nbsp; 
+					<a class="ui primary big button" href="search.php"><i class="search icon"></i> Search / Export</a>
 				</div>
 			</div>
 			<br><br>

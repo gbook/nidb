@@ -88,43 +88,12 @@
 			DisplayImport($uploadid);
 			break;
 		default:
-			DisplayImportPage();
+			DisplayImportList($displayall);
 	}
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
-
-	/* -------------------------------------------- */
-	/* ------- DisplayImportPage ------------------ */
-	/* -------------------------------------------- */
-	function DisplayImportPage() {
-		?>
-		<div class="ui container">
-			<div class="ui two column grid">
-				<div class="column">
-					<h1 class="ui header">Imaging Import</h1>
-				</div>
-				<div class="right aligned column">
-					<button class="ui primary large button" onClick="window.location.href='importimaging.php?action=newimportform'; return false;"><i class="plus square outline icon"></i> New Import</button>
-				</div>
-			</div>
-			<?DisplayImportList(0);?>
-		</div>
-
-		<!--
-		<table width="100%" cellpadding="5">
-			<tr>
-				<td style="font-weight: bold; font-size:16pt; color: #333;">New Import</td>
-				<td style="font-weight: bold; font-size:16pt; color: #333;">Most recent 10 imports<br><span style="font-size: 12pt; font-weight: normal"><a href="importimaging.php?action=displayimportlist&displayall=1">View all</a></span></td>
-			</tr>
-			<tr>
-				<td valign="top"><?DisplayNewImportForm();?></td>
-				<td valign="top"><?DisplayImportList(0);?></td>
-			</tr>
-		</table>-->
-		<?
-	}
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayNewImportForm --------------- */
@@ -135,7 +104,7 @@
 			<div class="ui top attached grey segment">
 				<h2 class="ui header">New Import</h2>
 			</div>
-			<form method="post" action="importimaging.php" enctype="multipart/form-data" class="ui form attached fluid segment">
+			<form method="post" action="importimaging.php" name="importform" enctype="multipart/form-data" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="newimport">
 				<div class="ui grid">
 					
@@ -161,13 +130,13 @@
 									?><option value="<?=$modality?>"><?=$modality?></option><?
 								}
 							?>
-							<option value="unknown">UNKNOWN - Have NiDB try to guess the modality</option>
+							<option value="unknown">Unknown - Have NiDB try to guess the modality</option>
 						</select>
 					</div>
 
 					<div class="three wide column"><h3 class="ui grey right aligned header">Destination Project</h3></div>
 					<div class="thirteen wide column">
-						<select name="projectid" class="ui dropdown" required>
+						<select name="projectid" required>
 							<option value="">Select project...</option>
 							<?
 								$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
@@ -185,7 +154,7 @@
 					</div>
 					
 					<div class="three wide column"><h3 class="ui grey right aligned header">Matching Criteria</h3></div>
-					<div class="ten wide column">
+					<div class="thirteen wide column">
 					
 						<div class="ui grey segment">
 							<div class="ui grid">
@@ -313,10 +282,12 @@
 						</div>
 					</div>
 				</div>
-			</form>
-			<div class="ui bottom attached right aligned segment">
-				<button class="ui button" onClick="window.location.href='importimaging.php'; return false;">Cancel</button> <button class="ui primary button">Upload</button>
-			</div>
+
+				<br>
+				<div style="text-align: right">
+					<button class="ui button" onClick="window.location.href='importimaging.php'; return false;">Cancel</button>
+					<input type="submit" class="ui primary button" value="Upload" onclick="inputform.submit();">
+				</div>
 			
 			</form>
 		</div>
@@ -462,26 +433,29 @@
 	/* ------- DisplayImportList ------------------ */
 	/* -------------------------------------------- */
 	function DisplayImportList($displayall) {
+
+		?>
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h1 class="ui header">Imaging Import</h1>
+					Displaying 10 most recent imports. <a href="importimaging.php?displayall=1">View all</a>
+				</div>
+				<div class="right aligned column">
+					<button class="ui primary big button" onClick="window.location.href='importimaging.php?action=newimportform'; return false;"><i class="cloud upload icon"></i> New Import</button>
+				</div>
+			</div>
+		<?
 		
 		if ($displayall == "1") {
-			$sqlstring = "select * from uploads order by upload_startdate desc";
+			$sqlstring = "select * from uploads a left join projects b on a.upload_destprojectid = b.project_id order by upload_startdate desc";
 		}
 		else {
-			$sqlstring = "select * from uploads order by upload_startdate desc limit 10";
+			$sqlstring = "select * from uploads a left join projects b on a.upload_destprojectid = b.project_id order by upload_startdate desc limit 10";
 		}
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
-			?>
-			<table class="ui selectable celled very compact table">
-				<thead>
-					<th>Date</th>
-					<th>Status</th>
-					<th>Datapath</th>
-					<th>Project</th>
-					<th>Modality</th>
-				</thead>
-			<?
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$uploadid = $row['upload_id'];
 				$startdate = $row['upload_startdate'];
@@ -492,6 +466,8 @@
 				$source = $row['upload_source'];
 				$datapath = $row['upload_datapath'];
 				$destprojectid = $row['upload_destprojectid'];
+				$projectname = $row['project_name'];
+				$projectnumber = $row['project_costcenter'];
 				$modality = $row['upload_modality'];
 				$guessmodality = $row['upload_guessmodality'];
 				$subjectcriteria = $row['upload_subjectcriteria'];
@@ -499,79 +475,112 @@
 				$seriescriteria = $row['upload_seriescriteria'];
 				
 				$filelist = explode(",", $originalfilelist);
+				$filecount = count($filelist);
+				
+				switch ($status) {
+					case 'parsingerror':
+					case 'uploaderror':
+					case 'archiveerror':
+						$statuscolor = "red";
+						$buttoncolor = "red";
+						$buttonlabel = "View Details";
+						$label = "<a class='ui red ribbon label'>Error</a>";
+						break;
+						
+					case 'parsingcomplete':
+						$statuscolor = "yellow";
+						$buttoncolor = "yellow";
+						$buttonlabel = "Choose Data to Import";
+						$label = "<a class='ui yellow ribbon label'>Needs Attention</a>";
+						break;
+
+					case 'archivecomplete':
+						$statuscolor = "grey";
+						$buttoncolor = "";
+						$buttonlabel = "View Import";
+						$label = "";
+						break;
+					
+					default:
+						$statuscolor = "secondary blue";
+						$buttoncolor = "";
+						$buttonlabel = "View Import";
+						$label = "";
+				}
 				
 				?>
-				<tr>
-					<td><?=$startdate?> - <?=$enddate?></td>
-					<td><a href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><?=$status?></a></td>
-					<td><tt><?=$datapath?></tt></td>
-					<td><?=$destprojectid?></td>
-					<td><?=$modality?></td>
-				</tr>
-				<tr>
-					<td colspan="5">
-						<?DisplayStatusSteps($status);?>
-						
-						<details>
-						<summary>Details</summary>
-						<table style="all: unset;">
-							<tr>
-								<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
-								<td>
-									<details>
-									<?
-										$sqlstringA = "select * from upload_logs where upload_id = $uploadid";
-										$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-									?>
-									<summary>View Log <span class="tiny"><?=mysqli_num_rows($resultA)?> entries</span></summary>
-									<tt><pre><?
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$date = $rowA['log_date'];
-											$msg = $rowA['log_msg'];
-											echo "[$date] $msg\n";
-										}
-									?></pre></tt>
-									</details>
-								</td>
-							</tr>
-							<tr>
-								<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
-								<td>
-									<details>
-									<summary>File list (<?=count($filelist);?> files)</summary>
-										<tt style="font-size:8pt"><?=implode2("<br>", $filelist)?></tt>
-									</details>
-								</td>
-							</tr>
-							<tr>
-								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
-								<td><?=$source?></td>
-							</tr>
-							<tr>
-								<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
-								<td><tt><?=$datapath?></tt></td>
-							</tr>
-							<tr>
-								<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
-								<td>
-									Subject: <?=$subjectcriteria?><br>
-									Study: <?=$studycriteria?><br>
-									Series: <?=$seriescriteria?>
-								</td>
-							</tr>
-						</table>
-						</details>
-					</td>
-				</tr>
+				<p>
+				<div class="ui top attached <?=$statuscolor?> segment">
+					<?=$label?>
+					<a class="ui <?=$buttoncolor?> button" href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><?=$buttonlabel?></a>
+					<span style="font-size: larger;">Importing <b><?=$filecount?> files</b> into <b><?=$projectname?></b> Started <?=date("r", strtotime($startdate))?></span>
+				</div>
+				
+				<!--
+				<div class="ui attached segment">
+					<details>
+					<summary>Details</summary>
+					<table style="all: unset;">
+						<tr>
+							<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
+							<td>
+								<details>
+								<?
+									$sqlstringA = "select * from upload_logs where upload_id = $uploadid";
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+								?>
+								<summary>View Log <span class="tiny"><?=mysqli_num_rows($resultA)?> entries</span></summary>
+								<tt><pre><?
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$date = $rowA['log_date'];
+										$msg = $rowA['log_msg'];
+										echo "[$date] $msg\n";
+									}
+								?></pre></tt>
+								</details>
+							</td>
+						</tr>
+						<tr>
+							<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
+							<td>
+								<details>
+								<summary>File list (<?=count($filelist);?> files)</summary>
+									<tt style="font-size:8pt"><?=implode2("<br>", $filelist)?></tt>
+								</details>
+							</td>
+						</tr>
+						<tr>
+							<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
+							<td><?=$source?></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
+							<td><tt><?=$datapath?></tt></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
+							<td>
+								Subject: <?=$subjectcriteria?><br>
+								Study: <?=$studycriteria?><br>
+								Series: <?=$seriescriteria?>
+							</td>
+						</tr>
+					</table>
+					</details>
+				</div>
+				-->
+				<?DisplayStatusSteps($status);?>
+				</p>
+				<br><br>
 				<?
 			}
-			?>
-			</table>
-			<?
 		}
 		else {
 			?>No current or recent uploads<?
 		}
+		?>
+		</div>
+		<?
 	}
 
 
@@ -649,6 +658,24 @@
 			$seriescriteria = $row['upload_seriescriteria'];
 			
 			$filelist = explode(",", $originalfilelist);
+
+			switch ($status) {
+				case 'parsingerror':
+				case 'uploaderror':
+				case 'archiveerror':
+					$statuscolor = "red";
+					
+				case 'parsingcomplete':
+					$statuscolor = "yellow";
+					break;
+
+				case 'archivecomplete':
+					$statuscolor = "green";
+					break;
+				
+				default:
+					$statuscolor = "";
+			}
 			
 			?>
 			<span style="font-weight: bold; font-size: 14pt;">Upload Details</span><br>
@@ -1055,77 +1082,77 @@
 			case 'uploading':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "active";
 				$step2_title = "Uploading"; $step2_desc = "Data is uploading"; $step2_state = "disabled";
-				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled";
+				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'uploadcomplete':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
-				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled";
+				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "active";
+				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'uploaderror':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Upload Error"; $step2_desc = "Error uploading"; $step2_state = "active";
-				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled";
+				$step3_title = "Parse"; $step3_desc = ""; $step3_state = "disabled"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'parsing':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parsing"; $step3_desc = "Data is being parsed"; $step3_state = "active";
+				$step3_title = "Parsing"; $step3_desc = "Data is being parsed"; $step3_state = "active"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'parsingcomplete':
 				$step1_title = "Start"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Upload"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parse"; $step3_desc = "Data has been parsed"; $step3_state = "active";
+				$step3_title = "Parsed"; $step3_desc = "Parsed data must be checked by user before archiving"; $step3_state = "active"; $step3_icon = "exclamation circle";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'parsingerror':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parse Error"; $step3_desc = "Error parsing"; $step3_state = "active";
+				$step3_title = "Parse Error"; $step3_desc = "Error parsing"; $step3_state = "active"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'archiving':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed";
+				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed"; $step3_icon = "tasks";
 				$step4_title = "Archiving"; $step4_desc = "Data is being archived"; $step4_state = "active";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'archivecomplete':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed";
+				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed"; $step3_icon = "tasks";
 				$step4_title = "Archived"; $step4_desc = "Data has been archived"; $step4_state = "completed";
 				$step5_title = "Complete"; $step5_desc = "Upload complete"; $step5_state = "active";
 				break;
 			case 'archiveerror':
 				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Uploaded"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed";
+				$step3_title = "Parsed"; $step3_desc = "Data has been parsed"; $step3_state = "completed"; $step3_icon = "tasks";
 				$step4_title = "Archive Error"; $step4_desc = "Error archiving"; $step4_state = "active";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'queueforarchive':
 				$step1_title = "Start"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Upload"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parse"; $step3_desc = "Data has been parsed"; $step3_state = "completed";
+				$step3_title = "Parse"; $step3_desc = "Data has been parsed"; $step3_state = "completed"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = "Data queued for archiving"; $step4_state = "archive";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
 			case 'reparse':
 				$step1_title = "Start"; $step1_desc = "Upload has been submitted"; $step1_state = "completed";
 				$step2_title = "Upload"; $step2_desc = "Data has been uploaded"; $step2_state = "completed";
-				$step3_title = "Parse"; $step3_desc = "Data queued to be re-parsed"; $step3_state = "active";
+				$step3_title = "Parse"; $step3_desc = "Data queued to be re-parsed"; $step3_state = "active"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
 				break;
@@ -1133,7 +1160,7 @@
 		}
 		
 		?>
-			<div class="ui five steps">
+			<div class="ui bottom attached five steps">
 				<div class="<?=$step1_state?> step">
 					<div class="content">
 						<div class="title"><?=$step1_title?></div>
@@ -1141,24 +1168,28 @@
 					</div>
 				</div>
 				<div class="<?=$step2_state?> step">
+					<i class="cloud upload icon"></i>
 					<div class="content">
 						<div class="green title"><?=$step2_title?></div>
 						<div class="description"><?=$step2_desc?></div>
 					</div>
 				</div>
 				<div class="<?=$step3_state?> step">
+					<i class="<?=$step3_icon?> icon"></i>
 					<div class="content">
 						<div class="title"><?=$step3_title?></div>
 						<div class="description"><?=$step3_desc?></div>
 					</div>
 				</div>
 				<div class="<?=$step4_state?> step">
+					<i class="archive icon"></i>
 					<div class="content">
 						<div class="title"><?=$step4_title?></div>
 						<div class="description"><?=$step4_desc?></div>
 					</div>
 				</div>
 				<div class="<?=$step5_state?> step">
+					<i class="check icon"></i>
 					<div class="content">
 						<div class="title"><?=$step5_title?></div>
 						<div class="description"><?=$step5_desc?></div>

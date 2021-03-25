@@ -124,14 +124,19 @@
 	function DisplayMenu() {
 	
 		?>
-		<ul>
-		<li><a href="import.php?action=idmapper" title="Matches a list of alternate IDs to the NiDB ID">ID mapper</a>
-		<li>Import <a href="importimaging.php">imaging</a> data
-		<li>View DICOM receiver <a href="importimaging.php?action=viewdcmrcvlogs">import logs</a>
-		<li><a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader <span class="tiny">via github.com</a>
-		<li><a href="import.php?action=import">Import</a> data via website
-		<li>View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)
-		</ul>
+		<div class="ui text container">
+			<i class="large sitemap icon"></i> <a href="import.php?action=idmapper" title="Matches a list of alternate IDs to the NiDB ID">ID mapper</a>
+			<br><br>
+			<i class="large cloud upload icon"></i> <a href="importimaging.php">Import imaging</a>
+			<br><br>
+			<i class="large file alternate outline icon"></i> DICOM receiver <a href="importimaging.php?action=viewdcmrcvlogs">import logs</a>
+			<br><br>
+			<i class="large github icon"></i> <a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader <span class="tiny">via github.com</span>
+			<br><br><br>
+			<i class="large disabled upload icon"></i> <span style="color: gray"><a href="import.php?action=import">Import</a> data via website (deprecated)</span>
+			<br><br>
+			<i class="large disabled file alternate outline icon"></i> <span style="color: gray">View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)</span>
+		</div>
 		<?
 	}
 
