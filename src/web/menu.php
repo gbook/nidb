@@ -287,11 +287,11 @@
 							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$name = $row['pipeline_name'];
 
-							?><a href="pipelines.php" style="">Pipeline List</a> <span style="color:#fff">&gt;</span> <?
+							?><a href="pipelines.php" style="">Pipeline List</a> <i class="inverted arrow right icon"></i> <?
 							
 							if (($page=="pipelines.php") && ($action == "editpipeline")) { $style = "background-color:#273f70"; }
 							else { $style = ""; }
-							?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a> <span style="color:#fff">&gt;</span><?
+							?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" style="<?=$style?>"><?=$name?></a> <i class="inverted arrow right icon"></i><?
 
 							if ($page=="analysis.php"){ $style = "background-color:#273f70"; }
 							else { $style = ""; }

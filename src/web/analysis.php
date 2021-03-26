@@ -970,28 +970,46 @@
 						</table>
 					</td>
 					<td colspan="10" align="right" style="background-color: #fff; font-size: 12pt">
-					With selected:&nbsp;<br><br>
-					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
-					<br><br><br>
-					<input type="button" name="copyanalyses" value="Copy analyses to..." style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses';GetDestination()">
-					<br>
-					<input type="button" name="createlinks" value="Create links..." style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies">
-					<br>
-					<input type="button" name="rerunresults" value="Re-run results script" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">
-					<br>
-					<input type="button" name="runsupplement" value="Run supplement script" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">
-					<br>
-					<input type="button" name="rechecksuccess" value="Re-check if successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist">
-					<br><br>
-					<input type="button" name="markasbad" value="Mark as bad" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
-					<br>
-					<input type="button" name="markasgood" value="Mark as good" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
-					<br>
-					<input type="button" name="markcomplete" value="Mark complete" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">
-					<br>
-					<input type="button" name="marksuccessful" value="Mark successful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">
-					<br>
-					<input type="button" name="markunsuccessful" value="Mark unsuccessful" style="width: 150px; margin:4px" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">&nbsp;
+						<br>
+						<h3 class="ui header">With Selected...</h3>
+						<button class="ui red button" style="width: 200px" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button>
+						<br><br><br>
+						<p><input class="ui button" style="width: 200px" type="button" name="copyanalyses" value="Copy analyses to..." onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses';GetDestination()"></p>
+						
+						<p><input class="ui button" style="width: 200px" type="button" name="createlinks" value="Create links..." onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies"></p>
+
+						<p><input class="ui button" style="width: 200px" type="button" name="rerunresults" value="Re-run results script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script"></p>
+
+						<p><input class="ui button" style="width: 200px" type="button" name="runsupplement" value="Run supplement script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory"></p>
+
+						<p><input class="ui button" style="width: 200px" type="button" name="rechecksuccess" value="Re-check if successful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"></p>
+						
+						<p>
+							<div class="ui left labeled button">
+								<a class="ui basic label">Mark as</a>
+								<input class="ui button" style="width: 150px" type="button" name="markasbad" value="Bad" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
+							</div>
+							<br>
+							<div class="ui left labeled button">
+								<a class="ui basic label">Mark as</a>
+								<input class="ui button" style="width: 150px" type="button" name="markasgood" value="Good" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
+							</div>
+							<br>
+							<div class="ui left labeled button">
+								<a class="ui basic label">Mark as</a>
+								<input class="ui button" style="width: 150px" type="button" name="markcomplete" value="Complete" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">
+							</div>
+							<br>
+							<div class="ui left labeled button">
+								<a class="ui basic label">Mark as</a>
+								<input class="ui button" style="width: 150px" type="button" name="marksuccessful" value="Successful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">
+							</div>
+							<br>
+							<div class="ui left labeled button">
+								<a class="ui basic label">Mark as</a>
+								<input class="ui button" style="width: 150px" type="button" name="markunsuccessful" value="Unsuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">
+							</div>
+						</p>
 					</td>
 				</tr>
 				</tfoot>

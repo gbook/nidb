@@ -949,7 +949,7 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
             n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
 
             /* delete the subject that has just been merged */
-            q.prepare("update subjects set is_active = 0 where subject_id = :subjectid");
+            q.prepare("update subjects set isactive = 0 where subject_id = :subjectid");
             q.bindValue(":subjectid", id.toInt());
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
         }
