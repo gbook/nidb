@@ -433,12 +433,12 @@
 			<!--  begin main page content -->
 <?			
 	if (count($_POST, COUNT_RECURSIVE) >= ini_get("max_input_vars")) {
-		DisplayErrorMessage("Error", "You POSTed " . count($_POST, COUNT_RECURSIVE). " variables, but your server's PHP limit is " . ini_get("max_input_vars") . ". Truncation of the submitted form may have occured.<br>
+		Error("Error", "You POSTed " . count($_POST, COUNT_RECURSIVE). " variables, but your server's PHP limit is " . ini_get("max_input_vars") . ". Truncation of the submitted form may have occured.<br>
 		Contact your server administrator or increase the <code>max_input_vars</code> PHP variable.");
 	}
 	
 	if ($_SESSION['username'] == "") {
-		DisplayErrorMessage("Error", "Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
+		Error("Error", "Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
 	}
 	
 ?>

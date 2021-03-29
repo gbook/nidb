@@ -37,16 +37,16 @@
 	
 	if ($type == "file") {
 		if (substr($filename,0,5) != "/tmp/") {
-			?><div class="staticmessage">You are attempting to download a file [<?=$filename?>] from an incorrect location</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+			Error("You are attempting to download a file [$filename] from an incorrect location. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 		}
 		else {
 			if (!file_exists($filename)) {
-				?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] does not exist</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+				Error("The file you are attempting to download [$filename] does not exist. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 			}
 			else {
 				if (filesize($filename) == 0) {
 					/* this may not correctly check files larger than 2GB in size... not sure if they'd ever return 0 size if they did exist though... */
-					?><div class="staticmessage">The file you are attempting to download [<?=$filename?>] exists, but is empty</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+					Error("The file you are attempting to download [$filename] exists but is empty. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 				}
 				else {
 					header("Content-Description: File Transfer");
@@ -92,18 +92,15 @@
 			$junk = exec($systemstring);
 			
 			if (!file_exists($datapath)) {
-				?>
-					<div class="staticmessage">The archive path [<?=$datapath?>] for this data does not exist</div><br>
-					Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page
-				<?
+				Error("The archive path [$datapath] for this data does not exist. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 			}
 			else {
 				if (!file_exists($zipfilepath)) {
-					?><div class="staticmessage">The archive path [<?=$datapath?>] exists, but the server was unable to create a zip file [<?=$zipfilepath?>]</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+					Error("The archive path [$datapath] exists, but the server was unable to create a zip file [$zipfilepath]. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 				}
 				else {
 					if (filesize($zipfilepath) == 0) {
-						?><div class="staticmessage">The archive path [<?=$datapath?>] exists, and the server was unable to create a zip file [<?=$zipfilepath?>], but the zip file is empty</div><br>Go <a href="<?=$_SERVER["HTTP_REFERER"]?>">back</a> to referring page<?
+						Error("The archive path [$datapath] exists and a zip file was created [$zipfilepath] but the file is empty. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 					}
 					else {
 						header("Content-Description: File Transfer");
@@ -119,7 +116,7 @@
 			}
 		}
 		else {
-			?><div class="staticmessage">Invalid modality [<?=$modality?>]<?
+			Error("Invalid modality [$modality]");
 		}
 	}
 ?>

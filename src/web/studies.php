@@ -235,7 +235,7 @@
 			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
 		}
 
-		DisplayNotice("Study Updated");
+		Notice("Study Updated");
 		
 	}	
 	
@@ -288,7 +288,7 @@
 		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("Study Updated");
+		Notice("Study Updated");
 	}
 
 
@@ -309,10 +309,10 @@
 		if ($copy_date=="Y"){
 			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
 			$result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);
-			DisplayNotice("Study and series updated [$copy_date]");
+			Notice("Study and series updated [$copy_date]");
 		}
 		else {
-			DisplayNotice("Study updated [$copy_date]");
+			Notice("Study updated [$copy_date]");
 		}
 	}
 
@@ -674,7 +674,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
-		DisplayNotice("Series names updated");
+		Notice("Series names updated");
 	}
 
 
@@ -752,7 +752,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 
-		DisplayNotice("Series notes updated");
+		Notice("Series notes updated");
 	}
 	
 	
@@ -1307,12 +1307,12 @@
 			$study_heightft = "$ft1' $in\"";
 		}
 		else {
-			DisplayErrorMessage("Error", "Invalid study ID. Unable to display this study");
+			Error("Error", "Invalid study ID. Unable to display this study");
 			return;
 		}
 		
 		if (($subjectid == 0) || ($subjectid == "")) {
-			DisplayErrorMessage("Error", "Invalid subject ID. Unable to display this study because the subject could not be found");
+			Error("Error", "Invalid subject ID. Unable to display this study because the subject could not be found");
 			return;
 		}
 
@@ -1526,7 +1526,7 @@
 							<summary style="color:darkred" class="tiny">Admin Functions</summary>
 							<div style="border: solid 1px #aaa; border-radius: 5px; padding: 5px">
 						
-							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="redlinkbutton">Delete</a>
+							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui red button">Delete</a>
 							<br><br>
 							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
 							<form action="studies.php" method="post">
@@ -2507,7 +2507,7 @@
 		if (!ValidID($id,'Study ID')) { return; }
 		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
-			DisplayErrorMessage("Modality was blank. Unable to display data");
+			Error("Modality was blank. Unable to display data");
 			return;
 		}
 		
@@ -2790,9 +2790,7 @@
 			}
 		}
 		else {
-			?>
-			<div class="staticmessage">No data exists for this study</div>
-			<?
+			Error("No data exists for this study");
 		}
 	}
 	

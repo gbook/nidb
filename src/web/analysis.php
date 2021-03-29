@@ -987,7 +987,7 @@
 						<p>
 							<div class="ui left labeled button">
 								<a class="ui basic label">Mark as</a>
-								<input class="ui button" style="width: 150px" type="button" name="markasbad" value="Bad" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">
+								<div class="ui button" style="width: 150px" type="button" name="markasbad" value="Bad" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">Bad</div>
 							</div>
 							<br>
 							<div class="ui left labeled button">

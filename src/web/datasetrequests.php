@@ -105,7 +105,7 @@
 		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', now(), 'submitted')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$shortname submitted");
+		Notice("$shortname submitted");
 	}
 
 	
@@ -127,7 +127,7 @@
 		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes' where datasetrequest_id = $datasetrequestid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$shortname updated");
+		Notice("$shortname updated");
 	}
 	
 
@@ -138,7 +138,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'cancelled' where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$id cancelled");
+		Notice("$id cancelled");
 	}
 
 
@@ -149,7 +149,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'assigned', admin_username = '" . $GLOBALS['username'] . "', request_startdate = now() where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$id assigned");
+		Notice("$id assigned");
 	}
 
 
@@ -160,7 +160,7 @@
 		$sqlstring = "update dataset_requests set request_status = 'complete', request_completedate = now() where datasetrequest_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$id marked as complete");
+		Notice("$id marked as complete");
 	}
 	
 	

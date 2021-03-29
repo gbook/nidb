@@ -64,7 +64,7 @@
 	function ViewReport($enrollmentid) {
 		
 		if (($enrollmentid == "") || (!isInteger($enrollmentid))) {
-			?><div class="staticmessage">Invalid or blank enrollment ID</div><?
+			Error("Invalid or blank enrollment ID");
 		}
 		
 		/* get enrollment information */
@@ -186,7 +186,7 @@
 	function ViewProjectReport($projectid) {
 		
 		if (($projectid == "") || (!isInteger($projectid))) {
-			?><div class="staticmessage">Invalid or blank project ID</div><?
+			Error("Invalid or blank project ID");
 		}
 
 		$sqlstring = "select project_name from projects where project_id = $projectid";

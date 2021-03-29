@@ -523,7 +523,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		
@@ -612,7 +612,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ---------- DisplayNlinkForms---------------------- */
+	/* ---------- DisplayNlinkForms --------------- */
 	/* -------------------------------------------- */
 	function DisplayNlinkForms($projectid) {
 
@@ -620,7 +620,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		

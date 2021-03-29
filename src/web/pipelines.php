@@ -234,7 +234,7 @@
 		//PrintVariable($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
-		DisplayNotice("Pipeline info for <b>$pipelinetitle</b> updated");
+		Notice("Pipeline info for <b>$pipelinetitle</b> updated");
 	}
 
 	
@@ -504,7 +504,7 @@
 		
 		$msg .= "</ol> Data specification [$id] updated";
 		
-		DisplayNotice($msg);
+		Notice($msg);
 	}
 
 
@@ -547,7 +547,7 @@
 			$projectids = implode2(",",$projectid);
 		
 		if (!ctype_alnum($pipelinetitle)) {
-			?><div align="center"><span class="staticmessage">Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters</span></div><?
+			Error("Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters");
 		}
 		
 		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
@@ -1319,8 +1319,75 @@
 		<!-- -------------------- Settings tab -------------------- -->
 		
 		<div class="ui bottom attached <?=$tab_twoactive?> tab segment" data-tab="second">
-			<div class="ui two column relaxed grid">
-				<div class="column">
+			<div class="ui right very close rail">
+				<div class="ui segment">
+					<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							Help
+						</div>
+						<div class="content">
+							<h3 class="ui header">Title</h3>
+							The pipeline name. This will be the directory name on disk. Limit of 255 characters.
+
+							<h3 class="ui header">Description</h3>
+							Longer description.
+
+							<h3 class="ui header">Stats level</h3>
+								<ul>
+									<li><b>First</b> Subject level, from individual studies
+									<li><b>Second</b> Group level, from first-level pipelines
+								</ul>
+
+							<h3 class="ui header">Directory</h3>
+							Full path into which this pipeline will be stored. A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and that directory will contain all of the analyses for this pipeline. If this option is blank (the default), analyses for this pipeline will be written to the default pipeline directory <code>/nidb/data/pipelineb</code>	
+
+							<h3 class="ui header">Directory structure</h3>
+							<ul>
+								<li><b>pipeline</b> <code>/S1234ABC/1/ThisPipeline</code>
+								<li><b>pipelineb</b> <code>/ThisPipeline/S1234ABC/1</code>
+							</ul>
+
+							<h3 class="ui header">Pipeline group</h3>
+							Pipelines can be grouped together using a group name. This is different than a group of subjects or studies.
+
+							<h3 class="ui header">Notes</h3>
+							Any notes for the pipeline.
+
+							<h3 class="ui header">Data transfer method</h3>
+							<ul>
+								<li><b>NFS</b> copies via the the <tt>cp</tt> command assumes the filesystem you want to write to is mounted on this server
+								<li><b>scp</b> uses secure copy and assumes you have a passwordless login setup between this server and the one you are copying to
+							</ul>
+
+							<h3 class="ui header">Concurrent processes</h3>This is the number of concurrent jobs allowed to be submitted to the cluster at a time. This number is separate from the number of slots available in the cluster queue, which specified in the grid engine setup	
+
+							<h3 class="ui header">Cluster type</h3>SGE (default) or slurm	
+
+							<h3 class="ui header">Cluster user</h3>The username under which data copying and cluster job submission should be done. This user must already have ssh keys setup for password-less login between this sever and the cluster submit server. If blank, the default username is used ()	
+
+							<h3 class="ui header">Submit hostname</h3>The hostname of the cluster node to submit to. This host will also be used for scp copy. If blank, the default submit host is used ()	
+
+							<h3 class="ui header">Max wall time</h3>
+							Maximum wall time (in minutes) that each analysis is allowed to run before being terminated. 24 hours = 1440 minutes. Default is unlimited.
+
+							<h3 class="ui header">Submit delay</h3>
+							Number of hours after the study datetime that the job will be submitted. This option exists to allow a manual data import process to occur. For example, MRI data will be automatically imported into NiDB and is available for analysis immediately, but behavioral data may need to to be manually uploaded and may take a certain number of hours to be available. Default delay is 6 hours.
+
+							<h3 class="ui header">Queue name</h3>
+							The sun grid (SGE) queue to submit t (Comma separated list)
+
+							<h3 class="ui header">Use temporary directory</h3>
+							This option will copy all data into the temporary directory first, process it there, and copy it back to its final location. Usually <code>/tmp</code>. Check with your sysadmin
+
+							<h3 class="ui header">Hidden?</h3>
+							Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up in the main list.
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--<div class="ui two column relaxed grid">
+				<div class="column">-->
 					<table class="entrytable" style="border:0px">
 						<form method="post" action="pipelines.php">
 						<input type="hidden" name="action" value="<?=$formaction?>">
@@ -1433,73 +1500,10 @@
 						</tr>
 						</form>
 					</table>
-				</div>
+				<!--</div>
 				<div class="column">
-					<div class="ui styled accordion">
-						<div class="title">
-							<i class="dropdown icon"></i>
-							Help
-						</div>
-						<div class="content">
-							<h3 class="ui header">Title</h3>
-							The pipeline name. This will be the directory name on disk. Limit of 255 characters.
-
-							<h3 class="ui header">Description</h3>
-							Longer description.
-
-							<h3 class="ui header">Stats level</h3>
-								<ul>
-									<li><b>First</b> Subject level, from individual studies
-									<li><b>Second</b> Group level, from first-level pipelines
-								</ul>
-
-							<h3 class="ui header">Directory</h3>
-							Full path into which this pipeline will be stored. A directory called <b>Title</b> (same name as this pipeline) will be created inside this directory and that directory will contain all of the analyses for this pipeline. If this option is blank (the default), analyses for this pipeline will be written to the default pipeline directory <code>/nidb/data/pipelineb</code>	
-
-							<h3 class="ui header">Directory structure</h3>
-							<ul>
-								<li><b>pipeline</b> <code>/S1234ABC/1/ThisPipeline</code>
-								<li><b>pipelineb</b> <code>/ThisPipeline/S1234ABC/1</code>
-							</ul>
-
-							<h3 class="ui header">Pipeline group</h3>
-							Pipelines can be grouped together using a group name. This is different than a group of subjects or studies.
-
-							<h3 class="ui header">Notes</h3>
-							Any notes for the pipeline.
-
-							<h3 class="ui header">Data transfer method</h3>
-							<ul>
-								<li><b>NFS</b> copies via the the <tt>cp</tt> command assumes the filesystem you want to write to is mounted on this server
-								<li><b>scp</b> uses secure copy and assumes you have a passwordless login setup between this server and the one you are copying to
-							</ul>
-
-							<h3 class="ui header">Concurrent processes</h3>This is the number of concurrent jobs allowed to be submitted to the cluster at a time. This number is separate from the number of slots available in the cluster queue, which specified in the grid engine setup	
-
-							<h3 class="ui header">Cluster type</h3>SGE (default) or slurm	
-
-							<h3 class="ui header">Cluster user</h3>The username under which data copying and cluster job submission should be done. This user must already have ssh keys setup for password-less login between this sever and the cluster submit server. If blank, the default username is used ()	
-
-							<h3 class="ui header">Submit hostname</h3>The hostname of the cluster node to submit to. This host will also be used for scp copy. If blank, the default submit host is used ()	
-
-							<h3 class="ui header">Max wall time</h3>
-							Maximum wall time (in minutes) that each analysis is allowed to run before being terminated. 24 hours = 1440 minutes. Default is unlimited.
-
-							<h3 class="ui header">Submit delay</h3>
-							Number of hours after the study datetime that the job will be submitted. This option exists to allow a manual data import process to occur. For example, MRI data will be automatically imported into NiDB and is available for analysis immediately, but behavioral data may need to to be manually uploaded and may take a certain number of hours to be available. Default delay is 6 hours.
-
-							<h3 class="ui header">Queue name</h3>
-							The sun grid (SGE) queue to submit t (Comma separated list)
-
-							<h3 class="ui header">Use temporary directory</h3>
-							This option will copy all data into the temporary directory first, process it there, and copy it back to its final location. Usually <code>/tmp</code>. Check with your sysadmin
-
-							<h3 class="ui header">Hidden?</h3>
-							Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up in the main list.
-						</div>
-					</div>
 				</div>
-			</div>
+			</div>-->
 		</div>
 
 		<!-- -------------------- Data & Scripts tab -------------------- -->

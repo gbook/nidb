@@ -74,7 +74,7 @@
 	/* -------------------------------------------- */
 	function UpdateEnrollment($id, $completed, $enrollgroup, $enrollstatus, $tags) {
 		if (($id == '') || ($id == 0)) {
-			?><div class="staticmessage">Enrollment ID blank</div><?
+			Error("Enrollment ID blank");
 			return;
 		}
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
@@ -116,7 +116,7 @@
 	/* -------------------------------------------- */
 	function DisplayEnrollment($id) {
 		if (($id == '') || ($id == 0)) {
-			?><div class="staticmessage">Enrollment ID blank</div><?
+			Error("Enrollment ID blank");
 			return;
 		}
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);

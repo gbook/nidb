@@ -241,7 +241,7 @@
 
 		CommitSQLTransaction();
 		
-		DisplayNotice("$uid updated");
+		Notice("$uid updated");
 	}
 
 
@@ -313,7 +313,7 @@
 		}
 
 		
-		DisplayNotice("$subjectname added $uid");
+		Notice("$subjectname added $uid");
 		
 		return $SubjectRowID;
 	}
@@ -330,10 +330,10 @@
 		$id2 = $row['subject_id'];
 		
 		if ($id == $id2) {
-			DisplayNotice("Subject cannot be related to him/herself");
+			Notice("Subject cannot be related to him/herself");
 		}
 		elseif ($id2 == "") {
-			DisplayNotice("Subject $uid2 could not be found");
+			Notice("Subject $uid2 could not be found");
 		}
 		else {
 			/* insert the primary relation */
@@ -354,7 +354,7 @@
 				$sqlstring = "insert into subject_relation (subjectid1, subjectid2, relation) values ($id2, $id, '$symrelation')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			DisplayNotice("Relation added");
+			Notice("Relation added");
 		}
 	}
 
@@ -394,7 +394,7 @@
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$uid", $urllist,$perms);
 		
-		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
 		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 
@@ -405,7 +405,7 @@
 	function CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid) {
 		
 		if (!isInteger($templateid)) {
-			?><span class="staticmessage">Invalid templateID [<?=$templateid?>]</span><?
+			Error("Invalid templateID [$templateid]");
 			return;
 		}
 		
@@ -459,7 +459,7 @@
 		$urllist[$uid] = "subjects.php?action=display&id=$id";
 		NavigationBar("$uid", $urllist,$perms);
 		
-		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
 		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 
@@ -557,7 +557,7 @@
 		/* commit a transaction */
 		CommitSQLTransaction();
 		
-		DisplayNotice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
+		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
 		<a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 	
@@ -567,7 +567,7 @@
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectid, $projectid) {
 		if ($projectid == "") {
-			DisplayErrorMessage("Project not specified");
+			Error("Project not specified");
 			return;
 		}
 		
@@ -577,7 +577,7 @@
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectid, $subjectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			DisplayNotice("Subject enrolled in the project");
+			Notice("Subject enrolled in the project");
 		}
 		else {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -586,7 +586,7 @@
 			$sqlstring = "update enrollment set enroll_enddate = '0000-00-00 00:00:00' where enrollment_id = '$enrollmentid'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			DisplayNotice("Subject re-enrolled in the project");
+			Notice("Subject re-enrolled in the project");
 		}
 	}
 
@@ -628,7 +628,7 @@
 			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			DisplayNotice("Subject moved to new project");
+			Notice("Subject moved to new project");
 		}
 		else {
 			$new_spid = $row['enrollment_id'];
@@ -641,7 +641,7 @@
 			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-			DisplayNotice("Subject already enrolled in this project. Studies moved to new project");
+			Notice("Subject already enrolled in this project. Studies moved to new project");
 		}
 		?></ol><?
 	}
@@ -655,7 +655,7 @@
 		$sqlstring = "update subjects set isactive = 0 where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		DisplayNotice("Subject deleted (marked as inactive)");
+		Notice("Subject deleted (marked as inactive)");
 	}
 
 	
@@ -669,7 +669,7 @@
 		$sqlstring = "update subjects set isactive = 1 where subject_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		DisplayNotice("Subject undeleted (marked as active)");
+		Notice("Subject undeleted (marked as active)");
 	}
 	
 
@@ -683,7 +683,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 
-		DisplayNotice("Subject(s) queued for obliteration");
+		Notice("Subject(s) queued for obliteration");
 	}
 	
 	

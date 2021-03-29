@@ -231,7 +231,7 @@
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		DisplayNotice("$username updated");
+		Notice("$username updated");
 	}
 
 
@@ -263,7 +263,7 @@
 		
 		/* don't assign any permissions to a new user by default, it must be done manually */
 
-		DisplayNotice("$username added");
+		Notice("$username added");
 	}
 
 
@@ -275,7 +275,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$username = GetUsernameFromID($id);
-		DisplayNotice("$username deleted");
+		Notice("$username deleted");
 	}
 
 
@@ -287,7 +287,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$username = GetUsernameFromID($id);
-		DisplayNotice("$username enabled");
+		Notice("$username enabled");
 	}
 
 
@@ -299,7 +299,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$username = GetUsernameFromID($id);
-		DisplayNotice("$username disabled");
+		Notice("$username disabled");
 	}
 
 
@@ -311,7 +311,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$username = GetUsernameFromID($id);
-		DisplayNotice("$username set as admin");
+		Notice("$username set as admin");
 	}
 
 
@@ -323,7 +323,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$username = GetUsernameFromID($id);
-		DisplayNotice("$username unset as admin");
+		Notice("$username unset as admin");
 	}
 	
 	

@@ -142,7 +142,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 	
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		
@@ -467,12 +467,12 @@
 					UpdateQCParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_tr, $param_te, $param_te, $param_ti, $param_ti, $param_flip, $param_flip, $param_xdim, $param_xdim, $param_ydim, $param_ydim, $param_zdim, $param_zdim, $param_tdim, $param_tdim, $param_slicethickness, $param_slicethickness, $param_slicespacing, $param_slicespacing, $param_bandwidth, $param_bandwidth);
 				}
 				else {
-					?><span class="staticmessage">No MR series found for [<?=$study?>]</span><?
+					Error("No MR series found for [$study]");
 				}
 			}
 		}
 		else {
-			?><span class="staticmessage">Invalid study ID [<?=$study?>]. Incorrect UID, study number, or study does not contain MR series</span><?
+			Error("Invalid study ID [$study]. Incorrect UID, study number, or study does not contain MR series");
 		}
 	}
 
@@ -549,12 +549,12 @@
 					UpdateMRScanParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_tr, $param_te, $param_te, $param_ti, $param_ti, $param_flip, $param_flip, $param_xdim, $param_xdim, $param_ydim, $param_ydim, $param_zdim, $param_zdim, $param_tdim, $param_tdim, $param_slicethickness, $param_slicethickness, $param_slicespacing, $param_slicespacing, $param_bandwidth, $param_bandwidth);
 				}
 				else {
-					?><span class="staticmessage">No MR series found for [<?=$study?>]</span><?
+					Error("No MR series found for [$study]");
 				}
 			}
 		}
 		else {
-			?><span class="staticmessage">Invalid study ID [<?=$study?>]. Incorrect UID, study number, or study does not contain MR series</span><?
+			Error("Invalid study ID [$study]. Incorrect UID, study number, or study does not contain MR series");
 		}
 	}
 

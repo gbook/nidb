@@ -147,7 +147,7 @@
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		DisplayNotice("Checklist updated");		
+		Notice("Checklist updated");		
 	}
 
 	/* -------------------------------------------- */
@@ -189,7 +189,7 @@
 		$missingdataid = mysqli_real_escape_string($GLOBALS['linki'], trim($missingdataid));
 		
 		if (($missingdataid == '') || ($missingdataid == 0)) {
-			?><div class="staticmessage">Data ID blank</div><?
+			Error("data ID blank");
 			return;
 		}
 		
@@ -210,7 +210,7 @@
 		$reason = mysqli_real_escape_string($GLOBALS['linki'], trim($reason));
 		
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		
@@ -227,7 +227,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 	
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		
@@ -333,7 +333,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 	
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 		
@@ -590,7 +590,7 @@
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 	
 		if (($projectid == '') || ($projectid == 0)) {
-			?><div class="staticmessage">Project ID blank</div><?
+			Error("Project ID blank");
 			return;
 		}
 

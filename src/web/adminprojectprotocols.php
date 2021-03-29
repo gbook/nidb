@@ -82,7 +82,7 @@
 		$sqlstring = "insert ignore into project_protocol (project_id, protocolgroup_id, pp_criteria, pp_perstudyquantity, pp_perprojectquantity) values ($projectid, $protocolgroupid, '$criteria', '$numpersession', '$numtotal')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">Protocol added</span><?
+		Notice("Protocol added");
 	}
 
 
@@ -93,7 +93,7 @@
 		$sqlstring = "delete from project_protocol where projectprotocol_id = $projectprotocolid";
 		//PrintSQl($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">Protocol deleted</span><?
+		Notice("Protocol deleted");
 	}	
 	
 

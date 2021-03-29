@@ -113,7 +113,7 @@
 			$rangehigh = "null";
 		
 		if (trim($varname) == "") {
-			?><div align="center"><span class="staticmessage">Error - Blank variable name</span></div><br><br><?
+			Error("Blank variable name");
 			return;
 		}
 		

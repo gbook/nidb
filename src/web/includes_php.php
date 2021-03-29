@@ -96,9 +96,7 @@
 			header("Location: login.php");
 		}
 		if (trim($username) == "") {
-			?>
-			<span class="staticmessage">username is blank. Contact NiDB administrator</span>
-			<?
+			Error("username is blank. Contact NiDB administrator");
 			exit(0);
 		}
 	}

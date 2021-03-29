@@ -77,7 +77,7 @@
 	function CancelExport($exportid) {
 		$sqlstring = "update exports set status = 'cancelled' where export_id = $exportid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">Export [<?=$exportid?>] cancelled</span><?
+		Notice("Export [$exportid] cancelled");
 	}
 
 	
@@ -90,10 +90,10 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?><span class="staticmessage">Status reset for export [<?=$exportid?>]</span><?
+			Notice("Status reset for export [$exportid]");
 		}
 		else {
-			?>Invalid export ID [<?=$exportid?>]<?
+			Error("Invalid export ID [$exportid]");
 		}
 	}
 
@@ -121,7 +121,7 @@
 			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		?><span class="staticmessage">Export <?=$exportid?> re-queued</span><?
+		Notice("Export $exportid re-queued");
 	}
 	
 

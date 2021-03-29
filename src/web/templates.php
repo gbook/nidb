@@ -287,7 +287,7 @@
 				$templateid = $row['studytemplate_id'];
 				$templatename = $row['template_name'];
 				$templatemodality = $row['template_modality'];
-				DisplayNotice("Template named <b>$templatename</b> already exists. Displaying that template");
+				Notice("Template named <b>$templatename</b> already exists. Displaying that template");
 			}
 			else {
 				$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
@@ -622,10 +622,10 @@
 			$sqlstring = "delete from study_template where studytemplate_id = $templateid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="message">Template deleted</span><?
+			Notice("Template deleted");
 		}
 		else {
-			?><span class="message">Invalid study template ID</span><?
+			Error("Invalid study template ID");
 		}
 	}
 
@@ -643,10 +643,10 @@
 			$sqlstring = "delete from project_template where projecttemplate_id = $templateid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			DisplayNotice("Project Template deleted");
+			Notice("Project Template deleted");
 		}
 		else {
-			DisplayError("Error", "Invalid project template ID");
+			Error("Error", "Invalid project template ID");
 		}
 	}
 	

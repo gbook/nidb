@@ -67,7 +67,7 @@
 	function CancelFileIO($fileioid) {
 		$sqlstring = "update fileio_requests set request_status = 'cancelled' where fileiorequest_id = $fileioid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="staticmessage">File I/O Id=<?=$fileioid?> is cancelled</span><?
+		Notice("File I/O $fileioid has been cancelled");
 	}
 
 	/* --------------------------------------------------- */
@@ -76,7 +76,7 @@
 	function DeleteFileIO($fileioid) {
 		$sqlstring = "delete from fileio_requests where fileiorequest_id = $fileioid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><span class="message">File I/O Id=<?=$fileioid?> is deleted</span><?
+		Notice("File I/O $fileioid has been deleted");
 	}
 
 

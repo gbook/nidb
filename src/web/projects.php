@@ -308,7 +308,7 @@
 			}
 		}
 		else {
-			?><div class="staticmessage">No studies selected</div><?
+			Notice("No studies selected");
 		}
 	}
 	
@@ -604,7 +604,7 @@
 	function ResetProjectQA($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if ($id == "") {
-			?><div class="staticmessage">Invalid project ID</div><?
+			Error("Invalid project ID");
 		}
 		
 		/* get list of series associated with this project */
@@ -678,8 +678,7 @@
 			}
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		?>
-		<div align="center" class="staticmessage">Studies [<?=implode(', ',$studyids)?>] queued for re-archiving</div>
+		Notice("Studies [" . implode(', ',$studyids) . "] queued for re-archiving");
 		<?
 	}
 
@@ -2287,7 +2286,7 @@
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
 		else {
-			DisplayErrorMessage("Error", "Invalid project ID [$projectid]");
+			Error("Error", "Invalid project ID [$projectid]");
 			return;
 		}
 		//PrintVariable($modalities);
@@ -2421,7 +2420,7 @@
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
 		else {
-			DisplayErrorMessage("Error", "Invalid project ID [$projectid]");
+			Error("Error", "Invalid project ID [$projectid]");
 			return;
 		}
 		
@@ -2731,7 +2730,7 @@
 	function DisplayProjectList() {
 		
 		if ($_SESSION['instanceid'] == "") {
-			?><div class="staticmessage">InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top right corner of the page.</div><?
+			Error("InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top left corner of the page.");
 		}
 		
 		?>

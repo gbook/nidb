@@ -119,7 +119,7 @@
 		/* insert the new group */
 		$sqlstring = "insert ignore into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		DisplayNotice("$groupname added");
+		Notice("$groupname added");
 	}
 
 	/* -------------------------------------------- */
@@ -174,7 +174,7 @@
 				}
 			}
 		}
-		DisplayNotice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
+		Notice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
 	}
 
 	
@@ -231,7 +231,7 @@
 				}
 			}
 		}
-		DisplayNotice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
+		Notice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
 	}
 
 
@@ -256,7 +256,7 @@
 				$numadded++;
 			}
 		}
-		DisplayNotice("<b>$numadded</b> series added<br><b>$numexisting</b> series already in group");
+		Notice("<b>$numadded</b> series added<br><b>$numexisting</b> series already in group");
 	}
 
 	
@@ -268,7 +268,7 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		if (trim($id) == "") {
-			DisplayError("Error", "ID blank");
+			Error("Error", "ID blank");
 			return;
 		}
 

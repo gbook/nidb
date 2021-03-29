@@ -100,7 +100,7 @@
 		$sqlstring = "update assessment_forms set form_title = '$formtitle', form_desc = '$formdesc' where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$formtitle updated");
+		Notice("$formtitle updated");
 	}
 
 
@@ -117,7 +117,7 @@
 		$sqlstring = "insert into assessment_forms (form_title, form_desc, form_creator, form_createdate) values ('$formtitle', '$formdesc', '$username', now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("$formtitle added");
+		Notice("$formtitle added");
 	}
 
 	
@@ -145,7 +145,7 @@
 			}
 		}
 		
-		DisplayNotice("$formtitle updated");
+		Notice("$formtitle updated");
 	}
 	
 
@@ -156,7 +156,7 @@
 		$sqlstring = "delete from assessment_forms where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		DisplayNotice("$id deleted");
+		Notice("$id deleted");
 	}	
 
 
@@ -167,7 +167,7 @@
 		$sqlstring = "update assessment_forms set form_ispublished = 1 where form_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		DisplayNotice("$id published");
+		Notice("$id published");
 	}	
 	
 	

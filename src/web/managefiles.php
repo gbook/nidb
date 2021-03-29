@@ -114,10 +114,10 @@
 		$newfilepath = "$datadir/$newfilename";
 
 		if (rename($oldfilepath, $newfilepath)) {
-			?><div align="center"><span class="staticmessage">Successfully renamed [<?=$oldfilepath?>] to [<?=$newfilepath?>]</span></div><br><br><?
+			Notice("Successfully renamed [$oldfilepath] to [$newfilepath]");
 		}
 		else {
-			?><div align="center"><span class="staticmessage">Problem renaming [<?=$oldfilepath?>] to [<?=$newfilepath?>]</span></div><br><br><?
+			Notice("Problem renaming [$oldfilepath] to [$newfilepath]");
 		}
 	}
 

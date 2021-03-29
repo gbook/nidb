@@ -855,7 +855,7 @@
 		$userid = $row['user_id'];
 		
 		if ($userid == "") {
-			DisplayErrorMessage("Username was blank. You appear not to be logged in. Please login with your username to access NiDB");
+			Error("Username was blank. You appear not to be logged in. Please login with your username to access NiDB");
 			return;
 		}
 		
@@ -1026,7 +1026,7 @@
 		$msg = ValidateSearchVariables($s);
 		
 		if ($msg != "") {
-			DisplayError("Search error", $msg);
+			Error("Search error", $msg);
 		}
 		else {
 		}
@@ -1148,9 +1148,8 @@
 			}
 		}
 		else {
+			Notice("Query returned no results");
 			?>
-			<span class="staticmessage">Query returned no results</span>
-			<br><br>
 			<details>
 				<summary style="font-size:9pt">View SQL query:</summary>
 				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>

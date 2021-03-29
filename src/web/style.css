@@ -324,7 +324,6 @@ table.subdownload td.main { padding: 8px; vertical-align: top; border-top: 1px s
 table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px; width: 200px; border-top: 1px solid #888 }
 
 .tiny { font-size: 8pt; color: #666666; font-weight: normal; }
-/*.staticmessage { font-size: 9pt; color: darkred; }*/
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
 
 .adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; border-radius: 6px; }
@@ -339,9 +338,6 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 
 .smalllinkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; font-size: smaller; }
 .smalllinkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; font-size: smaller; }
-
-.redlinkbutton { display: inline-block; background-color: #FF552A; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
-.redlinkbutton:hover { display: inline-block; background-color: #FF7F55; border: 1px solid #FF552A; color: #fff !important; text-decoration: none; }
 
 /* form entry table */
 table.formentrytable { width: 100%; border: 2px solid #666; padding: 8px; }
@@ -379,16 +375,6 @@ table.smallgrayrounded td.title { color: black; font-weight: bold; font-size: 11
 table.smallgrayrounded td.body { background-color: white; padding: 4px; border-radius: 3px; font-size: 10pt; }
 table.smallgrayrounded span.header { color: #CCC; font-weight: bold; }
 table.smallgrayrounded span.tiny { color: #555555; font-size: 8pt; }
-
-table.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-caption.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-tbody.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-tfoot.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-thead.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-tr.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-tbody.nostyle tr:hover { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-th.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
-td.nostyle { margin: 0;padding: 0;border: 0;outline: 0;font-size: 100%;vertical-align: baseline;background: transparent;}
 
 .codelisting { background-color: #DDDDDD; font-family: courier new; padding-left: 4px; padding-right: 4px; font-size:85%}
 div .code { background-color: #eee; font-family: monospace; padding: 6px; border: 1px solid #888; border-radius:6px; }
@@ -482,10 +468,6 @@ fieldset.notice { background-color: #e3ffe0; border: 2px solid darkgreen; border
 	box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
 	border: 1px solid #aaa !important;
 }
-/* for the menu on the project page */
-td.menuheader { border: 1px solid #ddd; text-align: center; vertical-align: top; padding: 5px; border-radius: 5px; font-size: 14pt; }
-td.menuheader:hover { border: 1px solid black; text-align: center; vertical-align: top; padding: 5px; border-radius: 5px; font-size: 14pt; }
-td.menuheaderactive { border: 2px solid orange; text-align: center; padding: 5px; border-radius: 5px; font-size: 14pt; font-weight: bold; background-color: lightyellow; }
 
 input.required { border: 1px solid #888; background-color: #FBFFC4}
 input.required:hover { border: 1px solid #000; background-color: #FBFFC4}
@@ -552,17 +534,6 @@ input.required:hover { border: 1px solid #000; background-color: #FBFFC4}
 #tabs-min .ui-tabs-nav .ui-state-active a { 
 	color: #000;
 	font-weight: bold;
-}
-
-.nostyle * {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    outline: 0 !important;
-    font-size: 100% !important;
-    vertical-align: baseline !important;
-    background: transparent !important;
-	font-weight: normal !important;
 }
 
 /* Subject/Study/Series display - tree view

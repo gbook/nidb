@@ -83,7 +83,7 @@
 	$logincount = $row['user_logincount'];
 
 	if ($email == "") {
-		DisplayNotice("Your email address is currently blank. Please <a href='users.php'>update</a>.");
+		Notice("Your email address is currently blank. Please <a href='users.php'>update</a>.");
 	}
 	
 	

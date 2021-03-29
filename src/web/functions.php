@@ -696,7 +696,7 @@
 		$uid = $row['uid'];
 		$projectname = $row['project_name'];
 		if (mysqli_num_rows($result) > 1) {
-			?><span class="staticmessage">Subject [<?=$uid?>] has more than one enrollment in the same project [<?=$projectname?>]. Using the first enrollment to get the primary ID.</span><br><br><?
+			Notice("Subject [$uid] has more than one enrollment in the same project [$projectname]. Using the first enrollment to get the primary ID.");
 		}
 
 		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc limit 1";
@@ -1082,7 +1082,7 @@
 		}
 		else {
 			if (trim($varname) != "") {
-				DisplayErrorMessage("Invalid ID", "ID value [$var], named [$varname], was not valid");
+				Error("Invalid ID", "ID value [$var], named [$varname], was not valid");
 			}
 			
 			return 0;
@@ -2278,7 +2278,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		
 		if (count($problems) > 0) {
 			echo "<br>";
-			DisplayErrorMessage("System Error. Contact NiDB administrator", "<ul><li>" . implode2("<li>", $problems) . "</ul>");
+			Error("System Error. Contact NiDB administrator", "<ul><li>" . implode2("<li>", $problems) . "</ul>");
 		}
 	}
 	
@@ -2436,9 +2436,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayErrorMessage ---------------- */
+	/* ------- Error ------------------------------ */
 	/* -------------------------------------------- */
-	function DisplayErrorMessage($msg) {
+	function Error($msg) {
 		?>
 		<div class="ui message red">
 			<i class="close icon"></i>
@@ -2450,9 +2450,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayNotice ---------------------- */
+	/* ------- Notice ----------------------------- */
 	/* -------------------------------------------- */
-	function DisplayNotice($msg) {
+	function Notice($msg) {
 		?>
 		<div class="ui message yellow">
 			<i class="close icon"></i>

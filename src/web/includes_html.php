@@ -78,13 +78,9 @@
 
 <style>
 	.ui-tooltip {
-		padding: 10px 8px;
-		border-radius: 5px;
-		font-size: 11px;
-		border: 1px solid black;
-		box-shadow: 3px 3px 3px #888;
 		background: #222;
-		color: white;
+		color: #fff;
+		border-radius: 5px;
 	}
 </style>
 

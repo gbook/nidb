@@ -138,7 +138,7 @@
 			}
 		}
 		
-		DisplayNotice("title", "$projectname updated");
+		Notice("title", "$projectname updated");
 	}
 
 
@@ -166,7 +166,7 @@
 		$sqlstring = "insert into projects (project_uid, project_name, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		DisplayNotice("title", "$projectname added");
+		Notice("title", "$projectname added");
 	}
 
 
