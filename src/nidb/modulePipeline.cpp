@@ -906,6 +906,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
     n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydata", "Started copying data to [<tt>" + analysispath + "</tt>]");
 
+    /* if global BIDS export, do that as one step */
+    /* TBD */
+
     dlog << "\n ********** Required data for this study exists. Beginning data copy **********\n";
     /* go through list of data search criteria again to do the actual copying */
     for (int i = 0; i < datadef.size(); i++) {
