@@ -2567,7 +2567,7 @@
 							$series_size = $row['series_size'];
 							$lastupdate = $row['lastupdate'];
 
-							if ($numfiles < 1) { $numfiles = "-"; }
+							if ($numfiles < 1) { $numfiles = "0"; }
 							if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 							?>
 							<script type="text/javascript">
@@ -2591,7 +2591,11 @@
 								<td>
 								<span id="uploader<?=$series_id?>"></span>
 								</td>
-								<td nowrap><?=$series_size?> <a href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>" border="0"><i class="download icon" title="Download <?=$modality?> data"></i></a></td>
+								<td nowrap>
+									<? if ($series_size != "-") { ?>
+										<?=$series_size?> <a class="ui tiny primary button" href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>"><i class="download icon" title="Download <?=$modality?> data"></i> download</a>
+									<? } ?>
+								</td>
 								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<?=$series_id?>"></td>
 							</tr>
 						<?
@@ -2664,7 +2668,7 @@
 		<div align="right" style="padding: 10px">
 			<b>With Selected</b> &nbsp; &nbsp; <br>
 			<br>
-			<input type="button" value="Delete" class="ui red button" style="width:150px" onclick="document.serieslist.action.value='deleteseries';return confirm('Are you absolutely sure you want to DELETE the selected series?')">
+			<input type="button" value="Delete" class="ui red button" style="width:150px" onclick="document.serieslist.action.value='deleteseries'; document.serieslist.submit(); return confirm('Are you absolutely sure you want to DELETE the selected series?')">
 			<br><br>
 			<input type="button" class="ui button" style="width:150px" name="minipipelineform" value="Run mini-pipeline" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()">
 		</div>
