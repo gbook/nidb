@@ -289,7 +289,7 @@
 			<? } ?>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -345,7 +345,7 @@
 				}
 			?>
 			<tr>
-				<td colspan="4" align="right"><input type="submit" value="Set Default"></td>
+				<td colspan="4" align="right"><input type="submit" value="Set Default" class="ui primary button"></td>
 			</tr>
 		</tbody>
 		</form>

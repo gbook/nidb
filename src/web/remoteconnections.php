@@ -209,7 +209,7 @@
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -263,7 +263,7 @@
 				<td><?=$remoteinstanceid?></td>
 				<td><?=$remoteprojectid?></td>
 				<td><?=$remotesiteid?></td>
-				<td><a href="remoteconnections.php?action=delete&id=<?=$id?>" style="color: red">X</a></td>
+				<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
 			</tr>
 			<? 
 				}

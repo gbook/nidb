@@ -298,7 +298,7 @@
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
-			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="submit" value="Add Single Variable"></td>
+			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="submit" value="Add Single Variable" class="ui primary button"></td>
 		</tr>
 		</form>
 		
@@ -324,7 +324,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 				<br><br>
 				<span style="color: #444">Paste .csv (comma separated values) here</span><br>
 				<textarea name="csv" style="width: 100%; height: 100px"></textarea>
-				<input type="submit" value="Add Group Variables">
+				<input type="submit" value="Add Group Variables" class="ui primary button">
 			</td>
 		</tr>
 		</form>
@@ -427,7 +427,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		}
 		?>
 		<tr>
-			<td colspan="8" align="right"><input type="submit" value="Update Data Dictionary"></td>
+			<td colspan="8" align="right"><input type="submit" value="Update Data Dictionary" class="ui primary button"></td>
 		</tr>
 		</form>
 		</tbody>
@@ -505,7 +505,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		<tr>
 			<td colspan="7" align="right">
 				<b>With Selected Variables:</b><br>
-				<input type="submit" value="Add to Data Dictionary">
+				<input type="submit" value="Add to Data Dictionary" class="ui primary button">
 				<br>
 			</td>
 		</tr>

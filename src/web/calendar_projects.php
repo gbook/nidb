@@ -109,7 +109,7 @@
 				<td><a href="calendar_projects.php?action=editform&id=<?=$id?>" class="link"><?=$name?></a></td>
 				<td><?=$description?></td>
 				<td><?=$admin?></td>
-				<td align="center"><a href="calendar_projects.php?action=delete&id=<?=$id?>" style="color: red; text-decoration: underline">X</a></td>
+				<td align="center"><a href="calendar_projects.php?action=delete&id=<?=$id?>" style="color: red; text-decoration: underline"><i class="trash icon"></i></a></td>
 			</tr>
 			<?
 		}

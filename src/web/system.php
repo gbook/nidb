@@ -491,7 +491,7 @@
 					$messageid = $row['message_id'];
 					$messagedate = $row['message_date'];
 					$message = $row['message'];
-					?><br><?=$messagedate?> - <b><?=$message?></b> <a href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" class="adminbutton">Delete</a><br><?
+					?><br><?=$messagedate?> - <b><?=$message?></b> <a class="ui red button" href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
 				}
 			}
 			else {
@@ -502,7 +502,7 @@
 			<form method="post" action="system.php">
 			<input type="hidden" name="action" value="setsystemmessage">
 			<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
-			<input type="submit" value="Set message">
+			<input type="submit" value="Set message" class="ui primary button">
 			</form>
 		</fieldset>
 		
@@ -1151,7 +1151,7 @@
 			</tr>
 			<tr>
 				<td colspan="3">
-					<input type="submit" value="Update nidb.cfg">
+					<input type="submit" value="Save Settings" class="ui primary button">
 				</td>
 			</tr>
 		</table>

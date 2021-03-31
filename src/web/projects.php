@@ -679,7 +679,6 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		Notice("Studies [" . implode(', ',$studyids) . "] queued for re-archiving");
-		<?
 	}
 
 	
@@ -2492,10 +2491,9 @@
 		$siteids = array_unique($siteids);
 		
 		?>
-		<div align="center">
-		<table cellpadding="15px">
-			<tr>
-				<td>
+		<div class="ui container">
+			<div class="ui grid">
+				<div class="ui eight wide column">
 					<h2 class="ui header"><?=$name?></h2>
 					<table class="ui very basic compact collapsing celled table">
 						<tbody>
@@ -2542,14 +2540,23 @@
 							</tr>
 						</tbody>
 					</table>
-				</td>
-				<td valign="top" style="padding-left: 40px">
-					<h3 class="ui header">Project options</h3><br>
+				</div>
+				<div class="ui four wide column">
+					<h3 class="ui header">Data Views</h3>
+					<br>
+					<i class="users icon"></i> <a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br><br>
+					<i class="sitemap icon"></i> <a href="projects.php?action=displaystudies&id=<?=$id?>">Studies</a><br><br>
+					<i class="clipboard list icon"></i> <a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br><br>
+					<i class="clipboard list icon"></i> <a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR scan QC</a><br><br>
+				</div>
+				<div class="ui four wide column">
+					<h3 class="ui header">Project options/tools</h3>
+					<br>
 					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br><br>
 					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Builder</a><br><br>
 					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study Templates</a><br><br>
-					<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Scan Criteria</a><br><br>
-					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">QC Criteria</a><br><br>
+					<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit Scan Criteria</a><br><br>
+					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC Criteria</a><br><br>
 					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS Protocol Mapping</a><br><br>
 					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>">NDA Mapping</a><br><br>
 					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>">Behavioral mini-pipelines</a><br><br>
@@ -2557,10 +2564,8 @@
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>
-
-				</td>
-			</tr>
-		</table>
+				</div>
+			</div>
 		</div>
 		<?
 	}

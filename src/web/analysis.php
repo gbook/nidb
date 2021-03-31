@@ -974,15 +974,16 @@
 						<h3 class="ui header">With Selected...</h3>
 						<button class="ui red button" style="width: 200px" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button>
 						<br><br><br>
-						<p><input class="ui button" style="width: 200px" type="button" name="copyanalyses" value="Copy analyses to..." onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses';GetDestination()"></p>
 						
-						<p><input class="ui button" style="width: 200px" type="button" name="createlinks" value="Create links..." onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks';GetDestination2()" title="Creates a directory called 'data' which contains links to all of the selected studies"></p>
+						<p><button class="ui button" style="width: 200px" type="button" name="copyanalyses" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</button></p>
+						
+						<p><button class="ui button" style="width: 200px" type="button" name="createlinks" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</button></p>
 
 						<p><input class="ui button" style="width: 200px" type="button" name="rerunresults" value="Re-run results script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script"></p>
 
 						<p><input class="ui button" style="width: 200px" type="button" name="runsupplement" value="Run supplement script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory"></p>
 
-						<p><input class="ui button" style="width: 200px" type="button" name="rechecksuccess" value="Re-check if successful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"></p>
+						<p><button class="ui button" style="width: 200px" type="button" name="rechecksuccess" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"><i class="clipboard check icon"></i>Recheck success</button></p>
 						
 						<p>
 							<div class="ui left labeled button">

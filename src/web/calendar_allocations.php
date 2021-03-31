@@ -119,7 +119,9 @@
 				<td><?=$projectname?></td>
 				<td><?=$calendarname?></td>
 				<td><?=$amount?> hours per <?=$timeperiod?> days</td>
-				<td align="center"><a href="calendar_allocations.php?action=delete&id=<?=$id?>" style="color: red; text-decoration: underline">X</a></td>
+				<td align="center">
+					<a class="ui red button" href="calendar_allocations.php?action=delete&id=<?=$id?>" ><i class="trash icon"></i></a>
+				</td>
 			</tr>
 			<?
 		}

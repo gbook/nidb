@@ -74,7 +74,7 @@
 		<br><br>
 		<textarea name="emailbody" rows="10" cols="60" placeholder="Body"></textarea>
 		<br>
-		<input type="submit" value="Send email">
+		<input type="submit" value="Send email" class="ui primary button">
 		</form>
 		<?
 	}

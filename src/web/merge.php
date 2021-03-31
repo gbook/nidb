@@ -121,6 +121,10 @@
 		
 		$mergeids = implode2(",", $subjectids);
 		//PrintVariable($mergeids);
+		if ($mergeids == "") {
+			Error("No subject IDs selected for merge");
+			return;
+		}
 		
 		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_enrollgroup, merge_altuids, request_status, request_message, username, requestdate) values ('merge', 'subject', $selectedid, '$mergeids', '$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$guid', '$enrollgroup', '$altuid', 'pending', 'Request submitted', '" . $GLOBALS['username'] . "', now())";
 		//PrintVariable($sqlstring);

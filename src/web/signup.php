@@ -549,7 +549,7 @@
 							</tr>
 							<tr>
 								<td colspan="2" align="center">
-									<input type="submit" value="Create Account">
+									<input type="submit" value="Create Account" class="ui primary button">
 								</td>
 							</tr>
 						</table>
@@ -585,7 +585,7 @@
 						<br>
 						Enter email <input type="email" name="e" required>
 						&nbsp;
-						<input type="submit" value="Reset password">
+						<input type="submit" value="Reset password" class="ui primary button">
 					</td>
 				</tr>
 			</table>

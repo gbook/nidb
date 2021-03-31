@@ -587,7 +587,7 @@
 						<td><?=$seriesmodality?></td>
 						<td style="font-size:8pt"><?=$seriesdatetime?></td>
 						<td><?=$seriesnum?></td>
-						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red">X</a></td>
+						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>
 					</tr>
 					<?
 				}
@@ -1046,7 +1046,7 @@
 											}
 										}
 										?>
-										<!--<td><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red">X</a></td>-->
+										<!--<td><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>-->
 										<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
 									</tr>
 									<?
@@ -1503,7 +1503,7 @@
 						<td><?=$count?></td>
 						<td align="right">
 							<? if ($ownerusername == $GLOBALS['username']) { ?>
-								<a href="groups.php?action=delete&id=<?=$id?>" style="color:red">X</a>
+								<a href="groups.php?action=delete&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a>
 							<? } ?>
 						</td>
 					</tr>

@@ -323,7 +323,7 @@
 						}
 						?>
 						<tr>
-							<td colspan="3" align="right">Protocol group name <input type="text" name="thegroup" list="protocolgroups"><input type="submit" value="Add" title="Add selected to group"></td>
+							<td colspan="3" align="right">Protocol group name <input type="text" name="thegroup" list="protocolgroups"><input type="submit" value="Add" title="Add selected to group" class="ui primary button"></td>
 						</tr>
 						</tbody>
 					</table>
@@ -360,7 +360,7 @@
 												$p = $rowA['pgitem_protocol'];
 												$pgitemid = $rowA['pgitem_id'];
 												?>
-													<tr><td><?=$p?></td><td><a href="adminmodalities.php?action=deleteprotocolgroupitem&pgitemid=<?=$pgitemid?>&modality=<?=$modality?>" style="color:darkred;" title="Remove <b><?=$p?></b> from group">X</a></td></tr>
+													<tr><td><?=$p?></td><td><a class="ui red button" href="adminmodalities.php?action=deleteprotocolgroupitem&pgitemid=<?=$pgitemid?>&modality=<?=$modality?>" style="color:darkred;" title="Remove <b><?=$p?></b> from group" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td></tr>
 												<?
 											}
 										?>

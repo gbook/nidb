@@ -156,12 +156,12 @@
 				<td><?=$endDate?></td>
 				<? if ($iostatus=='pending'){ ?>
 				<td align="center" class="cancel">
-					<a href="javascript:decision('Are you sure you want to cancel this I/O request?', 'filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>')" class="cancel">Cancel Operation</a>
+					<a class="ui red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
 				</td>
 				<? }?>
 				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
-				<td align="center" class="delete">
-					<a href="javascript:decision('Are you sure you want to Remove this file I/O Entry?', 'filesio.php?action=deletefileio&fileioid=<?=$fileioid?>')" class="delete">Remove</a>
+				<td>
+					<a class="ui red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
 				</td>
 				<? } ?>
 

@@ -185,7 +185,7 @@
 			<? } ?>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>

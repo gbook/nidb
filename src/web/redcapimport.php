@@ -242,7 +242,7 @@
 							<td><?=$typeStr?></td>
 							<td><?=$variable?></td>
 							<td><?=$instrument?></td>
-							<td title="Delete mapping"><a href="redcapimport.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>" class="ui red button" style="font-size: smaller">X</a></td>
+							<td title="Delete mapping"><a href="redcapimport.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>" class="ui red button" style="font-size: smaller"><i class="trash icon"></i></a></td>
 						</tr>
 					<?
 					}

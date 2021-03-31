@@ -419,7 +419,7 @@
 		}
 		?>
 			<tr>
-				<td colspan="8" align="right"><input type="submit" value="Delete Enrollments"></td>
+				<td colspan="8" align="right"><input type="submit" value="Delete Enrollments" class="ui red button"></td>
 			</tr>
 			</tbody>
 		</table>

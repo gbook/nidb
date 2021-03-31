@@ -1319,7 +1319,7 @@
 		<!-- -------------------- Settings tab -------------------- -->
 		
 		<div class="ui bottom attached <?=$tab_twoactive?> tab segment" data-tab="second">
-			<div class="ui right very close rail">
+			<div class="ui right close rail">
 				<div class="ui segment">
 					<div class="ui accordion">
 						<div class="title">
@@ -1767,8 +1767,6 @@
 						<th>Order</th>
 						<th>Protocol</th>
 						<th>Modality</th>
-						<th title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1.">Data source <i class="blue question circle icon"></i></th>
-						<th title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level">Subject linkage <i class="blue question circle icon"></i></th>
 						<th>Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="blue question circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i></th>
 					</thead>
 				<?
@@ -1857,7 +1855,7 @@
 						</td>
 						<td id="row<?=$neworder?>">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
-								<option value="">(Select modality)</option>
+								<option value="">Modality...</option>
 							<?
 								$sqlstringA = "select * from modalities order by mod_desc";
 								$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -1885,26 +1883,31 @@
 							?>
 							</select>
 						</td>
-						<td>
-							<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
-								<option value="">(select data level)
-								<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
-								<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
-							</select>
-						</td>
-						<td>
-							<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
-								<option value="">(select study link)
-								<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
-								<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
-							</select>
-						</td>
 						<td style="text-align:left">
 							<div class="ui accordion">
 								<div class="title">
-									<i class="dropdown icon"></i> Options / Output Format
+									<i class="dropdown icon"></i> Options
 								</div>
 								<div class="content">
+
+									<div class="field">
+										<label>Data source <i class="blue question circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+										<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
+											<option value="">Level...
+											<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
+											<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
+										</select>
+									</div>
+									
+									<div class="field">
+										<label>Subject linkage <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
+										<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
+											<option value="">Link...
+											<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
+											<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
+										</select>
+									</div>
+									
 									<div class="field">
 										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=$dd_imagetype?>">
@@ -1925,7 +1928,7 @@
 										<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
 									</div>
 
-									<h3 class="ui header">Output format</h3>
+									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
 										<label>Directory <i class="blue question circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
@@ -1958,7 +1961,7 @@
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>>
-											<label>Preserve series numbers <img src="images/help.gif" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></label>
+											<label>Preserve series numbers <i class="blue question circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
 										</div>
 									</div>
 									<div class="field">
@@ -2025,7 +2028,7 @@
 						</td>
 						<td id="row<?=$neworder?>">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
-								<option value="">(Select modality)</option>
+								<option value="">Modality...</option>
 							<?
 								$sqlstringA = "select * from modalities order by mod_desc";
 								$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -2045,26 +2048,29 @@
 							?>
 							</select>
 						</td>
-						<td>
-							<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
-								<option value="">(select data level)
-								<option value="study">Study
-								<option value="subject">Subject
-							</select>
-						</td>
-						<td>
-							<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
-								<option value="">(select study link)
-								<option value="nearestintime">Nearest in time
-								<option value="samestudytype">Same study type
-							</select>
-						</td>
 						<td style="text-align:left">
 							<div class="ui accordion">
 								<div class="title">
-									<i class="dropdown icon"></i> Options / Output Format
+									<i class="dropdown icon"></i> Options
 								</div>
 								<div class="content">
+									<div class="field">
+										<label>Data source <i class="blue question circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+										<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
+											<option value="">Level...
+											<option value="study">Study
+											<option value="subject">Subject
+										</select>
+									</div>
+									
+									<div class="field">
+										<label>Subject linkage <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
+										<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
+											<option value="">Link...
+											<option value="nearestintime">Nearest in time
+											<option value="samestudytype">Same study type
+										</select>
+									</div>
 									<div class="field">
 										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]">
@@ -2085,7 +2091,7 @@
 										<input type="text" name="dd_numboldreps[<?=$neworder?>]">
 									</div>
 
-									<h3 class="ui header">Output format</h3>
+									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
 										<label>Directory <i class="blue question circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
@@ -2154,65 +2160,19 @@
 			</div>
 
 			<div class="ui blue secondary attached segment">
-				<h3 class="ui header">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
+				<div class="ui two column grid">
+					<div class="ui column">
+						<h3 class="ui header">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
+					</div>
+					<div class="ui right aligned column">
+						<div class="ui tiny button editoroptions" onClick="toggleWrap(); return;">Toggle text wrap</div>
+					</div>
+				</div>
 			</div>
 			<div class="ui attached segment">
-			
-				<style type="text/css" media="screen">
-					#commandlist { 
-						position: relative;
-						width: 1000px;
-						height: 700px;
-						top: 0;
-						right: 0;
-						bottom: 0;
-						left: 0;
-					}
-					#supplementcommandlist { 
-						position: relative;
-						width: 1000px;
-						height: 300px;
-						top: 0;
-						right: 0;
-						bottom: 0;
-						left: 0;
-					}
-				</style>
-				</b>
-				<table>
-					<tr>
-						<td valign="top">
-						<?
-					$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					//PrintSQLTable($result);
-					?>
-				<textarea name="commandlist" style="font-weight:normal"><?
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$pipelinestep_id = $row['pipelinestep_id'];
-						$ps_desc = $row['ps_description'];
-						$ps_order = $row['ps_order'];
-						$ps_command = $row['ps_command'];
-						$ps_workingdir = $row['ps_workingdir'];
-						$ps_enabled = $row['ps_enabled'];
-						$ps_logged = $row['ps_logged'];
-						if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-						if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-						if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
-echo "$ps_command $logged $ps_desc\n";
-						}
-						elseif ($ps_enabled) {
-echo "$ps_command     # $logged $ps_desc\n";
-						}
-						else {
-echo "#$ps_command     $logged $ps_desc\n";
-						}
-					}
-				?></textarea>
-				<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
-						</td>
-						<td valign="top" align="center">
-						<b>Available pipeline variables</b><br>
+				<div class="ui right close rail">
+					<div class="ui blue segment">
+						<h3 class="ui header">Pipeline variables</h3>
 						<span class="tiny">Click variable to insert at current editor location</span>
 						<br><br>
 						<table>
@@ -2242,59 +2202,101 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{PROFILE}');" title="Enable profiling (measure RAM, CPU, disk IO usage) for this step using the <tt>time<tt> command. Will not work with certain linux commands such as <tt>export, for, while</tt>, etc">{PROFILE}</td></tr>
 						</table>
-						<br><br>
-						<span class="editoroptions" onClick="toggleWrap()">Toggle text wrap</span>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="6" align="left">
-							<?
-								$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
-								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-								if (mysqli_num_rows($result2) > 0) {
-									$open = "open";
-								}
-								else {
-									$open = "";
-								}
-							?>
-							<details <?=$open?>>
-							<summary style="text-align:left; font-size:14pt; font-weight: bold; color:#214282;">Supplementary script commands</summary>
-							<br>
-							<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
-							<textarea name="supplementcommandlist"><?
-								while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-									$pipelinestep_id = $row2['pipelinestep_id'];
-									$ps_desc = $row2['ps_description'];
-									$ps_order = $row2['ps_order'];
-									$ps_command = $row2['ps_command'];
-									$ps_workingdir = $row2['ps_workingdir'];
-									$ps_enabled = $row2['ps_enabled'];
-									$ps_logged = $row2['ps_logged'];
-									if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-									if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-									if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+					</div>
+				</div>
+			
+				<style type="text/css" media="screen">
+					#commandlist { 
+						position: relative;
+						width: 1000px;
+						height: 700px;
+						top: 0;
+						right: 0;
+						bottom: 0;
+						left: 0;
+					}
+					#supplementcommandlist { 
+						position: relative;
+						width: 1000px;
+						height: 300px;
+						top: 0;
+						right: 0;
+						bottom: 0;
+						left: 0;
+					}
+				</style>
+					<?
+					$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					?>
+					<textarea name="commandlist" style="font-weight:normal"><?
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$pipelinestep_id = $row['pipelinestep_id'];
+							$ps_desc = $row['ps_description'];
+							$ps_order = $row['ps_order'];
+							$ps_command = $row['ps_command'];
+							$ps_workingdir = $row['ps_workingdir'];
+							$ps_enabled = $row['ps_enabled'];
+							$ps_logged = $row['ps_logged'];
+							if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
+							if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
+							if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
 echo "$ps_command $logged $ps_desc\n";
-									}
-									elseif ($ps_enabled) {
+							}
+							elseif ($ps_enabled) {
 echo "$ps_command     # $logged $ps_desc\n";
-									}
-									else {
+							}
+							else {
 echo "#$ps_command     $logged $ps_desc\n";
-									}
-								}
-							?></textarea>
-							<span class="editoroptions" onClick="toggleWrap2()">Toggle text wrap</span>
-							</details>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="6" align="center">
-							<br><br>
-							
-						</td>
-					</tr>
-				</table>
+							}
+						}
+					?></textarea>
+					<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
+			</div>
+			<div class="ui blue secondary attached segment">
+				<div class="ui two column grid">
+					<div class="ui column">
+						<h3 class="ui header">Supplement script &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
+					</div>
+					<div class="ui right aligned column">
+						<div class="ui tiny button editoroptions" onClick="toggleWrap2(); return;">Toggle text wrap</div>
+					</div>
+				</div>
+			</div>
+			<div class="ui attached segment">
+				<?
+					$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
+					$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+					if (mysqli_num_rows($result2) > 0) {
+						$open = "active";
+					}
+					else {
+						$open = "";
+					}
+				?>
+				<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
+				<textarea name="supplementcommandlist" hidden><?
+					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+						$pipelinestep_id = $row2['pipelinestep_id'];
+						$ps_desc = $row2['ps_description'];
+						$ps_order = $row2['ps_order'];
+						$ps_command = $row2['ps_command'];
+						$ps_workingdir = $row2['ps_workingdir'];
+						$ps_enabled = $row2['ps_enabled'];
+						$ps_logged = $row2['ps_logged'];
+						if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
+						if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
+						if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
+echo "$ps_command $logged $ps_desc\n";
+						}
+						elseif ($ps_enabled) {
+echo "$ps_command     # $logged $ps_desc\n";
+						}
+						else {
+echo "#$ps_command     $logged $ps_desc\n";
+						}
+					}
+				?></textarea>
 			</div>
 			<div class="ui bottom attached segment">
 				<input class="ui primary button" type="submit" <?=$disabled?> value="Save Pipeline Details">

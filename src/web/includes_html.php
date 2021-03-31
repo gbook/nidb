@@ -33,7 +33,7 @@
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
 <script type="text/javascript" src="scripts/jquery.jeditable.js"></script>
-<script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>
+<!--<script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <script type="text/javascript" src="scripts/stupidtable.min.js"></script>
 
@@ -46,6 +46,7 @@
 
 <link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.min.css">
 <script src="scripts/semantic/semantic.min.js"></script>
+<script src="scripts/tablesort.js"></script>
 
 <!-- file uploader -->
 <script src="scripts/fileuploader.js" type="text/javascript"></script>
@@ -94,6 +95,7 @@
 		$('.ui.accordion').accordion({exclusive: false});
 		$('.ui.dropdown').dropdown({duration: 50});
 		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
+		//$('table').tablesort();
 		
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.

@@ -610,11 +610,11 @@
 				<div class="column">
 					<? if ($type == 'edit') { ?>
 						<input type="hidden" name="username" value="<?=$username?>">
-						<button class="ui red button" onClick="window.location.href='adminusers.php?action=delete&id=<?=$id?>'; return false;"><i class="minus square outline icon"></i>Delete User</button>
+						<a class="ui red button" href="adminusers.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
 					<? } ?>
 				</div>
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='adminusers.php'; return false;">Cancel</button>
+					<a class="ui button" href="adminusers.php">Cancel</a>
 					<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
 				</div>
 			</div>

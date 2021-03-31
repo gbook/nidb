@@ -644,7 +644,7 @@
 			}
 		?>
 			<tr>
-				<td colspan="5" align="right"><input type="submit" value="Rename"></td>
+				<td colspan="5" align="right"><input type="submit" value="Rename" class="ui primary button"></td>
 			</tr>
 		</table>
 		</form>
@@ -728,7 +728,7 @@
 			}
 		?>
 			<tr>
-				<td colspan="5" align="right"><input type="submit" value="Save notes"></td>
+				<td colspan="5" align="right"><input type="submit" value="Save notes" class="ui primary button"></td>
 			</tr>
 		</table>
 		</form>
@@ -837,7 +837,7 @@
 				<form method="post" action="studies.php">
 				<input type="hidden" name="action" value="delete">
 				<input type="hidden" name="studyid" value="<?=$studyid?>">
-				<td align="center"><input type="submit" value="Yes, delete it"</td>
+				<td align="center"><input type="submit" value="Yes, delete it" class="ui primary button"></td>
 				</form>
 			</tr>
 		</table>		
@@ -1074,7 +1074,7 @@
 			?>
 			</tbody>
 		</table>
-		<input type="submit" value="Run mini-pipelines">
+		<input type="submit" value="Run mini-pipelines" class="ui primary button">
 		</form>
 		<?
 		
@@ -1240,7 +1240,7 @@
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -1526,7 +1526,7 @@
 							<summary style="color:darkred" class="tiny">Admin Functions</summary>
 							<div style="border: solid 1px #aaa; border-radius: 5px; padding: 5px">
 						
-							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui red button">Delete</a>
+							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui red button" onclick="return confirm('Are you sure you want to delete this study?')">Delete</a>
 							<br><br>
 							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
 							<form action="studies.php" method="post">

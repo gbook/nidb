@@ -269,7 +269,7 @@
 								<td><?=$ctime?></td>
 								<td><?=$atime?></td>
 								<td><?=$mtime?></td>
-								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>" style="color: white; background-color: darkred; padding: 1px 5px; font-weight: bold">X</a></td>
+								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>" style="color: white; background-color: darkred; padding: 1px 5px; font-weight: bold"><i class="trash icon"></i></a></td>
 							</tr>
 							<?
 						}

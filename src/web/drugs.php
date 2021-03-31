@@ -227,8 +227,8 @@
 							<td><?=$drug_dose?> / <?=$drug_dosefreq?></td>
 							<td><?=$drug_route?></td>
 							<td><?=$drug_startdate?> to <?=$drug_enddate?></td>
-							<td align="right" class="delete">
-								<a href="javascript:decision('Are you sure you want to delete this drug?', 'drugs.php?action=deletedrug&drugid=<?=$drugid?>&enrollmentid=<?=$enrollmentid?>')" class="delete">X</a>
+							<td>
+								<a class="ui red button" href="drugs.php?action=deletedrug&drugid=<?=$drugid?>&enrollmentid=<?=$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

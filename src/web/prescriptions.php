@@ -179,8 +179,8 @@
 							<td><?=$rx_name?></td>
 							<td><?=$rx_route?><br><?=$rx_dateentered2?></td>
 							<td><?=$rx_rater?><br><?=$rx_rater2?></td>
-							<td align="right" class="delete">
-								<a href="javascript:decision('Are you sure you want to delete this rx?', 'prescriptions.php?action=deleterx&rxid=<?=$rxid?>&enrollmentid=<?=$enrollmentid?>')" class="delete">X</a>
+							<td align="right">
+								<a class="ui red button" href="prescriptions.php?action=deleterx&rxid=<?=$rxid?>&enrollmentid=<?=$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

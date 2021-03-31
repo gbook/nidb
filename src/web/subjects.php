@@ -1334,9 +1334,9 @@
 									if ($GLOBALS['isadmin']) {
 										if ($isactive) {
 										?>
-											<button class="ui red button" onClick="window.location.href='subjects.php?action=deleteconfirm&id=<?=$id?>'; return false;">Delete</button>
+											<a class="ui red button" href="subjects.php?action=deleteconfirm&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
 										<? } else { ?>
-											<button class="ui red button" onClick="window.location.href='subjects.php?action=undelete&id=<?=$id?>'; return false;">Undelete</button>
+											<a class="ui red button" href="subjects.php?action=undelete&id=<?=$id?>" onclick="return confirm('Are you sure you want to undelete this subject?')">Undelete</a>
 										<?
 										}
 									}

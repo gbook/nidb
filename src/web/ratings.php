@@ -157,7 +157,7 @@
 						<td><?=$rating_date?></td>
 						<td style="color: <?=$rating_fcolor;?>; background-color: <?=$rating_bcolor;?>"><?=$rating_value?></td>
 						<td><?=$rating_notes?></td>
-						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>&type=<?=$type?>&modality=<?=$modality?>" style="color: red">X</a></td>
+						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>&type=<?=$type?>&modality=<?=$modality?>" style="color: red"><i class="trash icon"></i></a></td>
 					</tr>
 					<?
 				}

@@ -108,7 +108,7 @@
 				}
 			?>
 			<input name="modality" type="hidden" value="<?=$modality?>">
-			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt">
+			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt" class="ui primary button">
 		</form>
 		<br>
 		<? if ($modality == "mr") { echo "Data for MRI series will be uploaded as <u>behavioral</u> data<br><br>"; } ?>

@@ -96,6 +96,7 @@
 			case 'deletestudytemplate':
 				DeleteStudyTemplate($templateid);
 				DisplayStudyTemplateList($projectid);
+				DisplayProjectStudyTemplateList($projectid);
 				break;
 			case 'deleteprojecttemplate':
 				DeleteProjectTemplate($ptid);
@@ -141,7 +142,7 @@
 					<div class="ui labeled action input">
 						<input type="text" name="newtemplatename" placeholder="New template name" required>
 						<select name="newtemplatemodality" class="ui selection dropdown" required>
-							<option value="">Select modality</option>
+							<option value="">Modality...</option>
 						<?
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
@@ -167,6 +168,12 @@
 				$templateid = $row['studytemplate_id'];
 				$templatename = $row['template_name'];
 				$templatemodality = $row['template_modality'];
+				
+				if ($templatename == "")
+					$templatename = "(blank)";
+				
+				if ($templatemodality == "")
+					$templatemodality = "(blank)";
 				?>
 				<tr>
 					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
@@ -234,6 +241,9 @@
 				$name = $row['template_name'];
 				$createdate = $row['template_createdate'];
 				$modifydate = $row['template_modifydate'];
+
+				if ($name == "")
+					$name = "(blank)";
 				
 				$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -351,10 +361,10 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<input type="hidden" name="username" value="<?=$username?>">
-					<button class="ui red button" onClick="window.location.href='templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>; return false;'"><i class="minus square outline icon"></i>Delete</button>
+					<a class="ui red button" href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='templates.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
 					<input type="submit" value="Save" class="ui button primary">
 				</div>
 			</div>
@@ -495,10 +505,10 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<input type="hidden" name="username" value="<?=$username?>">
-					<button class="ui red button" onClick="window.location.href='templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>; return false;'"><i class="minus square outline icon"></i>Delete</button>
+					<a class="ui red button" href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" onclick="return confirm('Are you sure you want to delete this template?')"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='templates.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
 					<input type="submit" value="Save" class="ui button primary">
 				</div>
 			</div>
@@ -538,6 +548,8 @@
 		/* commit the transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		Notice("Study template updated");
 	}
 
 
@@ -606,6 +618,8 @@
 		/* commit the transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		Notice("Study project template updated");
 	}
 
 

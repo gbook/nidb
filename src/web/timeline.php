@@ -429,7 +429,7 @@
 		<input type="datetime-local" name="startdatetime" value="<?=str_replace(" ", "T", $startdatetime)?>"> to <input type="datetime-local" name="enddatetime" value="<?=str_replace(" ", "T", $enddatetime)?>">
 		
 		<br><br><br>
-		<input type="submit" value="Update">
+		<input type="submit" value="Update" class="ui primary button">
 		
 		</form>
 		</div>

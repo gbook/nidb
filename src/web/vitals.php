@@ -203,8 +203,8 @@
 							<td><?=$vital_value?></td>
 							<td><?=$vital_notes?></td>
 							<td><?=$vital_date?></td>
-							<td align="right" class="delete">
-								<a href="javascript:decision('Are you sure you want to delete this vital?', 'vitals.php?action=deletevital&vitalid=<?=$vitalid?>&enrollmentid=<?=$enrollmentid?>')" class="delete">X</a>
+							<td align="right">
+								<a class="ui red button" href="javascript:decision('Are you sure you want to delete this vital?', 'vitals.php?action=deletevital&vitalid=<?=$vitalid?>&enrollmentid=<?=$enrollmentid?>')" class="delete"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

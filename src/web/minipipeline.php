@@ -366,10 +366,10 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			</div>
 			<div class="ui two column grid">
 				<div class="column">
-					<button class="ui red button" onClick="window.location.href='minipipeline.php?mpid=1&projectid=1&action=delete'; return false;"><i class="minus square outline icon"></i>Delete</button>
+					<a class="ui red button" href="minipipeline.php?mpid=1&projectid=1&action=delete" onclick="return confirm('Are you sure you want to delete?')"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<a class="ui button" href="minipipeline.php?projectid=<?=$projectid?>">Cancel</a>
 					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</form>
@@ -492,7 +492,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 								}
 								?>
 							</td>
-							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')">X</a></td>
+							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash icon"></i></a></td>
 						</tr>
 						<?
 					}

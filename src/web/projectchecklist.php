@@ -383,21 +383,18 @@
 		
 		?>
 		<br>
-		<div align="center">
-		<!--<form action="subjects.php" method="post">
-		<input type="hidden" name="action" value="merge">
-		<input type="hidden" name="returnpage" value="projectchecklist.php?projectid=<?=$projectid?>">-->
+		<div class="ui container">
 		<b>Displaying <?=$numenrollments?> enrollments</b> <span class="tiny">Table is sortable. Click column headers to sort</span><br><br>
-		<table class="sortable graydisplaytable" style="border-collapse: collapse; border: 1px solid #444">
+		<table class="ui celled very compact selectable black table">
 			<thead>
 			<tr>
 				<!--<th>Merge</th>-->
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">Primary ID</th>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">UID</th>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">GUID</th>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">Enroll date</th>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff"># studies</th>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">Group</th>
+				<th class="ui inverted attached header">Primary ID</th>
+				<th class="ui inverted attached header">UID</th>
+				<th class="ui inverted attached header">GUID</th>
+				<th class="ui inverted attached header">Enroll date</th>
+				<th class="ui inverted attached header"># studies</th>
+				<th class="ui inverted attached header">Group</th>
 		<?
 		$totals = array(0,0,0,0,0);
 		$ii = 5;
@@ -413,7 +410,7 @@
 			$ii++;
 		}
 		?>
-				<th data-sort="string-ins" style="background-color: #444; color: #fff">Complete data?</th>
+				<th class="ui inverted attached header">Complete data?</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -545,13 +542,13 @@
 						}
 					}
 					else {
-						?><td style="border-left: 1px solid #ccc; text-align: center"><?=$msg?></td><?
+						?><td><?=$msg?></td><?
 					}
 					$ii++;
 				}
 				
 				if ($rowtotal == count($checklist)) {
-					?><td style="border-left: 1px solid #ccc; text-align: center">&#10004;</td><?
+					?><td>&#10004;</td><?
 					$totals[$ii]++;
 				}
 				else {
@@ -565,18 +562,19 @@
 			</tr>
 			<?
 		}
-		//PrintVariable($enrollment);
-		echo "<tr><td style='border-top: 1px solid black;'>Totals </td>";
-		foreach ($totals as $i => $num) {
-			?><td style="border-top: 1px solid black; font-weight: bold"><?=$num?></td><?
-		}
 		?>
-				<td style='border-top: 1px solid black;'></td>
-			</tr>
 			</tbody>
+			<tfoot>
+			<tr>
+				<th>Totals </th>
+				<?
+				foreach ($totals as $i => $num) {
+					?><th><?=$num?></th><?
+				}
+				?>
+			</tr>
+			</tfoot>
 		</table>
-		<!--<input type="submit" value="Merge subjects">
-		</form>-->
 		</div>
 		<?
 	}

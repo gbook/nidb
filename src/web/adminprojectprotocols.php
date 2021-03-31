@@ -160,7 +160,7 @@
 					<td><?=$criteria?></td>
 					<td><?=$numpersession?></td>
 					<td><?=$numtotal?></td>
-					<td><a href="adminprojectprotocols.php?action=deleteprotocol&projectprotocolid=<?=$projectprotocolid?>&projectid=<?=$projectid?>" style="color: darkred">X</a></td>
+					<td><a class="ui red button" href="adminprojectprotocols.php?action=deleteprotocol&projectprotocolid=<?=$projectprotocolid?>&projectid=<?=$projectid?>" style="color: darkred" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td>
 				</tr>
 				<? 
 				}
