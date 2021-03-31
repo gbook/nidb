@@ -72,16 +72,16 @@
 		
 		/* calculate the status color */
 		if (!$moduleinfo[$name]['isactive']) {
-			$moduleinfo[$name]['color'] = "#f00";
+			$moduleinfo[$name]['color'] = "red";
 			$moduleinfo[$name]['status'] = 'Disabled';
 		}
 		else {
 			if ($moduleinfo[$name]['status'] == "running") {
-				$moduleinfo[$name]['color'] = "#bcffc5";
+				$moduleinfo[$name]['color'] = "green";
 				$moduleinfo[$name]['status'] = 'Running';
 			}
 			if ($moduleinfo[$name]['status'] == "stopped") {
-				$moduleinfo[$name]['color'] = "#adc7ff";
+				$moduleinfo[$name]['color'] = "blue";
 				$moduleinfo[$name]['status'] = 'Enabled';
 			}
 		}
@@ -111,11 +111,11 @@
 			<? } ?>
 			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
 			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
-			<span style="background-color: <?=$moduleinfo['import']['color']?>" title="Status: <?=$moduleinfo['import']['status']?>">&nbsp;import&nbsp;</span> 
-			<span style="background-color: <?=$moduleinfo['fileio']['color']?>" title="Status: <?=$moduleinfo['fileio']['status']?>">&nbsp;fileio&nbsp;</span> 
-			<span style="background-color: <?=$moduleinfo['pipeline']['color']?>" title="Status: <?=$moduleinfo['pipeline']['status']?>">&nbsp;pipeline&nbsp;</span>
-			<span style="background-color: <?=$moduleinfo['export']['color']?>" title="Status: <?=$moduleinfo['export']['status']?>">&nbsp;export&nbsp;</span>
-			<span style="background-color: <?=$moduleinfo['mriqa']['color']?>" title="Status: <?=$moduleinfo['mriqa']['status']?>">&nbsp;mriqa&nbsp;</span>
+			<div class="ui mini <?=$moduleinfo['import']['color']?> label" title="Status: <?=$moduleinfo['import']['status']?>">import</div> 
+			<div class="ui mini <?=$moduleinfo['fileio']['color']?> label" title="Status: <?=$moduleinfo['fileio']['status']?>">fileio</div> 
+			<div class="ui mini <?=$moduleinfo['pipeline']['color']?> label" title="Status: <?=$moduleinfo['pipeline']['status']?>">pipeline</div>
+			<div class="ui mini <?=$moduleinfo['export']['color']?> label" title="Status: <?=$moduleinfo['export']['status']?>">export</div>
+			<div class="ui mini <?=$moduleinfo['mriqa']['color']?> label" title="Status: <?=$moduleinfo['mriqa']['status']?>">mriqa</div>
 		</td>
 		<td align="right" style="font-size:8pt; color: white">
 			<span style="color: white; font-size:8pt; padding-right: 5px; padding-left: 5px">Problem, bug, or comment? <a href="https://github.com/gbook/nidb/issues" style="color:white; text-decoration:underline">Report it</a></span>

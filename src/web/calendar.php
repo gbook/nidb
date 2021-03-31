@@ -247,7 +247,7 @@
 					$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
 					$enddatetime = date('Y-m-d 23:59:59', mktime(0,0,0,$month, $day, $year));
 					?>
-					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><img src="images/add12.png" border="0" title="Add appointment"></a><br><br>
+					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><i class="orange plus square icon" title="Create appointment"></i> Create Appointment</a><br><br>
 					<?
 					if ($currentcal == 0) {
 						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
@@ -387,43 +387,43 @@
 					<? if ($sun_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$sun_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($mon_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$mon_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($tue_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$tue_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($wed_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$wed_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($thu_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$thu_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($fri_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$fri_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
 					<? if ($sat_holidays != "") { ?>
 					<div align="center" class="week_heading_holiday"><?=$sat_holidays?></div>
 					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
+					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
 				</td>
 				<td></td>
 			</tr>
@@ -607,7 +607,11 @@
 			else {
 				$bgcolor = "white";
 			}
-			if (array_key_exists($hol_date, $holidays)) { $theholidays = implode("<br>", $holidays[$hol_date]); }
+			if (array_key_exists($hol_date, $holidays)) {
+				$holidaystr = implode("<br>", $holidays[$hol_date]);
+			}
+			else
+				$holidaystr = "";
 
 			$startdatetime = "$year-$month-$day_num 00:00:00";
 			$enddatetime = "$year-$month-$day_num 23:59:59";
@@ -618,16 +622,16 @@
 					<tr>
 						<td style="background-image: -webkit-gradient(linear, 0% 100%, 100% 100%, from(#454545), to(#CCCCCC)); background-image: -moz-linear-gradient(0% 0% 0deg,#454545, #FFFFFF)">
 						<span style="color: white; background-color: #555555; font-weight: bold">&nbsp;<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day_num?>" style="color: white; font-size:10pt; text-decoration: none"><?=$day_num?></a>&nbsp;</span>
-						<? if ($theholidays != "") { ?>
-						<span class="week_heading_holiday"><?=$theholidays?></span>
+						<? if ($holidaystr != "") { ?>
+						<div class="ui blue small label"><?=$holidaystr?></div>
 						<? } ?>
 						</td>
 					</tr>
 				</table>
 				<table width="100%" height="100%">
 					<tr>
-						<td align="left" height="100%">&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><img src="images/add12.png" title="Add appointment" border="0"></a>
-							<br>
+						<td align="left" height="100%">&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><i class="orange plus square icon" title="Create appointment"></i></a>
+							<br><br>
 							<?
 							if ($currentcal == 0) {
 								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";

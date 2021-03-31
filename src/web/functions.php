@@ -2440,10 +2440,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function Error($msg) {
 		?>
-		<div class="ui message red">
-			<i class="close icon"></i>
-			<div class="header">Error</div>
-			<p><?=$msg?></p>
+		<div class="ui container">
+			<div class="ui message red">
+				<i class="close icon"></i>
+				<div class="header">Error</div>
+				<p><?=$msg?></p>
+			</div>
 		</div>
 		<?
 	}
@@ -2454,10 +2456,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function Notice($msg) {
 		?>
-		<div class="ui message yellow">
-			<i class="close icon"></i>
-			<div class="header">Notice</div>
-			<p><?=$msg?></p>
+		<div class="ui container">
+			<div class="ui message yellow">
+				<i class="close icon"></i>
+				<div class="header">Notice</div>
+				<p><?=$msg?></p>
+			</div>
 		</div>
 		<?
 	}

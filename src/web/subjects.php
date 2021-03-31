@@ -122,9 +122,11 @@
 			break;
 		case 'newstudy':
 			CreateNewStudy($modality, $enrollmentid, $id);
+			DisplaySubject($id);
 			break;
 		case 'newstudyfromtemplate':
 			CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
+			DisplaySubject($id);
 			break;
 		case 'newstudygroupfromtemplate':
 			CreateStudyGroupFromTemplate($modality, $enrollmentid, $id, $grouptemplateid);
@@ -510,7 +512,7 @@
 			
 			$i++;
 		}
-		PrintVariable($templates);
+		//PrintVariable($templates);
 
 		/* start a transaction */
 		StartSQLTransaction();
