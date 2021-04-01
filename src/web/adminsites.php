@@ -198,47 +198,50 @@
 	/* ------- DisplaySiteList -------------------- */
 	/* -------------------------------------------- */
 	function DisplaySiteList() {
-	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Sites'] = "adminsites.php";
-		$urllist['Add Site'] = "adminsites.php?action=addform";
-		NavigationBar("Admin", $urllist);
-		
 	?>
-
-	<table class="graydisplaytable">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Site ID</th>
-				<th>Address</th>
-				<th>Contact Info</th>
-				<th>UUID</th>
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from nidb_sites order by site_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['site_id'];
-					$uuid = $row['site_uuid'];
-					$name = $row['site_name'];
-					$address = $row['site_address'];
-					$contact = $row['site_contact'];
-			?>
-			<tr>
-				<td><a href="adminsites.php?action=editform&id=<?=$id?>"><?=$name?></td>
-				<td><?=$id?></td>
-				<td><?=$address?></td>
-				<td><?=$contact?></td>
-				<td class="tiny"><?=strtoupper($uuid)?></td>
-			</tr>
-			<? 
-				}
-			?>
-		</tbody>
-	</table>
+	<div class="ui container">
+		<div class="ui two column grid">
+			<div class="column">
+				<h1 class="ui header">Sites</h1>
+			</div>
+			<div class="right aligned column">
+				<a href="adminsites.php?action=addform" class="ui primary button"><i class="plus square icon"></i>Add Site</a>
+			</div>
+		</div>
+		<table class="ui very compact celled grey table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Site ID</th>
+					<th>Address</th>
+					<th>Contact Info</th>
+					<th>UUID</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select * from nidb_sites order by site_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['site_id'];
+						$uuid = $row['site_uuid'];
+						$name = $row['site_name'];
+						$address = $row['site_address'];
+						$contact = $row['site_contact'];
+				?>
+				<tr>
+					<td><a href="adminsites.php?action=editform&id=<?=$id?>"><?=$name?></td>
+					<td><?=$id?></td>
+					<td><?=$address?></td>
+					<td><?=$contact?></td>
+					<td class="tiny"><?=strtoupper($uuid)?></td>
+				</tr>
+				<? 
+					}
+				?>
+			</tbody>
+		</table>
+	</div>
 	<?
 	}
 ?>

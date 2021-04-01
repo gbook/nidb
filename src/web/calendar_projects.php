@@ -74,15 +74,15 @@
 		<style>
 			.header { font-weight: bold; color: darkblue; border-top: 2px solid gray; border-bottom: 1px solid gray;}
 		</style>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="link">Back</a> to Calendar</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="ui button">Back</a> to Calendar</td></tr></table><br>
 		<br>
 		<table width="100%">
 			<tr>
 				<td>
-					<img src="images/add16.png"> <a href="calendar_projects.php?action=addform" class="link">Add Project</a>
+					<img src="images/add16.png"> <a href="calendar_projects.php?action=addform" class="ui button">Add Project</a>
 				</td>
 				<td align="right">
-					<img src="images/refresh16.png"> <a href="calendar_projects.php" class="link">Refresh Page</a>
+					<img src="images/refresh16.png"> <a href="calendar_projects.php" class="ui button">Refresh Page</a>
 				</td>
 			</tr>
 		</table>
@@ -106,7 +106,7 @@
 			$description = $row['project_description'];
 			?>
 			<tr>
-				<td><a href="calendar_projects.php?action=editform&id=<?=$id?>" class="link"><?=$name?></a></td>
+				<td><a href="calendar_projects.php?action=editform&id=<?=$id?>" class="ui button"><?=$name?></a></td>
 				<td><?=$description?></td>
 				<td><?=$admin?></td>
 				<td align="center"><a href="calendar_projects.php?action=delete&id=<?=$id?>" style="color: red; text-decoration: underline"><i class="trash icon"></i></a></td>
@@ -178,7 +178,7 @@
 	/* ----------------------------------------------- */
 	function AddForm($message, $name, $description, $admin) {
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_projects.php" class="link">Back</a> to project list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_projects.php" class="ui button">Back</a> to project list</td></tr></table><br>
 		
 		<form action="calendar_projects.php" method="post" id="form1">
 		<input type="hidden" name="action" value="add">
@@ -221,7 +221,7 @@
 		$description = $row['project_description'];
 		$admin = $row['project_admin'];
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_projects.php" class="link">Back</a> to project list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_projects.php" class="ui button">Back</a> to project list</td></tr></table><br>
 		
 		<form action="calendar_projects.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">

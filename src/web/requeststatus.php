@@ -339,7 +339,7 @@
 			</tr>
 			<tr>
 				<td>
-					<table class="graydisplaytable" width="100%">
+					<table class="ui very compact celled grey table">
 						<thead>
 							<th align="left">Subject</th>
 							<th align="left">Study</th>

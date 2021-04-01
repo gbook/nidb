@@ -2716,7 +2716,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		?>
 		<br><br>
 		<b>All usage</b>
-		<table class="smallgraydisplaytable" style="margin-top: 5px; border-collapse: collapse">
+		<table class="ui very compact small celled grey table">
 			<thead>
 				<tr style="vertical-align: top;text-align:left">
 					<!--<th style="font-size:12pt">Pipeline Group</th>-->

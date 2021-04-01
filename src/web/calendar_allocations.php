@@ -76,15 +76,15 @@
 		<style>
 			.header { font-weight: bold; color: darkblue; border-top: 2px solid gray; border-bottom: 1px solid gray;}
 		</style>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="link">Back</a> to Calendar</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="ui button">Back</a> to Calendar</td></tr></table><br>
 		<br>
 		<table width="100%">
 			<tr>
 				<td>
-					<img src="images/add16.png"> <a href="calendar_allocations.php?action=addform" class="link">Add Allocation</a>
+					<img src="images/add16.png"> <a href="calendar_allocations.php?action=addform" class="ui button">Add Allocation</a>
 				</td>
 				<td align="right">
-					<img src="images/refresh16.png"> <a href="calendar_allocations.php" class="link">Refresh Page</a>
+					<img src="images/refresh16.png"> <a href="calendar_allocations.php" class="ui button">Refresh Page</a>
 				</td>
 			</tr>
 		</table>
@@ -180,7 +180,7 @@
 	/* ----------------------------------------------- */
 	function AddForm($message, $amount, $timeperiod, $calendar_id, $project_id) {
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_allocations.php" class="link">Back</a> to allocation list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_allocations.php" class="ui button">Back</a> to allocation list</td></tr></table><br>
 		
 		<form action="calendar_allocations.php" method="post" id="form1">
 		<input type="hidden" name="action" value="add">
@@ -259,7 +259,7 @@
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_allocations.php" class="link">Back</a> to allocation list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_allocations.php" class="ui button">Back</a> to allocation list</td></tr></table><br>
 		
 		<form action="calendar_allocations.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">

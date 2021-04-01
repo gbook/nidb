@@ -636,7 +636,7 @@
 		$grouplist = implode2("<br>", $groupnames);
 		if ($grouplist == "") { $grouplist = "None"; }
 
-		$datasearchtable = "<table class='smallgridtable'>
+		$datasearchtable = "<table class='ui very compact celled table'>
 			<thead>
 			<tr>
 				<th></th>
@@ -781,7 +781,7 @@
 				<td class="stepdetail">
 					<details><summary>History</summary>
 					<div style="height: 400px; width:1200px; overflow:auto">
-						<table class="smallgridtable">
+						<table class="ui very compact celled table">
 							<thead>
 								<tr>
 									<th>Cumulative time</th>
@@ -1033,7 +1033,7 @@
 		}
 
 		?>
-		<table class="smallgridtable">
+		<table class="ui very compact celled table">
 			<thead>
 				<tr>
 					<th>Series</th>

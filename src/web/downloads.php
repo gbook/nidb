@@ -89,7 +89,7 @@
 	<p style="background-color: #FFFFDF; border: 1px solid yellow; padding: 8px"><b>Notes</b><br>Some downloads may require registration. Click Download link to view release notes and contents of the download file. All downloads were created from data stored on this server. More detailed search criteria and QC information is available by logging in to the server and going to the Search page.</p>
 	
 	<div align="center">
-	<table class="graydisplaytable" width="90%">
+	<table class="ui very compact celled grey table">
 		<thead>
 			<tr>
 				<th>Description</th>

@@ -275,7 +275,7 @@
 					<form action="adminmodalities.php" method="post">
 					<input type="hidden" name="action" value="updateprotocolgroup">
 					<input type="hidden" name="modality" value="<?=$modality?>">
-					<table class="graydisplaytable">
+					<table class="ui very compact celled grey table">
 						<thead>
 							<tr>
 								<th>Series description</th>
@@ -330,7 +330,7 @@
 					</form>
 				</td>
 				<td valign="top">
-					<table class="graydisplaytable">
+					<table class="ui very compact celled grey table">
 						<thead>
 							<tr>
 								<th>Group</th>

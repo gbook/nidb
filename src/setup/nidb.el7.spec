@@ -8,7 +8,7 @@ URL:            http://github.com/gbook/nidb
 #Source0:        
 
 BuildArch:	x86_64
-BuildRequires:  gcc, cmake, make
+BuildRequires:  gcc, cmake3, make
 Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, mariadb, mariadb-server, mariadb-devel, mariadb-libs, httpd, ImageMagick, perl-Image-ExifTool, openssl
 
 %description

@@ -92,7 +92,7 @@
 					if(confirm(message)) location.href = url;
 			}
 		</SCRIPT>
-		<table class="graydisplaytable" width="100%">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th align="left">I/O Id</th>
 				<th align="left">Requested By</th>

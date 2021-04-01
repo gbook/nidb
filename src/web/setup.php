@@ -56,8 +56,16 @@
 		$cfg = LoadConfig();
 		if ($cfg != null) {
 			$cfgexists = true;
-			if (file_exists($cfg['nidbdir']))
-				$installtype = "upgrade";
+			
+			/* probably need to prompt the user if the nidbdir variable is blank */
+			if ($cfg['nidbdir'] == null)
+				if (file_exists("/nidb")) {
+					$cfg['nidbdir'] = "/nidb";
+					$installtype = "upgrade";
+				}
+			else
+				if (file_exists($cfg['nidbdir']))
+					$installtype = "upgrade";
 		}
 	}
 	

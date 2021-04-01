@@ -373,7 +373,7 @@
 		<b>Imaging studies from <?=$datestart?> to <?=$dateend?></b>
 		<br>
 		<br>
-		<table class="graydisplaytable">
+		<table class="ui very compact celled grey table">
 			<tr>
 				<th>UID</th>
 				<th>Study</th>

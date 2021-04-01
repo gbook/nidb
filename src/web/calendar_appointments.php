@@ -370,7 +370,7 @@
 			if ($method == "add") { echo "Appointment added"; } else { echo "Appointment updated"; }
 		?>
 		<br>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="link">Back</a> to calendar</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="ui button">Back</a> to calendar</td></tr></table><br>
 		</div>
 		<?
 	}	
@@ -409,7 +409,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
 		Appointment deleted<br><br>
-		<a href="calendar.php" class="link">Back</a> to calendar
+		<a href="calendar.php" class="ui button">Back</a> to calendar
 		<?
 	}	
 
@@ -544,7 +544,7 @@
 		}
 		
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="link">Back</a> to calendar</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="ui button">Back</a> to calendar</td></tr></table><br>
 		
 		<form action="calendar_appointments.php" method="post" id="form1" name="form1">
 		<input type="hidden" name="action" value="<?=$type?>">

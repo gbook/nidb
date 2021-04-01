@@ -556,7 +556,8 @@
 			   }
 			}
 		</script>
-		<table id="analysistable" class="smallgraydisplaytable" width="100%">
+		<table id="analysistable" class="ui very compact small celled grey table">
+		<!--<table id="analysistable" class="smallgraydisplaytable">-->
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
@@ -1097,7 +1098,7 @@
 		<input type="hidden" name="analysisid" value="">
 		<input type="hidden" name="id" value="<?=$id?>">
 		
-		<table id="analysistable" class="smallgraydisplaytable dropshadow">
+		<table id="analysistable" class="ui very compact small celled grey table">
 			<thead>
 				<tr>
 					<th><input type="checkbox" id="studiesall"> Study</th>

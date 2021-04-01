@@ -212,7 +212,7 @@
 		A <span style="color: red"> red ID</span> means the foreign ID is contained in the alternate <b>Study</b> ID, not alternate <b>Subject</b> ID<br>
 		A <span style="color: green"> green ID</span> means the foreign ID was found as a local UID<br>
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<th style="border-right: solid 1px #888"></th>
 				<th colspan="5">Local</th>
@@ -983,7 +983,7 @@ question_num, question_text, datatype, values, comment</div>
 		NavigationBar("Import", $urllist);
 	
 		?>
-		<table class="graydisplaytable">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Name</th>
 				<th>Description</th>

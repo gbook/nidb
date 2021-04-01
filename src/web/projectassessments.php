@@ -371,7 +371,7 @@
 		</table>
 
 		 <div align="right">
-                 <button><h3> <b> <a class="button" href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Preview Form </a></b></h3></button>
+                 <button><h3> <b> <a class="ui button" href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Preview Form </a></b></h3></button>
 
 		 <div align="center">	
 		<br><br>
@@ -502,7 +502,7 @@
 		<? if (($formpublish==0) || ($Cnt==0)) { ?>
 			<br>
 	 		<div align="right">
-                	<button disabled ><h3> <b> <a class="button" href="projectassessments.php?action=editform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Edit Form </a></b></h3></button>
+                	<button disabled ><h3> <b> <a class="ui button" href="projectassessments.php?action=editform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Edit Form </a></b></h3></button>
 		<? } else  {?>
 			<br><br><br>
 			<div align="center">

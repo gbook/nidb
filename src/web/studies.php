@@ -599,7 +599,7 @@
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="renameseries">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<table class="graydisplaytable">
+		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<tr>
 					<th></th>
@@ -692,7 +692,7 @@
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="updateseriesnotes">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<table class="graydisplaytable">
+		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<tr>
 					<th>Series</th>
@@ -1044,7 +1044,7 @@
 		<input type="hidden" name="action" value="submitminipipelines">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
 		<input type="hidden" name="modality" value="<?=$modality?>">
-		<table class="graydisplaytable">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Series</th>
 				<th>Desc</th>
@@ -1508,12 +1508,12 @@
 						<tr>
 							<td colspan="1" align="left">
 								<br>
-								<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="linkbutton">Edit</a>
+								<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button">Edit</a>
 							</td>
 							<? if (strtoupper($study_modality) != "MR"){ ?>
 							<td colspan="2" align="right">
 								<br>
-								<a name="subme" style="cursor: pointer;" class="linkbutton" onclick="document.getElementById('Sform').submit();">Save</a>
+								<a name="subme" style="cursor: pointer;" class="ui primary button" onclick="document.getElementById('Sform').submit();">Save</a>
 							</td>
 							<?}?>
 						</tr>
@@ -1528,7 +1528,7 @@
 						
 							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui red button" onclick="return confirm('Are you sure you want to delete this study?')">Delete</a>
 							<br><br>
-							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="linkbutton" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
+							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui primary button" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
 							<form action="studies.php" method="post">
 							<input type="hidden" name="studyid" value="<?=$study_id?>">
 							<input type="hidden" name="action" value="movestudytosubject">
@@ -1697,7 +1697,7 @@
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="mr">
-		<table class="smallgraydisplaytable" width="100%">
+		<table class="ui very compact small celled grey table">
 			<thead>
 				<tr>
 					<th>Series</th>

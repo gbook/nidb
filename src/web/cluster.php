@@ -213,7 +213,7 @@ echo "$line\n";
 		
 		?>
 
-		<table class="graydisplaytable dropshadow">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<tr>
 					<th>Node</th>

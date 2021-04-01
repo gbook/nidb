@@ -203,7 +203,7 @@
 		<form action="merge.php" method="post">
 		<input type="hidden" name="action" value="submitmergestudies">
 		<input type="hidden" name="returnpage" value="<?=$returnpage?>">
-		<table class="graydisplaytable">
+		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<th></th>
 				<th>Study</th>
@@ -286,7 +286,7 @@
 			<form action="merge.php" method="post">
 			<input type="hidden" name="action" value="merge">
 			<input type="text" name="subjectuid" placeholder="UID"><br>
-			<input type="submit" class="linkbutton" value="Add UID">
+			<input type="submit" class="ui primary button" value="Add UID">
 			</form>
 			<?
 			return;
@@ -528,7 +528,7 @@
 				}
 				?>
 				<input type="text" name="subjectuid" placeholder="UID"><br>
-				<input type="submit" class="linkbutton" value="Add UID">
+				<input type="submit" class="ui primary button" value="Add UID">
 				</form>
 				<? } else { ?>
 				Only 4 IDs allowed at a time

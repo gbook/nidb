@@ -254,8 +254,8 @@
 							<td><?=$measure_startdate?></td>
 							<td><?=$measure_duration?></td>
 							<td><?=$measure_enddate?></td>
-							<td align="right" class="delete" style="border-right: 1px solid #666">
-								<a class="ui red button" href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" onClick="return confirm('Are you sure you want to delete this record?')" class="delete"><i class="trash icon"></i></a>
+							<td align="right" style="border-right: 1px solid #666">
+								<a class="ui red button" href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" onClick="return confirm('Are you sure you want to delete this record?')"><i class="trash icon"></i></a>
 							</td>
 							<td style="font-size: 9pt"><?=$measure_entrydate?></td>
 							<td style="font-size: 9pt"><?=$measure_createdate?></td>

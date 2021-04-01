@@ -189,7 +189,7 @@
 		<b>Protocol:</b> <?=$protocol?>
 		</div>
 		<br><br>
-		<table class="graydisplaytable" width="100%">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<tr>
 					<th>Filename</th>

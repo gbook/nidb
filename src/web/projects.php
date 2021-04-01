@@ -838,7 +838,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
 		?>
-		<table class="graydisplaytable dropshadow">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Study</th>
 				<th>Date</th>
@@ -1093,7 +1093,7 @@
 		
 	?>
 
-	<table class="graydisplaytable">
+	<table class="ui very compact celled grey table">
 		<thead>
 			<tr>
 				<th>Title</th>
@@ -1892,7 +1892,7 @@
 		<? DisplayProjectsMenu("subjects", $id); ?>
 		<div align="center">
 		<br>
-		<table class="graydisplaytable dropshadow">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th>UID</th>
 				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
@@ -2051,7 +2051,7 @@
 		<input type="hidden" name="id" value="<?=$id?>">
 		Click <b>Update</b> below to apply these changes to all studies associated with this project
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Modality</th>
 				<th>Series Description</th>
@@ -2128,7 +2128,7 @@
 		
 		?>
 		<br><br>
-		<table class="graydisplaytable">
+		<table class="ui very compact celled grey table">
 			<thead>
 				<tr>
 					<th></th>

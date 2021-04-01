@@ -1265,7 +1265,7 @@
 		?>
 		<details>
 			<summary>MR protocol summary</summary>
-			<table class="smallgraydisplaytable sortable">
+			<table class="ui very compact small celled grey table">
 				<thead>
 				<th>Desc</th>
 				<th>TR</th>

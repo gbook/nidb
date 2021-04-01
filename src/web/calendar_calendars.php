@@ -80,15 +80,15 @@
 		<style>
 			.header { font-weight: bold; color: darkblue; border-top: 2px solid gray; border-bottom: 1px solid gray;}
 		</style>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="link">Back</a> to Calendar</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="ui button">Back</a> to Calendar</td></tr></table><br>
 		<br>
 		<table width="100%">
 			<tr>
 				<td>
-					<img src="images/add16.png"> <a href="calendar_calendars.php?action=addform" class="link">Add Calendar</a>
+					<img src="images/add16.png"> <a href="calendar_calendars.php?action=addform" class="ui button">Add Calendar</a>
 				</td>
 				<td align="right">
-					<img src="images/refresh16.png"> <a href="calendar_calendars.php" class="link">Refresh Page</a>
+					<img src="images/refresh16.png"> <a href="calendar_calendars.php" class="ui button">Refresh Page</a>
 				</td>
 			</tr>
 		</table>
@@ -112,7 +112,7 @@
 			$location = $row['calendar_location'];
 			?>
 			<tr>
-				<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="link"><?=$name?></a></td>
+				<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="ui button"><?=$name?></a></td>
 				<td><?=$description?></td>
 				<td><?=$location?></td>
 				<td align="center">
@@ -182,7 +182,7 @@
 	/* ----------------------------------------------- */
 	function AddForm($message, $name, $description, $location) {
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="link">Back</a> to calendar list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="ui button">Back</a> to calendar list</td></tr></table><br>
 		
 		<form action="calendar_calendars.php" method="post" id="form1">
 		<input type="hidden" name="action" value="add">
@@ -225,7 +225,7 @@
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="link">Back</a> to calendar list</td></tr></table><br>
+		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="ui button">Back</a> to calendar list</td></tr></table><br>
 		
 		<form action="calendar_calendars.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">

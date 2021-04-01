@@ -531,7 +531,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 			$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 			?>
 			
-			&nbsp; &nbsp; <a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="linkbutton"><b>&larr; Back</b></a>
+			&nbsp; &nbsp; <a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui button"><b>&larr; Back</b></a>
 			
 			<div style="padding: 20px">
 				<table class="twocoltablesimple">

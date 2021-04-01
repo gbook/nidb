@@ -144,7 +144,7 @@
 
 			?>
 			<div align="center">Block receipt status</div>
-			<table class="graydisplaytable" width="100%">
+			<table class="ui very compact celled grey table">
 				<thead>
 					<th align="left">Block</th>
 					<th align="left">Start</th>
