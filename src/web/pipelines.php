@@ -194,7 +194,8 @@
 		default:
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 	}
-	
+	//PrintVariable($GLOBALS['t']);
+
 	/* ------------------------------------ functions ------------------------------------ */
 
 
@@ -2693,7 +2694,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$group = $row['pipeline_group'];
 			//$imgdata[$group] = CreatePipelineGraph($group);
 		}
-		list($myusage,$maxsize) = GetPipelineInfo();
+		list($myusage,$maxsize) = GetPipelineInfo(true);
 		
 		?>
 		<style>
@@ -2716,7 +2717,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		?>
 		<br><br>
 		<b>All usage</b>
-		<table class="ui very compact small celled grey table">
+		<table class="smallgraydisplaytable" style="margin-top: 5px; border-collapse: collapse">
 			<thead>
 				<tr style="vertical-align: top;text-align:left">
 					<!--<th style="font-size:12pt">Pipeline Group</th>-->
@@ -2778,97 +2779,102 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$group = $row['pipeline_group'];
 			//$imgdata[$group] = CreatePipelineGraph($group);
 		}
-		list($myusage,$maxsize) = GetPipelineInfo();
+		list($myusage,$maxsize) = GetPipelineInfo(false);
+		//$myusage = "";
+		//$maxsize = "";
 		
 	?>
-	<style>
-		a { color: #224ea5; }
-	</style>
-	<span style="font-size: 10pt">
+	<!--<span style="font-size: 10pt">
 		<b>My usage</b><br>
 		<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
 		<b># running</b> <?=$myusage['totalrunning']?><br>
 		<b># complete</b> <?=$myusage['totalcomplete']?><br>
-	</span>
-	<br>
-	<span style="font-size:10pt">View: <a href="pipelines.php?viewuserid=all"><b>All pipelines</b></a> &nbsp; Only pipelines owned by
-	<?
-		foreach ($userids as $userid => $username) {
-			?> | <a href="pipelines.php?viewuserid=<?=$userid?>"><?=$username?></a><?
-		}
-	?>
-	</span>
-	<br>
-<!--	<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
-	<br> -->
-	<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
-	<br>
-	<?	
-		if ($viewuserid == "all") {
-			foreach ($userids as $userid => $username)
-				$useridlist[] = $userid;
-		}
-		else {
-			$useridlist[] = $viewuserid;
-		}
-		
-		foreach ($useridlist as $userid) {
-			$username = $userids[$userid];
-			$pipelinetree = GetPipelineTree($viewall, $userid);
-			if (trim($username) == "") { $username = "(blank)"; }
-			?>
-			<br><br>
-			<!--
-			<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
-				<tr>
-					<td style="background-color: #DDD; padding:5px">
-			<b style="color: #00008B;font-size:14pt"><?=$username?></b> &nbsp; &nbsp; <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/>
-			-->
-			<script type="text/javascript">
-				function filterTable(event) {
-					var filter = event.target.value.toUpperCase();
-					var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
-					
-					for (var i = 0; i < rows.length; i++) {
-						var firstCol = rows[i].cells[0].textContent.toUpperCase();
-						var secondCol = rows[i].cells[1].textContent.toUpperCase();
-						if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-							rows[i].style.display = "";
-						} else {
-							rows[i].style.display = "none";
-						}      
-					}
-				}
+	</span>-->
+	<div class="ui container">
+		<div class="ui two column grid">
+			<div class="column">
+				<h1 class="ui header">Pipelines</h1>
+			</div>
+			<div class="right aligned column">
+				<a href="pipelines.php?action=addform" class="ui primary large button"><i class="plus square outline icon"></i>New Pipeline</a>
+			</div>
+		</div>
+		<h3 class="ui header">View</h3> <a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a> <a href="pipelines.php?action=viewusage" class="ui button">Disk Usage <div class="ui mini yellow label">SLOW!</div></a>
+		<br><br>
+		<h3 class="ui header">View pipelines owned by</h3>
+		<?
+			$i = 0;
+			foreach ($userids as $userid => $username) {
+				if ($i == 0) $buttoncolor = "blue"; else $buttoncolor = "";
+				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><?=$username?></a><?
+				$i++;
+			}
 
-				document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
-			</script>
-			<!--		</td>
-				</tr>
-			</table>-->
-			<a href="pipelines.php?action=addform" class="ui primary button"><i class="plus square outline icon"></i>New Pipeline</a>
-			<table class="ui selectable table" id="pipelinetable<?=$username?>" width="100%">
-				<thead>
-					<tr style="vertical-align: top;text-align:left">
-						<th style="font-size:12pt">Pipeline Group</th>
-						<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/></th>
-						<th style="font-size:12pt" align="right">Level</th>
-						<th style="font-size:12pt">Owner<br></th>
-						<th style="font-size:12pt">Status</th>
-						<th style="font-size:12pt" align="right" title="processing / complete">Analyses</th>
-						<th style="font-size:12pt" align="right">Disk size</th>
-						<th style="font-size:12pt" align="left">Path</th>
-						<th style="font-size:12pt">Queue</th>
+			if ($viewuserid == "all") {
+				foreach ($userids as $userid => $username)
+					$useridlist[] = $userid;
+			}
+			else {
+				$useridlist[] = $viewuserid;
+			}
+			
+			foreach ($useridlist as $userid) {
+				$username = $userids[$userid];
+				$pipelinetree = GetPipelineTree($viewall, $userid);
+				if (trim($username) == "") { $username = "(blank)"; }
+				?>
+				<br><br>
+				<!--
+				<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
+					<tr>
+						<td style="background-color: #DDD; padding:5px">
+				<b style="color: #00008B;font-size:14pt"><?=$username?></b> &nbsp; &nbsp; <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/>
+				-->
+				<script type="text/javascript">
+					function filterTable(event) {
+						var filter = event.target.value.toUpperCase();
+						var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
+						
+						for (var i = 0; i < rows.length; i++) {
+							var firstCol = rows[i].cells[0].textContent.toUpperCase();
+							var secondCol = rows[i].cells[1].textContent.toUpperCase();
+							if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+								rows[i].style.display = "";
+							} else {
+								rows[i].style.display = "none";
+							}      
+						}
+					}
+
+					document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
+				</script>
+				<!--		</td>
 					</tr>
-				</thead>
-				<tbody>
-					<?
-						PrintTree($pipelinetree,0);
-					?>
-				</tbody>
-			</table>
-			<?
-		}
-	?>
+				</table>-->
+				<table class="ui single line selectable table" id="pipelinetable<?=$username?>" width="100%">
+					<thead>
+						<tr style="vertical-align: top;text-align:left">
+							<th style="font-size:12pt">Pipeline Group</th>
+							<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/></th>
+							<th style="font-size:12pt" align="right">Level</th>
+							<th style="font-size:12pt">Owner<br></th>
+							<th style="font-size:12pt">Status</th>
+							<!--<th style="font-size:12pt" align="right" title="processing / complete">Analyses</th>
+							<th style="font-size:12pt" align="right">Disk size</th>
+							<th style="font-size:12pt" align="left">Path</th>
+							<th style="font-size:12pt">Queue</th>-->
+						</tr>
+					</thead>
+					<tbody>
+						<?
+							PrintTree($pipelinetree,0);
+						?>
+					</tbody>
+				</table>
+				<?
+			}
+		?>
+	</div>
 	<br><br><br><br><br>
 	<?
 	}
@@ -3000,6 +3006,17 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$fontcolor = "black";
 		}
 		
+		$dispstatus = $info['status'];
+		/* get the correct display status */
+		if ($info['isenabled']) {
+			if ($info['status'] == "stopped") {
+				$dispstatus = "Idle";
+			}
+		}
+		else {
+			$dispstatus = "Disabled";
+		}
+		
 		$imgdata = $GLOBALS['imgdata'];
 		?>
 		<tr style="color: <?=$fontcolor?>">
@@ -3008,23 +3025,23 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<? } else { ?>
 			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']]?>'>"><?=$info['pipelinegroup']?></td>
 			<? } ?>
-			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
 			<td valign="top" align="right"><?=$info['level']?></td>
 			<td valign="top"><?=$info['creatorusername']?></td>
-			<td valign="top" align="left" style="background-color: <?=$bgcolor?>">
+			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
 				<?
 					if ($info['isenabled']) {
-						?><a href="pipelines.php?action=disable&returnpage=home&id=<?=$info['id']?>"><img src="images/toggle-on.png" width="25px" style="mix-blend-mode: multiply;" title="Enabled. Click to disable"></a><?
+						?><a href="pipelines.php?action=disable&returnpage=home&id=<?=$info['id']?>"><i class="green toggle on icon" title="Enabled. Click to disable"></i></a><?
 					}
 					else {
-						?><a href="pipelines.php?action=enable&returnpage=home&id=<?=$info['id']?>"><img src="images/toggle-off.png" width="25px" style="mix-blend-mode: multiply;" title="Disabled. Click to enable"></a><?
+						?><a href="pipelines.php?action=enable&returnpage=home&id=<?=$info['id']?>"><i class="red toggle off icon" title="Disabled. Click to enable"></i></a><?
 					}
 				?>
 				<span title="<b>Last message:</b> <?=$info['message']?><br><b>Last check:</b> <?=$info['lastcheck']?>">
-				<? if ($info['status'] == 'running') { ?><b>running</b> <a href="pipelines.php?action=reset&id=<?=$info['id']?>">reset</a><? } else { echo $info['status']; }  ?>
+				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <a href="pipelines.php?action=reset&id=<?=$info['id']?>" class="ui orange basic small button">reset</a><? } else { echo $dispstatus; }  ?>
 				</span>
 			</td>
-			<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
+			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
 				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
 			</td>
 			<td valign="top" align="right" style="font-size:8pt"><? if ($info['disksize'] > 0) { echo number_format(($info['disksize']/1024/1024/1024),1) . '&nbsp;GB'; } ?></td>
@@ -3039,7 +3056,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				?></tt></td><?
 			}
 			?>
-			<td valign="top"><?=$info['queue']?></td>
+			<td valign="top"><?=$info['queue']?></td>-->
 		</tr>
 		<?
 	}
@@ -3113,7 +3130,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- GetPipelineInfo -------------------- */
 	/* -------------------------------------------- */
-	function GetPipelineInfo() {
+	function GetPipelineInfo($showusage) {
 		MarkTime("GetPipelineInfo() first call");
 
 		/* yes, this variable is supposed to be global...
@@ -3170,12 +3187,14 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 			MarkTime("GetPipelineInfo($id) pre size");
 			
-			$sqlstringD = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
-			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
-			$rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC);
-			$info[$id]['disksize'] = $rowD['disksize'];
-			//PrintSQL($sqlstringD);
-			//echo "$disksize<br>";
+			if ($showusage) {
+				$sqlstringD = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
+				$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
+				$rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC);
+				$info[$id]['disksize'] = $rowD['disksize'];
+			}
+			else
+				$info[$id]['disksize'] = 0.0;
 
 			if ($info[$id]['disksize'] > $maxsize) {
 				$maxsize = $info[$id]['disksize'];
@@ -3194,15 +3213,21 @@ echo "#$ps_command     $logged $ps_desc\n";
 			//$info[$id]['numprocessing'] = $row3['numprocessing'];
 			//$info[$id]['numcomplete'] = $row3['numcomplete'];
 			
-			$sqlstring3 = "select count(*) 'numprocessing' from analysis where analysis_status = 'processing' and pipeline_id = $id";
-			$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
-			$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-			$info[$id]['numprocessing'] = $row3['numprocessing'];
-			
-			$sqlstring3 = "select count(*) 'numcomplete' from analysis where analysis_status = 'complete' and pipeline_id = $id";
-			$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
-			$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-			$info[$id]['numcomplete'] = $row3['numcomplete'];
+			if ($showusage) {
+				$sqlstring3 = "select count(*) 'numprocessing' from analysis where analysis_status = 'processing' and pipeline_id = $id";
+				$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+				$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+				$info[$id]['numprocessing'] = $row3['numprocessing'];
+				
+				$sqlstring3 = "select count(*) 'numcomplete' from analysis where analysis_status = 'complete' and pipeline_id = $id";
+				$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+				$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+				$info[$id]['numcomplete'] = $row3['numcomplete'];
+			}
+			else {
+				$info[$id]['numprocessing'] = 0;
+				$info[$id]['numcomplete'] = 0;
+			}
 			
 			if ($info[$id]['creatorusername'] == $GLOBALS['username']) {
 				$myusage['totaldisk'] += $info[$id]['disksize'];

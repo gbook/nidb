@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 04, 2021 at 05:43 PM
--- Server version: 10.3.17-MariaDB
+-- Generation Time: Apr 07, 2021 at 02:23 PM
+-- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -730,7 +730,7 @@ CREATE TABLE `dataset_requests` (
 
 CREATE TABLE `data_dictionary` (
   `datadict_id` int(11) NOT NULL,
-  `datadict_type` varchar(255) DEFAULT NULL,
+  `datadict_type` enum('drug','vital','measure','other') NOT NULL,
   `project_id` int(11) DEFAULT NULL,
   `datadict_varname` varchar(255) DEFAULT NULL,
   `datadict_desc` varchar(255) DEFAULT NULL,
@@ -1722,7 +1722,7 @@ CREATE TABLE `mr_series` (
   `bold_reps` int(11) NOT NULL DEFAULT 0,
   `numfiles` int(11) DEFAULT NULL,
   `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
-  `data_type` varchar(20) NOT NULL,
+  `data_type` varchar(20) DEFAULT NULL,
   `is_derived` tinyint(1) NOT NULL DEFAULT 0,
   `numfiles_beh` int(11) NOT NULL DEFAULT 0,
   `beh_size` double NOT NULL DEFAULT 0,
@@ -1892,6 +1892,7 @@ CREATE TABLE `pipelines` (
   `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
   `pipeline_projectid` text DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
+  `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
   `pipeline_laststart` datetime DEFAULT NULL,
@@ -2053,8 +2054,9 @@ CREATE TABLE `pipeline_options` (
   `pipeline_groupid` text DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) DEFAULT NULL,
-  `pipeline_projectid` int(11) DEFAULT NULL,
+  `pipeline_projectid` text DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
+  `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_completefiles` text DEFAULT NULL,
   `pipeline_resultsscript` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
@@ -2831,6 +2833,30 @@ CREATE TABLE `task_series` (
   `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `ishidden` tinyint(1) NOT NULL,
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tms_series`
+--
+
+CREATE TABLE `tms_series` (
+  `eegseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_status` varchar(255) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -4118,6 +4144,17 @@ ALTER TABLE `task_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
+-- Indexes for table `tms_series`
+--
+ALTER TABLE `tms_series`
+  ADD PRIMARY KEY (`eegseries_id`),
+  ADD KEY `fk_eeg_series_studies1` (`study_id`),
+  ADD KEY `ishidden` (`ishidden`),
+  ADD KEY `series_altdesc` (`series_altdesc`),
+  ADD KEY `series_desc` (`series_desc`),
+  ADD KEY `series_protocol` (`series_protocol`);
+
+--
 -- Indexes for table `uploads`
 --
 ALTER TABLE `uploads`
@@ -5008,6 +5045,12 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `tms_series`
+--
+ALTER TABLE `tms_series`
+  MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `uploads`

@@ -1517,7 +1517,7 @@
 	function DisplayTags($tags, $idtype, $tagtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' class='ui small yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
+			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
 		}
 		return $html;
 	}
