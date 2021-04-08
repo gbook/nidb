@@ -2003,7 +2003,7 @@
 					} /* end while loop for enrollments */
 				?>
 				<div class="ui bottom attached styled blue segment">
-					<?=$numenrollments?> enrollments
+					Displayed <?=$numenrollments?> enrollments
 				</div>
 			</div> <!-- end the 12-wide right column (list of enrollments) -->
 		</div> <!-- end the overall grid -->

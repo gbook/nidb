@@ -555,21 +555,30 @@
 		if ($pipelinesubmitdelay == "") $pipelinesubmitdelay = "null";
 		if ($pipelineremovedata == "") $pipelineremovedata = "null";
 		if ($pipelineusetmpdir == "") $pipelineusetmpdir = "null";
-		
-		/* get userid */
-		$sqlstring = "select user_id from users where username = '$username'";
+
+		/* check if the pipeline name already exists */
+		$sqlstring = "select * from pipelines where pipeline_name = '$pipelinetitle'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
-		/* insert the new form */
-		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$pipelineid = mysqli_insert_id($GLOBALS['linki']);
-		
-		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><?
-		
-		return $pipelineid;
+		if (mysqli_num_rows($result) > 0) {
+			Error("Pipeline name already in use. Please go back and fix it");
+			return -1;
+		}
+		else {
+			/* get userid */
+			$sqlstring = "select user_id from users where username = '$username'";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$userid = $row['user_id'];
+			
+			/* insert the new form */
+			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$pipelineid = mysqli_insert_id($GLOBALS['linki']);
+			
+			Notice("$pipelinetitle added. Pipeline is disabled by default.");
+			
+			return $pipelineid;
+		}
 	}
 
 	
@@ -1017,29 +1026,42 @@
 				DisplayPipelineStatus($title, $isenabled, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 			}
 			
-			$tab_oneactive = "";
-			$tab_twoactive = "";
-			$tab_threeactive = "";
-			$tab_fouractive = "";
-			switch ($returntab) {
-				case 'settings': $tab_twoactive = "active"; break;
-				case 'datascripts': $tab_threeactive = "active"; break;
-				case 'operations': $tab_fouractive = "active"; break;
-				default: $tab_oneactive = "active";
+			if ($type == "add") {
+				$tab_oneactive = "";
+				$tab_twoactive = "active";
+				$tab_threeactive = "";
+				$tab_fouractive = "";
+			}
+			else {
+				$tab_oneactive = "";
+				$tab_twoactive = "";
+				$tab_threeactive = "";
+				$tab_fouractive = "";
+				switch ($returntab) {
+					case 'settings': $tab_twoactive = "active"; break;
+					case 'datascripts': $tab_threeactive = "active"; break;
+					case 'operations': $tab_fouractive = "active"; break;
+					default: $tab_oneactive = "active";
+				}
 			}
 		?>
 		<br>
 		
 		<div class="ui container">
 			<div class="ui top attached inverted black tabular menu">
+				<? if ($type != "add") { ?>
 				<a class="<?=$tab_oneactive?> item" data-tab="first">Information</a>
+				<? } ?>
 				<a class="<?=$tab_twoactive?> item" data-tab="second">Settings</a>
+				<? if ($type != "add") { ?>
 				<a class="<?=$tab_threeactive?> item" data-tab="third">Data & Scripts</a>
 				<a class="<?=$tab_fouractive?> item" data-tab="fourth">Operations</a>
+				<? } ?>
 			</div>
 
 		<!-- -------------------- Information tab -------------------- -->
 
+		<? if ($type != "add") { ?>
 		<div class="ui bottom attached <?=$tab_oneactive?> tab segment" data-tab="first">
 			<table class="entrytable" style="border:0px">
 				<tr>
@@ -1316,6 +1338,7 @@
 				</tr>
 			</table>
 		</div>
+		<? } ?>
 		
 		<!-- -------------------- Settings tab -------------------- -->
 		
@@ -1508,6 +1531,7 @@
 		</div>
 
 		<!-- -------------------- Data & Scripts tab -------------------- -->
+		<? if ($type != "add") { ?>
 		<div class="ui bottom attached <?=$tab_threeactive?> tab segment" data-tab="third">
 			<form method="post" action="pipelines.php" name="stepsform" id="stepsform" class="ui form">
 			<input type="hidden" name="action" value="updatepipelineoptions">
@@ -2411,6 +2435,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
 			<? } ?>
 		</div>
+		<? } ?>
 		
 		<? if ($formaction == "update") { ?>
 			<script>
@@ -2806,7 +2831,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$i = 0;
 			foreach ($userids as $userid => $username) {
 				if ($i == 0) $buttoncolor = "blue"; else $buttoncolor = "";
-				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><?=$username?></a><?
+				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><i class="user icon"></i> <?=$username?></a><?
 				$i++;
 			}
 
