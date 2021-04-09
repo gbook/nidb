@@ -441,9 +441,9 @@
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
 	
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
-		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
+		//$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		//NavigationBar("Analyses", $urllist);
 
 		DisplayPipelineStatus($pipeline_name, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
@@ -1043,9 +1043,9 @@
 		$isenabled = $row['pipeline_enabled'];
 	
 		//$urllist['Analysis'] = "analysis.php";
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
-		$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
+		//$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		//NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
 		DisplayPipelineStatus($title, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
@@ -1211,9 +1211,9 @@
 
 		/* build navigation bar */
 		//$urllist['Analysis'] = "analysis.php";
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
-		$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
+		//$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
 		//NavigationBar("Logs for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 
 		/* get list of steps for the appropriate version */
@@ -1319,9 +1319,9 @@
 		
 		/* build navigation bar */
 		//$urllist['Analysis'] = "analysis.php";
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
-		$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
+		//$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
 		//NavigationBar("File list for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
 		
 		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";

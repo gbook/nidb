@@ -345,8 +345,8 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		
-		$urllist[$uid] = "subjects.php?id=$subjectid";
-		NavigationBar("$uid", $urllist);
+		//$urllist[$uid] = "subjects.php?id=$subjectid";
+		//NavigationBar("$uid", $urllist);
 		
 		if (!is_numeric($subjectid)) {
 			echo "Invalid subject ID [$subjectid]";
@@ -450,7 +450,7 @@
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";
-		echo "<li>Start transaction [ <tt>$sqlstring</tt>]";
+		echo "<li>Start transaction [ <span class='tt'>$sqlstring</span>]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$logmsg .= "$sqlstring\n";
 		
@@ -462,7 +462,7 @@
 			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id = $seriesids";
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		echo "<li>Get new study datetime [ <tt>$sqlstring</tt> ]";
+		echo "<li>Get new study datetime [ <span class='tt'>$sqlstring</span> ]";
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newstudydatetime = $row['newstudydatetime'];
 		$oldstudynum = $row['study_num'];
@@ -471,7 +471,7 @@
 		
 		/* get largest study_num for this subject */
 		$sqlstring = "select max(study_num) 'maxstudynum', b.project_id, b.enrollment_id, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id = $subjectid";
-		echo "<li>Get new study number [ <tt>$sqlstring</tt> ]";
+		echo "<li>Get new study number [ <span class='tt'>$sqlstring</span> ]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
@@ -490,13 +490,13 @@
 		
 		/* 2 - update the temp table with new study num, and datetime */
 		$sqlstring = "update tmp_studies set study_id = 0, study_num = $newstudynum, study_datetime = '$newstudydatetime'";
-		echo "<li>Update temp table [ <tt>$sqlstring</tt> ]";
+		echo "<li>Update temp table [ <span class='tt'>$sqlstring</span> ]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$logmsg .= "$sqlstring\n";
 
 		/* 3 - copy the new study to the studies table */
 		$sqlstring = "insert into studies select * from tmp_studies";
-		echo "<li>Copy new study into studies table [ <tt>$sqlstring</tt> ]";
+		echo "<li>Copy new study into studies table [ <span class='tt'>$sqlstring</span> ]";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$newstudyid = mysqli_insert_id($GLOBALS['linki']);
 		$logmsg .= "[$sqlstring] NewStudyID [$newstudyid]\n";
@@ -527,7 +527,7 @@
 			
 			$systemstring = "mkdir -pv $newpath 2>&1";
 			$copyresults = shell_exec($systemstring);
-			echo "<li>Creating new directory. Command [ <tt>$systemstring</tt> ] Output [ <tt>$copyresults</tt> ]";
+			echo "<li>Creating new directory. Command [ <span class='tt'>$systemstring</span> ] Output [ <span class='tt'>$copyresults</span> ]";
 			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
 			
 			if (!file_exists($newpath)) {
@@ -537,9 +537,9 @@
 			}
 			
 			$systemstring = "rsync -rtuv $oldpath/* $newpath/ 2>&1";
-			echo "<li>Moving series data within archive directory (may take a while). Command [<tt>$systemstring</tt>] Output:<br>";
+			echo "<li>Moving series data within archive directory (may take a while). Command [<span class='tt'>$systemstring</span>] Output:<br>";
 			$copyresults = shell_exec($systemstring);
-			echo "<pre style='background-color: #eee'><tt>$copyresults</tt></pre>";
+			echo "<pre style='background-color: #eee'><span class='tt'>$copyresults</span></pre>";
 			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
 			
 			$systemstring = "mv $oldpath $oldpathrenamed 2>&1";
@@ -627,8 +627,8 @@
 					?>
 					<tr>
 						<td><?=$seriesnum?></td>
-						<td><tt><?=$seriesdesc?></tt></td>
-						<td style="border-right: 1px solid #aaa"><tt><?=$seriesprotocol?></tt></td>
+						<td class="tt"><?=$seriesdesc?></td>
+						<td style="border-right: 1px solid #aaa" class="tt"><?=$seriesprotocol?></td>
 						<td><input type="text" name="newseriesdesc[<?=$seriesid?>]" value="<?=$seriesdesc?>" style="font-family: monospace;"></td>
 						<td><input type="text" name="newseriesprotocol[<?=$seriesid?>]" value="<?=$seriesprotocol?>" style="font-family: monospace;"></td>
 					</tr>
@@ -713,7 +713,7 @@
 					?>
 					<tr>
 						<td><?=$seriesnum?></td>
-						<td><tt><?=$seriesdesc?></tt></td>
+						<td class="tt"><?=$seriesdesc?></td>
 						<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=$seriesnote?>" style="font-family: monospace;"></td>
 					</tr>
 					<?
@@ -1123,7 +1123,7 @@
 		//$urllist[$projectname] = "projects.php?id=$projectid";
 		//$urllist[$uid] = "subjects.php?id=$subjectid";
 		//$urllist[$study_num] = "studies.php?studyid=$studyid";
-		NavigationBar("$uid$study_num", $urllist, $perms);
+		DisplayPermissions($perms);
 		
 		$formaction = "update";
 		$formtitle = "Updating study $study_num";
@@ -1342,10 +1342,6 @@
 		$userid = $row['user_id'];
 		
 		$perms = GetCurrentUserProjectPermissions(array($projectid));
-		$urllist[$project_name] = "projects.php?id=$projectid";
-		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
-		$urllist["Study " . $study_num] = "studies.php?studyid=$studyid";
-		NavigationBar("$uid$study_num", $urllist, $perms);
 
 		if (!GetPerm($perms, 'viewdata', $projectid)) {
 			echo "You do not have data access to this project. Consult your NiDB administrator";
@@ -1367,228 +1363,257 @@
 			color:#fff;
 			}
 		</style>
-
-		<table style="border: 2px solid #444" cellspacing="0" cellpadding="0">
-			<tr>
-				<td style="background-color: #444; font-weight: bold; color: #fff; padding: 8px; font-size: 12pt"><span style="margin-left:15px">Study Information</span>
-				</td>
-			</tr>
-			<tr>
-				<td style="padding: 8px">
-					<table class="reviewtable" width="100%">
+		
+		<div class="ui center aligned container">
+			<div class="ui massive breadcrumb">
+				<a href="projects.php?id=<?=$projectid?>" class="section"><?=$project_name?></a>
+				<i class="right angle icon divider"></i>
+				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
+				<i class="right angle icon divider"></i>
+				<div class="active section">Study <?=$study_num?></div>
+			</div>
+			<? DisplayPermissions($perms); ?>
+		</div>
+		
+		<br>
+		
+		<div class="ui grid">
+			<div class="three wide column">
+			
+				<!-- left side study information box -->
+				<div class="ui top attached segment inverted header">
+					<h3 class="ui header">Study information</h3>
+				</div>
+				<div class="ui bottom attached segment">
+					<table class="ui very basic very compact celled table" width="100%">
 						<tr>
-							<td colspan="2" align="center">
-							</td>
+							<td class="right aligned"><b>Study number</td>
+							<td><?=$study_num?></td>
 						</tr>
 						<tr>
-							<td class="label">Study number</td>
-							<td class="value"><?=$study_num?></td>
+							<td class="right aligned"><b>Study ID</td>
+							<td class="tt"><?=$uid?><?=$study_num?></td>
 						</tr>
 						<tr>
-							<td class="label">Study ID</td>
-							<td class="value"><tt><?=$uid?><?=$study_num?></tt></td>
+							<td class="right aligned"><b>Alternate Study ID</td>
+							<td class="tt"><?=$study_alternateid?></td>
 						</tr>
 						<tr>
-							<td class="label">Alternate Study ID</td>
-							<td class="value"><tt><?=$study_alternateid?></tt></td>
-						</tr>
-						<tr>
-							<td class="label">Modality</td>
+							<td class="right aligned"><b>Modality</td>
 							<td class="<?=$class?>"><?=$study_modality?></td>
 						</tr>
-						<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post">
+					<? if (strtolower($study_modality) == "mr"){ ?>
 						<tr>
-							<td class="label" valign="top">Date/time</td>
-							<? if (strtoupper($study_modality) != "MR"){ ?>
-								<td>
-								 <input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime"  required >
-								 <br><input type="checkbox" name="Sdate" > Copy <b>Date/time</b> value to all series
-								 <input type="hidden" name="stmod" value="<?=$study_modality?>">
-								</td>
-							 <?}else {?>
-								<td class="value"><?=$study_datetime?></td >	
-							<?}?>
+							<td class="right aligned"><b>Date/time</td>
+							<td><?=$study_datetime?></td>
 						</tr>
 						<tr>
-							<td class="label">Visit type</td>
-							<? if (strtoupper($study_modality) != "MR"){ ?>
-								<td><input type="text" name="studytype" value="<?=$study_type?>" size="30" ></td>
-							<?}else {?>
-								<td class="value"><?=$study_type?></td>
-							<?}?>
+							<td class="right aligned"><b>Visit type</td>
+							<td><?=$study_type?></td>
+						</tr>
+					<? } else { ?>
+						<tr>
+							<td colspan="2">
+								<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post" class="ui form">
+								<input type="hidden" name="subme">
+								<input type="hidden" name="stmod" value="<?=$study_modality?>">
+								<div class="inline field">
+									<label>Date/time</label>
+									<input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime" required>
+								</div>
+								<div class="inline field">
+									<div class="ui checkbox">
+										<input type="checkbox" name="Sdate">
+										<label>Copy <b>Date/time</b> value to all series</label>
+									</div>
+								</div>
+								<div class="inline field">
+									<label>Visit type</label>
+									<input type="text" class="ui input" name="studytype" value="<?=$study_type?>" size="30" placeholder="Visit type">
+								</div>
+								<input type="submit" class="ui small basic blue button" value="Quick Update">
+								</form>
+							</td>
+						</tr>
+					<? } ?>
+						<tr>
+							<td class="right aligned"><b>Age at scan</td>
+							<td><?=number_format($study_ageatscan,1)?> y</td>
 						</tr>
 						<tr>
-							<td class="label">Age at scan</td>
-							<td class="value"><?=number_format($study_ageatscan,1)?> y</td>
+							<td class="right aligned"><b>Height</td>
+							<td><?=number_format($study_height,2)?> m <span class="tiny">(<?=$study_heightft?>)</span></td>
 						</tr>
 						<tr>
-							<td class="label">Height</td>
-							<td class="value"><?=number_format($study_height,2)?> m <span class="tiny">(<?=$study_heightft?>)</span></td>
+							<td class="right aligned"><b>Weight</td>
+							<td><?=number_format($study_weight,1)?> kg <span class="tiny">(<?=number_format($study_weight*2.20462,1)?> lbs)</span></td>
 						</tr>
 						<tr>
-							<td class="label">Weight</td>
-							<td class="value"><?=number_format($study_weight,1)?> kg <span class="tiny">(<?=number_format($study_weight*2.20462,1)?> lbs)</span></td>
+							<td class="right aligned"><b>BMI</td>
+							<td><?=number_format($bmi,1)?> <span class="tiny">kg/m<sup>2</sup></span></td>
 						</tr>
 						<tr>
-							<td class="label">BMI</td>
-							<td class="value"><?=number_format($bmi,1)?> <span class="tiny">kg/m<sup>2</sup></span></td>
+							<td class="right aligned"><b>Visit type</td>
+							<td><?=$study_type?></td>
 						</tr>
 						<tr>
-							<td class="label">Visit type</td>
-							<td class="value"><?=$study_type?></td>
+							<td class="right aligned"><b>Description</td>
+							<td><?=$study_desc?></td>
 						</tr>
 						<tr>
-							<td class="label">Description</td>
-							<td class="value"><?=$study_desc?></td>
+							<td class="right aligned"><b>Operator</td>
+							<td><?=$study_operator?></td>
 						</tr>
 						<tr>
-							<td class="label">Operator</td>
-							<td class="value"><?=$study_operator?></td>
+							<td class="right aligned"><b>Performing physician</td>
+							<td><?=$study_physician?></td>
 						</tr>
 						<tr>
-							<td class="label">Performing physician</td>
-							<td class="value"><?=$study_physician?></td>
+							<td class="right aligned"><b>Site</td>
+							<td><?=$study_site?></td>
 						</tr>
 						<tr>
-							<td class="label">Site</td>
-							<td class="value"><?=$study_site?></td>
-						</tr>
-						<tr>
-							<td class="label">Notes</td>
-							<td class="value"><?=$study_notes?></td>
+							<td class="right aligned"><b>Notes</td>
+							<td><?=$study_notes?></td>
 						</tr>
 						<? if (strtolower($study_modality) == "mr") { ?>
 							<tr>
-								<td class="label">Radiological read?</td>
-								<td class="value"><? if ($study_doradread) { echo "Yes"; } else { echo "No"; } ?></td>
+								<td class="right aligned"><b>Radiological read?</td>
+								<td><? if ($study_doradread) { echo "Yes"; } else { echo "No"; } ?></td>
 							</tr>
 							<tr>
-								<td class="label">Rad. read date</td>
-								<td class="value"><?=$study_radreaddate?></td>
+								<td class="right aligned"><b>Rad. read date</td>
+								<td><?=$study_radreaddate?></td>
 							</tr>
 							<tr>
-								<td class="label">Rad. read findings</td>
-								<td class="value"><?=$study_radreadfindings?></td>
+								<td class="right aligned"><b>Rad. read findings</td>
+								<td><?=$study_radreadfindings?></td>
 							</tr>
 						<? } elseif (strtolower($study_modality) == "et") { ?>
 							<tr>
-								<td class="label">Snellen chart</td>
-								<td class="value"><?=$study_etsnellenchart?></td>
+								<td class="right aligned"><b>Snellen chart</td>
+								<td><?=$study_etsnellenchart?></td>
 							</tr>
 							<tr>
-								<td class="label">Vergence</td>
-								<td class="value"><?=$study_etvergence?></td>
+								<td class="right aligned"><b>Vergence</td>
+								<td><?=$study_etvergence?></td>
 							</tr>
 							<tr>
-								<td class="label">Tracking</td>
-								<td class="value"><?=$study_ettracking?></td>
+								<td class="right aligned"><b>Tracking</td>
+								<td><?=$study_ettracking?></td>
 							</tr>
 						<? } elseif (strtolower($study_modality) == "snp") { ?>
 							<tr>
-								<td class="label">SNP chip</td>
-								<td class="value"><?=$study_snpchip?></td>
+								<td class="right aligned"><b>SNP chip</td>
+								<td><?=$study_snpchip?></td>
 							</tr>
 						<? } ?>
 						<tr>
-							<td class="label">Status</td>
-							<td class="value"><?=$study_status?></td>
+							<td class="right aligned"><b>Status</b></td>
+							<td><?=$study_status?></td>
 						</tr>
 						<tr>
-							<td class="label">Created by</td>
-							<td class="value"><?=$study_createdby?></td>
+							<td class="right aligned"><b>Created by</td>
+							<td><?=$study_createdby?></td>
 						</tr>
 						<tr>
-							<td class="label">Import/upload date</td>
-							<td class="value"><?=$study_createdate?></td>
+							<td class="right aligned"><b>Import/upload date</td>
+							<td><?=$study_createdate?></td>
 						</tr>
 						<tr>
-							<td class="label">Experimenter</td>
-							<td class="value"><?=$study_experimenter?></td>
+							<td class="right aligned"><b>Experimenter</td>
+							<td><?=$study_experimenter?></td>
 						</tr>
-						<tr>
-							<td colspan="1" align="left">
-								<br>
-								<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button">Edit</a>
-							</td>
-							<? if (strtoupper($study_modality) != "MR"){ ?>
-							<td colspan="2" align="right">
-								<br>
-								<a name="subme" style="cursor: pointer;" class="ui primary button" onclick="document.getElementById('Sform').submit();">Save</a>
-							</td>
-							<?}?>
-						</tr>
-						<input type="hidden" name="subme">
-						</form>
 					</table>
+					<div class="ui right aligned">
+						<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button"><i class="edit icon"></i> Edit study</a>
+					</div>
 
+					<br>
 					<? if ($GLOBALS['isadmin']) { ?>
-						<details>
-							<summary style="color:darkred" class="tiny">Admin Functions</summary>
-							<div style="border: solid 1px #aaa; border-radius: 5px; padding: 5px">
-						
-							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui red button" onclick="return confirm('Are you sure you want to delete this study?')">Delete</a>
-							<br><br>
-							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui primary button" style="width: 70px; text-align: center">Merge</a> with other studies (same subject)
-							<form action="studies.php" method="post">
-							<input type="hidden" name="studyid" value="<?=$study_id?>">
-							<input type="hidden" name="action" value="movestudytosubject">
-							<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-							<br>
-							<span align="center">Move study to <b>subject</b></span> <input type="text" size="10" name="newuid" id="newuid" placeholder="New UID">
-							<input type="submit" value="Move" style="background-color: #FF552A; color: white; border: 1px solid #000;">
-							</form>
-							<form action="studies.php" method="post">
-							<input type="hidden" name="studyid" value="<?=$study_id?>">
-							<input type="hidden" name="action" value="movestudytoproject">
-							<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-							<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-							<br>
-							<span align="center">Move study to <b>project</b></span>
-							<select name="newprojectid">
-							<?
-								$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-								echo $sqlstringB;
-								$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-								while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-									$project_id = $rowB['project_id'];
-									$project_name = $rowB['project_name'];
-									$project_costcenter = $rowB['project_costcenter'];
-									?>
-									<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+						<div class="ui red accordion segment">
+							<div class="title">
+								<h3 class="ui header"><i class="dropdown icon"></i> Operations</h3>
+							</div>
+							<div class="content">
+								
+								<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
+								
+								<br>
+								
+								<form action="studies.php" method="post">
+									<input type="hidden" name="studyid" value="<?=$study_id?>">
+									<input type="hidden" name="action" value="movestudytosubject">
+									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+									<div class="ui fluid labeled action input">
+										<div class="ui small label">
+										Move study to
+										</div>
+										<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
+										<div type="submit" class="ui primary button">Move</div>
+									</div>
+								</form>
+								
+								<form action="studies.php" method="post">
+								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="action" value="movestudytoproject">
+								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+								<div class="ui fluid labeled action input">
+									<div class="ui small label">
+									Move study to
+									</div>
+									<select name="newprojectid" class="ui compact selection dropdown" required>
+										<option value="">Select project...</option>
 									<?
-								}
-							?>
-							</select>
-							<input type="submit" value="Move" style="background-color: #FF552A; color: white; border: 1px solid #000;">
-							</form>
-						</details>
+										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
+										echo $sqlstringB;
+										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+											$project_id = $rowB['project_id'];
+											$project_name = $rowB['project_name'];
+											$project_costcenter = $rowB['project_costcenter'];
+											?>
+											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<?
+										}
+									?>
+									</select>
+									<div class="ui primary button" type="submit">Move</div>
+								</div>
+								</form>
+								
+								<br><br>
+								
+								<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
+								
+							</div>
+						</div>
 					<? } ?>
-				</td>
-			</tr>
-		</table>
-
-		<br>
+				</div>
+			</div>
+			<div class="thirteen wide column">
+				<?
+				if ($displayfiles == true) {
+					?><a href="studies.php?studyid=<?=$studyid?>">Normal View</a><br><br><?
+					$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
+					DisplayFileSeries($studypath);
+				}
+				else {
+					if ($study_modality == "MR") {
+						DisplayMRSeries($studyid, $study_num, $uid);
+					}
+					elseif ($study_modality == "CT") {
+						DisplayCTSeries($studyid, $study_num, $uid);
+					}
+					else {
+						DisplayGenericSeries($studyid, $study_modality);
+					}
+				}
+				?>
+			</div>
+		</div>
 		<?
-		if ($displayfiles == true) {
-			?><a href="studies.php?studyid=<?=$studyid?>">Normal View</a><br><br><?
-			$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
-			DisplayFileSeries($studypath);
-		}
-		else {
-			?><a href="studies.php?studyid=<?=$studyid?>&action=displayfiles" style="font-size:8pt">View file list</a><?
-			if ($study_modality == "MR") {
-				DisplayMRSeries($studyid, $study_num, $uid);
-			}
-			elseif ($study_modality == "CT") {
-				DisplayCTSeries($studyid, $study_num, $uid);
-			}
-			else {
-				DisplayGenericSeries($studyid, $study_modality);
-			}
-			?>
-			<br><br><br><br><br><br>
-			<?
-		}
 	}
 
 
@@ -2121,10 +2146,13 @@
 								<td style="font-size:8pt;white-space: nowrap;">(<?=number_format($series_spacingx,1)?>, <?=number_format($series_spacingy,1)?>, <?=number_format($series_spacingz,1)?>)</td>
 								<td style="font-size:8pt;white-space: nowrap;">(<?=$dimX?>, <?=$dimY?>, <?=$dimZ?><? if ($dimT > 1) { echo ", <big><b>$dimT</b></big>"; } ?>)</td>
 								<td nowrap style="font-size:8pt">
+									<? if ($series_size > 0) { ?>
 									<?=$numfiles?> (<?=HumanReadableFilesize($series_size)?>)
 									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
-									<? } ?>
+									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download <?=$data_type?> data"></i></a>
+									<? 	}
+									}
+									?>
 								</td>
 								<td nowrap bgcolor="<?=$behcolor?>" align="center">
 									<? if ($numfiles_beh != "-") { ?>
@@ -2137,7 +2165,7 @@
 										if ($numfiles_beh > 0) {
 											echo "(" . HumanReadableFilesize($beh_size) . ")";
 											?>
-											&nbsp;<a href="download.php?modality=mr&type=beh&seriesid=<?=$mrseries_id?>" border="0"><img src="images/download16.png" title="Download behavioral data"></a>
+											&nbsp;<a href="download.php?modality=mr&type=beh&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download behavioral data"></i></a>
 											<?
 										}
 									?>
@@ -2174,32 +2202,36 @@
 					</script>
 				<?
 				}
-				if ($GLOBALS['isadmin']) {
 				?>
-				<tr>
-					<td colspan="20" align="right" style="background-color: #fff; font-size: 12pt">
-					<br>
-					<b style="color: #444;">With Selected Series...&nbsp; &nbsp; </b>
-					<br><br>
-					<input type="button" name="renameseriesform" value="Rename" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();">
-					<br>
-					<input type="button" name="updateseriesnotesform" value="Update notes" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();">
-					<br>
-					<input type="button" name="moveseriestonewstudy" value="Move to New Study" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">
-					<br>
-					<input type="button" name="hideseries" value="Hide" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results">
-					<br>
-					<input type="button" name="unhideseries" value="Unhide" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results">
-					<br>
-					<input type="button" name="resetqa" value="Reset QA" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated">
-					<br><br>
-					<input type="button" name="deleteseries" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <tt><?=$GLOBALS['cfg']['deleteddir']?></tt> directory and will not appear anywhere on the website">
-					</td>
-				</tr>
-				<? } ?>
 			</tbody>
 		</table>
 		</form>
+		<?
+				if ($GLOBALS['isadmin']) {
+				?>
+				<div class="ui two column grid">
+					<div class="column">
+						<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
+					</div>
+					<div class="right aligned column">
+						<b style="color: #444;">With Selected Series...&nbsp; &nbsp; </b>
+						<br><br>
+						<button class="ui button" name="renameseriesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();">Rename</button>
+						<br>
+						<button class="ui button" name="updateseriesnotesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();">Update notes</button>
+						<br>
+						<button class="ui button" name="moveseriestonewstudy" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</button>
+						<br>
+						<button class="ui button" name="hideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results">Hide</button>
+						<br>
+						<button class="ui button" name="unhideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results">Un-hide</button>
+						<br>
+						<button class="ui button" name="resetqa" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated">Reset QC</button>
+						<br><br>
+						<button class="ui red button" name="deleteseries" style="width:200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website">Delete</button>
+					</div>
+				</div>
+				<? } ?>
 		<?
 	}
 
@@ -2530,18 +2562,18 @@
 		});
 		</script>
 		
-		<table class="ui celled selectable compact grey table">
+		<table class="ui very compact celled selectable grey table">
 			<thead>
 				<tr>
-					<th>Series<br><span class="tiny" style="font-weight: normal">Click to edit series</span></th>
+					<th>Series</th>
 					<th>Protocol</th>
 					<th>Date</th>
 					<th>Notes</th>
-					<th>Files<br><span class="tiny" style="font-weight: normal">Click to manage files</span></th>
+					<th>Files</th>
 					<th>Size</th>
-					<th>Upload <?=strtoupper($modality)?> files<br><span class="tiny" style="font-weight: normal">Click button or Drag & Drop</span></th>
+					<th>Upload <?=strtoupper($modality)?> files <span class="tiny" style="font-weight: normal">(Drag & Drop)</span></th>
 					<th>Download</th>
-					<th align="left">Operations<br><input type="checkbox" id="seriesall"><span class="tiny" style="font-weight: normal"> Select All</span></th>
+					<th align="left">Operations <input type="checkbox" id="seriesall"><span class="tiny" style="font-weight: normal"> Select All</span></th>
 				</tr>
 			</thead>
 			<form method="post" name="serieslist" id="serieslist" action="studies.php" class="ui form">
@@ -2586,14 +2618,16 @@
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
 								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
-								<td><a href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><i class="file outline icon"></i> <?=$numfiles?> file(s)</a></td>
+								<td>
+									<a class="ui tiny basic blue button <? if ($numfiles < 1) echo "disabled"; ?>" href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><i class="file outline icon"></i> Manage <?=$numfiles?> file(s)</a>
+								</td>
 								<td><?=$series_size?></td>
 								<td>
 								<span id="uploader<?=$series_id?>"></span>
 								</td>
 								<td nowrap>
 									<? if ($series_size != "-") { ?>
-										<?=$series_size?> <a class="ui tiny primary button" href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>"><i class="download icon" title="Download <?=$modality?> data"></i> download</a>
+										<a class="ui tiny basic blue button" href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>"><i class="download icon" title="Download <?=$modality?> data"></i> Download (<?=$series_size?>)</a>
 									<? } ?>
 								</td>
 								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<?=$series_id?>"></td>
@@ -2615,20 +2649,20 @@
 					<script>
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
-					<?
-					mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$series_id = $row[strtolower($modality) . "series_id"];
-						?>
-								var uploader<?=$series_id?> = new qq.FileUploader({
-									element: document.getElementById('uploader<?=$series_id?>'),
-									action: 'upload.php',
-									params: {modality: '<?=strtoupper($modality)?>', studyid: '<?=$id?>', seriesid: <?=$series_id?>},
-									debug: true
-								});
-					<?
-					}
-					?>
+							<?
+							mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$series_id = $row[strtolower($modality) . "series_id"];
+								?>
+									var uploader<?=$series_id?> = new qq.FileUploader({
+										element: document.getElementById('uploader<?=$series_id?>'),
+										action: 'upload.php',
+										params: {modality: '<?=strtoupper($modality)?>', studyid: '<?=$id?>', seriesid: <?=$series_id?>},
+										debug: true
+									});
+								<?
+							}
+							?>
 						}
 						// in your app create uploader as soon as the DOM is ready
 						// don't wait for the window to load  
@@ -2639,9 +2673,9 @@
 				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
 				<!--<input type="hidden" name="id" value="<?=$id?>">-->
 				<tr>
-					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>"></td>
+					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required></td>
 					<td>
-						<input type="text" name="protocol" list="protocols">
+						<input type="text" name="protocol" list="protocols" required>
 						<datalist id="protocols">
 						<?
 							$sqlstring = "select * from modality_protocol where modality = '$modality'";
@@ -2655,23 +2689,25 @@
 						?>
 						</datalist>
 					</td>
-					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>"></td>
+					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
 					<td><input type="text" name="notes"></td>
-					<td><input type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"></td>
-					<td></td>
-					<td></td>
-					<td></td>
-					<td></td>
+					<td colspan="5">
+						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"><i class="arrow alternate circle left icon"></i> Create series</button>
+					</td>
 				</tr>
 			</tbody>
 		</table>
-		<div align="right" style="padding: 10px">
-			<b>With Selected</b> &nbsp; &nbsp; <br>
-			<br>
-			<input type="button" value="Delete" class="ui red button" style="width:150px" onclick="document.serieslist.action.value='deleteseries'; document.serieslist.submit(); return confirm('Are you absolutely sure you want to DELETE the selected series?')">
-			<br><br>
-			<input type="button" class="ui button" style="width:150px" name="minipipelineform" value="Run mini-pipeline" style="width: 150px; margin:4px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()">
-		</div>
+		<div class="ui two column grid">
+			<div class="column">
+				<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
+			</div>
+			<div class="right aligned column">
+				<b>With Selected</b> &nbsp; &nbsp; <br>
+				<br>
+				<button class="ui red button" style="width:200px" onclick="document.serieslist.action.value='deleteseries'; document.serieslist.submit(); return confirm('Are you absolutely sure you want to DELETE the selected series?')"><i class="trash icon"></i> Delete</button>
+				<br><br>
+				<button class="ui button" name="minipipelineform" style="width: 200px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()"><i class="cogs icon"></i> Run mini-pipeline</button>
+			</div>
 		</form>
 
 		<?

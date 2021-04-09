@@ -64,9 +64,9 @@
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayMenu($p) {
-		$urllist['Administration'] = "adminaudits.php";
-		$urllist['Audits'] = "adminaudits.php";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "adminaudits.php";
+		//$urllist['Audits'] = "adminaudits.php";
+		//NavigationBar("Admin", $urllist);
 		
 		?><b>Filter by problem type:</b> <a href="adminaudits.php?problemtype=">All</a><?
 		$sqlstring = "select distinct(problem) from audit_results where problem <> '' order by problem";

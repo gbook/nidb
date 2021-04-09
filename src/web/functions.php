@@ -1007,69 +1007,60 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- NavigationBar ---------------------- */
+	/* ------- DisplayPermissions ----------------- */
 	/* -------------------------------------------- */
-	function NavigationBar($title, $urllist, $perms=array()) {
+	function DisplayPermissions($perms) {
 		
 		$msg = "";
-		?>
-		<table width="100%" cellspacing="0">
-			<tr>
-				<td>
-				<?
-				if (count($perms) > 0) {
-					foreach ($perms as $projectid => $data) {
-						$admin = $data['projectadmin'];
-						$projectname = $data['projectname'];
-						$viewdata = $perms[$projectid]['viewdata'];
-						$viewphi = $perms[$projectid]['viewphi'];
-						$modifydata = $perms[$projectid]['modifydata'];
-						$modifyphi = $perms[$projectid]['modifyphi'];
-						
-						if ($admin) { $admin = "Admin"; }
-						if ($modifyphi) { $modifyphi = "Modify PHI"; }
-						if ($modifydata) { $modifydata = "Modify data"; }
-						if ($viewphi) { $viewphi = "View PHI"; }
-						if ($viewdata) { $viewdata = "View data"; }
-						
-						//echo "$projectname - $admin, $modifyphi, $modifydata, $viewphi, $viewdata<br>";
-						if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
-							$msg .= "<div class='item'>No permissions to access $projectname";
-						}
-						else {
-							$msg .= "<div class='item'><b>$projectname</b>";
-							
-							if ($admin != '')
-								$msg .= " <div class='ui mini red label'>$admin</div> ";
-							if ($modifyphi != '')
-								$msg .= " <div class='ui mini blue label'>$modifyphi</div> ";
-							if ($viewphi != '')
-								$msg .= " <div class='ui mini blue label'>$viewphi</div> ";
-							if ($modifydata != '')
-								$msg .= " <div class='ui mini blue label'>$modifydata</div> ";
-							if ($viewdata != '')
-								$msg .= " <div class='ui mini blue label'>$viewdata</div> ";
-						}
-					}
-					
-					?>
-					<div class="ui accordion">
-						<div class="title">
-							<span style="font-size: smaller"><i class="dropdown icon"></i>Your access permissions for this subject</span>
-						</div>
-						<div class="content">
-							<div class="ui list">
-							<?=$msg?>
-							</div>
-						</div>
-					</div>
-					<?
+		if (count($perms) > 0) {
+			foreach ($perms as $projectid => $data) {
+				$admin = $data['projectadmin'];
+				$projectname = $data['projectname'];
+				$viewdata = $perms[$projectid]['viewdata'];
+				$viewphi = $perms[$projectid]['viewphi'];
+				$modifydata = $perms[$projectid]['modifydata'];
+				$modifyphi = $perms[$projectid]['modifyphi'];
+				
+				if ($admin) { $admin = "Admin"; }
+				if ($modifyphi) { $modifyphi = "Modify PHI"; }
+				if ($modifydata) { $modifydata = "Modify data"; }
+				if ($viewphi) { $viewphi = "View PHI"; }
+				if ($viewdata) { $viewdata = "View data"; }
+				
+				if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
+					$msg .= "<div class='item'>No permissions to access $projectname</div>";
 				}
-				?>
-			</tr>
-		</table>
-		<br>
-		<?
+				else {
+					$msg .= "<div class='item'><b>$projectname</b>";
+					
+					if ($admin != '')
+						$msg .= " <div class='ui mini red label'>$admin</div> ";
+					if ($modifyphi != '')
+						$msg .= " <div class='ui mini blue label'>$modifyphi</div> ";
+					if ($viewphi != '')
+						$msg .= " <div class='ui mini blue label'>$viewphi</div> ";
+					if ($modifydata != '')
+						$msg .= " <div class='ui mini blue label'>$modifydata</div> ";
+					if ($viewdata != '')
+						$msg .= " <div class='ui mini blue label'>$viewdata</div> ";
+					
+					$msg .= "</div>";
+				}
+			}
+			
+			?>
+			<div class="ui accordion">
+				<div class="title">
+					<span style="font-size: smaller; color: gray"><i class="dropdown icon"></i>Your access permissions for this subject</span>
+				</div>
+				<div class="content">
+					<div class="ui list">
+					<?=$msg?>
+					</div>
+				</div>
+			</div>
+			<?
+		}
 	}
 	
 
@@ -2268,7 +2259,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* check if the nidb executable has execute permissions */
 		$nidbexe = $GLOBALS['cfg']['nidbdir'] . "/bin/nidb";
 		if (!is_executable($nidbexe))
-			array_push($problems, "<tt>$nidbexe</tt> executable does not have execute permissions");
+			array_push($problems, "<span class='tt'>$nidbexe</span> executable does not have execute permissions");
 		
 		/* check if any disks are full */
 		

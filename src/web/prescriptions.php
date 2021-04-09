@@ -128,10 +128,10 @@
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
 		
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
-		$urllist["$projectname prescriptions"] = "prescriptions.php?enrollmentid=$enrollmentid";
-		NavigationBar("Prescriptions", $urllist);
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
+		//$urllist["$projectname prescriptions"] = "prescriptions.php?enrollmentid=$enrollmentid";
+		//NavigationBar("Prescriptions", $urllist);
 		
 		?>
 		<SCRIPT LANGUAGE="Javascript">

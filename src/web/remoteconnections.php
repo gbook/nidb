@@ -165,8 +165,8 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		$urllist['Back'] = "remoteconnections.php";
-		NavigationBar("Remote Connections", $urllist);
+		//$urllist['Back'] = "remoteconnections.php";
+		//NavigationBar("Remote Connections", $urllist);
 		
 	?>
 		<div align="center">
@@ -223,9 +223,9 @@
 	/* -------------------------------------------- */
 	function DisplayConnectionList() {
 	
-		$urllist['Remote Connections'] = "remoteconnections.php";
-		$urllist['Add Connection'] = "remoteconnections.php?action=addform";
-		NavigationBar("Remote Connections", $urllist);
+		//$urllist['Remote Connections'] = "remoteconnections.php";
+		//$urllist['Add Connection'] = "remoteconnections.php?action=addform";
+		//NavigationBar("Remote Connections", $urllist);
 	?>
 
 	<table class="graydisplaytable">

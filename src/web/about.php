@@ -58,11 +58,6 @@
 	/* ------- DisplayAbout ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayAbout() {
-	
-		$urllist['Home'] = "index.php";
-		$urllist['About'] = "about.php";
-		NavigationBar("About", $urllist);
-		
 		?>
 		<p><i>Neuroinformatics Database</i> (NiDB) was developed at the Olin Neuropsychiatry Research Center at Hartford Hospital. This system is open source, released under the <a href="http://www.gnu.org/copyleft/gpl.html">GPLv3</a> license.</p>
 		

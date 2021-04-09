@@ -65,10 +65,6 @@
 	/* ------- DisplayScanParamaters -------------- */
 	/* -------------------------------------------- */
 	function DisplayScanParamaters($filename) {
-	
-		$urllist['Home'] = "index.php";
-		$urllist['Scan Params'] = "series.php";
-		NavigationBar("MR Scan Parameters", $urllist);
 
 		if (substr($filename,-4) == '.par') {
 			if (file_exists($filename)) {
@@ -212,10 +208,6 @@
 	/* ------- DisplayAllScanParamaters ----------- */
 	/* -------------------------------------------- */
 	function DisplayAllScanParamaters($filename) {
-	
-		$urllist['Home'] = "index.php";
-		$urllist['Scan Params'] = "series.php";
-		NavigationBar("MR Scan Parameters", $urllist);
 
 		$dicom = Nanodicom::factory($filename, 'dumper');
 		$tags = $dicom->dump();

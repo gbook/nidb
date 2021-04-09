@@ -85,7 +85,7 @@
 				/* home */
 				if ($page=="index.php"){ $style = "background-color:#3B5998"; }
 				else { $style = ""; }
-				?><a href="index.php" style="<?=$style?>"><b>Home</b></a><?
+				?><a href="index.php" style="<?=$style?>"><i class="home icon"></i><b>Home</b></a><?
 				
 				/* search */
 				if ($page=="search.php" || $page=="requeststatus.php" || $page=="analysisbuilder.php" || $page=="batchupload.php") { $style = "background-color:#3B5998"; }
@@ -139,7 +139,7 @@
 				else { $style = ""; }
 				?><a href="users.php" style="<?=$style?>"><b>My Account</b></a><?
 			?>
-				<a href="login.php?action=logout"></b>Logout<b></a><i class="sign out alternate icon inverted"></i>
+				<a href="login.php?action=logout"></b>Logout<b> <i class="sign out alternate icon inverted"></i></a>
 			</td>
 		</tr>
 		<tr>

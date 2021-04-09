@@ -230,9 +230,9 @@
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
 		
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("Subjects", $urllist);
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		//NavigationBar("Subjects", $urllist);
 		
 	?>
 		<div align="center">
@@ -384,9 +384,9 @@
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
 		
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("Subjects", $urllist);
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		//NavigationBar("Subjects", $urllist);
 		
 		if ($viewtype == "view") {
 			$readonly = "readonly";
@@ -632,9 +632,9 @@
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
 		
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("Subjects", $urllist);
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		//NavigationBar("Subjects", $urllist);
 		
 		if ($viewtype == "view") {
 			$readonly = "readonly";

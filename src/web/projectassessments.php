@@ -246,12 +246,12 @@
 #		$urllist['Projects'] = "projects.php";
 #		$urllist[$projectname] = "projects.php?id=$projectid";
 #		$urllist[$title] = "projectassessments.php?action=editform&formid=$formid&projectid=$projectid";
-		if ($type == "edit"){
-			$urllist['Projects'] = "projects.php";
-	                $urllist[$projectname] = "projects.php?id=$projectid";
-			NavigationBar("Updateable Assessment Form-- $title", $urllist);}
-		else {
-			NavigationBar("New Assessment Form", $urllist);}
+		//if ($type == "edit"){
+		//	$urllist['Projects'] = "projects.php";
+	    //            $urllist[$projectname] = "projects.php?id=$projectid";
+		//	NavigationBar("Updateable Assessment Form-- $title", $urllist);}
+		//else {
+		//	NavigationBar("New Assessment Form", $urllist);}
 
 		
 	?>
@@ -405,9 +405,9 @@
 		$projectname = $row['project_name'];
 		$formpublish = $row['form_ispublished'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		NavigationBar("$title", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//NavigationBar("$title", $urllist);
 		
 		// Counting query
 //		$sqlstr ="SELECT COUNT(*) as CNT FROM `subjects` a left join enrollment b on a.subject_id = b.subject_id WHERE b.project_id=$projectid ";
@@ -630,11 +630,10 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		$urllist['Projects'] = "projects.php";
-		$urllist[$projectname] = "projects.php?id=$projectid";
-#		$urllist['Add Form'] = "projectassessments.php?action=addform&projectid=$projectid";
-
-		NavigationBar("$projectname", $urllist);
+		//$urllist['Projects'] = "projects.php";
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//$urllist['Add Form'] = "projectassessments.php?action=addform&projectid=$projectid";
+		//NavigationBar("$projectname", $urllist);
 	
 		DisplayProjectsMenu('assessments', $projectid);	
 

@@ -194,9 +194,9 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$projectname = $row['project_name'];
 		
-		$urllist['Project List'] = "projects.php";
-		$urllist['Project Report'] = "projectreport.php?action=viewprojectreport&projectid=$projectid";
-		NavigationBar("Project report for $projectname", $urllist);
+		//$urllist['Project List'] = "projects.php";
+		//$urllist['Project Report'] = "projectreport.php?action=viewprojectreport&projectid=$projectid";
+		//NavigationBar("Project report for $projectname", $urllist);
 		?>
 		<table class="graydisplaytable">
 			<thead>

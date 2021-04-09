@@ -111,8 +111,8 @@
 		$userid = $_SESSION['userid'];
 	
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		NavigationBar("$uid", $urllist, $perms);
+		//$urllist['Subjects'] = "subjects.php";
+		DisplayPermissions($perms);
 
 		if (is_null($selectedprotocols)) {
 			$all = true;

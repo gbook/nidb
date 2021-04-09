@@ -977,10 +977,10 @@ question_num, question_text, datatype, values, comment</div>
 	/* ------- DisplayAssessmentFormList ---------- */
 	/* -------------------------------------------- */
 	function DisplayAssessmentFormList() {
-		$urllist['Home'] = "index.php";
-		$urllist['Import'] = "import.php";
-		$urllist['Assessment Form List'] = "import.php?action=viewassessmentforms";
-		NavigationBar("Import", $urllist);
+		//$urllist['Home'] = "index.php";
+		//$urllist['Import'] = "import.php";
+		//$urllist['Assessment Form List'] = "import.php?action=viewassessmentforms";
+		//NavigationBar("Import", $urllist);
 	
 		?>
 		<table class="ui very compact celled grey table">
@@ -1964,10 +1964,10 @@ question_num, question_text, datatype, values, comment</div>
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['Assessment Forms'] = "adminassessmentforms.php";
-		$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Assessment Forms'] = "adminassessmentforms.php";
+		//$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">

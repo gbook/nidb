@@ -204,10 +204,10 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['Instances'] = "admininstances.php";
-		$urllist[$name] = "admininstances.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Instances'] = "admininstances.php";
+		//$urllist[$name] = "admininstances.php?action=editform&id=$id";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">
@@ -303,10 +303,10 @@
 	/* -------------------------------------------- */
 	function DisplayInstanceList() {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Instances'] = "admininstances.php";
-		$urllist['Add Instance'] = "admininstances.php?action=addform";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Instances'] = "admininstances.php";
+		//$urllist['Add Instance'] = "admininstances.php?action=addform";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 

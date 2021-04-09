@@ -139,9 +139,9 @@
 		
 		$tags = GetTags('enrollment','dx',$id);
 
-		$urllist[$projectname] = "projects.php?id=$projectid";
-		$urllist[$uid] = "subjects.php?id=$subjectid";
-		NavigationBar("Enrollment for $uid in $projectname", $urllist);
+		//$urllist[$projectname] = "projects.php?id=$projectid";
+		//$urllist[$uid] = "subjects.php?id=$subjectid";
+		//NavigationBar("Enrollment for $uid in $projectname", $urllist);
 
 		/* get alternate subject IDs */
 		$altuids = GetAlternateUIDs($subjectid, $enrollmentid);

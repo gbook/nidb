@@ -68,8 +68,8 @@
 	/* -------------------------------------------- */
 	function DisplayGroupList() {
 	
-		$urllist['groups'] = "longqc.php";
-		NavigationBar("Longitudinal QC", $urllist);
+		//$urllist['groups'] = "longqc.php";
+		//NavigationBar("Longitudinal QC", $urllist);
 		
 	?>
 
@@ -117,8 +117,8 @@
 	/* -------------------------------------------- */
 	function DisplayProtocolList($groupid) {
 	
-		$urllist['Groups'] = "longqc.php";
-		NavigationBar("Longitudinal QC", $urllist);
+		//$urllist['Groups'] = "longqc.php";
+		//NavigationBar("Longitudinal QC", $urllist);
 		
 		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -173,8 +173,8 @@
 	/* -------------------------------------------- */
 	function DisplayLonitudinalQC($groupid, $protocol) {
 	
-		$urllist['Groups'] = "longqc.php";
-		NavigationBar("Longitudinal QC", $urllist);
+		//$urllist['Groups'] = "longqc.php";
+		//NavigationBar("Longitudinal QC", $urllist);
 		
 		# this only works for study groups
 		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";

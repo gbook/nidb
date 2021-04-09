@@ -128,9 +128,9 @@
 	/* -------------------------------------------- */
 	function DisplayQCModuleList() {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['QC Modules'] = "adminqc.php";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['QC Modules'] = "adminqc.php";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 

@@ -146,9 +146,9 @@
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
 		
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
-		$urllist["$projectname Measures"] = "measures.php?enrollmentid=$enrollmentid";
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
+		//$urllist["$projectname Measures"] = "measures.php?enrollmentid=$enrollmentid";
 		//NavigationBar("Phenotypic measures", $urllist);
 		
 		?>

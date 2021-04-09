@@ -157,10 +157,10 @@
 		$series_status = $row['series_status'];
 		$series_notes = $row['series_notes'];
 
-		$urllist['Subject List'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
-		$urllist["Study " . $study_num] = "studies.php?id=$studyid";
-		NavigationBar("Manage files", $urllist);
+		//$urllist['Subject List'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
+		//$urllist["Study " . $study_num] = "studies.php?id=$studyid";
+		//NavigationBar("Manage files", $urllist);
 
 		$datadir = GetDataDir($seriesid, $modality, $datatype);
 		

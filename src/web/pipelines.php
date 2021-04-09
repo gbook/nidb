@@ -950,8 +950,8 @@
 		
 		if ($numproc == "") { $numproc = 1; }
 		
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
 		//NavigationBar("", $urllist);
 	?>
 	
@@ -2483,8 +2483,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$version = $row['pipeline_version'];
 		}
 		
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
 		//NavigationBar("$title", $urllist);
 
 		?>
@@ -2775,8 +2775,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 	
 		MarkTime("DisplayPipelineTree()");
 	
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist['New Pipeline'] = "pipelines.php?action=addform";
+		//$urllist['Pipelines'] = "pipelines.php";
+		//$urllist['New Pipeline'] = "pipelines.php?action=addform";
 		//NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];

@@ -129,9 +129,6 @@
 	/* ------- ViewDetails ------------------------------- */
 	/* --------------------------------------------------- */
 	function ViewDetails($requestid) {
-		$urllist['Search'] = "search.php";
-		$urllist['Data export status'] = "requeststatus.php";
-		NavigationBar("Data export details", $urllist);
 		
 		$sqlstring = "select * from data_requests where request_id = $requestid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -302,9 +299,6 @@
 	/* ------- ViewExport -------------------------------- */
 	/* --------------------------------------------------- */
 	function ViewExport($exportid) {
-		$urllist['Search'] = "search.php";
-		$urllist['Export status'] = "requeststatus.php";
-		NavigationBar("Data export status", $urllist);
 
 		$sqlstring = "select * from exports where export_id = $exportid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

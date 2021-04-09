@@ -139,8 +139,8 @@
 	/* -------------------------------------------- */
 	function DisplayQstatJobs() {
 	
-		$urllist['Cluster Stats'] = "cluster.php";
-		NavigationBar("Cluster Stats", $urllist);
+		//$urllist['Cluster Stats'] = "cluster.php";
+		//NavigationBar("Cluster Stats", $urllist);
 		
 		DisplayStatsMenu();
 
@@ -166,8 +166,8 @@ echo "$line\n";
 	/* -------------------------------------------- */
 	function DisplayQstatUsage() {
 	
-		$urllist['Cluster Stats'] = "cluster.php";
-		NavigationBar("Cluster Stats", $urllist);
+		//$urllist['Cluster Stats'] = "cluster.php";
+		//NavigationBar("Cluster Stats", $urllist);
 		
 		DisplayStatsMenu();
 
@@ -201,8 +201,8 @@ echo "$line\n";
 	/* -------------------------------------------- */
 	function DisplayNodes() {
 	
-		$urllist['Cluster Stats'] = "cluster.php";
-		NavigationBar("Cluster Stats", $urllist);
+		//$urllist['Cluster Stats'] = "cluster.php";
+		//NavigationBar("Cluster Stats", $urllist);
 
 		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		
@@ -275,8 +275,8 @@ echo "$line\n";
 	/* -------------------------------------------- */
 	function DisplayQueues() {
 	
-		$urllist['Cluster Stats'] = "cluster.php";
-		NavigationBar("Cluster Stats", $urllist);
+		//$urllist['Cluster Stats'] = "cluster.php";
+		//NavigationBar("Cluster Stats", $urllist);
 
 		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		

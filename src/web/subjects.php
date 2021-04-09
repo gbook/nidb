@@ -392,9 +392,9 @@
 
 		/* navigation bar */
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$uid", $urllist,$perms);
+		//$urllist['Subjects'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		DisplayPermissions($perms);
 		
 		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
 		<a href='studies.php?id=$studyRowID'>View Study</a>");
@@ -457,9 +457,9 @@
 
 		/* navigation bar */
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		$urllist[$uid] = "subjects.php?action=display&id=$id";
-		NavigationBar("$uid", $urllist,$perms);
+		//$urllist['Subjects'] = "subjects.php";
+		//$urllist[$uid] = "subjects.php?action=display&id=$id";
+		DisplayPermissions($perms);
 		
 		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
 		<a href='studies.php?id=$studyRowID'>View Study</a>");
@@ -559,8 +559,7 @@
 		/* commit a transaction */
 		CommitSQLTransaction();
 		
-		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br>
-		<a href='studies.php?id=$studyRowID'>View Study</a>");
+		Notice("Study $study_num has been created for subject $uid in $projectname ($projectcostcenter)<br><a href='studies.php?id=$studyRowID'>View Study</a>");
 	}	
 	
 	
@@ -572,6 +571,11 @@
 			Error("Project not specified");
 			return;
 		}
+
+		$sqlstring = "select * from projects where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$projectname = $row['project_name'];
 		
 		$sqlstring = "select * from enrollment where project_id = $projectid and subject_id = $subjectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -579,7 +583,7 @@
 			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectid, $subjectid, now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			Notice("Subject enrolled in the project");
+			Notice("Subject enrolled in <b>$projectname</b>");
 		}
 		else {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -588,7 +592,7 @@
 			$sqlstring = "update enrollment set enroll_enddate = '0000-00-00 00:00:00' where enrollment_id = '$enrollmentid'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			Notice("Subject re-enrolled in the project");
+			Notice("Subject re-enrolled in <b>$projectname</b>");
 		}
 	}
 
@@ -1082,8 +1086,8 @@
 		}
 		
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		NavigationBar("$uid", $urllist, $perms);
+		//$urllist['Subjects'] = "subjects.php";
+		DisplayPermissions($perms);
 
 		/* update the mostrecent table */
 		UpdateMostRecent($userid, $id,'');
@@ -2034,8 +2038,8 @@
 		}
 	
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		$urllist['Subjects'] = "subjects.php";
-		NavigationBar("$uid", $urllist, $perms);
+		//$urllist['Subjects'] = "subjects.php";
+		DisplayPermissions($perms);
 		
 		$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = $enrollmentid order by a.study_num asc";
 		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2179,11 +2183,11 @@
 			$modifyphi = $viewphi = 1;
 		}
 
-		//$perms = GetCurrentUserProjectPermissions($projectids);
+		$perms = GetCurrentUserProjectPermissions($projectids);
 		//PrintVariable($perms);
 		//$urllist['Subjects'] = "subjects.php";
 		//$urllist[$uid] = "subjects.php?action=display&id=$id";
-		//NavigationBar("$formtitle", $urllist, $perms);
+		DisplayPermissions($perms);
 
 		if (GetPerm($perms, 'projectadmin', $projectid)) { $projectadmin = 1; } else { $projectadmin = 0; }
 		if (GetPerm($perms, 'modifyphi', $projectid)) { $modifyphi = 1; } else { $modifyphi = 0; }

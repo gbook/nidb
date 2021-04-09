@@ -193,10 +193,10 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['Forms'] = "adminforms.php";
-		$urllist[$title] = "adminforms.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Forms'] = "adminforms.php";
+		//$urllist[$title] = "adminforms.php?action=editform&id=$id";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">
@@ -373,10 +373,10 @@
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
-		$urllist['Administration'] = "admin.php";
-		$urllist['Forms'] = "adminforms.php";
-		$urllist[$title] = "adminforms.php?action=editform&id=$id";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Forms'] = "adminforms.php";
+		//$urllist[$title] = "adminforms.php?action=editform&id=$id";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">
@@ -476,10 +476,10 @@
 	/* -------------------------------------------- */
 	function DisplayFormList() {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Forms'] = "adminforms.php";
-		$urllist['Add Form'] = "adminforms.php?action=addform";
-		NavigationBar("Admin", $urllist);
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Forms'] = "adminforms.php";
+		//$urllist['Add Form'] = "adminforms.php?action=addform";
+		//NavigationBar("Admin", $urllist);
 		
 	?>
 

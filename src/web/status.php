@@ -61,9 +61,6 @@
 	/* ------- DisplayStatus ---------------------- */
 	/* -------------------------------------------- */
 	function DisplayStatus() {
-	
-		$urllist['System Status'] = "status.php";
-		NavigationBar("System Status", $urllist);
 
 		# connect to DB and get status
 		$dbconnect = true;

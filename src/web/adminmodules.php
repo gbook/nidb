@@ -116,8 +116,8 @@
 	/* -------------------------------------------- */
 	function ViewLogs($modulename) {
 	
-		$urllist['Administration'] = "admin.php";
-		$urllist['Modules'] = "adminmodules.php";
+		//$urllist['Administration'] = "admin.php";
+		//$urllist['Modules'] = "adminmodules.php";
 		//NavigationBar("Admin", $urllist);
 		
 		chdir($GLOBALS['cfg']['logdir']);

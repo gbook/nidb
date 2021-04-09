@@ -60,8 +60,8 @@
 	/* -------------------------------------------- */
 	function DisplayStats() {
 	
-		$urllist['Statistics'] = "stats.php";
-		NavigationBar("Stats", $urllist);
+		//$urllist['Statistics'] = "stats.php";
+		//NavigationBar("Stats", $urllist);
 
 		$currentyear = date("Y");
 		
