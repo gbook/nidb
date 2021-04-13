@@ -530,14 +530,14 @@ qq.FileUploader = function(o){
         // if set, will be used instead of qq-upload-list in template
         listElement: null,
         dragText: 'Drop files here to upload',
-        uploadButtonText: 'Upload',
+        uploadButtonText: '<i class="cloud upload icon"></i> Upload',
         cancelButtonText: 'Cancel',
         failUploadText: 'Upload failed',
         hideShowDropArea: true,
 
         template: '<div class="qq-uploader">' +
                 '<div class="qq-upload-drop-area"><span>{dragText}</span></div>' +
-                '<div class="qq-upload-button" title="Upload limit 1GB">{uploadButtonText}</div>' +
+                '<div class="qq-upload-button ui small red button" title="Upload limit 1GB">{uploadButtonText}</div>' +
                 '<ul class="qq-upload-list"></ul>' +
              '</div>',
 

@@ -49,6 +49,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$subjectid = GetVariable("subjectid");
 	$selectedid = GetVariable("selectedid");
 	$projectid = GetVariable("projectid");
 	$newprojectid = GetVariable("newprojectid");
@@ -97,6 +98,8 @@
 	else {
 		$searchactive = 1;
 	}
+	
+	if ($id == "") $id = $subjectid;
 	
 	/* determine action */
 	switch ($action) {

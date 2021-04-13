@@ -284,8 +284,12 @@
 		$studyaltid = mysqli_real_escape_string($GLOBALS['linki'], $studyaltid);
 		$studyexperimenter = mysqli_real_escape_string($GLOBALS['linki'], $studyexperimenter);
 		
+		if ($studydoradread == "") $studydoradread = "0";
+		if ($studyradreaddate == "") $studyradreaddate = "null"; else $studyradreaddate = "'$studyradreaddate'";
+		if ($studyetsnellchart == "") $studyetsnellchart = "null"; else $studyetsnellchart = "'$studyetsnellchart'";
+		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = '$studyradreaddate', study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = '$studyetsnellchart', study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -1085,7 +1089,7 @@
 	/* ------- DisplayStudyForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudyForm($studyid) {
-		PrintVariable($studyid);
+		//PrintVariable($studyid);
 		
 		if (!ValidID($studyid,'Study ID')) { return; }
 
@@ -1123,128 +1127,165 @@
 		//$urllist[$projectname] = "projects.php?id=$projectid";
 		//$urllist[$uid] = "subjects.php?id=$subjectid";
 		//$urllist[$study_num] = "studies.php?studyid=$studyid";
-		DisplayPermissions($perms);
+		//DisplayPermissions($perms);
 		
 		$formaction = "update";
 		$formtitle = "Updating study $study_num";
 		$submitbuttonlabel = "Update";
 		
-		if (($study_radreaddate == "") || ($study_radreaddate == "0000-00-00 00:00:00")) { $study_radreaddate = date('Y-m-d h:i:s a'); }
+		//if (($study_radreaddate == "") || ($study_radreaddate == "0000-00-00 00:00:00")) { $study_radreaddate = date('Y-m-d h:i:s'); }
 		
 	?>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="studies.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="studyid" value="<?=$studyid?>">
-			<tr>
-				<td class="heading" colspan="2" align="center">
-					<b><?=$formtitle?></b>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Modality</td>
-				<td>
-					<!--<input type="text" name="modality" value="<?=$study_modality?>">-->
-					<select name="modality">
-					<?
-						$sqlstring = "select * from modalities order by mod_desc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$mod_code = $row['mod_code'];
-							$mod_desc = $row['mod_desc'];
-							if ($mod_code == $study_modality) { $selected = "selected"; } else { $selected = ""; }
-							?>
-							<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option>
-							<?
-						}
-					?>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Date/time</td>
-				<td><input type="text" name="studydatetime" value="<?=$study_datetime?>" required></td>
-			</tr>
-			<tr>
-				<td class="label">Age at scan</td>
-				<td><input type="text" name="studyageatscan" value="<?=$study_ageatscan?>"> <span class="tiny">years, with decimals</span></td>
-			</tr>
-			<tr>
-				<td class="label">Height</td>
-				<td><input type="text" name="studyheight" value="<?=$study_height?>" size="4"> <span class="tiny">m</span></td>
-			</tr>
-			<tr>
-				<td class="label">Weight</td>
-				<td><input type="text" name="studyweight" value="<?=$study_weight?>" size="4"> <span class="tiny">kg</span></td>
-			</tr>
-			<tr>
-				<td class="label">Visit type</td>
-				<td><input type="text" name="studytype" value="<?=$study_type?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Operator</td>
-				<td><input type="text" name="studyoperator" value="<?=$study_operator?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Performing physician</td>
-				<td><input type="text" name="studyphysician" value="<?=$study_physician?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Site</td>
-				<td><input type="text" name="studysite" value="<?=$study_site?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Notes</td>
-				<td><textarea name="studynotes" cols="30" rows="5"><?=$study_notes?></textarea></td>
-			</tr>
-			<? if (strtolower($study_modality) == "mr") { ?>
-				<tr>
-					<td class="label">Radiological read done?</td>
-					<td><input type="checkbox" name="studydoradread" value="1" <? if ($study_doradread) {echo "checked";} ?>></td>
-				</tr>
-				<tr>
-					<td class="label">Radiological read date</td>
-					<td><input type="text" name="studyradreaddate" value="<?=$study_radreaddate?>"></td>
-				</tr>
-				<tr>
-					<td class="label">Radiological read findings</td>
-					<td><input type="text" name="studyradreadfindings" value="<?=$study_radreadfindings?>"></td>
-				</tr>
-			<? } elseif (strtolower($study_modality) == "et") { ?>
-				<tr>
-					<td class="label">Snellen chart</td>
-					<td><input type="text" size="8" name="studyetsnellchart" value="<?=$study_etsnellenchart?>"></td>
-				</tr>
-				<tr>
-					<td class="label">Vergence</td>
-					<td><input type="text" name="studyetvergence" value="<?=$study_etvergence?>"></td>
-				</tr>
-				<tr>
-					<td class="label">Tracking</td>
-					<td><input type="text" name="studyettracking" value="<?=$study_ettracking?>"></td>
-				</tr>
-			<? } elseif (strtolower($study_modality) == "snp") { ?>
-				<tr>
-					<td class="label">SNP chip</td>
-					<td><input type="text" size="35" name="studysnpchip" value="<?=$study_snpchip?>"></td>
-				</tr>
-			<? } ?>
-			<tr>
-				<td class="label">Alternate ID</td>
-				<td><input type="text" name="studyaltid" value="<?=$study_alternateid?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Experimenter</td>
-				<td><input type="text" name="studyexperimenter" <? if ($study_experimenter == "") {echo "style='color:red'"; } ?> value="<? if ($study_experimenter != "") { echo $study_experimenter; } else { echo $GLOBALS['username']; } ?>"></td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
-				</td>
-			</tr>
-			</form>
-		</table>
+		<div class="ui center aligned container">
+			<div class="ui massive breadcrumb">
+				<a href="projects.php?id=<?=$projectid?>" class="section"><?=$projectname?></a>
+				<i class="right angle icon divider"></i>
+				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
+				<i class="right angle icon divider"></i>
+				<div class="active section">Study <?=$study_num?></div>
+			</div>
+			<? DisplayPermissions($perms); ?>
+		</div>
+		
+		<br><br>
+		<div class="ui text container">
+			<div class="ui top attached secondary segment">
+				<h3 class="ui header"><?=$formtitle?></h3>
+			</div>
+			<div class="ui bottom attached segment">
+				<form method="post" action="studies.php" class="ui form">
+				<input type="hidden" name="action" value="<?=$formaction?>">
+				<input type="hidden" name="studyid" value="<?=$studyid?>">
+				<div class="two fields">
+					<div class="field">
+						<label>Modality</label>
+						<select name="modality" class="ui dropdown">
+						<?
+							$sqlstring = "select * from modalities order by mod_desc";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$mod_code = $row['mod_code'];
+								$mod_desc = $row['mod_desc'];
+								if ($mod_code == $study_modality) { $selected = "selected"; } else { $selected = ""; }
+								?><option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option><?
+							}
+						?>
+						</select>					
+					</div>
+					<div class="field">
+						<label>Date/time</label>
+						<input type="text" name="studydatetime" value="<?=$study_datetime?>" required>
+					</div>
+				</div>
+
+				<div class="three fields">
+					<div class="field">
+						<label>Age</label>
+						<div class="ui right labeled input">
+							<input type="text" name="studyageatscan" value="<?=$study_ageatscan?>">
+						    <div class="ui label">years</div>
+						</div>
+					</div>
+					<div class="field">
+						<label>Height</label>
+						<div class="ui right labeled input">
+							<input type="text" name="studyheight" value="<?=$study_height?>" size="4">
+						    <div class="ui label">m</div>
+						</div>
+					</div>
+					<div class="field">
+						<label>Weight</label>
+						<div class="ui right labeled input">
+							<input type="text" name="studyweight" value="<?=$study_weight?>" size="4">
+						    <div class="ui label">kg</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Visit type</label>
+					<input type="text" name="studytype" value="<?=$study_type?>">
+				</div>
+				
+				<div class="ui three fields">
+					<div class="field">
+						<label>Operator</label>
+						<input type="text" name="studyoperator" value="<?=$study_operator?>">
+					</div>
+					<div class="field">
+						<label>Performing physician</label>
+						<input type="text" name="studyphysician" value="<?=$study_physician?>">
+					</div>
+					<div class="field">
+						<label>Site</label>
+						<input type="text" name="studysite" value="<?=$study_site?>">
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Notes</label>
+					<textarea name="studynotes" cols="30" rows="5"><?=$study_notes?></textarea>
+				</div>
+
+				<? if (strtolower($study_modality) == "mr") { ?>
+					<div class="ui three fields">
+						<div class="field">
+							<label>Radiological read done?</label>
+							<input type="checkbox" class="ui checkbox" name="studydoradread" value="1" <? if ($study_doradread) {echo "checked";} ?>>
+						</div>
+						<div class="field">
+							<label>Radiological read date</label>
+							<input type="text" name="studyradreaddate" value="<?=$study_radreaddate?>">
+						</div>
+						<div class="field">
+							<label>Radiological read findings</label>
+							<input type="text" name="studyradreadfindings" value="<?=$study_radreadfindings?>">
+						</div>
+					</div>
+				<? } elseif (strtolower($study_modality) == "et") { ?>
+					<div class="ui three fields">
+						<div class="field">
+							<label>Snellen chart</label>
+							<input type="text" size="8" name="studyetsnellchart" value="<?=$study_etsnellenchart?>">
+						</div>
+						<div class="field">
+							<label>Vergence</label>
+							<input type="text" name="studyetvergence" value="<?=$study_etvergence?>">
+						</div>
+						<div class="field">
+							<label>Tracking</label>
+							<input type="text" name="studyettracking" value="<?=$study_ettracking?>">
+						</div>
+					</div>
+				<? } elseif (strtolower($study_modality) == "snp") { ?>
+					<div class="field">
+						<label>SNP chip</label>
+						<input type="text" size="35" name="studysnpchip" value="<?=$study_snpchip?>">
+					</div>
+				<? } ?>
+
+				<div class="two fields">
+					<div class="field">
+						<label>Alternate ID</label>
+						<input type="text" name="studyaltid" value="<?=$study_alternateid?>">
+					</div>
+					<div class="field">
+						<label>Experimenter</label>
+						<input type="text" name="studyexperimenter" <? if ($study_experimenter == "") { echo "style='color:red'"; } ?> value="<? if ($study_experimenter != "") { echo $study_experimenter; } else { echo $GLOBALS['username']; } ?>">
+					</div>
+				</div>
+				
+				<div class="ui two column grid">
+					<div class="column">
+					</div>
+					<div class="right aligned column">
+						<button class="ui button">Cancel</button>
+						<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+					</div>
+				</div>
+				
+				</form>
+			</div>
 		</div>
 	<?
 	}
@@ -1414,25 +1455,27 @@
 					<? } else { ?>
 						<tr>
 							<td colspan="2">
-								<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post" class="ui form">
-								<input type="hidden" name="subme">
-								<input type="hidden" name="stmod" value="<?=$study_modality?>">
-								<div class="inline field">
-									<label>Date/time</label>
-									<input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime" required>
-								</div>
-								<div class="inline field">
-									<div class="ui checkbox">
-										<input type="checkbox" name="Sdate">
-										<label>Copy <b>Date/time</b> value to all series</label>
+								<div class="ui styled segment">
+									<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post" class="ui form">
+									<input type="hidden" name="subme">
+									<input type="hidden" name="stmod" value="<?=$study_modality?>">
+									<div class="inline field">
+										<label>Date/time</label>
+										<input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime" required>
 									</div>
+									<div class="inline field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="Sdate">
+											<label>Copy <b>Date/time</b> value to all series</label>
+										</div>
+									</div>
+									<div class="inline field">
+										<label>Visit type</label>
+										<input type="text" class="ui input" name="studytype" value="<?=$study_type?>" size="30" placeholder="Visit type">
+									</div>
+									<input type="submit" class="ui small basic blue button" value="Quick Update">
+									</form>
 								</div>
-								<div class="inline field">
-									<label>Visit type</label>
-									<input type="text" class="ui input" name="studytype" value="<?=$study_type?>" size="30" placeholder="Visit type">
-								</div>
-								<input type="submit" class="ui small basic blue button" value="Quick Update">
-								</form>
 							</td>
 						</tr>
 					<? } ?>
@@ -1595,9 +1638,8 @@
 			<div class="thirteen wide column">
 				<?
 				if ($displayfiles == true) {
-					?><a href="studies.php?studyid=<?=$studyid?>">Normal View</a><br><br><?
 					$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
-					DisplayFileSeries($studypath);
+					DisplayFileSeries($studypath, $studyid);
 				}
 				else {
 					if ($study_modality == "MR") {
@@ -2699,7 +2741,7 @@
 		</table>
 		<div class="ui two column grid">
 			<div class="column">
-				<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
+				<a class="ui basic button" href="studies.php?studyid=<?=$id?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			</div>
 			<div class="right aligned column">
 				<b>With Selected</b> &nbsp; &nbsp; <br>
@@ -2716,22 +2758,23 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFileSeries ------------------ */
 	/* -------------------------------------------- */
-	function DisplayFileSeries($path) {
+	function DisplayFileSeries($path, $studyid) {
 	
 		if (file_exists($path)) {
 			$dir = scandir($path);
 			$files = find_all_files($path);
 
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files)
-			<br><br>
-			<table cellspacing="0" cellpadding="2" width="100%">
-				<tr>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Size <span class="tiny">bytes</span></td>
-				</tr>
+			<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>">Normal View</a> Showing (<?=count($files)?> files) from <code><?=$path?></code>
+			<table class="ui very compact small celled table">
+				<thead>
+					<tr>
+						<th style="font-weight: bold; border-bottom:2px solid #999999">File</th>
+						<th style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</th>
+						<th style="font-weight: bold; border-bottom:2px solid #999999">Permissions</th>
+						<th style="font-weight: bold; border-bottom:2px solid #999999">Size <span class="tiny">bytes</span></th>
+					</tr>
+				</thead>
 			<?
 			foreach ($files as $line) {
 				
@@ -2828,6 +2871,7 @@
 				</tr>
 				<?
 			}
+			?></table><?
 		}
 		else {
 			Error("No data exists for this study");

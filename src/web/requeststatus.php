@@ -157,16 +157,21 @@
 		
 		if ($viewall) {
 			?>
-			<h3 class="ui header">Showing all exports</h3> <a href="requeststatus.php?viewall=0">(show only most recent 30)</a>
+			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show only last 30</a>
 			<?
 		}
 		else {
 			?>
-			<h3 class="ui header">Showing 30 most recent exports</h3> <a href="requeststatus.php?viewall=1">(show all)</a>
+			<h3 class="ui header">Showing 30 most recent exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=1">Show all</a>
 			<?
 		}
 		?>
-		<table class="ui small celled selectable grey compact table">
+		<script>
+			$(document).ready(function() {
+				$('.ui .progress').progress();
+			});
+		</script>
+		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<th align="left">Request date</th>
 				<th align="left">Format</th>
@@ -232,7 +237,16 @@
 			}
 				
 			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
-				
+			
+			if ($totals['error'] > 0) {
+				$error = "error";
+				$witherrors = "<br><span style='font-size: 8pt; color:red'>with " . $totals['error'] . " errors</span>";
+			}
+			else {
+				$error = "";
+				$witherrors = "";
+			}
+			
 				if ($destinationtype == 'remotenidb') {
 					$completelabel = 'sent';
 				}
@@ -247,12 +261,18 @@
 					<td align="right"><?=$numseries?></td>
 					<td align="right"><?=number_format($totalbytes)?></td>
 					<td style="white-space: nowrap; width: 20%">
-						<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% <?=$completelabel?> <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>
+						<!--<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$totals['complete']?>,<?=$totals['processing']?>,<?=$totals['error']?>,<?=$leftovers?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($totals['complete']/$total)*100,1)?>% <?=$completelabel?> <span style="font-size:8pt;color:gray">(<?=number_format($totals['complete'])?> of <?=number_format($total)?> series)</span>-->
 						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
 						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 						<? } ?>
+						<div class="ui small progress <?=$error?>" data-percent="<?=($totals['complete']/$total)*100?>">
+							<div class="bar">
+								<div class="progress"></div>
+							</div>
+							<div class="inline label" style="font-size: 8pt; font-weight: normal"><?=number_format($totals['complete'])?> of <?=number_format($total)?> series</label>
+						</div>
 					</td>
-					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status"><?=ucfirst($exportstatus)?></a></td>
+					<td><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status"><?=ucfirst($exportstatus)?></a> <?=$witherrors?></td>
 					<td>
 						<? if ($exportstatus == "error") { ?>
 						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series">Retry</a>
@@ -278,7 +298,7 @@
 								echo "Zipping download...";
 							}
 							else {
-								?><a href="download/<?="NIDB-$exportid.zip"?>" title="Download zip file">Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
+								?><a class="ui primary button" href="download/<?="NIDB-$exportid.zip"?>" title="Download zip file"><i class="download icon"></i> Download</a> <span class="tiny"><?=number_format($filesize,0)?> bytes</span><?
 							}
 						}
 						else {

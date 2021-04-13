@@ -829,7 +829,7 @@
 					</tr>
 				</table>
 				<div align="center">
-				<input type="submit" value="Search">
+				<button class="ui primary button" type="submit"><i class="search icon"></i> Search</button>
 				</div>
 				<br>
 			</td>

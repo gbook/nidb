@@ -2190,7 +2190,7 @@
 						<h3 class="ui header">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
-						<div class="ui tiny button editoroptions" onClick="toggleWrap(); return;">Toggle text wrap</div>
+						<div class="ui tiny basic button editoroptions" onClick="toggleWrap(); return;">Toggle text wrap</div>
 					</div>
 				</div>
 			</div>
@@ -2284,7 +2284,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						<h3 class="ui header">Supplement script &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
-						<div class="ui tiny button editoroptions" onClick="toggleWrap2(); return;">Toggle text wrap</div>
+						<div class="ui tiny basic button editoroptions" onClick="toggleWrap2(); return;">Toggle text wrap</div>
 					</div>
 				</div>
 			</div>
@@ -2824,7 +2824,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<a href="pipelines.php?action=addform" class="ui primary large button"><i class="plus square outline icon"></i>New Pipeline</a>
 			</div>
 		</div>
-		<h3 class="ui header">View</h3> <a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a> <a href="pipelines.php?action=viewusage" class="ui button">Disk Usage <div class="ui mini yellow label">SLOW!</div></a>
+		<h3 class="ui header">View</h3> <a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a> <a href="pipelines.php?action=viewusage" class="ui button">Disk Usage</a><div class="ui mini yellow label">SLOW!</div>
 		<br><br>
 		<h3 class="ui header">View pipelines owned by</h3>
 		<?
