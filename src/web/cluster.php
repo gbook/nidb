@@ -58,11 +58,12 @@
 	/* -------------------------------------------- */
 	function DisplayStatsMenu() {
 		?>
-		<div align="center">
-			<a href="cluster.php?action=qstatjobs"><tt>qstat</tt> job output</a> &nbsp; &nbsp; 
-			<a href="cluster.php?action=qstatusage"><tt>qstat</tt> usage output</a> &nbsp; &nbsp; 
-			<a href="cluster.php?action=nodes">Nodes</a> &nbsp; &nbsp; 
-			<a href="cluster.php?action=queues">Queues</a> &nbsp; &nbsp; 
+		<div class="ui center aligned text container">
+			<h3 class="ui header">View cluster information</h3>
+			<a class="ui basic button" href="cluster.php?action=qstatjobs"><tt>qstat</tt> job output</a>
+			<a class="ui basic button" href="cluster.php?action=qstatusage"><tt>qstat</tt> usage output</a>
+			<a class="ui basic button" href="cluster.php?action=nodes"><i class="server icon"></i> Nodes</a>
+			<a class="ui basic button" href="cluster.php?action=queues"><i class="tasks icon"></i> Queues</a>
 		</div>
 		<br><br>
 		<?
@@ -138,24 +139,20 @@
 	/* ------- DisplayQstatJobs ------------------- */
 	/* -------------------------------------------- */
 	function DisplayQstatJobs() {
-	
-		//$urllist['Cluster Stats'] = "cluster.php";
-		//NavigationBar("Cluster Stats", $urllist);
-		
 		DisplayStatsMenu();
 
 		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat 2>&1";
 		$statsoutput = explode("\n",shell_exec($command));
-		//PrintVariable($command);
-		//PrintVariable($statsoutput);
 		
 		?>
-		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?
+		<div class="ui text container">
+			<div class="ui styled segment" style="font-family: monospace; white-space: pre;"><?
 			foreach ($statsoutput as $line) {
 				$line = trim($line);
 echo "$line\n";
 			}
 		?>
+			</div>
 		</div>
 		<?
 	}
@@ -165,25 +162,14 @@ echo "$line\n";
 	/* ------- DisplayQstatUsage ------------------ */
 	/* -------------------------------------------- */
 	function DisplayQstatUsage() {
-	
-		//$urllist['Cluster Stats'] = "cluster.php";
-		//NavigationBar("Cluster Stats", $urllist);
-		
 		DisplayStatsMenu();
 
-		//phpinfo();
-		
 		$command = "ssh ".$GLOBALS['cfg']['clustersubmithost']." qstat -f -u '*' 2>&1";
 		$statsoutput = explode("\n",shell_exec($command));
-		//PrintVariable($command);
-		//PrintVariable($statsoutput);
-		
-		//PrintVariable(shell_exec("ls"));
-
-		//PrintVariable(shell_exec('/bin/bash -v 2>&1'));
 		
 		?>
-		<div class="dropshadow" style="padding:8px; border: 1px solid #777; width: 50%; font-family: monospace; white-space: pre;"><?
+		<div class="ui text container">
+			<div class="ui styled segment" style="font-family: monospace; white-space: pre;"><?
 			foreach ($statsoutput as $line) {
 				if (!strstr($line,'------')) {
 					$line = trim($line);
@@ -191,6 +177,7 @@ echo "$line\n";
 				}
 			}
 		?>
+			</div>
 		</div>
 		<?
 	}
@@ -201,9 +188,6 @@ echo "$line\n";
 	/* -------------------------------------------- */
 	function DisplayNodes() {
 	
-		//$urllist['Cluster Stats'] = "cluster.php";
-		//NavigationBar("Cluster Stats", $urllist);
-
 		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		
 		DisplayStatsMenu();
@@ -212,60 +196,60 @@ echo "$line\n";
 		$slotsunusedcolor = "EEEEEE";
 		
 		?>
-
-		<table class="ui very compact celled grey table">
-			<thead>
-				<tr>
-					<th>Node</th>
-					<th>Arch</th>
-					<th>States</th>
-					<th>Load</th>
-					<th>Total slots</th>
-					<th>% slots in use</th>
-				</tr>
-			</thead>
-			<?
-				foreach ($hostnames as $hostname) {
-					//PrintVariable($report[$hostname]);
-
-					$slotsavailable = 0;
-					$slotsused = 0;
-					foreach ($report[$hostname]['queues'] as $queue => $info) {
-						//PrintVariable($info);
-						$slotsavailable += $info['slotsavailable'];
-						$slotsused += $info['slotsused'];
-					}
-					
-					$totalClusterSlotsAvailable += $slotsavailable;
-					$totalClusterSlotsUsed += $slotsused;
-					
-					$load = $report[$hostname]['cpu'];
-					$arch = $report[$hostname]['arch'];
-					$states = $report[$hostname]['states'];
-					
-					?>
+		<div class="ui text container">
+			<table class="ui small very compact celled grey table">
+				<thead>
 					<tr>
-						<td><?=$hostname?></td>
-						<td><?=$arch?></td>
-						<td><?=$states?></td>
-						<td><?=$load?></td>
-						<td><?=$slotsavailable?></td>
-						
-						<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
+						<th>Node</th>
+						<th>Arch</th>
+						<th>States</th>
+						<th>Load</th>
+						<th>Total slots</th>
+						<th>% slots in use</th>
 					</tr>
-					<?
-				}
-			?>
-			<tr>
-				<td style="font-weight: bold; font-size:14pt">Totals</td>
-				<td></td>
-				<td></td>
-				<td></td>
-				<td style="font-weight: bold; font-size:14pt"><?=$totalClusterSlotsAvailable?></td>
-				<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
-			</tr>
-		</table>
-		<br><br><br><br>
+				</thead>
+				<?
+					foreach ($hostnames as $hostname) {
+
+						$slotsavailable = 0;
+						$slotsused = 0;
+						foreach ($report[$hostname]['queues'] as $queue => $info) {
+							$slotsavailable += $info['slotsavailable'];
+							$slotsused += $info['slotsused'];
+						}
+						
+						$totalClusterSlotsAvailable += $slotsavailable;
+						$totalClusterSlotsUsed += $slotsused;
+						
+						$load = $report[$hostname]['cpu'];
+						$arch = $report[$hostname]['arch'];
+						$states = $report[$hostname]['states'];
+						
+						?>
+						<tr>
+							<td><?=$hostname?></td>
+							<td><?=$arch?></td>
+							<td><?=$states?></td>
+							<td><?=$load?></td>
+							<td><?=$slotsavailable?></td>
+							
+							<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
+						</tr>
+						<?
+					}
+				?>
+				<tfoot>
+				<tr>
+					<td>Totals</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td><?=$totalClusterSlotsAvailable?></td>
+					<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
+				</tr>
+				</tfoot>
+			</table>
+		</div>
 	<?
 	}
 

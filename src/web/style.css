@@ -1,7 +1,7 @@
 /*
  ------------------------------------------------------------------------------
  NIDB style.css
- Copyright (C) 2004 - 2019
+ Copyright (C) 2004 - 2021
  Gregory A Book <gbook@harthosp.org> <gbook@gbook.org>
  Olin Neuropsychiatry Research Center, Hartford Hospital
  ------------------------------------------------------------------------------
@@ -60,44 +60,6 @@ textarea:hover { box-shadow: 0px 0px 0px 2px #444; }
 select:focus { box-shadow: 0px 0px 0px 2px #444; background-color: #ffffcc; }
 select:hover { box-shadow: 0px 0px 0px 2px #444; }
 
-/*input[type=submit] {
-	padding:4px 7px; background:#ccc; border:1px solid #ccc;
-	cursor:pointer;
-	-webkit-border-radius: 6px;
-	border-radius: 6px;
-}
-input[type=submit]:hover { border: 1px solid #666; }
-
-input[type=button] {
-	padding:4px 7px; background:#ccc; border:1px solid #ccc;
-	cursor:pointer;
-	-webkit-border-radius: 6px;
-	border-radius: 6px;
-}
-input[type=button]:hover { border: 1px solid #666; }*/
-
-input[type=reset] {
-	padding:4px 7px; background:#ccc; border:1px solid #ccc;
-	cursor:pointer;
-	-webkit-border-radius: 6px;
-	border-radius: 6px;
-}
-input[type=reset]:hover { border: 1px solid #666; }
-
-/* for the fixed menu at the top of each page
-div.menu {
-	margin-left: -8px;
-	position: fixed;
-	top: 0px;
-	left: 0px;
-	width: 100%;
-	} */
-
-/*a { text-decoration: none; color: #224ea5; }
-a:hover { text-decoration: underline; color: #224ea5; }*/
-
-/*div.title { font-weight: bold; color: white; background-color: darkblue; }*/
-
 span.label { font-size: 8pt; font-weight: bold }
 
 span.value { font-size: 8pt }
@@ -126,11 +88,6 @@ td.rightvalue { text-align: left; vertical-align: top; }
 span.example { font-weight: normal; font-family: courier; color: darkred; font-size: 8pt; }
 
 input.textbox { background-color: lightyellow; border:1pt solid gray; margin-right: 6px; }
-
-/*span.button { background-color: #DDDDDD; border-bottom: 1pt solid #555555; border-right: 1pt solid #555555; border-left: 1pt solid #AAAAAA; border-top: 1pt solid #AAAAAA; }*/
-
-/*a.button { color:darkblue; text-decoration: none; }*/
-/*a.link { color: blue; text-decoration: underline; font-size: 11pt; }*/
 
 span.description { color: darkblue; font-size: 10pt }
 
@@ -179,12 +136,6 @@ table.merge { padding: 0px; border-collapse: collapse; }
 .merge td.bodyhighlighted { background-color: #FFFFBF; border-right: 1px solid #ccc; padding: 5px 8px; border-bottom: 1px solid #ccc; }
 .merge td.selected { background-color: yellow; }
 
-/* small grid table */
-/*table.smallgridtable { padding: 0px; border: 1px solid #666; border-spacing: 0px; border-collapse: collapse; }
-.smallgridtable th { font-weight: bold; font-size: 9pt; border: 1px solid #666; padding: 2px 6px; background-color: #EEE; }
-.smallgridtable td { border: 1px solid #ccc; font-size: 9pt; padding: 1px 6px; }
-.smallgridtable tbody tr:hover { background-color: #BBC8E6; }*/
-
 /* gray display table (multiple rows) */
 table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing: 0px; }
 .graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; text-align: left; }
@@ -197,40 +148,6 @@ table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing
 .graydisplaytable a { text-decoration: none; color: #224ea5; }
 .graydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
-/* small gray display table (multiple rows) */
-table.smallgraydisplaytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
-.smallgraydisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
-.smallgraydisplaytable th { font-weight: bold; color: #333; font-size: 11pt; padding: 5px; background-color: #ddd; vertical-align: bottom; }
-.smallgraydisplaytable td { border-top: 1px solid #DDD; font-size: 10pt; padding: 2px 4px; }
-.smallgraydisplaytable td.child { border-top: none; font-size: 10pt; padding: 2px 4px; }
-.smallgraydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 10pt; padding: 3px 6px; background-color: #EFEFEF; }
-.smallgraydisplaytable tbody tr:hover { background-color: #eee; }
-.smallgraydisplaytable tbody td:hover { background-color: #ccc; }
-.smallgraydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.smallgraydisplaytable a { text-decoration: none; color: #224ea5; }
-.smallgraydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
-
-/* small gray display table (multiple rows) */
-table.smallsimpledisplaytable { padding: 0px; border: 1px solid #eee; border-spacing: 0px;}
-.smallsimpledisplaytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
-.smallsimpledisplaytable th { font-weight: bold; color: #333; font-size: 9pt; padding: 5px; background-color: #eee; vertical-align: bottom; }
-.smallsimpledisplaytable td { border-top: 1px solid #eee; font-size: 9pt; padding: 2px 4px; }
-.smallsimpledisplaytable td.child { border-top: none; font-size: 9pt; padding: 2px 4px; }
-.smallsimpledisplaytable td.subheader { border-bottom: 1px solid #eee; font-size: 9pt; padding: 3px 6px; background-color: #EFEFEF; }
-.smallsimpledisplaytable tbody tr:hover { background-color: #eee; }
-.smallsimpledisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888; }
-.smallsimpledisplaytable a { text-decoration: none; color: #224ea5; }
-.smallsimpledisplaytable a:hover { text-decoration: underline; color: #224ea5; }
-
-/* tiny gray display table (multiple rows) */
-table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
-.tinytable:hover { padding: 0px; border: 1px solid #666; border-spacing: 0px;}
-.tinytable th { font-weight: bold; color: #333; font-size: 8pt; padding: 1px; background-color: #ddd; }
-.tinytable td { border-bottom: 1px solid #DDD; font-size: 8pt; padding: 1px 2px; }
-.tinytable tbody tr:hover { background-color: #eee; }
-.tinytable a { text-decoration: none; color: #224ea5; }
-.tinytable a:hover { text-decoration: underline; color: #224ea5; }
-
 .movementsubtable { border-spacing: 0px; padding: 0px; margin: 0px; border: none; width: 100%; height: 100%; border-radius:0px; }
 .movementsubtable td.mainval { border: none; text-align: right; padding:8px; border-radius:0px; }
 .movementsubtable td.subval { border: none; font-size:8pt; color: #555555;text-align: right; border-radius:0px; }
@@ -242,14 +159,6 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .reviewtable td.value { text-align: left; font-weight: normal; color: darkblue; font-size: 11pt; padding: 2px; }
 .reviewtable td.missing { text-align: left; font-weight: bold; color: darkred; background-color: #FFD4D4; font-size: 11pt; padding: 2px; }
 
-/* demographics table (small table with 2 columns: variable, value)*/
-.demographicstable { border-spacing: 0px; padding: 0px; border-top: 2px solid #666666; border-bottom: 2px solid #666666; }
-.demographicstable th { text-align: left; font-weight: bold; color: black; font-size: 12pt; padding: 2px; }
-.demographicstable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
-.demographicstable tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 9pt; padding: 4px; border-top: 1px solid #BBBBBB; white-space: nowrap; }
-.demographicstable .small { font-size:9pt; color: darkblue}
-.demographicstable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-
 /* 2 column table (small table with 2 columns: variable, value)*/
 .twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; border-collapse: collapse; }
 .twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 14pt; padding: 4px; background-color: #DDD; }
@@ -258,29 +167,10 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .twocoltable .small { font-size:9pt; color: darkblue}
 .twocoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
-/* 2 column table (small table with 2 columns: variable, value; no border, no headers) */
-.twocoltablesimple { border-spacing: 0px; padding: 0px; }
-.twocoltablesimple tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; padding: 4px; }
-.twocoltablesimple tr td:last-child { text-align: left; vertical-align: top; font-weight: normal; color: #444; padding: 4px; white-space: nowrap; }
-
-/* enrollment table */
-.enrolltable { border: 2px solid #444; border-collapse: collapse; }
-.enrolltable td.cell { border: 1px solid #ccc; padding: 5px; }
-.enrolltable td.headercell { border-top: 2px solid #444; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; border-right: 1px solid #ccc; padding: 5px; background-color: #ddd; font-weight: bold }
-
 /* analysis summary table */
 .summarytable { border: 2px solid #444; border-collapse: collapse; }
 .summarytable th { border: 1px solid #ccc; background-color: #ddd; font-weight: bold; font-size: 10pt; }
 .summarytable td { border: 1px solid #ddd; font-size: 9pt; white-space: nowrap; padding: 2px 5px; }
-
-/* 2 column table (small table with 2 columns: variable, value)*/
-.multicoltable { border-spacing: 0px; padding: 0px; border: 1px solid #AAA; border-collapse:collapse; }
-.multicoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; border-right: 1px solid #AAA }
-.multicoltable tr td:first-child { text-align: right; vertical-align: top; font-weight: bold; color: black; padding: 4px; border-top: 1px solid #BBBBBB; border-right: 1px solid #BBBBBB; }
-.multicoltable td { text-align: center; vertical-align: top; font-weight: normal; padding: 4px; border: 1px solid #BBBBBB; }
-.multicoltable 
-.multicoltable .small { font-size:9pt; color: darkblue}
-.multicoltable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
 
 /* page header */
 .headertable { border-spacing: 0px; padding: 3px; }
@@ -290,13 +180,8 @@ table.tinytable { padding: 0px; border: 1px solid #ddd; border-spacing: 0px;}
 .headertable1 { font-weight: bold; font-size: 18pt; color: darkblue; padding-left: 20px; padding-top: 5px; width: 90%; white-space: nowrap; vertical-align: top; }
 .headertable2 { font-size: 14pt; white-space: nowrap; vertical-align: top; padding-left: 25px; }
 
-/* all links */
-/*a { color: blue; } */
-
 /* update/delete/added messages */
-/*.message { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; }*/
 .staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; border-radius: 6px; }
-.subtlemessage { text-align: center; color: #333333; background-color: #FFC2B2; border-radius: 2px; padding: 1px 4px; font-size: 9pt }
 .error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
 
 /* search result tables */
@@ -326,19 +211,6 @@ table.subdownload td.notes { vertical-align: top; text-align: left; padding: 8px
 .tiny { font-size: 8pt; color: #666666; font-weight: normal; }
 .smalldiff { font-size: 10pt; background-color: darkred; color: white; padding:2px; font-weight:bold; }
 
-/*.adminbutton { background-color: #ffb7b7; font-weight: bold; color: #ad6464; text-align: center; margin: 5px; padding: 5px; text-decoration: none; border: 1px solid #ad6464; border-radius: 6px; }
-.adminbutton:hover {background-color: #e57272; color: darkred; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }
-
-.adminbutton2 { background-color: darkred; font-weight: bold; color: #fff !important; text-align: center; padding: 7px; text-decoration: none; border: 1px solid #444; border-radius: 6px; }
-.adminbutton2:hover {background-color: #e57272; cursor: pointer; border: 1px solid darkred; text-decoration: underline; }*/
-
-/* for links appearing as buttons */
-/*.linkbutton { display: inline-block; background-color: #3B5998; border-radius: 6px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; }
-.linkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; }*/
-
-/*.smalllinkbutton { display: inline-block; background-color: #3B5998; border-radius: 3px; border: 1px solid #000; color: #fff !important; padding: 2px 8px; margin: 2px; font-size: smaller; }
-.smalllinkbutton:hover { display: inline-block; background-color: #526FAA; border: 1px solid #3B5998; color: #fff !important; text-decoration: none; font-size: smaller; }*/
-
 /* form entry table */
 table.formentrytable { width: 100%; border: 2px solid #666; padding: 8px; }
 table.formentrytable td.title { font-size: 15pt; font-weight: bold; text-align: center; }
@@ -354,13 +226,6 @@ table.formentrytable .tiny { font-size: 8pt; color: #888888; padding-left: 5px; 
 
 .completeform {text-align: center; font-size: 14pt; background-color: #CCFF99; border: 1px solid darkolivegreen; border-radius: 4px; color: darkolivegreen; font-weight: bold; padding: 5px;}
 .incompleteform {text-align: center; font-size: 14pt; background-color: #F5E6E6; border: 1px solid darkred; border-radius: 4px; color: darkred; font-weight: bold; padding: 5px;}
-
-/* generic rounded display box (blue) */
-table.bluerounded { background-color: #093892; border-spacing: 6px; border-radius: 5px; }
-table.bluerounded td.title { color: white; font-weight: bold; font-size: 14pt; }
-table.bluerounded td.body { background-color: white; padding: 8px; border-radius: 5px; font-size: 10pt; }
-table.bluerounded span.header { color: darkblue; font-weight: bold; }
-table.bluerounded span.tiny { color: #555555; font-size: 8pt; }
 
 /* generic rounded display box (gray) */
 table.grayrounded { background-color: #DDD; border-spacing: 3px; border-radius: 3px; }
@@ -380,11 +245,6 @@ table.smallgrayrounded span.tiny { color: #555555; font-size: 8pt; }
 div .code { background-color: #eee; font-family: monospace; padding: 6px; border: 1px solid #888; border-radius:6px; }
 code { background-color: #ddd; border: 1px solid #ccc; padding:0px 4px; border-radius: 3px }
 
-/*td.delete { background-color: transparent; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: #942617; text-decoration: none; }
-td.delete:hover { background-color: #942617; text-align: center; vertical-align: middle; font-size: 12pt; font-weight: bold; color: white; text-decoration: underline; }
-a.delete { color: #601207; text-decoration: none; }
-a.delete:hover { color: #FFF; text-decoration: underline; }*/
-
 /* ------- the following are for emulating the <details> and <summary> tags ------- */
 details, summary { display: block; border: 0; padding: 2px; }
 /* Apply a pointer cursor and style the background upon hover to indicate <summary> is a clickable element. */
@@ -392,33 +252,8 @@ details, summary { display: block; border: 0; padding: 2px; }
 summary { cursor: pointer; border: 1px solid transparent; }
 summary:hover, summary:focus { border: 1px solid #EEE; }
 
-/* The following styles are not really needed, since the jQuery script takes care of hiding/displaying the elements. */
-/* However, we’re still gonna use CSS as well to prevent FOUC in browsers that understand these selectors. */
-/* Remember: by default (and probably most of the time), the contents of the <details> element are hidden. */
-.no-details details > * { display: none; }
-/* This doesn’t work very well in Firefox 3.6.x */
-/* .no-details details[open] > * { display: block; } */
-/* The following doesn’t toggle correctly in WebKit:
-.no-details details > summary:before { content: '\25BA '; }
-.no-details details[open] > summary:before { content: '\25BC '; }
-*/
-/* And yes, it should really be ::before, but that doesn’t work in IE8 */
-.no-details details > summary:before { float: left; width: 20px; content: "\25BA "; }
-.no-details details.open > summary:before { content: "\25BC "; }
-/* For IE6 and IE7, who don’t support generated content, you could use padding-left + a background image instead */
-/* I really couldn’t be bothered though. */
-/*
-.no-details details > summary { padding-left: 20px; background: url(img/arrow-sprite.png) no-repeat 0 0; }
-.no-details details.open > summary { background-position: 0 -20px; }
-*/
-/* Make sure summary remains visible */
-.no-details details summary { display: block; }
-
 .pipelinevariable { font-family: courier new; color: 333333; font-size:10pt; vertical-align: top; text-align: left; }
 .pipelinevariable:hover { background-color: #EEEEEE; text-decoration: underline; cursor:pointer; }
-.editoroptions { font-size:10pt; padding:5px; }
-.editoroptions:hover { background-color: #DDDDDD; text-decoration: underline; cursor:pointer; }
-.smalldesc { font-size: 9pt; vertical-align: top; }
 
 /* report menu table */
 .reporttable { border-spacing: 0px; padding: 0px; border-top: 1px solid #666666; border-bottom: 1px solid #666666; }
@@ -449,8 +284,6 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 .tiered td summary { font-size: 9pt; border: 0px; }
 .tiered td details { border: 1px solid #ccc; }
 
-/*.question { font-weight: bold; border:1px solid darkblue; color: white; border-radius: 8px; font-size:10pt; background-color: #526FAA; padding-left: 5px; padding-right: 5px; }*/
-
 .invalid { background-color: #ffe3e0; border: 1px solid darkred; border-radius: 3px; padding: 1px 5px; }
 
 legend.error { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; text-align: left; }
@@ -460,14 +293,6 @@ legend.notice { font-weight: bold; padding: 2px 8px; background-color: #00ce00; 
 fieldset.notice { background-color: #e3ffe0; border: 2px solid darkgreen; border-radius: 8px; text-align: left; width: 80%; color: #000; }
 
 .tag { background-color: #f4cbbe; border-radius: 4px; padding: 2px 4px; margin: 2px; color: black; }
-
-/* generic drop shadow */
-.dropshadow {
-	-webkit-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
-	-moz-box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
-	box-shadow: 8px 8px 15px 0px rgba(0,0,0,0.5);
-	border: 1px solid #aaa !important;
-}
 
 input.required { border: 1px solid #888; background-color: #FBFFC4}
 input.required:hover { border: 1px solid #000; background-color: #FBFFC4}

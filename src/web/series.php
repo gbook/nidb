@@ -69,7 +69,7 @@
 		if (substr($filename,-4) == '.par') {
 			if (file_exists($filename)) {
 				?>
-		<div class="dropshadow" style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
+		<div class="ui styled segment" style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
 		<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$filename?></div>
 
 <? readfile($filename); ?>

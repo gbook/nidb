@@ -295,7 +295,7 @@
 				</tr>
 				<tr>
 					<td class="body">
-						<table class="tinytable">
+						<table class="ui very compact small celled table">
 							<thead>
 								<th>Date</th>
 								<th>Subject</th>

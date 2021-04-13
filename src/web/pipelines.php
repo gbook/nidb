@@ -2190,7 +2190,7 @@
 						<h3 class="ui header">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
-						<div class="ui tiny basic button editoroptions" onClick="toggleWrap(); return;">Toggle text wrap</div>
+						<div class="ui tiny basic button" onClick="toggleWrap(); return;">Toggle text wrap</div>
 					</div>
 				</div>
 			</div>
@@ -2284,7 +2284,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						<h3 class="ui header">Supplement script &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
-						<div class="ui tiny basic button editoroptions" onClick="toggleWrap2(); return;">Toggle text wrap</div>
+						<div class="ui tiny basic button" onClick="toggleWrap2(); return;">Toggle text wrap</div>
 					</div>
 				</div>
 			</div>
@@ -2742,7 +2742,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		?>
 		<br><br>
 		<b>All usage</b>
-		<table class="smallgraydisplaytable" style="margin-top: 5px; border-collapse: collapse">
+		<table class="ui very compact small celled collapsing table">
 			<thead>
 				<tr style="vertical-align: top;text-align:left">
 					<!--<th style="font-size:12pt">Pipeline Group</th>-->

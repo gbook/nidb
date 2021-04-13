@@ -153,7 +153,7 @@
 		<table width="100%">
 			<tr>
 				<td valign="top" width="50%">
-					<table class="bluerounded" width="100%">
+					<table class="ui table">
 						<tr>
 							<td class="title">Series Info</td>
 						</tr>
@@ -194,7 +194,7 @@
 					
 					<br>
 					
-					<table class="bluerounded" width="100%">
+					<table class="ui table">
 						<tr>
 							<td class="title">System Info</td>
 						</tr>
@@ -213,7 +213,7 @@
 					
 					<br>
 					
-					<table class="bluerounded" width="100%">
+					<table class="ui table">
 						<tr>
 							<td class="title">Subject Demographics</td>
 						</tr>
@@ -246,7 +246,7 @@
 					</table>					
 				</td>
 				<td valign="top" width="50%">
-					<table class="bluerounded" width="100%">
+					<table class="ui table">
 						<tr>
 							<td class="title">MR</td>
 						</tr>

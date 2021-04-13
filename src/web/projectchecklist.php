@@ -253,73 +253,72 @@
 		?>
 	</datalist>
 	
-	<div align="center">
-	<br><br>
-	This table is a list of expected items for this project<br><br>
-	<form method="POST" action="projectchecklist.php">
-	<input type="hidden" name="action" value="updateprojectchecklist">
-	<input type="hidden" name="projectid" value="<?=$projectid?>">
-	<table class="graydisplaytable dropshadow">
-		<thead>
-			<tr>
-				<th>Order</th>
-				<th>Name</th>
-				<th>Modality<br><span class="tiny">Leave blank to use a checkbox</span></th>
-				<th>Protocol<br><span class="tiny">comma separated for multiple protocols</span></th>
-				<th>Count</th>
-				<!--<th colspan="2">Frequency</th>-->
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from project_checklist where project_id = $projectid order by item_order";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['projectchecklist_id'];
-					$itemname = $row['item_name'];
-					$itemorder = $row['item_order'];
-					$modality = $row['modality'];
-					$protocol = $row['protocol_name'];
-					$itemcount = $row['count'];
-					$frequency = $row['frequency'];
-					$frequencyunit = $row['frequency_unit'];
-					//frequency_unit	enum('hour', 'day', 'week', 'month', 'year')					
-					
-			?>
-			<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
-			<tr>
-				<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
-				<td><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></td>
-				<td><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></td>
-				<td><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></td>
-				<td><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></td>
-				<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
-				<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
-			</tr>
-			<? 
-					$neworder++;
-				}
-				for ($i=0;$i<5;$i++) {
-			?>
-			<input type="hidden" name="itemid[<?=$neworder?>]" value="">
-			<tr>
-				<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
-				<td><input type="text" name="itemname[<?=$neworder?>]" size="50"></td>
-				<td><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></td>
-				<td><input type="text" name="protocol[<?=$neworder?>]" size="50"></td>
-				<td><input type="number" name="itemcount[<?=$neworder?>]" style="width:40px" value="1"></td>
-				<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
-				<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
-			</tr>
-			<?
-					$neworder++;
-				}
-			?>
-			<tr>
-				<td colspan="5" align="right" style="padding-right: 20px"><input type="submit" value="Save/Update"></td>
-			</tr>
-		</tbody>
-	</table>
+	<div class="ui container">
+		This table is a list of expected <u>imaging</u> items for this project<br><br>
+		<form method="POST" action="projectchecklist.php">
+		<input type="hidden" name="action" value="updateprojectchecklist">
+		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<table class="ui small very compact table">
+			<thead>
+				<tr>
+					<th>Order</th>
+					<th>Name</th>
+					<th>Modality<br><span class="tiny">Leave blank to use a checkbox</span></th>
+					<th>Protocol<br><span class="tiny">comma separated for multiple protocols</span></th>
+					<th>Count</th>
+					<!--<th colspan="2">Frequency</th>-->
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select * from project_checklist where project_id = $projectid order by item_order";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['projectchecklist_id'];
+						$itemname = $row['item_name'];
+						$itemorder = $row['item_order'];
+						$modality = $row['modality'];
+						$protocol = $row['protocol_name'];
+						$itemcount = $row['count'];
+						$frequency = $row['frequency'];
+						$frequencyunit = $row['frequency_unit'];
+						//frequency_unit	enum('hour', 'day', 'week', 'month', 'year')					
+						
+				?>
+				<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
+				<tr>
+					<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
+					<td><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></td>
+					<td><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></td>
+					<td><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></td>
+					<td><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></td>
+					<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
+					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
+				</tr>
+				<? 
+						$neworder++;
+					}
+					for ($i=0;$i<5;$i++) {
+				?>
+				<input type="hidden" name="itemid[<?=$neworder?>]" value="">
+				<tr>
+					<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
+					<td><input type="text" name="itemname[<?=$neworder?>]" size="50"></td>
+					<td><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></td>
+					<td><input type="text" name="protocol[<?=$neworder?>]" size="50"></td>
+					<td><input type="number" name="itemcount[<?=$neworder?>]" style="width:40px" value="1"></td>
+					<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
+					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
+				</tr>
+				<?
+						$neworder++;
+					}
+				?>
+				<tr>
+					<td colspan="5" align="right" style="padding-right: 20px"><input type="submit" value="Save/Update"></td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 	<?
 	}

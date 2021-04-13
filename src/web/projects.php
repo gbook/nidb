@@ -332,7 +332,8 @@
 			if (trim($line) != '') {
 				$parts = str_getcsv($line);
 				//PrintVariable($parts,'Parts');
-				if (count($parts) == 15) {
+				$numparts = count($parts);
+				if ($numparts == 15) {
 					//PrintVariable($parts, 'Parts');
 					$subjectid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[0]));
 					$uid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[1]));
@@ -505,6 +506,9 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$numRowsUpdated = 0;
+		
+		$noticemsg = "";
+		$errormsg = "";
 		//PrintVariable($studytable);
 		$csv = explode("\n",$studytable);
 		array_shift($csv); /* remove headers from csv */
@@ -513,17 +517,18 @@
 			if (trim($line) != '') {
 				$parts = mysqli_real_escape_array(str_getcsv($line));
 				//PrintVariable($parts,'Parts');
-				if ((count($parts) == 17) || (count($parts) == 16)) {
+				$numparts = count($parts);
+				if (($numparts == 17) || ($numparts == 16)) {
 					//PrintVariable($parts, 'Parts');
 					
-					if (count($parts) == 17) {
+					if ($numparts == 17) {
 						$studyid = trim($parts[0]);
 						$subjectid = trim($parts[1]);
 						$uid = trim($parts[2]);
 						$sex = strtoupper(trim($parts[3]));
 						$altuidlist = trim($parts[4]);
 						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[10]);
+						$ageatscan = trim($parts[9]);
 						$site = trim($parts[15]);
 					}
 					else {
@@ -533,22 +538,24 @@
 						$sex = strtoupper(trim($parts[3]));
 						$altuidlist = trim($parts[4]);
 						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[10]);
+						$ageatscan = trim($parts[9]);
 						$site = trim($parts[14]);
 					}
 					
 					/* validate each variable before trying the SQL */
-					if (!ctype_digit(strval($studyid))) { echo "StudyID [$studyid] is not an integer<br>"; continue; }
-					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
+					if (!ctype_digit(strval($studyid))) { $noticemsg .= "StudyID [$studyid] is not an integer<br>"; continue; }
+					if (!ctype_digit(strval($subjectid))) { $noticemsg .= "SubjectID [$subjectid] is not an integer<br>"; continue; }
 					
-					if (is_numeric($ageatscan)) {
-						$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_type = '$visit', study_site = '$site' where study_id = '$studyid'";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysqli_affected_rows();
-					}
-					else {
-						echo "Age-at-scan [$ageatscan] is not a number<br>";
+					if ($ageatscan != "") {
+						if (is_numeric($ageatscan)) {
+							$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_type = '$visit', study_site = '$site' where study_id = '$studyid'";
+							//PrintSQL($sqlstring);
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$numRowsUpdated += mysqli_affected_rows();
+						}
+						else {
+							$noticemsg .= "Age-at-scan [$ageatscan] is not a number<br>";
+						}
 					}
 					
 					/* update the sex, if its valid */
@@ -592,9 +599,20 @@
 						$numRowsUpdated += mysqli_affected_rows();
 					}
 				}
+				else {
+					$errormsg .= "Expecting 16 or 17 columns, but received $numcols. Ignoring this line.";
+				}
 			}
 		}
 		CommitSQLTransaction();
+		
+		if ($errormsg != "")
+			Error($errormsg);
+
+		if ($noticemsg != "")
+			Notice($noticemsg);
+		else
+			Notice("Study details updated");
 	}
 
 
@@ -1174,6 +1192,7 @@
 			table.testgrid td, table.testgrid th { padding: 5px; }
 			table.testgrid th { background: #E5E5E5; text-align: left; }
 			input.invalid { background: red; color: #FDFDFD; }
+			td .editable { background-color: lightyellow; }
 		</style>
 		<?		
 		/* display studies associated with this project */
@@ -1224,7 +1243,7 @@
 					{ name: "altuids", datatype: "html", editable: true },
 					{ name: "study", datatype: "html", editable: false },
 					{ name: "visit", datatype: "string", editable: true },
-					{ name: "deleted", datatype: "boolean", editable: false },
+					{ name: "deleted", datatype: "html", editable: false },
 					{ name: "studydate", datatype: "date", editable: false },
 					{ name: "ageatscan", datatype: "double", editable: true, precision: 2, thousands_separator: '', decimal_point: '.' },
 					{ name: "calcageatscan", datatype: "string", editable: false },
@@ -1257,7 +1276,7 @@
 				});
 			}
 		</script>
-		<table class="testgrid dropshadow" id='table1'>
+		<table class="testgrid ui celled small very compact selectable table" id='table1'>
 			<thead>
 			<tr>
 				<th></th><!-- studyID -->
@@ -1267,7 +1286,7 @@
 				<th>Alt Subject IDs <span class="tiny">comma separated, * next to primary ID</span></th>
 				<th>Study Num</th>
 				<th>Visit</th>
-				<th>Deleted?</th>
+				<th>Active?</th>
 				<th>Study Date</th>
 				<th>StudyAge</th>
 				<th>CalcStudyAge</th>
@@ -1309,7 +1328,7 @@
 				list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
 				
 				if ($studyAge == null)
-					$studyAge = "-";
+					$studyAge = "";
 				else
 					$studyAge = number_format($studyAge,1);
 
@@ -1335,13 +1354,14 @@
 				$altuidlist = implode2(", ",$altids);
 				
 				if ($lastuid != $uid) {
-					if ($bgcolor == "") {
-						$bgcolor = "background-color: #eee;";
-					}
-					else {
-						$bgcolor = "";
-					}
-					$rowstyle = "border-top: 1px solid #444; border-bottom: 0px; $bgcolor";
+					$bgcolor = "";
+					//if ($bgcolor == "") {
+						//$bgcolor = "background-color: #efefef;";
+					//}
+					//else {
+					//	$bgcolor = "";
+					//}
+					$rowstyle = "border-top: 2px solid #666; border-bottom: 0px; $bgcolor";
 				}
 				else {
 					$rowstyle = "$bgcolor";
@@ -1353,18 +1373,18 @@
 					<td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td>
 					<td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td>
 					<td style="<?=$rowstyle?>">
-						<a href="subjects.php?id=<?=$subjectid?>"><span style="color: darkblue; text-decoration:underline" class="tt"><?=$uid;?></span></a>
+						<a class="ui primary button" href="subjects.php?id=<?=$subjectid?>"><span class="tt"><?=$uid;?></span></a>
 					</td>
-					<td style="<?=$rowstyle?> background-color: lightyellow; border: 1px solid skyblue"><?=$sex?></td>
-					<td style="<?=$rowstyle?> background-color: lightyellow; border: 1px solid skyblue" class="tt"><?=$altuidlist?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$sex?></td>
+					<td style="<?=$rowstyle?>" class="editable tt"><?=$altuidlist?></td>
 					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td><td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td><? } ?>
 					<td style="<?=$rowstyle?>" class="tt">
 						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
-					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_visit?></td>
-					<td style="<?=$rowstyle?>"><? if (!$isactive) { echo "Deleted"; } ?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$study_visit?></td>
+					<td style="<?=$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
 					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
-					<td style="<?=$rowstyle?>; background-color: lightyellow; border: 1px solid skyblue; border-radius:5px"><?=$studyAge?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$studyAge?></td>
 					<td style="<?=$rowstyle?>"><?=$calcStudyAge?></td>
 					<td style="<?=$rowstyle?>"><?=$modality?></td>
 					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
@@ -1372,7 +1392,7 @@
 					<? if ($GLOBALS['issiteadmin']) { ?>
 					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <?=$rowstyle?>><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
 					<? } ?>
-					<td style="<?=$rowstyle?> ; background-color: lightyellow; border: 1px solid skyblue"><?=$study_site?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$study_site?></td>
 				</tr>
 				<?
 				$lastuid = $uid;
@@ -1484,7 +1504,7 @@
 					<input type="hidden" name="id" value="<?=$id?>">
 					<input type="hidden" name="action" value="updatestudytable">
 					<input type="hidden" name="studytable" id="studytable">
-					<div align="right"><input type="submit" value="Save Studies Table" onMouseDown="ConvertToCSV();" style="font-size: 14pt; font-weight: bold"></div>
+					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table" onMouseDown="ConvertToCSV();" style="font-size: 14pt; font-weight: bold"></div>
 					</form>
 				</td>
 			</tr>

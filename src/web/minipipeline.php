@@ -534,7 +534,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 			&nbsp; &nbsp; <a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui button"><b>&larr; Back</b></a>
 			
 			<div style="padding: 20px">
-				<table class="twocoltablesimple">
+				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>Script name</td>
 						<td><?=$scriptname?></td>

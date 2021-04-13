@@ -2051,7 +2051,7 @@
 			}
 			//PrintVariable($tables,'Tables');
 			?>
-			<table cellspacing="0" class="multicoltable">
+			<table class="ui very small very compact celled table">
 				<thead>
 				<tr>
 					<th>UID</th>
@@ -3268,7 +3268,7 @@
 							<img src='xygraph.php?h=200&w=420&t=<?=$chartname?>&x=<?=$x?>&y=<?=$y?>&xtype=dat&ytype=lin'>
 							<details>
 							<summary>Data</summary>
-							<table class="tinytable">
+							<table class="ui very compact small celled table">
 								<tr>
 									<th>Study</th>
 									<th>Date</th>
@@ -3386,7 +3386,7 @@
 				<? if ($disptable) { ?>
 				<tr>
 					<td class="body">
-						<table class="tinytable">
+						<table class="ui very compact small celled table">
 							<thead>
 								<th>Date</th>
 								<th>Subject</th>
@@ -3456,7 +3456,7 @@
 				</td>
 			</tr>
 		</table>
-		<input type="submit" value="Submit" onclick="document.subjectlist.action.value='anonymize'">
+		<input class="ui primary button" type="submit" value="Submit" onclick="document.subjectlist.action.value='anonymize'">
 		</form>
 		<?
 	}
@@ -4060,7 +4060,7 @@
 				<tr>
 					<td style="background-color: white; border-radius:5px; padding: 8px" align="left">
 						<br><br>
-						<input type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
+						<input class="ui primary button" type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
 						<br><br>
 					</td>
 				</tr>
