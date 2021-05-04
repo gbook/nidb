@@ -2572,15 +2572,16 @@
 				<div class="ui four wide column">
 					<h3 class="ui header">Project options/tools</h3>
 					<br>
-					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>">Data Dictionary</a><br><br>
-					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis Builder</a><br><br>
-					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study Templates</a><br><br>
-					<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">Edit Scan Criteria</a><br><br>
-					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">Edit QC Criteria</a><br><br>
-					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS Protocol Mapping</a><br><br>
-					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>">NDA Mapping</a><br><br>
-					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>">Behavioral mini-pipelines</a><br><br>
-					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Redcap import settings</a><br><br>
+					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>"> Data Dictionary</a><br><br>
+					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>"> Analysis Builder</a><br><br>
+					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>"> Study Templates</a><br><br>
+					<!--<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"> Edit Scan Criteria</a><br><br>
+					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"> Edit QC Criteria</a><br><br>-->
+					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>"> BIDS Protocol Mapping</a><br><br>
+					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>"> NDA Mapping</a><br><br>
+					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>"> Behavioral mini-pipelines</a><br><br>
+					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap import <u>settings</u></a><br><br>
+					<i class="cloud download icon"></i><a href="redcaptonidb.php?action=default&projectid=<?=$id?>"> Redcap <i class="right arrow icon"></i> NiDB Transfer</a><br><br>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>

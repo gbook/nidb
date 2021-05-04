@@ -263,10 +263,13 @@
 	</script>
 	
 	<? if ($action == "search") { ?>
-	<div id="pageloading" align="center" valign="middle" style="font-size:16pt; font-weight: bold; color:darkblue">
-		<img src="images/SpinningSquirrel.gif"><br>Searching...
+	<div class="ui text container" id="pageloading">
+		<div class="ui inverted blue segment" align="center">
+			<h2 class="ui inverted header">
+				<i class="large inverted spinner loading icon"></i> Searching...
+			</h2>
+		</div>
 	</div>
-	<br>
 	<? } ?>
 
 	<button class="ui primary large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i></i> New Search</button>

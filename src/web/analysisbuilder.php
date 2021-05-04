@@ -70,6 +70,8 @@
     $a['includedob'] = GetVariable("includedob");
     $a['reportformat'] = GetVariable("reportformat");
     $a['outputformat'] = GetVariable("outputformat");
+	$a['collapsevariables'] = GetVariable("collapsevariables");
+	$a['collapsebyexpression'] = GetVariable("collapsebyexpression");
 	
 	/* determine action */
 	switch ($action) {
@@ -88,11 +90,11 @@
 	/* perform the default operation for this page, which is to display the search criteria and results */
 	if ($a['outputformat'] == "csv") {
 		if ($a['reportformat'] == "long") {
-			list($h, $t) = CreateLongReport($projectid, $a);
+			list($h, $t, $n) = CreateLongReport($projectid, $a);
 			PrintCSV($h,$t,'long');
 		}
 		else {
-			list($h, $t) = CreateWideReport($projectid, $a);
+			list($h, $t, $n) = CreateWideReport($projectid, $a);
 			PrintCSV($h,$t,'wide');
 		}
 		exit(0);
@@ -149,10 +151,10 @@
 		$includeallvitals = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallvitals']);
 		$includedrugdetails = mysqli_real_escape_string($GLOBALS['linki'], $a['includedrugdetails']);
 		$includetimesincedose = mysqli_real_escape_string($GLOBALS['linki'], $a['includetimesincedose']);
-		$dosevariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
-		$dosetimerange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
-		$dosedisplaytime = mysqli_real_escape_string($GLOBALS['linki'], $a['dosedisplaytime']);
-		$groupbydate = mysqli_real_escape_string($GLOBALS['linki'], $a['groupbydate']);
+		$doseVariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
+		$doseTimeRange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
+		$doseDisplayTime = mysqli_real_escape_string($GLOBALS['linki'], $a['dosedisplaytime']);
+		$groupByDate = mysqli_real_escape_string($GLOBALS['linki'], $a['groupbydate']);
 		$includeemptysubjects = mysqli_real_escape_string($GLOBALS['linki'], $a['includeemptysubjects']);
 		$reportformat = mysqli_real_escape_string($GLOBALS['linki'], $a['reportformat']);
 		$outputformat = mysqli_real_escape_string($GLOBALS['linki'], $a['outputformat']);
@@ -160,7 +162,7 @@
 		$vitalname = mysqli_real_escape_string($GLOBALS['linki'], $a['vitalname']);
 		$drugname = mysqli_real_escape_string($GLOBALS['linki'], $a['drugname']);
 
-		$sqlstring = "insert ignore into saved_search (user_id, saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_includeemptysubjects, search_reportformat, search_outputformat) values (" . $_SESSION['userid'] . ", now(), '$savedsearchname', '$projectid', '$includeprotocolparms', '$includemrqa', '$mr_protocols', '$eeg_protocols', '$et_protocols', '$pipelineid', '$pipelineresultname', '$pipelineseriesdatetime', '$measurename', '$includeallmeasures', '$vitalname', '$includeallvitals', '$drugname', '$includealldrugs', '$includetimesincedose', '$dosevariable', '$dosetimerange', '$dosedisplaytime', '$includeemptysubjects', '$reportformat', '$outputformat')";
+		$sqlstring = "insert ignore into saved_search (user_id, saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_includeemptysubjects, search_reportformat, search_outputformat) values (" . $_SESSION['userid'] . ", now(), '$savedsearchname', '$projectid', '$includeprotocolparms', '$includemrqa', '$mr_protocols', '$eeg_protocols', '$et_protocols', '$pipelineid', '$pipelineresultname', '$pipelineseriesdatetime', '$measurename', '$includeallmeasures', '$vitalname', '$includeallvitals', '$drugname', '$includealldrugs', '$includetimesincedose', '$doseVariable', '$doseTimeRange', '$doseDisplayTime', '$includeemptysubjects', '$reportformat', '$outputformat')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
@@ -253,17 +255,15 @@
 		
 		<br>
 		-->
-		<form method="post" action="analysisbuilder.php">
-		<input type="hidden" name="action" value="viewanalysissummary">
-		<b>Select Project: </b> <? DisplayProjectSelectBox(0,"projectid",'','',0,$projectid); ?> <input type="submit" value="Use selected project">
-		</form>
-		<?
-		if (($projectid == '') || ($projectid == 0)) {
-			return;
-		}
-
-		?>
+		
+		<div style="text-align: center; width: 100%" id="pageloading">
+			<i class="large blue spinner loading icon"></i> Loading...
+		</div>
 		<script>
+			$(document).ready(function(){
+				$('#pageloading').hide();
+			});
+		
 			$(document).ready(function() {
 				$('.js-example-basic-multiple').select2();
 			});
@@ -281,8 +281,8 @@
 			
 			/* MRI */
 			function CheckForMRICriteria() {
-				if ( (document.getElementById("includeprotocolparms").checked == true) || (document.getElementById("includemrqa").checked == true) || (document.getElementById("groupmrbyvisittype").checked == true) || (document.getElementById("mr_protocols").value != "NONE") ) {
-					document.getElementById("mriIndicator").innerHTML = "Search criteria entered";
+				if ( (document.getElementById("includeprotocolparms").checked == true) || (document.getElementById("includemrqa").checked == true) || (document.getElementById("groupmrbyvisittype").checked == true) || (document.getElementById("mr_protocols").value != "") ) {
+					document.getElementById("mriIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("mriIndicator").innerHTML = "";
@@ -291,8 +291,8 @@
 			
 			/* EEG */
 			function CheckForEEGCriteria() {
-				if (document.getElementById("eeg_protocols").value != "NONE") {
-					document.getElementById("eegIndicator").innerHTML = "Search criteria entered";
+				if (document.getElementById("eeg_protocols").value != "") {
+					document.getElementById("eegIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("eegIndicator").innerHTML = "";
@@ -301,8 +301,8 @@
 			
 			/* ET */
 			function CheckForETCriteria() {
-				if (document.getElementById("et_protocols").value != "NONE") {
-					document.getElementById("etIndicator").innerHTML = "Search criteria entered";
+				if (document.getElementById("et_protocols").value != "") {
+					document.getElementById("etIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("etIndicator").innerHTML = "";
@@ -312,7 +312,7 @@
 			/* pipeline */
 			function CheckForPipelineCriteria() {
 				if ( (document.getElementById("pipelineresultname").value != "") || (document.getElementById("pipelineseriesdatetime").value != "") ) {
-					document.getElementById("pipelineIndicator").innerHTML = "Search criteria entered";
+					document.getElementById("pipelineIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("pipelineIndicator").innerHTML = "";
@@ -322,7 +322,7 @@
 			/* measure */
 			function CheckForMeasureCriteria() {
 				if ((document.getElementById("measurename").value != "") || (document.getElementById("includeallmeasures").checked == true) ) {
-					document.getElementById("measureIndicator").innerHTML = "Search criteria entered";
+					document.getElementById("measureIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("measureIndicator").innerHTML = "";
@@ -332,7 +332,7 @@
 			/* vital */
 			function CheckForVitalCriteria() {
 				if ((document.getElementById("vitalname").value != "") || (document.getElementById("includeallvitals").checked == true) ) {
-					document.getElementById("vitalIndicator").innerHTML = "Search criteria entered";
+					document.getElementById("vitalIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("vitalIndicator").innerHTML = "";
@@ -342,7 +342,7 @@
 			/* drugs */
 			function CheckForDrugCriteria() {
 				if ((document.getElementById("drugname").value != "") || (document.getElementById("includealldrugs").checked == true) || (document.getElementById("includedrugdetails").checked == true) || (document.getElementById("includetimesincedose").checked == true) || (document.getElementById("dosevariable").checked == true) ) {
-					document.getElementById("drugIndicator").innerHTML = "Search criteria entered";
+					document.getElementById("drugIndicator").innerHTML = "<div class='ui small yellow label'><i class='black tasks icon'></i>has search criteria</div>";
 				}
 				else {
 					document.getElementById("drugIndicator").innerHTML = "";
@@ -351,322 +351,353 @@
 			
 		</script>
 		<style>
-			.indicator { font-size: smaller; color: #fff; padding-left: 10px; white-space: nowrap; }
+			.indicator { font-size: smaller; padding-left: 10px; white-space: nowrap; }
 			details { border: 1px solid #444; border-radius: 6px; padding: 0px; margin: 5px; }
 			summary { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
 			summary:hover { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
 			summary:focus { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
 			details div:first-of-type { padding: 10px; }
 			input { padding: 3px; }
-		</style>
-		
-		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
-		<br>
-		<table style="width: 100%; height: 100%">
+		</style>		
+
+		<table width="100%" style="table-layout:fixed; overflow: auto;">
 			<tr>
-				<td width="550px" valign="top">
-					<form method="post" name="analysisbuilder" action="analysisbuilder.php">
-					<input type="hidden" name="action" value="viewanalysissummary">
-					<input type="hidden" name="projectid" value="<?=$projectid?>">
-					<table width="550px">
-						<tr>
-							<td style="padding-left: 15px">
-
-								<details>
-									<summary><b>MR</b>&nbsp;<span id="mriIndicator" class="indicator"></span></summary>
-									<div style="padding: 10px">
-									<input type="checkbox" name="includeprotocolparms" id="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include protocol parameters
-									<br>
-									<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includemrqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA<br>
-									<input type="checkbox" name="groupmrbyvisittype" id="groupmrbyvisittype" <? if ($a['groupmrbyvisittype']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Separate by study visit type
-									<br>
-									MR Protocol<br>
-									<select name="mr_protocols[]" id="mr_protocols" multiple style="width: 400px" size="10" onChange="CheckForMRICriteria()">
-										<option value="NONE" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>(None)
-										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
-										<?
-										/* get unique list of MR protocols from this project */
-										$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$seriesdesc = trim($row['series_desc']);
-											
-											if (in_array($seriesdesc, $a['mr_protocols']))
-												$selected = "selected";
-											else
-												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-										}
-										?>
-									</select>
-									</div>
-								</details>
-								
-								<details>
-									<summary><b>EEG</b>&nbsp;<span id="eegIndicator" class="indicator"></span></summary>
-									<div style="padding: 10px">
-									EEG Protocol<br>
-									<select name="eeg_protocols[]" id="eeg_protocols" multiple style="width: 400px" size="10" onChange="CheckForEEGCriteria()">
-										<option value="NONE" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>(None)
-										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
-										<?
-										/* get unique list of EEG protocols from this project */
-										$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$seriesdesc = $row['series_desc'];
-											
-											if (in_array($seriesdesc, $a['eeg_protocols']))
-												$selected = "selected";
-											else
-												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-										}
-										?>
-									</select>
-									</div>
-								</details>
-								
-								<details>
-									<summary><b>ET</b>&nbsp;<span id="etIndicator" class="indicator"></span></summary>
-									<div>
-									ET Protocol<br>
-									<select name="et_protocols[]" id="et_protocols" multiple style="width: 400px" size="10" onChange="CheckForETCriteria()">
-										<option value="NONE" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>(None)
-										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
-										<?
-										/* get unique list of ET protocols from this project */
-										$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$seriesdesc = $row['series_desc'];
-											
-											if (in_array($seriesdesc, $a['et_protocols']))
-												$selected = "selected";
-											else
-												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-										}
-										?>
-									</select>
-									</div>
-								</details>
-								
-								<details>
-									<summary><b>Pipeline&nbsp;results</b>&nbsp;<span id="pipelineIndicator" class="indicator"></span></summary>
-									<div>
-									Pipeline<br>
-									<select class="js-example-basic-multiple" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
-										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-											$pipelineid = $row2['pipeline_id'];
-											$pipelinename = $row2['pipeline_name'];
-
-											$selected = "";
-											if (is_array($a['pipelineid']))
-												if (in_array($pipelineid, $a['pipelineid']))
-													$selected = "selected";
-											if (trim($pipelineid) == trim($a['pipelineid']))
-												$selected = "selected";
-											?>
-											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
-											<?
-										}
-									?></select>
-									Result name <img src="images/help.gif" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
-									<br>
-									Get Datetime from Series. Enter series description <img src="images/help.gif" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
-									</div>
-								</details>
-								
-								<details>
-									<summary><b>Cognitive and Other Measures</b>&nbsp;<span id="measureIndicator" class="indicator"></span></summary>
-									<div style="padding: 10px">
-									Measure name(s)
-									<br>
-									<select class="js-example-basic-multiple" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$measurename = $rowA['measure_name'];
-											if (trim($measurename) != "") {
-												$selected = "";
-												if (is_array($a['measurename']))
-													if (in_array($measurename, $a['measurename']))
-														$selected = "selected";
-												if (trim($measurename) == trim($a['measurename']))
-													$selected = "selected";
-												?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
-											}
-										}
-									?></select>
-									<br>
-									<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">Include all measures
-									</div>
-								</details>
-								
-								<details>
-									<summary><b>Biological Measurements</b>&nbsp;<span id="vitalIndicator" class="indicator"></span></summary>
-									<div style="padding: 10px">
-									Vital name(s)
-									<br>
-									<select class="js-example-basic-multiple" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$vitalname = $rowA['vital_name'];
-											$selected = "";
-											if (is_array($a['vitalname']))
-												if (in_array($vitalname, $a['vitalname']))
-													$selected = "selected";
-											if (trim($vitalname) == trim($a['vitalname']))
-												$selected = "selected";
-											?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
-										}
-									?></select>
-									<br>
-									<input type="checkbox" name="includeallvitals" id="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?> onChange="CheckForVitalCriteria()">Include all vitals
-									</div>
-								</details>
-
-								<details>
-									<summary><b>Drugs/Dosing</b>&nbsp;<span id="drugIndicator" class="indicator"></span></summary>
-									<div style="padding: 10px">
-									Drug variable name(s) <img src="images/help.png" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"><br>
-									<select class="js-example-basic-multiple" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
-									<?
-										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$drugname = $rowA['drug_name'];
-											$selected = "";
-											if (is_array($a['drugname']))
-												if (in_array($drugname, $a['drugname']))
-													$selected = "selected";
-											if (trim($drugname) == trim($a['drugname']))
-												$selected = "selected";
-											?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
-										}
-									?>
-									</select>
-									<br>
-									<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drug/dosing variables
-									<br>
-									<input type="checkbox" name="includedrugdetails" id="includedrugdetails" value="1" <? if ($a['includedrugdetails']) echo "checked"; ?>>Include drug/dose extended details
-									<br>
-									<br>
-									<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
-									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <img src="images/help.png" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"><br>
-									Dose variable(s)
-									<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
-									<?
-										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-											$drugname = $rowA['drug_name'];
-											$selected = "";
-											if (is_array($a['dosevariable']))
-												if (in_array($drugname, $a['dosevariable']))
-													$selected = "selected";
-											if (trim($drugname) == trim($a['dosevariable']))
-												$selected = "selected";
-											?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
-										}
-									?>
-									</select>
-									<br>
-									Group dose time by 
-									<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()">
-										<!--<option value="hour">Hour-->
-										<option value="day" selected>Day
-										<!--<option value="week">Week
-										<option value="month">Month
-										<option value="year">Year-->
-									</select>
-									<br>
-									Display time since dose in 
-									<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()">
-										<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
-										<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
-										<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
-									</select>
-									</div>
+				<td width="20%" style="vertical-align: top;">
+					<div class="ui top attached inverted styled segment">
+						<h2 class="ui inverted header">Analysis Builder</h2>
+					</div>
+					<div class="ui attached styled segment">
+						<form method="post" action="analysisbuilder.php" class="ui form">
+							<input type="hidden" name="action" value="viewanalysissummary">
+							<select name="projectid" class="ui dropdown" required>
+								<option value="">Select Project...</option>
+								<option value="0">All Projects</option>
+								<?
+									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
 									
-									</div>
-								</details>
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$project_id = $row['project_id'];
+										$project_name = $row['project_name'];
+										$project_costcenter = $row['project_costcenter'];
+										?>
+										<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<?
+									}
+								?>
+							</select>
+							<input class="ui primary button" type="submit" value="Use project">
+						</form>
+						<?
+						if (($projectid == '') || ($projectid == 0)) {
+							return;
+						}
+						?>
+					</div>
+					<div class="ui bottom attached styled segment">
+						<form method="post" name="analysisbuilder" action="analysisbuilder.php">
+						<input type="hidden" name="action" value="viewanalysissummary">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+					
+						<div class="ui top attached styled accordion">
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>MR&nbsp;<span id="mriIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								<input type="checkbox" name="includeprotocolparms" id="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include protocol parameters
+								<br>
+								<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includemrqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA<br>
+								<input type="checkbox" name="groupmrbyvisittype" id="groupmrbyvisittype" <? if ($a['groupmrbyvisittype']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Separate by study visit type
+								<br>
+								<b>Protocol(s)</b><br>
+								<select name="mr_protocols[]" id="mr_protocols" multiple class="ui search fluid dropdown" onChange="CheckForMRICriteria()">
+									<option value="" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>Select MRI protocol(s)...
+									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of MR protocols from this project */
+									$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = trim($row['series_desc']);
+										
+										if (in_array($seriesdesc, $a['mr_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+							</div>
+
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>EEG&nbsp;<span id="eegIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								EEG Protocol<br>
+								<select name="eeg_protocols[]" id="eeg_protocols" multiple class="ui search fluid dropdown" onChange="CheckForEEGCriteria()">
+									<option value="" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>Select EEG protocol(s)...
+									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of EEG protocols from this project */
+									$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = $row['series_desc'];
+										
+										if (in_array($seriesdesc, $a['eeg_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+							</div>
+							
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>ET&nbsp;<span id="etIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								ET Protocol<br>
+								<select name="et_protocols[]" id="et_protocols" multiple style="width: 400px" size="10" onChange="CheckForETCriteria()">
+									<option value="" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>Select ET protocol(s)...
+									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
+									<?
+									/* get unique list of ET protocols from this project */
+									$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$seriesdesc = $row['series_desc'];
+										
+										if (in_array($seriesdesc, $a['et_protocols']))
+											$selected = "selected";
+										else
+											$selected = "";
+										
+										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+									}
+									?>
+								</select>
+							</div>
+							
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>Pipeline&nbsp;<span id="pipelineIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								Pipeline<br>
+								<select class="js-example-basic-multiple" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
+									$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
+									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+									while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+										$pipelineid = $row2['pipeline_id'];
+										$pipelinename = $row2['pipeline_name'];
+
+										$selected = "";
+										if (is_array($a['pipelineid']))
+											if (in_array($pipelineid, $a['pipelineid']))
+												$selected = "selected";
+										if (trim($pipelineid) == trim($a['pipelineid']))
+											$selected = "selected";
+										?>
+										<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
+										<?
+									}
+								?></select>
+								Result name <i class="blue question circle icon" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
+								<br>
+								Get Datetime from Series. Enter series description <i class="blue question circle icon" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
+							</div>
+							
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>Cognitive and Other Measures&nbsp;<span id="measureIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								Measure name(s)
+								<br>
+								<select class="js-example-basic-multiple" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
+									$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$measurename = $rowA['measure_name'];
+										if (trim($measurename) != "") {
+											$selected = "";
+											if (is_array($a['measurename']))
+												if (in_array($measurename, $a['measurename']))
+													$selected = "selected";
+											if (trim($measurename) == trim($a['measurename']))
+												$selected = "selected";
+											?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
+										}
+									}
+								?></select>
+								<br>
+								<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">Include all measures
+							</div>
+							
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>Biological Measurements&nbsp;<span id="vitalIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								Vital name(s)
+								<br>
+								<select class="js-example-basic-multiple" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
+									$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$vitalname = $rowA['vital_name'];
+										$selected = "";
+										if (is_array($a['vitalname']))
+											if (in_array($vitalname, $a['vitalname']))
+												$selected = "selected";
+										if (trim($vitalname) == trim($a['vitalname']))
+											$selected = "selected";
+										?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
+									}
+								?></select>
+								<br>
+								<input type="checkbox" name="includeallvitals" id="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?> onChange="CheckForVitalCriteria()">Include all vitals
+							</div>
+
+							<div class="title" style="padding:5px;">
+								<h3 class="ui black header"><i class="dropdown icon"></i>Drugs/Dosing&nbsp;<span id="drugIndicator" class="indicator"></span></h3>
+							</div>
+							<div class="content">
+								Drug variable name(s) <i class="blue question circle icon" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i><br>
+								<select class="js-example-basic-multiple" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
+								<?
+									$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$drugname = $rowA['drug_name'];
+										$selected = "";
+										if (is_array($a['drugname']))
+											if (in_array($drugname, $a['drugname']))
+												$selected = "selected";
+										if (trim($drugname) == trim($a['drugname']))
+											$selected = "selected";
+										?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
+									}
+								?>
+								</select>
+								<br>
+								<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drug/dosing variables
+								<br>
+								<input type="checkbox" name="includedrugdetails" id="includedrugdetails" value="1" <? if ($a['includedrugdetails']) echo "checked"; ?>>Include drug/dose extended details
+								<br>
+								<br>
+								<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
+								<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <i class="blue question circle icon" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"></i><br>
+								Dose variable(s)
+								<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
+								<?
+									$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$drugname = $rowA['drug_name'];
+										$selected = "";
+										if (is_array($a['dosevariable']))
+											if (in_array($drugname, $a['dosevariable']))
+												$selected = "selected";
+										if (trim($drugname) == trim($a['dosevariable']))
+											$selected = "selected";
+										?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
+									}
+								?>
+								</select>
+								<br>
+								Group dose time by 
+								<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()">
+									<!--<option value="hour">Hour-->
+									<option value="day" selected>Day
+									<!--<option value="week">Week
+									<option value="month">Month
+									<option value="year">Year-->
+								</select>
+								<br>
+								Display time since dose in 
+								<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()">
+									<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
+									<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
+									<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
+								</select>
+								</div>
 								
-								<br>
-								<b>Grouping Options</b>
-								<br>
-								<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>Group by event DATE <img src="images/help.png" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."><br>
-								<br>
-								<b>Output Options</b>
-								<br>
-								<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data <img src="images/help.png" title="Includes subjects which are part of this project, but have none of the selected data"><br>
-								Blank values placeholder <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <img src="images/help.png" title="If a value exists, but the value is blank, display this string instead"><br>
-								Missing values placeholder <img src="images/help.png" title="If a value is missing, display this string instead"> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>"><br>
-								<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration <img src="images/help.png" title="If an event has a start and stop time, include the duration in the output"><br>
-								<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime <img src="images/help.png" title="If an event has a end date, include the end date in the output"><br>
-								<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight <img src="images/help.png" title="Include the subject's height and weight in the output"><br>
-								<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>Include subject date of birth <img src="images/help.png" title="Include the subject's date of birth in the output"><br>
-								<br>
-								<table>
-									<tr>
-										<td width="50%">
-											Reporting format<br>
-											<input type="radio" name="reportformat" value="long" <? if (($a['reportformat'] == "long") || ($a['reportformat'] == "")) echo "checked"; ?>>Long<br>
-											<!--<input type="radio" name="reportformat" value="wide" <? if ($a['reportformat'] == "wide") echo "checked"; ?>>Wide-->
-										</td>
-										<td style="padding-left: 20px">
-											Output format<br>
-											<input type="radio" name="outputformat" value="table" <? if (($a['outputformat'] == "table") || ($a['outputformat'] == "")) echo "checked"; ?>>Table (screen)<br>
-											<input type="radio" name="outputformat" value="csv" <? if ($a['outputformat'] == "csv") echo "checked"; ?>>.csv
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
-					<br>
-					<div align="center">
-						<input type="submit" value="Update Summary" style="width: 90%; border: 2px solid darkblue; font-weight: bold; background-color: lightblue">
+							</div>
+						</div>
+						
+						<br>
+						<b>Grouping Options</b>
+						<br>
+						<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>Group by event DATE <i class="blue question circle icon" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."></i><br>
+						<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>Collapse variables by wildcard within the day<i class="blue question circle icon" title="Expression should use <tt>*</tt> to indicate a wildcard that matches the grouping. To collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i> <input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>">
+						<br>
+						<b>Output Options</b>
+						<br>
+						<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data <i class="blue question circle icon" title="Includes subjects which are part of this project, but have none of the selected data"></i><br>
+						Blank values placeholder <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <i class="blue question circle icon" title="If a value exists, but the value is blank, display this string instead"></i><br>
+						Missing values placeholder <i class="blue question circle icon" title="If a value is missing, display this string instead"></i> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>"><br>
+						<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration <i class="blue question circle icon" title="If an event has a start and stop time, include the duration in the output"></i><br>
+						<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime <i class="blue question circle icon" title="If an event has a end date, include the end date in the output"></i><br>
+						<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight <i class="blue question circle icon" title="Include the subject's height and weight in the output"></i><br>
+						<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>Include subject date of birth <i class="blue question circle icon" title="Include the subject's date of birth in the output"></i><br>
+						<br>
+						<table>
+							<tr>
+								<td width="50%">
+									Reporting format<br>
+									<input type="radio" name="reportformat" value="long" <? if (($a['reportformat'] == "long") || ($a['reportformat'] == "")) echo "checked"; ?>>Long<br>
+									<!--<input type="radio" name="reportformat" value="wide" <? if ($a['reportformat'] == "wide") echo "checked"; ?>>Wide-->
+								</td>
+								<td style="padding-left: 20px">
+									Output format<br>
+									<input type="radio" name="outputformat" value="table" <? if (($a['outputformat'] == "table") || ($a['outputformat'] == "")) echo "checked"; ?>>Table (screen)<br>
+									<input type="radio" name="outputformat" value="csv" <? if ($a['outputformat'] == "csv") echo "checked"; ?>>.csv
+								</td>
+							</tr>
+						</table>
+						<br>
+						<input type="submit" class="ui fluid primary button" value="Update Summary">
 					</div>
-					<!--
-					<br>
-					<div align="center">
-						<input type="text" placeholder="Saved search name" name="savedsearchname"><input type="submit" value="Save Search" onClick="document.analysisbuilder.action.value='savesearch'">
-					</div>
-					</form>
-					-->
 				</td>
-				<td valign="top" height="100%">
-					<div style="overflow: auto;">
+				
+				<!-- ************** right side results table ************** -->
+				<td width="80%" style="vertical-align: top; overflow: auto">
 					<?
 						if ($a['reportformat'] == "long") {
-							list($h, $t) = CreateLongReport($projectid, $a);
+							list($h, $t, $n) = CreateLongReport($projectid, $a);
 						}
 						elseif ($a['reportformat'] == "wide") {
-							list($h, $t) = CreateWideReport($projectid, $a);
+							list($h, $t, $n) = CreateWideReport($projectid, $a);
 						}
 						
 						//PrintVariable($t);
 						
-						if ($a['outputformat'] == "table")
+						if ($a['outputformat'] == "table") {
+							?>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>Debug notes
+								</div>
+								<div class="content">
+									<pre class="tt" style="font-size: smaller"><?=$n?></pre>
+								</div>
+							</div>
+							<?
 							PrintTable($h, $t, $a);
-						elseif ($a['outputformat'] == "csv")
+						}
+						elseif ($a['outputformat'] == "csv") {
 							PrintCSV($h, $t, $a);
+						}
 					?>
-					</div>
 				</td>
 			</tr>
 		</table>
@@ -680,16 +711,18 @@
 	function CreateLongReport($projectid, $a) {
 
 		/* setup some global-ish variables */
-		$dosevariable = $a['dosevariable'];
-		$dosetimerange = $a['dosetimerange'];
-		$dosedisplaytime = $a['dosedisplaytime'];
-		$includeduration = $a['includeduration'];
-		$includeenddate = $a['includeenddate'];
-		$includeheightweight = $a['includeheightweight'];
-		$includedob = $a['includedob'];
-		$blankvalueplaceholder = $a['blankvalueplaceholder'];
-		$missingvalueplaceholder = $a['missingvalueplaceholder'];
-		$groupbydate = $a['groupbydate'];
+		$doseVariable = $a['dosevariable'];
+		$doseTimeRange = $a['dosetimerange'];
+		$doseDisplayTime = $a['dosedisplaytime'];
+		$includeDuration = $a['includeduration'];
+		$includeEndDate = $a['includeenddate'];
+		$includeHeightWeight = $a['includeheightweight'];
+		$includeDOB = $a['includedob'];
+		$blankValuePlaceholder = $a['blankvalueplaceholder'];
+		$missingValuePlaceholder = $a['missingvalueplaceholder'];
+		$groupByDate = $a['groupbydate'];
+		$collapseByVars = $a['collapsevariables'];
+		$collapseExpression = $a['collapsebyexpression'];
 		
 		/* create the table */
 		$t;
@@ -721,7 +754,7 @@
 			$hasdata = false;
 			
 			$uid = $subj['uid'];
-			if ($groupbydate)
+			if ($groupByDate)
 				$row = $uid . "0000-00-00";
 			else
 				$row = $uid . "0000-00-00 00:00:00";
@@ -732,7 +765,7 @@
 			/* get dose datetimes for this enrollment */
 			$drugdoses = array();
 			if ($a['includetimesincedose']) {
-				if ($dosevariable != "") {
+				if ($doseVariable != "") {
 					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $a['dosevariable']) . ")";
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					$i=0;
@@ -811,7 +844,7 @@
 						$seriesdesc = "$seriesdesc" . "_$studyvisit";
 					
 					/* need to add the demographic info to every row */
-					if ($groupbydate)
+					if ($groupByDate)
 						$row = $uid . substr($studydatetime, 0, 10);
 					else
 						$row = "$uid$studydatetime";
@@ -820,11 +853,11 @@
 					$t[$row]['Sex'] = $subj['sex'];
 					$t[$row]['AgeAtEvent'] = $studyAge;
 					$t[$row]['CalcAgeAtEvent'] = $calcStudyAge;
-					if ($includeheightweight) {
+					if ($includeHeightWeight) {
 						$t[$row]['Height'] = $height;
 						$t[$row]['Weight'] = $weight;
 					}
-					if ($includedob) {
+					if ($includeDOB) {
 						$t[$row]['DOB'] = $subj['dob'];
 					}
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
@@ -839,11 +872,14 @@
 					//$t[$row]["$seriesdesc-NumSeries"] = $numseries;
 					//$t[$row]["$seriesdesc-Notes"] = $studynotes;
 					
-					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $seriesdatetime, $dosedisplaytime);
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $seriesdatetime, $doseDisplayTime);
 					if ($timeSinceDose != null) {
-						$t[$row]["$seriesdesc-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]["$seriesdesc-TIMESINCEDOSE-$doseDisplayTime"] = $timeSinceDose;
 						$t[$row]['DoseAmount'] = $doseamount;
 						$t[$row]['DoseKey'] = $dosekey;
+					}
+					else {
+						$n .= $subj['uid'] . ": $seriesdesc-TIMESINCEDOSE-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME $seriesdatetime\n";
 					}
 					
 					if ($a["includeprotocolparms"]) {
@@ -902,10 +938,27 @@
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-					if ($groupbydate)
+					$measurename = $rowA['measure_name'];
+					
+					/* attempt to collapse variables based on the expression provided by the user */
+					$timepoint = "";
+					if ($collapseByVars)
+						if ($collapseExpression != "") {
+							$preg = str_replace("#", "(\d+)", $collapseExpression);
+							$displayvariable = str_replace("#", "", $measurename);
+							preg_match($preg, $measurename, $matches);
+							$timepoint = $matches[1];
+						}
+						else
+							$n .= "Collapse variables was selected, but an expression was not specified\n";
+
+					if ($groupByDate || $collapseByVars)
 						$row = $uid . substr($rowA['measure_startdate'], 0, 10);
 					else
 						$row = $uid . $rowA['measure_startdate'];
+					
+					if ($collapseByVars)
+						$t[$row]['collapseGroup'] = $timepoint;
 					
 					$measurevalue = $rowA['measure_value'];
 					
@@ -917,11 +970,11 @@
 					/* need to add the demographic info to every row */
 					$t[$row]['UID'] = $subj['uid'];
 					$t[$row]['Sex'] = $subj['sex'];
-					if ($includeheightweight) {
+					if ($includeHeightWeight) {
 						$t[$row]['Height'] = $subj['height'];
 						$t[$row]['Weight'] = $subj['weight'];
 					}
-					if ($includedob) {
+					if ($includeDOB) {
 						$t[$row]['DOB'] = $subj['dob'];
 					}
 					$t[$row]['AgeAtEvent'] = $age;
@@ -929,22 +982,24 @@
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 
 					/* add the measure info to this row */
-					$measurename = $rowA['measure_name'];
 					$t[$row]['EventDateTime'] = $rowA['measure_startdate'];
-					if ($includeduration)
+					if ($includeDuration)
 						$t[$row][$measurename . '_DURATION'] = $rowA['measure_duration'];
-					if ($includeenddate)
+					if ($includeEndDate)
 						$t[$row][$measurename . '_ENDDATETIME'] = $rowA['measure_enddate'];
 					if ($measurevalue == "")
-						$t[$row][$measurename] = $blankvalueplaceholder;
+						$t[$row][$measurename] = $blankValuePlaceholder;
 					else
 						$t[$row][$measurename] = $measurevalue;
 
-					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $dosedisplaytime);
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $doseDisplayTime);
 					if ($timeSinceDose != null) {
-						$t[$row]["$measurename-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]["$measurename-TimeSinceDose-$doseDisplayTime"] = $timeSinceDose;
 						$t[$row]['DoseAmount'] = $doseamount;
 						$t[$row]['DoseKey'] = $dosekey;
+					}
+					else {
+						$n .= $subj['uid'] . ": $measurename-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $rowA['measure_startdate'] . "\n";
 					}
 
 					$hasdata = true;
@@ -962,10 +1017,29 @@
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-					if ($groupbydate)
-						$row = $uid . substr($rowA['vital_startdate'], 0, 10);
+					/* add the vital info to this row */
+					$vitalname = $rowA['vital_name'];
+					
+					/* attempt to collapse variables based on the expression provided by the user */
+					$timepoint = "";
+					if ($collapseByVars)
+						if ($collapseExpression != "") {
+							$preg = "/^" . str_replace("#", "(\d+)", $collapseExpression) . "/";
+							preg_match($preg, $vitalname, $matches);
+							$timepoint = $matches[1];
+							$vitalname = str_replace($timepoint, "", $vitalname);
+						}
+						else
+							$n .= "Collapse variables was selected, but an expression was not specified\n";
+
+					/* create the unique row identifier */
+					if ($groupByDate || $collapseByVars)
+						$row = $uid . substr($rowA['vital_startdate'], 0, 10) . $timepoint;
 					else
 						$row = $uid . $rowA['vital_startdate'];
+					
+					if ($collapseByVars)
+						$t[$row]['collapseGroup'] = $timepoint;
 
 					$vitalvalue = $rowA['vital_value'];
 					
@@ -977,34 +1051,35 @@
 					/* need to add the demographic info to every row */
 					$t[$row]['UID'] = $subj['uid'];
 					$t[$row]['Sex'] = $subj['sex'];
-					if ($includeheightweight) {
+					if ($includeHeightWeight) {
 						$t[$row]['Height'] = $subj['height'];
 						$t[$row]['Weight'] = $subj['weight'];
 					}
-					if ($includedob) {
+					if ($includeDOB) {
 						$t[$row]['DOB'] = $subj['dob'];
 					}
 					$t[$row]['AgeAtEvent'] = $age;
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 					$t[$row]['AltUIDs'] = $subj['altuids'];
-
-					/* add the vital info to this row */
-					$vitalname = $rowA['vital_name'];
+					
 					$t[$row]['EventDateTime'] = $rowA['vital_startdate'];
-					if ($includeduration)
-						$t[$row][$vitalname . '_DURATION'] = $rowA['vital_duration'];
-					if ($includeenddate)
-						$t[$row][$vitalname . '_ENDDATETIME'] = $rowA['vital_enddate'];
+					if ($includeDuration)
+						$t[$row][$vitalname . '_Duration'] = $rowA['vital_duration'];
+					if ($includeEndDate)
+						$t[$row][$vitalname . '_EndDateTime'] = $rowA['vital_enddate'];
 					if ($vitalvalue == "")
-						$t[$row][$vitalname] = $blankvalueplaceholder;
+						$t[$row][$vitalname] = $blankValuePlaceholder;
 					else
 						$t[$row][$vitalname] = $vitalvalue;
 
-					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $dosedisplaytime);
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $doseDisplayTime);
 					if ($timeSinceDose != null) {
-						$t[$row]["$vitalname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+						$t[$row]["$vitalname-TimeSinceDose-$doseDisplayTime"] = $timeSinceDose;
 						$t[$row]['DoseAmount'] = $doseamount;
 						$t[$row]['DoseKey'] = $dosekey;
+					}
+					else {
+						$n .= $subj['uid'] . ": $vitalname-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $rowA['vital_startdate'] . "\n";
 					}
 
 					$hasdata = true;
@@ -1026,23 +1101,42 @@
 					elseif (($a['drugname'] != "") && ($a['drugname'] != null))
 						$drugarray[] = $a['drugname'];
 						
-					//if (is_array($a['dosevariable']))
-					//	$drugarray = array_merge($drugarray, $a['dosevariable']);
-					//elseif (($a['dosevariable'] != "") && ($a['dosevariable'] != null))
-					//	$drugarray[] = $a['dosevariable'];
 					$drugarray = array_unique($drugarray);
-					//PrintVariable($drugarray);
-						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $drugarray) . ")";
+
+					$drugstr = CreateSQLSearchString("b.drug_name", $drugarray);
+					if ($drugstr == "") {
+						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
+					}
+					else {
+						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and ($drugstr)";
+					}
 				}
 				if (count($drugarray) > 0) {
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
-						if ($groupbydate)
+						$drugname = $rowA['drug_name'];
+
+						/* attempt to collapse variables based on the expression provided by the user */
+						$timepoint = "";
+						if ($collapseByVars)
+							if ($collapseExpression != "") {
+								$preg = str_replace("#", "(\d+)", $collapseExpression);
+								$displayvariable = str_replace("#", "", $vitalname);
+								preg_match($preg, $vitalname, $matches);
+								$timepoint = $matches[1];
+							}
+							else
+								$n .= "Collapse variables was selected, but an expression was not specified\n";
+
+						if ($groupByDate || $collapseByVars)
 							$row = $uid . substr($rowA['drug_startdate'], 0, 10);
 						else
 							$row = $uid . $rowA['drug_startdate'];
-							
+						
+						if ($collapseByVars)
+							$t[$row]['collapseGroup'] = $timepoint;
+
 						$drugvalue = $rowA['drug_value'];
 						
 						$dob = date_create($subj['dob']);
@@ -1053,11 +1147,11 @@
 						/* need to add the demographic info to every row */
 						$t[$row]['UID'] = $subj['uid'];
 						$t[$row]['Sex'] = $subj['sex'];
-						if ($includeheightweight) {
+						if ($includeHeightWeight) {
 							$t[$row]['Height'] = $subj['height'];
 							$t[$row]['Weight'] = $subj['weight'];
 						}
-						if ($includedob) {
+						if ($includeDOB) {
 							$t[$row]['DOB'] = $subj['dob'];
 						}
 						$t[$row]['AgeAtEvent'] = $age;
@@ -1065,22 +1159,24 @@
 						$t[$row]['AltUIDs'] = $subj['altuids'];
 
 						/* add the drug info to this row */
-						$drugname = $rowA['drug_name'];
 						$t[$row]['EventDateTime'] = $rowA['drug_startdate'];
-						if ($includeduration)
+						if ($includeDuration)
 							$t[$row][$drugname . '_DURATION'] = $rowA['drug_duration'];
-						if ($includeenddate)
+						if ($includeEndDate)
 							$t[$row][$drugname . '_ENDDATETIME'] = $rowA['drug_enddate'];
 						if ($drugvalue == "")
-							$t[$row][$drugname] = $blankvalueplaceholder;
+							$t[$row][$drugname] = $blankValuePlaceholder;
 						else
 							$t[$row][$drugname] = $drugvalue;
 
-						list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $dosedisplaytime);
+						list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $doseDisplayTime);
 						if ($timeSinceDose != null) {
-							$t[$row]["$drugname-TIMESINCEDOSE-$dosedisplaytime"] = $timeSinceDose;
+							$t[$row]["$drugname-TimeSinceDose-$doseDisplayTime"] = $timeSinceDose;
 							$t[$row]['DoseAmount'] = $doseamount;
 							$t[$row]['DoseKey'] = $dosekey;
+						}
+						else {
+							$n .= $subj['uid'] . ": $drugname-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $rowA['drug_startdate'] . "\n";
 						}
 
 						/* add the drug details */
@@ -1141,7 +1237,7 @@
 									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 									$variabledatetime = $rowB['series_datetime'];
 
-									if ($groupbydate)
+									if ($groupByDate)
 										$row = $uid . substr($rowA['drug_startdate'], 0, 10);
 									else
 										$row = $uid . $rowA['drug_startdate'];
@@ -1149,7 +1245,7 @@
 									//$t[$row]['Pipeline-SeriesDateTime'] = $variabledatetime;
 								}
 							}
-							if ($groupbydate)
+							if ($groupByDate)
 								$row = $uid . substr($variabledatetime, 0, 10);
 							else
 								$row = $uid . $variabledatetime;
@@ -1158,11 +1254,11 @@
 							$t[$row]['UID'] = $subj['uid'];
 							$t[$row]['Sex'] = $subj['sex'];
 							$t[$row]['AgeAtEvent'] = $age;
-							if ($includeheightweight) {
+							if ($includeHeightWeight) {
 								$t[$row]['Height'] = $height;
 								$t[$row]['Weight'] = $weight;
 							}
-							if ($includedob) {
+							if ($includeDOB) {
 								$t[$row]['DOB'] = $subj['dob'];
 							}
 							$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
@@ -1176,9 +1272,9 @@
 							/* add the measure info to this row */
 							$t[$row]["Pipeline_$resultname"] = $rowA['result_value'];
 
-							list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $variabledatetime, $dosedisplaytime);
+							list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $variabledatetime, $doseDisplayTime);
 							if ($timeSinceDose != null) {
-								$t[$row][$resultname . "_TIMESINCEDOSE_$dosedisplaytime"] = $timeSinceDose;
+								$t[$row][$resultname . "_TIMESINCEDOSE_$doseDisplayTime"] = $timeSinceDose;
 								$t[$row]['DoseAmount'] = $doseamount;
 								$t[$row]['DoseKey'] = $dosekey;
 							}
@@ -1198,11 +1294,11 @@
 			if ((!$hasdata) && ($a['includeemptysubjects'] == 1)) {
 				$t[$row]['UID'] = $subj['uid'];
 				$t[$row]['Sex'] = $subj['sex'];
-				if ($includeheightweight) {
+				if ($includeHeightWeight) {
 					$t[$row]['Height'] = $subj['height'];
 					$t[$row]['Weight'] = $subj['weight'];
 				}
-				if ($includedob) {
+				if ($includeDOB) {
 					$t[$row]['DOB'] = $subj['dob'];
 				}
 				$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
@@ -1220,7 +1316,7 @@
 		}
 		$h = array_keys($h2);
 		
-		return array($h, $t);
+		return array($h, $t, $n);
 	}
 	
 	
@@ -1230,9 +1326,9 @@
 	function CreateWideReport($projectid, $a) {
 
 		// /* setup some global-ish variables */
-		// $dosevariable = $a['dosevariable'];
-		// $dosetimerange = $a['dosetimerange'];
-		// $dosedisplaytime = $a['dosedisplaytime'];
+		// $doseVariable = $a['dosevariable'];
+		// $doseTimeRange = $a['dosetimerange'];
+		// $doseDisplayTime = $a['dosedisplaytime'];
 
 		// /* create the table */
 		// $t;
@@ -1258,8 +1354,8 @@
 			// /* get dose datetimes for this enrollment */
 			// $dosedates = array();
 			// if ($a['includetimesincedose']) {
-				// if ($dosevariable != "") {
-					// $sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$dosevariable'";
+				// if ($doseVariable != "") {
+					// $sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and b.drug_name = '$doseVariable'";
 					// $resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					// while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 						// /* add the measure info to this row */
@@ -1375,9 +1471,9 @@
 						// $t[$uid]["$seriesdesc"."_rot_maxy_$i"] = $rowC['rot_maxy'];
 					// }
 					
-					// $timeSinceDose = GetTimeSinceDose($drugdoses, $seriesdatetime, $dosedisplaytime);
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $seriesdatetime, $doseDisplayTime);
 					// if ($timeSinceDose != null)
-						// $t[$uid]["$seriesdesc-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+						// $t[$uid]["$seriesdesc-TimeSinceDose-$doseDisplayTime-$i"] = $timeSinceDose;
 					
 					// $i++;
 				// }
@@ -1396,9 +1492,9 @@
 					// $measurename = $rowA['measure_name'];
 					// $t[$uid]["measure_$measurename"."_$i"] = $rowA['measure_value'];
 
-					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $dosedisplaytime);
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['measure_startdate'], $doseDisplayTime);
 					// if ($timeSinceDose != null)
-						// $t[$uid]["$measurename-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+						// $t[$uid]["$measurename-TimeSinceDose-$doseDisplayTime-$i"] = $timeSinceDose;
 					
 					// $i++;
 				// }
@@ -1417,9 +1513,9 @@
 					// $vitalname = $rowA['vital_name'];
 					// $t[$uid]["vital_$vitalname"."_$i"] = $rowA['vital_value'];
 					
-					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $dosedisplaytime);
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $doseDisplayTime);
 					// if ($timeSinceDose != null)
-						// $t[$uid]["$vitalname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+						// $t[$uid]["$vitalname-TimeSinceDose-$doseDisplayTime-$i"] = $timeSinceDose;
 					
 					// $i++;
 				// }
@@ -1438,9 +1534,9 @@
 					// $drugname = $rowA['drug_name'];
 					// $t[$uid]["drug_$drugname"."_$i"] = $rowA['drug_value'];
 
-					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $dosedisplaytime);
+					// $timeSinceDose = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $doseDisplayTime);
 					// if ($timeSinceDose != null)
-						// $t[$uid]["$drugname-TimeSinceDose-$dosedisplaytime-$i"] = $timeSinceDose;
+						// $t[$uid]["$drugname-TimeSinceDose-$doseDisplayTime-$i"] = $timeSinceDose;
 					
 					// $i++;
 				// }
@@ -1519,9 +1615,9 @@
 								// }
 							// }
 
-							// $timeSinceDose = GetTimeSinceDose($drugdoses, $variabledatetime, $dosedisplaytime);
+							// $timeSinceDose = GetTimeSinceDose($drugdoses, $variabledatetime, $doseDisplayTime);
 							// if ($timeSinceDose != null)
-								// $t[$uid][$resultname . "_TimeSinceDose_$dosedisplaytime"."_$i"] = $timeSinceDose;
+								// $t[$uid][$resultname . "_TimeSinceDose_$doseDisplayTime"."_$i"] = $timeSinceDose;
 							
 							// $hasdata = true;
 							// $laststudyid = $studyid;
@@ -1606,7 +1702,7 @@
 		}
 		
 		?>
-		Displaying <b><?=$numrows?></b> rows by <b><?=$numcols?></b> columns
+		<span style="padding-left: 15px">Displaying <b><?=$numrows?></b> rows by <b><?=$numcols?></b> columns</span>
 		<br><br>
 		<table class="summarytable">
 			<thead>
@@ -1646,7 +1742,7 @@
 	/* -------------------------------------------- */
 	/* ------- GetTimeSinceDose ------------------- */
 	/* -------------------------------------------- */
-	function GetTimeSinceDose($drugdoses, $event, $dosedisplaytime) {
+	function GetTimeSinceDose($drugdoses, $event, $doseDisplayTime) {
 		$eventParts = date_parse($event);
 		
 		//PrintVariable($eventParts);
@@ -1675,9 +1771,9 @@
 
 				$timeSinceDose = $et - $dt;
 				
-				if ($dosedisplaytime == "min")
+				if ($doseDisplayTime == "min")
 					$timeSinceDose = $timeSinceDose/60;
-				if ($dosedisplaytime == "hour")
+				if ($doseDisplayTime == "hour")
 					$timeSinceDose = $timeSinceDose/60/60;
 				
 				break;
