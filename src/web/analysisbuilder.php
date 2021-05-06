@@ -20,6 +20,7 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+	//ob_implicit_flush();
 
 	define("LEGIT_REQUEST", true);
 	
@@ -137,10 +138,10 @@
 	/* -------------------------------------------- */
 	function SaveSearch($projectid, $savedsearchname, $a) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$savedsearchname = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchname);
-		$mr_protocols = implode2(",", mysqli_real_escape_array($a['mr_protocols']));
-		$eeg_protocols = implode2(",", mysqli_real_escape_array($a['eeg_protocols']));
-		$et_protocols = implode2(",", mysqli_real_escape_array($a['et_protocols']));
+		$savedSearchName = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchname);
+		$MRprotocols = implode2(",", mysqli_real_escape_array($a['mr_protocols']));
+		$EEGprotocols = implode2(",", mysqli_real_escape_array($a['eeg_protocols']));
+		$ETprotocols = implode2(",", mysqli_real_escape_array($a['et_protocols']));
 		$pipelineid = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineid']);
 		$pipelineresultname = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineresultname']);
 		$pipelineseriesdatetime = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineseriesdatetime']);
@@ -161,12 +162,77 @@
 		$measurename = mysqli_real_escape_string($GLOBALS['linki'], $a['measurename']);
 		$vitalname = mysqli_real_escape_string($GLOBALS['linki'], $a['vitalname']);
 		$drugname = mysqli_real_escape_string($GLOBALS['linki'], $a['drugname']);
+		$includealldrugs = mysqli_real_escape_string($GLOBALS['linki'], $a['includealldrugs']);
+		$blankValue = mysqli_real_escape_string($GLOBALS['linki'], $a['blankvalueplaceholder']);
+		$missingValue = mysqli_real_escape_string($GLOBALS['linki'], $a['missingvalueplaceholder']);
+		$includeduration = mysqli_real_escape_string($GLOBALS['linki'], $a['includeduration']);
+		$includeenddate = mysqli_real_escape_string($GLOBALS['linki'], $a['includeenddate']);
+		$includeheightweight = mysqli_real_escape_string($GLOBALS['linki'], $a['includeheightweight']);
+		$includedob = mysqli_real_escape_string($GLOBALS['linki'], $a['includedob']);
+		$collapsevariables = mysqli_real_escape_string($GLOBALS['linki'], $a['collapsevariables']);
+		$collapsebyexpression = mysqli_real_escape_string($GLOBALS['linki'], $a['collapsebyexpression']);
 
-		$sqlstring = "insert ignore into saved_search (user_id, saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_includeemptysubjects, search_reportformat, search_outputformat) values (" . $_SESSION['userid'] . ", now(), '$savedsearchname', '$projectid', '$includeprotocolparms', '$includemrqa', '$mr_protocols', '$eeg_protocols', '$et_protocols', '$pipelineid', '$pipelineresultname', '$pipelineseriesdatetime', '$measurename', '$includeallmeasures', '$vitalname', '$includeallvitals', '$drugname', '$includealldrugs', '$includetimesincedose', '$doseVariable', '$doseTimeRange', '$doseDisplayTime', '$includeemptysubjects', '$reportformat', '$outputformat')";
-		//PrintSQL($sqlstring);
+		$userid = $_SESSION['userid'];
+		
+		if ($pipelineid == "") $pipelineid = "null";
+		if ($includeprotocolparms == "") $includeprotocolparms = "null";
+		if ($includemrqa == "") $includemrqa = "null";
+		if ($groupmrbyvisittype == "") $groupmrbyvisittype = "null";
+		if ($includeallmeasures == "") $includeallmeasures = "null";
+		if ($includeallvitals == "") $includeallvitals = "null";
+		if ($includedrugdetails == "") $includedrugdetails = "null";
+		if ($includetimesincedose == "") $includetimesincedose = "null";
+		if ($includeemptysubjects == "") $includeemptysubjects = "null";
+		if ($includealldrugs == "") $includealldrugs = "null";
+		if ($includeenddate == "") $includeenddate = "null";
+		if ($includeheightweight == "") $includeheightweight = "null";
+		if ($includedob == "") $includedob = "null";
+		if ($includedob == "") $includedob = "null";
+		if ($collapsevariables == "") $collapsevariables = "null";
+
+		$sqlstring = "insert into saved_search (
+		user_id,saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_groupmrbyvisittype, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includedrugdetails, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_groupbyeventdate, search_collapsevariables, search_collapseexpression, search_includeemptysubjects, search_blankvalue, search_missingvalue, search_includeeventduration, search_includeendate, search_includeheightweight, search_includedob, search_reportformat, search_outputformat)
+		values (
+			'$userid',
+			now(), 
+			'$savedSearchName',
+			'$projectid',
+			$includeprotocolparms,
+			$includemrqa,
+			'$groupmrbyvisittype',
+			'$MRprotocols',
+			'$EEGprotocols',
+			'$ETprotocols',
+			$pipelineid,
+			'$pipelineresultname',
+			'$pipelineseriesdatetime',
+			'$measurename',
+			$includeallmeasures,
+			'$vitalname',
+			$includeallvitals,
+			'$drugname',
+			$includealldrugs,
+			$includedrugdetails,
+			$includetimesincedose,
+			'$doseVariable',
+			'$doseTimeRange',
+			'$doseDisplayTime',
+			'$groupByDate',
+			'$collapsevariables',
+			'$collapsebyexpression',
+			$includeemptysubjects,
+			'$blankValue',
+			'$missingValue',
+			$includeduration,
+			$includeenddate,
+			$includeheightweight,
+			$includedob,
+			'$reportformat',
+			'$outputformat'
+		)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
-		echo "Search saved [$savedsearchname]<br>";
+		Notice("Search saved <b>$savedsearchname</b>");
 	}
 	
 	
@@ -179,17 +245,16 @@
 		$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//PrintSQL($sqlstring);
-		//$projectid = $row['search_projectid");
+
 		$a['projectid'] = $row['search_projectid'];
 		$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
-		$a['eeg_protocols'] = explode(",", $row['search_eeg_protocol']);
-		$a['et_protocols'] = explode(",", $row['search_et_protocol']);
+		$a['eeg_protocols'] = explode(",", $row['search_eegprotocol']);
+		$a['et_protocols'] = explode(",", $row['search_etprotocol']);
 		$a['pipelineid'] = $row['search_pipelineid'];
 		$a['pipelineresultname'] = $row['search_pipelineresultname'];
-		$a['pipelineseriesdatetime'] = $row['search_pipelineseriesdatetime'];
-		$a['includeprotocolparms'] = $row['search_includeprotocolparms'];
-		$a['includemrqa'] = $row['search_includemrqa'];
+		$a['pipelineseriesdatetime'] = $row['search_pipelineseries'];
+		$a['includeprotocolparms'] = $row['search_mrincludeprotocolparams'];
+		$a['includemrqa'] = $row['search_mrincludeqa'];
 		$a['groupmrbyvisittype'] = $row['search_groupmrbyvisittype'];
 		$a['includeallmeasures'] = $row['search_includeallmeasures'];
 		$a['measurename'] = $row['search_measurename'];
@@ -200,12 +265,22 @@
 		$a['drugname'] = $row['search_drugname'];
 		$a['includetimesincedose'] = $row['search_includetimesincedose'];
 		$a['dosevariable'] = $row['search_dosevariable'];
-		$a['dosetimerange'] = $row['search_dosetimerange'];
-		$a['dosedisplaytime'] = $row['search_dosedisplaytime'];
-		$a['groupbydate'] = $row['search_groupbydate'];
+		$a['dosetimerange'] = $row['search_groupdosetime'];
+		$a['dosedisplaytime'] = $row['search_displaytime'];
+		$a['groupbydate'] = $row['search_groupbyeventdate'];
 		$a['includeemptysubjects'] = $row['search_includeemptysubjects'];
 		$a['reportformat'] = $row['search_reportformat'];
 		$a['outputformat'] = $row['search_outputformat'];
+		$a['collapsevariables'] = $row['search_collapsevariables'];
+		$a['collapsebyexpression'] = $row['search_collapseexpression'];
+		$a['blankvalueplaceholder'] = $row['search_blankvalue'];
+		$a['missingvalueplaceholder'] = $row['search_missingvalue'];
+		
+		$a['includeduration'] = $row['search_includeeventduration'];
+		$a['includeenddate'] = $row['search_includeendate'];
+		$a['includeheightweight'] = $row['search_includeheightweight'];
+		$a['includedob'] = $row['search_includedob'];
+		
 		
 		//PrintVariable($a);
 		return $a;
@@ -219,43 +294,12 @@
 		
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 
-		//$a['includeemptysubjects'] = GetVariable("includeemptysubjects");
-		
 		if ($a['blankvalueplaceholder'] == "")
 			$a['blankvalueplaceholder'] = "BlankValue";
 		//if ($a['missingvalueplaceholder'] == "")
 		//	$a['missingvalueplaceholder'] = "MissingValue";
 		
 		?>
-		<!--
-		<form method="post" action="analysisbuilder.php">
-		<input type="hidden" name="action" value="usesavedsearch">
-		Saved Searches
-		<select name="savedsearchid">
-			<?
-			$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$savedsearchid = $row['savedsearch_id'];
-				$savedname = $row['saved_name'];
-				if ($savedid == $savedsearchid) {
-					$selected = "selected";
-				}
-				else {
-					$selected = "";
-				}
-				?>
-				<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
-				<?
-			}
-			?>
-		</select>
-		<input type="submit" value="Use saved search">
-		</form>
-		
-		<br>
-		-->
-		
 		<div style="text-align: center; width: 100%" id="pageloading">
 			<i class="large blue spinner loading icon"></i> Loading...
 		</div>
@@ -367,26 +411,56 @@
 						<h2 class="ui inverted header">Analysis Builder</h2>
 					</div>
 					<div class="ui attached styled segment">
-						<form method="post" action="analysisbuilder.php" class="ui form">
-							<input type="hidden" name="action" value="viewanalysissummary">
-							<select name="projectid" class="ui dropdown" required>
-								<option value="">Select Project...</option>
-								<option value="0">All Projects</option>
-								<?
-									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-									
+						<form method="post" action="analysisbuilder.php">
+							<input type="hidden" name="action" value="usesavedsearch">
+							<div class="ui fluid action input">
+								<select name="savedsearchid" class="ui dropdown" required>
+									<option value="">Select saved search...
+									<?
+									$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$project_id = $row['project_id'];
-										$project_name = $row['project_name'];
-										$project_costcenter = $row['project_costcenter'];
+										$savedsearchid = $row['savedsearch_id'];
+										$savedname = $row['saved_name'];
+										if ($savedid == $savedsearchid) {
+											$selected = "selected";
+										}
+										else {
+											$selected = "";
+										}
 										?>
-										<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
 										<?
 									}
-								?>
-							</select>
-							<input class="ui primary button" type="submit" value="Use project">
+									?>
+								</select>
+								<button class="ui primary button">Use saved search</button>
+							</div>
+						</form>
+					</div>
+					<div class="ui attached styled segment">
+						<form method="post" action="analysisbuilder.php" class="ui form">
+							<input type="hidden" name="action" value="viewanalysissummary">
+							<div class="ui fluid action input">
+								<select name="projectid" class="ui dropdown" required>
+									<option value="">Select Project...</option>
+									<option value="0">All Projects</option>
+									<?
+										$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+										
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$project_id = $row['project_id'];
+											$project_name = $row['project_name'];
+											$project_costcenter = $row['project_costcenter'];
+											?>
+											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<?
+										}
+									?>
+								</select>
+								<button class="ui primary button">Use project</button>
+							</div>
 						</form>
 						<?
 						if (($projectid == '') || ($projectid == 0)) {
@@ -638,13 +712,13 @@
 						<b>Grouping Options</b>
 						<br>
 						<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>Group by event DATE <i class="blue question circle icon" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."></i><br>
-						<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>Collapse variables by wildcard within the day<i class="blue question circle icon" title="Expression should use <tt>*</tt> to indicate a wildcard that matches the grouping. To collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i> <input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>">
+						<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>Collapse variables <i class="blue question circle icon" title="Expression to match a grouping, <i>by day</i>. For example, to collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i> <input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>" placeholder="Matching expression...">
 						<br>
 						<b>Output Options</b>
 						<br>
 						<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data <i class="blue question circle icon" title="Includes subjects which are part of this project, but have none of the selected data"></i><br>
-						Blank values placeholder <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <i class="blue question circle icon" title="If a value exists, but the value is blank, display this string instead"></i><br>
-						Missing values placeholder <i class="blue question circle icon" title="If a value is missing, display this string instead"></i> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>"><br>
+						Blank value string <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <i class="blue question circle icon" title="If a value exists, but the value is blank, display this string instead"></i><br>
+						Missing value string <i class="blue question circle icon" title="If a value is missing, display this string instead"></i> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder..."><br>
 						<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration <i class="blue question circle icon" title="If an event has a start and stop time, include the duration in the output"></i><br>
 						<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime <i class="blue question circle icon" title="If an event has a end date, include the end date in the output"></i><br>
 						<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight <i class="blue question circle icon" title="Include the subject's height and weight in the output"></i><br>
@@ -665,7 +739,13 @@
 							</tr>
 						</table>
 						<br>
-						<input type="submit" class="ui fluid primary button" value="Update Summary">
+						<button class="ui fluid primary button" onClick="document.analysisbuilder.action.value='viewanalysissummary'; return;"><i class="search icon"></i>Update Summary</button>
+						<br><br>
+						<div class="ui fluid action input">
+							<input type="text" name="savedsearchname" placeholder="Saved search name..." required>
+							<button class="ui basic compact button" onClick="document.analysisbuilder.action.value='savesearch'; return;"><i class="save icon"></i> Save search</button>
+						</div>
+						</form>
 					</div>
 				</td>
 				
@@ -779,7 +859,7 @@
 				}
 			}
 			
-			/* ----- get all of the MR protocol info ----- */
+			/* ---------- get all of the MR protocol info ---------- */
 			if (!empty($a['mr_protocols'])) {
 				
 				if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
@@ -927,7 +1007,7 @@
 				}
 			}
 
-			/* ----- Measures ----- */
+			/* ---------- Measures ---------- */
 			if (($a['includeallmeasures']) || ($a['measurename'] != "")) {
 				if ($a['includeallmeasures']) {
 					$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
@@ -944,16 +1024,23 @@
 					$timepoint = "";
 					if ($collapseByVars)
 						if ($collapseExpression != "") {
-							$preg = str_replace("#", "(\d+)", $collapseExpression);
-							$displayvariable = str_replace("#", "", $measurename);
+							/* replace all potential regex characters that the user may have entered */
+							$preg = preg_quote2($collapseExpression);
+							//$n .= "CollapseBy expression after preg_replace2(measures): [$preg]\n";
+							
+							/* replace the escaped # and * with the equivalent actual regex chars */
+							$preg = str_replace("*", "+", $preg);
+							$preg = "/^" . str_replace("#", "(\d+)", $preg) . "/";
+							$n .= "Final collapseBy expression (measures): [$preg]\n";
 							preg_match($preg, $measurename, $matches);
 							$timepoint = $matches[1];
+							$measurename = str_replace($timepoint, "", $measurename);
 						}
 						else
 							$n .= "Collapse variables was selected, but an expression was not specified\n";
 
 					if ($groupByDate || $collapseByVars)
-						$row = $uid . substr($rowA['measure_startdate'], 0, 10);
+						$row = $uid . substr($rowA['measure_startdate'], 0, 10) . $timepoint;
 					else
 						$row = $uid . $rowA['measure_startdate'];
 					
@@ -1006,7 +1093,7 @@
 				}
 			}
 			
-			/* ----- Vitals ----- */
+			/* ---------- Vitals ---------- */
 			if (($a['includeallvitals']) || ($a['vitalname'] != "")) {
 				if ($a['includeallvitals']) {
 					$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
@@ -1024,7 +1111,14 @@
 					$timepoint = "";
 					if ($collapseByVars)
 						if ($collapseExpression != "") {
-							$preg = "/^" . str_replace("#", "(\d+)", $collapseExpression) . "/";
+							/* replace all potential regex characters that the user may have entered */
+							$preg = preg_quote2($collapseExpression);
+							//$n .= "CollapseBy expression after preg_replace2(vitals): [$preg]\n";
+							
+							/* replace the escaped # and * with the equivalent actual regex chars */
+							$preg = str_replace("*", "+", $preg);
+							$preg = "/^" . str_replace("#", "(\d+)", $preg) . "/";
+							$n .= "Final collapseBy expression (vitals): [$preg]\n";
 							preg_match($preg, $vitalname, $matches);
 							$timepoint = $matches[1];
 							$vitalname = str_replace($timepoint, "", $vitalname);
@@ -1086,9 +1180,8 @@
 				}
 			}
 			
-			/* ----- Drugs ----- */
+			/* ---------- Drugs ---------- */
 			if (($a['includealldrugs']) || ($a['drugname'] != "") || ($a['includedrugdetails']) || ($a['dosevariable'] != "")) {
-				//PrintVariable($a['drugname']);
 				
 				if ($a['includealldrugs']) {
 					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where enrollment_id = $enrollmentid";
@@ -1121,16 +1214,23 @@
 						$timepoint = "";
 						if ($collapseByVars)
 							if ($collapseExpression != "") {
-								$preg = str_replace("#", "(\d+)", $collapseExpression);
-								$displayvariable = str_replace("#", "", $vitalname);
-								preg_match($preg, $vitalname, $matches);
+								/* replace all potential regex characters that the user may have entered */
+								$preg = preg_quote2($collapseExpression);
+								//$n .= "CollapseBy expression after preg_replace2(drugs): [$preg]\n";
+								
+								/* replace the escaped # and * with the equivalent actual regex chars */
+								$preg = str_replace("*", "+", $preg);
+								$preg = "/^" . str_replace("#", "(\d+)", $preg) . "/";
+								$n .= "Final collapseBy expression (drugs): [$preg]\n";
+								preg_match($preg, $drugname, $matches);
 								$timepoint = $matches[1];
+								$drugname = str_replace($timepoint, "", $drugname);
 							}
 							else
 								$n .= "Collapse variables was selected, but an expression was not specified\n";
 
 						if ($groupByDate || $collapseByVars)
-							$row = $uid . substr($rowA['drug_startdate'], 0, 10);
+							$row = $uid . substr($rowA['drug_startdate'], 0, 10) . $timepoint;
 						else
 							$row = $uid . $rowA['drug_startdate'];
 						
@@ -1286,7 +1386,7 @@
 					}
 				}
 				else {
-					echo "<br>Pipeline results not found using search criteria entered. Check the analysis result name and try again. SQL [$sqlstringX]<br>";
+					$n .= "Pipeline results not found using search criteria entered. Check the analysis result name and try again. SQL [$sqlstringX]\n";
 				}
 			}
 			

@@ -2790,5 +2790,30 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 	}
 
+	
+	/* -------------------------------------------- */
+	/* ------- preg_quote2 ------------------------ */
+	/* -------------------------------------------- */
+	function preg_quote2($s) {
+		$s = str_replace('\\', '\\\\', $s);
+		$s = str_replace('.', '\\.', $s);
+		$s = str_replace('?', '\\?', $s);
+		$s = str_replace('[', '\\[', $s);
+		$s = str_replace('^', '\\^', $s);
+		$s = str_replace(']', '\\]', $s);
+		$s = str_replace('$', '\\$', $s);
+		$s = str_replace('(', '\\(', $s);
+		$s = str_replace(')', '\\)', $s);
+		$s = str_replace('{', '\\{', $s);
+		$s = str_replace('}', '\\}', $s);
+		$s = str_replace('=', '\\=', $s);
+		$s = str_replace('!', '\\!', $s);
+		$s = str_replace('<', '\\<', $s);
+		$s = str_replace('>', '\\>', $s);
+		$s = str_replace('|', '\\|', $s);
+		$s = str_replace(':', '\\:', $s);
+		$s = str_replace('-', '\\-', $s);
+		return $s;
+	}
 
 ?>

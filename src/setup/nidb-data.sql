@@ -2,24 +2,25 @@ INSERT IGNORE INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `
 (1, 'I1234ABC', 'NiDB', 1, 1);
 
 INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`) VALUES
-(1, 'MR', 'MRI - Magnetic Resonance Imaging', 1),
-(2, 'CT', 'CT - Computed Tomography', 1),
-(3, 'EEG', 'EEG - Electroencephalography', 1),
+(1, 'MR', 'Magnetic resonance imaging', 1),
+(2, 'CT', 'Computed tomography', 1),
+(3, 'EEG', 'Electroencephalography', 1),
 (4, 'VIDEO', 'Video', 1),
-(5, 'ECG', 'ECG - Electrocardiogram', 1),
+(5, 'ECG', 'Electrocardiogram', 1),
 (6, 'US', 'Ultrasound', 1),
-(7, 'MEG', 'MEG - Magnetoencephalography', 1),
+(7, 'MEG', 'Magnetoencephalography', 1),
 (8, 'XRAY', 'X-ray', 1),
-(9, 'PT', 'PET - Positron Emission Tomography', 1),
+(9, 'PT', 'Positron emission tomography', 1),
 (10, 'OT', 'Other DICOM', 1),
 (11, 'PPI', 'Pre-pulse inhibition', 1),
 (12, 'ET', 'Eye-tracking', 1),
-(13, 'XA', 'XA - X-ray angiography', 1),
-(14, 'CR', 'CR - Computed radiography (digital x-ray)', 1),
+(13, 'XA', 'X-ray angiography', 1),
+(14, 'CR', 'Computed radiography (digital x-ray)', 1),
 (15, 'SURGERY', 'Pre-surgical Mapping', 1),
 (16, 'AUDIO', 'Audio', 1),
 (17, 'SNP', 'SNP genetic information', 1),
 (18, 'CONSENT', 'Consent form', 1),
+(18, 'TMS', 'Transcranial magnetic stimulation', 1),
 (19, 'TASK', 'Task', 1);
 
 delete from modules;
