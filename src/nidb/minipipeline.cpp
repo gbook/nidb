@@ -25,9 +25,9 @@
 
 minipipeline::minipipeline(int id, nidb *a)
 {
-	n = a;
-	minipipelineid = id;
-	LoadMiniPipelineInfo();
+    n = a;
+    minipipelineid = id;
+    LoadMiniPipelineInfo();
 }
 
 
@@ -36,57 +36,57 @@ minipipeline::minipipeline(int id, nidb *a)
 /* ---------------------------------------------------------- */
 void minipipeline::LoadMiniPipelineInfo() {
 
-	if (minipipelineid < 1) {
-		msg = "Invalid minipipeline ID";
-		isValid = false;
-		return;
-	}
+    if (minipipelineid < 1) {
+        msg = "Invalid minipipeline ID";
+        isValid = false;
+        return;
+    }
 
-	/* load the minipipeline info */
-	QSqlQuery q;
-	q.prepare("select * from minipipelines where minipipeline_id = :minipipelineid");
-	q.bindValue(":minipipelineid", minipipelineid);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() < 1) {
-		msg = "Mini-pipeline query returned no results. Possibly invalid minipipeline ID or recently deleted?";
-		isValid = false;
-		return;
-	}
-	q.first();
+    /* load the minipipeline info */
+    QSqlQuery q;
+    q.prepare("select * from minipipelines where minipipeline_id = :minipipelineid");
+    q.bindValue(":minipipelineid", minipipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() < 1) {
+        msg = "Mini-pipeline query returned no results. Possibly invalid minipipeline ID or recently deleted?";
+        isValid = false;
+        return;
+    }
+    q.first();
 
-	name = q.value("mp_name").toString().trimmed();
-	createDate = q.value("mp_createdate").toDateTime();
-	modifyDate = q.value("mp_modifydate").toDateTime();
-	version = q.value("mp_version").toInt();
+    name = q.value("mp_name").toString().trimmed();
+    createDate = q.value("mp_createdate").toDateTime();
+    modifyDate = q.value("mp_modifydate").toDateTime();
+    version = q.value("mp_version").toInt();
 
-	/* load the scripts */
-	q.prepare("select * from minipipeline_scripts where minipipeline_id = :minipipelineid");
-	q.bindValue(":minipipelineid", minipipelineid);
-	//q.bindValue(":version", version);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-	if (q.size() > 1) {
-		while (q.next()) {
-			miniPipelineScript mps;
-			mps.id = q.value("minipipelinescript_id").toInt();
-			mps.version = q.value("mp_version").toInt();
-			mps.isExec = q.value("mp_executable").toBool();
-			mps.isEntryPoint = q.value("mp_entrypoint").toBool();
-			mps.filename = q.value("mp_scriptname").toString().trimmed();
-			mps.filesize = q.value("mp_scriptsize").toInt();
-			mps.parameterList = q.value("mp_parameterlist").toString().trimmed();
-			mps.cDate = q.value("mp_scriptcreatedate").toDateTime();
-			mps.mDate = q.value("mp_scriptmodifydate").toDateTime();
-			mps.file = q.value("mp_script").toByteArray();
-			scripts.append(mps);
+    /* load the scripts */
+    q.prepare("select * from minipipeline_scripts where minipipeline_id = :minipipelineid");
+    q.bindValue(":minipipelineid", minipipelineid);
+    //q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    if (q.size() > 0) {
+        while (q.next()) {
+            miniPipelineScript mps;
+            mps.id = q.value("minipipelinescript_id").toInt();
+            mps.version = q.value("mp_version").toInt();
+            mps.isExec = q.value("mp_executable").toBool();
+            mps.isEntryPoint = q.value("mp_entrypoint").toBool();
+            mps.filename = q.value("mp_scriptname").toString().trimmed();
+            mps.filesize = q.value("mp_scriptsize").toInt();
+            mps.parameterList = q.value("mp_parameterlist").toString().trimmed();
+            mps.cDate = q.value("mp_scriptcreatedate").toDateTime();
+            mps.mDate = q.value("mp_scriptmodifydate").toDateTime();
+            mps.file = q.value("mp_script").toByteArray();
+            scripts.append(mps);
 
-			//n->WriteLog(QString("Entry point [%1] [%2]").arg(mps.filename).arg(mps.isEntryPoint));
-			if (mps.isEntryPoint)
-				entrypoint = mps.filename;
-		}
-	}
+            n->WriteLog(QString("Entry point [%1] [%2]").arg(mps.filename).arg(mps.isEntryPoint));
+            if (mps.isEntryPoint)
+                entrypoint = mps.filename;
+        }
+    }
 
-	isValid = true;
-	msg = "Loaded mini-pipeline details";
+    isValid = true;
+    msg = "Loaded mini-pipeline details";
 }
 
 
@@ -95,37 +95,37 @@ void minipipeline::LoadMiniPipelineInfo() {
 /* ---------------------------------------------------------- */
 bool minipipeline::WriteScripts(QString dir, QString &m) {
 
-	QDir d(dir);
-	if (!d.exists()) {
-		m = "Directory [" + dir + "] does not exist";
-		return false;
-	}
+    QDir d(dir);
+    if (!d.exists()) {
+        m = "Directory [" + dir + "] does not exist";
+        return false;
+    }
 
-	foreach (miniPipelineScript s, scripts) {
-		QString filename = dir + "/" + s.filename;
+    foreach (miniPipelineScript s, scripts) {
+        QString filename = dir + "/" + s.filename;
 
-		QFile f(filename);
-		f.open(QIODevice::WriteOnly);
-		f.write(QByteArray::fromBase64(s.file));
-		f.close();
+        QFile f(filename);
+        f.open(QIODevice::WriteOnly);
+        f.write(QByteArray::fromBase64(s.file));
+        f.close();
 
-		/* check if file actually exists */
-		if (!QFile::exists(filename)) {
-			m = "Created file [" + filename + "] does not exist";
-			return false;
-		}
+        /* check if file actually exists */
+        if (!QFile::exists(filename)) {
+            m = "Created file [" + filename + "] does not exist";
+            return false;
+        }
 
-		/* check the size of the file */
-		QFileInfo fi(filename);
-		if (fi.size() != s.filesize) {
-			m = QString("Created file size [%1] does not match database file size [%2]").arg(fi.size()).arg(s.filesize);
-			return false;
-		}
+        /* check the size of the file */
+        QFileInfo fi(filename);
+        if (fi.size() != s.filesize) {
+            m = QString("Created file size [%1] does not match database file size [%2]").arg(fi.size()).arg(s.filesize);
+            return false;
+        }
 
-		/* set the permissions */
-		if (s.isExec)
-			f.setPermissions(QFile::ExeGroup | QFile::ExeOther | QFile::ExeOther | QFile::ExeUser);
-	}
+        /* set the permissions */
+        if (s.isExec)
+            f.setPermissions(QFile::ExeGroup | QFile::ExeOther | QFile::ExeOther | QFile::ExeUser);
+    }
 
-	return true;
+    return true;
 }

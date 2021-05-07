@@ -176,8 +176,8 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	function DisplayMiniPipelineJobs($mpid, $projectid) {
 		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//StartHTMLTable(array('Mini-pipeline', 'Queue date', 'Start date', 'Complete date', 'Status', 'Logs', 'Study', 'Modality', 'Rows inserted'), "ui celled selectable grey compact table");
 		?>
+		<a class="ui primary button" href="minipipeline.php?projectid=<?=$projectid?>"><i class="arrow alternate circle left icon"></i> Back</a>
 		<table class="ui celled selectable grey compact table">
 			<thead>
 				<th>Mini-pipeline</th>
@@ -192,6 +192,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			</thead>
 			<tbody>
 		<?
+		$i = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$mpname = $row['mp_name'];
 			$queuedate = $row['mp_queuedate'];
@@ -207,18 +208,33 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			
 			list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality)
 			?>
+			<div class="ui scrolling modal" id="modal<?=$i?>">
+				<i class="close icon"></i>
+				<div class="header">
+					Viewing log file
+				</div>
+				<div class="scrolling content" style="overflow: auto">
+					<pre class="tt" style="white-space: pre-wrap;"><?=$logs?></pre>
+				</div>
+				<div class="actions">
+					<div class="ui approve button">Close</div>
+				</div>
+			</div>
 			<tr>
 				<td valign="top"><?=$mpname?></td>
 				<td valign="top"><?=$queuedate?></td>
 				<td valign="top"><?=$startdate?></td>
 				<td valign="top"><?=$enddate?></td>
 				<td valign="top"><?=$status?></td>
-				<td valign="top"><details><summary>View</summary><tt><pre><?=$logs?></pre></tt></details></td>
+				<td valign="top" class="scrolling content">
+					<button class="ui compact basic button" id="viewlog<?=$i?>" onClick="$('#modal<?=$i?>').modal('show');"><i class="file alternate icon"></i> View Logs</button>
+				</td>
 				<td valign="top"><a href="studies.php?studyid=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 				<td valign="top"><?=$modality?></td>
 				<td valign="top"><?=$numinserts?></td>
 			</tr>
 			<?
+			$i++;
 		}
 		?>
 			</tbody>
@@ -418,87 +434,87 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 		
 		?>
 		<div class="ui container">
-		<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Add mini-pipeline</button>
-		<br><br>
-		<table class="ui celled selectable grey compact table">
-			<thead>
-				<tr>
-					<th style="border: 1px solid #999; ">Name</th>
-					<th style="border: 1px solid #999; ">Logs</th>
-					<th style="border: 1px solid #999; ">Version</th>
-					<th style="border: 1px solid #999; ">Create date</th>
-					<th style="border: 1px solid #999; ">Modify date</th>
-					<th style="border: 1px solid #999; ">Script(s)</th>
-					<th style="border: 1px solid #999; ">Delete</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?
-					$sqlstring = "select * from minipipelines where project_id = $projectid order by mp_name asc";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$mpid = $row['minipipeline_id'];
-						$name = $row['mp_name'];
-						$version = $row['mp_version'];
-						$mpcreatedate = date('M j, Y h:ia',strtotime($row['mp_createdate']));
-						$mpmodifydate = date('M j, Y h:ia',strtotime($row['mp_modifydate']));
-						
-						?>
-						<tr>
-							<td valign="top" style="border-bottom: 1px solid #999"><a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><?=$name?></td>
-							<td valign="top" style="border-bottom: 1px solid #999"><a href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>">View</td>
-							<td valign="top" style="border-bottom: 1px solid #999"><?=$version?></td>
-							<td valign="top" style="border-bottom: 1px solid #999"><?=$mpcreatedate?></td>
-							<td valign="top" style="border-bottom: 1px solid #999"><?=$mpmodifydate?></td>
-							<td valign="top" align="center" style="border-bottom: 1px solid #999">
-							<?
-								$sqlstringA = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
-								$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-								if (mysqli_num_rows($resultA) > 0) {
+			<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create mini-pipeline</button>
+			<br><br>
+			<table class="ui celled selectable grey compact table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Logs</th>
+						<th>Version</th>
+						<th>Create date</th>
+						<th>Modify date</th>
+						<th>Script(s)</th>
+						<th>Delete</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?
+						$sqlstring = "select * from minipipelines where project_id = $projectid order by mp_name asc";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$mpid = $row['minipipeline_id'];
+							$name = $row['mp_name'];
+							$version = $row['mp_version'];
+							$mpcreatedate = date('M j, Y h:ia',strtotime($row['mp_createdate']));
+							$mpmodifydate = date('M j, Y h:ia',strtotime($row['mp_modifydate']));
+							
 							?>
-								<table style="font-size: 9pt" width="100%" class="ui very small very compact celled selectable grey table">
-									<thead>
-										<tr>
-											<th>Script</th>
-											<th>Size</th>
-											<th>Executable</th>
-											<th>Entry point</th>
-										</tr>
-									</thead>
+							<tr>
+								<td valign="top"><a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><?=$name?></td>
+								<td valign="top"><a href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>">View</td>
+								<td valign="top"><?=$version?></td>
+								<td valign="top"><?=$mpcreatedate?></td>
+								<td valign="top"><?=$mpmodifydate?></td>
+								<td valign="top" align="center">
 								<?
-								while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-									$script = $rowA['mp_scriptname'];
-									$params = $rowA['mp_parameterlist'];
-									$executable = $rowA['mp_executable'];
-									$entrypoint = $rowA['mp_entrypoint'];
-									$scriptsize = $rowA['mp_scriptsize'];
-									$createdate = date('M j, Y h:ia',strtotime($rowA['mp_scriptcreatedate']));
-									$modifydate = date('M j, Y h:ia',strtotime($rowA['mp_scriptmodifydate']));
-									?>
-									<tr>
-										<td><tt><?=$script?> <i><?=$params?></i></tt></td>
-										<td><?=$scriptsize?></td>
-										<td><? if ($executable) { echo "&#10004;"; }?></td>
-										<td><? if ($entrypoint) { echo "&#10004;"; }?></td>
-									</tr>
+									$sqlstringA = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									if (mysqli_num_rows($resultA) > 0) {
+								?>
+									<table style="font-size: 9pt" class="ui very small very compact celled selectable table">
+										<thead>
+											<tr>
+												<th>Script</th>
+												<th>Size</th>
+												<th>Executable</th>
+												<th>Entry point</th>
+											</tr>
+										</thead>
 									<?
-								}
-								?>
-								</table>
-								<?
-								}
-								else {
-									echo "None";
-								}
-								?>
-							</td>
-							<td valign="top" align="center" style="border-bottom: 1px solid #999; font-size: smaller;"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash icon"></i></a></td>
-						</tr>
-						<?
-					}
-				?>
-			</tbody>
-		</table>
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$script = $rowA['mp_scriptname'];
+										$params = $rowA['mp_parameterlist'];
+										$executable = $rowA['mp_executable'];
+										$entrypoint = $rowA['mp_entrypoint'];
+										$scriptsize = $rowA['mp_scriptsize'];
+										$createdate = date('M j, Y h:ia',strtotime($rowA['mp_scriptcreatedate']));
+										$modifydate = date('M j, Y h:ia',strtotime($rowA['mp_scriptmodifydate']));
+										?>
+										<tr>
+											<td><tt><?=$script?> <i><?=$params?></i></tt></td>
+											<td><?=$scriptsize?></td>
+											<td><? if ($executable) { echo "&#10004;"; }?></td>
+											<td><? if ($entrypoint) { echo "&#10004;"; }?></td>
+										</tr>
+										<?
+									}
+									?>
+									</table>
+									<?
+									}
+									else {
+										echo "None";
+									}
+									?>
+								</td>
+								<td valign="top" align="center"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>
+							</tr>
+							<?
+						}
+					?>
+				</tbody>
+			</table>
 		</div>
 		<?
 	}

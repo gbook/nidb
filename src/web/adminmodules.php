@@ -130,7 +130,7 @@
 			<details>
 			<summary><?=$filename?> <span class="tiny"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</span></summary>
 			<? if ($filesize < 1000000) {?>
-			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px"><?=htmlspecialchars(file_get_contents($filename))?></pre>
+			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
 			<? } else { ?>
 				File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
 <?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>

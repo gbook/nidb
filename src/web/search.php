@@ -3683,10 +3683,10 @@
 							}
 						?>
 						<?=$mpselectbox?>
-						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines'">Run</div>
+						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines';document.subjectlist.submit();">Run</div>
 					</div>
 					<div class="ui horizontal divider">Batch Upload Data</div>
-					<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist'">Upload</div>
+					<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist';document.subjectlist.submit();">Upload</div>
 				</div>
 			</div>
 			

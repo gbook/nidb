@@ -20,8 +20,8 @@ INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`
 (16, 'AUDIO', 'Audio', 1),
 (17, 'SNP', 'SNP genetic information', 1),
 (18, 'CONSENT', 'Consent form', 1),
-(18, 'TMS', 'Transcranial magnetic stimulation', 1),
-(19, 'TASK', 'Task', 1);
+(19, 'TMS', 'Transcranial magnetic stimulation', 1),
+(20, 'TASK', 'Task', 1);
 
 delete from modules;
 
@@ -37,8 +37,9 @@ INSERT IGNORE INTO `modules` (`module_id`, `module_name`, `module_status`, `modu
 (9, 'notifications', 'stopped', 0, now(), now(), 0),
 (10, 'pipeline', 'stopped', 0, now(), now(), 1),
 (11, 'qc', 'stopped', 0, now(), now(), 1),
-(11, 'upload', 'stopped', 0, now(), now(), 1),
-(12, 'usage', 'stopped', 0, now(), now(), 0);
+(12, 'upload', 'stopped', 0, now(), now(), 1),
+(13, 'minipipeline', 'stopped', 0, now(), now(), 1),
+(14, 'usage', 'stopped', 0, now(), now(), 0);
 
 INSERT IGNORE INTO `nidb_sites` (`site_id`, `site_uid`, `site_uuid`, `site_name`, `site_address`, `site_contact`) VALUES
 (1, 0, uuid(), 'Default Site name', 'Default Site address', 'Default Site contact');
