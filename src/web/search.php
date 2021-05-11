@@ -948,75 +948,80 @@
 		}
 		else {
 			?>
-			<details>
-				<summary style="font-size: 10pt">Recent Searches</summary>
-			
-			<ul style="font-size: 8pt">
-			<?
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$searchhistoryid = $row['searchhistory_id'];
-				$userid = $row['user_id'];
-				$date_added = $row['date_added'];
-				$saved_name = $row['saved_name'];
-				
-				$s['UID(s)'] = $row['subjectuid'];
-				$s['Alt UID(s)'] = $row['subjectaltuid'];
-				$s['Name'] = $row['subjectname'];
-				$s['DOB Start'] = $row['subjectdobstart'];
-				$s['DOB End'] = $row['subjectdobend'];
-				$s['Age Min'] = $row['ageatscanmin'];
-				$s['Age Max'] = $row['ageatscanmax'];
-				$s['Gender'] = $row['subjectgender'];
-				$s['Subject Group ID'] = $row['subjectgroupid'];
-				$s['Project ID'] = $row['projectid'];
-				$s['Enroll Subgroup'] = $row['enrollsubgroup'];
-				$s['Measure Search'] = $row['measuresearch'];
-				$s['Measure List'] = $row['measurelist'];
-				$s['Institution'] = $row['studyinstitution'];
-				$s['Equipment'] = $row['studyequipment'];
-				$s['Study ID'] = $row['studyid'];
-				$s['Study Alt Scan ID'] = $row['studyaltscanid'];
-				$s['Study Date Start'] = $row['studydatestart'];
-				$s['Study Date End'] = $row['studydateend'];
-				$s['Study Desc'] = $row['studydesc'];
-				$s['study Physician'] = $row['studyphysician'];
-				$s['Operator'] = $row['studyoperator'];
-				$s['Study Type'] = $row['studytype'];
-				$s['Modality'] = $row['studymodality'];
-				$s['Study Group ID'] = $row['studygroupid'];
-				$s['Series Desc'] = $row['seriesdesc'];
-				$s['usealtseriesdesc'] = $row['usealtseriesdesc'];
-				$s['Sequence'] = $row['seriessequence'];
-				$s['Image Type'] = $row['seriesimagetype'];
-				$s['TR'] = $row['seriestr'];
-				$s['Image Comments'] = $row['seriesimagecomments'];
-				$s['Series Num'] = $row['seriesnum'];
-				$s['Num Files'] = $row['seriesnumfiles'];
-				$s['Series Group ID'] = $row['seriesgroupid'];
-				$s['Pipeline ID'] = $row['pipelineid'];
-				$s['Pipeline Result Name'] = $row['pipelineresultname'];
-				$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
-				$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
-				$s['Pipeline Result Type'] = $row['pipelineresulttype'];
-				$s['Result Order'] = $row['resultorder'];
-				$s['Form ID'] = $row['formid'];
-				$s['Form Field ID'] = $row['formfieldid'];
-				$s['Form Criteria'] = $row['formcriteria'];
-				$s['Form Value'] = $row['formvalue'];
-				
-				$searchterms = "";
-				foreach ($s as $key => $value) {
-					if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
-						$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i> Recent Searches
+				</div>
+				<div class="content">
+					<ul style="font-size: 8pt">
+					<?
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$searchhistoryid = $row['searchhistory_id'];
+						$userid = $row['user_id'];
+						$date_added = $row['date_added'];
+						$saved_name = $row['saved_name'];
+						
+						$s['UID(s)'] = $row['subjectuid'];
+						$s['Alt UID(s)'] = $row['subjectaltuid'];
+						$s['Name'] = $row['subjectname'];
+						$s['DOB Start'] = $row['subjectdobstart'];
+						$s['DOB End'] = $row['subjectdobend'];
+						$s['Age Min'] = $row['ageatscanmin'];
+						$s['Age Max'] = $row['ageatscanmax'];
+						$s['Gender'] = $row['subjectgender'];
+						$s['Subject Group ID'] = $row['subjectgroupid'];
+						$s['Project ID'] = $row['projectid'];
+						$s['Enroll Subgroup'] = $row['enrollsubgroup'];
+						$s['Measure Search'] = $row['measuresearch'];
+						$s['Measure List'] = $row['measurelist'];
+						$s['Institution'] = $row['studyinstitution'];
+						$s['Equipment'] = $row['studyequipment'];
+						$s['Study ID'] = $row['studyid'];
+						$s['Study Alt Scan ID'] = $row['studyaltscanid'];
+						$s['Study Date Start'] = $row['studydatestart'];
+						$s['Study Date End'] = $row['studydateend'];
+						$s['Study Desc'] = $row['studydesc'];
+						$s['study Physician'] = $row['studyphysician'];
+						$s['Operator'] = $row['studyoperator'];
+						$s['Study Type'] = $row['studytype'];
+						$s['Modality'] = $row['studymodality'];
+						$s['Study Group ID'] = $row['studygroupid'];
+						$s['Series Desc'] = $row['seriesdesc'];
+						$s['usealtseriesdesc'] = $row['usealtseriesdesc'];
+						$s['Sequence'] = $row['seriessequence'];
+						$s['Image Type'] = $row['seriesimagetype'];
+						$s['TR'] = $row['seriestr'];
+						$s['Image Comments'] = $row['seriesimagecomments'];
+						$s['Series Num'] = $row['seriesnum'];
+						$s['Num Files'] = $row['seriesnumfiles'];
+						$s['Series Group ID'] = $row['seriesgroupid'];
+						$s['Pipeline ID'] = $row['pipelineid'];
+						$s['Pipeline Result Name'] = $row['pipelineresultname'];
+						$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
+						$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
+						$s['Pipeline Result Type'] = $row['pipelineresulttype'];
+						$s['Result Order'] = $row['resultorder'];
+						$s['Form ID'] = $row['formid'];
+						$s['Form Field ID'] = $row['formfieldid'];
+						$s['Form Criteria'] = $row['formcriteria'];
+						$s['Form Value'] = $row['formvalue'];
+						
+						$searchterms = "";
+						foreach ($s as $key => $value) {
+							if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
+								$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+							}
+						}
+						if ($searchterms != "") {
+						?>
+						<li><a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>"><?=$date_added?></a> - <?=$searchterms?>
+						<?
+						}
 					}
-				}
-				if ($searchterms != "") {
-				?>
-				<li><a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>"><?=$date_added?></a> - <?=$searchterms?>
-				<?
-				}
-			}
-			echo "</ul></details>";
+					?>
+				</ul>
+			</div>
+			<?
 		}
 	}
 	

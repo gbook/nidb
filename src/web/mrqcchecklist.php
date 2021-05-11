@@ -351,23 +351,11 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		//NavigationBar("$name", $urllist);
-
-		DisplayProjectsMenu('mrqc', $id);
-		
 		/* get all of the MR params for this project */
 		$sqlstring = "select * from mr_scanparams where project_id = $id order by protocol_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQLTable($result);
-		if (mysqli_num_rows($result) < 1){
-			?>
-			<p align="center">No MR parameters specified for this project. Add them <a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>">here</a>.</p>
-			<?
-		}
-		else {
+		if (mysqli_num_rows($result) > 0) {
 			$i=0;
 			//$lastprotocol = "";
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -408,12 +396,7 @@
 		
 		$sqlstring = "select * from mr_qcparams where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) < 1){
-			?>
-			<p align="center">No QC criteria specified for this project. Add them <a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>">here</a>.</p>
-			<?
-		}
-		else {
+		if (mysqli_num_rows($result) > 0) {
 			$i=0;
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$qcparms[$row['protocol_name']]['max_x'] = number_format($row['max_x'],3,'.','');
@@ -435,7 +418,15 @@
 			DisplayProtocolDataListForProject($id, "protocollist");
 			
 			?>
-			<br><br>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">MR scan quality control</h2>
+				</div>
+				<div class="right aligned column">
+					<a class="ui primary button" href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"><i class="edit icon"></i> Edit expected MR parameters</a>
+					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
+				</div>
+			</div>
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th colspan="5">
@@ -818,13 +809,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$projectid";
-		//$urllist['Edit MR Scan Parameters'] = "mrqcchecklist.php?action=editmrparams&id=$projectid";
-		//NavigationBar("$name", $urllist);
-		
-		DisplayProjectsMenu('mrqc', $projectid);
-		
 		DisplayProtocolDataListForProject($projectid, "protocollist");
 		
 		?>
@@ -874,13 +858,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['View MR Scan Parameter QA'] = "projects.php?action=editmrparams&id=$id";
-		//NavigationBar("$name", $urllist);
-
-		DisplayProjectsMenu('mrqc', $id);
 		
 		/* get all of the MR params for this project */
 		$sqlstring = "select * from mr_scanparams where project_id = $id";
@@ -1124,8 +1101,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-		
-		//DisplayProjectsMenu('mrqc', $projectid);
 		
 		?>
 		<br><br>

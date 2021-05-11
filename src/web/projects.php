@@ -844,12 +844,6 @@
 		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//NavigationBar("$name", $urllist);
-
-		DisplayProjectsMenu('studies', $id);
 		
 		/* get list of all studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
@@ -986,15 +980,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-	#	$desc = $row['form_desc'];
-		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name]="projects.php";
-		//$urllist['Assessments'] = "adminassessmentforms.php";
-#		$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		//NavigationBar("Project Assessments", $urllist);
-	
-		DisplayProjectsMenu('assessments', $id);
 	
 	?>
 		<div align="center">
@@ -1103,12 +1088,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
-		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?actimn=displayFormList&id=$id";
-		//$urllist['Add Form'] = "projectassessments.php?action=addform";
-#		NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<table class="ui very compact celled grey table">
@@ -1260,7 +1239,6 @@
 			} 
 		</script>
 		
-		<? DisplayProjectsMenu('studies', $id); ?>
 		<br><br>
 		<div align="center">
 		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
@@ -1370,16 +1348,27 @@
 				?>
 				<tr id="R<?=$i?>">
 					<? if ($lastuid != $uid) { ?>
-					<td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td>
-					<td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td>
-					<td style="<?=$rowstyle?>">
-						<a class="ui primary button" href="subjects.php?id=<?=$subjectid?>"><span class="tt"><?=$uid;?></span></a>
-					</td>
-					<td style="<?=$rowstyle?>" class="editable"><?=$sex?></td>
-					<td style="<?=$rowstyle?>" class="editable tt"><?=$altuidlist?></td>
-					<? } else { ?><td style="<?=$rowstyle?>" class="tiny"><?=$study_id?></td><td style="<?=$rowstyle?>" class="tiny"><?=$subjectid?></td><td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td> <td style="<?=$rowstyle?>"></td><? } ?>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
+						<td style="<?=$rowstyle?>">
+							<a class="ui large compact primary button" href="subjects.php?id=<?=$subjectid?>"><span class="tt"><?=$uid;?></span></a>
+						</td>
+						<td style="<?=$rowstyle?>" class="editable"><?=$sex?></td>
+						<td style="<?=$rowstyle?>" class="editable tt"><?=$altuidlist?></td>
+						<?
+					}
+					else {
+						?>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
+						<td style="<?=$rowstyle?>"></td>
+						<td style="<?=$rowstyle?>"></td>
+						<td style="<?=$rowstyle?>"></td>
+						<?
+					}
+					?>
 					<td style="<?=$rowstyle?>" class="tt">
-						<a href="studies.php?id=<?=$study_id?>"><span style="color: darkblue; text-decoration:underline"><?=$uid;?><?=$study_num;?></span></a>
+						<a class="ui basic large compact primary button" href="studies.php?id=<?=$study_id?>"><span class="tt"><?=$uid;?><?=$study_num;?></span></a>
 					</td>
 					<td style="<?=$rowstyle?>" class="editable"><?=$study_visit?></td>
 					<td style="<?=$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
@@ -1529,10 +1518,6 @@
 		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//NavigationBar("$name", $urllist);
 
 		?>
 		<form method="post" action="projects.php">
@@ -1594,12 +1579,7 @@
 		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//NavigationBar("$name", $urllist);
 
-		//PrintVariable($locallist);
 		$localseries = explode("\n",$locallist);
 		$foreignseries = explode("\n",$foreignlist);
 		
@@ -1700,11 +1680,6 @@
 		$name = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 		
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$name] = "projects.php?action=displaystudies&id=$id";
-		//$urllist['Edit Demographics'] = "projects.php?action=editsubjects&id=$id";
-		//NavigationBar("$name", $urllist);
-		
 		# get the autocomplete list for the enrollgroup
 		$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
 		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -1766,9 +1741,8 @@
 				editableGrid.renderGrid();
 			} 
 		</script>
-		
+		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
 		<?
-			DisplayProjectsMenu("subjects", $id);
 			/* get all subjects, and their enrollment info, associated with the project */
 			$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1909,7 +1883,7 @@
 		$name = $row['project_name'];
 		
 		?>
-		<? DisplayProjectsMenu("subjects", $id); ?>
+		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
 		<div align="center">
 		<br>
 		<table class="ui very compact celled grey table">
@@ -2062,8 +2036,6 @@
 			}
 		}
 		
-		DisplayProjectsMenu('mrqc', $id);
-		
 		?>
 		<br><br>
 		<form action="projects.php" method="post">
@@ -2143,8 +2115,6 @@
 				}
 			}
 		}
-		
-		DisplayProjectsMenu('mrqc', $id);
 		
 		?>
 		<br><br>
@@ -2513,9 +2483,9 @@
 		?>
 		<div class="ui container">
 			<div class="ui grid">
-				<div class="ui eight wide column">
-					<h2 class="ui header"><?=$name?></h2>
-					<table class="ui very basic compact collapsing celled table">
+				<div class="ui seven wide column">
+					<h2 class="ui top attached inverted header"><?=$name?></h2>
+					<table class="ui basic bottom attached compact collapsing celled table">
 						<tbody>
 							<tr>
 								<td class="right aligned"><h4 class="ui header">Subjects</h4></td>
@@ -2561,13 +2531,17 @@
 						</tbody>
 					</table>
 				</div>
-				<div class="ui four wide column">
+				<div class="ui one wide column">
+				</div>
+				<div class="ui three wide column">
 					<h3 class="ui header">Data Views</h3>
 					<br>
-					<i class="users icon"></i> <a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a><br><br>
-					<i class="sitemap icon"></i> <a href="projects.php?action=displaystudies&id=<?=$id?>">Studies</a><br><br>
-					<i class="clipboard list icon"></i> <a href="projectchecklist.php?projectid=<?=$id?>">Checklist</a><br><br>
-					<i class="clipboard list icon"></i> <a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">MR scan QC</a><br><br>
+					<a class="ui fluid vertical big primary button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="black users icon"></i> Subjects</a><br>
+					<a class="ui fluid vertical big primary button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="black sitemap icon"></i> Studies</a><br>
+					<a class="ui fluid vertical big primary button" href="projectchecklist.php?projectid=<?=$id?>"><i class="black clipboard list icon"></i> Checklist</a><br>
+					<a class="ui fluid vertical big primary button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="black clipboard list icon"></i> MR scan QC</a>
+				</div>
+				<div class="ui one wide column">
 				</div>
 				<div class="ui four wide column">
 					<h3 class="ui header">Project options/tools</h3>
@@ -2580,7 +2554,7 @@
 					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>"> BIDS Protocol Mapping</a><br><br>
 					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>"> NDA Mapping</a><br><br>
 					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>"> Behavioral mini-pipelines</a><br><br>
-					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap import <u>settings</u></a><br><br>
+					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap settings</a><br><br>
 					<i class="cloud download icon"></i><a href="redcaptonidb.php?action=default&projectid=<?=$id?>"> Redcap <i class="right arrow icon"></i> NiDB Transfer</a><br><br>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
@@ -2595,7 +2569,7 @@
 
 # Asim Addtition .........................................................................
 	function AssessmentsInfo($id) {
-		DisplayProjectsMenu('assessments', $id);
+		//DisplayProjectsMenu('assessments', $id);
 	}
 
 
@@ -2604,9 +2578,6 @@
 	/* -------------------------------------------- */
 	function DisplayInstanceSummary($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		//$urllist['Projects'] = "projects.php";
-		//NavigationBar("Projects for " . $_SESSION['instancename'], $urllist);
 		
 		/* get all studies associated with this project */
 		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid, a.project_name FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id and d.isactive = 1 order by a.project_name, e.altuid";

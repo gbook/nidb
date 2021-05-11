@@ -123,11 +123,6 @@
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
 		
-		//$urllist['Subject List'] = "subjects.php";
-		//$urllist[$uid] = "subjects.php?action=display&id=$subjectid";
-		//$urllist["$projectname vitals"] = "vitals.php?enrollmentid=$enrollmentid";
-		//NavigationBar("Vitals", $urllist);
-		
 		?>
 		<SCRIPT LANGUAGE="Javascript">
 			function decision(message, url){

@@ -88,10 +88,6 @@
 	/* ------- DisplayDownloadList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayDownloadList() {
-	
-		//$urllist['Public Downloads'] = "publicdownloads.php";
-		//NavigationBar("Export", $urllist);
-		
 	?>
 
 	<table class="ui small celled selectable grey compact table">

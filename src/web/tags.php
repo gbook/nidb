@@ -92,9 +92,6 @@
 		
 		$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
 		
-		//$urllist['Tags'] = "tags.php";
-		//NavigationBar("$idtype tags matching '$tag'", $urllist);
-
 		switch ($idtype) {
 			case 'series': DisplaySeriesTags($tagtype, $tag); break;
 			case 'study': DisplayStudyTags($tagtype, $tag); break;

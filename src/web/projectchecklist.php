@@ -238,9 +238,8 @@
 		
 		$neworder = 1;
 
-		DisplayProjectsMenu('checklist', $projectid);
-
 	?>
+	<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" class="ui primary basic button">Edit checklist</a>
 
 	<datalist id="modalitylist">
 		<?
@@ -378,12 +377,18 @@
 		}
 		$numenrollments = count($enrollment);
 
-		DisplayProjectsMenu('checklist', $projectid);
-		
 		?>
-		<br>
+		
 		<div class="ui container">
-		<b>Displaying <?=$numenrollments?> enrollments</b> <span class="tiny">Table is sortable. Click column headers to sort</span><br><br>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header"><?=$projectname?> Checklist</h2>
+					Displaying <b><?=$numenrollments?> enrollments</b>
+				</div>
+				<div class="right aligned column">
+					<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" class="ui primary basic button">Edit checklist</a>
+				</div>
+			</div>
 		<table class="ui celled very compact selectable black table">
 			<thead>
 			<tr>
@@ -591,9 +596,8 @@
 			return;
 		}
 
-		DisplayProjectsMenu('checklist', $projectid);
-		
 		?>
+		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a>
 		<br><br>
 		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
 		

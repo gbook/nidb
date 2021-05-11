@@ -241,19 +241,6 @@
 			$formtitle = "Create a new assessment form";
 			$submitbuttonlabel = "Add";
 		}
-		
-	        
-#		$urllist['Projects'] = "projects.php";
-#		$urllist[$projectname] = "projects.php?id=$projectid";
-#		$urllist[$title] = "projectassessments.php?action=editform&formid=$formid&projectid=$projectid";
-		//if ($type == "edit"){
-		//	$urllist['Projects'] = "projects.php";
-	    //            $urllist[$projectname] = "projects.php?id=$projectid";
-		//	NavigationBar("Updateable Assessment Form-- $title", $urllist);}
-		//else {
-		//	NavigationBar("New Assessment Form", $urllist);}
-
-		
 	?>
 	
 		<div align="center">
@@ -404,10 +391,6 @@
 		$desc = $row['form_desc'];
 		$projectname = $row['project_name'];
 		$formpublish = $row['form_ispublished'];
-	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$projectname] = "projects.php?id=$projectid";
-		//NavigationBar("$title", $urllist);
 		
 		// Counting query
 //		$sqlstr ="SELECT COUNT(*) as CNT FROM `subjects` a left join enrollment b on a.subject_id = b.subject_id WHERE b.project_id=$projectid ";
@@ -533,13 +516,6 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$projectname] = "projects.php?id=$projectid";
-		//NavigationBar("$projectname Assessment Forms", $urllist);
-	
-		//DisplayProjectsMenu('assessments', $projectid);	
-
-
 		/* get the main checklist items */
 		$i = 0;
 		$sqlstring = "select * from assessment_forms where project_id = $projectid order by form_id asc";
@@ -552,17 +528,10 @@
 			$form[$i]['published'] = $row['form_published'];
 			$i++;
 		}
-		
-//PrintVariable($projectid);
-		
-
-	
 	?>
 	
 	<div align="center">
 	<h2> <b> Current Assessment Forms  </a>  </h2> </b> 
-
-
 
 	<table class="graydisplaytable">
 		<thead>
@@ -609,8 +578,6 @@
 	}
 
 
-
-
 	/* -------------------------------------------- */
 	/* ---------- DisplayNlinkForms --------------- */
 	/* -------------------------------------------- */
@@ -630,14 +597,6 @@
 		$projectname = $row['project_name'];
 		$usecustomid = $row['project_usecustomid'];
 	
-		//$urllist['Projects'] = "projects.php";
-		//$urllist[$projectname] = "projects.php?id=$projectid";
-		//$urllist['Add Form'] = "projectassessments.php?action=addform&projectid=$projectid";
-		//NavigationBar("$projectname", $urllist);
-	
-		DisplayProjectsMenu('assessments', $projectid);	
-
-
 		/* get the main checklist items */
 		$i = 0;
 		$sqlstring = "select distinct * from assessment_forms where form_id not in (select form_id from  assessment_forms where project_id = $projectid) order by form_id asc";

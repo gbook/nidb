@@ -131,7 +131,7 @@
 				if ($GLOBALS['isadmin']) {
 					if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) { $style = "background-color:#3B5998"; }
 					else { $style = ""; }
-					?><a href="admin.php" style="<?=$style?>"><b>Admin</b></a><?
+					?><a href="admin.php" style="<?=$style?>"><i class="cog icon"></i><b>Admin</b></a><?
 				}
 				
 				/* user options */
@@ -354,7 +354,7 @@
 				elseif ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) {
 					if ($page=="admin.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }
-					?><a href="admin.php" style="<?=$style?>">Admin</a><?
+					?><a href="admin.php" style="<?=$style?>"><i class="cog icon"></i> Admin</a><?
 					
 					if ($page=="adminmodules.php") { $style = "background-color:#273f70"; }
 					else { $style = ""; }

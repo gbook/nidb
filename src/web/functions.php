@@ -1664,35 +1664,6 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayProjectsMenu ---------------- */
-	/* -------------------------------------------- */
-	function DisplayProjectsMenu($menuitem, $id) {
-		switch ($menuitem) {
-			case "assessments":
-				break;
-			case "info":
-				break;
-			case "subjects":
-				?>
-				<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
-				<?
-				break;
-			case "studies":
-				break;
-			case "checklist":
-				?>
-				<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a>
-				<?
-				break;
-			case "mrqc":
-				?>
-				<?
-				break;
-		}
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- between ---------------------------- */
 	/* -------------------------------------------- */
 	/* returns true if val is between min and max   */

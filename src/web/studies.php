@@ -349,9 +349,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		
-		//$urllist[$uid] = "subjects.php?id=$subjectid";
-		//NavigationBar("$uid", $urllist);
-		
 		if (!is_numeric($subjectid)) {
 			echo "Invalid subject ID [$subjectid]";
 		}

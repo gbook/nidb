@@ -440,12 +440,12 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 				<thead>
 					<tr>
 						<th>Name</th>
-						<th>Logs</th>
+						<th>Jobs</th>
 						<th>Version</th>
 						<th>Create date</th>
 						<th>Modify date</th>
 						<th>Script(s)</th>
-						<th>Delete</th>
+						<!--<th>Delete</th>-->
 					</tr>
 				</thead>
 				<tbody>
@@ -461,8 +461,8 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 							
 							?>
 							<tr>
-								<td valign="top"><a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><?=$name?></td>
-								<td valign="top"><a href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>">View</td>
+								<td valign="top"><a class="ui primary compact button" href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="edit icon"></i> <?=$name?></td>
+								<td valign="top"><a class="ui compact basic button" href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="file alternate icon"></i> View Jobs</td>
 								<td valign="top"><?=$version?></td>
 								<td valign="top"><?=$mpcreatedate?></td>
 								<td valign="top"><?=$mpmodifydate?></td>
@@ -508,7 +508,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 									}
 									?>
 								</td>
-								<td valign="top" align="center"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>
+								<!--<td valign="top" align="center"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>-->
 							</tr>
 							<?
 						}
@@ -547,13 +547,13 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 			$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 			?>
 			
-			&nbsp; &nbsp; <a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui button"><b>&larr; Back</b></a>
-			
-			<div style="padding: 20px">
+			<div class="ui text container">
+				<a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
+				<br>
 				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>Script name</td>
-						<td><?=$scriptname?></td>
+						<td><h3 class="ui header"><?=$scriptname?></h3></td>
 					</tr>
 					<tr>
 						<td>Executable?</td>
@@ -576,7 +576,8 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 						<td><?=$modifydate?></td>
 					</tr>
 				</table>
-				<br>
+			</div>
+			<div style="padding: 20px">
 				Displaying entire file
 				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
 			</div>
