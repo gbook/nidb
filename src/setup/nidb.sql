@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 07, 2021 at 02:23 PM
+-- Generation Time: May 14, 2021 at 06:25 PM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1448,6 +1448,30 @@ CREATE TABLE `measures` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `meg_series`
+--
+
+CREATE TABLE `meg_series` (
+  `megseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` text DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_status` varchar(255) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
+) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `minipipelines`
 --
 
@@ -2486,6 +2510,52 @@ CREATE TABLE `remote_logins` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `saved_search`
+--
+
+CREATE TABLE `saved_search` (
+  `savedsearch_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `saved_datetime` datetime NOT NULL DEFAULT current_timestamp(),
+  `saved_name` varchar(255) NOT NULL,
+  `search_projectid` int(11) DEFAULT NULL,
+  `search_mrincludeprotocolparams` tinyint(1) DEFAULT NULL,
+  `search_mrincludeqa` tinyint(1) DEFAULT NULL,
+  `search_groupmrbyvisittype` tinyint(1) DEFAULT NULL,
+  `search_mrprotocol` text DEFAULT NULL,
+  `search_eegprotocol` text DEFAULT NULL,
+  `search_etprotocol` text DEFAULT NULL,
+  `search_pipelineid` int(11) DEFAULT NULL,
+  `search_pipelineresultname` text DEFAULT NULL,
+  `search_pipelineseries` text DEFAULT NULL,
+  `search_measurename` text DEFAULT NULL,
+  `search_includeallmeasures` tinyint(1) DEFAULT NULL,
+  `search_vitalname` text DEFAULT NULL,
+  `search_includeallvitals` tinyint(1) DEFAULT NULL,
+  `search_drugname` text DEFAULT NULL,
+  `search_includealldrugs` tinyint(1) DEFAULT NULL,
+  `search_includedrugdetails` tinyint(1) DEFAULT NULL,
+  `search_includetimesincedose` tinyint(1) DEFAULT NULL,
+  `search_dosevariable` text DEFAULT NULL,
+  `search_groupdosetime` varchar(25) DEFAULT NULL,
+  `search_displaytime` varchar(25) DEFAULT NULL,
+  `search_groupbyeventdate` tinyint(1) DEFAULT NULL,
+  `search_collapsevariables` tinyint(1) DEFAULT NULL,
+  `search_collapseexpression` varchar(255) DEFAULT NULL,
+  `search_includeemptysubjects` tinyint(1) DEFAULT NULL,
+  `search_blankvalue` varchar(255) DEFAULT NULL,
+  `search_missingvalue` varchar(255) DEFAULT NULL,
+  `search_includeeventduration` tinyint(1) DEFAULT NULL,
+  `search_includeendate` tinyint(1) DEFAULT NULL,
+  `search_includeheightweight` tinyint(1) DEFAULT NULL,
+  `search_includedob` tinyint(1) DEFAULT NULL,
+  `search_reportformat` varchar(50) DEFAULT NULL,
+  `search_outputformat` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `search_history`
 --
 
@@ -2843,7 +2913,7 @@ CREATE TABLE `task_series` (
 --
 
 CREATE TABLE `tms_series` (
-  `eegseries_id` int(11) NOT NULL,
+  `tmsseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
@@ -2857,7 +2927,8 @@ CREATE TABLE `tms_series` (
   `series_status` varchar(255) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `series_duration` bigint(20) DEFAULT NULL
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
+  `eegseries_id` int(11) NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -3665,6 +3736,17 @@ ALTER TABLE `measures`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_value`,`measure_startdate`);
 
 --
+-- Indexes for table `meg_series`
+--
+ALTER TABLE `meg_series`
+  ADD PRIMARY KEY (`megseries_id`),
+  ADD KEY `ishidden` (`ishidden`),
+  ADD KEY `series_altdesc` (`series_altdesc`),
+  ADD KEY `series_desc` (`series_desc`),
+  ADD KEY `series_protocol` (`series_protocol`),
+  ADD KEY `fk_meg_series_studies1` (`study_id`) USING BTREE;
+
+--
 -- Indexes for table `minipipelines`
 --
 ALTER TABLE `minipipelines`
@@ -4028,6 +4110,13 @@ ALTER TABLE `remote_logins`
   ADD KEY `idx_remote_logins` (`username`);
 
 --
+-- Indexes for table `saved_search`
+--
+ALTER TABLE `saved_search`
+  ADD PRIMARY KEY (`savedsearch_id`),
+  ADD UNIQUE KEY `user_id` (`user_id`,`saved_name`);
+
+--
 -- Indexes for table `search_history`
 --
 ALTER TABLE `search_history`
@@ -4147,12 +4236,13 @@ ALTER TABLE `task_series`
 -- Indexes for table `tms_series`
 --
 ALTER TABLE `tms_series`
-  ADD PRIMARY KEY (`eegseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
+  ADD PRIMARY KEY (`tmsseries_id`),
   ADD KEY `ishidden` (`ishidden`),
   ADD KEY `series_altdesc` (`series_altdesc`),
   ADD KEY `series_desc` (`series_desc`),
-  ADD KEY `series_protocol` (`series_protocol`);
+  ADD KEY `series_protocol` (`series_protocol`),
+  ADD KEY `fk_tms_series_studies1` (`study_id`) USING BTREE,
+  ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
 -- Indexes for table `uploads`
@@ -4663,6 +4753,12 @@ ALTER TABLE `measures`
   MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `meg_series`
+--
+ALTER TABLE `meg_series`
+  MODIFY `megseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `minipipelines`
 --
 ALTER TABLE `minipipelines`
@@ -4951,6 +5047,12 @@ ALTER TABLE `remote_logins`
   MODIFY `remotelogin_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `saved_search`
+--
+ALTER TABLE `saved_search`
+  MODIFY `savedsearch_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `search_history`
 --
 ALTER TABLE `search_history`
@@ -5050,7 +5152,7 @@ ALTER TABLE `task_series`
 -- AUTO_INCREMENT for table `tms_series`
 --
 ALTER TABLE `tms_series`
-  MODIFY `eegseries_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `tmsseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `uploads`
