@@ -32,6 +32,7 @@
 	</head>
 
 <body>
+	<div id="wrapper">
 <?
 	require "functions.php";
 	require "includes_php.php";

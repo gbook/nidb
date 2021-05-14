@@ -93,8 +93,7 @@
 	</div> <!-- end column div -->
 </div> <!-- end page grid div -->
 
-<br><br><br>
-
+<br><br><br><br>
 <!-- footer -->
 <div class="ui mini inverted menu" style="!important; overflow: auto; position:absolute; bottom:0; left:0;" id="footer">
 	<div class="item">

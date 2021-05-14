@@ -33,7 +33,7 @@
 	</head>
 
 <body>
-	<!--<div id="wrapper">-->
+	<div id="wrapper">
 <?
 	require "functions.php";
 	require "includes_php.php";
@@ -148,9 +148,8 @@
 				if ($GLOBALS['cfg']['displayrecentstudies']) {
 					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];
 			?>
-			<h3 class="ui header">New Studies</h3>
-			<span class="tiny">Collected in past <?=$numrecentdays?> days</span>
-			<table class="ui small celled selectable grey very compact table">
+			<h3 class="ui top attached header">New Studies<span class="tiny">Collected in past <?=$numrecentdays?> days</span></h3>
+			<table class="ui small celled bottom attached selectable grey very compact table">
 				<thead>
 					<th class="subheader">Subject UID</th>
 					<th class="subheader">Study #</th>
@@ -216,8 +215,10 @@
 			?>
 		</div>
 		<div class="column">
-			<h3 class="ui header">Recently Viewed Subjects</h3>
-			<table class="ui small celled selectable grey very compact table">
+			<div class="ui top attached compact segment">
+				<h3 class="ui header">Recently Viewed Subjects</h3>
+			</div>
+			<table class="ui bottom attached small celled selectable grey very compact table">
 				<thead>
 					<th>UID</th>
 					<th>Sex</th>
@@ -247,15 +248,19 @@
 				?>
 			</table>
 			<br>
-			<h3 class="ui header">Recently Viewed Studies</h3>
-			<table class="ui small celled selectable grey very compact table">
+			<div class="ui top attached compact segment">
+				<h3 class="ui header">Recently Viewed Studies</h3>
+			</div>
+			<table class="ui bottom attached small celled selectable grey very compact table">
 				<thead>
-					<th>StudyID</th>
-					<th>Date</th>
-					<th>Modality</th>
-					<th>Site</th>
-					<th>Date Accessed</th>
-				</tr>
+					<tr>
+						<th>StudyID</th>
+						<th>Date</th>
+						<th>Modality</th>
+						<th>Site</th>
+						<th>Date Accessed</th>
+					</tr>
+				</thead>
 				<?
 				$q = mysqli_stmt_init($GLOBALS['linki']);
 				mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");

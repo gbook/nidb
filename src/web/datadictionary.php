@@ -516,3 +516,4 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		EndHTMLTable();
 	}
 ?>
+<? include("footer.php") ?>

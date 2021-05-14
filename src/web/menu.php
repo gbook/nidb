@@ -76,16 +76,11 @@
 </div>
 
 <!-- ****************** bottom menu ****************** -->
-<div class="ui bottom attached grey inverted menu" style="!important; overflow: auto">
-	<div class="item">
-		<!--<form method="post" action="index.php" id="instanceform" style="margin:0px">
-		<input type="hidden" name="action" value="switchinstance">
-		<!--<span style="font-size:9pt;"><i>Project group</i></span><br>-->
-		
-		<!--
-		<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap" title="<?=$_SESSION['instancename']?>"><?=$_SESSION['instancename']?></span>
-		<select name="instanceid" style="padding:0;border: 0px solid #526FAA; width:20px; color: white" title="Switch instance (project group)" onChange="instanceform.submit()">
-			<option value="">Select Project Group...</option>
+<div class="ui bottom attached grey inverted menu">
+	<div class="ui dropdown item">
+		<span title="Switch instance..."><?=$_SESSION['instancename']?></span>
+		<i class="dropdown icon"></i>
+		<div class="menu">
 			<?
 				$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -93,31 +88,13 @@
 					$instance_id = $row['instance_id'];
 					$instance_name = $row['instance_name'];
 					?>
-					<option value="<?=$instance_id?>"><?=$instance_name?></option>
+					<a class="item" href="index.php?action=switchinstance&instanceid=<?=$instance_id?>"><?=$instance_name?></a>
 					<?
 				}
 			?>
-		</select>
-		</form>
-		
-		<div class="ui icon top left pointing dropdown button">
-			<i class="wrench icon"></i>
-			<div class="menu">
-				<div class="header">Display Density</div>
-				<div class="item">Comfortable</div>
-				<div class="item">Cozy</div>
-				<div class="item">Compact</div>
-				<div class="ui divider"></div>
-				<div class="item">Settings</div>
-				<div class="item">Manage Apps</div>
-				<div class="item">Keyboard Shortcuts</div>
-				<div class="item">Help</div>
-			</div>
 		</div>
-		-->
 	</div>
 	<?
-		
 		/* home sub-menu */
 		if ($page=="index.php") {
 			?>
