@@ -676,10 +676,10 @@
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>
@@ -726,10 +726,10 @@
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>
@@ -776,10 +776,10 @@
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="30px"></a><?
+								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="30px"></a><?
+								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>

@@ -88,41 +88,36 @@
 	}
 	
 ?>
-		<!-- end main page content -->
-		</td>
-	</tr>
-</table>
+<!-- end main page content -->
+
+	</div> <!-- end column div -->
+</div> <!-- end page grid div -->
 
 <br><br><br>
 
 <!-- footer -->
-<div id="footer">
-<table width="100%" cellspacing="0" cellpadding="6" style="background-color: 3b5998; border-top: 2px solid #35486D">
-	<tr>
-		<td width="20%" align="left" style="font-size:8pt;">
-			<a href="about.php" style="color: white; text-decoration:none"><img src="images/nidb_plain.png" style="height:15px; border: 4px white solid; border-radius:2px"> v<?=$GLOBALS['cfg']['version']?></a>
-		</td>
-		<td width="60%" align="center" style="font-size:8pt; color: white">
-			Page generated: <? echo date("D M j, Y g:i a T"); ?> &nbsp; &nbsp; Page creation time: <?=$pagetotaltime?> sec<br>
-			<? if ($GLOBALS['issiteadmin']) { ?>
-			<a href="status.php" style="color: #fff">System status</a>:
-			<? } else { ?>
-			System status:
-			<? } ?>
-			&nbsp; &nbsp; &nbsp; <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Import queue</b> <?=$numimportpending?> requests, <?=$numimportdirs?> dirs &nbsp; &nbsp; &nbsp; <b>Archive queue</b> <?=$numdicomfiles?> files, <?=$numdicomdirs?> dirs &nbsp; &nbsp; &nbsp; <b>File IO queue</b> <?=$numiopending?> operations
-			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
-			<div class="ui mini <?=$moduleinfo['import']['color']?> label" title="Status: <?=$moduleinfo['import']['status']?>">import</div> 
-			<div class="ui mini <?=$moduleinfo['fileio']['color']?> label" title="Status: <?=$moduleinfo['fileio']['status']?>">fileio</div> 
-			<div class="ui mini <?=$moduleinfo['pipeline']['color']?> label" title="Status: <?=$moduleinfo['pipeline']['status']?>">pipeline</div>
-			<div class="ui mini <?=$moduleinfo['export']['color']?> label" title="Status: <?=$moduleinfo['export']['status']?>">export</div>
-			<div class="ui mini <?=$moduleinfo['mriqa']['color']?> label" title="Status: <?=$moduleinfo['mriqa']['status']?>">mriqa</div>
-		</td>
-		<td align="right" style="font-size:8pt; color: white">
-			<span style="color: white; font-size:8pt; padding-right: 5px; padding-left: 5px">Problem, bug, or comment? <a href="https://github.com/gbook/nidb/issues" style="color:white; text-decoration:underline">Report it</a></span>
-		</td>
-	</tr>
-</table>
+<div class="ui mini inverted menu" style="!important; overflow: auto; position:absolute; bottom:0; left:0;" id="footer">
+	<div class="item">
+		<a href="about.php"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
+	</div>
+	<div class="item">
+		Page generated: <? echo date("D M j, Y g:i a T"); ?>
+	</div>
+	<div class="item">
+		Page creation time: <?=$pagetotaltime?> sec
+	</div>
+	<div class="item">
+		System status: <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
+		<div class="ui mini <?=$moduleinfo['import']['color']?> label" title="Status: <?=$moduleinfo['import']['status']?>">import</div> 
+		<div class="ui mini <?=$moduleinfo['fileio']['color']?> label" title="Status: <?=$moduleinfo['fileio']['status']?>">fileio</div> 
+		<div class="ui mini <?=$moduleinfo['pipeline']['color']?> label" title="Status: <?=$moduleinfo['pipeline']['status']?>">pipeline</div>
+		<div class="ui mini <?=$moduleinfo['export']['color']?> label" title="Status: <?=$moduleinfo['export']['status']?>">export</div>
+		<div class="ui mini <?=$moduleinfo['mriqa']['color']?> label" title="Status: <?=$moduleinfo['mriqa']['status']?>">mriqa</div>
+	</div>
+	<div class="item">
+		Problem, bug, or comment? <a href="https://github.com/gbook/nidb/issues" style="color:white; text-decoration:underline">Report it</a>
+	</div>
 </div>
-</div>
+
 </body>
 </html>

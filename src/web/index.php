@@ -33,12 +33,13 @@
 	</head>
 
 <body>
-	<div id="wrapper">
+	<!--<div id="wrapper">-->
 <?
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
-	
+	require "menu.php";
+
 	/* ----- setup variables ----- */
 	$vars['action'] = GetVariable("action");
 	$vars['instanceid'] = GetVariable("instanceid");
@@ -50,7 +51,7 @@
 	}
 	
 	/* put this here so that the instance ID can be changed before displaying things */
-	require "menu.php";
+	//require "menu.php";
 	
 	/* -------------------------------------------- */
 	/* ------- SwitchInstance --------------------- */
@@ -65,15 +66,7 @@
 		$_SESSION['instancename'] = $instancename;
 		//echo "Switched instance to $id";
 	}
-?>
-
-<script>
-	$(function() {
-		$( document ).tooltip({show:{effect:'appear'}, hide:{duration:0}});
-	});
-</script>
-
-<?
+	
 	$q = mysqli_stmt_init($GLOBALS['linki']);
 	mysqli_stmt_prepare($q, "select user_email, user_logincount from users where username = ?");
 	mysqli_stmt_bind_param($q, 's', $GLOBALS['username']);
@@ -125,12 +118,11 @@
 	
 ?>
 
-<table width="100%">
-	<tr>
-		<td valign="top" width="50%">
+	<div class="ui two column grid">
+		<div class="column">
 			<div class="ui two column grid">
 				<div class="column">
-					<img src="images/NIDB_logo.png" width="300px">
+					<img class="ui image" src="images/NIDB_logo.png" width="300px">
 					<div class="ui tiny statistics">
 						<div class="statistic">
 							<div class="value"><?=number_format($numsubjects)?></div>
@@ -222,8 +214,8 @@
 			<?
 				}
 			?>
-		</td>
-		<td valign="top">
+		</div>
+		<div class="column">
 			<h3 class="ui header">Recently Viewed Subjects</h3>
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
@@ -291,9 +283,7 @@
 				}
 				?>
 			</table>
-		</td>
-	</tr>
-</table>
+		</div>
+	</div>
 
 <? include("footer.php") ?>
-<? ob_end_flush(); ?>

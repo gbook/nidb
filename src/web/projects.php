@@ -1262,7 +1262,7 @@
 				<th>Subject</th>
 				<th>Sex <span class="tiny" style="font-weight: normal">F, M, O, U</span></th>
 				<th>Alt Subject IDs <span class="tiny">comma separated, * next to primary ID</span></th>
-				<th>Study Num</th>
+				<th>Study</th>
 				<th>Visit</th>
 				<th>Active?</th>
 				<th>Study Date</th>
@@ -1368,7 +1368,7 @@
 					}
 					?>
 					<td style="<?=$rowstyle?>" class="tt">
-						<a class="ui basic large compact primary button" href="studies.php?id=<?=$study_id?>"><span class="tt"><?=$uid;?><?=$study_num;?></span></a>
+						<a class="ui basic large compact primary button" href="studies.php?id=<?=$study_id?>"><span class="tt"><span style="color: gray"><?=$uid;?></span><b><?=$study_num;?></b></span></a>
 					</td>
 					<td style="<?=$rowstyle?>" class="editable"><?=$study_visit?></td>
 					<td style="<?=$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
@@ -2534,7 +2534,7 @@
 				<div class="ui one wide column">
 				</div>
 				<div class="ui three wide column">
-					<h3 class="ui header">Data Views</h3>
+					<h2 class="ui header">Data Views</h2>
 					<br>
 					<a class="ui fluid vertical big primary button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="black users icon"></i> Subjects</a><br>
 					<a class="ui fluid vertical big primary button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="black sitemap icon"></i> Studies</a><br>
@@ -2544,7 +2544,7 @@
 				<div class="ui one wide column">
 				</div>
 				<div class="ui four wide column">
-					<h3 class="ui header">Project options/tools</h3>
+					<h2 class="ui header">Project tools & settings</h2>
 					<br>
 					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>"> Data Dictionary</a><br><br>
 					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>"> Analysis Builder</a><br><br>

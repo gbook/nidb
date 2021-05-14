@@ -115,11 +115,7 @@
 	/* ------- ViewLogs --------------------------- */
 	/* -------------------------------------------- */
 	function ViewLogs($modulename) {
-	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Modules'] = "adminmodules.php";
-		//NavigationBar("Admin", $urllist);
-		
+
 		chdir($GLOBALS['cfg']['logdir']);
 		$files = glob("$modulename"."2*.log");
 		usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
@@ -299,20 +295,20 @@
 					<td>
 						<?
 							if ($module_isactive) {
-								?><a href="adminmodules.php?action=disable&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
+								?><a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=enable&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
+								?><a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>
 					<td>
 						<?
 							if ($module_debug) {
-								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>"><img src="images/toggle-on.png" width="40px"></a><?
+								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=debug&id=<?=$id?>"><img src="images/toggle-off.png" width="40px"></a><?
+								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>

@@ -187,7 +187,7 @@
 		if ($includeenddate == "") $includeenddate = "null";
 		if ($includeheightweight == "") $includeheightweight = "null";
 		if ($includedob == "") $includedob = "null";
-		if ($includedob == "") $includedob = "null";
+		if ($includeduration == "") $includeduration = "null";
 		if ($collapsevariables == "") $collapsevariables = "null";
 
 		$sqlstring = "insert into saved_search (
@@ -742,7 +742,7 @@
 						<button class="ui fluid primary button" onClick="document.analysisbuilder.action.value='viewanalysissummary'; return;"><i class="search icon"></i>Update Summary</button>
 						<br><br>
 						<div class="ui fluid action input">
-							<input type="text" name="savedsearchname" placeholder="Saved search name..." required>
+							<input type="text" name="savedsearchname" placeholder="Saved search name...">
 							<button class="ui basic compact button" onClick="document.analysisbuilder.action.value='savesearch'; return;"><i class="save icon"></i> Save search</button>
 						</div>
 						</form>
@@ -1106,6 +1106,13 @@
 
 					/* add the vital info to this row */
 					$vitalname = $rowA['vital_name'];
+					if (($rowA['vital_startdate'] == "0000-00-00 00:00:00") || ($rowA['vital_startdate'] == "")) {
+						$vitalDate = $rowA['vital_date'];
+					}
+					else {
+						$vitalDate = $rowA['vital_startdate'];
+					}
+						
 					
 					/* attempt to collapse variables based on the expression provided by the user */
 					$timepoint = "";
@@ -1128,9 +1135,9 @@
 
 					/* create the unique row identifier */
 					if ($groupByDate || $collapseByVars)
-						$row = $uid . substr($rowA['vital_startdate'], 0, 10) . $timepoint;
+						$row = $uid . substr($vitalDate, 0, 10) . $timepoint;
 					else
-						$row = $uid . $rowA['vital_startdate'];
+						$row = $uid . $vitalDate;
 					
 					if ($collapseByVars)
 						$t[$row]['collapseGroup'] = $timepoint;
@@ -1138,7 +1145,7 @@
 					$vitalvalue = $rowA['vital_value'];
 					
 					$dob = date_create($subj['dob']);
-					$eventdate = date_create($rowA['vital_startdate']);
+					$eventdate = date_create($vitalDate);
 					$diff = date_diff($eventdate, $dob);
 					$age = $diff->format("%a")/365.25;
 					
@@ -1156,7 +1163,7 @@
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 					
-					$t[$row]['EventDateTime'] = $rowA['vital_startdate'];
+					$t[$row]['EventDateTime'] = $vitalDate;
 					if ($includeDuration)
 						$t[$row][$vitalname . '_Duration'] = $rowA['vital_duration'];
 					if ($includeEndDate)
@@ -1166,14 +1173,14 @@
 					else
 						$t[$row][$vitalname] = $vitalvalue;
 
-					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['vital_startdate'], $doseDisplayTime);
+					list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $vitalDate, $doseDisplayTime);
 					if ($timeSinceDose != null) {
 						$t[$row]["$vitalname-TimeSinceDose-$doseDisplayTime"] = $timeSinceDose;
 						$t[$row]['DoseAmount'] = $doseamount;
 						$t[$row]['DoseKey'] = $dosekey;
 					}
 					else {
-						$n .= $subj['uid'] . ": $vitalname-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $rowA['vital_startdate'] . "\n";
+						$n .= $subj['uid'] . ": $vitalname-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $vitalDate . "\n";
 					}
 
 					$hasdata = true;
