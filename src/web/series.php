@@ -84,11 +84,12 @@
 			//print_r($tags);
 			$lines = explode("\n",$tags);
 			?>
-			<div align="center">
-			<table style="font-size: 10pt; border: 1px solid #DDDDDD" cellspacing="0" cellpadding="2">
-				<tr>
-					<td colspan="3" style="font-weight: bold; font-size: 14pt; text-align: center; padding:10px; border-bottom: 2px solid #666666">MR Sequence Parameters</td>
-				</tr>
+			<div class="ui container">
+			
+			<div class="ui top attached segment">
+				<h3 class="ui header">MR sequence parameters</h3>
+			</div>
+			<table class="ui bottom attached celled small very compact table">
 			<?
 			$lasttag1 = '';
 			foreach ($lines as $line) {
@@ -119,7 +120,7 @@
 						<tr>
 							<td style="color:darkblue; <?=$style?>"><?=$tag1?>:<?=$tag2?></td>
 							<td style="<?=$style?>"><?=$name?></td>
-							<td style="<?=$style?>"><?=$value?></td>
+							<td style="<?=$style?>" class="<? if (is_numeric($value)) echo "tt"; ?>"><?=$value?></td>
 						</tr>
 						<?
 					}
@@ -148,7 +149,7 @@
 					<tr>
 						<td style="color:darkblue; <?=$style?>"><?=$tag1?>:<?=$tag2?></td>
 						<td style="<?=$style?>"><?=$name?></td>
-						<td style="<?=$style?>"><?=$value?> <span class="tiny"><?=$units?></span></td>
+						<td style="<?=$style?>" class="<? if (is_numeric($value)) echo "tt"; ?>"><?=$value?> <?=$units?></td>
 					</tr>
 					<?
 					$lasttag1 = '0018';

@@ -221,48 +221,51 @@
 	function DisplayConnectionList() {
 	?>
 
-	<table class="graydisplaytable">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Server</th>
-				<th>Username</th>
-				<th>Password <span class="tiny">SHA1</span></th>
-				<th>Instance</th>
-				<th>Project</th>
-				<th>Site</th>
-				<th>Delete</th>
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['remoteconn_id'];
-					$connname = $row['conn_name'];
-					$remoteserver = $row['remote_server'];
-					$remoteusername = $row['remote_username'];
-					$remotepassword = $row['remote_password'];
-					$remoteinstanceid = $row['remote_instanceid'];
-					$remoteprojectid = $row['remote_projectid'];
-					$remotesiteid = $row['remote_siteid'];
-			?>
-			<tr>
-				<td><a href="remoteconnections.php?action=editform&id=<?=$id?>"><?=$connname?></a></td>
-				<td><?=$remoteserver?></td>
-				<td><?=$remoteusername?></td>
-				<td style="font-size:10pt"><?=strtoupper($remotepassword)?></td>
-				<td><?=$remoteinstanceid?></td>
-				<td><?=$remoteprojectid?></td>
-				<td><?=$remotesiteid?></td>
-				<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
-			</tr>
-			<? 
-				}
-			?>
-		</tbody>
-	</table>
+	<div class="ui container">
+		<a class="ui primary button" href="remoteconnections.php?action=addform"><i class="ui plus icon"></i> Create Remote Connection</a>
+		<table class="ui grey compact celled table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Server</th>
+					<th>Username</th>
+					<th>Password <span class="tiny">SHA1</span></th>
+					<th>Instance</th>
+					<th>Project</th>
+					<th>Site</th>
+					<th>Delete</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['remoteconn_id'];
+						$connname = $row['conn_name'];
+						$remoteserver = $row['remote_server'];
+						$remoteusername = $row['remote_username'];
+						$remotepassword = $row['remote_password'];
+						$remoteinstanceid = $row['remote_instanceid'];
+						$remoteprojectid = $row['remote_projectid'];
+						$remotesiteid = $row['remote_siteid'];
+				?>
+				<tr>
+					<td><a href="remoteconnections.php?action=editform&id=<?=$id?>"><?=$connname?></a></td>
+					<td><?=$remoteserver?></td>
+					<td><?=$remoteusername?></td>
+					<td style="font-size:10pt"><?=strtoupper($remotepassword)?></td>
+					<td><?=$remoteinstanceid?></td>
+					<td><?=$remoteprojectid?></td>
+					<td><?=$remotesiteid?></td>
+					<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
+				</tr>
+				<? 
+					}
+				?>
+			</tbody>
+		</table>
+	</div>
 	<?
 	}
 ?>

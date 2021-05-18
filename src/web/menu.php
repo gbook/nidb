@@ -275,7 +275,7 @@
 	<? }?>
 
 <div class="ui grid">
-	<div class="sixteen wide column" style="margin-left: 10px; margin-right: 10px; overflow-x: auto">
+	<div class="sixteen wide column" style="margin: 15px; overflow-x: auto">
 <!--
 <table width="100%" cellpadding="5">
 	<tr>

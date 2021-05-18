@@ -172,3 +172,6 @@
 		</table>
 		<?
 	}
+	
+require "footer.php";
+?>

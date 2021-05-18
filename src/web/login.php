@@ -40,7 +40,9 @@
 
 <body>
 <link rel="stylesheet" type="text/css" href="style.css">
-<br><br>
+<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
+<script src="scripts/semantic/semantic.min.js"></script>
+
 <noscript>Javascript is required to use NiDB</noscript>
 <div id="cookiemessage" style="font-weight:bold; border: 2px solid orange; text-align: center; width: 98%"></div>
 <script type="text/javascript">
@@ -68,7 +70,6 @@ function AreCookiesEnabled()
 window.onload = AreCookiesEnabled;
 -->
 </script>
-<br><br>
 <?
 
 	/* ----- setup variables ----- */
@@ -314,62 +315,62 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function DisplayLogin($message) {
 		?>
-			<form method="post" action="login.php">
+		<form method="post" action="login.php" class="ui form">
 			<input type="hidden" name="action" value="login">
-			
-			<table width="100%" height="90%">
-				<tr>
-					<td align="center" valign="middle">
-						<img src="images/nidb_short_notext_small.png" height="40">
+
+			<br><br><br>
+			<div class="ui grid">
+				<div class="ui six wide column"></div>
+				<div class="ui four wide column">
+					<div class="ui top attached inverted center aligned segment">
+						<h2 class="ui header">Login</h2>
+					</div>
+					<? if ($message != "") { ?>
+					<div class="ui attached center aligned inverted tertiary red segment">
+						<?=$message?>
+					</div>
+					<? } ?>
+					<div class="ui bottom attached segment">
+						<img class="ui medium centered image" src="images/NIDB_logo.png">
 						<br><br>
-						<table cellpadding="5" class="editor">
-							<tr>
-								<td colspan="2" align="center" style="background-color: #3B5998; color: white; font-weight: bold; border-radius:5px">
-									Login to NiDB
-								</td>
-							</tr>
-							<tr>
-								<td colspan="2" align="center" style="color: red">
-								&nbsp;<small><?=$message?></small>
-								</td>
-							</tr>
-							<? if ($GLOBALS['cfg']['enablecas']) { ?>
-							<tr>
-								<td align="center" colspan="2">
-									<input type="submit" value="Login with CAS">
-								</td>
-							</tr>
-							<? } else { ?>
-							<tr title="Username is your email address if you self-registered">
-								<td class="label">Username<br><span class="tiny">or email address</span></td>
-								<td>
-									<input type="text" name="username" maxlength="50" autofocus="autofocus">
-								</td>
-							</tr>
-							<tr>
-								<td class="label">Password<br><span class="tiny">Case sensitive</span></td>
-								<td>
-									<input type="password" name="password" maxlength="50">
-								</td>
-							</tr>
-							<tr>
-								<td style="font-size:8pt; text-align: left">
-									<? if ($GLOBALS['cfg']['ispublic']) { ?>
-									New user? <a href="signup.php">Sign up</a>.<br>
-									Forgot password? <a href="signup.php?a=r">Reset it</a>.
-									<? } ?>
-								</td>
-								<td align="right">
-									<input type="submit" value="Login">
-								</td>
-							</tr>
-							<? } ?>
-						</table>
-					</td>
-				</tr>
-				<? if ($GLOBALS['cfg']['ispublic']) { ?>
-				<tr>
-					<td align="center">
+						<? if ($GLOBALS['cfg']['enablecas']) { ?>
+							<input class="ui primary button" type="submit" value="Login with CAS">
+						<?
+							}
+							else {
+						?>
+						<div class="ui two column grid">
+							<div class="right aligned column">
+								<span style="font-size: larger">Username</span><br><span class="tiny"> or email address</span>
+							</div>
+							<div class="column">
+								<input type="text" name="username" maxlength="50" autofocus="autofocus">
+							</div>
+							<div class="right aligned column">
+								<span style="font-size: larger">Password</span><br><span class="tiny">Case sensitive</span>
+							</div>
+							<div class="column">
+								<input type="password" name="password" maxlength="50">
+							</div>
+							
+							<div class="column">
+								<? if ($GLOBALS['cfg']['ispublic']) { ?>
+								New user? <a href="signup.php">Sign up</a>.<br>
+								Forgot password? <a href="signup.php?a=r">Reset it</a>.
+								<? } ?>
+							</div>
+							<div class="column">
+								<input class="ui primary button" type="submit" value="Login">
+							</div>
+						</div>
+						<?
+							}
+						?>
+							
+					</div>
+				</div>
+				<div class="ui six wide column">
+					<? if ($GLOBALS['cfg']['ispublic']) { ?>
 						<table>
 							<tr>
 								<td align="center">
@@ -389,16 +390,12 @@ window.onload = AreCookiesEnabled;
 								</td>
 							</tr>
 						</table>
-					</td>
-					<? } ?>						
-				</tr>
-			</table>
-			
-			</form>
-			
-		</div>
+					<? } ?>
+				</div>
+			</div>
+		</form>
 		
-		<div style="position:absolute; bottom:0; width:95%; height: 30px; padding:10px">
+		<div style="position:absolute; bottom:5; width:95%; height: 30px; padding:10px">
 			<table width="100%" cellspacing="0" cellpadding="6">
 				<tr>
 					<td align="left" style="font-size:8pt; color: #555">
@@ -410,5 +407,5 @@ window.onload = AreCookiesEnabled;
 		<?
 	}
 ?>
-
+</body>
 <? ob_end_flush(); ?>

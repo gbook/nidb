@@ -122,9 +122,9 @@
 				<form name="pageform" action="calendar_select.php" method="get">
 				<td align="center"><span class="title"><?=$currentcalname?></span>
 				<br><br>
-				<span class="apptowner">Switch:</span>
 				<input type="hidden" name="action" value="set">
-				<select name="currentcal" style="border: 1px solid #AAAAAA; font-size:8pt" onChange="pageform.submit()">
+				Change Calendar
+				<select name="currentcal" onChange="pageform.submit()" class="ui dropdown">
 				<?
 				$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -138,7 +138,7 @@
 					<?
 				}
 				?>
-				<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars...
+				<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars
 				</select>
 				</form>
 				</td>

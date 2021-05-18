@@ -396,15 +396,10 @@
 		</script>
 		<style>
 			.indicator { font-size: smaller; padding-left: 10px; white-space: nowrap; }
-			details { border: 1px solid #444; border-radius: 6px; padding: 0px; margin: 5px; }
-			summary { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
-			summary:hover { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
-			summary:focus { border: none; background-color: #444; color: #fff; outline: none; border-radius: 5px; padding:4px; }
-			details div:first-of-type { padding: 10px; }
 			input { padding: 3px; }
 		</style>		
 
-		<table width="100%" style="table-layout:fixed; overflow: auto;">
+		<table width="100%">
 			<tr>
 				<td width="20%" style="vertical-align: top;">
 					<div class="ui top attached inverted styled segment">
@@ -464,6 +459,7 @@
 						</form>
 						<?
 						if (($projectid == '') || ($projectid == 0)) {
+							echo "</div></td></tr></table><br><br><br><br>";
 							return;
 						}
 						?>
@@ -669,40 +665,40 @@
 								<br>
 								<br>
 								<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
-								<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <i class="blue question circle icon" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"></i><br>
-								Dose variable(s)
-								<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
-								<?
-									$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
-									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-										$drugname = $rowA['drug_name'];
-										$selected = "";
-										if (is_array($a['dosevariable']))
-											if (in_array($drugname, $a['dosevariable']))
+									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <i class="blue question circle icon" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"></i><br>
+									Dose variable(s)
+									<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
+									<?
+										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$drugname = $rowA['drug_name'];
+											$selected = "";
+											if (is_array($a['dosevariable']))
+												if (in_array($drugname, $a['dosevariable']))
+													$selected = "selected";
+											if (trim($drugname) == trim($a['dosevariable']))
 												$selected = "selected";
-										if (trim($drugname) == trim($a['dosevariable']))
-											$selected = "selected";
-										?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
-									}
-								?>
-								</select>
-								<br>
-								Group dose time by 
-								<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()">
-									<!--<option value="hour">Hour-->
-									<option value="day" selected>Day
-									<!--<option value="week">Week
-									<option value="month">Month
-									<option value="year">Year-->
-								</select>
-								<br>
-								Display time since dose in 
-								<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()">
-									<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
-									<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
-									<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
-								</select>
+											?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
+										}
+									?>
+									</select>
+									<br>
+									Group dose time by 
+									<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()">
+										<!--<option value="hour">Hour-->
+										<option value="day" selected>Day
+										<!--<option value="week">Week
+										<option value="month">Month
+										<option value="year">Year-->
+									</select>
+									<br>
+									Display time since dose in 
+									<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()">
+										<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
+										<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
+										<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
+									</select>
 								</div>
 								
 							</div>

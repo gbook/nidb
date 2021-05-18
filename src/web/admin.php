@@ -88,7 +88,9 @@
 				<li><a href="status.php">System status</a>
 				<li><a href="adminemail.php">Mass email</a>
 				<br><br><br>
-				<i class="cog icon large red"></i><a href="system.php"><b>System Settings</b></a>
+				<i class="large cog icon"></i><a href="system.php"><b>System Settings</b></a>
+				<br><br>
+				<i class="large wrench icon"></i><a href="setup.php"><b>Setup</b></a>
 			</div>
 		</div>
 		<?
