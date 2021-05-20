@@ -1880,7 +1880,7 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QStringList &columns, QStri
         QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
         columns = cols;
 
-        m << QString("Found [%1] columns").arg(cols.size());
+        m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
         /* remove the last column if it was blank, because the file contained an extra trailing comma */
         if (cols.last() == "") {
             cols.removeLast();

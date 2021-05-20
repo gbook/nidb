@@ -167,9 +167,9 @@ int moduleMiniPipeline::Run() {
                                     AppendMiniPipelineLog("\nError - csv header did not contain the [type] column header. This column is required", mpjobid);
                                 if (!cols.contains("variablename"))
                                     AppendMiniPipelineLog("\nError - csv header did not contain the [variablename] column header. This column is required", mpjobid);
-                                if (!cols.contains("startdate"))
+                                if ((!cols.contains("startdate")) && (!cols.contains("startdatetime")))
                                     AppendMiniPipelineLog("\nError - csv header did not contain the [startdate] column header. This column is required", mpjobid);
-                                if (!cols.contains("enddate"))
+                                if ((!cols.contains("enddate")) && (!cols.contains("enddatetime")))
                                     AppendMiniPipelineLog("\ncsv header did not contain the [enddate] column header. The header is required, though the column values are optional", mpjobid);
                                 if (!cols.contains("duration"))
                                     AppendMiniPipelineLog("\ncsv header did not contain the [duration] column header. The header is required, though the column values are optional", mpjobid);
@@ -246,7 +246,7 @@ int moduleMiniPipeline::Run() {
                                         AppendMiniPipelineLog(n->WriteLog("Invalid end date [" + csvEndDate + "]"), mpjobid);
 
                                     /* insert the value */
-                                    QSqlQuery q2;
+                                    //QSqlQuery q2;
                                     if (csvType == "measure") {
                                         int n=0;
                                         QString m;
@@ -256,7 +256,7 @@ int moduleMiniPipeline::Run() {
                                             numInserts += n;
                                     }
                                     else if (csvType == "vital") {
-                                        numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate);
+                                        numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate, endDate, csvDuration.toInt());
                                     }
                                     else if (csvType == "drug") {
                                         numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
@@ -447,7 +447,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 /* ---------------------------------------------------------- */
 /* --------- InsertVital ------------------------------------ */
 /* ---------------------------------------------------------- */
-int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalDate) {
+int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalStartDate, QDateTime vitalEndDate, int duration) {
 
     QSqlQuery q;
 
@@ -467,13 +467,16 @@ int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString
         vitalNameID = q.lastInsertId().toInt();
     }
 
-    q.prepare("insert ignore into vitals (enrollment_id, vitalname_id, vital_value, vital_notes, vital_date, vital_type, vital_createdate, vital_modifydate) values (:enrollmentid, :vitalnameid, :value, :notes, :vitaldate, :vitaltype, now(), now()) on duplicate key update vitalname_id = :vitalnameid, vital_value = :value, vital_type = :vitaltype, vital_notes = :notes, vital_date = :vitaldate, vital_modifydate = now()");
+    q.prepare("insert ignore into vitals (enrollment_id, vitalname_id, vital_value, vital_notes, vital_date, vital_startdate, vital_enddate, vital_duration, vital_type, vital_createdate, vital_modifydate) values (:enrollmentid, :vitalnameid, :value, :notes, :vitaldate, :startdate, :enddate, :duration, :vitaltype, now(), now()) on duplicate key update vitalname_id = :vitalnameid, vital_value = :value, vital_type = :vitaltype, vital_notes = :notes, vital_date = :vitaldate, vital_modifydate = now()");
     q.bindValue(":enrollmentid", enrollmentID);
     q.bindValue(":vitalnameid", vitalNameID);
     q.bindValue(":value", value);
     q.bindValue(":vitaltype", vitalType);
     q.bindValue(":notes", notes);
-    q.bindValue(":vitaldate", vitalDate);
+    q.bindValue(":vitaldate", vitalStartDate.toString(Qt::ISODate));
+    q.bindValue(":startdate", vitalStartDate.toString(Qt::ISODate));
+    q.bindValue(":enddate", vitalEndDate);
+    q.bindValue(":duration", duration);
 
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
