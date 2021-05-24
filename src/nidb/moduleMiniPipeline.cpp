@@ -216,11 +216,13 @@ int moduleMiniPipeline::Run() {
                                                 startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-ddThh:mm:ss");
                                             else
                                                 startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
-                                        else
+                                        else {
+                                            sdparts[1] = n->ParseTime(sdparts[1]); /* attempt to fix the time if its different than expected */
                                             if (sdparts[1].size() == 5)
                                                 startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm");
                                             else
                                                 startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm:ss");
+                                        }
                                     }
 
                                     /* check and reformat the endDate */
@@ -478,7 +480,7 @@ int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString
     q.bindValue(":enddate", vitalEndDate);
     q.bindValue(":duration", duration);
 
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
     return 1;
 }
@@ -505,7 +507,7 @@ int moduleMiniPipeline::InsertDrug(int enrollmentID, QDateTime startDate, QDateT
     else {
         q.prepare("insert into vitalnames (vital_name) values (:vitalname)");
         q.bindValue(":vitalname", drugName);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
         drugNameID = q.lastInsertId().toInt();
     }
 

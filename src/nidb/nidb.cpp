@@ -1441,6 +1441,9 @@ QString nidb::ParseDate(QString s) {
     date = QDate::fromString(s, "yyyy-MM-dd");
     if (date.isValid()) return date.toString("yyyy-MM-dd");
 
+    date = QDate::fromString(s, "yyyy-M-d");
+    if (date.isValid()) return date.toString("yyyy-MM-dd");
+
     date = QDate::fromString(s, "dd-MM-yy");
     if (date.isValid()) return date.toString("yyyy-MM-dd");
 
@@ -1463,10 +1466,37 @@ QString nidb::ParseTime(QString s) {
     time = QTime::fromString(s, "hh:mm:ss");
     if (time.isValid()) return time.toString("hh:mm:ss");
 
-    time = QTime::fromString(s, "h:m:s"); /* unlikely */
+    time = QTime::fromString(s, "h:m:s");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "hh:m:s");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "hh:mm:s");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "h:mm:ss");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "h:m:ss");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "hh:m:ss");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "h:mm:s");
     if (time.isValid()) return time.toString("hh:mm:ss");
 
     time = QTime::fromString(s, "hh:mm");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "hh:m");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "h:mm");
+    if (time.isValid()) return time.toString("hh:mm:ss");
+
+    time = QTime::fromString(s, "h:m");
     if (time.isValid()) return time.toString("hh:mm:ss");
 
     time = QTime::fromString(s, "hh:mm:ss.zzz");
