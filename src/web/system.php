@@ -247,15 +247,15 @@
 		$latestnidb = shell_exec($systemstring);
 		$latestnidb = str_replace("\"tag_name\": \"","", $latestnidb);
 		$latestnidb = str_replace("\",","", $latestnidb);
-		$latestnidb = str_replace("v","", $latestnidb);
+		$latestnidb = trim(str_replace("v","", $latestnidb));
 		
-		$currentnidb = GetNiDBVersion();
+		$currentnidb = trim(GetNiDBVersion());
 		if ($currentnidb != $latestnidb) {
 		?>
 			<div class="ui inverted orange segment">
 				<h3 class="ui header">New NiDB version available</h3>
-				Current NiDB version <?=GetNiDBVersion();?><br>
-				Latest NiDB version <b><?=$latestnidb;?></b>
+				Current NiDB version [<?=GetNiDBVersion();?>]<br>
+				Latest NiDB version [<?=$latestnidb;?>]
 			</div>
 		<? } ?>
 		

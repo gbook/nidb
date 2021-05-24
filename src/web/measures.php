@@ -124,7 +124,7 @@
 		//echo "[$sqlstring]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message">Measure deleted</span></div><br><br><?
+		Notice("Measure deleted");
 	}
 
 	
@@ -152,15 +152,103 @@
 		//NavigationBar("Phenotypic measures", $urllist);
 		
 		?>
+		<script>
+			$(document).ready(function(){
+				$('#pageloading').hide();
+				//$('#measuretable').tablesort();
+			});
+		</script>
+
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.css"/>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.js"></script>
+		<script>
+			$(document).ready(function() {
+				$('#measuretable').DataTable( {"pageLength": 25} );
+			} );		
+		</script>
 		
-		<table class="graydisplaytable">
+		<div class="ui text container" id="pageloading">
+			<div class="ui inverted segment" align="center">
+				<h2 class="ui inverted header">
+					<i class="spinner loading icon"></i> Loading...
+				</h2>
+			</div>
+		</div>
+		
+		<div class="ui segment">		
+			<form action="measures.php" method="post" class="ui form">
+				<input type="hidden" name="action" value="addmeasure">
+				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				
+				<div class="eight fields">
+					<div class="field">
+						<label>Measure name</label>
+						<input type="text" name="measure_name" size="15" required>
+					</div>
+					<div class="field">
+						<label>Instrument</label>
+						<input type="text" name="measure_instrument" size="15">
+					</div>
+					<div class="field">
+						<label>Value</label>
+						<input type="text" name="measure_value" size="10" required>
+					</div>
+					<div class="field">
+						<label>Rater</label>
+						<input type="text" name="measure_rater" size="15" value="<?=$GLOBALS['username']?>">
+					</div>
+					<div class="field">
+						<label>Start date</label>
+						<input type="datetime-local" name="measure_startdate">
+					</div>
+					<div class="field">
+						<label>Duration</label>
+						<input type="text" name="measure_duration" size="10">
+					</div>
+					<div class="field">
+						<label>End date</label>
+						<input type="datetime-local" name="measure_enddate">
+					</div>
+					<div class="field">
+						<label>.</label>
+						<input type="submit" class="ui primary button" value="Add Measure">
+					</div>
+				</div>
+				
+			</form>
+		</div>
+		
+		<!--<div class="ui top attached header">
+			Table is sortable &nbsp; <span style="font-size: smaller; font-weight: normal">(Sorting may be slow with large table)</span>
+		</div>-->
+		<table class="ui celled very compact small grey sortable selectable bottom attached table" id="measuretable">
 			<thead>
 				<tr>
-					<th colspan="9" style="border-right: 1px solid #666"></th>
-					<th colspan="3">Database record dates</th>
-				</tr>
-				<tr>
-					<th>Variable</th>
+					<th>Variable
+					<!--
+						<div class="ui icon input">
+							<input id="variablenamefilter" class="ui small input" type="text" placeholder="Filter by variable"/>
+							<i class="search icon"></i>
+						</div>
+
+						<script type="text/javascript">
+							function filterTable(event) {
+								var filter = event.target.value.toUpperCase();
+								var rows = document.querySelector("#measuretable tbody").rows;
+								
+								for (var i = 0; i < rows.length; i++) {
+									var firstCol = rows[i].cells[0].textContent.toUpperCase();
+									if (firstCol.indexOf(filter) > -1) {
+										rows[i].style.display = "";
+									} else {
+										rows[i].style.display = "none";
+									}      
+								}
+							}
+
+							document.querySelector('#variablenamefilter').addEventListener('keyup', filterTable, false);
+						</script>-->
+					</th>
 					<th>Instrument</th>
 					<th>Value</th>
 					<!--<th>Notes</th>-->
@@ -170,31 +258,10 @@
 					<th>Duration</th>
 					<th>End date</th>
 					<th style="border-right: 1px solid #666">Delete</th>
-					<th title="Date the value was entered. May have been entered in a different database before this one">Entry <img src="images/help.png"></th>
-					<th title="Date the record was created in this database">Create <img src="images/help.png"></th>
-					<th title="Date the record was modified in this database">Modify <img src="images/help.png"></th>
+					<th title="<b>Entry</b> Date the value was entered into this database<br><b>Create</b> Date the record was created in this database<br><b>Modify</b> Date the record was modified in this database">Database record dates<i class="question circle icon"></i></th>
 				</tr>
 			</thead>
 			<tbody>
-				<form action="measures.php" method="post">
-				<input type="hidden" name="action" value="addmeasure">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-				<tr>
-					<td><input type="text" name="measure_name" size="15" required></td>
-					<td><input type="text" name="measure_instrument" size="15"></td>
-					<td><input type="text" name="measure_value" size="10" required></td>
-					<!--<td><input type="text" name="measure_notes" size="15"></td>-->
-					<td></td>
-					<td><input type="text" name="measure_rater" size="15" value="<?=$GLOBALS['username']?>"></td>
-					<td><input type="datetime-local" name="measure_startdate"></td>
-					<td><input type="text" name="measure_duration" size="10"></td>
-					<td><input type="datetime-local" name="measure_enddate"></td>
-					<td style="border-right: 1px solid #666"><input type="submit" value="Add"></td>
-					<td></td>
-					<td></td>
-					<td></td>
-				</tr>
-				</form>
 				<?
 					$sqlstring = "select a.*, b.*, c.*, e.uid from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by b.measure_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -254,12 +321,12 @@
 							<td><?=$measure_startdate?></td>
 							<td><?=$measure_duration?></td>
 							<td><?=$measure_enddate?></td>
-							<td align="right" style="border-right: 1px solid #666">
-								<a class="ui red button" href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" onClick="return confirm('Are you sure you want to delete this record?')"><i class="trash icon"></i></a>
+							<td class="center aligned" style="border-right: 1px solid #666">
+								<a href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" title="Delete this variable" onClick="return confirm('Are you sure you want to delete this record?')"><i class="red alternate trash icon"></i></a>
 							</td>
-							<td style="font-size: 9pt"><?=$measure_entrydate?></td>
-							<td style="font-size: 9pt"><?=$measure_createdate?></td>
-							<td style="font-size: 9pt"><?=$measure_modifydate?></td>
+							<td title="<b>Entry</b> <?=$measure_entrydate?><br><b>Create</b> <?=$measure_createdate?><br><b>Modify</b> <?=$measure_modifydate?>">
+							<i class="calendar alternate outline icon"></i>
+							</td>
 						</tr>
 					<?
 					}

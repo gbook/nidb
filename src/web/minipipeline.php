@@ -30,7 +30,6 @@
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB - Behavioral data analysis pipelines</title>
 	</head>
-
 <body>
 	<div id="wrapper">
 <?
@@ -53,6 +52,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$mpid = GetVariable("mpid");
+	$mpjobid = GetVariable("mpjobid");
 	$projectid = GetVariable("projectid");
 	$minipipelinename = GetVariable("minipipelinename");
 	$scriptexecutableids = GetVariable("scriptexecutableids");
@@ -88,8 +88,9 @@
 	elseif (($action == "viewscript") && ($selfcall)) {
 		ViewScript($projectid, $scriptid);
 	}
-	elseif (($action == "rerun") && ($selfcall)) {
-		ReRun($projectid, $scriptid);
+	elseif (($action == "rerunjob") && ($selfcall)) {
+		ReRunJob($mpjobid);
+		DisplayMiniPipelineJobs($mpid, $projectid);
 	}
 	else {
 		DisplayMiniPipelineList($projectid);
@@ -97,6 +98,18 @@
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- ReRunJob --------------------------- */
+	/* -------------------------------------------- */
+	function ReRunJob($mpjobid) {
+		$mpjobid = mysqli_real_escape_string($GLOBALS['linki'], $mpjobid);
+		$sqlstring = "update minipipeline_jobs set mp_status = 'pending', mp_queuedate = now() where minipipelinejob_id = $mpjobid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		Notice("Minipipeline job queued to be re-run");
+	}
 
 
 	/* -------------------------------------------- */
@@ -189,11 +202,13 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 				<th>Study</th>
 				<th>Modality</th>
 				<th>Rows inserted</th>
+				<th></th>
 			</thead>
 			<tbody>
 		<?
 		$i = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mpjobid = $row['minipipelinejob_id'];
 			$mpname = $row['mp_name'];
 			$queuedate = $row['mp_queuedate'];
 			$startdate = $row['mp_startdate'];
@@ -220,7 +235,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					<div class="ui approve button">Close</div>
 				</div>
 			</div>
-			<tr>
+			<tr class="<? if (($status == "error") or ($numinserts < 1)) { echo "negative"; } ?>">
 				<td valign="top"><?=$mpname?></td>
 				<td valign="top"><?=$queuedate?></td>
 				<td valign="top"><?=$startdate?></td>
@@ -232,6 +247,11 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 				<td valign="top"><a href="studies.php?studyid=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 				<td valign="top"><?=$modality?></td>
 				<td valign="top"><?=$numinserts?></td>
+				<td valign="top">
+					<? if ($status != "pending") { ?>
+					<a class="ui very compact button" href="minipipeline.php?action=rerunjob&mpjobid=<?=$mpjobid?>&projectid=<?=$projectid?>&mpid=<?=$mpid?>">Rerun</a>
+					<? } ?>
+				</td>
 			</tr>
 			<?
 			$i++;

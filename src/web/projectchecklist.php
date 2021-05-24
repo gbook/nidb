@@ -378,6 +378,14 @@
 		$numenrollments = count($enrollment);
 
 		?>
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.css"/>
+		<script type="text/javascript" src="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.js"></script>
+		
+		<script>
+			$(document).ready(function() {
+				$('#maintable').DataTable();
+			} );		
+		</script>
 		
 		<div class="ui container">
 			<div class="ui two column grid">
@@ -389,7 +397,7 @@
 					<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" class="ui primary basic button">Edit checklist</a>
 				</div>
 			</div>
-		<table class="ui celled very compact selectable black table">
+		<table class="ui celled very compact selectable black table" id="maintable">
 			<thead>
 			<tr>
 				<!--<th>Merge</th>-->
