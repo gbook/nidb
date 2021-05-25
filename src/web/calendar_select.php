@@ -41,6 +41,9 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
+
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	

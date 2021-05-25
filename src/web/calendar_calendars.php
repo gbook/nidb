@@ -77,52 +77,50 @@
 	/* ----------------------------------------------- */
 	function DisplayList() {
 		?>
-		<style>
-			.header { font-weight: bold; color: darkblue; border-top: 2px solid gray; border-bottom: 1px solid gray;}
-		</style>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="index.php" class="ui button">Back</a> to Calendar</td></tr></table><br>
-		<br>
-		<table width="100%">
-			<tr>
-				<td>
-					<img src="images/add16.png"> <a href="calendar_calendars.php?action=addform" class="ui button">Add Calendar</a>
-				</td>
-				<td align="right">
-					<img src="images/refresh16.png"> <a href="calendar_calendars.php" class="ui button">Refresh Page</a>
-				</td>
-			</tr>
-		</table>
 		
-		<br><br>
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i>Back</a>
+				</div>
+				<div class="right aligned column">
+					<a href="calendar_calendars.php?action=addform" class="ui primary button"><i class="plus square icon"></i>Add Calendar</a>
+				</div>
+			</div>
 		
-		<table width="100%" cellspacing="0" cellpadding="3">
-		<tr>
-			<td class="header">Name</td>
-			<td class="header">Description</td>
-			<td class="header">Location</td>
-			<td class="header" align="center"><span style="font-weight: normal;">Delete</span></td>
-		</tr>
-		<?
-		$sqlstring = "select * from calendars where calendar_deletedate > now()";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$id = $row['calendar_id'];
-			$name = $row['calendar_name'];
-			$description = $row['calendar_description'];
-			$location = $row['calendar_location'];
-			?>
-			<tr>
-				<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="ui button"><?=$name?></a></td>
-				<td><?=$description?></td>
-				<td><?=$location?></td>
-				<td align="center">
-					<a class="ui red button" href="calendar_calendars.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
-				</td>
-			</tr>
-			<?
-		}
-		?>
+		<table class="ui celled selectable grey table">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Description</th>
+					<th>Location</th>
+					<th class="center aligned">Delete</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?
+				$sqlstring = "select * from calendars where calendar_deletedate > now()";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['calendar_id'];
+					$name = $row['calendar_name'];
+					$description = $row['calendar_description'];
+					$location = $row['calendar_location'];
+					?>
+					<tr>
+						<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="ui button"><i class="edit icon"></i><?=$name?></a></td>
+						<td><?=$description?></td>
+						<td><?=$location?></td>
+						<td class="center aligned">
+							<a href="calendar_calendars.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure?')"><i class="ui red alternate trash icon"></i></a>
+						</td>
+					</tr>
+					<?
+				}
+				?>
+			</tbody>
 		</table>
+		</div>
 		<?
 	}
 	

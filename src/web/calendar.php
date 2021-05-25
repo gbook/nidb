@@ -38,6 +38,9 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 
@@ -103,10 +106,6 @@
 		$caldate = mktime(0,0,0,$month,$day,$year);
 		?>
 		<style>
-			.menuitem { color: blue; text-align: center; padding-left: 5px; padding-right: 5px }
-			.menuitemhighlight { text-align: center; padding: 5px; background-color: lightyellow; border: 1pt solid orange; border-radius: 3px }
-			.title { color: darkblue; font-size: 16pt; font-weight: bold }
-
 			.week_heading { font-size: 12pt; color: white; font-weight:bold; text-align: center; background-color: #555; padding: 5px }
 			.week_heading_date { font-size: 10pt; color: white; font-weight: normal; }
 			.week_heading_holiday { font-size: 8pt; background-color: darkred; color: white; font-weight: bold; padding: 1px 4px; }
@@ -116,53 +115,63 @@
 			.apptowner { font-size: 8pt; color: #555555; }
 			.timerequest { font-size: 8pt; background-color: darkred; color: #FFFFFF; font-variant: small-caps; }
 		</style>
-		
-		<table width="100%" cellspacing="0">
-			<tr>
-				<form name="pageform" action="calendar_select.php" method="get">
-				<td align="center"><span class="title"><?=$currentcalname?></span>
-				<br><br>
+
+		<div class="ui container">
+			<div class="ui top attached center aligned segment">
+				Viewing <h2 class="ui header"><?=$currentcalname?></h2>
+				
+				<form name="pageform" action="calendar_select.php" method="post" class="ui form">
 				<input type="hidden" name="action" value="set">
-				Change Calendar
-				<select name="currentcal" onChange="pageform.submit()" class="ui dropdown">
-				<?
-				$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['calendar_id'];
-					$name = $row['calendar_name'];
-					$description = $row['calendar_description'];
-					$location = $row['calendar_location'];
-					?>
-					<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
-					<?
-				}
-				?>
-				<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars
-				</select>
+					<div class="ui small labeled input">
+						<div class="ui label">
+							Change
+						</div>
+						<select name="currentcal" onChange="document.pageform.submit()" class="ui dropdown">
+						<?
+						$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
+						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$id = $row['calendar_id'];
+							$name = $row['calendar_name'];
+							$description = $row['calendar_description'];
+							$location = $row['calendar_location'];
+							?>
+							<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+							<?
+						}
+						?>
+						<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars
+						</select>
+					</div>
 				</form>
-				</td>
-			</tr>
-			<tr>
-				<td width="90%"><span style="font-size:10pt">
-					<b>Today</b> <?=date('D M j, Y')?><br><br>
-					<b>Calendar Date</b> <?=date('D M j, Y',$caldate)?>
-					</span>
-				</td>
-				<? if ($menuitem == "day") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
-				<td class="<?=$class?>">
-				<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/day.png"><br>Day</a>
-				</td>
-				<? if ($menuitem == "week") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
-				<td class="<?=$class?>">
-				<a href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/week.png"><br>Week</a></td>
-				<? if ($menuitem == "month") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
-				<td class="<?=$class?>">
-				<a href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><img src="images/month.png"><br>Month</a></td>
-				<!--<? if ($menuitem == "year") { $class="menuitemhighlight"; } else { $class="menuitem"; } ?>
-				<td class="<?=$class?>"><a href="calendar.php?action=year&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>" style="color: blue; text-decoration: underline">Year</a></td>-->
-			</tr>
-		</table>
+			</div>
+			<div class="ui bottom attached segment">
+				<div class="ui two column grid">
+					<div class="column">
+						<div class="ui image label">
+							<i class="calendar check icon"></i>
+							Today
+							<div class="ui detail"><?=date('D M j, Y')?></div>
+						</div>
+						<br><br>
+						<div class="ui image label">
+							<i class="calendar alternate outline icon"></i>
+							Calendar date
+							<div class="ui detail"><?=date('D M j, Y',$caldate)?></div>
+						</div>
+					</div>
+					<div class="right aligned column">
+						<? if ($menuitem == "day") { $class="yellow"; } else { $class=""; } ?>
+						<a class="ui big <?=$class?> label" href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar icon"></i>Day</a>
+						<? if ($menuitem == "week") { $class="yellow"; } else { $class=""; } ?>
+						<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
+						<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
+						<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		
 		<br><br>
 		<?
 	}
@@ -227,52 +236,54 @@
 		
 		$today = date('D M j, Y',mktime(0,0,0,$month, $day, $year));
 		?>
-		<div align="center">
-		<table class="calendar" cellpadding="0" cellspacing="0" width="50%" style="border: 1px solid #555; background-color: snow">
-			<tr>
-				<td colspan=7 class="heading" style="padding: 8px; background-color: #555;">
-					<br>
-					<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size:16pt">&#9664;</a>
-					&nbsp;
-					<span style="color: white; font-size:16pt"><?=$today?></span>
-					&nbsp;
-					<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: white; font-size:16pt">&#9654;</a>
-					<br>
-					<br>
-				</td>
-			</tr>
-			<tr>
-				<td style="border-top: 1px solid gray; padding: 5px">
-					<?
-					$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
-					$enddatetime = date('Y-m-d 23:59:59', mktime(0,0,0,$month, $day, $year));
+		<div class="ui text container">
+			<div class="ui center aligned top attached inverted segment">
+				<div class="ui three column grid">
+					<div class="column">
+						<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="ui inverted big arrow alternate circle left icon"></i></a>
+					</div>
+					<div class="column">
+						<span style="color: white; font-size:16pt"><?=$today?></span>
+					</div>
+					<div class="column">
+						<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="ui inverted big arrow alternate circle right icon"></i></a>
+					</div>
+				</div>
+			</div>
+			<div class="ui attached segment">
+				<?
+				$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
+				$enddatetime = date('Y-m-d 23:59:59', mktime(0,0,0,$month, $day, $year));
+				?>
+				<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><i class="orange calendar plus icon" title="Create appointment"></i> Create Appointment</a>
+			</div>
+			<div class="ui bottom attached segment">
+				<?
+				if ($currentcal == 0) {
+					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+				}
+				else {
+					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+				}
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$id = $row['appt_id'];
+					$username = $row['appt_username'];
+					$projectname = $row['project_name'];
+					$calendarname = $row['calendar_name'];
+					$title = $row['appt_title'];
+					$details = $row['appt_details'];
+					$starttime = date('g:i a', strtotime($row['appt_startdate']));
+					$endtime = date('g:i a', strtotime($row['appt_enddate']));
+					$isallday = $row['appt_isalldayevent'];
+					$isrequest = $row['appt_istimerequest'];
 					?>
-					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><i class="orange plus square icon" title="Create appointment"></i> Create Appointment</a><br><br>
-					<?
-					if ($currentcal == 0) {
-						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
-					}
-					else {
-						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
-					}
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$id = $row['appt_id'];
-						$username = $row['appt_username'];
-						$projectname = $row['project_name'];
-						$calendarname = $row['calendar_name'];
-						$title = $row['appt_title'];
-						$details = $row['appt_details'];
-						$starttime = date('g:i a', strtotime($row['appt_startdate']));
-						$endtime = date('g:i a', strtotime($row['appt_enddate']));
-						$isallday = $row['appt_isalldayevent'];
-						$isrequest = $row['appt_istimerequest'];
-						?>
+					<div class="ui blue segment">
 						<?if (!$isallday) { ?>
-							<span class="time">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span> &nbsp;
+							<span class="ui small yellow label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span> &nbsp;
 						<? } ?>
 						<? if ($isrequest) { ?>
-							<span class="timerequest">&nbsp;Time request&nbsp;</span>
+							<span class="ui small red label">&nbsp;Time request&nbsp;</span>
 						<? } ?>
 						
 						<? /*if ($_COOKIE['username'] == $username) { */?>
@@ -285,15 +296,11 @@
 						<span class="apptowner"><?=$calendarname?> - <b><?=$username?></b></span>
 						<br>
 						<?=$details;?>
-						<br>
-						<div style="border-bottom: 1px dashed gray">&nbsp;</div>
-						<br>
-						<?
-					}
-					?>
-				</td>
-			</tr>
-		</table>
+					</div>
+					<?
+				}
+				?>
+			</div>
 		</div>
 		<?
 	}
