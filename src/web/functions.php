@@ -1122,7 +1122,13 @@
 	/* ------- PrintSQL --------------------------- */
 	/* -------------------------------------------- */
 	function PrintSQL($sql) {
+		?>
+		<div class="ui blue segment">
+		<?
 		echo getFormattedSQL($sql);
+		?>
+		</div>
+		<?
 	}
 	
 	
@@ -2287,6 +2293,49 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* commit transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DuplicateSQLRow -------------------- */
+	/* -------------------------------------------- */
+	/* newvals is an associative array with fields to be changed, and their new values */
+	function DuplicateSQLRow($table, $pk, $id, $newvals) {
+		/* setup: $newvals['column'] = newval */
+		
+		$tmptable = GenerateRandomString(10);
+		StartSQLTransaction();
+
+		$sqlstring = "create temporary table $tmptable select * from $table where $pk = $id";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		$sqlstring = "update $tmptable set $pk = NULL";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		foreach ($newvals as $col => $val) {
+			$sqlstring = "update $tmptable set $col = $val";
+			//PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		
+		$sqlstring = "select * from $tmptable";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//PrintSQLTable($result,$url,$orderby,$size,$text=false);
+		
+		$sqlstring = "insert ignore into $table select * from $tmptable";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$rowid = mysqli_insert_id($GLOBALS['linki']);
+		
+		$sqlstring = "drop temporary table if exists $tmptable";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		CommitSQLTransaction();
+		
+		return $rowid;
 	}
 
 

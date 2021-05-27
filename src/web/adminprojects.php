@@ -45,6 +45,8 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$projectid = GetVariable("projectid");
+	$copyfromprojectid = GetVariable("copyfromprojectid");
 	$projectname = GetVariable("projectname");
 	$admin = GetVariable("admin");
 	$pi = GetVariable("pi");
@@ -75,6 +77,10 @@
 			break;
 		case 'delete':
 			DeleteProject($id);
+			break;
+		case 'copysettings':
+			CopyProjectSettings($projectid, $copyfromprojectid);
+			DisplayProjectForm("edit", $projectid);
 			break;
 		default:
 			DisplayProjectList();
@@ -177,6 +183,92 @@
 		$sqlstring = "delete from projects where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}	
+
+
+	/* -------------------------------------------- */
+	/* ------- CopyProjectSettings ---------------- */
+	/* -------------------------------------------- */
+	function CopyProjectSettings($projectid, $copyfromprojectid) {
+		$sourceprojectid = mysqli_real_escape_string($GLOBALS['linki'], $copyfromprojectid);
+		$destprojectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+
+		$sqlstring = "select project_name from projects where project_id = $sourceprojectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$sourceprojectname = $row['project_name'];
+
+		$sqlstring = "select project_name from projects where project_id = $destprojectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$destprojectname = $row['project_name'];
+		
+		?>
+		<div class="ui message">
+			<h2 class="ui header">Copying settings from <div class="ui big blue label"><?=$sourceprojectname?></div> to <div class="ui big blue label"><?=$destprojectname?></div></h2>
+			
+			<ul>
+				<li>
+					<h3 class="ui header">Project checklists
+						<?
+						$numrows = 0;
+						$newvals = array();
+						$sqlstring = "select * from project_checklist where project_id = $sourceprojectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$numrows = mysqli_num_rows($result);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$rowid = $row['projectchecklist_id'];
+							$newvals['project_id'] = $destprojectid;
+							DuplicateSQLRow('project_checklist', 'projectchecklist_id', $rowid, $newvals);
+						}
+						?>
+						<div class="sub header">copied <?=$numrows?> rows</div>
+					</h3>
+				<li>
+					<h3 class="ui header">BIDS mapping
+						<?
+						$numrows = 0;
+						$newvals = array();
+						$sqlstring = "select * from bids_mapping where project_id = $sourceprojectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$numrows = mysqli_num_rows($result);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$rowid = $row['protocolmapping_id'];
+							$newvals['project_id'] = $destprojectid;
+							DuplicateSQLRow('bids_mapping', 'protocolmapping_id', $rowid, $newvals);
+						}
+						?>
+						<div class="sub header">copied <?=$numrows?> rows</div>
+					</h3>
+				<li>
+					<h3 class="ui header">Study templates
+						<?
+						$numrows = 0;
+						$newvals = array();
+						$sqlstring = "select * from study_template where project_id = $sourceprojectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$numrows = mysqli_num_rows($result);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$rowid = $row['studytemplate_id'];
+							$newvals['project_id'] = $destprojectid;
+							$newstudytemplateid = DuplicateSQLRow('study_template', 'studytemplate_id', $rowid, $newvals);
+							
+							$newvals2 = array();
+							$sqlstringA = "select * from study_templateitems where studytemplate_id = $rowid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$numrows += mysqli_num_rows($resultA);
+							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								$rowid2 = $rowA['studytemplateitem_id'];
+								$newvals2['studytemplate_id'] = $newstudytemplateid;
+								$newrowid = DuplicateSQLRow('study_templateitems', 'studytemplateitem_id', $rowid2, $newvals2);
+							}
+						}
+						?>
+						<div class="sub header">copied <?=$numrows?> rows</div>
+					</h3>
+			</ul>
+		</div>
+		<?
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -326,11 +418,40 @@
 					<input type="text" name="enddate" value="<?=$enddate?>">
 				</div>
 			</div>
-			<div align="right">
-				<button class="ui button" onClick="window.location.href='adminprojects.php'; return false;">Cancel</button>
-				<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+			<div class="ui two column grid">
+				<div class="column">
+					
+				</div>
+				<div class="right aligned column">
+					<button class="ui button" onClick="window.location.href='adminprojects.php'; return false;">Cancel</button>
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+				</div>
 			</div>
 			</form>
+			<div class="ui bottom attached grey segment">
+				<form method="post" action="adminprojects.php" class="ui form">
+					<input type="hidden" name="action" value="copysettings">
+					<input type="hidden" name="projectid" value="<?=$id?>">
+					Copy settings from existing project <i class="question circle icon" title="Copy the following settings from an existing project<br><ul><li>Templates<li>Data dictionary<li>BIDS mapping<li>Checklists<li>Mini-pipelines<li>Redcap Settings</ul>"></i><br>
+					<select name="copyfromprojectid" class="ui compact selection dropdown">
+						<option value="">Select project...</option>
+					<?
+						$sqlstringB = "select * from projects";
+						echo $sqlstringB;
+						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+						while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+							$project_id = $rowB['project_id'];
+							$project_name = $rowB['project_name'];
+							$project_costcenter = $rowB['project_costcenter'];
+							?>
+							<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+							<?
+						}
+					?>
+					</select>
+					<input type="submit" class="ui primary button" value="Copy Settings">
+				</form>
+			</div>
 		</div>
 
 			<script type="text/javascript">
@@ -416,23 +537,27 @@
 			</tr>-->
 			<? } ?>
 			</form>
+		
 		<br><br><br>
-			<? if ($type == "edit") { ?>
-				<div style="font-size:11pt; color: #333;">
-				Required protocols<br><br>
-				<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="70%" height="400px" frameborder="0"></iframe>
-				<?
-					$sqlstring = "select * from project_protocol where project_id = $id";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$user_id = $row['user_id'];
-					}
-				?>
+		
+		<? if ($type == "edit") { ?>
+			<div class="ui container">
+				<div class="ui segment">
+					Required protocols<br><br>
+					<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="100%" height="400px" frameborder="0"></iframe>
+					<?
+						$sqlstring = "select * from project_protocol where project_id = $id";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$user_id = $row['user_id'];
+						}
+					?>
 				</div>
-			<? } ?>
-		</div>
-	<?
+			</div>
+		<? } ?>
+		<?
 	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayProjectList ----------------- */

@@ -65,6 +65,8 @@
 	$studyheight = GetVariable("studyheight");
 	$studyweight = GetVariable("studyweight");
 	$studytype = GetVariable("studytype");
+	$studydaynum = GetVariable("studydaynum");
+	$studytimepoint = GetVariable("studytimepoint");
 	$studyoperator = GetVariable("studyoperator");
 	$studyphysician = GetVariable("studyphysician");
 	$studysite = GetVariable("studysite");
@@ -114,7 +116,7 @@
 			SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid);
 			break;
 		case 'update':
-			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
+			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studydaynum, $studytimepoint, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
 			DisplayStudy($studyid);
 			break;
 		case 'mergestudies':
@@ -199,7 +201,7 @@
 			DisplayStudy($studyid, true);
 			break;
 		case 'saveme':
-			SaveSt($studyid, $studytype, $studydatetime, $Sdate, $stmod);
+			SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod);
 			DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
 		default:
@@ -215,7 +217,7 @@
 
     /* ----------------Update Studies---------------------------- */
     /* -------------------------------------------- */
-	function SaveSt($studyid, $studytype, $studydatetime, $Sdate, $stmod) {
+	function SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod) {
 		
 		/* perform data checks */
 		$studydatetime = str_ireplace("T", " ", $studydatetime) . ":00";
@@ -224,11 +226,11 @@
 		/* update the user */
 
 		if ($Sdate != 'on') {
-			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $studyid";
+			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $studyid";
         	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}		
 		elseif ($Sdate == 'on') {
-			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $studyid";
+			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $studyid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 			$sqlstring1 = "update $stmod"."_series set series_datetime = '$studydatetime' where study_id = $studyid";
@@ -263,7 +265,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateStudy ------------------------ */
 	/* -------------------------------------------- */
-	function UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter) {
+	function UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studydaynum, $studytimepoint, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter) {
 		/* perform data checks */
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 		$studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
@@ -271,6 +273,8 @@
 		$studyheight = mysqli_real_escape_string($GLOBALS['linki'], $studyheight);
 		$studyweight = mysqli_real_escape_string($GLOBALS['linki'], $studyweight);
 		$studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
+		$studydaynum = mysqli_real_escape_string($GLOBALS['linki'], $studydaynum);
+		$studytimepoint = mysqli_real_escape_string($GLOBALS['linki'], $studytimepoint);
 		$studyoperator = mysqli_real_escape_string($GLOBALS['linki'], $studyoperator);
 		$studyphysician = mysqli_real_escape_string($GLOBALS['linki'], $studyphysician);
 		$studysite = mysqli_real_escape_string($GLOBALS['linki'], $studysite);
@@ -289,7 +293,7 @@
 		if ($studyetsnellchart == "") $studyetsnellchart = "null"; else $studyetsnellchart = "'$studyetsnellchart'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -299,16 +303,18 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateStSe ------------------------ */
 	/* -------------------------------------------- */
-	function UpdateStSe($id, $studydatetime, $studytype,$copy_date,$study_modality) {
+	function UpdateStSe($id, $studydatetime, $studytype, $studydaynum, $studytimepoint, $copy_date, $study_modality) {
 		/* perform data checks */
 		$studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
 		$studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
+		$studydaynum = mysqli_real_escape_string($GLOBALS['linki'], $studydaynum);
+		$studytimepoint = mysqli_real_escape_string($GLOBALS['linki'], $studytimepoint);
 		$copy_date = mysqli_real_escape_string($GLOBALS['linki'], $copy_date);
 		$study_modality = mysqli_real_escape_string($GLOBALS['linki'], $study_modality);
 		$studydatetime = date("Y-m-d H:i",strtotime($studydatetime));
 
 		/* Update Command */
-		$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype' where study_id = $id";
+		$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $id";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if ($copy_date=="Y"){
 			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
@@ -1103,6 +1109,8 @@
 		$study_height = $row['study_height'];
 		$study_weight = $row['study_weight'];
 		$study_type = $row['study_type'];
+		$study_daynum = $row['study_daynum'];
+		$study_timepoint = $row['study_timepoint'];
 		$study_operator = $row['study_operator'];
 		$study_physician = $row['study_performingphysician'];
 		$study_site = $row['study_site'];
@@ -1199,9 +1207,25 @@
 					</div>
 				</div>
 				
-				<div class="field">
-					<label>Visit type</label>
-					<input type="text" name="studytype" value="<?=$study_type?>">
+				<div class="ui segment">
+					<h3 class="ui header">
+						Repeated studies
+						<div class="sub header">For clinical trials and tracking multiple sessions</div>
+					</h3>
+					<div class="ui three fields">
+						<div class="field">
+							<label>Visit type</label>
+							<input type="text" name="studytype" value="<?=$study_type?>">
+						</div>
+						<div class="field">
+							<label>Day number</label>
+							<input type="text" name="studydaynum" value="<?=$study_daynum?>">
+						</div>
+						<div class="field">
+							<label>Time number</label>
+							<input type="text" name="studytimepoint" value="<?=$study_timepoint?>">
+						</div>
+					</div>
 				</div>
 				
 				<div class="ui three fields">
@@ -1308,6 +1332,8 @@
 			$study_height = $row['study_height'];
 			$study_weight = $row['study_weight'];
 			$study_type = $row['study_type'];
+			$study_daynum = $row['study_daynum'];
+			$study_timepoint = $row['study_timepoint'];
 			$study_operator = $row['study_operator'];
 			$study_physician = $row['study_performingphysician'];
 			$study_site = $row['study_site'];
@@ -1469,6 +1495,14 @@
 									<div class="inline field">
 										<label>Visit type</label>
 										<input type="text" class="ui input" name="studytype" value="<?=$study_type?>" size="30" placeholder="Visit type">
+									</div>
+									<div class="inline field">
+										<label>Visit number</label>
+										<input type="text" class="ui input" name="studydaynum" value="<?=$study_daynum?>" size="30" placeholder="Day number">
+									</div>
+									<div class="inline field">
+										<label>Visit time point</label>
+										<input type="text" class="ui input" name="studytimepoint" value="<?=$study_timepoint?>" size="30" placeholder="Time point">
 									</div>
 									<input type="submit" class="ui small basic blue button" value="Quick Update">
 									</form>

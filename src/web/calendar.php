@@ -106,11 +106,7 @@
 		$caldate = mktime(0,0,0,$month,$day,$year);
 		?>
 		<style>
-			.week_heading { font-size: 12pt; color: white; font-weight:bold; text-align: center; background-color: #555; padding: 5px }
-			.week_heading_date { font-size: 10pt; color: white; font-weight: normal; }
-			.week_heading_holiday { font-size: 8pt; background-color: darkred; color: white; font-weight: bold; padding: 1px 4px; }
 			.time { font-size: 10pt; color: darkred; background-color: lightyellow; }
-			.timeallday { font-size: 10pt; color: darkred; background-color: #DFDFDF; }
 			.appttitle { font-size: 10pt; color: darkblue; }
 			.apptowner { font-size: 8pt; color: #555555; }
 			.timerequest { font-size: 8pt; background-color: darkred; color: #FFFFFF; font-variant: small-caps; }
@@ -122,7 +118,7 @@
 				
 				<form name="pageform" action="calendar_select.php" method="post" class="ui form">
 				<input type="hidden" name="action" value="set">
-					<div class="ui small labeled input">
+					<div class="ui mini labeled input">
 						<div class="ui label">
 							Change
 						</div>
@@ -237,7 +233,7 @@
 		$today = date('D M j, Y',mktime(0,0,0,$month, $day, $year));
 		?>
 		<div class="ui text container">
-			<div class="ui center aligned top attached inverted segment">
+			<div class="ui center aligned top attached grey inverted segment">
 				<div class="ui three column grid">
 					<div class="column">
 						<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="ui inverted big arrow alternate circle left icon"></i></a>
@@ -376,112 +372,200 @@
 		if (array_key_exists($sat_hol_date, $holidays)) { $sat_holidays = implode("<br>", $holidays[$sat_hol_date]); }
 	
 		?>
-		<table class="calendar" cellpadding="3" cellspacing="0" width="100%" style="background-color: snow;">
-			<tr>
-				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size: 18pt">&#9664;</a></td>
-				<td width="14%" class="week_heading" valign="top">Sunday<br><a href="calendar.php?action=day&year=<?=$sun{'y'}?>&month=<?=$sun{'m'}?>&day=<?=$sun{'d'}?>"><span class="week_heading_date"><u><?=$sun_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Monday<br><a href="calendar.php?action=day&year=<?=$mon{'y'}?>&month=<?=$mon{'m'}?>&day=<?=$mon{'d'}?>"><span class="week_heading_date"><u><?=$mon_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Tuesday<br><a href="calendar.php?action=day&year=<?=$tue{'y'}?>&month=<?=$tue{'m'}?>&day=<?=$tue{'d'}?>"><span class="week_heading_date"><u><?=$tue_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Wednesday<br><a href="calendar.php?action=day&year=<?=$wed{'y'}?>&month=<?=$wed{'m'}?>&day=<?=$wed{'d'}?>"><span class="week_heading_date"><u><?=$wed_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Thursday<br><a href="calendar.php?action=day&year=<?=$thu{'y'}?>&month=<?=$thu{'m'}?>&day=<?=$thu{'d'}?>"><span class="week_heading_date"><u><?=$thu_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Friday<br><a href="calendar.php?action=day&year=<?=$fri{'y'}?>&month=<?=$fri{'m'}?>&day=<?=$fri{'d'}?>"><span class="week_heading_date"><u><?=$fri_date?></u></span></a></td>
-				<td width="14%" class="week_heading" valign="top">Saturday<br><a href="calendar.php?action=day&year=<?=$sat{'y'}?>&month=<?=$sat{'m'}?>&day=<?=$sat{'d'}?>"><span class="week_heading_date"><u><?=$sat_date?></u></span></a></td>
-				<td class="week_heading"><a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>" style="text-decoration: none; color: white; font-size: 18pt">&#9654;</a></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td height="100%" valign="bottom" style="border-left: 1px solid gray; border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($sun_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$sun_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($mon_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$mon_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($tue_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$tue_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($wed_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$wed_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($thu_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$thu_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($fri_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$fri_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td height="100%" valign="bottom" style="border-right: 1px solid gray; border-bottom: 1px dashed gray">
-					<? if ($sat_holidays != "") { ?>
-					<div align="center" class="week_heading_holiday"><?=$sat_holidays?></div>
-					<? } ?>
-					&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><i class="orange plus square icon" title="Create appointment"></i></a>
-				</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td></td>
-				
+			<div class="ui grid">
+				<!-- main day/date row -->
+				<div class="row">
+					<div class="one wide center aligned column">
+						<br>
+						<a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon" title="Previous week"></i></a>
+					</div>
+					<div class="two wide column">
+						<? if ($sun_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Sunday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sun{'y'}?>&month=<?=$sun{'m'}?>&day=<?=$sun{'d'}?>"><?=$sun_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><i class="blue plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($sun_holidays != "") { ?><br><div class="ui red label"><?=$sun_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($mon_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Monday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$mon{'y'}?>&month=<?=$mon{'m'}?>&day=<?=$mon{'d'}?>"><?=$mon_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($mon_holidays != "") { ?><br><div class="ui small fluid red label"><?=$mon_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($tue_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Tuesday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$tue{'y'}?>&month=<?=$tue{'m'}?>&day=<?=$tue{'d'}?>"><?=$tue_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($tue_holidays != "") { ?><br><div class="ui small fluid red label"><?=$tue_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($wed_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Wednesday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$wed{'y'}?>&month=<?=$wed{'m'}?>&day=<?=$wed{'d'}?>"><?=$wed_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($wed_holidays != "") { ?><br><div class="ui small fluid red label"><?=$wed_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($thu_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Thursday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$thu{'y'}?>&month=<?=$thu{'m'}?>&day=<?=$thu{'d'}?>"><?=$thu_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><i class="plus square <?=$inverted?> icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($thu_holidays != "") { ?><br><div class="ui small fluid red label"><?=$thu_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($fri_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Friday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$fri{'y'}?>&month=<?=$fri{'m'}?>&day=<?=$fri{'d'}?>"><?=$fri_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($fri_holidays != "") { ?><br><div class="ui small fluid red label"><?=$fri_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="two wide column">
+						<? if ($sat_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
+						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui <?=$inverted?> header">
+										Saturday
+										<div class="<?=$inverted?> sub header">
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sat{'y'}?>&month=<?=$sat{'m'}?>&day=<?=$sat{'d'}?>"><?=$sat_date?></a>
+										</div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
+								</div>
+							</div>
+							<? if ($sat_holidays != "") { ?><br><div class="ui small fluid red label"><?=$sat_holidays?></div><? } ?>
+						</div>
+					</div>
+					<div class="one wide center aligned column">
+						<br>
+						<a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big black arrow alternate circle right icon" title="Next week"></i></a>
+					</div>
+				</div>
+
+				<!-- appointments row -->
+				<div class="row">
+					<div class="one wide center aligned column"></div>
 				<?
-					/* loop through each day of the week. The first <td...> is setup inside the switch statement */
+					/* loop through each day of the week. The first <div...> segment is setup inside the switch statement */
 					for ($i=0;$i<7;$i++) {
 						switch ($i) {
 							case 0:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($sun_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($sun_hol_date));
-								if ($sun_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; border-left: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($sun_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 1:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($mon_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($mon_hol_date));
-								if ($mon_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($mon_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 2:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($tue_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($tue_hol_date));
-								if ($tue_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($tue_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 3:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($wed_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($wed_hol_date));
-								if ($wed_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($wed_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 4:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($thu_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($thu_hol_date));
-								if ($thu_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($thu_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 5:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($fri_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($fri_hol_date));
-								if ($fri_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($fri_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 							case 6:
 								$startdatetime = date('Y-m-d 00:00:00', strtotime($sat_hol_date));
 								$enddatetime = date('Y-m-d 23:59:59', strtotime($sat_hol_date));
-								if ($sat_hol_date == date('Y-m-d')) { $bgcolor = "#FFFFAA"; } else { $bgcolor = "white"; }
-								?><td valign="top" height="100%" style="border-right: 1px solid gray; background-color: <?=$bgcolor?>"><?
+								if ($sat_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
+								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
 								break;
 						}
 						
@@ -504,25 +588,21 @@
 							$isrequest = $row['appt_istimerequest'];
 							?>
 							<?if (!$isallday) { ?>
-								<span class="time">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span><br>
+								<span class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span><br>
 							<? } ?>
 							<? if ($isrequest) { ?>
-								<span class="timerequest">&nbsp;Time request&nbsp;</span>
+								<span class="ui red label">&nbsp;Time request&nbsp;</span>
 							<? } ?>
 							<a href="calendar_appointments.php?action=editform&id=<?=$id?>"><span class="appttitle"><u><?=$title?></u></span></a><br>
 							<span class="apptowner"><?=$calendarname?> - <b><?=$username?></b></span>
 							<br><br>
 							<?
 						}
-					?>
-					&nbsp;
-				</td>
-						<?
-					}
+						?></div></div><?
+					}				
 				?>
-				<td></td>
-			</tr>
-		</table>
+				</div>
+			</div>
 		<?
 	}
 	

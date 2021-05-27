@@ -1654,14 +1654,14 @@
 												<thead>
 													<th>Study</th>
 													<th>Modality</th>
-													<th>Date &darr;</th>
-													<th># series</th>
+													<th>Date <i class="arrow circle down icon"></i></th>
+													<th># Series</th>
 													<th>Age</th>
-													<th>Physician</th>
-													<th>Operator</th>
 													<th>Site</th>
 													<th>Study ID</th>
 													<th>Visit</th>
+													<th>Day</th>
+													<th>Timepoint</th>
 													<th>Rad Read</th>
 												</thead>
 												<tbody>
@@ -1678,6 +1678,8 @@
 													$study_performingphysician = $row2['study_performingphysician'];
 													$study_site = $row2['study_site'];
 													$study_type = $row2['study_type'];
+													$study_daynum = $row2['study_daynum'];
+													$study_timepoint = $row2['study_timepoint'];
 													$study_status = $row2['study_status'];
 													$study_doradread = $row2['study_doradread'];
 													
@@ -1711,11 +1713,11 @@
 														<td><?=$study_datetime?></td>
 														<td><?=$seriescount?></td>
 														<td><?=number_format($age,1)?> <span class="tiny">&nbsp;y</span></td>
-														<td><?=$study_performingphysician?></td>
-														<td><?=$study_operator?></td>
 														<td><?=$study_site?></td>
 														<td><tt><?=$uid?><?=$study_num?></tt></td>
 														<td><?=$study_type?></td>
+														<td><?=$study_daynum?></td>
+														<td><?=$study_timepoint?></td>
 														<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
 														<!--<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>-->
 													</tr>
