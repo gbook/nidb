@@ -92,7 +92,7 @@
 			$(this).closest('.message').transition('fade');
 		});
 		$('.menu .item').tab();
-		$('.ui.accordion').accordion({exclusive: false});
+		$('.ui.accordion').accordion({exclusive: false, animateChildren: false, duration: 0});
 		$('.ui.dropdown').dropdown({duration: 50});
 		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
 		//$('table').tablesort();

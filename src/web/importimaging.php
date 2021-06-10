@@ -522,7 +522,7 @@
 					<summary>Details</summary>
 					<table style="all: unset;">
 						<tr>
-							<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
+							<td>Log</td>
 							<td>
 								<details>
 								<?
@@ -541,7 +541,7 @@
 							</td>
 						</tr>
 						<tr>
-							<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
+							<td>Uploaded files</td>
 							<td>
 								<details>
 								<summary>File list (<?=count($filelist);?> files)</summary>
@@ -550,15 +550,15 @@
 							</td>
 						</tr>
 						<tr>
-							<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
+							<td>Source</td>
 							<td><?=$source?></td>
 						</tr>
 						<tr>
-							<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
+							<td>Source Data path</td>
 							<td><tt><?=$datapath?></tt></td>
 						</tr>
 						<tr>
-							<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
+							<td>Matching Criteria</td>
 							<td>
 								Subject: <?=$subjectcriteria?><br>
 								Study: <?=$studycriteria?><br>
@@ -647,6 +647,7 @@
 			$startdate = $row['upload_startdate'];
 			$enddate = $row['upload_enddate'];
 			$status = $row['upload_status'];
+			$percent = $row['upload_statuspercent'];
 			$originalfilelist = $row['upload_originalfilelist'];
 			$source = $row['upload_source'];
 			$datapath = $row['upload_datapath'];
@@ -660,94 +661,148 @@
 			$filelist = explode(",", $originalfilelist);
 
 			switch ($status) {
-				case 'parsingerror':
-				case 'uploaderror':
-				case 'archiveerror':
-					$statuscolor = "red";
 					
+				case 'uploading':
+					$statuscolor = "";
+					$statusmsg = "Uploading";
+					break;
+				case 'uploadcomplete':
+					$statuscolor = "";
+					$statusmsg = "Upload Complete";
+					break;
+				case 'uploaderror':
+					$statuscolor = "red";
+					$statusmsg = "Upload Error";
+					break;
+				case 'parsing':
+					$statuscolor = "";
+					$statusmsg = "Parsing";
+					break;
 				case 'parsingcomplete':
 					$statuscolor = "yellow";
+					$statusmsg = "Parsing Complete";
 					break;
-
+				case 'parsingerror':
+					$statuscolor = "red";
+					$statusmsg = "Parsing Error";
+					break;
+				case 'archiving':
+					$statuscolor = "";
+					$statusmsg = "Archiving";
+					break;
 				case 'archivecomplete':
 					$statuscolor = "green";
+					$statusmsg = "Archiving Complete";
 					break;
-				
+				case 'archiveerror':
+					$statuscolor = "red";
+					$statusmsg = "Archiving Error";
+					break;
+				case 'queueforarchive':
+					$statuscolor = "";
+					$statusmsg = "Queued for archiving";
+					break;
+				case 'reparse':
+					$statuscolor = "";
+					$statusmsg = "Queued for Reparsing";
+					break;
+					
 				default:
 					$statuscolor = "";
+					$statusmsg = $status;
 			}
 			
 			?>
-			<span style="font-weight: bold; font-size: 14pt;">Upload Details</span><br>
-			<table style="border: 1px solid #aaa;" cellpadding="5">
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Status</td>
-					<td><?=$status?></td>
-				</tr>
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Log</td>
-					<td>
-						<details>
-						<?
-							$sqlstring = "select * from upload_logs where upload_id = $uploadid";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						?>
-						<summary>View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span></summary>
-						<tt><pre><?
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$date = $row['log_date'];
-								$msg = $row['log_msg'];
-								echo "[$date] $msg\n";
-							}
-						?></pre></tt>
-						</details>
-					</td>
-				</tr>
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Uploaded files</td>
-					<td>
-						<details>
-						<summary>Original file list (<?=count($filelist);?> files)</summary>
-							<tt><?=implode2("<br>", $filelist)?></tt>
-						</details>
-						
-						<?
-							$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							$errorfiles = array();
-							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-								$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
-							}
-							if (count($errorfiles) > 0) {
-								?>
-								<details style="color: red">
-								<summary>Unreadable files (<?=count($errorfiles);?> files)</summary>
-									<tt><?=implode2("<br>", $errorfiles)?></tt>
-								</details>
-								<?
-							}
+			<div class="ui container">
+				<h3 class="center aligned header">Upload Details</h3>
+				<table class="ui very basic collapsing celled table">
+					<tr>
+						<td class="right aligned"><h4 class="header">Status</h4></td>
+						<td>
+							<div class="ui large <?=$statuscolor?> label"><?=$statusmsg?></div>
+							<? if ($percent != "") { ?>
+							<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
+							<? } ?>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Log</h4></td>
+						<td>
+							<?
+								$sqlstring = "select * from upload_logs where upload_id = $uploadid";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							?>
-					</td>
-				</tr>
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source</td>
-					<td><?=$source?></td>
-				</tr>
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Source Data path</td>
-					<td><tt><?=$datapath?></tt></td>
-				</tr>
-				<tr>
-					<td style="text-align: right; vertical-align: top; font-weight: bold;">Matching Criteria</td>
-					<td>
-						Subject: <i><?=$subjectcriteria?></i><br>
-						Study: <i><?=$studycriteria?></i><br>
-						Series: <i><?=$seriescriteria?></i>
-					</td>
-				</tr>
-			</table>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>
+									View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
+								</div>
+								<div class="content">
+									<tt><pre><?
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$date = $row['log_date'];
+											$msg = $row['log_msg'];
+											echo "[$date] $msg\n";
+										}
+									?></pre></tt>
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Uploaded files</h4></td>
+						<td>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>
+									Original file list (<?=count($filelist);?> files)
+								</div>
+								<div class="content">
+									<tt><?=implode2("<br>", $filelist)?></tt>
+								</div>
+								<?
+									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$errorfiles = array();
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
+									}
+									if (count($errorfiles) > 0) {
+										?>
+										<div class="ui accordion">
+											<div class="title">
+												<i class="dropdown icon"></i>
+												Unreadable (<?=count($filelist);?> files)
+											</div>
+											<div class="content">
+												<tt><?=implode2("<br>", $errorfiles)?></tt>
+											</div>
+										</div>
+										<?
+									}
+								?>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Source</h4></td>
+						<td><?=$source?></td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Source Data Path</h4></td>
+						<td><tt><?=$datapath?></tt></td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Matching Criteria</h4></td>
+						<td>
+							Subject: <b><?=$subjectcriteria?></b><br>
+							Study: <b><?=$studycriteria?></b><br>
+							Series: <b><?=$seriescriteria?></b>
+						</td>
+					</tr>
+				</table>
+			</div>
 			
-			<br><br>
 			
 			<style>
 				ul, #myUL { list-style-type: none; }
@@ -762,6 +817,8 @@
 				li.level3 { background-color: #e0efff; margin: 5px; padding: 10px; border-radius: 8px; }
 			</style>
 			
+			<br><br>
+			
 			<? if ($status == "parsingcomplete") { ?>
 			<form method="post" action="importimaging.php">
 			<input type="hidden" name="action" value="queueforarchive">
@@ -769,10 +826,16 @@
 			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" value="Archive">
 			<? } ?>
 			
-			<ul id="myUL">
 			<?
 			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid and uploadsubject_patientid <> 'unreadable' and uploadsubject_patientid <> 'NiDBunreadable' order by uploadsubject_patientid desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$numsubjects = mysqli_num_rows($resultA);
+			if ($numsubjects < 1) { $smsg = "No subjects"; }
+			elseif ($numsubjects = 1) { $smsg = "$numsubjects subject"; }
+			elseif ($numsubjects > 1) { $smsg = "$numsubjects subjects"; }
+			?>
+			<h3 class="inverted header"><?=$smsg?></h3>
+			<?
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$uploadsubjectid = $rowA['uploadsubject_id'];
 				$patientid = $rowA['uploadsubject_patientid'];
@@ -792,10 +855,33 @@
 				$matchsubjectuid = $subjectmatches[0]['uid'];
 				
 				?>
-				<li class="level1">
-					<span class="caret active"><span class="tiny">PatientID:</span> <b><?=$patientid?></b> <span class="tiny">Name:</span> <?=$name?></span>
-					<? if ($matchsubjectid != "") { ?>Matched existing subject <a href="subjects.php?subjectid=<?=$matchsubjectid?>" target="_blank"><?=$matchsubjectuid?></a><? } ?>
-				<ul class="nested">
+				<div class="ui styled attached fluid accordion" style="background-color: #ddd">
+					<div class="title">
+						<div class="ui two column grid">
+							<div class="column">
+								<i class="dropdown icon"></i>
+								<div class="ui large blue label">
+									<?=$patientid?>
+								</div>
+								<div class="ui large image label">
+									Name
+									<div class="detail"><?=$name?></div>
+								</div>
+							</div>
+							<div class="right aligned column">
+								<? if ($matchsubjectid != "") { ?>
+									<div class="ui labeled button">
+										<div class="ui small yellow button">
+											<i class="clipboard check icon"></i> Matched existing subject
+										</div>
+										<a href="subjects.php?subjectid=<?=$matchsubjectid?>" class="ui yellow label" target="_blank"><?=$matchsubjectuid?></a>
+									</div>
+								<? } ?>
+							</div>
+						</div>
+					</div>
+					<div class="content">
+
 				<?
 					$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
 					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
@@ -822,10 +908,40 @@
 						$matchstudynum = $studymatches[0]['studynum'];
 						
 						?>
-						<li class="level2"><span class="caret"><span class="tiny">Desc:</span> <b><?=$desc?></b> <span class="tiny">Date:</span> <?=$studydate?> <span class="tiny">Modality:</span> <?=$modality?> <span class="tiny">Datatype:</span> <?=$datatype?> <span class="tiny">Equipment:</span> <?=$equipment?></span>
-						<? if ($matchstudyid != "") { ?>Matched existing studies <a href="studies.php?studyid=<?=$matchstudyid?>" target="_blank"><?=$matchsubjectuid?><?=$matchstudynum?></a><? } ?>
-
-						<ul class="nested">
+						<div class="accordion" style="background-color: #eee">
+							<div class="title">
+								<div class="ui two column grid">
+									<div class="column">
+										<i class="dropdown icon"></i>
+										<div class="ui large blue label">
+											<?=$desc?>
+										</div>
+										<div class="ui large image label">
+											Date
+											<div class="detail"><?=$studydate?></div>
+										</div>
+										<div class="ui large image label">
+											Modality
+											<div class="detail"><?=$modality?></div>
+										</div>
+										<div class="ui large image label">
+											Datatype
+											<div class="detail"><?=$datatype?></div>
+										</div>
+									</div>
+									<div class="right aligned column">
+										<? if ($matchstudyid != "") { ?>
+											<div class="ui labeled button">
+												<div class="ui small yellow button">
+													<i class="clipboard check icon"></i> Matched existing study
+												</div>
+												<a href="studies.php?studyid=<?=$matchstudyid?>" target="_blank" class="ui yellow label"><?=$matchsubjectuid?><?=$matchstudynum?></a>
+											</div>
+										<? } ?>
+									</div>
+								</div>
+							</div>
+							<div class="content">
 						<?
 							$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
 							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
@@ -854,33 +970,64 @@
 								//PrintVariable($seriesmatches);
 								
 								?>
-								<li class="level3"><? if ($status == "parsingcomplete") { ?><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><?}?><span class="caret"><b><?=$seriesnum?></b> &nbsp; <?=$desc?> &nbsp; <?=$protocol?> &nbsp; <?=$seriesdate?> <span class="tiny">Img:</span> <?=$cols?>x<?=$rows?></span> <i>Matched <?=count($seriesmatches);?> series</i>
-									<ul class="nested" style="margin: 5px;">
+								<div class="accordion" style="background-color: #fff">
+									<div class="title">
+										<div class="ui two column grid">
+											<div class="column">
+												<i class="dropdown icon"></i>
+												<? if ($status == "parsingcomplete") { ?><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><?}?>
+												<div class="ui large blue label">
+													<?=$seriesnum?>
+												</div>
+												<div class="ui large label">
+													<?=$desc?>
+												</div>
+												<div class="ui large image label">
+													Protocol
+													<div class="detail"><?=$protocol?></div>
+												</div>
+												<div class="ui large image label">
+													Date
+													<div class="detail"><?=$seriesdate?></div>
+												</div>
+												<div class="ui large image label">
+													Img
+													<div class="detail"><?=$cols?>x<?=$rows?></div>
+												</div>
+											</div>
+											<div class="right aligned column">
+												<i>Matched <?=count($seriesmatches);?> series</i>
+											</div>
+										</div>
+									</div>
+									<div class="content">
 									<?
 										$files = explode(",", $filelist);
 										?>
-										<li style='background-color: #fff; padding: 2px 5px;'><b><?=count($files)?> files</b>
-										<tt>
+										<b><?=count($files)?> files</b><br>
+										<tt style="font-size: 8pt">
 										<?
 										foreach ($files as $f) {
-											echo "<li style='font-size: 8pt; background-color: #fff; padding: 1px 5px;'><tt>$f</tt>";
+											echo "$f<br>";
 										}
 									?>
 										</tt>
-									</ul>
-								</tt>
+									</div>
+								</div>
 								<?
 							}
 						?>
-						</ul>
+						</div>
+						</div>
 						<?
 					}
 				?>
-				</ul>
+				</div>
+				</div>
 				<?
 			}
 			?>
-			</ul>
+
 			<? if ($status == "parsingcomplete") { ?>
 			</form>
 			<? } ?>
@@ -902,6 +1049,8 @@
 		else {
 			?>Upload not found<?
 		}
+		?>
+		<?
 	}
 	
 	

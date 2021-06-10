@@ -37,8 +37,8 @@ public:
     //QString AppendUploadLog(int uploadid, QString msg);
     bool ParseUploads();
     bool ArchiveParsedUploads();
-    void SetUploadStatus(int uploadid, QString status);
-
+    void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
+    bool UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
 
 private:
     nidb *n;
