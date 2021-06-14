@@ -38,6 +38,7 @@ public:
     bool ParseUploads();
     bool ArchiveParsedUploads();
     void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
+    QString GetUploadStatus(int uploadid);
     bool UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
 
 private:

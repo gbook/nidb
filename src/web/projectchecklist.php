@@ -239,7 +239,7 @@
 		$neworder = 1;
 
 	?>
-	<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" class="ui primary basic button">Edit checklist</a>
+	<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
 
 	<datalist id="modalitylist">
 		<?
@@ -394,7 +394,7 @@
 					Displaying <b><?=$numenrollments?> enrollments</b>
 				</div>
 				<div class="right aligned column">
-					<a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" class="ui primary basic button">Edit checklist</a>
+					<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
 				</div>
 			</div>
 		<table class="ui celled very compact selectable black table" id="maintable">
@@ -605,7 +605,7 @@
 		}
 
 		?>
-		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$id?>" style="font-weight: normal">Edit checklist</a>
+		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" style="font-weight: normal">Edit checklist</a>
 		<br><br>
 		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
 		

@@ -33,14 +33,7 @@
 	</head>
 	
 	<style>
-		.t td { vertical-align: top; padding: 7px;}
-		.t td:first-child { text-align: right; color: #444; font-weight: bold; }
-		.t td:last-child { text-align: left; color: darkblue; }
 		.e { font-weight: bold; color: #444; }
-		.good:before { content: '\2714'; font-weight: bold; color: green; display: inline-block; }
-		.bad:before { content: '\2718'; font-weight: bold; color: red; display: inline-block; }
-		input:invalid { background: #ffdbc9; border: 2px solid orange !important; }
-		/* input:required { border: 1px solid orange !important; } */
 	</style>
 
 <body>
@@ -70,6 +63,7 @@
 	}
 	
 	/* check if the client can run this page. ie, is it in the list of safe IPs */
+	$cfg['setupips'] .= "::1,127.0.0.1,localhost";
 	if ($cfg['setupips'] != "") {
 		$valid = false;
 		$iplist = explode(",", $cfg['setupips']);
@@ -78,7 +72,7 @@
 				$valid = true;
 		}
 		if (!$valid) {
-			Notice("You are not allowed to access this page. Setup/upgrade functionality is only available to specified IP addresses.");
+			Notice("You are not allowed to access this page. Setup/upgrade functionality is only available to specified IP addresses.<br>Your IP is " . $_SERVER['REMOTE_ADDR']);
 			exit(0);
 		}
 	}
@@ -1012,7 +1006,7 @@
 							else
 								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							
-							echo " &nbsp; <tt style='font-size: smaller;'><span class='good'></span> $column</tt> modified.<br>";
+							echo " &nbsp; <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> modified.<br>";
 						}
 					}
 					else {
@@ -1026,7 +1020,7 @@
 						else
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-						echo " &nbsp; Column <tt style='font-size: smaller;'><span class='good'></span> $column</tt> added.<br>";
+						echo " &nbsp; Column <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> added.<br>";
 					}
 				}
 				

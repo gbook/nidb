@@ -241,6 +241,16 @@ bool moduleUpload::ParseUploads() {
                     double pct = ((double)tfiles/(double)c) * 100.0;
                     SetUploadStatus(upload_id, "parsing", pct);
 
+                    /* check if this module should be running */
+                    n->ModuleRunningCheckIn();
+                    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
+                    /* check if the upload status has changed */
+                    QString status = GetUploadStatus(upload_id);
+                    if (status != "parsing") {
+                        return ret;
+                    }
+
                     /* after 5000 files, put the found information into the database, then clear the fs list */
                     io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
                     UpdateParsedUploads(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, upload_id);
@@ -674,6 +684,11 @@ bool moduleUpload::ArchiveParsedUploads() {
             int i(0);
             if (numSeries > 0) {
                 while (q2.next()) {
+
+                    /* check if this module should be running */
+                    n->ModuleRunningCheckIn();
+                    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
                     ret = 1;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
@@ -739,4 +754,23 @@ void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent)
     if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
     q.bindValue(":uploadid", uploadid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetUploadStatus -------------------------------- */
+/* ---------------------------------------------------------- */
+QString moduleUpload::GetUploadStatus(int uploadid) {
+    QString status = "";
+
+    QSqlQuery q;
+    q.prepare("select upload_status from uploads where upload_id = :uploadid");
+    q.bindValue(":uploadid", uploadid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    if (q.size() > 0) {
+        q.first();
+        status = q.value("upload_status").toString();
+    }
+
+    return status;
 }
