@@ -41,6 +41,8 @@
 	require "menu.php";
 	//require 'kashi.php';
 
+	//PrintVariable($_POST);
+	
 	/* set debugging on/off only for this page */
 	$GLOBALS['cfg']['debug'] = 0;
 	
@@ -49,7 +51,7 @@
 
 	/* searching variables */
     $searchvars['s_searchhistoryid'] = GetVariable("s_searchhistoryid");
-    $searchvars['s_projectid'] = GetVariable("s_projectid");
+    $searchvars['s_projectids'] = GetVariable("s_projectids");
     $searchvars['s_enrollsubgroup'] = GetVariable("s_enrollsubgroup");
     $searchvars['s_subjectuid'] = GetVariable("s_subjectuid");
     $searchvars['s_subjectaltuid'] = GetVariable("s_subjectaltuid");
@@ -150,7 +152,7 @@
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div style="background-color: orange">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
+		<div class="ui orange label">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -190,7 +192,7 @@
 			$s['s_ageatscanmax'] = $row['ageatscanmax'];
 			$s['s_subjectgender'] = $row['subjectgender'];
 			$s['s_subjectgroupid'] = $row['subjectgroupid'];
-			$s['s_projectid'] = $row['projectid'];
+			$s['s_projectids'] = $row['projectids'];
 			$s['s_enrollsubgroup'] = $row['enrollsubgroup'];
 			$s['s_measuresearch'] = $row['measuresearch'];
 			$s['s_measurelist'] = $row['measurelist'];
@@ -264,7 +266,7 @@
 	
 	<? if ($action == "search") { ?>
 	<div class="ui text container" id="pageloading">
-		<div class="ui inverted blue segment" align="center">
+		<div class="ui inverted green segment" align="center">
 			<h2 class="ui inverted header">
 				<i class="large inverted spinner loading icon"></i> Searching...
 			</h2>
@@ -358,7 +360,8 @@
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="180px">Project</td>
 						<td>
-						<select name="s_projectid" class="importantfield">
+						<select name="s_projectids[]" multiple class="ui dropdown importantfield">
+							<option value=""></option>
 							<option value="all">All Projects</option>
 							<?
 								$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
@@ -367,7 +370,7 @@
 									$project_id = $row['project_id'];
 									$project_name = $row['project_name'];
 									$project_costcenter = $row['project_costcenter'];
-									if ($project_id == $s['s_projectid']) { $selected = "selected"; } else { $selected = ""; }
+									if (in_array($project_id, $s['s_projectids'])) { $selected = "selected"; } else { $selected = ""; }
 									
 									$perms = GetCurrentUserProjectPermissions(array($project_id));
 									if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
@@ -868,7 +871,8 @@
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
+			if (is_array($value)) { $$key = mysqli_real_escape_array($s[$key]); }
+			elseif (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
 			else { $$key = $s[$key]; }
 		}
 
@@ -881,7 +885,9 @@
 		$s_ageatscanmax = ($s_ageatscanmax == '') ? "null" : "'$s_ageatscanmax'";
 		$s_subjectgender = ($s_subjectgender == '') ? "null" : "'$s_subjectgender'";
 		$s_subjectgroupid = ($s_subjectgroupid == '') ? "null" : "'$s_subjectgroupid'";
-		$s_projectid = (($s_projectid == '') || ($s_projectid == 'all')) ? "null" : "'$s_projectid'";
+		
+		if (($s_projectids == '') || ($s_projectids == 'all')) { $projectid = "null"; } else { $projectid = "'" . implode2(",", $s_projectids) . "'"; }
+		
 		$s_enrollsubgroup = ($s_enrollsubgroup == '') ? "null" : "'$s_enrollsubgroup'";
 		$s_measuresearch = ($s_measuresearch == '') ? "null" : "'$s_measuresearch'";
 		$s_measurelist = ($s_measurelist == '') ? "null" : "'$s_measurelist'";
@@ -924,7 +930,7 @@
 		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
 		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
 
-		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectid, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $s_projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
@@ -1135,7 +1141,7 @@
 			}
 			elseif ($s_resultorder == 'thumbnails') {
 				/* display thumbnails */
-				SearchThumbnails($result);
+				SearchThumbnails($result, $s);
 			}
 			elseif ($s_resultorder == 'long') {
 				/* display longitudinal data */
@@ -1330,9 +1336,13 @@
 		}
 		
 		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
-		if (($s_projectid != "") && ($s_projectid != "all")) {
+		if (($s_projectids != "") && ($s_projectids != "all")) {
 			foreach ($subjectids as $subjid) {
-				$displayids[$subjid] = GetPrimaryProjectID($subjid, $s_projectid);
+				foreach ($s_projectids as $projectid) {
+					if ($projectid != "") {
+						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
+					}
+				}
 			}
 		}
 		
@@ -1507,7 +1517,7 @@
 			/* determine the displayID - in case the user wants to see the project specific IDs instead */
 			$displayid = $uid;
 			$displayidcolor = "";
-			if (($s_projectid != "") && ($s_projectid != "all")) {
+			if (($s_projectids != "") && ($s_projectids != "all")) {
 				if ($displayids[$subject_id] != "") {
 					$displayid = $displayids[$subject_id];
 					$displayidcolor = "";
@@ -2442,7 +2452,7 @@
 		<? if ($s_resultorder == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
-		<table width="100%" class="searchresults">
+		<!--<table width="100%" class="searchresults" border="1">-->
 		<? } ?>
 			<script type="text/javascript">
 			$(document).ready(function() {
@@ -2507,9 +2517,13 @@
 		}
 		
 		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
-		if (($s_projectid != "") && ($s_projectid != "all")) {
+		if (($s_projectids != "") && ($s_projectids != "all")) {
 			foreach ($subjectids as $subjid) {
-				$displayids[$subjid] = GetPrimaryProjectID($subjid, $s_projectid);
+				foreach ($s_projectids as $projectid) {
+					if ($projectid != "") {
+						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
+					}
+				}
 			}
 		}
 		
@@ -2612,10 +2626,8 @@
 		
 		/* ----- loop through the results and display them ----- */
 		?>
-		<table style="border: 1px solid #aaa; border-collapse: collapse">
-			<tr>
-			<?
-			$col = 0;
+		<div class="ui eight cards">
+		<?
 		mysqli_data_seek($result,0); /* rewind the record pointer */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
@@ -2637,22 +2649,22 @@
 			//echo "$thumbpath<br>";
 			
 			?>
-				<td style="padding:15; border: 1px solid #aaa;" align="center">
-					<a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a> series <?=$seriesnum?>
-					<br>
-					<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="preview.php?image=<?=$thumbpath?>" style="max-width: 200px; padding: 8px"></a>
-					<br>
-					<?=$seriesdesc?>
-				</td>
+				<!--<div class="ui center aligned column">-->
+					<div class="ui card">
+						<div class="content">
+							<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a> series <?=$seriesnum?></div>
+							<div class="meta"><?=$seriesdesc?></div>
+							<div class="description">
+								<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$thumbpath?>"></a>
+							</div>
+						</div>
+					</div>
+				<!--</div>-->
 			<?
-			
-			$col++;
-			if ($col >= 6) {
-				$col = 0;
-				?></tr><tr><?
-			}
 		}
-		?></tr></table><?
+		?>
+		</div>
+		<?
 	}
 	
 	
@@ -4087,7 +4099,10 @@
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) {
+			if (is_array($value)) {
+				$$key = trim(mysqli_real_escape_array($s[$key]));
+			}
+			elseif (is_scalar($value)) {
 				$$key = trim(mysqli_real_escape_string($GLOBALS['linki'], $s[$key]));
 			}
 			else {
@@ -4140,8 +4155,8 @@
 		if ($s_ageatscanmin != "") { $sqlwhere .= " and `studies`.study_ageatscan >= '$s_ageatscanmin'"; }
 		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
-		if ($s_projectid != "all") {
-			$sqlwhere .= " and `projects`.project_id = $s_projectid";
+		if ((!in_array("all", $s_projectids) && (count($s_projectids) != 0))) {
+			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
 		}
 		else {
 			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		

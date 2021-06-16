@@ -685,6 +685,8 @@
 		if (!ValidID($subjectid,'Subject ID')) { return; }
 		if (!ValidID($projectid,'Project ID')) { return; }
 	
+		//PrintVariable($subjectid);
+		//PrintVariable($projectid);
 		//if (($subjectid == "") || ($projectid == "")) {
 		//	return "";
 		//}
@@ -698,12 +700,15 @@
 		if (mysqli_num_rows($result) > 1) {
 			Notice("Subject [$uid] has more than one enrollment in the same project [$projectname]. Using the first enrollment to get the primary ID.");
 		}
-
-		$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc limit 1";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//PrintSQL($sqlstring);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		return $row['altuid'];
+		elseif (mysqli_num_rows($result) == 1) {
+			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc limit 1";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			//PrintSQL($sqlstring);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			return $row['altuid'];
+		}
+		else
+			return "";
 	}
 
 	

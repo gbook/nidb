@@ -503,6 +503,13 @@
 						$buttonlabel = "View Import";
 						$label = "";
 						break;
+
+					case 'cancelled':
+						$statuscolor = "grey";
+						$buttoncolor = "";
+						$buttonlabel = "View Cancelled Import";
+						$label = "";
+						break;
 					
 					default:
 						$statuscolor = "secondary blue";
@@ -722,6 +729,8 @@
 			
 			?>
 			<div class="ui container">
+				<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
+				<br><br>
 				<div class="ui two column grid">
 					<div class="column">
 						<h3 class="ui top attached inverted header">Upload Details</h3>
@@ -813,7 +822,11 @@
 						</table>
 					</div>
 					<div class="column">
-						<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel</a>
+						
+						<h3 class="ui top attached inverted header">Operations</h3>
+						<div class="ui bottom attached segment">
+							<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel Import</a>
+						</div>
 						<!--
 						<h3 class="ui top attached inverted header">Reparse</h3>
 						<div class="ui bottom attached segment">
@@ -1361,6 +1374,13 @@
 				$step3_title = "Parse"; $step3_desc = "Data queued to be re-parsed"; $step3_state = "active"; $step3_icon = "tasks";
 				$step4_title = "Archive"; $step4_desc = ""; $step4_state = "disabled";
 				$step5_title = "Complete"; $step5_desc = ""; $step5_state = "disabled";
+				break;
+			case 'cancelled':
+				$step1_title = "Started"; $step1_desc = "Upload has been submitted"; $step1_state = "active";
+				$step2_title = "Uploading"; $step2_desc = "Import has been cancelled"; $step2_state = "disabled";
+				$step3_title = "Parse"; $step3_desc = "Import has been cancelled"; $step3_state = "disabled";
+				$step4_title = "Archive"; $step4_desc = "Import has been cancelled"; $step4_state = "disabled";
+				$step5_title = "Complete"; $step5_desc = "Import has been cancelled"; $step5_state = "disabled";
 				break;
 			default:
 		}
