@@ -60,6 +60,7 @@
 	$datestart = GetVariable("datestart");
 	$dateend = GetVariable("dateend");
 	$keyword = GetVariable("keyword");
+	$userspecifiedpatientid = GetVariable("userspecifiedpatientid");
 	
 	/* determine action */
 	switch ($action) {
@@ -67,7 +68,7 @@
 			DisplayNewImportForm();
 			break;
 		case 'newimport':
-			NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria);
+			NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid);
 			DisplayImportList($displayall);
 			break;
 		case 'queueforarchive':
@@ -301,7 +302,7 @@
 	/* -------------------------------------------- */
 	/* ------- NewImport -------------------------- */
 	/* -------------------------------------------- */
-	function NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria) {
+	function NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid) {
 		
 		/* prepare fields for SQL */
 		$datalocation = mysqli_real_escape_string($GLOBALS['linki'], $datalocation);
@@ -311,6 +312,7 @@
 		$subjectcriteria = mysqli_real_escape_string($GLOBALS['linki'], $subjectcriteria);
 		$studycriteria = mysqli_real_escape_string($GLOBALS['linki'], $studycriteria);
 		$seriescriteria = mysqli_real_escape_string($GLOBALS['linki'], $seriescriteria);
+		$userspecifiedpatientid = mysqli_real_escape_string($GLOBALS['linki'], $userspecifiedpatientid);
 		
 		if ($modality == "unknown")
 			$guessmodality = 1;
@@ -322,7 +324,7 @@
 		  */
 		
 		/* create the upload and get the upload_id */
-		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria) values (now(), 'uploading', '$datalocation', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria')";
+		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid) values (now(), 'uploading', '$datalocation', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadid = mysqli_insert_id($GLOBALS['linki']);
@@ -579,7 +581,7 @@
 					</details>
 				</div>
 				-->
-				<?DisplayStatusSteps($status);?>
+				<?DisplayStatusSteps($status,"");?>
 				</p>
 				<br><br>
 				<?
@@ -731,135 +733,129 @@
 			<div class="ui container">
 				<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
 				<br><br>
-				<div class="ui two column grid">
-					<div class="column">
-						<h3 class="ui top attached inverted header">Upload Details</h3>
-						<table class="ui bottom attached celled table">
-							<tr>
-								<td class="right aligned"><h4 class="header">Status</h4></td>
-								<td>
-									<div class="ui large <?=$statuscolor?> label"><?=$statusmsg?></div>
-									<? if ($percent != "") { ?>
-									<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
-									<? } ?>
-								</td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="header">Log</h4></td>
-								<td>
-									<?
-										$sqlstring = "select * from upload_logs where upload_id = $uploadid";
-										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									?>
-									<div class="ui accordion">
-										<div class="title">
-											<i class="dropdown icon"></i>
-											View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
-										</div>
-										<div class="content">
-											<tt><pre><?
-												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$date = $row['log_date'];
-													$msg = $row['log_msg'];
-													echo "[$date] $msg\n";
-												}
-											?></pre></tt>
-										</div>
-									</div>
-								</td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="header">Uploaded files</h4></td>
-								<td>
-									<div class="ui accordion">
-										<div class="title">
-											<i class="dropdown icon"></i>
-											Original file list (<?=count($filelist);?> files)
-										</div>
-										<div class="content">
-											<tt><?=implode2("<br>", $filelist)?></tt>
+				<h3 class="ui top attached inverted header">Upload Details</h3>
+				<table class="ui attached celled table">
+					<tr>
+						<td class="right aligned"><h4 class="header">Status</h4></td>
+						<td>
+							<?DisplayStatusSteps($status,"mini");?>
+							<div class="ui large <?=$statuscolor?> label"><?=$statusmsg?></div>
+							<? if ($percent != "") { ?>
+							<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
+							<? } ?>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Log</h4></td>
+						<td>
+							<?
+								$sqlstring = "select * from upload_logs where upload_id = $uploadid";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							?>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>
+									View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
+								</div>
+								<div class="content">
+									<tt><pre><?
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$date = $row['log_date'];
+											$msg = $row['log_msg'];
+											echo "[$date] $msg\n";
+										}
+									?></pre></tt>
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Uploaded files</h4></td>
+						<td>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>
+									Original file list (<?=count($filelist);?> files)
+								</div>
+								<div class="content">
+									<tt><?=implode2("<br>", $filelist)?></tt>
+								</div>
+								<?
+									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$errorfiles = array();
+									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+										$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
+									}
+									if (count($errorfiles) > 0) {
+										?>
+										<div class="ui accordion">
+											<div class="title">
+												<i class="dropdown icon"></i>
+												Unreadable (<?=count($filelist);?> files)
+											</div>
+											<div class="content">
+												<tt><?=implode2("<br>", $errorfiles)?></tt>
+											</div>
 										</div>
 										<?
-											$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
-											$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-											$errorfiles = array();
-											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-												$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
-											}
-											if (count($errorfiles) > 0) {
-												?>
-												<div class="ui accordion">
-													<div class="title">
-														<i class="dropdown icon"></i>
-														Unreadable (<?=count($filelist);?> files)
-													</div>
-													<div class="content">
-														<tt><?=implode2("<br>", $errorfiles)?></tt>
-													</div>
-												</div>
-												<?
-											}
-										?>
-									</div>
-								</td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="header">Source</h4></td>
-								<td><?=$source?></td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="header">Source Data Path</h4></td>
-								<td><tt><?=$datapath?></tt></td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="header">Matching Criteria</h4></td>
-								<td>
-									Subject: <b><?=$subjectcriteria?></b><br>
-									Study: <b><?=$studycriteria?></b><br>
-									Series: <b><?=$seriescriteria?></b>
-								</td>
-							</tr>
-						</table>
-					</div>
-					<div class="column">
-						
-						<h3 class="ui top attached inverted header">Operations</h3>
-						<div class="ui bottom attached segment">
-							<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel Import</a>
-						</div>
-						<!--
-						<h3 class="ui top attached inverted header">Reparse</h3>
-						<div class="ui bottom attached segment">
-							<form class="ui form" method="post" action="importimaging.php" name="reparseform">
-							<input type="hidden" name="action" value="reparse">
-							<input type="hidden" name="uploadid" value="<?=$uploadid?>">
-							<div class="field">
-								<label>Subject Matching Criteria</label>
-								<select class="ui dropdown" name="subjectcriteria">
-									<option value="patientid" <? if ($subjectcriteria == "patientid") echo "selected"; ?>>PatientID (DICOM 0010,0020)</option>
-									<option value="specificpatientid" <? if ($subjectcriteria == "specificpatientid") echo "selected"; ?>>Specific PatientID</option>
-									<option value="patientidfromdir" <? if ($subjectcriteria == "patientidfromdir") echo "selected"; ?>>PatientID from parent directory</option>
-									<option value="namesexdob" <? if ($subjectcriteria == "namesexdob") echo "selected"; ?>>PatientName/PatientBirthDate/PatientSex (DICOM fields)</option>
-								</select>
-								<label>Study Matching Criteria</label>
-								<select class="ui dropdown" name="studycriteria">
-									<option value="modalitystudydate" <? if ($studycriteria == "modalitystudydate") echo "selected"; ?>>Modality/StudyDate/StudyTime (DICOM)</option>
-									<option value="studyuid" <? if ($studycriteria == "studyuid") echo "selected"; ?>>StudyInstanceUID (DICOM 0020,000D)</option>
-									<option value="patientidfromdir" <? if ($studycriteria == "patientidfromdir") echo "selected"; ?>>StudyID (DICOM 0020,0010)</option>
-								</select>
-								<label>Series Matching Criteria</label>
-								<select class="ui dropdown" name="seriescriteria">
-									<option value="seriesnum" <? if ($seriescriteria == "seriesnum") echo "selected"; ?>>SeriesNumber (DICOM 0020,0011)</option>
-									<option value="seriesdate" <? if ($seriescriteria == "seriesdate") echo "selected"; ?>>SeriesDate/SeriesTime (DICOM)</option>
-									<option value="seriesuid" <? if ($seriescriteria == "seriesuid") echo "selected"; ?>>SeriesInstanceUID (DICOM 0020,000E)</option>
-								</select>
+									}
+								?>
 							</div>
-							<button class="ui red button" title="Completely reset the upload (remove logs, and any found subjects/studies/series) and reparse based on the new settings." onClick="document.reparseform.submit();">Reparse</button>
-							</form>
-						</div>
-						-->
-					</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Source</h4></td>
+						<td><?=$source?></td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Source Data Path</h4></td>
+						<td><tt><?=$datapath?></tt></td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">Matching Criteria</h4></td>
+						<td>
+							Subject: <b><?=$subjectcriteria?></b><br>
+							Study: <b><?=$studycriteria?></b><br>
+							Series: <b><?=$seriescriteria?></b>
+						</td>
+					</tr>
+				</table>
+				<h3 class="ui attached inverted header">Operations</h3>
+				<div class="ui bottom attached segment">
+					<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel Import</a>
 				</div>
+				<!--
+				<h3 class="ui top attached inverted header">Reparse</h3>
+				<div class="ui bottom attached segment">
+					<form class="ui form" method="post" action="importimaging.php" name="reparseform">
+					<input type="hidden" name="action" value="reparse">
+					<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+					<div class="field">
+						<label>Subject Matching Criteria</label>
+						<select class="ui dropdown" name="subjectcriteria">
+							<option value="patientid" <? if ($subjectcriteria == "patientid") echo "selected"; ?>>PatientID (DICOM 0010,0020)</option>
+							<option value="specificpatientid" <? if ($subjectcriteria == "specificpatientid") echo "selected"; ?>>Specific PatientID</option>
+							<option value="patientidfromdir" <? if ($subjectcriteria == "patientidfromdir") echo "selected"; ?>>PatientID from parent directory</option>
+							<option value="namesexdob" <? if ($subjectcriteria == "namesexdob") echo "selected"; ?>>PatientName/PatientBirthDate/PatientSex (DICOM fields)</option>
+						</select>
+						<label>Study Matching Criteria</label>
+						<select class="ui dropdown" name="studycriteria">
+							<option value="modalitystudydate" <? if ($studycriteria == "modalitystudydate") echo "selected"; ?>>Modality/StudyDate/StudyTime (DICOM)</option>
+							<option value="studyuid" <? if ($studycriteria == "studyuid") echo "selected"; ?>>StudyInstanceUID (DICOM 0020,000D)</option>
+							<option value="patientidfromdir" <? if ($studycriteria == "patientidfromdir") echo "selected"; ?>>StudyID (DICOM 0020,0010)</option>
+						</select>
+						<label>Series Matching Criteria</label>
+						<select class="ui dropdown" name="seriescriteria">
+							<option value="seriesnum" <? if ($seriescriteria == "seriesnum") echo "selected"; ?>>SeriesNumber (DICOM 0020,0011)</option>
+							<option value="seriesdate" <? if ($seriescriteria == "seriesdate") echo "selected"; ?>>SeriesDate/SeriesTime (DICOM)</option>
+							<option value="seriesuid" <? if ($seriescriteria == "seriesuid") echo "selected"; ?>>SeriesInstanceUID (DICOM 0020,000E)</option>
+						</select>
+					</div>
+					<button class="ui red button" title="Completely reset the upload (remove logs, and any found subjects/studies/series) and reparse based on the new settings." onClick="document.reparseform.submit();">Reparse</button>
+					</form>
+				</div>
+				-->
 			</div>
 			
 			
@@ -1293,7 +1289,7 @@
 	/* ---------------------------------------------------------- */
 	/* --------- DisplayStatusSteps ----------------------------- */
 	/* ---------------------------------------------------------- */
-	function DisplayStatusSteps($status) {
+	function DisplayStatusSteps($status, $size) {
 		
 		// Possible statuses: 'uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse'
 		
@@ -1386,7 +1382,12 @@
 		}
 		
 		?>
-			<div class="ui bottom attached five steps">
+		<script>
+			$(document).ready(function() {
+				$('.ui .progress').progress();
+			});
+		</script>		
+			<div class="ui bottom attached five <?=$size?> steps">
 				<div class="<?=$step1_state?> step">
 					<div class="content">
 						<div class="title"><?=$step1_title?></div>

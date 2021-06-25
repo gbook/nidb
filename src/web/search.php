@@ -42,6 +42,7 @@
 	//require 'kashi.php';
 
 	//PrintVariable($_POST);
+	//PrintVariable($_SESSION);
 	
 	/* set debugging on/off only for this page */
 	$GLOBALS['cfg']['debug'] = 0;
@@ -94,7 +95,7 @@
     $searchvars['s_pipelinecolorize'] = GetVariable("s_pipelinecolorize");
     $searchvars['s_pipelinecormatrix'] = GetVariable("s_pipelinecormatrix");
     $searchvars['s_pipelineresultstats'] = GetVariable("s_pipelineresultstats");
-    $searchvars['s_resultorder'] = GetVariable("s_resultorder");
+    $searchvars['s_resultoutput'] = GetVariable("s_resultoutput");
     $searchvars['s_formid'] = GetVariable("s_formid");
     $searchvars['s_formfieldid'] = GetVariable("s_formfieldid");
     $searchvars['s_formcriteria'] = GetVariable("s_formcriteria");
@@ -152,7 +153,7 @@
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div class="ui orange label">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
+		<div class="ui orange message">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -226,7 +227,7 @@
 			$s['s_pipelinecolorize'] = $row['pipelinecolorize'];
 			$s['s_pipelinecormatrix'] = $row['pipelinecormatrix'];
 			$s['s_pipelineresultstats'] = $row['pipelineresultstats'];
-			$s['s_resultorder'] = $row['resultorder'];
+			$s['s_resultoutput'] = $row['resultorder'];
 			$s['s_formid'] = $row['formid'];
 			$s['s_formfieldid'] = $row['formfieldid'];
 			$s['s_formcriteria'] = $row['formcriteria'];
@@ -266,7 +267,7 @@
 	
 	<? if ($action == "search") { ?>
 	<div class="ui text container" id="pageloading">
-		<div class="ui inverted green segment" align="center">
+		<div class="ui inverted yellow segment" align="center">
 			<h2 class="ui inverted header">
 				<i class="large inverted spinner loading icon"></i> Searching...
 			</h2>
@@ -684,30 +685,30 @@
 										<li><a href="#tabs-6">Admin</a></li>
 									</ul>
 									<div id="tabs-1">
-										<? if (($s['s_resultorder'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
+										<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
 										
-										<? if ($s['s_resultorder'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="downloadseries" value="series" <?=$checked?>> Display all series <span class="tiny">(use for "Select All")</span><br>
+										<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>> Display all series <span class="tiny">(use for "Select All")</span><br>
 
-										<? if ($s['s_resultorder'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
+										<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
 									</div>
 									<div id="tabs-3">
-										<? if ($s['s_resultorder'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewtable" value="table" <?=$checked?>> Table<br>
+										<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>> Table<br>
 										
-										<? if ($s['s_resultorder'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
+										<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
 										
-										<? if ($s['s_resultorder'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
+										<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
 										
-										<? if ($s['s_resultorder'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
+										<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
 										
-										<? if ($s['s_resultorder'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
+										<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
 									</div>
 									<div id="tabs-4">
 										<table width="100%" cellspacing="0" cellpadding="3" style="font-size:11pt">
@@ -769,17 +770,17 @@
 										</table>
 										<br><br>
 									
-										<? if ($s['s_resultorder'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
+										<? if ($s['s_resultoutput'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
 										
-										<? if ($s['s_resultorder'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
+										<? if ($s['s_resultoutput'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
 										
-										<? if ($s['s_resultorder'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
+										<? if ($s['s_resultoutput'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
 										
-										<? if ($s['s_resultorder'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
+										<? if ($s['s_resultoutput'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
 									</div>
 									<div id="tabs-5">
 										QC variable <span class="tiny">built-in</span>&nbsp;
@@ -810,19 +811,19 @@
 											?>
 										</select>
 										<br><br>
-										<? if ($s['s_resultorder'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
+										<? if ($s['s_resultoutput'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
 										
-										<? if ($s['s_resultorder'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="qctable" value="qctable" <?=$checked?>> Table<br>
+										<? if ($s['s_resultoutput'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>> Table<br>
 									</div>
 									<div id="tabs-6">
-										<? if ($s['s_resultorder'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
+										<? if ($s['s_resultoutput'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
 										
 										<? if ($GLOBALS['isadmin']) { ?>
-										<? if ($s['s_resultorder'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultorder" id="viewoperations" value="operations" <?=$checked?>> File operations
+										<? if ($s['s_resultoutput'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>> File operations
 										<? } ?>
 										<br>
 										
@@ -844,7 +845,7 @@
 	
 	</form>
 	</div>
-	<br><br><br><br><br><br><br><br>
+	<br><br><br>
 	<?
 	}
 
@@ -921,7 +922,7 @@
 		$s_pipelinecolorize = ($s_pipelinecolorize == '') ? "null" : "'$s_pipelinecolorize'";
 		$s_pipelinecormatrix = ($s_pipelinecormatrix == '') ? "null" : "'$s_pipelinecormatrix'";
 		$s_pipelineresultstats = ($s_pipelineresultstats == '') ? "null" : "'$s_pipelineresultstats'";
-		$s_resultorder = ($s_resultorder == '') ? "null" : "'$s_resultorder'";
+		$s_resultoutput = ($s_resultoutput == '') ? "null" : "'$s_resultoutput'";
 		$s_formid = ($s_formid == '') ? "null" : "'$s_formid'";
 		$s_formfieldid = ($s_formfieldid == '') ? "null" : "'$s_formfieldid'";
 		$s_formcriteria = ($s_formcriteria == '') ? "null" : "'$s_formcriteria'";
@@ -930,7 +931,7 @@
 		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
 		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
 
-		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultorder, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultoutput, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
@@ -1027,6 +1028,7 @@
 					?>
 				</ul>
 			</div>
+			</div>
 			<?
 		}
 	}
@@ -1072,43 +1074,23 @@
 		
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
+
+		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums) = GetResultMetrics($result, $sqlstring, $s);
 		
+		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
 		
-		if ($s_resultorder == "debug") {
-			?>
-			<span class="sublabel">Query returned <?=mysqli_num_rows($result)?> rows in <?=number_format($querytime, 4)?> sec</span>
-			<div style="background-color: #EEEEEE"><?=$sqlstring?></div><br>
-			<div style="background-color: #EEEEEE"><?=getFormattedSQL($sqlstring)?></div>
-			<br><br><br><br>
-			<?
+		if (($numrows > 100000) && ($s_resultoutput != "pipelinecsv"))
 			return;
-		}
 
 		/* display the results */
-		if (mysqli_num_rows($result) > 0) {
+		if ($numrows > 0) {
 		
-			if ((mysqli_num_rows($result) > 100000) && ($s_resultorder != "pipelinecsv")) {
-				?>
-				<div style="border: 2px solid darkred; background-color: #FFEEEE; text-align: left; padding:5px; border-radius: 5px">
-				<b>Your search returned <? echo number_format(mysqli_num_rows($result),0); ?> results... which is a lot</b>
-				<br>
-				Try changing the search criteria to return fewer results or select a .csv format
-				</div>
-				<?
-				return;
-			}
-
 			/* generate a color gradient in an array (green to yellow to red) */
 			$colors = GenerateColorGradient();
 			$colors2 = GenerateColorGradient2();
 			
 			/* display the number of rows and the search time */
 			?>
-			<span class="sublabel">Query returned <? echo number_format(mysqli_num_rows($result),0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
-			<details>
-				<summary style="font-size:9pt">View SQL query:</summary>
-				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>
-			</details>
 			<style>
 			#preview {
 				position:absolute;
@@ -1128,49 +1110,291 @@
 			</script>
 			<?
 			/* ---------- pipeline results ------------ */
-			if (($s_resultorder == "pipeline") || ($s_resultorder == "pipelinecsv")) {
-				SearchPipeline($result, $s_resultorder, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats);
+			if (($s_resultoutput == "pipeline") || ($s_resultoutput == "pipelinecsv")) {
+				DisplaySearchResultsPipeline($result, $s_resultoutput, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats);
 			}
-			elseif ($s_resultorder == 'subject') {
+			elseif ($s_resultoutput == 'subject') {
 				/* display only subject data */
-				SearchStudy($result);
+				DisplaySearchResultsStudy($result);
 			}
-			elseif ($s_resultorder == 'uniquesubject') {
+			elseif ($s_resultoutput == 'uniquesubject') {
 				/* display only unique subject data */
-				SearchSubject($result);
+				DisplaySearchResultsSubject($result);
 			}
-			elseif ($s_resultorder == 'thumbnails') {
+			elseif ($s_resultoutput == 'thumbnails') {
 				/* display thumbnails */
-				SearchThumbnails($result, $s);
+				DisplaySearchResultsThumbnail($result, $s);
 			}
-			elseif ($s_resultorder == 'long') {
+			elseif ($s_resultoutput == 'long') {
 				/* display longitudinal data */
-				SearchLongitudinal($result);
+				DisplaySearchResultsLongitudinal($result);
 			}
-			elseif (($s_resultorder == 'pipelinelong') || ($s_resultorder == 'pipelinelongyear')) {
+			elseif (($s_resultoutput == 'pipelinelong') || ($s_resultoutput == 'pipelinelongyear')) {
 				/* display longitudinal pipeline data */
-				SearchLongitudinalPipeline($result, $s_resultorder);
+				DisplaySearchResultsLongitudinalPipeline($result, $s_resultoutput);
 			}
-			elseif (($s_resultorder == 'qcchart') || ($s_resultorder == 'qctable')) {
+			elseif (($s_resultoutput == 'qcchart') || ($s_resultoutput == 'qctable')) {
 				/* display longitudinal pipeline data */
-				//PrintSQL($sqlstring);
-				SearchQC($result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid);
+				DisplaySearchResultsQC($result, $s_resultoutput, $s_qcbuiltinvariable, $s_qcvariableid);
+			}
+			elseif (($s_resultoutput == 'table') || ($s_resultoutput == 'csv')) {
+				/* display table or csv */
+				DisplaySearchResultsTable($result, $s);
 			}
 			else {
 				/* regular old search */
-				SearchDefault($result, $s, $colors, $colors2);
+				DisplaySearchResultsDefault($result, $s, $colors, $colors2);
 			}
 		}
-		else {
-			Notice("Query returned no results");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetResultMetrics ------------------- */
+	/* -------------------------------------------- */
+	function GetResultMetrics($result, $sqlstring, $s) {
+		$numresults = 0;
+		$missinguids = array();
+		$missingaltuids = array();
+		$misingstudynums = array();
+		
+		/* ----- get number of results ----- */
+		$numresults = mysqli_num_rows($result);
+		
+		/* ----- get list of projects they don't have access to ----- */
+		$allowedprojectids = array();
+		$allowedprojectnames = array();
+		/* check to see which projects this user has access to view */
+		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '" . $_SESSION['userid'] . "' and (a.view_data = 1 or a.view_phi = 1)";
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+			$restrictedprojectids[] = $rowC['projectid'];
+		}
+		
+		/* ----- get list of unique subjects/studies/series ----- */
+		/* ----- if a project or group was specified, get list of IDs (UIDs/StudyIDs) which were found, and which were not found ----- */
+		$totalbytes = 0;
+		$subjects = array();
+		$studies = array();
+		$uids = array();
+		$subjectids = array();
+		/* tell the user if there are results for projects they don't have access to */
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$projectid = $row['project_id'];
+			$projectname = $row['project_name'];
+			$studyid = $row['study_id'];
+			$subjectid = $row['subject_id'];
+			$uid = $row['uid'];
+
+			if (!in_array($projectid, $allowedprojectids)) {
+				//echo "$projectid is not in allowedprojectids<br>";
+				if (!in_array($projectname, $allowedprojectnames)) {
+					//echo "$projectname is not in allowedprojectnames<br>";
+					$restrictedprojectnames[] = $projectname;
+				}
+			}
+			
+			/* ... AND ... while we're in this loop, count the number of unique studies ... */
+			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
+				$studies[] = $studyid;
+			}
+			/* ... and # of unique subjects */
+			if ((!isset($subjects)) || (!in_array($subjectid, $subjects))) {
+				$subjects[] = $subjectid;
+			}
+			/* also a unique list of UIDs ... */
+			if ((!isset($uids)) || (!in_array($uid, $uids))) {
+				$uids[] = $uid;
+			}
+			/* ... and a unique list of SubjectIDs */
+			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
+				$subjectids[] = $subjectid;
+			}
+			/* and get the total size of the data */
+			$totalbytes += $row['series_size'];
+		}
+		$numsubjects = count($subjects);
+		$numstudies = count($studies);
+
+		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
+		if (($s['s_projectids'] != "") && ($s['s_projectids'] != "all")) {
+			foreach ($subjectids as $subjid) {
+				foreach ($s['s_projectids'] as $projectid) {
+					if ($projectid != "") {
+						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
+					}
+				}
+			}
+		}
+		
+		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
+		if ($s['s_subjectuid'] != "") {
+			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
+			
+			$missinguids = array_udiff($uidsearchlist, $uids, 'strcasecmp');
+		}
+		if ($s['s_subjectaltuid'] != "") {
+			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
+
+			/* get list of UIDs from the list of alternate UIDs */
+			$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
+			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+				$altuids[] = $rowX['altuid'];
+			}
+			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
+		}
+		if ($s['s_subjectgroupid'] != "") {
+			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
+			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
+			if (count($missingstudies) > 0) {
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
+					$missinguids[] = $rowY['uid'];
+				}
+			}
+		}
+		if ($s['s_studygroupid'] != "") {
+			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
+			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
+			if (count($missingstudies) > 0) {
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
+					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
+				}
+			}
+		}
+		
+		$missinguids = array_filter($missinguids);
+		$missingaltuids = array_filter($missingaltuids);
+		$missingstudynums = array_filter($missingstudynums);
+		$restrictedprojectnames = array_filter($restrictedprojectnames);
+		
+		return array($numresults, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayResultMetrics --------------- */
+	/* -------------------------------------------- */
+	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
+		?>
+		<div class="ui container">
+		<div class="ui top attached grey segment">
+			Found <b><?=$numsubjects?> subjects</b> in <b><?=$numstudies?> studies</b> with <b><?=number_format($numrows,0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
+		</div>
+		<?
+			if ((mysqli_num_rows($result) > 100000) && ($s['s_resultoutput'] != "pipelinecsv")) {
+				?>
+				<div class="ui attached red message">
+				<b>Your search returned <? echo number_format(mysqli_num_rows($result),0); ?> results... which is a lot</b>
+				<br>
+				Try changing the search criteria to return fewer results or select a .csv format
+				</div>
+				<?
+			}
+
+			if (count($missinguids) > 0) {
 			?>
-			<details>
-				<summary style="font-size:9pt">View SQL query:</summary>
-				<div style="background-color: #EEEEEE; font-family:courier new; font-size:10pt"><?=getFormattedSQL($sqlstring)?><br></div>
-			</details>
-			<br>
+				<div class="ui inverted orange attached segment" style="padding-top:5px; padding-bottom:5px">
+					<div class="ui inverted accordion">
+						<div class="inverted title" style="padding-top:5px; padding-bottom:5px">
+							<i class="dropdown icon"></i>
+							<?=count($missinguids)?> UIDs not found
+						</div>
+						<div class="content">
+							<?=implode('<br>',$missinguids)?>
+						</div>
+					</div>
+				</div>
+			<?
+			}
+			elseif ($s['s_subjectuid'] != "") {
+			?>
+				<div class="ui attached segment" style="padding-top:5px; padding-bottom:5px">All UIDs found</div>
+			<?
+			}
+			
+			if (count($missingaltuids) > 0) {
+			?>
+				<div class="ui inverted orange attached segment" style="padding-top:5px; padding-bottom:5px">
+					<div class="ui accordion">
+						<div class="title" style="padding-top:5px; padding-bottom:5px">
+							<i class="dropdown icon"></i>
+							<?=count($missingaltuids)?> alternate UIDs not found
+						</div>
+						<div class="content">
+							<?=implode('<br>',$missingaltuids)?>
+						</div>
+					</div>
+				</div>
+			<?
+			}
+			elseif ($s['s_subjectaltuid'] != "") {
+			?>
+				<div class="ui attached segment" style="padding-top:5px; padding-bottom:5px">All alternate UIDs found</div>
+			<?
+			}
+			
+			if (count($missingstudynums) > 0) {
+			?>
+				<div class="ui inverted orange attached segment" style="padding-top:5px; padding-bottom:5px">
+					<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							<?=count($missingstudynums)?> Studies not found
+						</div>
+						<div class="content">
+							<?=implode('<br>',$missingstudynums)?>
+						</div>
+					</div>
+				</div>
+			<?
+			}
+		?>
+		<?
+		if (count($restrictedprojectnames) > 0) {
+		?>
+			<div class="ui inverted orange attached segment">
+				<b>Your search results contain subjects enrolled in the following projects to which you do not have view access</b>
+				<br>Contact your PI or project administrator for access
+				<ul>
+					<?
+					natcasesort($restrictedprojectnames);
+					foreach ($restrictedprojectnames as $projectname) {
+						echo "<li>$projectname</li>\n";
+					}
+					?>
+				</ul>
+			</div>
 			<?
 		}
+		
+		?>
+			<div class="ui <? if ($numrows > 0) { echo "bottom"; } ?> attached segment" style="padding-top:5px; padding-bottom:5px; font-size: smaller">
+				Query returned <? echo number_format($numrows,0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
+				<div class="ui accordion" style="padding-top:5px; padding-bottom:5px">
+					<div class="title" style="padding-top:5px; padding-bottom:5px">
+						<i class="dropdown icon"></i>
+						View SQL query
+					</div>
+					<div class="content" style="padding-top:5px; padding-bottom:5px">
+						<div class="ui segment"><span class="tt"><?=getFormattedSQL($sqlstring)?></span></div>
+					</div>
+				</div>
+			</div>
+		<?
+		if ($numrows < 1) {
+			?>
+			<div class="ui bottom attached yellow message">Query returned no results</div>
+			<?
+		}
+		?>
+		</div>
+		<br><br>
+		<?
 	}
 	
 	
@@ -1180,7 +1404,7 @@
 	function ValidateSearchVariables($s) {
 		
 		/* check which resultorder (type of result display) was selected */
-		switch ($s['s_resultorder']) {
+		switch ($s['s_resultoutput']) {
 			case 'pipeline':
 			case 'pipelinecsv':
 				if (trim($s['s_pipelineid']) == "") {
@@ -1196,9 +1420,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- SearchDefault ---------------------- */
+	/* ------- DisplaySearchResultsDefault -------- */
 	/* -------------------------------------------- */
-	function SearchDefault(&$result, $s, $colors, $colors2) {
+	function DisplaySearchResultsDefault(&$result, $s, $colors, $colors2) {
 		error_reporting(-1);
 		ini_set('display_errors', '1');
 	
@@ -1265,7 +1489,7 @@
 		}
 		
 		?>
-		<? if ($s_resultorder == "table") { ?>
+		<? if ($s_resultoutput == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
 		<table width="100%" class="searchresults">
@@ -1298,7 +1522,6 @@
 			$projectids[] = $rowC['projectid'];
 		}
 		
-		$totalbytes = 0;
 		/* tell the user if there are results for projects they don't have access to */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$projectid = $row['project_id'];
@@ -1307,32 +1530,10 @@
 			$subjectid = $row['subject_id'];
 			$uid = $row['uid'];
 
-			if (!in_array($projectid, $projectids)) {
-				//echo "$projectid is not in projectids<br>";
-				if (!in_array($projectname, $projectnames)) {
-					//echo "$projectname is not in projectnames<br>";
-					$projectnames[] = $projectname;
-				}
-			}
-			
-			/* ... AND ... while we're in this loop, count the number of unique studies ... */
-			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
-				$studies[] = $studyid;
-			}
-			/* ... and # of unique subjects */
-			if ((!isset($subjects)) || (!in_array($subjectid, $subjects))) {
-				$subjects[] = $subjectid;
-			}
-			/* also a unique list of UIDs ... */
-			if ((!isset($uids)) || (!in_array($uid, $uids))) {
-				$uids[] = $uid;
-			}
 			/* ... and a unique list of SubjectIDs */
 			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
 				$subjectids[] = $subjectid;
 			}
-			/* and get the total size of the data */
-			$totalbytes += $row['series_size'];
 		}
 		
 		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
@@ -1345,132 +1546,7 @@
 				}
 			}
 		}
-		
-		/* get the measures, if requested */
-		$measurenames = null;
-		if ($s_measurelist != "") {
-			$searchcriteria = ParseMeasureResultList($s_measurelist, "d.measure_name");
-			
-			if ($s_measurelist == "*") {
-				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjects) . ")";
-			}
-			else {
-				$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjects) . ") and d.measure_name in (" . MakeSQLList($s_measurelist) . ")";
-			}
-			
-			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
-			while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
-				if ($rowD['measure_type'] == 's') {
-					$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'] = $rowD['measure_valuestring'];
-				}
-				else {
-					$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'] = $rowD['measure_valuenum'];
-				}
-				$measuredata[$rowD['subject_id']][$rowD['measure_name']]['notes'] = $rowD['measure_notes'];
-				$measurenames[] = $rowD['measure_name'];
-			}
-			$measurenames = array_unique($measurenames);
-			natcasesort($measurenames);
-		}
-		
-		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
-		if ($s['s_subjectuid'] != "") {
-			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
-			
-			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
-		}
-		if ($s['s_subjectaltuid'] != "") {
-			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
-			/* get list of UIDs from the list of alternate UIDs */
-			$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
-			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$altuids[] = $rowX['altuid'];
-			}
-			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
-		}
-		if ($s['s_subjectgroupid'] != "") {
-			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
-			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingstudies) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
-					$missinguids[] = $rowY['uid'];
-				}
-			}
-		}
-		if ($s['s_studygroupid'] != "") {
-			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
-			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
-			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
-					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
-				}
-			}
-		}
-		?>
-		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=number_format(mysqli_num_rows($result),0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
-		<?
-			if (count($missinguids) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missinguids)?> UIDs not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missinguids)?></span>
-				</details>
-			<?
-			}
-			elseif ($uidsearchlist != '') {
-			?>
-				<br><span style="font-size:8pt">All UIDs found</span>
-			<?
-			}
-			
-			if (count($missingaltuids) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingaltuids)?> alternate UIDs not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missingaltuids)?></span>
-				</details>
-			<?
-			}
-			elseif ($altuidsearchlist != '') {
-			?>
-				<br><span style="font-size:8pt">All alternate UIDs found</span>
-			<?
-			}
-			
-			if (count($missingstudynums) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingstudynums)?> Studies not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missingstudynums)?></span>
-				</details>
-			<?
-			}
-		?>
-		<br><br>
-		<?
-		if (count($projectnames) > 0) {
-		?>
-			<div style="border: 2px solid darkred; background-color: #FFEEEE; text-align: left; padding:5px; border-radius: 5px">
-			<b>Your search results contain subjects enrolled in the following projects to which you do not have view access</b>
-			<br>Contact your PI or project administrator for access
-			<ul>
-			<?
-			natcasesort($projectnames);
-			foreach ($projectnames as $projectname) {
-				echo "<li>$projectname</li>\n";
-			}
-			?>
-			</ul>
-			</div>
-			<?
-		}
-		
 		/* create some variables to store info about the restuls */
 		$foundprojectids = array();
 		
@@ -1537,33 +1613,18 @@
 			}
 			
 			/* calculate the BMI */
-			if (($study_height == 0) || ($study_weight == 0)) {
-				$study_bmi = 0;
-			}
-			else {
-				$study_bmi = $study_weight / ( $study_height * $study_height);
-			}
+			$study_bmi = GetBMI($study_height, $study_weight);
 
 			$newstudyid = $uid . $study_num;
 
 			/* calculate age at scan */
-			list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $study_ageatscan, $study_datetime);
-			
-			if ($studyAge == null)
-				$studyAge = "-";
-			else
-				$studyAge = number_format($studyAge,1);
-
-			if ($calcStudyAge == null)
-				$calcStudyAge = "-";
-			else
-				$calcStudyAge = number_format($calcStudyAge,1);
+			list($studyAge, $calcStudyAge) = GetStudySearchResultsAge($birthdate, $study_ageatscan, $study_datetime);
 
 			/* fix some fields */
-			list($lname, $fname) = explode("^",$name);
-			$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
+			$name = GetFixedName($name);
+			
 			$study_desc = str_replace("^"," ",$study_desc);
-			if (($s_resultorder == "study") || ($s_resultorder == "export")) {
+			if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
 				$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
 			}
 			else {
@@ -1752,7 +1813,7 @@
 			
 			/* display study header if study */
 			if ($study_id != $laststudy_id) {
-				if (($s_resultorder == "study") || ($s_resultorder == "export")) {
+				if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
 					/* display study header */
 					?>
 					<script type="text/javascript">
@@ -1798,13 +1859,13 @@
 				}
 				/* display the series header only once */
 				if ($study_modality == "mr") {
-					if (($laststudy_id == "") && ($s_resultorder != "study") && ($s_resultorder != "export") && ($s_resultorder != "csv")) {
-						DisplayMRSeriesHeader($s_resultorder, $measurenames);
+					if (($laststudy_id == "") && ($s_resultoutput != "study") && ($s_resultoutput != "export") && ($s_resultoutput != "csv")) {
+						DisplayMRSeriesHeader($s_resultoutput, $measurenames);
 					}
-					if (($s_resultorder == "study") || ($s_resultorder == "export")) {
+					if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
 						DisplayMRStudyHeader($study_id, true, $measurenames);
 					}
-					if ($s_resultorder == "csv") {
+					if ($s_resultoutput == "csv") {
 						if (!$headeradded) {
 							$header = DisplayMRStudyHeader($study_id, false, $measurenames);
 							$csv .= "$header";
@@ -1819,16 +1880,16 @@
 					}
 				}
 				else {
-					if (($laststudy_id == "") && ($s_resultorder != "study") && ($s_resultorder != "export")) {
-						DisplayGenericSeriesHeader($s_resultorder);
+					if (($laststudy_id == "") && ($s_resultoutput != "study") && ($s_resultoutput != "export")) {
+						DisplayGenericSeriesHeader($s_resultoutput);
 					}
-					if (($s_resultorder == "study") || ($s_resultorder == "export")) {
+					if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
 						DisplayGenericStudyHeader($study_id);
 					}
 				}
 			}
 			/* set the css class for the rows */
-			if (($s_resultorder == "series") || ($s_resultorder == "table") || ($s_resultorder == "operations")) {
+			if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) {
 				$rowstyle = "seriesrowsmall";
 			}
 			else {
@@ -1836,7 +1897,7 @@
 			}
 			/* and then display the series... */
 			if ($study_modality == "mr") {
-				if ($s_resultorder == "csv") {
+				if ($s_resultoutput == "csv") {
 					if ($s_usealtseriesdesc) {
 						//$csv .= "$series_num, $series_altdesc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
 
@@ -1873,7 +1934,7 @@
 					
 				?>
 					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
-						<? if ($s_resultorder != "table") { ?>
+						<? if ($s_resultoutput != "table") { ?>
 							<td class="<?=$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<?=$series_id?>"></td>
 						<? } ?>
 						<td class="<?=$rowstyle?>"><b><?=$series_num?></b><? if ($downloadmsg != "") { ?>&nbsp;&nbsp;<img src="images/downloaded.png" title="<?=$downloadmsg?>"><?} ?>
@@ -1883,7 +1944,7 @@
 							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
 							&nbsp;<a href="preview.php?image=<?=$gifthumbpath?>" class="preview"><img src="images/movie.png" border="0"></a>
 						</td>
-						<? if (($s_resultorder == "series") || ($s_resultorder == "table") || ($s_resultorder == "operations")) { ?>
+						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
 							<td class="<?=$rowstyle?>"><?=$gender?></td>
 							<td class="<?=$rowstyle?>"><?=number_format($ageatscan,1)?>Y</td>
@@ -1901,7 +1962,7 @@
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxycolor?>;"><?=$rangey;?></td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td>
-						<? if ($s_resultorder != "table") { ?>
+						<? if ($s_resultoutput != "table") { ?>
 						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
 							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
 						</td>
@@ -1941,7 +2002,7 @@
 						<td class="<?=$rowstyle?>"><?=$series_size?></td>
 						<td class="<?=$rowstyle?>"><?=$sequence?></td>
 						<td class="<?=$rowstyle?>"><?=$series_tr?></td>
-						<? if ($s_resultorder != "table") { ?>
+						<? if ($s_resultoutput != "table") { ?>
 						<td class="<?=$rowstyle?>" bgcolor="<?=$behcolor?>"><?=$numfiles_beh?> <span class="tiny">(<?=$beh_size?>)</span></td>
 						<? }
 							if (count($measurenames) > 0) {
@@ -1959,12 +2020,12 @@
 			else {
 				?>
 				<tr class="tr<?=$study_id?> allseries">
-					<? if ($s_resultorder != "table") { ?>
+					<? if ($s_resultoutput != "table") { ?>
 						<td class="<?=$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<?=$series_id?>"></td>
 					<? } ?>
 					<td class="<?=$rowstyle?>"><b><?=$series_num?></b></td>
 					<td class="<?=$rowstyle?>"><?=$series_protocol;?></td>
-					<? if (($s_resultorder == "series") || ($s_resultorder == "table") || ($s_resultorder == "operations")) { ?>
+					<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 						<td class="<?=$rowstyle?>"><tt><?=$uid?></tt></td>
 						<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><?=implode2(', ',$altuids)?></tt></a></td>
 						<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
@@ -1985,7 +2046,7 @@
 		}
 
 		/* ---------- generate csv file ---------- */
-		if ($s_resultorder == "csv") {
+		if ($s_resultoutput == "csv") {
 			$filename = "query" . GenerateRandomString(10) . ".csv";
 			file_put_contents("/tmp/" . $filename, $csv);
 			?>
@@ -2000,10 +2061,10 @@
 		<div style="padding-left: 15px">
 		<?
 			/* ---------- display download/group box ---------- */
-			if (($s_resultorder == "study") || ($s_resultorder == "series") || ($s_resultorder == "export")) {
-				DisplayDownloadBox($s_studymodality, $s_resultorder, $foundprojectids);
+			if (($s_resultoutput == "study") || ($s_resultoutput == "series") || ($s_resultoutput == "export")) {
+				DisplayDownloadBox($s_studymodality, $s_resultoutput, $foundprojectids);
 			}
-			elseif ($s_resultorder == "operations") {
+			elseif ($s_resultoutput == "operations") {
 				DisplayFileIOBox();
 			}
 		?>
@@ -2013,11 +2074,512 @@
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySearchResultsTable ---------- */
+	/* -------------------------------------------- */
+	function DisplaySearchResultsTable(&$result, $s) {
+		error_reporting(-1);
+		ini_set('display_errors', '1');
+	
+		/* escape all the variables and put them back into meaningful variable names */
+		foreach ($s as $key => $value) {
+			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
+			else { $$key = $s[$key]; }
+		}
+
+		/* ---------------- regular search --------------- */
+		$s_studymodality = strtolower($s_studymodality);
+		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
+		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
+			$ratingseriesid = $row3['data_id'];
+			$ratings[$ratingseriesid][] = $row3['rating_value'];
+		}
+		
+		/* if its MRI, get the basic QC data */
+		if (strtolower($s_studymodality) == "mr") {
+			$pstats = GetMRSequenceQCList();
+		}
+		
+		$projectids = array();
+
+		/* get the user's id */
+		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+		$userid = $rowC['user_id'];
+				
+		/* check to see which projects this user has access to view */
+		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
+		//print "$sqlstringC<br>";
+		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+			$projectids[] = $rowC['projectid'];
+		}
+		
+		/* tell the user if there are results for projects they don't have access to */
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = $row['subject_id'];
+			
+			/* ... and a unique list of SubjectIDs */
+			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
+				$subjectids[] = $subjectid;
+			}
+		}
+		
+		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
+		if (($s_projectids != "") && ($s_projectids != "all")) {
+			foreach ($subjectids as $subjid) {
+				foreach ($s_projectids as $projectid) {
+					if ($projectid != "") {
+						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
+					}
+				}
+			}
+		}
+		
+		if ($s_resultoutput != "csv") {
+		?>
+		<table class="ui very compact small celled selectable table">
+			<thead>
+				<th class="ui inverted attached header">SeriesNum</th>
+				<th class="ui inverted attached header">Protocol</th>
+				<th class="ui inverted attached header">UID</th>
+				<th class="ui inverted attached header">Sex</th>
+				<th class="ui inverted attached header">StudyAge</th>
+				<th class="ui inverted attached header">CalcStudyAge</th>
+				<th class="ui inverted attached header">AltUIDs</th>
+				<th class="ui inverted attached header">StudyID</th>
+				<th class="ui inverted attached header">AltStudyID</th>
+				<th class="ui inverted attached header">StudyNum</th>
+				<th class="ui inverted attached header">Site</th>
+				<th class="ui inverted attached header">StudyDate</th>
+				<th class="ui inverted attached header">SeriesTime</th>
+				<th class="ui inverted attached header">MotionX</th>
+				<th class="ui inverted attached header">MotionY</th>
+				<th class="ui inverted attached header">MotionZ</th>
+				<th class="ui inverted attached header">Rating</th>
+				<th class="ui inverted attached header">PV_SNR</th>
+				<th class="ui inverted attached header">IO_SNR</th>
+				<th class="ui inverted attached header">MotionR^2</th>
+				<th class="ui inverted attached header">SizeX</th>
+				<th class="ui inverted attached header">SizeY</th>
+				<th class="ui inverted attached header">NumFiles</th>
+				<th class="ui inverted attached header">Size</th>
+				<th class="ui inverted attached header">Sequence</th>
+				<th class="ui inverted attached header">TR</th>
+				<th class="ui inverted attached header">NumBeh</th>
+				<th class="ui inverted attached header">BehSize</th>
+			</thead>
+		<?
+		}
+		$csv = "SeriesNum,Protocol,UID,Sex,StudyAge,CalcStudyAge,AltUIDs,StudyID,AltStudyID,StudyNum,Site,StudyDate,SeriesTime,MotionX,MotionY,MotionZ,Rating,PV_SNR,IO_SNR,MotionR^2,SizeX,SizeY,NumFiles,Size,Sequence,TR,NumBeh,BehSize\n";
+		
+		/* create some variables to store info about the restuls */
+		$foundprojectids = array();
+		
+		/* ----- loop through the results and display them ----- */
+		mysqli_data_seek($result,0); /* rewind the record pointer */
+		$laststudy_id = "";
+		$headeradded = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+
+			$project_id = $row['project_id'];
+			/* if the user doesn't have view access to this project, skip to the next record */
+			if (($projectids == null) || (!in_array($project_id, $projectids))) {
+				continue;
+			}
+			$enrollment_id = $row['enrollment_id'];
+			$project_id = $row['project_id'];
+			$project_name = $row['project_name'];
+			$project_costcenter = $row['project_costcenter'];
+			$name = $row['name'];
+			$birthdate = $row['birthdate'];
+			$gender = $row['gender'];
+			$uid = $row['uid'];
+			$subject_id = $row['subject_id'];
+			$study_id = $row['study_id'];
+			$study_num = $row['study_num'];
+			$study_desc = $row['study_desc'];
+			$study_type = $row['study_type'];
+			$study_height = $row['study_height'];
+			$study_weight = $row['study_weight'];
+			$study_alternateid = $row['study_alternateid'];
+			$study_modality = strtolower($row['study_modality']);
+			$study_datetime = $row['study_datetime'];
+			$study_ageatscan = $row['study_ageatscan'];
+			$study_type = $row['study_type'];
+			$study_operator = $row['study_operator'];
+			$study_performingphysician = $row['study_performingphysician'];
+			$study_site = $row['study_site'];
+			$study_institution = $row['study_institution'];
+			$enrollsubgroup = $row['enroll_subgroup'];
+
+			/* keep a list of projects to which this result belongs */
+			$foundprojectids[$project_id] = "";
+			
+			/* determine the displayID - in case the user wants to see the project specific IDs instead */
+			$displayid = $uid;
+			$displayidcolor = "";
+			if (($s_projectids != "") && ($s_projectids != "all")) {
+				if ($displayids[$subject_id] != "") {
+					$displayid = $displayids[$subject_id];
+					$displayidcolor = "";
+				}
+				else {
+					$displayidcolor = "red";
+				}
+			}
+			
+			/* get list of alternate subject UIDs */
+			$altuids = GetAlternateUIDs($subject_id,'');
+			if (count($altuids) > 0) {
+				$altuidlist = implode2(",",$altuids);
+			}
+			else {
+				$altuidlist = "(none)";
+			}
+			
+			/* fix some fields */
+			$study_bmi = GetBMI($study_height, $study_weight);
+			$newstudyid = $uid . $study_num;
+			list($studyAge, $calcStudyAge) = GetStudySearchResultsAge($birthdate, $study_ageatscan, $study_datetime);
+			$name = GetFixedName($name);
+			$study_desc = str_replace("^"," ",$study_desc);
+			$study_datetime = GetStudyDateTime($s_resultoutput, $study_datetime);
+
+			/* gather series specific info based on modality */
+			if ($study_modality == "mr") {
+				$series_id = $row['mrseries_id'];
+				$series_datetime = $row['series_datetime'];
+				$series_desc = $row['series_desc'];
+				$series_protocol = $row['series_protocol'];
+				$series_altdesc = $row['series_altdesc'];
+				$sequence = $row['series_sequencename'];
+				$series_num = $row['series_num'];
+				$series_tr = $row['series_tr'];
+				$spacing['x'] = $row['series_spacingx'];
+				$spacing['y'] = $row['series_spacingy'];
+				$spacing['z'] = $row['series_spacingz'];
+				$series_fieldstrength = $row['series_fieldstrength'];
+				$series_notes = $row['series_notes'];
+				$imagetype = $row['image_type'];
+				$imagecomments = $row['image_comments'];
+				$img_rows = $row['img_rows'];
+				$img_cols = $row['img_cols'];
+				$img_slices = $row['img_slices'];
+				$dimn = $row['dimN'];
+				$dimx = $row['dimX'];
+				$dimy = $row['dimY'];
+				$dimz = $row['dimZ'];
+				$dimt = $row['dimT'];
+				$bold_reps = $row['bold_reps'];
+				$numfiles = $row['numfiles'];
+				$series_size = $row['series_size'];
+				$numfiles_beh = $row['numfiles_beh'];
+				$beh_size = $row['beh_size'];
+				$series_status = $row['series_status'];
+				$is_derived = $row['is_derived'];
+				$min['movex'] = $row['move_minx'];
+				$min['movey'] = $row['move_miny'];
+				$min['movez'] = $row['move_minz'];
+				$max['movex'] = $row['move_maxx'];
+				$max['movey'] = $row['move_maxy'];
+				$max['movez'] = $row['move_maxz'];
+				$max['rotp'] = $row['rot_maxp'];
+				$max['rotr'] = $row['rot_maxr'];
+				$max['roty'] = $row['rot_maxy'];
+				$min['rotp'] = $row['rot_minp'];
+				$min['rotr'] = $row['rot_minr'];
+				$min['roty'] = $row['rot_miny'];
+				$iosnr = $row['io_snr'];
+				$pvsnr = $row['pv_snr'];
+				$motion_rsq = $row['motion_rsq'];
+				
+				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
+				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
+				
+				$series_datetime = date("g:ia",strtotime($series_datetime));
+				//$series_size = HumanReadableFilesize($series_size);
+				//$beh_size = HumanReadableFilesize($beh_size);
+
+				if (($sequence == "epfid2d1_64") && ($numfiles_beh < 1)) { $behcolor = "red"; } else { $behcolor = ""; }
+				
+				list($range, $index, $color, $snrs, $iosnr, $pvsnr) = GetFormattedSeriesQC($pstats, $sequence, $min, $max, $spacing, $iosnr, $pvsnr, $motion_rsq);
+				
+				/* check if this is real data, or unusable data based on the ratings, and get rating counts */
+				$isbadseries = false;
+				$istestseries = false;
+				$ratingcount2 = '';
+				$hasratings = false;
+				$rowcolor = '';
+				$ratingavg = '';
+				if (isset($ratings)) {
+					foreach ($ratings as $key => $ratingarray) {
+						if ($key == $series_id) {
+							$hasratings = true;
+							if (in_array(5,$ratingarray)) {
+								$isbadseries = true;
+								//echo "IsBadSeries is true";
+							}
+							if (in_array(6,$ratingarray)) {
+								$istestseries = true;
+							}
+							$ratingcount2 = count($ratingarray);
+							$ratingavg = array_sum($ratingarray) / count($ratingarray);
+							break;
+						}
+					}
+				}
+				if ($isbadseries) { $rowcolor = "red"; }
+				if ($istestseries) { $rowcolor = "#AAAAAA"; }
+			}
+			else {
+				$series_id = $row[$study_modality . 'series_id'];
+				$series_num = $row['series_num'];
+				$series_datetime = $row['series_datetime'];
+				$series_protocol = $row['series_protocol'];
+				$series_numfiles = $row['series_numfiles'];
+				$series_size = $row['series_size'];
+				$series_notes = $row['series_notes'];
+				
+				$series_datetime = date("g:ia",strtotime($series_datetime));
+				if ($series_numfiles < 1) { $series_numfiles = "-"; }
+				if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
+			}
+			
+			/* and then display the series... */
+			if ($s_resultoutput != "csv") {
+			?>
+			<tr>
+				<td><?=$series_num?></td>
+				<td><?=$series_desc?></td>
+				<td><?=$uid?></td>
+				<td><?=$gender?></td>
+				<td><?=$studyAge?></td>
+				<td><?=$calcStudyAge?></td>
+				<td><? echo implode2('|',$altuids);?></td>
+				<td><?=$uid?><?=$studynum?></td>
+				<td><?=$study_alternateid?></td>
+				<td><?=$studynum?></td>
+				<td><?=$study_site?></td>
+				<td><?=$study_datetime?></td>
+				<td><?=$series_datetime?></td>
+				<td><?=$range['x']?></td>
+				<td><?=$range['y']?></td>
+				<td><?=$range['z']?></td>
+				<td><?=$ratingavg?></td>
+				<td><?=$pvsnr?></td>
+				<td><?=$iosnr?></td>
+				<td><?=$motion_rsq?></td>
+				<td><?=$img_cols?></td>
+				<td><?=$img_rows?></td>
+				<td><?=$numfiles?></td>
+				<td><?=$series_size?></td>
+				<td><?=$sequence?></td>
+				<td><?=$series_tr?></td>
+				<td><?=$numfiles_beh?></td>
+				<td><?=$beh_size?></td>
+			</tr>
+			<?
+			}
+			
+			if ($study_modality == "mr") {
+				if ($s_resultoutput == "csv") {
+					
+					$csv .= "$series_num,$series_desc,$uid,$gender,$studyAge,$calcStudyAge," . implode2('|',$altuids) . ",$uid$studynum,$study_alternateid,$studynum,$study_site,$study_datetime,$series_datetime," . $range['x'] . "," . $range['y'] . "," . $range['z'] . ",$ratingavg,$pvsnr,$iosnr,$motion_rsq,$img_cols,$img_rows,$numfiles,$series_size,$sequence,$series_tr,$numfiles_beh,$beh_size";
+					
+					//if ($s_usealtseriesdesc) {
+					//	$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
+					//}
+					//else {
+					//	$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
+					//}
+					
+					$csv .= "\n";
+				}
+			}
+
+			$laststudy_id = $study_id;
+			$lastseriesnum = $series_num;
+		}
+
+		/* ---------- generate csv file ---------- */
+		if ($s_resultoutput == "csv") {
+			$filename = "query" . GenerateRandomString(10) . ".csv";
+			file_put_contents("/tmp/" . $filename, $csv);
+			?>
+			<div class="ui container">
+				<div class="ui center aligned segment">
+					<a class="ui orange button" href="download.php?type=file&filename=<?="/tmp/$filename";?>"><i class="ui download icon"></i>Download .csv file</a>
+				</div>
+			</div>
+			<?
+		}
+		?>
+		</table>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFixedName ----------------------- */
+	/* -------------------------------------------- */
+	function GetFixedName($name) {
+		list($lname, $fname) = explode("^",$name);
+		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
+		return $name;
+	}
+
+	/* -------------------------------------------- */
+	/* ------- GetBMI ----------------------------- */
+	/* -------------------------------------------- */
+	function GetBMI($study_height, $study_weight) {
+		$study_bmi = 0;
+		
+		if (($study_height > 0) && ($study_weight == 0)) {
+			$study_bmi = $study_weight / ( $study_height * $study_height);
+		}
+		
+		return $study_bmi;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudyDateTime ------------------- */
+	/* -------------------------------------------- */
+	function GetStudyDateTime($s_resultoutput, $study_datetime) {
+		if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
+			$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
+		}
+		else {
+			$study_datetime = date("Y-m-d H:i",strtotime($study_datetime));
+		}
+		
+		return $study_datetime;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudySearchResultsAge ----------- */
+	/* -------------------------------------------- */
+	function GetStudySearchResultsAge($dob, $studyage, $studydate) {
+		
+		//echo "dob [$dob]  studyage [$studyage]  studydate [$studydate]<br>";
+		
+		# calculate study age
+		if (($dobUnix = strtotime($dob)) === false) {
+			//echo "Bad date/time format [$dob]<br>";
+			$calculatedStudyAge = "-";
+		}
+		else {
+			if (($studyUnix = strtotime($studydate)) === false) {
+				//echo "Bad date/time format [$studydate]<br>";
+				$calculatedStudyAge = "-";
+			}
+			else {
+				$calculatedStudyAge = ($studyUnix - $dobUnix)/31536000;
+				if (($calculatedStudyAge <= 0) || ($calculatedStudyAge > 150))
+					$calculatedStudyAge = "-";
+			}
+				
+		}
+		
+		$calculatedStudyAge = number_format($calculatedStudyAge,1);
+		
+		return array($studyage, $calculatedStudyAge);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFormattedSeriesQC --------------- */
+	/* -------------------------------------------- */
+	function GetFormattedSeriesQC($pstats, $sequence, $min, $max, $spacing, $iosnr, $pvsnr, $motion_rsq) {
+		
+		/* format the colors for realignment and SNR */
+		$range['x'] = abs($min['movex']) + abs($max['movex']);
+		$range['y'] = abs($min['movey']) + abs($max['movey']);
+		$range['z'] = abs($min['movez']) + abs($max['movez']);
+		$range['Pitch'] = abs($min['rotp']) + abs($max['rotp']);
+		$range['Roll'] = abs($min['rotr']) + abs($max['rotr']);
+		$range['Yaw'] = abs($min['roty']) + abs($max['roty']);
+		
+		/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
+		if ($spacing['x'] > 0) { $index['x'] = round(($range['x']/$spacing['x'])*100); if ($index['x'] > 100) { $index['x'] = 100; } }
+		if ($spacing['y'] > 0) { $index['y'] = round(($range['y']/$spacing['y'])*100); if ($index['y'] > 100) { $index['y'] = 100; } }
+		if ($spacing['z'] > 0) { $index['z'] = round(($range['z']/$spacing['z'])*100); if ($index['z'] > 100) { $index['z'] = 100; } }
+
+		/* get standard deviations from the mean for SNR */
+		if ($pstats[$sequence]['stdiosnr'] != 0) {
+			if ($iosnr > $pstats[$sequence]['avgiosnr']) {
+				$stds['iosnr'] = 0;
+			}
+			else {
+				$stds['iosnr'] = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+			}
+		}
+		if ($pstats[$sequence]['stdpvsnr'] != 0) {
+			if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
+				$stds['pvsnr'] = 0;
+			}
+			else {
+				$stds['pvsnr'] = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+			}
+		}
+		if ($pstats[$sequence]['stdmotion'] != 0) {
+			if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
+				$stds['motion'] = 0;
+			}
+			else {
+				$stds['motion'] = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+			}
+		}
+		
+		if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $index['pv'] = 100; }
+		else { $pvindex = round(($stds['pvsnr']/$pstats[$sequence]['maxstdpvsnr'])*100); }
+		$index['pv'] = 100 + $index['pv'];
+		if ($index['pv'] > 100) { $index['pv'] = 100; }
+		
+		if ($pstats[$sequence]['maxstdiosnr'] == 0) { $index['io'] = 100; }
+		else { $index['io'] = round(($stds['iosnr']/$pstats[$sequence]['maxstdiosnr'])*100); }
+		$index['io'] = 100 + $index['io'];
+		if ($index['io'] > 100) { $index['io'] = 100; }
+		
+		if ($pstats[$sequence]['maxstdmotion'] == 0) { $index['motion'] = 100; }
+		else { $index['motion'] = round(($stds['motion']/$pstats[$sequence]['maxstdmotion'])*100); }
+		$index['motion'] = 100 + $index['motion'];
+		if ($index['motion'] > 100) { $index['motion'] = 100; }
+		
+		$color['maxpvsnr'] = $colors[100-$index['pv']];
+		$color['maxiosnr'] = $colors[100-$index['io']];
+		$color['maxmotion'] = $colors[100-$index['motion']];
+		if ($pvsnr <= 0.0001) { $pvsnr = "-"; $color['maxpvsnr'] = "#fff"; }
+		else { $pvsnr = number_format($pvsnr,2); }
+		if ($iosnr <= 0.0001) { $iosnr = "-"; $color['maxiosnr'] = "#fff"; }
+		else { $iosnr = number_format($iosnr,2); }
+		if ($motion_rsq <= 0.0001) { $motion_rsq = "-"; $color['maxmotion'] = ""; }
+		else { $motion_rsq = number_format($motion_rsq,5); }
+		
+		/* setup movement colors */
+		$color['maxx'] = $colors[$index['x']];
+		$color['maxy'] = $colors[$index['y']];
+		$color['maxz'] = $colors[$index['z']];
+		if ($range['x'] <= 0.0001) { $range['x'] = "-"; $color['maxx'] = "#fff"; }
+		else { $range['x'] = number_format($range['x'],2); }
+		if ($range['y'] <= 0.0001) { $range['y'] = "-"; $color['maxy'] = "#fff"; }
+		else { $range['y'] = number_format($range['y'],2); }
+		if ($range['z'] <= 0.0001) { $range['z'] = "-"; $color['maxz'] = "#fff"; }
+		else { $range['z'] = number_format($range['z'],2); }
+		
+		return array($range, $index, $color, $snrs, $iosnr, $pvsnr);
+	}
+
 	
 	/* -------------------------------------------- */
-	/* ------- SearchPipeline --------------------- */
+	/* ------- DisplaySearchResultsPipeline ------- */
 	/* -------------------------------------------- */
-	function SearchPipeline($result, $s_resultorder, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats) {
+	function DisplaySearchResultsPipeline($result, $s_resultoutput, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats) {
 		if ($s_pipelineresulttype == "i") {
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
@@ -2152,17 +2714,7 @@
 				$study_ageatscan = $row['study_ageatscan'];
 				
 				/* calculate age at scan */
-				list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $study_ageatscan, $study_datetime);
-				
-				if ($studyAge == null)
-					$studyAge = "-";
-				else
-					$studyAge = number_format($studyAge,1);
-
-				if ($calcStudyAge == null)
-					$calcStudyAge = "-";
-				else
-					$calcStudyAge = number_format($calcStudyAge,1);
+				list($studyAge, $calcStudyAge) = GetStudySearchResultsAge($birthdate, $study_ageatscan, $study_datetime);
 				
 				if (strpos($unit,'^') !== false) {
 					$unit = str_replace('^','<sup>',$unit);
@@ -2203,7 +2755,7 @@
 				if (($thevalue < $names2[$name2]['min']) || ($names2[$name2]['min'] == "")) { $names2[$name2]['min'] = $thevalue; }
 			}
 
-			if ($s_resultorder == "pipelinecsv") {
+			if ($s_resultoutput == "pipelinecsv") {
 				$csv = "uid,studynum,altuids,datetime,sex,age";
 				foreach ($names2 as $name2 => $blah) {
 					$csv .= ",$name2";
@@ -2436,9 +2988,9 @@
 	}
 
 	/* -------------------------------------------- */
-	/* ------- SearchThumbnails ------------------- */
+	/* ------- DisplaySearchResultsThumbnail ------ */
 	/* -------------------------------------------- */
-	function SearchThumbnails(&$result, $s) {
+	function DisplaySearchResultsThumbnail(&$result, $s) {
 		error_reporting(-1);
 		ini_set('display_errors', '1');
 	
@@ -2449,7 +3001,7 @@
 		}
 
 		?>
-		<? if ($s_resultorder == "table") { ?>
+		<? if ($s_resultoutput == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
 		<!--<table width="100%" class="searchresults" border="1">-->
@@ -2669,9 +3221,9 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- SearchSubject ---------------------- */
+	/* ------- DisplaySearchResultsSubject -------- */
 	/* -------------------------------------------- */
-	function SearchSubject(&$result) {
+	function DisplaySearchResultsSubject(&$result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2712,9 +3264,9 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- SearchStudy ------------------------ */
+	/* ------- DisplaySearchResultsStudy ---------- */
 	/* -------------------------------------------- */
-	function SearchStudy(&$result) {
+	function DisplaySearchResultsStudy(&$result) {
 		//PrintSQLTable(&$result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
@@ -2792,9 +3344,9 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- SearchLongitudinal ----------------- */
+	/* ------- DisplaySearchResultsLongitudinal --- */
 	/* -------------------------------------------- */
-	function SearchLongitudinal(&$result) {
+	function DisplaySearchResultsLongitudinal(&$result) {
 		//PrintSQLTable(&$result);
 		
 		$modality = '';
@@ -3001,13 +3553,13 @@
 	}
 
 	
-	/* -------------------------------------------- */
-	/* ------- SearchLongitudinalPipeline --------- */
-	/* -------------------------------------------- */
-	function SearchLongitudinalPipeline(&$result, $s_resultorder) {
+	/* ---------------------------------------------------------- */
+	/* ------- DisplaySearchResultsLongitudinalPipeline --------- */
+	/* ---------------------------------------------------------- */
+	function DisplaySearchResultsLongitudinalPipeline(&$result, $s_resultoutput) {
 		//PrintSQLTable($result);
 		
-		if ($s_resultorder == 'pipelinelong') {
+		if ($s_resultoutput == 'pipelinelong') {
 			$agebin = 'M';
 			$agecutoffmin = 10*12;
 			$agecutoffmax = 95*12;
@@ -3190,9 +3742,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- SearchQC --------------------------- */
+	/* ------- DisplaySearchResultsQC ------------- */
 	/* -------------------------------------------- */
-	function SearchQC(&$result, $s_resultorder, $s_qcbuiltinvariable, $s_qcvariableid) {
+	function DisplaySearchResultsQC(&$result, $s_resultoutput, $s_qcbuiltinvariable, $s_qcvariableid) {
 		//PrintSQLTable($result);
 		
 		/* gather scans into longitudinal format */
@@ -3485,7 +4037,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDownloadBox ----------------- */
 	/* -------------------------------------------- */
-	function DisplayDownloadBox($s_studymodality, $s_resultorder, $projectids) {
+	function DisplayDownloadBox($s_studymodality, $s_resultoutput, $projectids) {
 		
 		?>
 			<br><br>
@@ -3497,7 +4049,7 @@
 					$('.remotenidb').hide();
 					$('.bids').hide();
 					$('.publicdownload').hide();
-					<? if ($s_resultorder != 'subject') { ?>
+					<? if ($s_resultoutput != 'subject') { ?>
 					$('.export').hide();
 					<? } else { ?>
 					$('.dirstructure').hide();
@@ -3767,7 +4319,7 @@
 												<br>
 												<?
 												}
-												if ($s_resultorder != 'subject') {
+												if ($s_resultoutput != 'subject') {
 													if (!$GLOBALS['cfg']['ispublic']) {
 														?><input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br><?
 													}
@@ -3787,7 +4339,7 @@
 											<td valign="top" align="right"><b>External</b> server</td>
 											<td valign="top">
 											<?
-											if ($s_resultorder != 'subject') {
+											if ($s_resultoutput != 'subject') {
 												?>
 												<script>
 													function CheckNFSPath() {
@@ -4015,7 +4567,7 @@
 														<td style="padding-right: 6px"><input type="radio" name="dirformat" value="altuid">Primary alternate subject ID<br><span class="tiny">With incremental study numbers</span></td>
 														<td style="color:#333"><tt>23505/1<br>23505/2</tt></td>
 													</tr>
-													<? if ($s_resultorder == 'long') { ?>
+													<? if ($s_resultoutput == 'long') { ?>
 													<tr>
 														<td valign="top"><input type="radio" name="dirformat" value="longitudinal">Longitudinal</td>
 														<td style="color:#333"><tt>S1234ABC<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time1<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time2</tt></td>
@@ -4100,7 +4652,8 @@
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
 			if (is_array($value)) {
-				$$key = trim(mysqli_real_escape_array($s[$key]));
+				//PrintVariable($value);
+				$$key = mysqli_real_escape_array($s[$key]);
 			}
 			elseif (is_scalar($value)) {
 				$$key = trim(mysqli_real_escape_string($GLOBALS['linki'], $s[$key]));
@@ -4155,6 +4708,7 @@
 		if ($s_ageatscanmin != "") { $sqlwhere .= " and `studies`.study_ageatscan >= '$s_ageatscanmin'"; }
 		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
+		//PrintVariable($s_projectids);
 		if ((!in_array("all", $s_projectids) && (count($s_projectids) != 0))) {
 			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
 		}
@@ -4419,19 +4973,19 @@
 	
 		/* ----- put the whole SQL query together ----- */
 		/* first setup the SELECT, depending on the type of query ... */
-		if ($s_resultorder == "pipeline") {
+		if ($s_resultoutput == "pipeline") {
 			Debug(__FILE__, __LINE__, "Checkpoint G");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, studies.study_type, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
-		elseif ($s_resultorder == "pipelinelong") {
+		elseif ($s_resultoutput == "pipelinelong") {
 			Debug(__FILE__, __LINE__, "Checkpoint H");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
-		elseif ($s_resultorder == "pipelinelongyear") {
+		elseif ($s_resultoutput == "pipelinelongyear") {
 			Debug(__FILE__, __LINE__, "Checkpoint I");
 			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
 		}
-		elseif ($s_resultorder == "long") {
+		elseif ($s_resultoutput == "long") {
 			if ($s_usealtseriesdesc) {
 				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_altdesc";
 			}
@@ -4439,7 +4993,7 @@
 				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_desc";
 			}
 		}
-		elseif (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
+		elseif (($s_resultoutput == 'qctable') || ($s_resultoutput == 'qcchart')) {
 			/* return all custom QC variables */
 			//if ($s_qcvariableid != "") {
 			//	$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_num, unix_timestamp(DATE(series_datetime)) 'studydate', $modalitytable.series_desc, qc_resultnames.qcresult_name, qc_resultnames.qcresult_units, qc_results.qcresults_valuenumber";
@@ -4448,10 +5002,10 @@
 				$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_id, studies.study_num, DATE(series_datetime) 'studydate', $modalitytable.series_desc, $modality" . "_qa.*";
 			//}
 		}
-		elseif ($s_resultorder == 'subject') {
+		elseif ($s_resultoutput == 'subject') {
 			$sqlstring = "select subjects.*, projects.*, enrollment.*";
 		}
-		elseif ($s_resultorder == 'uniquesubject') {
+		elseif ($s_resultoutput == 'uniquesubject') {
 			$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_id, studies.study_alternateid, studies.study_num";
 		}
 		else {
@@ -4496,7 +5050,7 @@
 		if (($modality == "mr") && ($s_pipelineid == "")) {
 			$sqlstring .= " left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id";
 		}
-		//if (($s_resultorder == 'qctable') || ($s_resultorder == 'qcchart')) {
+		//if (($s_resultoutput == 'qctable') || ($s_resultoutput == 'qcchart')) {
 		//	if ($s_qcvariableid != "") {
 		//		if ($s_qcvariableid == "all") {
 		//			$sqlstring .= " LEFT JOIN `qc_moduleseries` ON `qc_moduleseries`.series_id = `mr_series`.mrseries_id LEFT JOIN `qc_modules` ON `qc_modules`.qcmodule_id = `qc_moduleseries`.qcmodule_id LEFT JOIN `qc_results` ON `qc_results`.qcmoduleseries_id = `qc_moduleseries`.qcmoduleseries_id LEFT JOIN `qc_resultnames` ON `qc_results`.qcresultname_id = `qc_resultnames`.qcresult_name";
@@ -4506,17 +5060,17 @@
 		
 		/* ... then add the WHERE clause (created earlier) and the ORDER BY and GROUP BY clauses if necessary */
 		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = '$modality' $sqlwhere ";
-		if ($s_resultorder == 'subject') {
+		if ($s_resultoutput == 'subject') {
 			$sqlstring .= " group by enrollment.enrollment_id order by subjects.uid, projects.project_name";
 		}
-		elseif ($s_resultorder == 'uniquesubject') {
+		elseif ($s_resultoutput == 'uniquesubject') {
 			$sqlstring .= " group by studies.study_id";
 		}
 		else {
 			if ($s_formvalue[0] != ""){
 				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id ";
 			}
-			if (($s_resultorder != "pipeline") && ($s_resultorder != "pipelinecsv") && ($s_resultorder != "pipelinelong") && ($s_resultorder != "pipelinelongyear")) {
+			if (($s_resultoutput != "pipeline") && ($s_resultoutput != "pipelinecsv") && ($s_resultoutput != "pipelinelong") && ($s_resultoutput != "pipelinelongyear")) {
 				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
 				if ($s_pipelineid == ""){
 					$sqlstring .= ", `$modalitytable`.series_num";
@@ -4585,10 +5139,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRSeriesHeader -------------- */
 	/* -------------------------------------------- */
-	function DisplayMRSeriesHeader($s_resultorder, $measures) {
+	function DisplayMRSeriesHeader($s_resultoutput, $measures) {
 		?>
 		<tr>
-			<? if (($s_resultorder == "series") || ($s_resultorder == "operations")) { ?>
+			<? if (($s_resultoutput == "series") || ($s_resultoutput == "operations")) { ?>
 				<td class="seriesheader"><input type="checkbox" id="seriesall"></td>
 			<? } ?>
 			<td class="seriesheader"><b>Series #</b></td>
@@ -4606,7 +5160,7 @@
 			<td class="seriesheader">X</td>
 			<td class="seriesheader">Y</td>
 			<td class="seriesheader">Z</td>
-			<? if (($s_resultorder == "series") || ($s_resultorder == "operations")) { ?>
+			<? if (($s_resultoutput == "series") || ($s_resultoutput == "operations")) { ?>
 				<td class="seriesheader">QA</td>
 				<td class="seriesheader" title="Scale 1-5<br>1 = good<br>5 = bad">Rating</td>
 			<? } ?>
@@ -4618,7 +5172,7 @@
 			<td class="seriesheader">Size</td>
 			<td class="seriesheader">Sequence</td>
 			<td class="seriesheader">TR</td>
-			<? if ($s_resultorder != "table") { ?>
+			<? if ($s_resultoutput != "table") { ?>
 			<td class="seriesheader"># beh <span class="tiny">(size)</span></td>
 			<? }
 				if (count($measures) > 0) {
@@ -4655,10 +5209,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayGenericSeriesHeader --------- */
 	/* -------------------------------------------- */
-	function DisplayGenericSeriesHeader($s_resultorder) {
+	function DisplayGenericSeriesHeader($s_resultoutput) {
 		?>
 		<tr>
-			<? if (($s_resultorder == "series") || ($s_resultorder == "operations")) { ?>
+			<? if (($s_resultoutput == "series") || ($s_resultoutput == "operations")) { ?>
 				<td class="seriesheader"><input type="checkbox" id="seriesall"></td>
 			<? } ?>
 			<td class="seriesheader"><b>Series #</b></td>
@@ -4952,6 +5506,41 @@
 			$newparts[] = $part;
 		}
 		return implode2(" or ", $newparts);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMRSequenceQCList ---------------- */
+	/* -------------------------------------------- */
+	function GetMRSequenceQCList() {
+		/* get the movement & SNR stats by sequence name */
+		$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
+		$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+		while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+			$sequence = $row2['series_sequencename'];
+			$pstats[$sequence]['avgpvsnr'] = $row2['avgpvsnr'];
+			$pstats[$sequence]['stdpvsnr'] = $row2['stdpvsnr'];
+			$pstats[$sequence]['minpvsnr'] = $row2['minpvsnr'];
+			$pstats[$sequence]['maxpvsnr'] = $row2['maxpvsnr'];
+			$pstats[$sequence]['avgiosnr'] = $row2['avgiosnr'];
+			$pstats[$sequence]['stdiosnr'] = $row2['stdiosnr'];
+			$pstats[$sequence]['miniosnr'] = $row2['miniosnr'];
+			$pstats[$sequence]['maxiosnr'] = $row2['maxiosnr'];
+			$pstats[$sequence]['avgmotion'] = $row2['avgmotion'];
+			$pstats[$sequence]['stdmotion'] = $row2['stdmotion'];
+			$pstats[$sequence]['minmotion'] = $row2['minmotion'];
+			$pstats[$sequence]['maxmotion'] = $row2['maxmotion'];
+
+			if ($row2['stdiosnr'] != 0) {
+				$pstats[$sequence]['maxstdiosnr'] = ($row2['avgiosnr'] - $row2['miniosnr'])/$row2['stdiosnr'];
+			} else { $pstats[$sequence]['maxstdiosnr'] = 0; }
+			if ($row2['stdpvsnr'] != 0) {
+				$pstats[$sequence]['maxstdpvsnr'] = ($row2['avgpvsnr'] - $row2['minpvsnr'])/$row2['stdpvsnr'];
+			} else { $pstats[$sequence]['maxstdpvsnr'] = 0; }
+			if ($row2['stdmotion'] != 0) {
+				$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
+			} else { $pstats[$sequence]['maxstdmotion'] = 0; }
+		}
 	}
 
 	

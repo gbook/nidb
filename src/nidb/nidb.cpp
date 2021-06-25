@@ -910,12 +910,6 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
     b = 0;
 
     QDir d(dir);
-    QFileInfoList fl = d.entryInfoList(QDir::NoDotAndDotDot | QDir::Files);
-    c = fl.size();
-    for (int i=0; i < fl.size(); i++) {
-        const QFileInfo finfo = fl.at(i);
-        b += finfo.size();
-    }
 
     if (recurse) {
         QDirIterator it(dir, QStringList() << "*", QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
@@ -923,6 +917,14 @@ void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) 
             it.next();
             c++;
             b += it.fileInfo().size();
+        }
+    }
+    else {
+        QFileInfoList fl = d.entryInfoList(QDir::NoDotAndDotDot | QDir::Files);
+        c = fl.size();
+        for (int i=0; i < fl.size(); i++) {
+            const QFileInfo finfo = fl.at(i);
+            b += finfo.size();
         }
     }
 }

@@ -1230,7 +1230,7 @@
 
 		$sql_formatted .= trim($word);
 
-		return $sql_formatted;
+		return trim($sql_formatted);
 	}
 
 

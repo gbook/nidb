@@ -1319,7 +1319,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             AppendUploadLog(__FUNCTION__, "Finished creating ["+backdir+"]");
     }
     AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
+    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
     QString output = n->SystemCommand(systemstring);
     AppendUploadLog(__FUNCTION__, output);
     AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
@@ -1647,7 +1647,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
             AppendUploadLog(__FUNCTION__, "Created backdir [" + backdir + "]");
     }
     AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %5").arg(outdir).arg(backdir);
+    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
     QString output = n->SystemCommand(systemstring);
     AppendUploadLog(__FUNCTION__, output);
     AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
