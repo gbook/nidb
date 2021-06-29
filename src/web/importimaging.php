@@ -581,7 +581,7 @@
 					</details>
 				</div>
 				-->
-				<?DisplayStatusSteps($status,"");?>
+				<?DisplayStatusSteps($status, "", "bottom");?>
 				</p>
 				<br><br>
 				<?
@@ -738,11 +738,13 @@
 					<tr>
 						<td class="right aligned"><h4 class="header">Status</h4></td>
 						<td>
-							<?DisplayStatusSteps($status,"mini");?>
-							<div class="ui large <?=$statuscolor?> label"><?=$statusmsg?></div>
-							<? if ($percent != "") { ?>
-							<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
-							<? } ?>
+							<div class="ui top attached <?=$statuscolor?> message">
+								<?=$statusmsg?>
+								<? if ($percent != "") { ?>
+									<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
+								<? } ?>								
+							</div>
+							<?DisplayStatusSteps($status, "mini", "bottom");?>
 						</td>
 					</tr>
 					<tr>
@@ -1289,7 +1291,7 @@
 	/* ---------------------------------------------------------- */
 	/* --------- DisplayStatusSteps ----------------------------- */
 	/* ---------------------------------------------------------- */
-	function DisplayStatusSteps($status, $size) {
+	function DisplayStatusSteps($status, $size, $attachment) {
 		
 		// Possible statuses: 'uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse'
 		
@@ -1387,7 +1389,7 @@
 				$('.ui .progress').progress();
 			});
 		</script>		
-			<div class="ui bottom attached five <?=$size?> steps">
+			<div class="ui <?=$attachment?> attached five <?=$size?> steps">
 				<div class="<?=$step1_state?> step">
 					<div class="content">
 						<div class="title"><?=$step1_title?></div>
