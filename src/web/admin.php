@@ -64,19 +64,15 @@
 		?>
 		<div class="ui text container grid">
 			<div class="ui eight wide column">
-				<i class="users icon"></i><a href="adminusers.php">Users</a>
-				<br><br>
-				<i class="clipboard list icon"></i><a href="adminprojects.php">Projects</a>
-				<br><br><br>
-				<i class="clipboard icon"></i><a href="reports.php">Reports</a>
-				<br><br>
-				<i class="clipboard check icon"></i><a href="adminaudits.php">Audits</a>
-				<br><br>
-				<i class="eraser icon"></i><a href="cleanup.php">Clean-up data</a>
-				<br><br>
-				<i class="check circle icon"></i><a href="longqc.php">Longitudinal QC</a>
-				<br><br>
-				<i class="thermometer half icon"></i><a href="stats.php">System Usage Statistics</a>
+				<div class="ui vertical basic big buttons">
+					<a href="adminusers.php" class="ui button"><i class="black users icon"></i> Users</a>
+					<a href="adminprojects.php" class="ui button"><i class="black clipboard list icon"></i> Projects</a>
+					<a href="reports.php" class="ui button"><i class="black clipboard icon"></i> Reports</a>
+					<a href="adminaudits.php" class="ui button"><i class="black clipboard check icon"></i> Audits</a>
+					<a href="cleanup.php" class="ui button"><i class="black eraser icon"></i> Clean-up data</a>
+					<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>
+					<a href="stats.php" class="ui button"><i class="black thermometer half icon"></i> System Usage Statistics</a>
+				</div>
 			</div>
 			<div class="ui eight wide column">
 				<li><a href="adminmodules.php">Modules</a>

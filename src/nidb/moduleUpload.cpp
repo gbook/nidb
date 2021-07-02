@@ -775,8 +775,9 @@ bool moduleUpload::ArchiveParsedUploads() {
                             uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
                     }
 
+                    performanceMetric perf;
                     /* insert the series */
-                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
+                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
 
                     i++;
                     double pct = (double)i/(double)numSeries * 100.0;

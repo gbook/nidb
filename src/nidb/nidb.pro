@@ -33,6 +33,7 @@ SOURCES += \
     moduleQC.cpp \
     moduleUpload.cpp \
     nidb.cpp \
+    performanceMetric.cpp \
     pipeline.cpp \
     remotenidbconnection.cpp \
     series.cpp \
@@ -68,6 +69,7 @@ HEADERS += \
     moduleQC.h \
     moduleUpload.h \
     nidb.h \
+    performanceMetric.h \
     pipeline.h \
     remotenidbconnection.h \
     series.h \
@@ -92,19 +94,19 @@ win32: {
     HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
 
     LIBS += -lgdcmMSFF \
-        -lgdcmCommon \
-        -lgdcmDICT \
-        -lgdcmDSED \
-        -lgdcmIOD \
-        -lgdcmMEXD \
-        -lgdcmcharls \
-        -lgdcmexpat \
-        -lgdcmjpeg12 \
-        -lgdcmjpeg16 \
-        -lgdcmjpeg8 \
-        -lgdcmopenjp2 \
-        -lgdcmzlib \
-        -lsocketxx
+	-lgdcmCommon \
+	-lgdcmDICT \
+	-lgdcmDSED \
+	-lgdcmIOD \
+	-lgdcmMEXD \
+	-lgdcmcharls \
+	-lgdcmexpat \
+	-lgdcmjpeg12 \
+	-lgdcmjpeg16 \
+	-lgdcmjpeg8 \
+	-lgdcmopenjp2 \
+	-lgdcmzlib \
+	-lsocketxx
 
     # Location of SMTP Library
     SMTPBIN = K:/bin/smtp-win
@@ -112,7 +114,7 @@ win32: {
     INCLUDEPATH += K:/src/smtp
     DEPENDPATH += $$SMTPBIN
     *msvc* { # visual studio spec filter
-        QMAKE_CXXFLAGS += -MP
+	QMAKE_CXXFLAGS += -MP
     }
 }
 unix: {
@@ -137,20 +139,20 @@ unix: {
     HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
 
     LIBS += -lgdcmMSFF \
-        -lgdcmCommon \
-        -lgdcmDICT \
-        -lgdcmDSED \
-        -lgdcmIOD \
-        -lgdcmMEXD \
-        -lgdcmcharls \
-        -lgdcmexpat \
-        -lgdcmjpeg12 \
-        -lgdcmjpeg16 \
-        -lgdcmjpeg8 \
-        -lgdcmopenjp2 \
-        -lgdcmuuid \
-        -lgdcmzlib \
-        -lsocketxx
+	-lgdcmCommon \
+	-lgdcmDICT \
+	-lgdcmDSED \
+	-lgdcmIOD \
+	-lgdcmMEXD \
+	-lgdcmcharls \
+	-lgdcmexpat \
+	-lgdcmjpeg12 \
+	-lgdcmjpeg16 \
+	-lgdcmjpeg8 \
+	-lgdcmopenjp2 \
+	-lgdcmuuid \
+	-lgdcmzlib \
+	-lsocketxx
 }
 
 DISTFILES += \

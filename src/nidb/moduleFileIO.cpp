@@ -1086,6 +1086,72 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
             }
         }
     }
+    else if (mergeMethod == "sortbyseriesnum") {
+        QString mergeIDList = n->JoinIntArray(allStudyIDs, ",");
+
+        int newSeriesNum = 0;
+        /* get list of all series sorted by series date */
+        q.prepare(QString("select * from %1_series a left join studies b on a.study_id = b.study_id where b.study_id in (%2) order by a.series_num asc").arg(modality).arg(mergeIDList));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        if (q.size() > 0) {
+            while (q.next()) {
+
+                int sourceStudyID = q.value("study_id").toInt();
+                int studyNum = q.value("study_num").toInt();
+                int seriesID = q.value(modality + "series_id").toInt();
+                int seriesNum = q.value("series_num").toInt();
+                QString seriesDesc = q.value("series_desc").toString();
+                QString seriesDateTime = q.value("series_datetime").toDateTime().toString();
+
+                /* check if this series number exists in the new study (on disk) */
+                study destStudy(destStudyID, n);
+                QString newPath(QString("%1/%2").arg(destStudy.path()).arg(seriesNum));
+                QFileInfo fi(newPath);
+                if (fi.exists()) {
+                    int chkSeriesNum = 10000 + seriesNum;
+                    n->WriteLog(QString("New series path [%1] already exists. Checking if [%2] exists").arg(newPath).arg(chkSeriesNum));
+                    while (1) {
+                        QString chkPath(QString("%1/%2").arg(destStudy.path()).arg(chkSeriesNum));
+                        if (QDir(chkPath).exists()) {
+                            n->WriteLog(QString("Path [%1] already exists. Will check next one").arg(chkPath));
+                            chkSeriesNum++;
+                        }
+                        else {
+                            n->WriteLog(QString("Path [%1] does not exist. This will be the new series number").arg(chkPath));
+                            newSeriesNum = chkSeriesNum;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    newSeriesNum = seriesNum;
+                }
+
+                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
+
+                /* FIRST - move the series directory */
+                series s(seriesID, modality, n);
+                s.ChangeSeriesPath(destStudyID, newSeriesNum);
+
+                /* SECOND - change the studyid to the new study, and seriesnum to the tmpSeriesNum */
+                QSqlQuery q2;
+                q2.prepare(QString("update %1_series set study_id = :newstudyid, series_num = :newseriesnum where %1series_id = :seriesid").arg(modality));
+                q2.bindValue(":newstudyid", destStudyID);
+                q2.bindValue(":newseriesnum", newSeriesNum);
+                q2.bindValue(":seriesid", seriesID);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            }
+
+            /* delete the, now, extraneous studies */
+            QList<int> deleteStudyIDs;
+            deleteStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+            foreach (int delStudyID, deleteStudyIDs) {
+                QString m;
+                if (!DeleteStudy(delStudyID, m))
+                    n->WriteLog("Error deleting study, with message [" + m + "]");
+            }
+        }
+    }
     else if (mergeMethod == "concatbystudydateasc") {
 
     }

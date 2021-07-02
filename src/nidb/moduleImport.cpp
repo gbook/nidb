@@ -93,6 +93,8 @@ int moduleImport::Run() {
 
     n->WriteLog("Leaving the import module");
 
+    PrintPerformance();
+
     return ret;
 }
 
@@ -162,7 +164,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     dcmseries.clear();
     QString archivereport;
-    QString importStatus;
+    //QString importStatus;
     QString importModality;
     QString importDatatype;
     int importSiteID(-1);
@@ -170,6 +172,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     //int importMatchIDOnly(-1);
     QString importSeriesNotes;
     QString importAltUIDs;
+
+    performanceMetric perf;
+    perf.Start();
 
     QString subjectMatchCriteria("uid");
     QString studyMatchCriteria("ModalityStudyDate");
@@ -202,6 +207,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 /* cleanup so this import can continue another time */
                 SetImportStatus(importid, "", "", "", false);
 
+                n->WriteLog(perf.End());
                 return 0;
             }
         }
@@ -226,10 +232,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     int processedFileCount(0);
     foreach (QString file, files) {
 
+        perf.numFilesRead++;
         /* check if the file exists. par/rec files may be moved from previous steps, so check if they still exist */
         if (QFile::exists(file)) {
             /* check the file size */
             qint64 fsize = QFileInfo(file).size();
+            perf.numBytesRead += fsize;
             if (fsize < 1) {
                 n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
@@ -261,7 +269,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
                 n->WriteLog("Module is now inactive, stopping the module");
-                okToDeleteDir = false;
+                //okToDeleteDir = false;
+                n->WriteLog(perf.End());
                 return 1;
             }
         }
@@ -377,10 +386,13 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         n->WriteLog(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
         QStringList files = dcmseries[seriesuid];
 
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files))
+        performanceMetric perf2;
+        perf2.Start();
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files, perf2))
             iscomplete = true;
         else
             iscomplete = false;
+        n->WriteLog(perf2.End());
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */
@@ -392,6 +404,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             q.bindValue(":archivereport", archivereport);
             q.bindValue(":importid", importid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+            n->WriteLog(perf.End());
+
             return 1;
         }
     }
@@ -419,5 +434,14 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         ret = 0;
     }
 
+    n->WriteLog(perf.End());
     return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- PrintPerformance ------------------------------- */
+/* ---------------------------------------------------------- */
+void moduleImport::PrintPerformance() {
+
 }

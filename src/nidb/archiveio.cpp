@@ -53,7 +53,7 @@ void archiveIO::SetUploadID(int u) {
 /* ---------------------------------------------------------- */
 /* --------- ArchiveDICOMSeries ------------------------------ */
 /* ---------------------------------------------------------- */
-bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files) {
+bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, performanceMetric &perf) {
 
     AppendUploadLog(__FUNCTION__ , QString("Beginning to archive this DICOM series (%1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12)").arg(importid).arg(existingSubjectID).arg(existingStudyID).arg(existingSeriesID).arg(subjectMatchCriteria).arg(studyMatchCriteria).arg(seriesMatchCriteria).arg(destProjectID).arg(specificPatientID).arg(destSiteID).arg(altUIDstr).arg(seriesNotes));
 
@@ -61,7 +61,6 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     subjectMatchCriteria = subjectMatchCriteria.toLower();
     studyMatchCriteria = studyMatchCriteria.toLower();
     seriesMatchCriteria = seriesMatchCriteria.toLower();
-
 
     /* check if there are any files to archive */
     if (files.size() < 1) {
@@ -979,7 +978,8 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     AppendUploadLog(__FUNCTION__, "Checking if the subject exists by UID [" + PatientID + "] or AltUIDs [" + SQLIDs + "]");
     int projectcount(0);
     int subjectcount(0);
-    QString sqlstring = QString("select (SELECT count(*) FROM `projects` WHERE project_costcenter = :costcenter) 'projectcount', (SELECT count(*) FROM `subjects` a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in (%1) or a.uid = SHA1(:patientid) or b.altuid in (%1) or b.altuid = SHA1(:patientid)) 'subjectcount'").arg(SQLIDs);
+
+    QString sqlstring = QString("select count(*) 'projectcount' from `projects` where project_costcenter = :costcenter");
     QSqlQuery q;
     q.prepare(sqlstring);
     q.bindValue(":patientid", PatientID);
@@ -987,6 +987,14 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     if (q.size() > 0) {
         q.first();
         projectcount = q.value("projectcount").toInt();
+    }
+
+    sqlstring = QString("select count(*) 'subjectcount' from `subjects` a left join subject_altuid b on a.subject_id = b.subject_id where a.uid in (%1) or a.uid = SHA1(:patientid) or b.altuid in (%1) or b.altuid = SHA1(:patientid)").arg(SQLIDs);
+    q.prepare(sqlstring);
+    q.bindValue(":patientid", PatientID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    if (q.size() > 0) {
+        q.first();
         subjectcount = q.value("subjectcount").toInt();
     }
 
@@ -2038,7 +2046,7 @@ bool archiveIO::CreateStudy(int subjectRowID, int enrollmentRowID, QString Study
     else
         studyNum = 1;
 
-    q.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '" + StudyDateTime + "', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now()) on duplicate key update enrollment_id = :enrollmentid, study_num = :studynum, study_alternateid = :patientid, study_modality = :modality, study_datetime = '" + StudyDateTime + "', study_ageatscan = :patientage, study_height = :height, study_weight = :weight, study_desc = :studydesc, study_operator = :operator, study_performingphysician = :physician, study_site = :stationname, study_institution = :institution");
+    q.prepare("insert into studies (enrollment_id, study_num, study_alternateid, study_modality, study_datetime, study_ageatscan, study_height, study_weight, study_desc, study_operator, study_performingphysician, study_site, study_nidbsite, study_institution, study_status, study_createdby, study_createdate) values (:enrollmentid, :studynum, :patientid, :modality, '" + StudyDateTime + "', :patientage, :height, :weight, :studydesc, :operator, :physician, :stationname, :importsiteid, :institution, 'complete', 'import', now()) on duplicate key update enrollment_id = :enrollmentid, study_num = :studynum, study_alternateid = :patientid, study_modality = :modality, study_datetime = '" + StudyDateTime + "', study_ageatscan = :patientage, study_height = :height, study_weight = :weight, study_desc = :studydesc, study_operator = :operator, study_performingphysician = :physician, study_site = :stationname, study_uid = :studyInstanceUID, study_institution = :institution");
     q.bindValue(":enrollmentid", enrollmentRowID);
     q.bindValue(":studynum", studyNum);
     q.bindValue(":patientid", PatientID);
@@ -2047,6 +2055,7 @@ bool archiveIO::CreateStudy(int subjectRowID, int enrollmentRowID, QString Study
     q.bindValue(":height", PatientSize);
     q.bindValue(":weight", PatientWeight);
     q.bindValue(":studydesc", StudyDescription);
+    q.bindValue(":studyInstanceUID", studyUID);
     q.bindValue(":operator", OperatorsName);
     q.bindValue(":physician", PerformingPhysiciansName);
     q.bindValue(":stationname", StationName);

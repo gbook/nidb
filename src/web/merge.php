@@ -253,11 +253,12 @@
 		</table>
 		<br>
 		<b>Merge method</b><br>
-		<input type="radio" name="mergemethod" value="sortbyseriesdate" checked>Renumber series, ordering by series datetime (ascending)<br>
-		<input type="radio" name="mergemethod" value="concatbystudydateasc">Concatentate by study date (ascending <tt>2020-06-14 2020-06-22 ... 2020-08-01 2020-08-05</tt>)<br>
-		<input type="radio" name="mergemethod" value="concatbystudydatedesc">Concatentate by study date (descending <tt>2020-08-05 2020-08-01 ... 2020-06-22 2020-06-14</tt>)<br>
-		<input type="radio" name="mergemethod" value="concatbystudynumasc">Concatentate by study number (ascending <tt>1 2 ... 7 8</tt>)<br>
-		<input type="radio" name="mergemethod" value="concatbystudynumdesc">Concatentate by study number (descending <tt>6 5 ... 2 1</tt>)<br>
+		<input type="radio" name="mergemethod" value="sortbyseriesdate" checked>Renumber series, ordering by series datetime (<b>ascending</b>)<br>
+		<input type="radio" name="mergemethod" value="sortbyseriesnum" checked>Reorder by existing series number (<b>ascending</b>)<br>
+		<input type="radio" name="mergemethod" value="concatbystudydateasc">Concatentate by study date (<b>ascending</b> <tt>2020-06-14 2020-06-22 ... 2020-08-01 2020-08-05</tt>)<br>
+		<input type="radio" name="mergemethod" value="concatbystudydatedesc">Concatentate by study date (<b>descending</b> <tt>2020-08-05 2020-08-01 ... 2020-06-22 2020-06-14</tt>)<br>
+		<input type="radio" name="mergemethod" value="concatbystudynumasc">Concatentate by study number (<b>ascending</b> <tt>1 2 ... 7 8</tt>)<br>
+		<input type="radio" name="mergemethod" value="concatbystudynumdesc">Concatentate by study number (<b>descending</b> <tt>6 5 ... 2 1</tt>)<br>
 		<br>
 		<input type="submit" value="Merge">
 		</form>

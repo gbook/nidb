@@ -31,28 +31,37 @@
 #include "gdcmAnonymizer.h"
 #include "series.h"
 
+struct performanceMetrics {
+    int numSeries;
+    int numFiles;
+    QDateTime startTime;
+    QDateTime endTime;
+    qint64 numBytesRead;
+    qint64 numBytesArchived;
+};
 
 class moduleImport
 {
 public:
-	moduleImport();
-	moduleImport(nidb *n);
-	~moduleImport();
+    moduleImport();
+    moduleImport(nidb *n);
+    ~moduleImport();
 
-	int Run();
-	int ParseDirectory(QString dir, int importid);
-	QString GetImportStatus(int importid);
-	bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
+    int Run();
+    int ParseDirectory(QString dir, int importid);
+    QString GetImportStatus(int importid);
+    bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
+    void PrintPerformance();
 
 private:
-	nidb *n;
+    nidb *n;
     archiveIO *io;
 
-	/* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
-	//QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
+    /* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
+    //QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
 
-	/* create a regular associated hash for dicoms with a SeriesInstanceUID tag */
-	QMap<QString, QStringList> dcmseries;
+    /* create a regular associated hash for dicoms with a SeriesInstanceUID tag */
+    QMap<QString, QStringList> dcmseries;
 };
 
 #endif // MODULEIMPORT_H
