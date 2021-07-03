@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 14, 2021 at 06:25 PM
+-- Generation Time: Jul 03, 2021 at 12:29 AM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1083,7 +1083,7 @@ CREATE TABLE `fileio_requests` (
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `merge_id` int(11) DEFAULT NULL,
   `merge_ids` varchar(255) DEFAULT NULL,
-  `merge_method` enum('sortbyseriesdate','concatbystudydateasc','concatbystudydatedesc','concatbystudynumasc','concatbystudynumdesc') DEFAULT NULL,
+  `merge_method` enum('sortbyseriesdate','concatbystudydateasc','concatbystudydatedesc','concatbystudynumasc','concatbystudynumdesc','sortbyseriesnum') DEFAULT NULL,
   `merge_name` varchar(255) DEFAULT NULL,
   `merge_dob` date DEFAULT NULL,
   `merge_sex` char(1) DEFAULT NULL,
@@ -2573,7 +2573,7 @@ CREATE TABLE `search_history` (
   `ageatscanmax` double DEFAULT NULL,
   `subjectgender` char(1) DEFAULT NULL,
   `subjectgroupid` int(11) DEFAULT NULL,
-  `projectid` int(11) DEFAULT NULL,
+  `projectids` text DEFAULT NULL,
   `enrollsubgroup` varchar(255) DEFAULT NULL,
   `measuresearch` text DEFAULT NULL,
   `measurelist` text DEFAULT NULL,
@@ -2700,6 +2700,8 @@ CREATE TABLE `studies` (
   `study_num` int(11) NOT NULL,
   `study_desc` varchar(255) NOT NULL,
   `study_type` varchar(255) DEFAULT NULL,
+  `study_daynum` int(11) DEFAULT NULL,
+  `study_timepoint` int(11) DEFAULT NULL,
   `study_alternateid` varchar(100) DEFAULT NULL COMMENT 'original ADO id',
   `study_modality` varchar(25) NOT NULL,
   `study_datetime` datetime DEFAULT NULL,
@@ -2941,7 +2943,9 @@ CREATE TABLE `uploads` (
   `upload_id` int(11) NOT NULL,
   `upload_startdate` datetime DEFAULT NULL,
   `upload_enddate` datetime DEFAULT NULL,
-  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse') DEFAULT NULL,
+  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse','cancelled') DEFAULT NULL,
+  `upload_statuspercent` double DEFAULT NULL,
+  `upload_log` text DEFAULT NULL,
   `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
   `upload_datapath` text DEFAULT NULL,
@@ -4165,13 +4169,15 @@ ALTER TABLE `studies`
 -- Indexes for table `study_template`
 --
 ALTER TABLE `study_template`
-  ADD PRIMARY KEY (`studytemplate_id`);
+  ADD PRIMARY KEY (`studytemplate_id`),
+  ADD UNIQUE KEY `project_id` (`project_id`,`template_name`,`template_modality`,`template_visitlabel`);
 
 --
 -- Indexes for table `study_templateitems`
 --
 ALTER TABLE `study_templateitems`
-  ADD PRIMARY KEY (`studytemplateitem_id`);
+  ADD PRIMARY KEY (`studytemplateitem_id`),
+  ADD UNIQUE KEY `studytemplate_id` (`studytemplate_id`,`item_order`,`item_protocol`);
 
 --
 -- Indexes for table `subjects`
