@@ -2824,7 +2824,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<a href="pipelines.php?action=addform" class="ui primary large button"><i class="plus square outline icon"></i>New Pipeline</a>
 			</div>
 		</div>
-		<h3 class="ui header">View</h3> <a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a> <a href="pipelines.php?action=viewusage" class="ui button">Disk Usage</a><div class="ui mini yellow label">SLOW!</div>
+		<h3 class="ui header">View</h3>
+			<a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a>
+			<a href="pipelines.php?action=viewusage" class="ui button"><i class="hdd icon"></i> Disk Usage (slow)</a>
+			<a href="visualization.php?action=visualize&type=ica" class="ui button"><i class="images icon"></i> Visualization</a>
 		<br><br>
 		<h3 class="ui header">View pipelines owned by</h3>
 		<?
