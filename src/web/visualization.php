@@ -79,7 +79,7 @@
 			<div class="column">
 				<h2 class="ui header">Available visualizations</h2>
 				<a href="visualization.php?action=visualize&type=ica" class="ui button">ICA</a>
-				<a href="visualization.php?action=visualize&type=ica" class="ui button">ICA</a>
+				<!--<a href="visualization.php?action=visualize&type=line" class="ui button">I</a>-->
 			</div>
 			<div class="right aligned column">
 				<a href="pipelines.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to pipelines</a>
@@ -98,7 +98,23 @@
 		$componentnum = mysqli_real_escape_string($GLOBALS['linki'], $componentnum);
 	
 		?>
+		<script>
+			$(document).ready(function(){
+				$('#pageloading').hide();
+			});
+		</script>
+		
+		<div class="ui text container" id="pageloading">
+			<div class="ui segment" align="center">
+				<h2 class="ui header">
+					<i class="large spinner loading icon"></i> Loading...
+				</h2>
+			</div>
+			<br>
+		</div>
+		
 		<script src="https://d3js.org/d3.v7.min.js"></script>
+		
 		<script>
 			function CheckNFSPath() {
 				var xhttp = new XMLHttpRequest();
@@ -190,10 +206,14 @@
 					
 					$data = ReadSpaceDelimitedFile("$filepath/$filename");
 					//PrintVariable($data);
+					
+					foreach ($data as $d) {
+						$datums[] = "{\"x\":$d[0], \"y\":$d[1]}";
+					}
+					$datum = implode(",", $datums);
 				?>
 				
 				<div id="my_dataviz"></div>
-				<div id="my_dataviz2"></div>
 				<div id="my_dataviz3"></div>
 				
 				<script>
@@ -249,70 +269,14 @@
 						.style("stroke", "black");
 
 				</script>
-					
-				<script>
-					// set the dimensions and margins of the graph
-					var margin = {top: 10, right: 30, bottom: 30, left: 60},
-						width = 460 - margin.left - margin.right,
-						height = 400 - margin.top - margin.bottom;
 
-					// append the svg object to the body of the page
-					var svg2 = d3.select("#my_dataviz2")
-						.append("svg")
-						.attr("width", width + margin.left + margin.right)
-						.attr("height", height + margin.top + margin.bottom)
-						.append("g")
-						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-					//Read the data
-					
-					var data = [
-						{"name": "point1", "x":1, "y":2},
-						{"name": "point2", "x":3, "y":4},
-						{"name": "point3", "x":5, "y":6},
-						{"name": "point4", "x":7, "y":8}
-					];
-
-					// Add X axis
-					var x2 = d3.scaleLinear()
-						.domain([0, 10])
-						.range([ 0, width ]);
-					svg2.append("g")
-						.attr("transform", "translate(0," + height + ")")
-						.call(d3.axisBottom(x2));
-
-					// Add Y axis
-					var y2 = d3.scaleLinear()
-						.domain([0, 10])
-						.range([ height, 0]);
-					
-					svg2.append("g")
-						.call(d3.axisLeft(y2));
-
-					// Add dots
-					svg2.append("g")
-						.selectAll("dot")
-						.data(data)
-						.enter()
-						.append("circle")
-						.attr("r", 3.5)
-						.attr("cx",d=>x2(d.x))
-						.attr("cy",d=>y2(d.y))
-						.style("fill", "#000");
-
-				</script>
 				<script>
 					// set the dimensions and margins of the graph
 					var margin3 = {top: 10, right: 30, bottom: 30, left: 60},
-						width = 460 - margin3.left - margin3.right,
+						width = 1500 - margin3.left - margin3.right,
 						height = 400 - margin3.top - margin3.bottom;
-						
-					var data3 = [
-						{"name": "point1", "x":1, "y":2},
-						{"name": "point2", "x":3, "y":4},
-						{"name": "point3", "x":5, "y":6},
-						{"name": "point4", "x":7, "y":8}
-					];
+					
+					var data3 = [<?=$datum?>];
 
 					x = d3.scaleLinear()
 						.domain(d3.extent(data3, d => d.x)).nice()
@@ -381,15 +345,15 @@
 						.call(grid);
 
 					svg3.append("g")
-						.attr("stroke", "steelblue")
-						.attr("stroke-width", 1.5)
-						.attr("fill", "none")
+						//.attr("stroke", "steelblue")
+						//.attr("stroke-width", 1.5)
+						.attr("fill", "steelblue")
 						.selectAll("circle")
 						.data(data3)
 						.join("circle")
 						.attr("cx", d => x(d.x))
 						.attr("cy", d => y(d.y))
-						.attr("r", 3);
+						.attr("r", 1);
 
 					svg3.append("g")
 						.attr("font-family", "sans-serif")
@@ -430,7 +394,7 @@
 		if ($fh) {
 			while (($line = fgets($fh)) !== false) {
 				/* split on whitespace */
-				$parts = preg_split('/\s+/', $line);
+				$parts = preg_split('/\s+/', trim($line));
 				$parts = array_filter($parts);
 				$data[] = $parts;
 			}

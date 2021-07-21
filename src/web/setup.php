@@ -63,11 +63,14 @@
 	}
 	
 	/* check if the client can run this page. ie, is it in the list of safe IPs */
-	$cfg['setupips'] .= "::1,127.0.0.1,localhost";
+	$cfg['setupips'] .= ",::1,127.0.0.1,localhost";
 	if ($cfg['setupips'] != "") {
 		$valid = false;
 		$iplist = explode(",", $cfg['setupips']);
+
 		foreach ($iplist as $ip) {
+			//echo "Checking IP from list [$ip] against REMOTE_ADDR [" . $_SERVER['REMOTE_ADDR'] . "]<br>";
+			
 			if (trim($ip) == $_SERVER['REMOTE_ADDR'])
 				$valid = true;
 		}

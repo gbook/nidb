@@ -21,6 +21,7 @@ SOURCES += \
     archiveio.cpp \
     main.cpp \
     minipipeline.cpp \
+    moduleBackup.cpp \
     moduleCluster.cpp \
     moduleExport.cpp \
     moduleFileIO.cpp \
@@ -57,6 +58,7 @@ HEADERS += \
     analysis.h \
     archiveio.h \
     minipipeline.h \
+    moduleBackup.h \
     moduleCluster.h \
     moduleExport.h \
     moduleFileIO.h \

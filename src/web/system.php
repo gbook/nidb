@@ -126,6 +126,9 @@
 
     $c['setupips'] = GetVariable("setupips");
 
+    $c['backupsize'] = GetVariable("backupsize");
+    $c['backupstagingdir'] = GetVariable("backupstagingdir");
+
     $c['importchunksize'] = GetVariable("importchunksize");
     $c['numretry'] = GetVariable("numretry");
     $c['enablenfs'] = GetVariable("enablenfs");

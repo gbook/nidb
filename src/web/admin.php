@@ -72,6 +72,7 @@
 					<a href="cleanup.php" class="ui button"><i class="black eraser icon"></i> Clean-up data</a>
 					<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>
 					<a href="stats.php" class="ui button"><i class="black thermometer half icon"></i> System Usage Statistics</a>
+					<a href="backup.php" class="ui button"><i class="box icon"></i> Backup</a>
 				</div>
 			</div>
 			<div class="ui eight wide column">

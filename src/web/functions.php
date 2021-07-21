@@ -3181,6 +3181,22 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 
 			<tr>
+				<td colspan="4" class="active"><h3>Backup</h3></td>
+			</tr>
+			<tr>
+				<td class="right aligned tt">backupsize</td>
+				<td><input type="text" name="backupsize" value="<?=$GLOBALS['cfg']['backupsize']?>"></td>
+				<td></td>
+				<td>(Tape size) Number of GB in the backup directory before a tape is written. 1 GB = 1,000,000,000 bytes</td>
+			</tr>
+			<tr>
+				<td class="right aligned tt">backupstagingdir</td>
+				<td><input type="text" name="backupstagingdir" value="<?=$GLOBALS['cfg']['backupstagingdir']?>"></td>
+				<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupstagingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+				<td>Path where data will be staged prior to writing to tape</td>
+			</tr>
+
+			<tr>
 				<td colspan="4" class="active"><h3>Data Import/Export</h3></td>
 			</tr>
 			<tr>
@@ -3657,6 +3673,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 # ----- security options -----
 [setupips] = $setupips
+
+# ----- security options -----
+[backupsize] = $backupsize
+[backupstagingdir] = $backupstagingdir
 
 # ----- import/export options -----
 [importchunksize] = $importchunksize
