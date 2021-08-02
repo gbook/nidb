@@ -2236,23 +2236,45 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- RunSystemChecks -------------------- */
 	/* -------------------------------------------- */
 	function RunSystemChecks() {
-		$problems = array();
+		$errors = array();
+		$warnings = array();
 		
 		/* check if the nidb executable has execute permissions */
 		$nidbexe = $GLOBALS['cfg']['nidbdir'] . "/bin/nidb";
 		if (!is_executable($nidbexe))
-			array_push($problems, "<span class='tt'>$nidbexe</span> executable does not have execute permissions");
+			array_push($errors, "<tt>$nidbexe</tt> executable does not have execute permissions");
 		
 		/* check if any disks are full */
 		
 		/* check if load is above 100% */
 		
 		/* check if import, export, or fileio modules are disabled */
+		$sqlstring = "select * from modules where module_name = 'import' and module_isactive = 0";
+		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		if (mysqli_num_rows($result) > 0)
+			array_push($warnings, "<tt>import</tt> module is disabled. New images will not archived");
 		
-		if (count($problems) > 0) {
+		$sqlstring = "select * from modules where module_name = 'export' and module_isactive = 0";
+		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		if (mysqli_num_rows($result) > 0)
+			array_push($warnings, "<tt>export</tt> module is disabled. Requested exports will not be processed");
+		
+		$sqlstring = "select * from modules where module_name = 'fileio' and module_isactive = 0";
+		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		if (mysqli_num_rows($result) > 0)
+			array_push($warnings, "<tt>fileio</tt> module is disabled. Any back-end changes will not be performed");
+		
+		
+		if (count($errors) > 0) {
 			echo "<br>";
-			Error("System Error. Contact NiDB administrator", "<ul><li>" . implode2("<li>", $problems) . "</ul>");
+			Error("System Error. Contact NiDB administrator<br> <ul><li>" . implode2("<li>", $errors) . "</ul>");
 		}
+		if (count($warnings) > 0) {
+			echo "<br>";
+			Notice("Warning. Contact NiDB administrator<br> <ul><li>" . implode2("<li>", $warnings) . "</ul>");
+		}
+		else
+			return false;
 	}
 	
 	
@@ -2454,11 +2476,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- Error ------------------------------ */
 	/* -------------------------------------------- */
-	function Error($msg) {
+	function Error($msg, $close=true) {
 		?>
 		<div class="ui container">
 			<div class="ui message red">
-				<i class="close icon"></i>
+				<? if ($close) { ?><i class="close icon"></i> <? } ?>
 				<div class="header">Error</div>
 				<p><?=$msg?></p>
 			</div>

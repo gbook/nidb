@@ -285,7 +285,7 @@
 						
 						if (!$module_isactive) { $rowclass = "disabled"; } else { $rowclass = ""; }
 				?>
-				<tr class="<?=$rowclass?>">
+				<tr class="">
 					<td><b><?=$module_name?></b></td>
 					<td><i class="file alternate outline icon"></i> <a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a></td>
 					<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>

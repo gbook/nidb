@@ -329,7 +329,7 @@
 
 			/* if we get to this point, its safe to add to the database */
 			if ($method == "add") {
-				$sqlstring = "insert into calendar_appointments (appt_groupid, appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values ('$groupid', '$username', $calendarid, $projectid, '$title', '$details', '$startdatetime', '$enddatetime', $isalldayevent, $istimerequest)";
+				$sqlstring = "insert into calendar_appointments (appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values ('$username', $calendarid, $projectid, '$title', '$details', '$startdatetime', '$enddatetime', $isalldayevent, $istimerequest)";
 				//echo "$sqlstring<br>";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* CALULATE&POPULATE GROUP ID */

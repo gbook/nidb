@@ -76,6 +76,8 @@
 				</div>
 			</div>
 			<div class="ui eight wide column">
+				<i class="large info circle icon"></i><a href="status.php"><b>Status</b></a>
+				<br><br>
 				<li><a href="adminmodules.php">Modules</a>
 				<li><a href="adminmodalities.php">Modalities</a>
 				<li><a href="adminsites.php">Sites</a>
@@ -87,7 +89,7 @@
 				<br><br><br>
 				<i class="large cog icon"></i><a href="system.php"><b>System Settings</b></a>
 				<br><br>
-				<i class="large wrench icon"></i><a href="setup.php"><b>Setup</b></a>
+				<i class="large wrench icon"></i><a href="setup.php"><b>Setup/Upgrade</b></a>
 			</div>
 		</div>
 		<?

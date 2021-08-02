@@ -57,11 +57,24 @@ int moduleBackup::Run() {
     if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
 
     QSqlQuery q;
+
+    /* insert a row into backup table for the copying, to display a basic row of information the staging directory size, on the webpage */
     q.prepare("insert ignore into backups (backup_tapenumber, backup_tapeletter, backup_tapestatus, backup_startdate) values (0, '0', 'staging', now()) on duplicate key update backup_tapestatus = 'idle', backup_startdate = now(), backup_enddate = null");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    /* ----- step 1 ----- backup the database */
+    /* ----- step 1 ----- backup the database (Always done) */
     n->WriteLog(BackupDatabase());
+
+    /* possible statuses: 'idle','waitingfortape','readytowrite','writing','filelisting','rewinding','staging','ejecting','complete' */
+
+    /* check if there are any backups already occuring: ie, any status other than 'idle' or 'complete' */
+    q.prepare("select * from backups where backup_tapestatus not in ('idle', 'complete')");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        QString backup = q.value("maxtapenumber").toInt();
+
+    }
 
     /* ----- step 2 ----- copy to backup staging */
     qint64 backupStageSize = MoveToBackupStaging();
