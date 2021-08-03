@@ -59,7 +59,7 @@ int moduleBackup::Run() {
     QSqlQuery q;
 
     /* insert a row into backup table for the copying, to display a basic row of information the staging directory size, on the webpage */
-    q.prepare("insert ignore into backups (backup_tapenumber, backup_tapeletter, backup_tapestatus, backup_startdate) values (0, '0', 'staging', now()) on duplicate key update backup_tapestatus = 'idle', backup_startdate = now(), backup_enddate = null");
+    q.prepare("insert ignore into backups (backup_tapenumber, backup_tapestatus, backup_startdateA) values (0, 'staging', now()) on duplicate key update backup_tapestatus = 'idle', backup_startdateA = now(), backup_enddateA = null");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* ----- step 1 ----- backup the database (Always done) */
@@ -71,9 +71,25 @@ int moduleBackup::Run() {
     q.prepare("select * from backups where backup_tapestatus not in ('idle', 'complete')");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
-        q.first();
-        QString backup = q.value("maxtapenumber").toInt();
+        while (q.next()) {
+            int backup_id = q.value("backup_id").toInt();
+            int backup_tapenumber = q.value("backup_tapenumber").toInt();
+            QString backup_tapestatus = q.value("backup_tapestatus").toString();
+            QDateTime backup_startdateA = q.value("backup_startdateA").toDateTime();
+            QDateTime backup_enddateA = q.value("backup_enddateA").toDateTime();
+            qint64 backup_tapesizeA = q.value("backup_tapesizeA").toLongLong();
+            //backup_tapecontentsA
+            QDateTime backup_startdateB = q.value("backup_startdateB").toDateTime();
+            QDateTime backup_enddateB = q.value("backup_enddateB").toDateTime();
+            qint64 backup_tapesizeB = q.value("backup_tapesizeB").toLongLong();
+            //backup_tapecontentsB
+            QDateTime backup_startdateC = q.value("backup_startdateC").toDateTime();
+            QDateTime backup_enddateC = q.value("backup_enddateC").toDateTime();
+            qint64 backup_tapesizeC = q.value("backup_tapesizeC").toLongLong();
+            //backup_tapecontentsC
 
+            n->WriteLog(QString("Tape [%1] has status of [%2]. Startdate(s) [%3,%4,%5]  sizes [%6,%7,%8]  enddates [%9,%10,%11]").arg(backup_tapenumber).arg(backup_tapestatus).arg(backup_startdateA.toString()).arg(backup_startdateB.toString()).arg(backup_startdateC.toString()).arg(backup_tapesizeA).arg(backup_tapesizeB).arg(backup_tapesizeC).arg(backup_enddateA.toString()).arg(backup_enddateB.toString()).arg(backup_enddateC.toString()));
+        }
     }
 
     /* ----- step 2 ----- copy to backup staging */
@@ -82,19 +98,37 @@ int moduleBackup::Run() {
 
     /* ----- step 3 ----- check if we have enough data to write to a tape */
     if (backupStageSize > backupTapeSize) {
-        WriteTapeSet();
+        /* possible statuses:
+         * 'idle', 'waitingForTapeA', 'readyToWriteTapeA', 'writingTapeA', 'completeTapeA', 'waitingForTapeB', 'readyToWriteTapeB', 'writingTapeB', 'completeTapeB', 'waitingForTapeC', 'readyToWriteTapeC', 'writingTapeC', 'completeTapeC', 'complete' */
+
+        /* check for any rows with status readyToWriteTapeX */
+
+        /* if there are, then write the tape */
+        if () {
+
+        }
+        else {
+            /* find any rows with
+            /* if status is 'idle', then we'll need the user to load tape A (set status to 'waitingForTapeA') */
+
+            /* if status is 'completeTapeA', then need to set status to 'waitingForTapeB' */
+
+            /* if status is 'completeTapeB', then set status to 'waitingForTapeC' */
+
+            /* if status is 'completeTapeC', then delete backupstaging contents and set status to 'complete' */
+        }
     }
     else {
         /* get the default row tapenum = 0, tapeletter = '0' */
-        q.prepare("select backup_id from backups where backup_tapenumber = 0 and backup_tapeletter = '0'");
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        q.first();
-        int backupid = q.value("backup_id").toInt();
+        //q.prepare("select backup_id from backups where backup_tapenumber = 0");
+        //n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        //q.first();
+        //int backupid = q.value("backup_id").toInt();
 
-        q.prepare("update backups set backup_tapestatus = 'idle', backup_enddate = now(), backup_tapesize = :stagesize where backup_id = :backupid");
-        q.bindValue(":backupid", backupid);
+        q.prepare("update backups set backup_tapestatus = 'idle', backup_enddateA = now(), backup_tapesizeA = :stagesize where backup_tapenumber = 0");
+        //q.bindValue(":backupid", backupid);
         q.bindValue(":stagesize", backupStageSize);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
     }
 
 
@@ -178,7 +212,7 @@ QString moduleBackup::BackupDatabase() {
 /* ---------------------------------------------------------- */
 bool moduleBackup::WriteTapeSet() {
 
-    /* get next tape number */
+    /* get next tape number, and letter */
     int tapeNum = 1;
     QSqlQuery q;
     q.prepare("select max(backup_tapenumber) 'maxtapenumber' from backup");

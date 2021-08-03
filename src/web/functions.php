@@ -3217,9 +3217,21 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupstagingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 				<td>Path where data will be staged prior to writing to tape</td>
 			</tr>
+			<tr>
+				<td class="right aligned tt">backupdevice</td>
+				<td><input type="text" name="backupdevice" value="<?=$GLOBALS['cfg']['backupdevice']?>"></td>
+				<td></td>
+				<td>Tape device through which tar will be used. Usually the default tape device on Linux is <code>/dev/st0</code>. Remote tape drives use this format <code>user@remote-host:/dev/tapedevice</code></td>
+			</tr>
 
 			<tr>
 				<td colspan="4" class="active"><h3>Data Import/Export</h3></td>
+			</tr>
+			<tr>
+				<td class="right aligned tt">enablecsa</td>
+				<td><input type="checkbox" name="enablecsa" value="1" <? if ($GLOBALS['cfg']['enablecsa']) { echo "checked"; } ?>></td>
+				<td></td>
+				<td>Enable reading of Siemens CSA header in DICOM files. This option allows phase encoding direction to be read, but will make archiving SLOW for non-mosaic images.</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">importchunksize</td>
@@ -3241,7 +3253,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 			<tr>
 				<td class="right aligned tt">enableftp</td>
-				<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
+				<td><input type="checkbox" name="enableftp" value="1" <? if ($GLOBALS['cfg']['enableftp']) { echo "checked"; } ?>></td>
 				<td></td>
 				<td>Display the FTP export options. Uncheck if this site does not have FTP, SCP, or other file transfer services enabled</td>
 			</tr>
@@ -3696,11 +3708,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 # ----- security options -----
 [setupips] = $setupips
 
-# ----- security options -----
+# ----- backup options -----
 [backupsize] = $backupsize
 [backupstagingdir] = $backupstagingdir
+[backupdevice] = $backupdevice
 
 # ----- import/export options -----
+[enablecsa] = $enablecsa
 [importchunksize] = $importchunksize
 [numretry] = $numretry
 [enablenfs] = $enablenfs

@@ -45,7 +45,7 @@
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 
 <link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
-<script src="scripts/semantic/semantic.min.js"></script>
+<script src="scripts/semantic/semantic.js"></script>
 <script src="scripts/tablesort.js"></script>
 
 <!-- file uploader -->

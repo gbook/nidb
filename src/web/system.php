@@ -128,7 +128,9 @@
 
     $c['backupsize'] = GetVariable("backupsize");
     $c['backupstagingdir'] = GetVariable("backupstagingdir");
+    $c['backupdevice'] = GetVariable("backupdevice");
 
+    $c['enablecsa'] = GetVariable("enablecsa");
     $c['importchunksize'] = GetVariable("importchunksize");
     $c['numretry'] = GetVariable("numretry");
     $c['enablenfs'] = GetVariable("enablenfs");

@@ -2361,46 +2361,49 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
         tags["UniqueSeriesString"] = uniqueseries;
 
         /* attempt to get the Siemens CSA header info */
+        tags["PhaseEncodeAngle"] = "";
+        tags["PhaseEncodingDirectionPositive"] = "";
+        if (cfg["enablecsa"] == "1") {
+            /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
+            QFile df(f);
 
-        /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
-        QFile df(f);
+            /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
+            if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
 
-        /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
-        if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
-
-            QTextStream in(&df);
-            while (!in.atEnd()) {
-                QString line = in.readLine();
-                if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
-                    /* make sure the line does not contain any non-printable ASCII control characters */
-                    if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
-                        int idx = line.indexOf(".dInPlaneRot");
-                        line = line.mid(idx,23);
-                        QStringList vals = line.split(QRegExp("\\s+"));
-                        if (vals.size() > 0)
-                            tags["PhaseEncodeAngle"] = vals.last().trimmed();
-                        break;
+                QTextStream in(&df);
+                while (!in.atEnd()) {
+                    QString line = in.readLine();
+                    if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
+                        /* make sure the line does not contain any non-printable ASCII control characters */
+                        if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
+                            int idx = line.indexOf(".dInPlaneRot");
+                            line = line.mid(idx,23);
+                            QStringList vals = line.split(QRegExp("\\s+"));
+                            if (vals.size() > 0)
+                                tags["PhaseEncodeAngle"] = vals.last().trimmed();
+                            break;
+                        }
                     }
                 }
+                //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
+                df.close();
             }
-            //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
-            df.close();
-        }
 
-        /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-        QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(cfg["nidbdir"]).arg(f);
-        QString csaheader = SystemCommand(systemstring, false);
-        QStringList parts = csaheader.split(",");
-        QString val;
-        if (parts.size() == 5) {
-            val = parts[4];
-            val.replace("Data '","",Qt::CaseInsensitive);
-            val.replace("'","");
-            if (val.trimmed() == "Data")
-                val = "";
-            tags["PhaseEncodingDirectionPositive"] = val.trimmed();
+            /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
+            QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(cfg["nidbdir"]).arg(f);
+            QString csaheader = SystemCommand(systemstring, false);
+            QStringList parts = csaheader.split(",");
+            QString val;
+            if (parts.size() == 5) {
+                val = parts[4];
+                val.replace("Data '","",Qt::CaseInsensitive);
+                val.replace("'","");
+                if (val.trimmed() == "Data")
+                    val = "";
+                tags["PhaseEncodingDirectionPositive"] = val.trimmed();
+            }
+            //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
         }
-        //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
     }
     else {
         /* ---------- not a DICOM file, so see what other type of file it may be ---------- */

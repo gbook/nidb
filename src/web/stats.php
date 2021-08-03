@@ -722,7 +722,101 @@
 					
 					<table class="bluerounded" width="100%">
 						<tr>
-							<td class="title">Studies by Day by Site</td>
+							<td class="title">MRI Studies by Day by Site</td>
+						</tr>
+						<tr>
+							<td class="body">
+								<?
+									unset($sites);
+									/* get the list of possible study sites (equipments) */
+									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
+									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$sites[] = $row['site'];
+									}
+									
+									natcasesort($sites);
+									//PrintVariable($sites,'sites');
+									
+								?>
+								<script>
+									$(function() {
+											var data4 = [
+									<?
+										foreach ($sites as $site) {
+											unset($jsonstrings);
+											?>
+												{
+												label: "<?=$site?>",
+												data: [<?
+											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where a.study_site = '$site' GROUP BY DATE(a.study_datetime) order by Date";
+											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+												$date = $row['Date']*1000;
+												if ($date > 0) {
+													//$totalsize = $row['totalsize']/1000/1000/1000;
+													$totalcount = $row['totalCount'];
+													//$cumtotal += $totalsize;
+													//$studysites[$site][$date]['size'] = $totalsize;
+													//$studysites[$site][$date]['count'] = $totalcount;
+													
+													$jsonstrings[] .= "['$date', " . $totalcount . "]";
+													//$jsonstrings[] .= "['$date', $cumtotal]";
+												}
+											}
+											?><?=implode2(',',$jsonstrings)?>]
+												},
+											<?
+											
+										}
+										//PrintVariable($studysites,'StudySites');
+									?>
+										];
+									
+										var options4 = {
+											series: {
+												lines: {
+													show: true,
+													fill: true
+												},
+												points: {
+													show: false
+												}
+											},
+											legend: {
+												noColumns: 6
+											},
+											xaxis: {
+												mode: "time",
+												timeformat: "%Y-%m-%d"
+											},
+											yaxis: {
+												min: 0,
+												tickDecimals: 1
+											},
+											selection: {
+												mode: "x"
+											}
+										};
+
+										var placeholder4 = $("#placeholder4");
+
+										var plot4 = $.plot(placeholder4, data4, options4);
+									});
+								</script>
+								
+								<div class='flot-y-axis'>
+									<div class='flot-tick-label'>Studies</div>
+								</div>
+								<div id="placeholder4" style="width:1100px;height:600px;"></div>
+							</td>
+						</tr>
+					</table>
+
+					<table class="bluerounded" width="100%">
+						<tr>
+							<td class="title">Studies by Day</td>
 						</tr>
 						<tr>
 							<td class="body">

@@ -127,11 +127,11 @@
 							$tapesizeC = $row['backup_tapesizeC'];
 							?>
 							<tr>
-								<td><?=$tapenumber?><?=$tapeletter?></td>
-								<td><?=$startdate?></td>
+								<td><?=$tapenumber?></td>
+								<td><?=$startdateA?></td>
 								<td><?=$status?></td>
 								<td></td>
-								<td>Backup staging size <?=$tapesize?></td>
+								<td>Backup staging size <?=$tapesizeA?></td>
 								<td><?=$enddate?></td>
 							</tr>
 							<?
