@@ -34,14 +34,17 @@ public:
 
     QString BackupDatabase();
     qint64 MoveToBackupStaging();
-    bool WriteTapeSet();
-    bool WriteTape(int tapeNum, char tapeLetter);
+    //bool WriteTapeSet();
+    bool WriteTape(int tapeNum, char tapeLetter, int backupid);
+    void SetBackupStatus(int backupid, QString status);
 
 private:
     nidb *n;
     qint64 backupTapeSize;
     QString backupDir;
     QString backupStagingDir;
+    QString backupServer;
+    QString backupDevice;
 };
 
 #endif // MODULEBACKUP_H
