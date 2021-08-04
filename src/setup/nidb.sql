@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 03, 2021 at 12:29 AM
+-- Generation Time: Aug 04, 2021 at 05:10 PM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -392,6 +392,30 @@ CREATE TABLE `audit_subject` (
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `backups`
+--
+
+CREATE TABLE `backups` (
+  `backup_id` int(11) NOT NULL,
+  `backup_tapenumber` int(11) NOT NULL,
+  `backup_tapestatus` enum('idle','waitingForTapeA','readyToWriteTapeA','writingTapeA','completeTapeA','waitingForTapeB','readyToWriteTapeB','writingTapeB','completeTapeB','waitingForTapeC','readyToWriteTapeC','writingTapeC','completeTapeC','complete') NOT NULL DEFAULT 'idle',
+  `backup_startdateA` datetime DEFAULT NULL,
+  `backup_enddateA` datetime DEFAULT NULL,
+  `backup_tapesizeA` bigint(20) NOT NULL DEFAULT 0,
+  `backup_tapecontentsA` longtext DEFAULT NULL,
+  `backup_startdateB` datetime DEFAULT NULL,
+  `backup_enddateB` datetime DEFAULT NULL,
+  `backup_tapesizeB` bigint(20) NOT NULL DEFAULT 0,
+  `backup_tapecontentsB` longtext DEFAULT NULL,
+  `backup_startdateC` datetime DEFAULT NULL,
+  `backup_enddateC` datetime DEFAULT NULL,
+  `backup_tapesizeC` bigint(20) NOT NULL DEFAULT 0,
+  `backup_tapecontentsC` longtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -3402,6 +3426,13 @@ ALTER TABLE `audit_subject`
   ADD KEY `subject_id` (`subject_id`);
 
 --
+-- Indexes for table `backups`
+--
+ALTER TABLE `backups`
+  ADD PRIMARY KEY (`backup_id`),
+  ADD UNIQUE KEY `backup_tapenumber` (`backup_tapenumber`);
+
+--
 -- Indexes for table `bids_mapping`
 --
 ALTER TABLE `bids_mapping`
@@ -4469,6 +4500,12 @@ ALTER TABLE `audit_study`
 --
 ALTER TABLE `audit_subject`
   MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `backups`
+--
+ALTER TABLE `backups`
+  MODIFY `backup_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `bids_mapping`
