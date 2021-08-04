@@ -135,7 +135,7 @@ int moduleBackup::Run() {
         else if (status == "readyToWriteTapeC") {
             WriteTape(tapeNum, 'C', backupid);
         }
-        else if (status == "idle") {
+        else if ((status == "idle") || (status == "complete")) {
             /* create new row with status of waitingForTapeA, and maxTapeNum+1. Also get the backup_id */
             q.prepare("insert into backups (backup_tapenumber, backup_tapestatus) values (:tapenum, 'waitingForTapeA')");
             q.bindValue(":tapenum", tapeNum+1);

@@ -3221,7 +3221,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td class="right aligned tt">backupdevice</td>
 				<td><input type="text" name="backupdevice" value="<?=$GLOBALS['cfg']['backupdevice']?>"></td>
 				<td></td>
-				<td>Tape device through which tar will be used. Usually the default tape device on Linux is <code>/dev/st0</code>. Remote tape drives use this format <code>user@remote-host:/dev/tapedevice</code></td>
+				<td>Tape device through which tar will be used. Usually the default tape device on Linux is <code>/dev/st0</code>.</td>
+			</tr>
+			<tr>
+				<td class="right aligned tt">backupserver</td>
+				<td><input type="text" name="backupserver" value="<?=$GLOBALS['cfg']['backupserver']?>"></td>
+				<td></td>
+				<td>Remote tape server, with username. Passwordless ssh is needed if using a remote tape server. example <code>user@tapeserver</code></td>
 			</tr>
 
 			<tr>
@@ -3712,6 +3718,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [backupsize] = $backupsize
 [backupstagingdir] = $backupstagingdir
 [backupdevice] = $backupdevice
+[backupserver] = $backupserver
 
 # ----- import/export options -----
 [enablecsa] = $enablecsa

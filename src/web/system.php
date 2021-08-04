@@ -129,6 +129,7 @@
     $c['backupsize'] = GetVariable("backupsize");
     $c['backupstagingdir'] = GetVariable("backupstagingdir");
     $c['backupdevice'] = GetVariable("backupdevice");
+    $c['backupserver'] = GetVariable("backupserver");
 
     $c['enablecsa'] = GetVariable("enablecsa");
     $c['importchunksize'] = GetVariable("importchunksize");

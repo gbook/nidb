@@ -267,9 +267,9 @@
 	
 	<? if ($action == "search") { ?>
 	<div class="ui text container" id="pageloading">
-		<div class="ui inverted yellow segment" align="center">
+		<div class="ui yellow message" align="center">
 			<h2 class="ui inverted header">
-				<i class="large inverted spinner loading icon"></i> Searching...
+				<em data-emoji=":chipmunk:" class="loading"></em> Searching...
 			</h2>
 		</div>
 	</div>

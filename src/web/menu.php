@@ -66,7 +66,7 @@
 		<?
 			/* admin */
 			if ($GLOBALS['isadmin']) {
-				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) { echo "active"; } ?> item"><i class="cog icon"></i>Admin</a><?
+				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog icon"></i>Admin</a><?
 			}
 			/* user options */
 			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account</a><?
@@ -225,7 +225,7 @@
 		}
 		
 		/* admin sub-menu. any pages starting with 'admin' */
-		elseif ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php")) {
+		elseif ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) {
 			?><a href="admin.php" class="<? if ($page=="admin.php") { echo "active"; } ?> item"><i class="cog icon"></i> Admin</a><?
 			?><a href="adminmodules.php" class="<? if ($page=="adminmodules.php") { echo "active"; } ?> item">Modules</a><?
 			?><a href="system.php" class="<? if ($page=="system.php") { echo "active"; } ?> item">Settings...</a><?
