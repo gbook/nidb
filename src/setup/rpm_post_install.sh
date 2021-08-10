@@ -93,6 +93,7 @@ echo 'Create data directories and change owner'
 mkdir -p /nidb/data
 mkdir -p /nidb/data/archive
 mkdir -p /nidb/data/backup
+mkdir -p /nidb/data/backupstaging
 mkdir -p /nidb/data/deleted
 mkdir -p /nidb/data/dicomincoming
 mkdir -p /nidb/data/download

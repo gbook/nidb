@@ -241,8 +241,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             if (fsize < 1) {
                 n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
-                if (!n->MoveFile(file, n->cfg["problemdir"]))
-                    n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+				QString m;
+				if (!n->MoveFile(file, n->cfg["problemdir"], m))
+					n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
                 continue;
             }
         }
@@ -305,8 +306,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg",m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-                    if (!n->MoveFile(file, n->cfg["problemdir"]))
-                        n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+					QString m;
+					if (!n->MoveFile(file, n->cfg["problemdir"], m))
+						n->WriteLog(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting PAR/REC: " + m, archivereport, true);
                 }
@@ -332,8 +334,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    if (!n->MoveFile(file, n->cfg["problemdir"]))
-                        n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+					if (!n->MoveFile(file, n->cfg["problemdir"], m))
+						n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
                 }
@@ -363,8 +365,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    if (!n->MoveFile(file, n->cfg["problemdir"]))
-                        n->WriteLog("Unable to move ["+file+"] to ["+n->cfg["problemdir"]+"]");
+					QString m2;
+					if (!n->MoveFile(file, n->cfg["problemdir"], m2))
+						n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
 
                     /* change the import status to reflect the error */
                     if (importid > 0)

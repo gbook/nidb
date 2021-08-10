@@ -111,8 +111,8 @@
 			DisplayMiniPipelineForm($studyid, $seriesids);
 			break;
 		case 'submitminipipelines':
-			/* sad :( but the variable seriesid can come from the search.php page, and is an array. too much work to change all references to it now though
-			   this function needs to check for both variable names */
+			/* the variable seriesid can come from the search.php page, and is an array. too much work to change all references to it
+			   so this function needs to check for both variable names: 'seriesid' and 'seriesids' */
 			SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid);
 			break;
 		case 'update':
@@ -291,9 +291,13 @@
 		if ($studydoradread == "") $studydoradread = "0";
 		if ($studyradreaddate == "") $studyradreaddate = "null"; else $studyradreaddate = "'$studyradreaddate'";
 		if ($studyetsnellchart == "") $studyetsnellchart = "null"; else $studyetsnellchart = "'$studyetsnellchart'";
+		if ($studytimepoint == "") $studytimepoint = "null"; else $studytimepoint = "'$studytimepoint'";
+		if ($studydaynum == "") $studydaynum = "null"; else $studydaynum = "'$studydaynum'";
+		if ($studyheight == "") $studyheight = "null"; else $studyheight = "'$studyheight'";
+		if ($studyweight == "") $studyweight = "null"; else $studyweight = "'$studyweight'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = '$studyheight', study_weight = '$studyweight', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint', study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -1619,42 +1623,38 @@
 									<input type="hidden" name="studyid" value="<?=$study_id?>">
 									<input type="hidden" name="action" value="movestudytosubject">
 									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-									<div class="ui fluid labeled action input">
-										<div class="ui small label">
-										Move study to
-										</div>
+									<b>Move study to existing UID...</b>
+									<div class="ui fluid labeled inline action input">
 										<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
 										<div type="submit" class="ui primary button">Move</div>
 									</div>
 								</form>
 								
 								<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
-								<input type="hidden" name="action" value="movestudytoproject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-								<div class="ui fluid labeled action input">
-									<div class="ui small label">
-									Move study to
+									<input type="hidden" name="studyid" value="<?=$study_id?>">
+									<input type="hidden" name="action" value="movestudytoproject">
+									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+									<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+									<b>Move study to new project...</b>
+									<div class="ui fluid labeled inline action input">
+										<select name="newprojectid" class="ui compact selection dropdown" required>
+											<option value="">Select project...</option>
+										<?
+											$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
+											echo $sqlstringB;
+											$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+											while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+												$project_id = $rowB['project_id'];
+												$project_name = $rowB['project_name'];
+												$project_costcenter = $rowB['project_costcenter'];
+												?>
+												<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+												<?
+											}
+										?>
+										</select>
+										<div class="ui primary button" type="submit">Move</div>
 									</div>
-									<select name="newprojectid" class="ui compact selection dropdown" required>
-										<option value="">Select project...</option>
-									<?
-										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-										echo $sqlstringB;
-										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-											$project_id = $rowB['project_id'];
-											$project_name = $rowB['project_name'];
-											$project_costcenter = $rowB['project_costcenter'];
-											?>
-											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-											<?
-										}
-									?>
-									</select>
-									<div class="ui primary button" type="submit">Move</div>
-								</div>
 								</form>
 								
 								<br><br>
@@ -1899,7 +1899,11 @@
 								}
 								?>
 								<tr>
-									<td colspan="24" align="center" style="border-top: double 3px #FF7F7F; border-bottom: double 3px #FF7F7F; padding:5px">Non-consecutive series numbers. Missing series <?=$missingmsg?></td>
+									<td colspan="24" align="center" style="border-top: solid 3px #FF7F7F; border-bottom: solid 3px #FF7F7F; padding:5px">
+									<h4 class="ui center aligned header">
+										Non-consecutive series numbers. Missing series <?=$missingmsg?>
+									</h4>
+									</td>
 								</tr>
 								<?
 							}
@@ -2135,59 +2139,50 @@
 							function newPopup(url) {
 								popupWindow = window.open(url,'popUpWindow','height=700,width=800,left=10,top=10,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=no,status=yes')
 							}
+							
+							$(document).ready(function() {
+								const xhttp = new XMLHttpRequest();
+								xhttp.onload = function() {
+									document.getElementById("series<?=$series_num?>").innerHTML = this.responseText;
+								}
+								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp.send();
+								
+								const xhttp2 = new XMLHttpRequest();
+								xhttp2.onload = function() {
+									document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
+								}
+								xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp2.send();
+							});
 							</script>
 							<tr style="color: <?=$rowcolor?>">
-								<td><?=$series_num?></td>
+								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
-								<?
-								if ($data_type == "dicom") {
-									$dicoms = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
-									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/";
-									$dcmfile = $dicoms[0];
-									if (file_exists($dcmfile)) {
+									<?
+									if ($data_type == "dicom") {
 										?><a href="series.php?action=scanparams&file=<?=$dcmfile?>"><?=$series_desc?></a><?
 									}
-									else {
-										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?
-									}
-								}
-								elseif ($data_type == "parrec") {
-									$pars = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/parrec/*.par");
-									$filespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/parrec/";
-									$parfile = $pars[0];
-									if (file_exists($parfile)) {
+									elseif ($data_type == "parrec") {
 										?><a href="series.php?action=scanparams&file=<?=$parfile?>"><?=$series_desc?></a><?
+										echo $series_desc;
 									}
-									else {
-										?><span style="color: red" title="Files missing from disk [<?=$filespath?>]"><?=$series_desc?></span><?
-									}
-								} else {
-									echo $series_desc;
-								}
-								?>
-								<br>
-								<? if (file_exists($thumbpath)) { ?>
-								<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
-								&nbsp;
-								<? } ?>
-								<? if (file_exists($gifthumbpath)) { ?>
-								<a href="preview.php?image=<?=$gifthumbpath?>" class="preview"><img src="images/movie.png" border="0"></a>
-								<? } ?>
-								<? if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
-								&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><img src="images/colors.png" border="0"></a>
-								<? } ?>
+									?>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
+									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
+									<? //} ?>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
 								<td class="seriesrow" style="padding: 0px 5px;">
-									<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$mrseries_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
+									<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$mrseries_id?>');"><i class="chart bar icon" title="View QA results, including movement correction"></i></a>
 								</td>
 								<td class="seriesrow" style="padding: 0px 5px;">
 									<span style="font-size:7pt"><?=$ratingavg;?></span>
 									<div id="popup" style="display:none; min-width:800px; min-height:400px"></div>
-									<? if ($hasratings) { $image = "rating2.png"; } else { $image = "rating.png"; } ?>
-									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><img src="images/<?=$image?>" border="0" title="View ratings"></a>
+									<? if ($hasratings) { $image = "red"; } else { $image = "grey"; } ?>
+									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><i class="<?=$image?> comment dots icon" title="View ratings"></i></a>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable" style="border-radius:0px">
@@ -2289,19 +2284,19 @@
 					<div class="right aligned column">
 						<b style="color: #444;">With Selected Series...&nbsp; &nbsp; </b>
 						<br><br>
-						<button class="ui button" name="renameseriesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();">Rename</button>
+						<button class="ui button" name="renameseriesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i></i>Rename</button>
 						<br>
-						<button class="ui button" name="updateseriesnotesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();">Update notes</button>
+						<button class="ui button" name="updateseriesnotesform" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Update notes</button>
 						<br>
 						<button class="ui button" name="moveseriestonewstudy" style="width: 200px; margin: 5px;" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</button>
 						<br>
-						<button class="ui button" name="hideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results">Hide</button>
+						<button class="ui button" name="hideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results"><i class="eye slash icon"></i> Hide</button>
 						<br>
-						<button class="ui button" name="unhideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results">Un-hide</button>
+						<button class="ui button" name="unhideseries" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results"><i class="eye icon"></i> Un-hide</button>
 						<br>
-						<button class="ui button" name="resetqa" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated">Reset QC</button>
+						<button class="ui button" name="resetqa" style="width: 200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</button>
 						<br><br>
-						<button class="ui red button" name="deleteseries" style="width:200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website">Delete</button>
+						<button class="ui red button" name="deleteseries" style="width:200px; margin:5px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
 					</div>
 				</div>
 				<? } ?>
@@ -2433,7 +2428,7 @@
 						<tr>
 							<td><?=$series_num?></td>
 							<td><?=$series_desc?></td>
-							<td><?=$protocol?> <a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a></td>
+							<td><?=$protocol?> <a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a></td>
 							<td><?=$series_datetime?></td>
 							<td><span id="series_notes" class="edit_inline<? echo $ctseries_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_notes; ?></span></td>
 							<td><?=$series_contrastbolusagent?></td>
@@ -3019,7 +3014,7 @@
 												break;
 											case "i":
 												?>
-												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
 												<?
 												break;
 										}
@@ -3197,7 +3192,7 @@
 											break;
 										case "i":
 											?>
-											<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+											<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
 											<?
 											break;
 									}

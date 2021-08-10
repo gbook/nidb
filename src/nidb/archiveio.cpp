@@ -530,9 +530,9 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* copy the file to the archive, update db info */
     AppendUploadLog(__FUNCTION__ , QString("SeriesRowID: [%1]").arg(seriesRowID));
 
-    study *s = NULL;
+	study *s = nullptr;
     s = new study(studyRowID, n);
-    if ((s == NULL) || (!s->valid())) {
+	if ((s == nullptr) || (!s->valid())) {
         AppendUploadLog(__FUNCTION__ , QString("Error getting study information. StudyRowID [%1] not valid").arg(studyRowID));
         return false;
     }
@@ -1289,12 +1289,14 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     QString outdir = QString("%1/%2/%3/%4/parrec").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     AppendUploadLog(__FUNCTION__, "Outdir [" + outdir + "]");
     QString m;
-    if (!n->MakePath(outdir, m))
+	if (!n->MakePath(outdir, m)) {
         AppendUploadLog(__FUNCTION__, "Error creating outdir ["+outdir+"] because of error ["+m+"]");
+	}
 
     /* move the files into the outdir */
-    n->MoveFile(parfile, outdir);
-    n->MoveFile(recfile, outdir);
+	//QString m;
+	n->MoveFile(parfile, outdir, m);
+	n->MoveFile(recfile, outdir, m);
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize(0);
@@ -1627,8 +1629,8 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
-    if (!n->MoveFile(file, outdir))
-        n->WriteLog("Unable to move ["+file+"] to ["+outdir+"]");
+	if (!n->MoveFile(file, outdir, m))
+		n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(outdir).arg(m));
 
     /* get the size of the files and update the DB */
     qint64 dirsize(0);
@@ -1874,7 +1876,7 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
 bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID) {
     subjectMatchCriteria = subjectMatchCriteria.toLower();
 
-    subject *s = NULL;
+	subject *s = nullptr;
 
     if (existingSubjectID >= 0) {
         s = new subject(existingSubjectID, n);
@@ -1986,7 +1988,7 @@ bool archiveIO::GetStudy(QString studyMatchCriteria, int existingStudyID, int en
 
     studyMatchCriteria = studyMatchCriteria.toLower();
 
-    study *s = NULL;
+	study *s = nullptr;
 
     if (existingStudyID >= 0)
         s = new study(existingStudyID, n);
@@ -2371,7 +2373,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
                 s[uid][studynum][seriesnum]["projectid"] = QString("%1").arg(projectid);
                 s[uid][studynum][seriesnum]["subjectsex"] = subjectsex;
-                s[uid][studynum][seriesnum]["subjectage"] = subjectAge;
+				s[uid][studynum][seriesnum]["subjectage"] = QString("%1").arg(subjectAge);
                 s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                 s[uid][studynum][seriesnum]["modality"] = modality;
                 s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);

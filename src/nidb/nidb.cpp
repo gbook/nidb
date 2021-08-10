@@ -748,18 +748,23 @@ QString nidb::GenerateRandomString(int n) {
 /* ---------------------------------------------------------- */
 /* --------- MoveFile --------------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::MoveFile(QString f, QString dir) {
+bool nidb::MoveFile(QString f, QString dir, QString &m) {
 
     QDir d;
     if (d.exists(dir)) {
         QString systemstring;
         systemstring = QString("mv %1 %2/").arg(f).arg(dir);
 
-        if (SystemCommand(systemstring, false).trimmed() != "")
+		QString output = SystemCommand(systemstring, false).trimmed();
+		if (output != "") {
+			m = output;
             return false;
+		}
     }
-    else
+	else {
+		m = QString("Directory [%1] does not exist").arg(dir);
         return false;
+	}
 
     return true;
 }

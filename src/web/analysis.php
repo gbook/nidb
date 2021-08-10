@@ -440,11 +440,6 @@
 		$pipeline_lastfinish = $row['pipeline_lastfinish'];
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
-	
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
-		//$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
-		//NavigationBar("Analyses", $urllist);
 
 		DisplayPipelineStatus($pipeline_name, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
@@ -512,7 +507,7 @@
 		</script>
 
 		<table width="100%" class="tablepage">
-			<form method="post" action="analysis.php" id="numperpageform">
+			<form method="post" action="analysis.php" id="numperpageform" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
@@ -524,7 +519,7 @@
 				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
 				<td class="pagenum">
 					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
-					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()">
+					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()" class="ui dropdown">
 						<option value="100" <?if ($numperpage == 100) { echo "selected"; } ?>>100
 						<option value="500" <?if ($numperpage == 500) { echo "selected"; } ?>>500
 						<option value="1000" <?if ($numperpage == 1000) { echo "selected"; } ?>>1,000
@@ -557,8 +552,7 @@
 			}
 		</script>
 		<table id="analysistable" class="ui very compact small celled grey table">
-		<!--<table id="analysistable" class="smallgraydisplaytable">-->
-			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php">
+			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="numperpage" value="<?=$numperpage?>">
@@ -619,13 +613,13 @@
 					<th align="left">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
 				<tr>
-					<th align="left"><input type="text" name="searchuid" placeholder="UID" value="<?=$searchuid?>" size="10"></th>
+					<th align="left"><input type="text" name="searchuid" placeholder="UID" value="<?=$searchuid?>" size="10" class="ui input"></th>
 					<th></th>
 					<th></th>
 					<th></th>
 					<th></th>
 					<th align="left">
-						<select name="searchstatus">
+						<select name="searchstatus" class="ui dropdown">
 							<option value="" <? if ($searchstatus == "") { echo "selected"; } ?>>(Select status)
 							<option value="complete" <? if ($searchstatus == "complete") { echo "selected"; } ?>>Complete
 							<option value="pending" <? if ($searchstatus == "pending") { echo "selected"; } ?>>Pending
@@ -636,7 +630,7 @@
 						</select>
 					</th>
 					<th>
-						<select name="searchsuccess">
+						<select name="searchsuccess" class="ui dropdown">
 							<option value="" <? if ($searchsuccess == "") { echo "selected"; } ?>>(Select success)
 							<option value="1" <? if ($searchsuccess == "1") { echo "selected"; } ?>>Successful
 							<option value="2" <? if ($searchsuccess == "2") { echo "selected"; } ?>>Not Successful
@@ -650,12 +644,12 @@
 					<th></th>
 					<th></th>
 					<th></th>
-					<th><input type="submit" name="btnSubmitFilter" value="Filter"></th>
+					<th><input type="submit" name="btnSubmitFilter" value="Filter" class="ui button"></th>
 					<th></th>
 				</tr>
 			</thead>
 			</form>
-			<form method="post" name="studieslist" id="studieslist" action="analysis.php">
+			<form method="post" name="studieslist" id="studieslist" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
 			<input type="hidden" name="destination" value="" id="studieslistdestination">
 			<input type="hidden" name="analysisnotes" value="">
@@ -797,11 +791,11 @@
 						
 						if ($notes == "") {
 							$notestitle = "Click to create notes";
-							$notescolor = "#DDD";
+							$notescolor = "grey";
 						}
 						else {
 							$notestitle = $notes;
-							$notescolor = "C00";
+							$notescolor = "red";
 						}
 						
 						if ($analysis_isbad) {
@@ -865,21 +859,21 @@
 						<? if ($analysis_iscomplete) { echo "&#x2713;"; } ?>
 					</td>
 					<? if ($analysis_status != "") { ?>
-					<td align="center">
-						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><img src="images/log16.png"></a>
+					<td class="center aligned">
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><i class="large grey file alternate outline icon"></i></a>
 					</td>
-					<td align="center">
-						<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><img src="images/folder16.png"></a>
+					<td class="center aligned">
+						<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><i class="large grey folder open outline icon"></i></a>
 					</td>
-					<td align="center">
+					<td class="center aligned">
 						<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-						<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a>
+						<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><i class="large grey download icon"></i></a>
 						<? } else { ?>
 						
 						<? } ?>
 					</td>
-					<td align="center">
-						<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><img src="images/chart16.png"></a>
+					<td class="center aligned">
+						<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><i class="large grey chart bar icon"></i></a>
 					</td>
 					<? } else { ?>
 					<td></td>
@@ -888,7 +882,7 @@
 					<td></td>
 					<? } ?>
 					<td>
-						<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" style="cursor:hand; font-size:14pt; color: <?=$notescolor?>" title="<?=$notestitle?>">&#9998;</span>
+						<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
 					</td>
 					<td style="font-size:9pt; white-space:nowrap">
 						<?=$analysis_statusmessage?><br>

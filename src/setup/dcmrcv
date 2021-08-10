@@ -4,7 +4,7 @@
 
 case "$1" in
 'start')
-	/nidb/bin/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/dicomincoming > /dev/null 2>&1 &
+	/nidb/bin/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/data/dicomincoming > /dev/null 2>&1 &
 	touch /var/lock/subsys/dcmrcv
 	;;
 'stop')

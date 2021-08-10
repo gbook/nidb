@@ -72,22 +72,21 @@
 					<a href="cleanup.php" class="ui button"><i class="black eraser icon"></i> Clean-up data</a>
 					<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>
 					<a href="stats.php" class="ui button"><i class="black thermometer half icon"></i> System Usage Statistics</a>
-					<a href="backup.php" class="ui button"><i class="box icon"></i> Backup</a>
+					<a href="backup.php" class="ui button"><i class="black archive icon"></i> Backup</a>
 				</div>
 			</div>
 			<div class="ui eight wide column">
-				<i class="large info circle icon"></i><a href="status.php"><b>Status</b></a>
+				<i class="large info circle icon"></i><a href="status.php"><b>System status</b></a>
 				<br><br>
-				<li><a href="adminmodules.php">Modules</a>
-				<li><a href="adminmodalities.php">Modalities</a>
-				<li><a href="adminsites.php">Sites</a>
-				<li><a href="adminqc.php">QC Modules</a>
+				<li><i class="list alternate icon"></i> <a href="adminmodules.php">Modules</a>
+				<li><i class="list alternate icon"></i> <a href="adminmodalities.php">Modalities</a>
+				<li><i class="list alternate icon"></i> <a href="adminsites.php">Sites</a>
+				<li><i class="list alternate icon"></i> <a href="adminqc.php">QC Modules</a>
 				<!--<li><a href="importlog.php">Import Logs</a>-->
-				<li><a href="admininstances.php">Instances</a>
-				<li><a href="status.php">System status</a>
-				<li><a href="adminemail.php">Mass email</a>
+				<li><i class="list alternate icon"></i> <a href="admininstances.php">Instances</a>
+				<li><i class="envelope icon"></i> <a href="adminemail.php">Mass email</a>
 				<br><br><br>
-				<i class="large cog icon"></i><a href="system.php"><b>System Settings</b></a>
+				<i class="large cog icon"></i><a href="system.php"><b>NiDB Settings</b></a>
 				<br><br>
 				<i class="large wrench icon"></i><a href="setup.php"><b>Setup/Upgrade</b></a>
 			</div>
