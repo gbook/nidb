@@ -1624,9 +1624,9 @@
 									<input type="hidden" name="action" value="movestudytosubject">
 									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 									<b>Move study to existing UID...</b>
-									<div class="ui fluid labeled inline action input">
+									<div class="ui fluid inline action input">
 										<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
-										<div type="submit" class="ui primary button">Move</div>
+										<button class="ui attached primary button" onClick="this.submit();">Move</button>
 									</div>
 								</form>
 								
@@ -1653,7 +1653,7 @@
 											}
 										?>
 										</select>
-										<div class="ui primary button" type="submit">Move</div>
+										<button class="ui attached primary button" onClick="this.submit();">Move</button>
 									</div>
 								</form>
 								
