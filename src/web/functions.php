@@ -3030,6 +3030,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td></td>
 				<td><b>upload</b> module. Recommended is 1</td>
 			</tr>
+			<tr>
+				<td class="right aligned tt">modulebackupthreads</td>
+				<td><input type="number" name="modulebackupthreads" value="1" disabled></td>
+				<td></td>
+				<td><b>backup</b> module. Not multi-threaded</td>
+			</tr>
 
 			<tr>
 				<td colspan="4" class="active"><h3>Email &nbsp; &nbsp;<a href="system.php?action=testemail" class="ui compact yellow button">Send test email</a></h3></td>
@@ -3678,6 +3684,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
 [moduleuploadthreads] = $moduleuploadthreads
+[modulebackupthreads] = $modulebackupthreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail

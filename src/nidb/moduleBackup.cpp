@@ -53,7 +53,7 @@ moduleBackup::~moduleBackup()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleBackup::Run() {
-    n->WriteLog("Entering the export module");
+    n->WriteLog("Entering the backup module");
 
     n->ModuleRunningCheckIn();
     if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
@@ -202,19 +202,19 @@ qint64 moduleBackup::MoveToBackupStaging() {
         }
         //QString destFile = QString("%1%2/%3").arg(backupStagingDir).arg(relativeDir).arg(fname);
         QString destDir = QString("%1%2").arg(backupStagingDir).arg(relativeDir);
-		//n->WriteLog(QString("Moving file [%1] to directory [%2]").arg(fpath).arg(destDir));
+        //n->WriteLog(QString("Moving file [%1] to directory [%2]").arg(fpath).arg(destDir));
 
         QString m;
         if (!n->MakePath(destDir,m))
             n->WriteLog(QString("Unable to create path [%1]. Error message [%2]").arg(destDir).arg(m));
         else {
-			QString m;
-			if (n->MoveFile(fpath, destDir, m)) {
+            QString m;
+            if (n->MoveFile(fpath, destDir, m)) {
                 filesMoved++;
                 bytesMoved += size;
             }
             else
-				n->WriteLog(QString("Unable to copy file [%1] to directory [%2], with error [%3]").arg(fpath).arg(destDir).arg(m));
+                n->WriteLog(QString("Unable to copy file [%1] to directory [%2], with error [%3]").arg(fpath).arg(destDir).arg(m));
         }
     }
 

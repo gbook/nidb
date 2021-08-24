@@ -230,6 +230,13 @@ int nidb::GetNumThreads() {
         if (cfg["moduleqcthreads"] == "") return 1;
         else return cfg["moduleqcthreads"].toInt();
     }
+    else if (module == "upload") {
+        if (cfg["moduleuploadthreads"] == "") return 1;
+        else return cfg["moduleuploadthreads"].toInt();
+    }
+    else if (module == "backup") {
+        return 1;
+    }
 
     return 1;
 }
@@ -755,16 +762,16 @@ bool nidb::MoveFile(QString f, QString dir, QString &m) {
         QString systemstring;
         systemstring = QString("mv %1 %2/").arg(f).arg(dir);
 
-		QString output = SystemCommand(systemstring, false).trimmed();
-		if (output != "") {
-			m = output;
+        QString output = SystemCommand(systemstring, false).trimmed();
+        if (output != "") {
+            m = output;
             return false;
-		}
+        }
     }
-	else {
-		m = QString("Directory [%1] does not exist").arg(dir);
+    else {
+        m = QString("Directory [%1] does not exist").arg(dir);
         return false;
-	}
+    }
 
     return true;
 }
