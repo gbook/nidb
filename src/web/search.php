@@ -2582,7 +2582,11 @@
 	/* ------- DisplaySearchResultsPipeline ------- */
 	/* -------------------------------------------- */
 	function DisplaySearchResultsPipeline($result, $s_resultoutput, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats) {
+		
+		mysqli_data_seek($result,0); /* rewind the record pointer */
+		
 		if ($s_pipelineresulttype == "i") {
+			
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
 			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
@@ -2598,7 +2602,7 @@
 			
 			/* ---------------- pipeline results (images) --------------- */
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				//PrintVariable($row,'row');
+				//PrintVariable($row);
 			
 				$step = $row['analysis_step'];
 				$pipelinename = $row['pipeline_name'];
@@ -2653,15 +2657,32 @@
 					foreach ($tables as $uid => $valuepair) {
 						?>
 						<tr style="font-weight: <?=$bold?>">
-							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
+							<td>
+								<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
+							</td>
 							<?
 							foreach ($names as $name => $blah) {
 								if ($tables[$uid][$name] == "") { $dispval = "-"; }
 								else { $dispval = $tables[$uid][$name]; }
 								list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
 							?>
-								<td style="padding:2px"><a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview"><img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" style="max-width: <?=$maximgwidth?>px"></a></td>
+								<!--<td style="padding:2px">
+									<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview">
+										<img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" style="max-width: <?=$maximgwidth?>px">
+									</a>
+								</td>-->
 								
+								<td>
+									<div class="ui card">
+										<div class="content">
+											<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></div>
+											<div class="meta"><?=$dispval?></div>
+											<div class="description">
+												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>"></a>
+											</div>
+										</div>
+									</div>
+								</td>
 							<?
 							}
 							?>

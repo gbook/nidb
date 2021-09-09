@@ -1452,7 +1452,7 @@
 				<div class="ui top attached segment inverted header">
 					<h3 class="ui header">Study information</h3>
 				</div>
-				<div class="ui attached segment">
+				<div class="ui bottom attached segment">
 					<table class="ui very basic very compact celled table" width="100%">
 						<tr>
 							<td class="right aligned"><b>Study number</td>
@@ -1606,63 +1606,65 @@
 					<div class="ui right aligned">
 						<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button"><i class="edit icon"></i> Edit study</a>
 					</div>
+
+					<br>
+					<? if ($GLOBALS['isadmin']) { ?>
+						<div class="ui red accordion segment">
+							<div class="title">
+								<h3 class="ui header"><i class="dropdown icon"></i> Operations</h3>
+							</div>
+							<div class="content">
+								
+								<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
+								
+								<br>
+								
+								<form action="studies.php" method="post">
+									<input type="hidden" name="studyid" value="<?=$study_id?>">
+									<input type="hidden" name="action" value="movestudytosubject">
+									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+									<b>Move study to existing UID...</b>
+									<div class="ui fluid inline action input">
+										<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
+										<button class="ui attached primary button" onClick="this.submit();">Move</button>
+									</div>
+								</form>
+								
+								<form action="studies.php" method="post">
+									<input type="hidden" name="studyid" value="<?=$study_id?>">
+									<input type="hidden" name="action" value="movestudytoproject">
+									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+									<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+									<b>Move study to new project...</b>
+									<div class="ui fluid labeled inline action input">
+										<select name="newprojectid" class="ui compact selection dropdown" required>
+											<option value="">Select project...</option>
+										<?
+											$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
+											echo $sqlstringB;
+											$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+											while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+												$project_id = $rowB['project_id'];
+												$project_name = $rowB['project_name'];
+												$project_costcenter = $rowB['project_costcenter'];
+												?>
+												<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+												<?
+											}
+										?>
+										</select>
+										<button class="ui attached primary button" onClick="this.submit();">Move</button>
+									</div>
+								</form>
+								
+								<br><br>
+								
+								<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
+								
+							</div>
+						</div>
+					<? } ?>
 				</div>
-				<? if ($GLOBALS['isadmin']) { ?>
-					<div class="ui red accordion bottom attached segment">
-						<div class="title">
-							<h3 class="ui header"><i class="dropdown icon"></i> Operations</h3>
-						</div>
-						<div class="content">
-							
-							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
-							
-							<br>
-							
-							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
-								<input type="hidden" name="action" value="movestudytosubject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-								<b>Move study to existing UID...</b>
-								<div class="ui fluid inline action input">
-									<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
-									<button class="ui attached primary button" onClick="this.submit();">Move</button>
-								</div>
-							</form>
-							
-							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
-								<input type="hidden" name="action" value="movestudytoproject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-								<b>Move study to new project...</b>
-								<div class="ui fluid labeled inline action input">
-									<select name="newprojectid" class="ui compact selection dropdown" required>
-										<option value="">Select project...</option>
-									<?
-										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-										echo $sqlstringB;
-										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-											$project_id = $rowB['project_id'];
-											$project_name = $rowB['project_name'];
-											$project_costcenter = $rowB['project_costcenter'];
-											?>
-											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-											<?
-										}
-									?>
-									</select>
-									<button class="ui attached primary button" onClick="this.submit();">Move</button>
-								</div>
-							</form>
-							
-							<br><br>
-							
-							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
-							
-						</div>
-					</div>
-				<? } ?>
 			</div>
 			<div class="thirteen wide column">
 				<?
@@ -2657,6 +2659,7 @@
 			<input type="hidden" name="studyid" value="<?=$id?>">
 			<tbody>
 				<?
+					$firstdate = "";
 					$sqlstringA = "show tables like '" . strtolower($modality) . "_series'";
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 					if (mysqli_num_rows($resultA) > 0) {
@@ -2675,6 +2678,18 @@
 							$series_size = $row['series_size'];
 							$lastupdate = $row['lastupdate'];
 
+							$datecolor = "";
+							$datemsg = "";
+							if ($firstdate == "") {
+								$firstdate = substr($series_datetime,0,10);
+							}
+							else {
+								if ($firstdate != substr($series_datetime,0,10)) {
+									$datecolor = "red";
+									$datemsg = "<i class='bell icon' title='Date does not match series 1. Is this date correct?'></i> ";
+								}
+							}
+								
 							if ($numfiles < 1) { $numfiles = "0"; }
 							if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 							?>
@@ -2692,7 +2707,7 @@
 							<tr>
 								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
-								<td><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
+								<td class="<?=$datecolor?>"><?=$datemsg;?><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
 								<td>
 									<a class="ui tiny basic blue button <? if ($numfiles < 1) echo "disabled"; ?>" href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><i class="file outline icon"></i> Manage <?=$numfiles?> file(s)</a>
