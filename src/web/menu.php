@@ -189,9 +189,9 @@
 					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 					$name = $row['pipeline_name'];
 
-					?><!--<a href="pipelines.php" style="">Pipeline List</a> <i class="inverted arrow right icon"></i>--> <?
+					?><a href="pipelines.php" class="item">Pipelines</a><?
 					
-					?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><?=$name?></a> <i class="inverted arrow right icon"></i><?
+					?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><?=$name?></a><?
 
 					?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" class="<? if ($page=="analysis.php"){ echo "active"; } ?> item">Analyses</a><?
 				}

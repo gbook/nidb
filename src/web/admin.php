@@ -42,9 +42,21 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
+	$linkid = GetVariable("linkid");
+	$linkurl = GetVariable("linkurl");
+	$linktext = GetVariable("linktext");
+	$linkdesc = GetVariable("linkdesc");
 
 	/* determine action */
 	if ($action == "") {
+		DisplayAdminList();
+	}
+	elseif ($action == "addlink") {
+		AddLink($linkurl, $linktext, $linkdesc);
+		DisplayAdminList();
+	}
+	elseif ($action == "deletelink") {
+		DeleteLink($linkid);
 		DisplayAdminList();
 	}
 	else {
@@ -59,8 +71,6 @@
 	/* ------- DisplayAdminList ------------------- */
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
-	
-
 		?>
 		<div class="ui text container grid">
 			<div class="ui eight wide column">
@@ -91,8 +101,85 @@
 				<i class="large wrench icon"></i><a href="setup.php"><b>Setup/Upgrade</b></a>
 			</div>
 		</div>
+		<br><br>
+		<div class="ui container">
+			<h3 class="ui header">
+				<div class="content">
+				Informational Links
+				<div class="sub header">
+					Links to local network resources. Example: cluster status, license servers, documentation, external links
+				</div>
+			</h3>
+			
+			<form method="post" action="admin.php" class="ui form">
+			<input type="hidden" name="action" value="addlink">
+				<div class="fields">
+					<div class="four wide field">
+						<input type="url" name="linkurl" placeholder="URL">
+					</div>
+					<div class="four wide field">
+						<input type="text" name="linktext" placeholder="Link text">
+					</div>
+					<div class="eight wide field">
+						<input type="text" name="linkdesc" placeholder="Description...">
+					</div>
+					<input type="submit" class="ui primary button" value="Add">
+				</div>
+			</form>
+			
+			<br><br>
+			<div class="ui large relaxed divided list">
+			<?
+			$sqlstring = "select * from links";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$linkid = $row['link_id'];
+				$linktext = $row['link_text'];
+				$linkurl = $row['link_url'];
+				$linkdesc = $row['link_desc'];
+				?>
+				<div class="item">
+					<div class="right floated content"><a href="admin.php?action=deletelink&linkid=<?=$linkid?>"><i class="red trash icon"></i></div>
+					<div class="content">
+						<h3 class="header"><a href="<?=$linkurl?>"><?=$linktext?></a></h3>
+						<div class="description"><?=$linkdesc?></div>
+					</div>
+				</div>
+				<?
+			}
+			?>
+			</div>
+		</div>
 		<?
 	}
+
+	/* -------------------------------------------- */
+	/* ------- AddLink ---------------------------- */
+	/* -------------------------------------------- */
+	function AddLink($linkurl, $linktext, $linkdesc) {
+		$linkurl = mysqli_real_escape_string($GLOBALS['linki'], $linkurl);
+		$linktext = mysqli_real_escape_string($GLOBALS['linki'], $linktext);
+		$linkdesc = mysqli_real_escape_string($GLOBALS['linki'], $linkdesc);
+		
+		$sqlstring = "insert into links (link_url, link_text, link_desc) values ('$linkurl', '$linktext', '$linkdesc')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		Notice("Link Added");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteLink ------------------------- */
+	/* -------------------------------------------- */
+	function DeleteLink($linkid) {
+		if (!ValidID($linkid,'Link ID')) { return; }
+		
+		$sqlstring = "delete from links where link_id = $linkid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		Notice("Link deleted");
+	}
+	
 ?>
 
 <? include("footer.php") ?>

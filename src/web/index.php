@@ -148,8 +148,13 @@
 				if ($GLOBALS['cfg']['displayrecentstudies']) {
 					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];
 			?>
-			<h3 class="ui top attached header">New Studies<span class="tiny">Collected in past <?=$numrecentdays?> days</span></h3>
-			<table class="ui small celled bottom attached selectable grey very compact table">
+			<div class="ui header">
+				<div class="content">
+					New Studies
+					<div class="sub header">Collected in past <?=$numrecentdays?> days</div>
+				</div>
+			</div>
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th class="subheader">Subject UID</th>
 					<th class="subheader">Study #</th>
@@ -215,10 +220,13 @@
 			?>
 		</div>
 		<div class="column">
-			<div class="ui top attached compact segment">
-				<h3 class="ui header">Recently Viewed Subjects</h3>
+			<div class="ui header">
+				<div class="content">
+					Recently viewed subjects
+				</div>
 			</div>
-			<table class="ui bottom attached small celled selectable grey very compact table">
+
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<th>UID</th>
 					<th>Sex</th>
@@ -248,10 +256,13 @@
 				?>
 			</table>
 			<br>
-			<div class="ui top attached compact segment">
-				<h3 class="ui header">Recently Viewed Studies</h3>
+			<div class="ui header">
+				<div class="content">
+					Recently viewed studies
+				</div>
 			</div>
-			<table class="ui bottom attached small celled selectable grey very compact table">
+
+			<table class="ui small celled selectable grey very compact table">
 				<thead>
 					<tr>
 						<th>StudyID</th>

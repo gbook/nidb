@@ -720,186 +720,226 @@
 
 		?>
 		<style>
-			td.arrow { vertical-align: middle; text-align: center; font-size: 24pt; font-weight: bold; }
+			td.arrow { vertical-align: middle; text-align: center; }
 			td.step { font-weight: bold; background-color: #ddd; vertical-align: middle; text-align: center; padding: 5px; border-radius: 10px 0px 0px 10px; }
 			td.stepdetail { border: 1px solid #ddd; padding: 5px; border-radius: 0px 10px 10px 0px; }
 		</style>
-		<table style="margin: 20pt; cellspacing: 0px; cellpadding: 4px; border-collapse: collapse">
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="step">Data</td>
-				<td class="stepdetail" width="1200px">
-					<details><summary>Search criteria</summary>
-					<div style="height: 400px; width:1200px; overflow:auto">
-						<?=$datasearchtable?>
+		
+		<div class="ui very compact grid">
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="two wide column">&nbsp;</div>
+			<div class="eleven wide column">&nbsp;</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="two wide column">
+				<div class="ui center aligned inverted blue segment" style="height:100%;">
+					<h2>Data</h2>
+				</div>
+			</div>
+			<div class="eleven wide column">
+				<div class="ui grey segment">
+					<div class="ui accordion">
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Search criteria</h3>
+						</div>
+						<div class="content" style="height: 400px; overflow: auto">
+							<?=$datasearchtable?>
+						</div>
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Download summary</h3>
+						</div>
+						<div class="content" style="height: 400px; overflow: auto">
+							<?=DataDownloadTable($studyid, strtolower($pdd_modality), $analysisid); ?>
+						</div>
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Detailed log</h3>
+						</div>
+						<div class="content" style="height: 400px; overflow: auto">
+							<?=$datatable?>
+						</div>
 					</div>
-					</details>
-					
-					<details><summary>Download summary</summary>
-					<div style="height: 400px; width:1200px; overflow:auto">
-						<?=DataDownloadTable($studyid, strtolower($pdd_modality), $analysisid); ?>
+				</div>
+			</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="center aligned two wide column"><i class="big arrow down icon"></i></div>
+			<div class="eleven wide column">&nbsp;</div>
+			
+			<div class="two wide column">
+				<div class="ui segment" style="height:100%;">
+					<div class="ui header">
+						<i class="sitemap icon"></i>
+						<div class="content">Dependencies
+							<div class="sub header"><?=$dependencylist?></div>
+						</div>
 					</div>
-					</details>
-					
-					<details><summary>Detailed log</summary>
-					<div style="height: 400px; width:1200px; overflow:auto">
-						<?=$datatable?>
+					<div class="ui header">
+						<div class="content">Groups
+							<div class="sub header"><?=$grouplist?></div>
+						</div>
 					</div>
-					</details>
-				</td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="arrow">&darr;</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td>
-					<b>Dependencies</b><br><?=$dependencylist?><br><br>
-					<b>Groups</b><br><?=$grouplist?>
-				</td>
-				<td class="arrow">&rarr;<br>&rarr;</td>
-				<td class="step">
-					Analysis graph for study<br><br> <span style="color: darkblue"><?="$uid$studynum"?></span><br><br>
-					through pipeline<br><br><span style="color: darkblue"><?=$pipelinename?></span></td>
-				<td class="stepdetail">
+				</div>
+			</div>
+			<div class="middle aligned one wide column">
+				<div class="ui center aligned basic segment">
+					<i class="big arrow right icon"></i>
+				</div>
+			</div>
+			<div class="two wide column">
+				<div class="ui center aligned inverted blue segment" style="height:100%;">
+					<div class="ui header">
+						<i class="project diagram icon"></i>
+						<div class="content">Analysis graph</div>
+					</div>
+				</div>
+			</div>
+			<div class="eleven wide column">
+				<div class="ui grey segment" style="height:100%;">
 					<img border=1 src="data:image/png;base64,<?=$imgdata?>">
-				</td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="arrow">&darr;</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="step">Cluster</td>
-				<td class="stepdetail">
-					<details><summary>History</summary>
-					<div style="height: 400px; width:1200px; overflow:auto">
-						<table class="ui very compact celled table">
-							<thead>
-								<tr>
-									<th>Cumulative time</th>
-									<th>Date/time</th>
-									<th>Pipeline version</th>
-									<th>Hostname</th>
-									<th>Event</th>
-									<th>Message</th>
-								</tr>
-							</thead>
-						<?
-						$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						/* get the first event to get the starting time */
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$pipeline_version = $row['pipeline_version'];
-						$analysis_event = $row['analysis_event'];
-						$analysis_hostname = $row['analysis_hostname'];
-						$event_message = $row['event_message'];
-						$startdatetime = $row['event_datetime'];
-						$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
-						?>
-						<tr>
-							<td>0</td>
-							<td nowrap><?=$event_datetime?></td>
-							<td><?=$pipeline_version?></td>
-							<td><?=$analysis_hostname?></td>
-							<td><?=$analysis_event?></td>
-							<td><?=$event_message?></td>
-						</tr>
-						<?
-						/* continue on with the rest of the events */
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				</div>
+			</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="center aligned two wide column"><i class="big arrow down icon"></i></div>
+			<div class="eleven wide column">&nbsp;</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="center aligned two wide column">
+				<div class="ui center aligned inverted blue segment" style="height:100%;">
+					<h2>Cluster</h2>
+				</div>
+			</div>
+			<div class="eleven wide column">
+				<div class="ui grey segment">
+					<div class="ui accordion">
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>History</h3>
+						</div>
+						<div class="content" style="height: 400px; overflow: auto">
+							<table class="ui very compact celled table">
+								<thead>
+									<tr>
+										<th>Cumulative time</th>
+										<th>Date/time</th>
+										<th>Pipeline version</th>
+										<th>Hostname</th>
+										<th>Event</th>
+										<th>Message</th>
+									</tr>
+								</thead>
+							<?
+							$sqlstring = "select pipeline_version, analysis_event, analysis_hostname, event_message, unix_timestamp(event_datetime) 'event_datetime' from analysis_history where analysis_id = '$analysisid' order by event_datetime asc";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							/* get the first event to get the starting time */
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$pipeline_version = $row['pipeline_version'];
 							$analysis_event = $row['analysis_event'];
 							$analysis_hostname = $row['analysis_hostname'];
 							$event_message = $row['event_message'];
-							$event_datetime = $row['event_datetime'];
-							$cumtime = FormatCountdown($event_datetime - $startdatetime);
-							
+							$startdatetime = $row['event_datetime'];
+							$event_datetime = date('D, Y-m-d H:i:s',$startdatetime);
 							?>
 							<tr>
-								<td><?=$cumtime?></td>
-								<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+								<td>0</td>
+								<td nowrap><?=$event_datetime?></td>
 								<td><?=$pipeline_version?></td>
 								<td><?=$analysis_hostname?></td>
 								<td><?=$analysis_event?></td>
 								<td><?=$event_message?></td>
 							</tr>
 							<?
-						}
-						?>
-						</table>
-					</div>
-					</details>
+							/* continue on with the rest of the events */
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$pipeline_version = $row['pipeline_version'];
+								$analysis_event = $row['analysis_event'];
+								$analysis_hostname = $row['analysis_hostname'];
+								$event_message = $row['event_message'];
+								$event_datetime = $row['event_datetime'];
+								$cumtime = FormatCountdown($event_datetime - $startdatetime);
+								
+								?>
+								<tr>
+									<td><?=$cumtime?></td>
+									<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+									<td><?=$pipeline_version?></td>
+									<td><?=$analysis_hostname?></td>
+									<td><?=$analysis_event?></td>
+									<td><?=$event_message?></td>
+								</tr>
+								<?
+							}
+							?>
+							</table>
+						</div>
 					
-					<details><summary style="background-color: #fcf76a; padding: 4px; border: 1px solid #ffc700">Log files</summary>
-					<div style="height: 400px; width:1200px; overflow:auto">
-						<? DisplayLogs($analysisid); ?>
+						<div class="title">
+							<h3 class="ui header"><i class="dropdown icon"></i>Log files</h3>
+						</div>
+						<div class="content" style="height: 400px; overflow: auto">
+							<? DisplayLogs($analysisid); ?>
+						</div>
 					</div>
-					</details>
-				</td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="arrow">&darr;</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td></td>
-				<td class="step">Results</td>
-				<td class="stepdetail">
-				<?
-					$numvalue = $numfile = $numtext = $numhtml = $numimage = 0;
-					$sqlstring = "select a.* from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$type = $row['result_type'];
-						switch($type) {
-							case "v": $numvalue++; break;
-							case "f": $numfile++; break;
-							case "t": $numtext++; break;
-							case "h": $numhtml++; break;
-							case "i": $numimage++; break;
+				</div>
+			</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="center aligned two wide column"><i class="big arrow down icon"></i></div>
+			<div class="eleven wide column">&nbsp;</div>
+
+			<div class="three wide column">&nbsp;</div>
+			<div class="center aligned two wide column">
+				<div class="ui center aligned inverted blue segment" style="height:100%;">
+					<h2>Results</h2>
+				</div>
+			</div>
+			<div class="eleven wide column">
+				<div class="ui grey segment">
+					<?
+						$numvalue = $numfile = $numtext = $numhtml = $numimage = 0;
+						$sqlstring = "select a.* from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$type = $row['result_type'];
+							switch($type) {
+								case "v": $numvalue++; break;
+								case "f": $numfile++; break;
+								case "t": $numtext++; break;
+								case "h": $numhtml++; break;
+								case "i": $numimage++; break;
+							}
 						}
-					}
-					if ($numvalue == 0) { $numvalue = "-"; }
-					if ($numfile == 0) { $numfile = "-"; }
-					if ($numtext == 0) { $numtext = "-"; }
-					if ($numhtml == 0) { $numhtml = "-"; }
-					if ($numimage == 0) { $numimage = "-"; }
-				?>
-				<table class="twocoltable">
-					<tr>
-						<td>Values</td>
-						<td><?=$numvalue?></td>
-					</tr>
-					<tr>
-						<td>Images</td>
-						<td><?=$numimage?></td>
-					</tr>
-					<tr>
-						<td>Files</td>
-						<td><?=$numfile?></td>
-					</tr>
-					<tr>
-						<td>Text</td>
-						<td><?=$numtext?></td>
-					</tr>
-					<tr>
-						<td>HTML</td>
-						<td><?=$numhtml?></td>
-					</tr>
-				</td>
-			</tr>
-		</table>
+						if ($numvalue == 0) { $numvalue = "-"; }
+						if ($numfile == 0) { $numfile = "-"; }
+						if ($numtext == 0) { $numtext = "-"; }
+						if ($numhtml == 0) { $numhtml = "-"; }
+						if ($numimage == 0) { $numimage = "-"; }
+					?>
+					<table class="ui very compact collapsing very basic table">
+						<tr>
+							<td>Values</td>
+							<td><?=$numvalue?></td>
+						</tr>
+						<tr>
+							<td>Images</td>
+							<td><?=$numimage?></td>
+						</tr>
+						<tr>
+							<td>Files</td>
+							<td><?=$numfile?></td>
+						</tr>
+						<tr>
+							<td>Text</td>
+							<td><?=$numtext?></td>
+						</tr>
+						<tr>
+							<td>HTML</td>
+							<td><?=$numhtml?></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
 		<?
 	}
 

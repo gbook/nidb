@@ -291,7 +291,7 @@
 				<table width="100%" cellspacing="0" cellpadding="5">
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="180px" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">UID(s)</td>
-						<td><input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>"></td>
+						<td style="border: 1px solid black"><input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui fluid input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>"></td>
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">Alternate UID(s)</td>
@@ -361,7 +361,7 @@
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="180px">Project</td>
 						<td>
-						<select name="s_projectids[]" multiple class="ui dropdown importantfield">
+						<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield">
 							<option value=""></option>
 							<option value="all">All Projects</option>
 							<?
@@ -2347,7 +2347,7 @@
 				
 				$series_datetime = date("g:ia",strtotime($series_datetime));
 				if ($series_numfiles < 1) { $series_numfiles = "-"; }
-				if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
+				//if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
 			
 			/* and then display the series... */
@@ -2387,7 +2387,7 @@
 			<?
 			}
 			
-			if ($study_modality == "mr") {
+			//if ($study_modality == "mr") {
 				if ($s_resultoutput == "csv") {
 					
 					$csv .= "$series_num,$series_desc,$uid,$gender,$studyAge,$calcStudyAge," . implode2('|',$altuids) . ",$uid$studynum,$study_alternateid,$studynum,$study_site,$study_type,$study_datetime,$series_datetime," . $range['x'] . "," . $range['y'] . "," . $range['z'] . ",$ratingavg,$pvsnr,$iosnr,$motion_rsq,$img_cols,$img_rows,$numfiles,$series_size,$sequence,$series_tr,$numfiles_beh,$beh_size";
@@ -2401,7 +2401,7 @@
 					
 					$csv .= "\n";
 				}
-			}
+			//}
 
 			$laststudy_id = $study_id;
 			$lastseriesnum = $series_num;
