@@ -404,6 +404,7 @@
 				<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 				<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 				<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
+				$errormsg = mysqli_error($GLOBALS['linki']);
 			}
 			else {
 				$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
@@ -427,9 +428,57 @@
 			}
 			else {
 				?>
-				<div style="border: 2px solid orange" width="100%">
-					<h2>SQL error occured</h2>
-					<?=$body?>
+				<div class="ui inverted yellow segment" style="padding:4px;">
+					<div class="ui segment">
+						<h1 class="ui header">
+							<i class="red exclamation circle icon"></i>
+							<div class="content">
+								SQL error
+								<div class="sub header">Contact your NiDB administrator</div>
+							</div>
+						</h1>
+						<div class="ui grid">
+							<div class="four wide right aligned column">
+								<h3 class="header">Query</h3>
+							</div>
+							<div class="twelve wide column"> <code><?=$file?></code> (line <tt><?=$line?></tt>)</div>
+							
+							<div class="four wide right aligned column">
+								<h3 class="header">Datetime</h3>
+							</div>
+							<div class="twelve wide column"><?=$datetime?></div>
+							
+							<div class="four wide right aligned column">
+								<h3 class="header">Error</h3>
+							</div>
+							<div class="twelve wide column"><?=$errormsg?></div>
+							
+							<div class="four wide right aligned column">
+								<h3 class="header">Username</h3>
+							</div>
+							<div class="twelve wide column"><?=$username?></div>
+
+							<div class="four wide right aligned column">
+								<h3 class="header">POST</h3>
+							</div>
+							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_POST, true)?></pre></div>
+
+							<div class="four wide right aligned column">
+								<h3 class="header">GET</h3>
+							</div>
+							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_GET, true)?></pre></div>
+
+							<div class="four wide right aligned column">
+								<h3 class="header">SESSION</h3>
+							</div>
+							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SESSION, true)?></pre></div>
+
+							<div class="four wide right aligned column">
+								<h3 class="header">SERVER</h3>
+							</div>
+							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SERVER, true)?></pre></div>
+						</div>
+					</div>
 				</div>
 				<?
 			}

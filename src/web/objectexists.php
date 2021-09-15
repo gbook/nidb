@@ -83,9 +83,9 @@
 				<a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="photo video icon"></i></a>
 				<?
 			}
-			else {
-				echo "thumbnail path [$thumbpath]";
-			}
+			//else {
+			//	echo "thumbnail path [$thumbpath]";
+			//}
 		}
 	}
 ?>

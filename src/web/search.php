@@ -252,6 +252,24 @@
 	<script>
 		$(document).ready(function(){
 			$('#pageloading').hide();
+			
+			$('#custom_format_calendar')
+			  .calendar({
+				monthFirst: false,
+				type: 'date',
+				formatter: {
+				  date: function (date, settings) {
+					if (!date) return '';
+					var day = date.getDate();
+					if (day < 10) { day = "0" + day; }
+					var month = date.getMonth() + 1;
+					if (month < 10) { month = "0" + month; }
+					var year = date.getFullYear();
+					return year + '-' + month + '-' + day;
+				  }
+				}
+			  })
+			;
 		});
 		
 		/* changed the results/view output type when a search element is clicked */
@@ -281,8 +299,22 @@
 	<br><br>
 	
 	<div align="center">
-	<form action="search.php" method="post" name="searchform">
+	<form action="search.php" method="post" name="searchform" class="ui form">
 	<input type="hidden" name="action" value="search">
+	
+	<div class="ui grid">
+		<div class="two wide column">
+		</div>
+		<div class="twelve wide column">
+			<div class="ui grey top attached segment">
+				<h3 class="ui horizontal dark red left aligned divider header">
+					Subject
+				</h3>
+			</div>
+		</div>
+		<div class="two wide column">
+		</div>
+	</div>
 	
 	<table cellspacing="0" cellpadding="0" width="75%" style="border: 2px solid #888; border-radius: 8px">
 		<tr>
@@ -291,15 +323,17 @@
 				<table width="100%" cellspacing="0" cellpadding="5">
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="180px" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">UID(s)</td>
-						<td style="border: 1px solid black"><input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui fluid input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>"></td>
+						<td>
+							<input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>">
+						</td>
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">Alternate UID(s)</td>
-						<td><input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>"></td>
+						<td><input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>"></td>
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="150px">Name</td>
-						<td><input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" size="50" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>"></td>
+						<td><input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>"></td>
 					</tr>
 				</table>
 			</td>
@@ -308,13 +342,30 @@
 					<tr class="fieldhover">
 						<td class="fieldlabel" width="180px">DOB</td>
 						<td>
-							<input type="date" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobstart'])) ? 'hasdata' : '';?>" > to <input type="date" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobend'])) ? 'hasdata' : '';?>">
+							<div class="ui inline field">
+								<div class="ui calendar" id="custom_format_calendar">
+									<div class="ui input left icon">
+										<i class="calendar icon"></i>
+										<input type="text" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" placeholder="DOB start">
+									</div>
+								</div>
+								to
+								<div class="ui calendar" id="custom_format_calendar">
+									<div class="ui input left icon">
+										<i class="calendar icon"></i>
+										<input type="text" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" placeholder="DOB end">
+									</div>
+								</div>
+							</div>
+							<!--<input type="date" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobstart'])) ? 'hasdata' : '';?>" > to <input type="date" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobend'])) ? 'hasdata' : '';?>">-->
 						</td>
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel">Age-at-scan</td>
 						<td>
-							<input type="text" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" size="3" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" size="3" maxlength="3">
+							<div class="inline fields">
+								<input type="text" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" maxlength="3">
+							</div>
 						</td>
 					</tr>
 					<tr class="fieldhover">
@@ -419,7 +470,27 @@
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel" title="<b>Study date</b><br><br>Leave first date blank to search for anything earlier than the second date. Leave the second date blank to search for anything later than the first date">Date</td>
-						<td><input type="date" name="s_studydatestart" value="<?=$s['s_studydatestart']?>" size="12" class="importantfield"> to <input type="date" name="s_studydateend" value="<?=$s['s_studydateend']?>" size="12" class="importantfield"></td>
+						<td>
+							<div class="inline fields">
+								<div class="ui calendar" id="custom_format_calendar">
+									<div class="ui input left icon">
+										<i class="calendar icon"></i>
+										<input type="text" name="s_studydatestart" value="<?=$s['s_studydatestart'];?>" placeholder="start">
+									</div>
+								</div>
+								&nbsp; <i class="arrows alternate horizontal icon"></i> &nbsp;
+								<div class="ui calendar" id="custom_format_calendar">
+									<div class="ui input left icon">
+										<i class="calendar icon"></i>
+										<input type="text" name="s_studydateend" value="<?=$s['s_studydateend'];?>" placeholder="end">
+									</div>
+								</div>
+							</div>
+						
+							<!--<input type="date" name="s_studydatestart" value="<?=$s['s_studydatestart']?>" size="12" class="importantfield">
+							to
+							<input type="date" name="s_studydateend" value="<?=$s['s_studydateend']?>" size="12" class="importantfield">-->
+						</td>
 					</tr>
 					<tr class="fieldhover">
 						<td class="fieldlabel">Modality</td>

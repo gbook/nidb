@@ -837,23 +837,31 @@
 		$uid = $row['uid'];
 		
 		?>
-		<div align="center" class="message">
-		<b>Are you absolutely sure you want to delete this study?</b><img src="images/chili24.png">
-		<br><br>
-		<span><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?>
-		<br><br>
-		<table width="100%">
-			<tr>
-				<td align="center" width="50%"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
-				<form method="post" action="studies.php">
-				<input type="hidden" name="action" value="delete">
-				<input type="hidden" name="studyid" value="<?=$studyid?>">
-				<td align="center"><input type="submit" value="Yes, delete it" class="ui primary button"></td>
-				</form>
-			</tr>
-		</table>		
+		<div class="ui text container">
+			<div class="ui top attached red message">
+				<h2 class="ui header">
+					<em data-emoji=":hot_pepper:" class="small"></em>
+					<div class="content">
+						Are you absolutely sure you want to delete this study?
+						<div class="sub header"><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?></div>
+					</div>
+				</h2>
+			</div>
+			<div class="ui bottom attached segment">
+				<div class="ui two column grid">
+					<div class="column">
+						<button onClick="history.go(-1)" class="ui blue basic button">Back</button>
+					</div>
+					<div class="right aligned column">
+						<form method="post" action="studies.php">
+						<input type="hidden" name="action" value="delete">
+						<input type="hidden" name="studyid" value="<?=$studyid?>">
+						<input type="submit" value="Yes, delete it" class="ui red button">
+						</form>
+					</div>
+				</div>
+			</div>
 		</div>
-		<br><br>
 		<?
 	}
 	
