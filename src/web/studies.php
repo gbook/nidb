@@ -837,31 +837,23 @@
 		$uid = $row['uid'];
 		
 		?>
-		<div class="ui text container">
-			<div class="ui top attached red message">
-				<h2 class="ui header">
-					<em data-emoji=":hot_pepper:" class="small"></em>
-					<div class="content">
-						Are you absolutely sure you want to delete this study?
-						<div class="sub header"><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?></div>
-					</div>
-				</h2>
-			</div>
-			<div class="ui bottom attached segment">
-				<div class="ui two column grid">
-					<div class="column">
-						<button onClick="history.go(-1)" class="ui blue basic button">Back</button>
-					</div>
-					<div class="right aligned column">
-						<form method="post" action="studies.php">
-						<input type="hidden" name="action" value="delete">
-						<input type="hidden" name="studyid" value="<?=$studyid?>">
-						<input type="submit" value="Yes, delete it" class="ui red button">
-						</form>
-					</div>
-				</div>
-			</div>
+		<div align="center" class="message">
+		<b>Are you absolutely sure you want to delete this study?</b><img src="images/chili24.png">
+		<br><br>
+		<span><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?>
+		<br><br>
+		<table width="100%">
+			<tr>
+				<td align="center" width="50%"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
+				<form method="post" action="studies.php">
+				<input type="hidden" name="action" value="delete">
+				<input type="hidden" name="studyid" value="<?=$studyid?>">
+				<td align="center"><input type="submit" value="Yes, delete it" class="ui primary button"></td>
+				</form>
+			</tr>
+		</table>		
 		</div>
+		<br><br>
 		<?
 	}
 	
@@ -928,7 +920,8 @@
 		$sqlstring = "update studies set enrollment_id = $enrollmentid where study_id = $studyid";
 		echo $sqlstring;
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div align="center"><span class="message">Study moved to project <?=$newprojectid?></span></div><?
+		
+		Notice("Study moved to project $newprojectid");
 	}
 
 
@@ -1478,7 +1471,7 @@
 							<td class="right aligned"><b>Modality</td>
 							<td class="<?=$class?>"><?=$study_modality?></td>
 						</tr>
-					<? if (strtolower($study_modality) == "mr"){ ?>
+					<? if (strtolower($study_modality) == "mr") { ?>
 						<tr>
 							<td class="right aligned"><b>Date/time</td>
 							<td><?=$study_datetime?></td>
@@ -1611,69 +1604,72 @@
 							<td><?=$study_experimenter?></td>
 						</tr>
 					</table>
-					<div class="ui right aligned">
-						<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button"><i class="edit icon"></i> Edit study</a>
-					</div>
 
-					<br>
+					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button"><i class="edit icon"></i> Edit study</a>
+
 					<? if ($GLOBALS['isadmin']) { ?>
-						<div class="ui red accordion segment">
-							<div class="title">
-								<h3 class="ui header"><i class="dropdown icon"></i> Operations</h3>
-							</div>
-							<div class="content">
-								
-								<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
-								
-								<br>
-								
-								<form action="studies.php" method="post">
-									<input type="hidden" name="studyid" value="<?=$study_id?>">
-									<input type="hidden" name="action" value="movestudytosubject">
-									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-									<b>Move study to existing UID...</b>
-									<div class="ui fluid inline action input">
-										<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
-										<button class="ui attached primary button" onClick="this.submit();">Move</button>
-									</div>
-								</form>
-								
-								<form action="studies.php" method="post">
-									<input type="hidden" name="studyid" value="<?=$study_id?>">
-									<input type="hidden" name="action" value="movestudytoproject">
-									<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-									<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-									<b>Move study to new project...</b>
-									<div class="ui fluid labeled inline action input">
-										<select name="newprojectid" class="ui compact selection dropdown" required>
-											<option value="">Select project...</option>
-										<?
-											$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-											echo $sqlstringB;
-											$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-											while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-												$project_id = $rowB['project_id'];
-												$project_name = $rowB['project_name'];
-												$project_costcenter = $rowB['project_costcenter'];
-												?>
-												<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-												<?
-											}
-										?>
-										</select>
-										<button class="ui attached primary button" onClick="this.submit();">Move</button>
-									</div>
-								</form>
-								
-								<br><br>
-								
-								<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
-								
-							</div>
+						<script>
+							$(document).ready(function() {
+								$('#popupbutton1').popup({
+									popup : $('#popupmenu1'),
+									on : 'click'
+								});
+							});
+						</script>
+						
+						<br><br>
+						<div class="ui red button" id="popupbutton1"><i class="tools icon"></i> Operations...</div>
+						
+						<div class="ui wide popup" id="popupmenu1" style="width: 400px">
+							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
+							
+							<br>
+							
+							<form action="studies.php" method="post">
+								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="action" value="movestudytosubject">
+								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+								<b>Move study to existing UID...</b>
+								<div class="ui fluid inline action input">
+									<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
+									<button class="ui attached primary button" onClick="this.submit();">Move</button>
+								</div>
+							</form>
+							
+							<form action="studies.php" method="post">
+								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="action" value="movestudytoproject">
+								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+								<b>Move study to new project...</b>
+								<div class="ui fluid labeled inline action input">
+									<select name="newprojectid" class="ui compact selection dropdown" required>
+										<option value="">Select project...</option>
+									<?
+										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
+										echo $sqlstringB;
+										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+											$project_id = $rowB['project_id'];
+											$project_name = $rowB['project_name'];
+											$project_costcenter = $rowB['project_costcenter'];
+											?>
+											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<?
+										}
+									?>
+									</select>
+									<button class="ui attached primary button" onClick="this.submit();">Move</button>
+								</div>
+							</form>
+							
+							<br><br>
+							
+							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
 						</div>
 					<? } ?>
-				</div>
-			</div>
+				</div> <!-- end bottom attached segment -->
+			</div> <!-- end 3-wide column -->
 			<div class="thirteen wide column">
 				<?
 				if ($displayfiles == true) {
@@ -1692,8 +1688,8 @@
 					}
 				}
 				?>
-			</div>
-		</div>
+			</div> <!-- end 13-wide column -->
+		</div> <!-- end ui grid -->
 		<?
 	}
 
@@ -1825,7 +1821,7 @@
 					<th title="Image dimensions in voxels. If 4D image, <i>t</i> dimension will be the number of BOLD reps">Image dims <br><span class="tiny">(x y z t) in voxels</span></th>
 					<th>Files</th>
 					<th>Beh</th>
-					<th class="center aligned orange" style="background-color: #FFFAF3"><span class="tiny">Select All</span><br><input type="checkbox" id="seriesall"></th>
+					<th class="center aligned" style="background-color: Lavender;"><span style="font-size: 8pt;">Select All</span><br><input type="checkbox" id="seriesall"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -2247,7 +2243,7 @@
 									?>
 									</span>
 								</td>
-								<td class="allseries center aligned warning" align="center"><input type="checkbox" name="seriesids[]" value="<?=$mrseries_id?>"></td>
+								<td class="allseries center aligned" align="center" style="background-color: Lavender"><input type="checkbox" name="seriesids[]" value="<?=$mrseries_id?>"></td>
 							</tr>
 							<?
 							$lastseriesnum = $series_num;
@@ -2283,22 +2279,22 @@
 		</table>
 		<script>
 			$(document).ready(function() {
-				$('.ui.menu .item:first-child').popup({
-					popup : $('.ui.popup'),
+				$('#popupbutton2').popup({
+					popup : $('#popupmenu2'),
 					on : 'click'
 				});
 			});
 		</script>
 		<div class="ui bottom attached menu">
 			<a class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
-			<div class="right menu">
-				<a class="browse item" style="background-color: #FFFAF3">
+			<div class="right menu" id="popupbutton2">
+				<a class="browse item" style="background-color: Lavender">
 					With Selected...
 					<i class="dropdown icon"></i>
 				</a>
 			</div>
 		</div>
-		<div class="ui popup">
+		<div class="ui popup" id="popupmenu2">
 			<? if ($GLOBALS['isadmin']) { ?>
 				<h3>With Selected Series...</h3>
 				<button class="ui fluid button" name="renameseriesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i></i>Rename</button>

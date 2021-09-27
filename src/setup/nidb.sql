@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 04, 2021 at 05:10 PM
+-- Generation Time: Sep 27, 2021 at 08:05 PM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -34,7 +34,7 @@ CREATE TABLE `analysis` (
   `pipeline_dependency` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `analysis_qsubid` bigint(20) UNSIGNED DEFAULT NULL,
-  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus') DEFAULT NULL,
+  `analysis_status` enum('complete','pending','processing','error','submitted','started','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysis_notes` text DEFAULT NULL,
@@ -1395,6 +1395,19 @@ CREATE TABLE `instance_usage` (
   `pricing_id` int(11) NOT NULL,
   `usage_amount` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `links`
+--
+
+CREATE TABLE `links` (
+  `link_id` int(11) NOT NULL,
+  `link_text` varchar(255) NOT NULL,
+  `link_url` text NOT NULL,
+  `link_desc` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -2919,16 +2932,16 @@ CREATE TABLE `tags` (
 CREATE TABLE `task_series` (
   `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -3743,6 +3756,12 @@ ALTER TABLE `instance_usage`
   ADD PRIMARY KEY (`instanceusage_id`);
 
 --
+-- Indexes for table `links`
+--
+ALTER TABLE `links`
+  ADD PRIMARY KEY (`link_id`);
+
+--
 -- Indexes for table `manual_qa`
 --
 ALTER TABLE `manual_qa`
@@ -4267,7 +4286,7 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   ADD PRIMARY KEY (`taskseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
+  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE;
 
 --
 -- Indexes for table `tms_series`
@@ -4770,6 +4789,12 @@ ALTER TABLE `instance_pricing`
 --
 ALTER TABLE `instance_usage`
   MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `links`
+--
+ALTER TABLE `links`
+  MODIFY `link_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `manual_qa`

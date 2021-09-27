@@ -145,8 +145,6 @@
 			</div>
 			<br><br>
 			
-			<? $resultA = MySQLiQuery("This query shouldn't work",__FILE__,__LINE__); ?>
-
 			<?
 				if ($GLOBALS['cfg']['displayrecentstudies']) {
 					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];

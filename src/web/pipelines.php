@@ -1065,16 +1065,16 @@
 		<div class="ui bottom attached <?=$tab_oneactive?> tab segment" data-tab="first">
 			<table class="entrytable" style="border:0px">
 				<tr>
-					<td class="label" valign="top">View</td>
+					<td><h3 class="ui header">View</h3</td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>"><b>Analyses</b></a><br>
-						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis">Ignored studies<br>
-						<a href="pipelines.php?action=viewversion&id=<?=$id?>">Pipeline versions<br>
-						<br>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui large green button">Analyses</a>
+						<br><br>
+						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic button">Ignored studies<br>
+						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic button">Pipeline versions</a>
 					</td>
 				</tr>
 				<tr>
-					<td class="label" valign="top">Analysis statistics</td>
+					<td><h3 class="ui header">Analysis statistics</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 					<?
 						/* gather statistics about the analyses */
@@ -1127,7 +1127,7 @@
 						}
 						
 						?>
-						<div class="ui mini five statistics">
+						<div class="ui mini statistics">
 							<div class="ui tiny statistic">
 								<div class="value"><?=$numcomplete?></div>
 								<div class="label">Completed</div>
@@ -1216,7 +1216,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td class="label" valign="top">Dependency</td>
+					<td><h3 class="ui header">Dependency</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 					<?
 						if ($dependency != "") {
@@ -1239,60 +1239,55 @@
 							$children[$childid]['notes'] = $row['pipeline_notes'];
 						}
 					?>
-					<table style="border: 1px solid #ddd; border-radius:6px; font-size:10pt" cellspacing="0" cellpadding="5">
-						<tr>
-							<td align="right" valign="middle">Parent pipeline(s)</td>
-							<td align="center">
-								<table style="font-size:10pt">
-									<tr>
-									<?
-										if (count($parents) > 0) {
-											foreach ($parents as $parentid => $info) {
-												?><td align="center" style="padding: 2px 10px"><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><br>&darr;</td><?
-											}
+					<div class="ui compact segment" style="width: 50%">
+						<div class="ui very compact grid">
+							<div class="four wide right aligned column"><i class="user icon"></i> <b>Parents</b></div>
+							<div class="twelve wide center aligned column">
+								<?
+									if (count($parents) > 0) {
+										foreach ($parents as $parentid => $info) {
+											?><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><?
 										}
-										else {
-											?><td align="center">This pipeline does not depend on any other pipelines<br>&darr;</td><?
+									}
+									else {
+										?>This pipeline does not depend on any other pipelines<?
+									}
+								?>
+							</div>
+
+							<div class="four wide column">&nbsp;</div>
+							<div class="twelve wide center aligned column"><i class="arrow down icon"></i></div>
+
+							<div class="four wide column"></div>
+							<div class="twelve wide center aligned column">
+								<span class="ui big red text"><?=$title?></span>
+							</div>
+
+							<div class="four wide column">&nbsp;</div>
+							<div class="twelve wide center aligned column"><i class="arrow down icon"></i></div>
+
+							<div class="four wide right aligned column"><i class="child icon"></i> <b>Children</b></div>
+							<div class="twelve wide center aligned column">
+								<?
+									if (count($children) > 0) {
+										foreach ($children as $child => $info) {
+											?>
+												&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+											<?
 										}
-									?>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<td></td>
-							<td align='center' style="font-weight: bold; font-size: 14pt; background-color:#eee" title="This pipeline"><?=$title?></td>
-						</tr>
-						<tr>
-							<td align="right" valign="middle">Child pipeline(s)</td>
-							<td align="center">
-								<table style="font-size:10pt">
-									<tr>
-									<?
-										if (count($children) > 0) {
-											foreach ($children as $child => $info) {
-												?>
-												<tr>
-													<td align="left" style="padding: 2px 10px">
-													&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
-													</td>
-												</tr>
-												<?
-											}
-										}
-										else {
-											?><td align="center">&darr;<br>No pipelines depend on this pipeline</td><?
-										}
-									?>
-									</tr>
-								</table>
-							</td>
-						</tr>
-					</table>
+									}
+									else {
+										?>No pipelines depend on this pipeline<?
+									}
+								?>
+							</div>
+						</div>
+					</div>
+					
 					</td>
 				</tr>
 				<tr>
-					<td class="label" valign="top">Data location</td>
+					<td><h3 class="ui header">Data location</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 						<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
 						<?
@@ -1311,29 +1306,34 @@
 					</td>
 				</tr>
 				<tr>
-					<td class="label" valign="top">Help</td>
+					<td><h3 class="ui header"><i class="question circle icon"></i> Help</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-					<details style="font-size:10pt">
-						<summary style="color: #3B5998"> Pipeline not working? </summary>
-						There are several things that can cause the pipeline not to (or appear not to) process your data
-						<ol>
-							<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
-								<ul>
-									<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
-									<li>Check the "Image type". For MR, this can also vary over time.
-									<li>Make sure the data items are enabled and at least one item is not optional
-									<li>Make sure at least one data item is at the study level
-									<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
-									<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
-								</ul>
-							<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
-							<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
-							<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
-							<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
-							<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
-						</ol>
-						The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
-					</details>
+						<div class="ui accordion">
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Pipeline not working?
+							</div>
+							<div class="content">
+								There are several things that can cause the pipeline not to (or appear not to) process your data
+								<ol>
+									<li><b>Data specification</b> - The most common problem is that the data specification is not quite right.
+										<ul>
+											<li>The protocol names can vary over time. For example "Resting State" becomes "Rest - noeyes" halfway through a project. You'll need to include both possible protocol names.
+											<li>Check the "Image type". For MR, this can also vary over time.
+											<li>Make sure the data items are enabled and at least one item is not optional
+											<li>Make sure at least one data item is at the study level
+											<li>If you are getting data from the subject level, check the subject linkage... for example, if you are working on fMRI data, and the T1 comes from another study, make sure you use the correct linkage
+											<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
+										</ul>
+									<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
+									<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
+									<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
+									<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
+									<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
+								</ol>
+								The first step for pipeline processing is getting the data. This involves checking the data criteria, dependencies, and groups to find which subjects have the data required for the analysis. 
+							</div>
+						</div>
 					</td>
 				</tr>
 			</table>

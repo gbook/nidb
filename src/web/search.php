@@ -303,17 +303,18 @@
 	<input type="hidden" name="action" value="search">
 	
 	<div class="ui grid">
-		<div class="two wide column">
-		</div>
+		<div class="two wide column"></div>
 		<div class="twelve wide column">
 			<div class="ui grey top attached segment">
-				<h3 class="ui horizontal dark red left aligned divider header">
+				<h3 class="ui horizontal red left aligned divider header">
 					Subject
 				</h3>
 			</div>
+			<div class="ui grid">
+				<div class="one wide column"></div>
+			</div>
 		</div>
-		<div class="two wide column">
-		</div>
+		<div class="two wide column"></div>
 	</div>
 	
 	<table cellspacing="0" cellpadding="0" width="75%" style="border: 2px solid #888; border-radius: 8px">

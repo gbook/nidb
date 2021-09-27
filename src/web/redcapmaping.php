@@ -30,6 +30,7 @@
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB- RedCap Instruments</title>
+
 	</head>
 
 	<div id="wrapper">
@@ -106,13 +107,18 @@
 
                 $sqlstring = "start transaction";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                
-                $sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$redcapevent', '$redcapform', '$redcapfields', '$redcapfieldtype' ,'$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
+		print_r($redcapevent);
+		
+		foreach ($_POST['redcapevent'] as $Event) {                
+
+			$sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$Event', '$redcapform', '$redcapfields', '$redcapfieldtype' ,'$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
                 //PrintSQL($sqlstring);
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                
+
                 $sqlstring = "commit";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		}
                 
         }
 
@@ -172,10 +178,17 @@
                         <tr></tr> <tr></tr>
 
                         <tr>
-                                <td>RedCap Token: </td>
-                                <td> <b> <?=$redcaptoken?> </td>
 
                 </table>
+
+
+	<?
+		// This section separated two methods of mapping
+			
+
+			
+
+	?>
 		
 		<?list($In_Name,$In_Label)=getrcinstruments($projectid);?>
 
@@ -253,7 +266,7 @@
                         <tbody>
                                 <tr>
 					<td>
-						<select name="redcapevent" required>
+						<select name="redcapevent[]"  multiple required size="3">
 			                           <?for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
 			                              <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
  				                   <?}?>	
@@ -264,25 +277,32 @@
 					<? $V_names=getrcvariables($projectid,$inst,$redcapevent);?>
 
 					<td>
-                                                <select name="redcapfields" required>
-                                                   <?for($Fi=0;$Fi < count($V_names); $Fi++){ ?>
-                                                      <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
-                                                   <?}?>
+                                                <select name="redcapfields" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
+                                                   <?for($Fi=0;$Fi < count($V_names); $Fi++){ 
+						      if ($Fi==0){?>
+						        <option value=<?=$V_names[$Fi]?> selected> <?=$V_names[$Fi]?> </option>	 <?}
+						else {?>
+                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+						   
+                                                   <?}}?>
                                                 </select>
                                         </td>
 
-                                        <td style="border-right: 1px solid #bdbdbd"><input type="text" name="redcapfieldtype"></td>
+					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="redcapfieldtype"></td>
+					
+
+
                                         <td style="border-right: 1px solid #bdbdbd"></td>
                                         <td>
                                                 <select name="nidbdatatype" required>
                                                         <option value="">(select type)
-                                                        <option value="m">Measure
+                                                        <option value="m" selected>Measure
                                                         <option value="v">Vital
                                                         <option value="d">Drug/dose
                                                 </select>
                                         </td>
-                                        <td><input type="text" name="nidbvariablename" value=<?=$redcapfields?> ></td>
-                                        <td><input type="text" name="nidbinstrumentname"></td>
+                                        <td><input type="text" name="nidbvariablename" id="nidbvariablename"></td>
+                                        <td><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
                                         <td title="Save mapping"><input type="submit" value="Add"> </td>
                                 </tr>
                                 <?
