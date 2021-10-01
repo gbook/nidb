@@ -248,12 +248,13 @@
 		.fieldlabel { color: #444; text-align: right; vertical-align: middle; }
 		.importantfield { background-color: lightyellow; }
 		input.hasdata { font-weight: bold; box-shadow: 0px 0px 0px 2px #3B5998; }
+		.slabel { font-size: 12pt; }
 	</style>
 	<script>
 		$(document).ready(function(){
 			$('#pageloading').hide();
 			
-			$('#custom_format_calendar')
+			$('.custom_format_calendar')
 			  .calendar({
 				monthFirst: false,
 				type: 'date',
@@ -281,639 +282,776 @@
 			}
 		}
 		
+		/* this function is called from onChange, onInput, and onBlur events
+		   because some Semantic UI inputs fire different events */
+		function inputColor(i) {
+			console.log("checkInput has been fired");
+			
+			if (i.value == "")
+				i.style.backgroundColor='';
+			else
+				i.style.backgroundColor='LightGoldenRodYellow';
+		}		
 	</script>
-	
-	<? if ($action == "search") { ?>
-	<div class="ui text container" id="pageloading">
-		<div class="ui yellow message" align="center">
-			<h2 class="ui inverted header">
-				<em data-emoji=":chipmunk:" class="loading"></em> Searching...
-			</h2>
-		</div>
-	</div>
-	<? } ?>
-
-	<button class="ui primary large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i></i> New Search</button>
-	<br>
-	<? DisplaySearchHistory(); ?>
-	<br><br>
 	
 	<div align="center">
 	<form action="search.php" method="post" name="searchform" class="ui form">
 	<input type="hidden" name="action" value="search">
 	
 	<div class="ui grid">
-		<div class="two wide column"></div>
+		<div class="two wide column">&nbsp;</div>
 		<div class="twelve wide column">
-			<div class="ui grey top attached segment">
-				<h3 class="ui horizontal red left aligned divider header">
-					Subject
-				</h3>
+			
+			<div class="ui grey secondary inverted top attached segment">
+				<div class="ui three column grid">
+					<div class="left aligned column">
+						<button class="ui inverted large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i> New Search</button>
+					</div>
+					<div class="column">
+						<? if ($action == "search") { ?>
+						<div class="ui yellow message" align="center" id="pageloading">
+							<h2 class="ui header">
+								<em data-emoji=":chipmunk:" class="loading"></em> Searching...
+							</h2>
+						</div>
+						<? } ?>
+						&nbsp;
+					</div>
+					<div class="left aligned middle aligned column">
+						<? DisplaySearchHistory(); ?>
+					</div>
+				</div>
 			</div>
-			<div class="ui grid">
-				<div class="one wide column"></div>
-			</div>
-		</div>
-		<div class="two wide column"></div>
-	</div>
-	
-	<table cellspacing="0" cellpadding="0" width="75%" style="border: 2px solid #888; border-radius: 8px">
-		<tr>
-			<td class="sidelabel">Subject</td>
-			<td class="fieldcell">
-				<table width="100%" cellspacing="0" cellpadding="5">
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">UID(s)</td>
-						<td>
-							<input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>">
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel">Alternate UID(s)</td>
-						<td><input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px">Name</td>
-						<td><input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>"></td>
-					</tr>
-				</table>
-			</td>
-			<td class="fieldcell">
-				<table>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">DOB</td>
-						<td>
-							<div class="ui inline field">
-								<div class="ui calendar" id="custom_format_calendar">
-									<div class="ui input left icon">
-										<i class="calendar icon"></i>
-										<input type="text" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" placeholder="DOB start">
-									</div>
-								</div>
-								to
-								<div class="ui calendar" id="custom_format_calendar">
-									<div class="ui input left icon">
-										<i class="calendar icon"></i>
-										<input type="text" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" placeholder="DOB end">
-									</div>
-								</div>
+			
+			<div class="ui grey attached segment">
+				<div class="ui grid">
+					<div class="one wide right aligned column">
+						<h3 class="ui header">Subject</h3>
+					</div>
+					<div class="eight wide left aligned column">
+					
+						<div class="ui compact grid">
+							<div class="four wide right aligned middle aligned column slabel">
+								UIDs <i class="small blue question circle outline icon" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy & Paste from Excel"></i>
 							</div>
-							<!--<input type="date" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobstart'])) ? 'hasdata' : '';?>" > to <input type="date" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" size="12" class="<? echo (!isEmpty($s['s_subjectdobend'])) ? 'hasdata' : '';?>">-->
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Age-at-scan</td>
-						<td>
-							<div class="inline fields">
-								<input type="text" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" maxlength="3"> to <input type="text" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" maxlength="3">
+							<div class="twelve wide column">
+								<input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>" placeholder="UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Gender</td>
-						<td>
-							<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$s['s_subjectgender']?>"> <span class="tiny">&nbsp;F, M, O, U</span>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px">Subject group</td>
-						<td>
-						<select name="s_subjectgroupid">
-							<option value="">Select a group</option>
-						<?
-							$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$groupid = $row['group_id'];
-								$groupname = $row['group_name'];
-								$groupowner = $row['group_owner'];
-								
-								echo "[[$groupid -- [" . $s['s_subjectgroupid'] . "]]]";
-								if ($groupid == $s['s_subjectgroupid']) {
-									$selected = "selected";
-								}
-								else {
-									$selected = "";
-								}
-								?>
-								<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
-								<?
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-		<tr>
-			<td class="sidelabel">Enrollment</td>
-			<td class="fieldcell">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Project</td>
-						<td>
-						<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield">
-							<option value=""></option>
-							<option value="all">All Projects</option>
-							<?
-								$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$project_id = $row['project_id'];
-									$project_name = $row['project_name'];
-									$project_costcenter = $row['project_costcenter'];
-									if (in_array($project_id, $s['s_projectids'])) { $selected = "selected"; } else { $selected = ""; }
-									
-									$perms = GetCurrentUserProjectPermissions(array($project_id));
-									if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
-									?>
-									<option value="<?=$project_id?>" <?=$selected?>  <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
-									<?
-								}
-							?>
-						</select>
-						</td>
-					</tr>
-				</table>
-			</td>
-			<td class="fieldcell">
-				<table>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Enrollment sub-group</td>
-						<td>
-						<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$s['s_enrollsubgroup']?>" size="50"></td>
-						<datalist id="s_enrollsubgroup">
-						<?
-							$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								?><option value="<?=$row['enroll_subgroup']?>"><?
-							}
-						?>
-						</datalist>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-		<tr>
-			<td class="sidelabel">Study</td>
-			<td class="fieldcell">
-				<table width="100%" cellspacing="0" cellpadding="5">
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Study ID(s)</td>
-						<td><input type="text" name="s_studyid" value="<?=$s['s_studyid']?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Alternate Scan ID(s)</td>
-						<td><input type="text" name="s_studyaltscanid" value="<?=$s['s_studyaltscanid']?>" size="50" class="importantfield"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" title="<b>Study date</b><br><br>Leave first date blank to search for anything earlier than the second date. Leave the second date blank to search for anything later than the first date">Date</td>
-						<td>
-							<div class="inline fields">
-								<div class="ui calendar" id="custom_format_calendar">
-									<div class="ui input left icon">
-										<i class="calendar icon"></i>
-										<input type="text" name="s_studydatestart" value="<?=$s['s_studydatestart'];?>" placeholder="start">
-									</div>
-								</div>
-								&nbsp; <i class="arrows alternate horizontal icon"></i> &nbsp;
-								<div class="ui calendar" id="custom_format_calendar">
-									<div class="ui input left icon">
-										<i class="calendar icon"></i>
-										<input type="text" name="s_studydateend" value="<?=$s['s_studydateend'];?>" placeholder="end">
-									</div>
-								</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Alternate UIDs <i class="small blue question circle outline icon" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel"></i>
 							</div>
+							<div class="twelve wide column">
+								<input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>" placeholder="Alternate UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Name
+							</div>
+							<div class="twelve wide column">
+								<input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>" placeholder="Name" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+							</div>
+						</div>
 						
-							<!--<input type="date" name="s_studydatestart" value="<?=$s['s_studydatestart']?>" size="12" class="importantfield">
-							to
-							<input type="date" name="s_studydateend" value="<?=$s['s_studydateend']?>" size="12" class="importantfield">-->
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Modality</td>
-						<td>
-						<select name="s_studymodality" class="importantfield">
-						<?
-							$sqlstring = "select * from modalities order by mod_desc";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$mod_code = $row['mod_code'];
-								$mod_desc = $row['mod_desc'];
-								
-								/* check if the modality table exists */
-								$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-								$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-								if (mysqli_num_rows($result2) > 0) {
-								
-									/* if the table does exist, allow the user to search on it */
-									if (($mod_code == "MR") && ($s['s_studymodality'] == "")) {
-										$selected = "selected";
-									}
-									else {
-										if ($mod_code == $s['s_studymodality']) {
+					</div>
+					
+					<div class="seven wide column">
+						<div class="ui compact grid">
+							<div class="four wide right aligned middle aligned column slabel">
+								DOB
+							</div>
+							<div class="twelve wide left aligned column">
+								<div class="ui inline field">
+									<div class="ui calendar custom_format_calendar">
+										<div class="ui small input left icon">
+											<i class="calendar icon"></i>
+											<input type="text" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+										</div>
+									</div>
+									<i class="arrows alternate horizontal icon"></i> &nbsp;
+									<div class="ui calendar custom_format_calendar">
+										<div class="ui small input left icon">
+											<i class="calendar icon"></i>
+											<input type="text" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Age-at-scan
+							</div>
+							<div class="twelve wide left aligned column">
+								<div class="ui small right labeled input">
+									<input type="number" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<div class="ui label">
+										years
+									</div>
+								</div>
+								<i class="arrows alternate horizontal icon"></i>
+								<div class="ui small right labeled input">
+									<input type="number" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<div class="ui label">
+										years
+									</div>
+								</div>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Sex
+							</div>
+							<div class="twelve wide left aligned column">
+								<div class="ui small input">
+									<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$s['s_subjectgender']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<span class="tiny">&nbsp;F, M, O, U</span>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								<i class="user friends icon"></i> Subject group
+							</div>
+							<div class="twelve wide left aligned column">
+								<select name="s_subjectgroupid" class="ui small dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<option value="">Select a group</option>
+								<?
+									$sqlstring = "select * from groups where group_type = 'subject' order by group_name";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$groupid = $row['group_id'];
+										$groupname = $row['group_name'];
+										$groupowner = $row['group_owner'];
+										
+										echo "[[$groupid -- [" . $s['s_subjectgroupid'] . "]]]";
+										if ($groupid == $s['s_subjectgroupid']) {
 											$selected = "selected";
 										}
 										else {
 											$selected = "";
 										}
+										?>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<?
 									}
-									?>
-									<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option>
-									<?
-								}
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-				</table>
-			</td>
-			<td class="fieldcell">
-				<table>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Institution</td>
-						<td>
-						<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$s['s_studyinstitution']?>" size="50"></td>
-						<datalist id="s_studyinstitution">
-						<?
-							$sqlstring = "select distinct(study_institution) from studies order by study_institution";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								?><option value="<?=$row['study_institution']?>"><?
-							}
-						?>
-						</datalist>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Equipment</td>
-						<td>
-						<select name="s_studyequipment">
-							<option value="">Select equipment</option>
-						<?
-							$sqlstring = "select distinct(study_site) from studies order by study_site";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$study_site = $row['study_site'];
-								
-								if ($study_site != "") {
-									if ($study_site == $s['s_studyequipment']) {
-										$selected = "selected";
-									}
-									else {
-										$selected = "";
-									}
-									?>
-									<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
-									<?
-								}
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Description</td>
-						<td>
-							<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$s['s_studydesc']?>" size="50">
-							<datalist id="s_studydesc">
-							<?
-								$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									?><option value="<?=trim($row['study_desc'])?>"><?
-								}
-							?>
-							</datalist>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Performing&nbsp;Physician</td>
-						<td>
-							<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$s['s_studyphysician']?>" size="50">
-							<datalist id="s_studyphysician">
-							<?
-								$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									?><option value="<?=trim($row['study_performingphysician'])?>"><?
-								}
-							?>
-							</datalist>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Operator</td>
-						<td>
-							<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$s['s_studyoperator']?>" size="50">
-							<datalist id="s_studyoperator">
-							<?
-								$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									?><option value="<?=trim($row['study_operator'])?>"><?
-								}
-							?>
-							</datalist>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel">Visit type</td>
-						<td>
-							<input type="text" name="s_studytype" list="s_studytype" value="<?=$s['s_studytype']?>" size="50">
-							<datalist id="s_studytype">
-							<?
-								$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									?><option value="<?=trim($row['study_type'])?>"><?
-								}
-							?>
-							</datalist>
-						</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px">Study group</td>
-						<td>
-						<select name="s_studygroupid">
-							<option value="">Select a group</option>
-						<?
-							$sqlstring = "select * from groups where group_type = 'study' order by group_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$groupid = $row['group_id'];
-								$groupname = $row['group_name'];
-								$groupowner = $row['group_owner'];
-								
-								if ($groupid == $s['s_studygroupid']) {
-									$selected = "selected";
-								}
-								else {
-									$selected = "";
-								}
 								?>
-								<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
-								<?
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-		<tr>
-			<td class="sidelabel">Series</td>
-			<td class="fieldcell">
-				<table width="100%" cellspacing="0" cellpadding="5">
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px" title="<b>Comma separated</b> protocols: search will be an AND<br><b>Semi-colon separated</b> protocols: search will be an OR">Protocol</td>
-						<td><input type="text" name="s_seriesdesc" value="<?=$s['s_seriesdesc']?>" size="50" class="importantfield"></td>
-					</tr>
-				</table>
-			</td>
-			<td class="fieldcell">
-				<table>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px" title="Perform the search using the alternate protocol name, and return the results using the alternate protocol name. The alternate protocol name often groups together series with similar names into one protocol. For example 'MPRAGE', 'Axial T1', and 'T1w_SPC' would all be labeled 'T1'"></td>
-						<td><input type="checkbox" name="s_usealtseriesdesc" value="1" class="importantfield" <? if ($s['s_usealtseriesdesc']) { echo "checked"; } ?>>Use alternate protocol name</td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Sequence</td>
-						<td><input type="text" name="s_seriessequence" value="<?=$s['s_seriessequence']?>" size="50"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px" title="Comma separated. Use * to indicate wildcards">Image Type</td>
-						<td><input type="text" name="s_seriesimagetype" value="<?=$s['s_seriesimagetype']?>" size="50"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="180px">Image Comments</td>
-						<td><input type="text" name="s_seriesimagecomments" value="<?=$s['s_seriesimagecomments']?>" size="50"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px" title="Repetition time in milliseconds">TR</td>
-						<td><input type="text" name="s_seriestr" value="<?=$s['s_seriestr']?>" size="10"> <span class="tiny">ms</span></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">Series number</td>
-						<td><input type="text" name="s_seriesnum" value="<?=$s['s_seriesnum']?>" size="10"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>">Number of files</td>
-						<td><input type="text" name="s_seriesnumfiles" value="<?=$s['s_seriesnumfiles']?>" size="10"></td>
-					</tr>
-					<tr class="fieldhover">
-						<td class="fieldlabel" width="150px">Series group</td>
-						<td>
-						<select name="s_seriesgroupid">
-							<option value="">Select a group</option>
-						<?
-							$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$groupid = $row['group_id'];
-								$groupname = $row['group_name'];
-								$groupowner = $row['group_owner'];
-								
-								if ($groupid == $s['s_seriesgroupid']) {
-									$selected = "selected";
-								}
-								else {
-									$selected = "";
-								}
-								?>
-								<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
-								<?
-							}
-						?>
-						</select>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
-		<tr>
-			<td class="sidelabel" style="color: #666; border-bottom: 0px">Output</td>
-			<td colspan="2">
-				<table width="100%" cellspacing="0" cellpadding="3">
-					<tr>
-						<td>
-							<script>
-								$(function() {
-									$( "#tabs-min" ).tabs();
-								});
-							</script>
-							<div id="tabs-min" class="tabs-min">
-								<div style="overflow:auto; width: 650px">
-									<ul>
-										<li><a href="#tabs-1">Transfer Data</a></li>
-										<li><a href="#tabs-3" title="Enrollment and subject lists">Summary</a></li>
-										<li><a href="#tabs-4">Analysis</a></li>
-										<li><a href="#tabs-5">QC</a></li>
-										<li><a href="#tabs-6">Admin</a></li>
-									</ul>
-									<div id="tabs-1">
-										<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>> Group by <b>study</b><br>
-										
-										<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>> Display all series <span class="tiny">(use for "Select All")</span><br>
+								</select>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="ui attached segment">
+				<div class="ui grid">
+					<div class="one wide right aligned column">
+						<h3 class="ui header">Enrollment</h3>
+					</div>
+					<div class="eight wide left aligned column">
+						<div class="ui compact grid">
+							<div class="four wide right aligned middle aligned column slabel">
+								Projects
+							</div>
+							<div class="twelve wide column">
 
-										<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>> Longitudinal<br>
-									</div>
-									<div id="tabs-3">
-										<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>> Table<br>
-										
-										<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
-										
-										<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
-										
-										<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
-										
-										<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
-									</div>
-									<div id="tabs-4">
-										<table width="100%" cellspacing="0" cellpadding="3" style="font-size:11pt">
-											<tr>
-												<td class="fieldlabel" width="150px">Pipeline</td>
-												<td>
-												<select name="s_pipelineid" onClick="SwitchOption('viewpipeline')">
-													<option value="">Select pipeline</option>
-												<?
-													$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
-													$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-													while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-														$pipelineid = $row2['pipeline_id'];
-														$pipelinename = $row2['pipeline_name'];
-														?>
-														<option value="<?=$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
-														<?
-													}
-												?>
-												</select>
-												</td>
-											</tr>
-											<tr>
-												<td class="fieldlabel" width="150px">Result name</td>
-												<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
-											</tr>
-											<tr>
-												<td class="fieldlabel" width="150px">Result unit</td>
-												<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
-											</tr>
-											<tr>
-												<td class="fieldlabel" width="150px">Result type</td>
-												<td>
-													<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
-													<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
-													<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
-													<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
-													<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
-												</td>
-											</tr>
-											<tr>
-												<td class="fieldlabel" width="150px">Result value</td>
-												<td valign="top">
-													<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
-														<option value="=" <? if ($s['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
-														<option value=">" <? if ($s['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
-														<option value=">=" <? if ($s['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
-														<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
-														<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
-													</select>
-													<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
-													<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
-													<br>
-													<!--<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
-													<br>-->
-													<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
-												</td>
-											</tr>
-										</table>
-										<br><br>
-									
-										<? if ($s['s_resultoutput'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
-										
-										<? if ($s['s_resultoutput'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
-										
-										<? if ($s['s_resultoutput'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
-										
-										<? if ($s['s_resultoutput'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
-									</div>
-									<div id="tabs-5">
-										QC variable <span class="tiny">built-in</span>&nbsp;
-										<select name="s_qcbuiltinvariable">
-											<option value="">(Select built-in QC variable)
-											<option value="all" selected>ALL available variables
-											<option value="iosnr">IO SNR
-											<option value="pvsnr">PV SNR
-											<option value="totaldisp">Total displacement [mm]
-										</select>
-										<br>
-										QC variable <span class="tiny">modular</span>&nbsp;
-										<select name="s_qcvariableid">
-											<option value="">(Select modular QC variable)
-											<option value="all">ALL available variables
-											<?
-												$sqlstring2 = "select * from qc_resultnames where qcresult_type = 'number' order by qcresult_name";
-												$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-												while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-													$qcresultnameid = $row2['qcresultname_id'];
-													$qcresultname = $row2['qcresult_name'];
-													$qcresultunits = $row2['qcresult_units'];
-													?>
-													<option value="<?=$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
-													<?
-												}
-												
+								<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<option value=""></option>
+									<option value="all">All Projects</option>
+									<?
+										$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$project_id = $row['project_id'];
+											$project_name = $row['project_name'];
+											$project_costcenter = $row['project_costcenter'];
+											if (in_array($project_id, $s['s_projectids'])) { $selected = "selected"; } else { $selected = ""; }
+											
+											$perms = GetCurrentUserProjectPermissions(array($project_id));
+											if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
 											?>
-										</select>
-										<br><br>
-										<? if ($s['s_resultoutput'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
-										
-										<? if ($s['s_resultoutput'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>> Table<br>
+											<option value="<?=$project_id?>" <?=$selected?>  <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<?
+										}
+									?>
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class="seven wide left aligned column">
+						<div class="ui compact grid">
+							<div class="four wide right aligned middle aligned column slabel">
+								Enrollment sub-group
+							</div>
+							<div class="twelve wide left aligned column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$s['s_enrollsubgroup']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_enrollsubgroup">
+								<?
+									$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=$row['enroll_subgroup']?>"><?
+									}
+								?>
+								</datalist>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ui attached segment">
+				<div class="ui grid">
+					<div class="one wide right aligned column">
+						<h3 class="ui header">Study</h3>
+					</div>
+					<div class="eight wide left aligned column">
+						<div class="ui compact grid">
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Study IDs
+							</div>
+							<div class="twelve wide column">
+								<input type="text" name="s_studyid" value="<?=$s['s_studyid']?>" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Alternate Scan IDs
+							</div>
+							<div class="twelve wide column">
+								<input type="text" name="s_studyaltscanid" value="<?=$s['s_studyaltscanid']?>" size="50" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Study Date <i class="small blue question circle outline icon" title="<b>Study date</b><br><br>Leave first date blank to search for anything earlier than the second date. Leave the second date blank to search for anything later than the first date"></i>
+							</div>
+							<div class="twelve wide column">
+								<div class="inline fields">
+									<div class="ui calendar custom_format_calendar">
+										<div class="ui input left icon">
+											<i class="calendar icon"></i>
+											<input type="text" name="s_studydatestart" value="<?=$s['s_studydatestart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+										</div>
 									</div>
-									<div id="tabs-6">
-										<? if ($s['s_resultoutput'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
-										
-										<? if ($GLOBALS['isadmin']) { ?>
-										<? if ($s['s_resultoutput'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>> File operations
-										<? } ?>
-										<br>
-										
-										<? if ($s['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
+									&nbsp; <i class="arrows alternate horizontal icon"></i> &nbsp;
+									<div class="ui calendar custom_format_calendar">
+										<div class="ui input left icon">
+											<i class="calendar icon"></i>
+											<input type="text" name="s_studydateend" value="<?=$s['s_studydateend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+										</div>
 									</div>
 								</div>
 							</div>
-						</td>
-					</tr>
-				</table>
-				<div align="center">
-				<button class="ui primary button" type="submit"><i class="search icon"></i> Search</button>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Modality
+							</div>
+							<div class="twelve wide column">
+								<select name="s_studymodality" class="ui fluid dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<?
+									$sqlstring = "select * from modalities order by mod_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$mod_code = $row['mod_code'];
+										$mod_desc = $row['mod_desc'];
+										
+										/* check if the modality table exists */
+										$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
+										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+										if (mysqli_num_rows($result2) > 0) {
+										
+											/* if the table does exist, allow the user to search on it */
+											if (($mod_code == "MR") && ($s['s_studymodality'] == "")) {
+												$selected = "selected";
+											}
+											else {
+												if ($mod_code == $s['s_studymodality']) {
+													$selected = "selected";
+												}
+												else {
+													$selected = "";
+												}
+											}
+											?>
+											<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option>
+											<?
+										}
+									}
+								?>
+								</select>
+							
+							</div>
+
+						</div>
+					</div>
+					<div class="seven wide left aligned column">
+						<div class="ui compact grid">
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Institution
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$s['s_studyinstitution']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_studyinstitution">
+								<?
+									$sqlstring = "select distinct(study_institution) from studies order by study_institution";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=$row['study_institution']?>"><?
+									}
+								?>
+								</datalist>
+							
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Equipment
+							</div>
+							<div class="twelve wide column">
+								<select name="s_studyequipment" class="ui small fluid dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<option value="">Select equipment</option>
+								<?
+									$sqlstring = "select distinct(study_site) from studies order by study_site";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$study_site = $row['study_site'];
+										
+										if ($study_site != "") {
+											if ($study_site == $s['s_studyequipment']) {
+												$selected = "selected";
+											}
+											else {
+												$selected = "";
+											}
+											?>
+											<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
+											<?
+										}
+									}
+								?>
+								</select>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Description
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$s['s_studydesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_studydesc">
+								<?
+									$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=trim($row['study_desc'])?>"><?
+									}
+								?>
+								</datalist>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Physician
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$s['s_studyphysician']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_studyphysician">
+								<?
+									$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=trim($row['study_performingphysician'])?>"><?
+									}
+								?>
+								</datalist>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Operator
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$s['s_studyoperator']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_studyoperator">
+								<?
+									$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=trim($row['study_operator'])?>"><?
+									}
+								?>
+								</datalist>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Visit type
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_studytype" list="s_studytype" value="<?=$s['s_studytype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+								<datalist id="s_studytype">
+								<?
+									$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										?><option value="<?=trim($row['study_type'])?>"><?
+									}
+								?>
+								</datalist>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								<i class="user friends icon"></i> Study group
+							</div>
+							<div class="twelve wide column">
+								<select name="s_studygroupid" class="ui small fluid dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<option value="">Select a group</option>
+								<?
+									$sqlstring = "select * from groups where group_type = 'study' order by group_name";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$groupid = $row['group_id'];
+										$groupname = $row['group_name'];
+										$groupowner = $row['group_owner'];
+										
+										if ($groupid == $s['s_studygroupid']) {
+											$selected = "selected";
+										}
+										else {
+											$selected = "";
+										}
+										?>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<?
+									}
+								?>
+								</select>
+							</div>
+							
+						</div>
+					</div>
 				</div>
-				<br>
-			</td>
-		</tr>
-	</table>
+			</div>
+
+			<div class="ui attached segment">
+				<div class="ui grid">
+					<div class="one wide right aligned column">
+						<h3 class="ui header">Series</h3>
+					</div>
+					<div class="eight wide left aligned column">
+						<div class="ui compact grid">
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Protocol <i class="small blue question circle outline icon" title="<b>Comma separated</b> protocols: search will be an AND<br><b>Semi-colon separated</b> protocols: search will be an OR"></i>
+							</div>
+							<div class="twelve wide column">
+								<div class="ui fluid input">
+									<input type="text" name="s_seriesdesc" value="<?=$s['s_seriesdesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+							
+						</div>
+					</div>
+					<div class="seven wide left aligned column">
+						<div class="ui compact grid">
+
+							<div class="four wide right aligned middle aligned column slabel">
+								
+							</div>
+							<div class="twelve wide column">
+								<div class="ui inline field">
+									<div class="ui checkbox">
+										<input type="checkbox" name="s_usealtseriesdesc" value="1" class="importantfield" <? if ($s['s_usealtseriesdesc']) { echo "checked"; } ?> onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+										<label>Use alternate protocol name <i class="small blue question circle outline icon" title="Perform the search using the alternate protocol name, and return the results using the alternate protocol name. The alternate protocol name often groups together series with similar names into one protocol. For example 'MPRAGE', 'Axial T1', and 'T1w_SPC' would all be labeled 'T1'"></i></label>
+									</div>
+								</div>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								Sequence
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_seriessequence" value="<?=$s['s_seriessequence']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Image type
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_seriesimagetype" value="<?=$s['s_seriesimagetype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Image comments
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small fluid input">
+									<input type="text" name="s_seriesimagecomments" value="<?=$s['s_seriesimagecomments']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								TR
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small right labeled input">
+									<input type="text" name="s_seriestr" value="<?=$s['s_seriestr']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<div class="ui label">ms</div>
+								</div>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Series number <i class="small blue question circle outline icon" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i>
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small input">
+									<input type="text" name="s_seriesnum" value="<?=$s['s_seriesnum']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+							
+							<div class="four wide right aligned middle aligned column slabel">
+								Number of files <i class="small blue question circle outline icon" title="<b>Must be an integer or a criteria:</b><ul><li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i>
+							</div>
+							<div class="twelve wide column">
+								<div class="ui small input">
+									<input type="text" name="s_seriesnumfiles" value="<?=$s['s_seriesnumfiles']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								</div>
+							</div>
+
+							<div class="four wide right aligned middle aligned column slabel">
+								<i class="user friends icon"></i> Series group
+							</div>
+							<div class="twelve wide column">
+								<select name="s_seriesgroupid" class="ui small fluid dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<option value="">Select a group</option>
+								<?
+									$sqlstring = "select * from groups where group_type = 'series' order by group_name";
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$groupid = $row['group_id'];
+										$groupname = $row['group_name'];
+										$groupowner = $row['group_owner'];
+										
+										if ($groupid == $s['s_seriesgroupid']) {
+											$selected = "selected";
+										}
+										else {
+											$selected = "";
+										}
+										?>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<?
+									}
+								?>
+								</select>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="ui grey bottom attached segment">
+				<div class="ui grid">
+					<div class="one wide right aligned column">
+						<h3 class="ui grey header">Output</h3>
+					</div>
+					<div class="eight wide left aligned column">
+						<div class="ui top attached tabular menu">
+							<a class="ui red active item" data-tab="first">Transfer Data</a>
+							<a class="ui red item" data-tab="second" title="Enrollment and subject lists">Summary</a>
+							<a class="ui red item" data-tab="third">Analysis</a>
+							<a class="ui red item" data-tab="fourth">QC</a>
+							<a class="ui red item" data-tab="fifth">Admin</a>
+						</div>
+
+						<div class="ui bottom attached active tab segment" data-tab="first">
+							<div class="ui grouped fields">
+								<div class="field">
+									<div class="ui radio checkbox">
+										<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>>
+										<label>Group by study</label>
+									</div>
+								</div>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>>
+										<label>Display all series (use for "Select All")</label>
+									</div>
+								</div>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
+										<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>>
+										<label>Longitudinal</label>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="ui bottom attached tab segment" data-tab="second">
+							<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>> Table<br>
+							
+							<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
+							
+							<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
+							
+							<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
+							
+							<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
+						</div>
+						
+						<div class="ui bottom attached tab segment" data-tab="third">
+							<table width="100%" cellspacing="0" cellpadding="3" style="font-size:11pt">
+								<tr>
+									<td class="fieldlabel" width="150px">Pipeline</td>
+									<td>
+									<select name="s_pipelineid" onClick="SwitchOption('viewpipeline')">
+										<option value="">Select pipeline</option>
+									<?
+										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines order by pipeline_name";
+										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+											$pipelineid = $row2['pipeline_id'];
+											$pipelinename = $row2['pipeline_name'];
+											?>
+											<option value="<?=$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
+											<?
+										}
+									?>
+									</select>
+									</td>
+								</tr>
+								<tr>
+									<td class="fieldlabel" width="150px">Result name</td>
+									<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
+								</tr>
+								<tr>
+									<td class="fieldlabel" width="150px">Result unit</td>
+									<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
+								</tr>
+								<tr>
+									<td class="fieldlabel" width="150px">Result type</td>
+									<td>
+										<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
+										<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
+										<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
+										<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
+										<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
+									</td>
+								</tr>
+								<tr>
+									<td class="fieldlabel" width="150px">Result value</td>
+									<td valign="top">
+										<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
+											<option value="=" <? if ($s['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
+											<option value=">" <? if ($s['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
+											<option value=">=" <? if ($s['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
+											<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
+											<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
+										</select>
+										<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
+										<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
+										<br>
+										<!--<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
+										<br>-->
+										<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
+									</td>
+								</tr>
+							</table>
+							<br><br>
+						
+							<? if ($s['s_resultoutput'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
+							
+							<? if ($s['s_resultoutput'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
+							
+							<? if ($s['s_resultoutput'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
+							
+							<? if ($s['s_resultoutput'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
+						</div>
+								
+						<div class="ui bottom attached tab segment" data-tab="fourth">
+							QC variable <span class="tiny">built-in</span>&nbsp;
+							<select name="s_qcbuiltinvariable">
+								<option value="">(Select built-in QC variable)
+								<option value="all" selected>ALL available variables
+								<option value="iosnr">IO SNR
+								<option value="pvsnr">PV SNR
+								<option value="totaldisp">Total displacement [mm]
+							</select>
+							<br>
+							QC variable <span class="tiny">modular</span>&nbsp;
+							<select name="s_qcvariableid">
+								<option value="">(Select modular QC variable)
+								<option value="all">ALL available variables
+								<?
+									$sqlstring2 = "select * from qc_resultnames where qcresult_type = 'number' order by qcresult_name";
+									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+									while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+										$qcresultnameid = $row2['qcresultname_id'];
+										$qcresultname = $row2['qcresult_name'];
+										$qcresultunits = $row2['qcresult_units'];
+										?>
+										<option value="<?=$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
+										<?
+									}
+									
+								?>
+							</select>
+							<br><br>
+							<? if ($s['s_resultoutput'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
+							
+							<? if ($s['s_resultoutput'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>> Table<br>
+						</div>
+								
+						<div class="ui bottom attached tab segment" data-tab="fifth">
+							<? if ($s['s_resultoutput'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
+							
+							<? if ($GLOBALS['isadmin']) { ?>
+							<? if ($s['s_resultoutput'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>> File operations
+							<? } ?>
+							<br>
+							
+							<? if ($s['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
+							<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
+						</div>
+					
+					</div>
+					<div class="seven wide middle aligned column">
+						<button class="ui huge primary button" type="submit"><i class="search icon"></i> Search</button>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+		<div class="two wide column">&nbsp;</div>
+	</div>
+	
 	
 	</form>
 	</div>
@@ -939,7 +1077,7 @@
 		}
 		
 		/* only keep the 10 most recent searches */
-		$sqlstring = "delete from search_history where user_id = $userid and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid order by date_added asc limit 10) temp_tab)";
+		$sqlstring = "delete from search_history where user_id = $userid and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid order by date_added desc limit 10) temp_tab)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		/* escape all the variables and put them back into meaningful variable names */
@@ -1027,79 +1165,87 @@
 		}
 		else {
 			?>
-			<div class="ui accordion">
+			<div class="ui inverted accordion">
 				<div class="title">
 					<i class="dropdown icon"></i> Recent Searches
 				</div>
 				<div class="content">
-					<ul style="font-size: 8pt">
-					<?
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$searchhistoryid = $row['searchhistory_id'];
-						$userid = $row['user_id'];
-						$date_added = $row['date_added'];
-						$saved_name = $row['saved_name'];
-						
-						$s['UID(s)'] = $row['subjectuid'];
-						$s['Alt UID(s)'] = $row['subjectaltuid'];
-						$s['Name'] = $row['subjectname'];
-						$s['DOB Start'] = $row['subjectdobstart'];
-						$s['DOB End'] = $row['subjectdobend'];
-						$s['Age Min'] = $row['ageatscanmin'];
-						$s['Age Max'] = $row['ageatscanmax'];
-						$s['Gender'] = $row['subjectgender'];
-						$s['Subject Group ID'] = $row['subjectgroupid'];
-						$s['Project ID'] = $row['projectid'];
-						$s['Enroll Subgroup'] = $row['enrollsubgroup'];
-						$s['Measure Search'] = $row['measuresearch'];
-						$s['Measure List'] = $row['measurelist'];
-						$s['Institution'] = $row['studyinstitution'];
-						$s['Equipment'] = $row['studyequipment'];
-						$s['Study ID'] = $row['studyid'];
-						$s['Study Alt Scan ID'] = $row['studyaltscanid'];
-						$s['Study Date Start'] = $row['studydatestart'];
-						$s['Study Date End'] = $row['studydateend'];
-						$s['Study Desc'] = $row['studydesc'];
-						$s['study Physician'] = $row['studyphysician'];
-						$s['Operator'] = $row['studyoperator'];
-						$s['Study Type'] = $row['studytype'];
-						$s['Modality'] = $row['studymodality'];
-						$s['Study Group ID'] = $row['studygroupid'];
-						$s['Series Desc'] = $row['seriesdesc'];
-						$s['usealtseriesdesc'] = $row['usealtseriesdesc'];
-						$s['Sequence'] = $row['seriessequence'];
-						$s['Image Type'] = $row['seriesimagetype'];
-						$s['TR'] = $row['seriestr'];
-						$s['Image Comments'] = $row['seriesimagecomments'];
-						$s['Series Num'] = $row['seriesnum'];
-						$s['Num Files'] = $row['seriesnumfiles'];
-						$s['Series Group ID'] = $row['seriesgroupid'];
-						$s['Pipeline ID'] = $row['pipelineid'];
-						$s['Pipeline Result Name'] = $row['pipelineresultname'];
-						$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
-						$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
-						$s['Pipeline Result Type'] = $row['pipelineresulttype'];
-						$s['Result Order'] = $row['resultorder'];
-						$s['Form ID'] = $row['formid'];
-						$s['Form Field ID'] = $row['formfieldid'];
-						$s['Form Criteria'] = $row['formcriteria'];
-						$s['Form Value'] = $row['formvalue'];
-						
-						$searchterms = "";
-						foreach ($s as $key => $value) {
-							if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
-								$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+					<div class="ui segment">
+						<div class="ui divided list">
+						<?
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$searchhistoryid = $row['searchhistory_id'];
+							$userid = $row['user_id'];
+							$date_added = $row['date_added'];
+							$saved_name = $row['saved_name'];
+							
+							$s['UID(s)'] = $row['subjectuid'];
+							$s['Alt UID(s)'] = $row['subjectaltuid'];
+							$s['Name'] = $row['subjectname'];
+							$s['DOB Start'] = $row['subjectdobstart'];
+							$s['DOB End'] = $row['subjectdobend'];
+							$s['Age Min'] = $row['ageatscanmin'];
+							$s['Age Max'] = $row['ageatscanmax'];
+							$s['Gender'] = $row['subjectgender'];
+							$s['Subject Group ID'] = $row['subjectgroupid'];
+							$s['Project ID'] = $row['projectid'];
+							$s['Enroll Subgroup'] = $row['enrollsubgroup'];
+							$s['Measure Search'] = $row['measuresearch'];
+							$s['Measure List'] = $row['measurelist'];
+							$s['Institution'] = $row['studyinstitution'];
+							$s['Equipment'] = $row['studyequipment'];
+							$s['Study ID'] = $row['studyid'];
+							$s['Study Alt Scan ID'] = $row['studyaltscanid'];
+							$s['Study Date Start'] = $row['studydatestart'];
+							$s['Study Date End'] = $row['studydateend'];
+							$s['Study Desc'] = $row['studydesc'];
+							$s['study Physician'] = $row['studyphysician'];
+							$s['Operator'] = $row['studyoperator'];
+							$s['Study Type'] = $row['studytype'];
+							$s['Modality'] = $row['studymodality'];
+							$s['Study Group ID'] = $row['studygroupid'];
+							$s['Series Desc'] = $row['seriesdesc'];
+							$s['usealtseriesdesc'] = $row['usealtseriesdesc'];
+							$s['Sequence'] = $row['seriessequence'];
+							$s['Image Type'] = $row['seriesimagetype'];
+							$s['TR'] = $row['seriestr'];
+							$s['Image Comments'] = $row['seriesimagecomments'];
+							$s['Series Num'] = $row['seriesnum'];
+							$s['Num Files'] = $row['seriesnumfiles'];
+							$s['Series Group ID'] = $row['seriesgroupid'];
+							$s['Pipeline ID'] = $row['pipelineid'];
+							$s['Pipeline Result Name'] = $row['pipelineresultname'];
+							$s['Pipeline Result Unit'] = $row['pipelineresultunit'];
+							$s['Pipeline Result Value'] = $row['pipelineresultvalue'];
+							$s['Pipeline Result Type'] = $row['pipelineresulttype'];
+							$s['Result Order'] = $row['resultorder'];
+							$s['Form ID'] = $row['formid'];
+							$s['Form Field ID'] = $row['formfieldid'];
+							$s['Form Criteria'] = $row['formcriteria'];
+							$s['Form Value'] = $row['formvalue'];
+							
+							$searchterms = "";
+							foreach ($s as $key => $value) {
+								if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
+									$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+								}
+							}
+							if ($searchterms != "") {
+							?>
+								<div class="item">
+									<i class="sticky note outline icon"></i>
+									<div class="content">
+										<a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>" class="header"><?=$searchterms?></a>
+										<div class="description"><?=$date_added?></div>
+									</div>
+								</div>
+							<?
 							}
 						}
-						if ($searchterms != "") {
 						?>
-						<li><a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>"><?=$date_added?></a> - <?=$searchterms?>
-						<?
-						}
-					}
-					?>
-				</ul>
-			</div>
+						</div>
+					</div>
+				</div>
 			</div>
 			<?
 		}
@@ -2273,7 +2419,7 @@
 			$uid = $row['uid'];
 			$subject_id = $row['subject_id'];
 			$study_id = $row['study_id'];
-			$study_num = $row['study_num'];
+			$studynum = $row['study_num'];
 			$study_desc = $row['study_desc'];
 			$study_type = $row['study_type'];
 			$study_height = $row['study_height'];

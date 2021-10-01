@@ -261,7 +261,7 @@
 					
 					<div class="ui yellow message">
 						<i class="large exclamation circle icon"></i> <b>Disable access to NiDB during the upgrade</b>
-						<p style="color: black">This can be done by setting the config file variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
+						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
 					</div>
 						
 					<div class="ui red message">
@@ -416,7 +416,7 @@
 					<a class="ui inverted large button" href="setup.php"><i class="arrow alternate circle left icon"></i>&nbsp;Back</a>
 				</div>
 				<div class="item">
-					<a class="ui inverted large button" href="setup.php?step=database1">Next <i class="arrow alternate circle right icon"></i></a>
+					<a class="ui inverted huge button" href="setup.php?step=database1">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
 		</div>
@@ -688,7 +688,7 @@
 					<a class="ui inverted large button" href="setup.php?step=database1"><i class="arrow alternate circle left icon"></i>&nbsp;Back</a>
 				</div>
 				<div class="item">
-					<a class="ui inverted large button" href="setup.php?step=config">Next <i class="arrow alternate circle right icon"></i></a>
+					<a class="ui inverted huge button" href="setup.php?step=config">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
 		</div>
