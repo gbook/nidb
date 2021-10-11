@@ -521,11 +521,13 @@
 			$isrequest = $row['appt_istimerequest'];
 			$details = $row['appt_details'];
 
-			$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 1) {
-				$pagetitle = "Edit Recurring Appointment";
-				$repeats = true;
+			if ($groupid != "") {
+				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 1) {
+					$pagetitle = "Edit Recurring Appointment";
+					$repeats = true;
+				}
 			}
 			
 			if ($isallday == "1") { $isalldayeventcheck = "checked"; } else { $isalldayeventcheck = ""; }

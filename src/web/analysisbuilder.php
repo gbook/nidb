@@ -190,49 +190,99 @@
 		if ($includeduration == "") $includeduration = "null";
 		if ($collapsevariables == "") $collapsevariables = "null";
 
-		$sqlstring = "insert into saved_search (
-		user_id,saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_groupmrbyvisittype, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includedrugdetails, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_groupbyeventdate, search_collapsevariables, search_collapseexpression, search_includeemptysubjects, search_blankvalue, search_missingvalue, search_includeeventduration, search_includeendate, search_includeheightweight, search_includedob, search_reportformat, search_outputformat)
-		values (
-			'$userid',
-			now(), 
-			'$savedSearchName',
-			'$projectid',
-			$includeprotocolparms,
-			$includemrqa,
-			'$groupmrbyvisittype',
-			'$MRprotocols',
-			'$EEGprotocols',
-			'$ETprotocols',
-			$pipelineid,
-			'$pipelineresultname',
-			'$pipelineseriesdatetime',
-			'$measurename',
-			$includeallmeasures,
-			'$vitalname',
-			$includeallvitals,
-			'$drugname',
-			$includealldrugs,
-			$includedrugdetails,
-			$includetimesincedose,
-			'$doseVariable',
-			'$doseTimeRange',
-			'$doseDisplayTime',
-			'$groupByDate',
-			'$collapsevariables',
-			'$collapsebyexpression',
-			$includeemptysubjects,
-			'$blankValue',
-			'$missingValue',
-			$includeduration,
-			$includeenddate,
-			$includeheightweight,
-			$includedob,
-			'$reportformat',
-			'$outputformat'
-		)";
+		$sqlstring = "select savedsearch_id from saved_search where saved_name = '$savedsearchname'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (mysqli_num_rows($result) > 0){
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$savedsearchid = $row['savedsearch_id'];
 
-		Notice("Search saved <b>$savedsearchname</b>");
+			$sqlstring = "update saved_search 
+			set user_id = '$userid',
+			saved_datetime = now(), 
+			search_projectid = '$projectid', 
+			search_mrincludeprotocolparams = $includeprotocolparms, 
+			search_mrincludeqa = $includemrqa, 
+			search_groupmrbyvisittype = '$groupmrbyvisittype', 
+			search_mrprotocol = '$MRprotocols', 
+			search_eegprotocol = '$EEGprotocols', 
+			search_etprotocol = '$ETprotocols', 
+			search_pipelineid = $pipelineid, 
+			search_pipelineresultname = '$pipelineresultname', 
+			search_pipelineseries = '$pipelineseriesdatetime', 
+			search_measurename = '$measurename', 
+			search_includeallmeasures = $includeallmeasures, 
+			search_vitalname = '$vitalname', 
+			search_includeallvitals = $includeallvitals, 
+			search_drugname = '$drugname', 
+			search_includealldrugs = $includealldrugs, 
+			search_includedrugdetails = $includedrugdetails, 
+			search_includetimesincedose = $includetimesincedose, 
+			search_dosevariable = '$doseVariable', 
+			search_groupdosetime = '$doseTimeRange', 
+			search_displaytime = '$doseDisplayTime', 
+			search_groupbyeventdate = '$groupByDate', 
+			search_collapsevariables = '$collapsevariables', 
+			search_collapseexpression = '$collapsebyexpression', 
+			search_includeemptysubjects = $includeemptysubjects, 
+			search_blankvalue = '$blankValue', 
+			search_missingvalue = '$missingValue', 
+			search_includeeventduration = $includeduration, 
+			search_includeendate = $includeenddate, 
+			search_includeheightweight = $includeheightweight, 
+			search_includedob = $includedob, 
+			search_reportformat = '$reportformat', 
+			search_outputformat = '$outputformat'
+			where savedsearch_id = $savedsearchid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			Notice("Search updated <b>$savedsearchname</b>");
+		}
+		else {
+			$sqlstring = "insert into saved_search (
+			user_id,saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_groupmrbyvisittype, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_measurename, search_includeallmeasures, search_vitalname, search_includeallvitals, search_drugname, search_includealldrugs, search_includedrugdetails, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_groupbyeventdate, search_collapsevariables, search_collapseexpression, search_includeemptysubjects, search_blankvalue, search_missingvalue, search_includeeventduration, search_includeendate, search_includeheightweight, search_includedob, search_reportformat, search_outputformat)
+			values (
+				'$userid',
+				now(), 
+				'$savedSearchName',
+				'$projectid',
+				$includeprotocolparms,
+				$includemrqa,
+				'$groupmrbyvisittype',
+				'$MRprotocols',
+				'$EEGprotocols',
+				'$ETprotocols',
+				$pipelineid,
+				'$pipelineresultname',
+				'$pipelineseriesdatetime',
+				'$measurename',
+				$includeallmeasures,
+				'$vitalname',
+				$includeallvitals,
+				'$drugname',
+				$includealldrugs,
+				$includedrugdetails,
+				$includetimesincedose,
+				'$doseVariable',
+				'$doseTimeRange',
+				'$doseDisplayTime',
+				'$groupByDate',
+				'$collapsevariables',
+				'$collapsebyexpression',
+				$includeemptysubjects,
+				'$blankValue',
+				'$missingValue',
+				$includeduration,
+				$includeenddate,
+				$includeheightweight,
+				$includedob,
+				'$reportformat',
+				'$outputformat'
+			)";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			
+			Notice("Search saved <b>$savedsearchname</b>");
+		}
+
 	}
 	
 	
@@ -275,6 +325,7 @@
 		$a['collapsebyexpression'] = $row['search_collapseexpression'];
 		$a['blankvalueplaceholder'] = $row['search_blankvalue'];
 		$a['missingvalueplaceholder'] = $row['search_missingvalue'];
+		$a['savedsearchname'] = $row['saved_name'];
 		
 		$a['includeduration'] = $row['search_includeeventduration'];
 		$a['includeenddate'] = $row['search_includeendate'];
@@ -300,12 +351,12 @@
 		//	$a['missingvalueplaceholder'] = "MissingValue";
 		
 		?>
-		<div style="text-align: center; width: 100%" id="pageloading">
-			<i class="large blue spinner loading icon"></i> Loading...
-		</div>
 		<script>
 			$(document).ready(function(){
 				$('#pageloading').hide();
+				
+				document.getElementById("resultsTable").style.height = screen.availHeight * 0.75;
+				
 			});
 		
 			$(document).ready(function() {
@@ -399,73 +450,88 @@
 			input { padding: 3px; }
 		</style>		
 
-		<table width="100%">
-			<tr>
-				<td width="20%" style="vertical-align: top;">
-					<div class="ui top attached inverted styled segment">
-						<h2 class="ui inverted header">Analysis Builder</h2>
+		<div class="ui grey secondary inverted top attached segment">
+			<div class="ui very compact grid">
+				<div class="ui four wide column">
+					<h2 class="ui inverted header">Analysis Builder</h2>
+				</div>
+				<div class="ui eight wide column">
+					<div style="text-align: center; width: 100%" id="pageloading">
+						<i class="large inverted blue spinner loading icon"></i> Loading...
 					</div>
-					<div class="ui attached styled segment">
-						<form method="post" action="analysisbuilder.php">
-							<input type="hidden" name="action" value="usesavedsearch">
-							<div class="ui fluid action input">
-								<select name="savedsearchid" class="ui dropdown" required>
-									<option value="">Select saved search...
-									<?
-									$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$savedsearchid = $row['savedsearch_id'];
-										$savedname = $row['saved_name'];
-										if ($savedid == $savedsearchid) {
-											$selected = "selected";
-										}
-										else {
-											$selected = "";
-										}
-										?>
-										<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
-										<?
+				</div>
+				<div class="ui four wide right aligned column">
+					<form method="post" action="analysisbuilder.php" class="ui form">
+						<input type="hidden" name="action" value="usesavedsearch">
+						<div class="ui fluid action input">
+							<select name="savedsearchid" class="ui fluid dropdown" required>
+								<option value="">Select saved search...
+								<?
+								$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$savedsearchid = $row['savedsearch_id'];
+									$savedname = $row['saved_name'];
+									if ($savedid == $savedsearchid) {
+										$selected = "selected";
+									}
+									else {
+										$selected = "";
 									}
 									?>
-								</select>
-								<button class="ui primary button">Use saved search</button>
-							</div>
-						</form>
-					</div>
-					<div class="ui attached styled segment">
-						<form method="post" action="analysisbuilder.php" class="ui form">
-							<input type="hidden" name="action" value="viewanalysissummary">
-							<div class="ui fluid action input">
-								<select name="projectid" class="ui dropdown" required>
-									<option value="">Select Project...</option>
-									<option value="0">All Projects</option>
+									<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
 									<?
-										$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-										
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$project_id = $row['project_id'];
-											$project_name = $row['project_name'];
-											$project_costcenter = $row['project_costcenter'];
-											?>
-											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-											<?
-										}
-									?>
-								</select>
-								<button class="ui primary button">Use project</button>
-							</div>
-						</form>
-						<?
-						if (($projectid == '') || ($projectid == 0)) {
-							echo "</div></td></tr></table><br><br><br><br>";
-							return;
-						}
-						?>
-					</div>
+								}
+								?>
+							</select>
+							<button class="ui button">Use saved search</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<?
+		//if (($projectid == '') || ($projectid == 0)) {
+			//return;
+		//}
+		?>
+
+		<div class="ui grid">
+			<div class="ui four wide column">
+
+				<div class="ui attached segment">
+					<form method="post" action="analysisbuilder.php" class="ui form">
+						<input type="hidden" name="action" value="viewanalysissummary">
+						<div class="ui fluid action input">
+							<select name="projectid" class="ui fluid dropdown" required>
+								<option value="">Select Project...</option>
+								<option value="0">All Projects</option>
+								<?
+									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+									
+									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$project_id = $row['project_id'];
+										$project_name = $row['project_name'];
+										$project_costcenter = $row['project_costcenter'];
+										if ($projectid == $project_id)
+											$selected = "selected";
+										else
+											$selected = "";
+										?>
+										<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<?
+									}
+								?>
+							</select>
+							<button class="ui primary button">Select project</button>
+						</div>
+					</form>
+				</div>
+
 					<div class="ui bottom attached styled segment">
-						<form method="post" name="analysisbuilder" action="analysisbuilder.php">
+						<form method="post" name="analysisbuilder" action="analysisbuilder.php" class="ui small form">
 						<input type="hidden" name="action" value="viewanalysissummary">
 						<input type="hidden" name="projectid" value="<?=$projectid?>">
 					
@@ -474,231 +540,281 @@
 								<h3 class="ui black header"><i class="dropdown icon"></i>MR&nbsp;<span id="mriIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								<input type="checkbox" name="includeprotocolparms" id="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include protocol parameters
+								<div class="ui checkbox">
+									<input type="checkbox" name="includeprotocolparms" id="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">
+									<label>Include protocol parameters</label>
+								</div>
 								<br>
-								<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includemrqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Include QA<br>
-								<input type="checkbox" name="groupmrbyvisittype" id="groupmrbyvisittype" <? if ($a['groupmrbyvisittype']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">Separate by study visit type
+								<div class="ui checkbox">
+									<input type="checkbox" name="includemrqa" id="includemrqa" <? if ($a['includemrqa']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">
+									<label>Include QA</label>
+								</div>
 								<br>
-								<b>Protocol(s)</b><br>
-								<select name="mr_protocols[]" id="mr_protocols" multiple class="ui search fluid dropdown" onChange="CheckForMRICriteria()">
-									<option value="" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>Select MRI protocol(s)...
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of MR protocols from this project */
-									$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = trim($row['series_desc']);
-										
-										if (in_array($seriesdesc, $a['mr_protocols']))
-											$selected = "selected";
+								<div class="ui checkbox">
+									<input type="checkbox" name="groupmrbyvisittype" id="groupmrbyvisittype" <? if ($a['groupmrbyvisittype']) { echo "checked"; } ?> value="1" onChange="CheckForMRICriteria()">
+									<label>Separate by study visit type</label>
+								</div>
+								<br>
+								<div class="ui inline field">
+									<label>Protocol(s)</label>
+									<select name="mr_protocols[]" id="mr_protocols" multiple class="ui search fluid dropdown" onChange="CheckForMRICriteria()">
+										<option value="" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>Select MRI protocol(s)...
+										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
+										<?
+										/* get unique list of MR protocols from this project */
+										if ($projectid == "")
+											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
+											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$seriesdesc = trim($row['series_desc']);
+											
+											if (in_array($seriesdesc, $a['mr_protocols']))
+												$selected = "selected";
+											else
+												$selected = "";
+											
+											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										}
+										?>
+									</select>
+								</div>
 							</div>
 
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>EEG&nbsp;<span id="eegIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								EEG Protocol<br>
-								<select name="eeg_protocols[]" id="eeg_protocols" multiple class="ui search fluid dropdown" onChange="CheckForEEGCriteria()">
-									<option value="" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>Select EEG protocol(s)...
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of EEG protocols from this project */
-									$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = $row['series_desc'];
-										
-										if (in_array($seriesdesc, $a['eeg_protocols']))
-											$selected = "selected";
-										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
+								<div class="ui inline field">
+									<label>EEG Protocol</label>
+									<select name="eeg_protocols[]" id="eeg_protocols" multiple class="ui search fluid dropdown" onChange="CheckForEEGCriteria()">
+										<option value="" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>Select EEG protocol(s)...
+										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
+										<?
+										/* get unique list of EEG protocols from this project */
+										$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$seriesdesc = $row['series_desc'];
+											
+											if (in_array($seriesdesc, $a['eeg_protocols']))
+												$selected = "selected";
+											else
+												$selected = "";
+											
+											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										}
+										?>
+									</select>
+								</div>
 							</div>
 							
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>ET&nbsp;<span id="etIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								ET Protocol<br>
-								<select name="et_protocols[]" id="et_protocols" multiple style="width: 400px" size="10" onChange="CheckForETCriteria()">
-									<option value="" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>Select ET protocol(s)...
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of ET protocols from this project */
-									$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = $row['series_desc'];
-										
-										if (in_array($seriesdesc, $a['et_protocols']))
-											$selected = "selected";
-										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
+								<div class="ui field">
+									<label>ET Protocol</label>
+									<select name="et_protocols[]" id="et_protocols" multiple onChange="CheckForETCriteria()" class="ui dropdown">
+										<option value="" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>Select ET protocol(s)...
+										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
+										<?
+										/* get unique list of ET protocols from this project */
+										$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$seriesdesc = $row['series_desc'];
+											
+											if (in_array($seriesdesc, $a['et_protocols']))
+												$selected = "selected";
+											else
+												$selected = "";
+											
+											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
+											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										}
+										?>
+									</select>
+								</div>
 							</div>
 							
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>Pipeline&nbsp;<span id="pipelineIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								Pipeline<br>
-								<select class="js-example-basic-multiple" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
-									$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
-									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-									while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-										$pipelineid = $row2['pipeline_id'];
-										$pipelinename = $row2['pipeline_name'];
+								<div class="ui field">
+									Pipeline
+									<select class="ui dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
+										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
+										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+											$pipelineid = $row2['pipeline_id'];
+											$pipelinename = $row2['pipeline_name'];
 
-										$selected = "";
-										if (is_array($a['pipelineid']))
-											if (in_array($pipelineid, $a['pipelineid']))
+											$selected = "";
+											if (is_array($a['pipelineid']))
+												if (in_array($pipelineid, $a['pipelineid']))
+													$selected = "selected";
+											if (trim($pipelineid) == trim($a['pipelineid']))
 												$selected = "selected";
-										if (trim($pipelineid) == trim($a['pipelineid']))
-											$selected = "selected";
-										?>
-										<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
-										<?
-									}
-								?></select>
-								Result name <i class="blue question circle icon" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i> <input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
-								<br>
-								Get Datetime from Series. Enter series description <i class="blue question circle icon" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i> <input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()">
+											?>
+											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
+											<?
+										}
+									?>
+									</select>
+								</div>
+								<div class="ui field">
+									Result name <i class="small blue question circle outline icon" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
+									<input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
+								</div>
+								<div class="ui field">
+									Get Datetime from Series. Enter series description <i class="small blue question circle outline icon" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
+									<input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()" placeholder="Series description...">
+								</div>
 							</div>
 							
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>Cognitive and Other Measures&nbsp;<span id="measureIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								Measure name(s)
-								<br>
-								<select class="js-example-basic-multiple" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
-									$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
-									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-										$measurename = $rowA['measure_name'];
-										if (trim($measurename) != "") {
-											$selected = "";
-											if (is_array($a['measurename']))
-												if (in_array($measurename, $a['measurename']))
+								<div class="ui field">
+									Measure name(s)
+									<select class="ui dropdown" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
+										$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$measurename = $rowA['measure_name'];
+											if (trim($measurename) != "") {
+												$selected = "";
+												if (is_array($a['measurename']))
+													if (in_array($measurename, $a['measurename']))
+														$selected = "selected";
+												if (trim($measurename) == trim($a['measurename']))
 													$selected = "selected";
-											if (trim($measurename) == trim($a['measurename']))
-												$selected = "selected";
-											?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
+												?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
+											}
 										}
-									}
-								?></select>
-								<br>
-								<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">Include all measures
+									?>
+									</select>
+								</div>
+								<div class="ui checkbox">
+									<input type="checkbox" name="includeallmeasures" id="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?> onChange="CheckForMeasureCriteria()">
+									<label>Include all measures</label>
+								</div>
 							</div>
 							
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>Biological Measurements&nbsp;<span id="vitalIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								Vital name(s)
-								<br>
-								<select class="js-example-basic-multiple" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
-									$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
-									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-										$vitalname = $rowA['vital_name'];
-										$selected = "";
-										if (is_array($a['vitalname']))
-											if (in_array($vitalname, $a['vitalname']))
+								<div class="ui field">
+									<label>Vital name(s)</label>
+									<select class="ui dropdown" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
+										$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
+										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+											$vitalname = $rowA['vital_name'];
+											$selected = "";
+											if (is_array($a['vitalname']))
+												if (in_array($vitalname, $a['vitalname']))
+													$selected = "selected";
+											if (trim($vitalname) == trim($a['vitalname']))
 												$selected = "selected";
-										if (trim($vitalname) == trim($a['vitalname']))
-											$selected = "selected";
-										?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
-									}
-								?></select>
-								<br>
-								<input type="checkbox" name="includeallvitals" id="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?> onChange="CheckForVitalCriteria()">Include all vitals
+											?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
+										}
+									?>
+									</select>
+								</div>
+								<div class="ui checkbox">
+									<input type="checkbox" name="includeallvitals" id="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?> onChange="CheckForVitalCriteria()">
+									<label>Include all vitals</label>
+								</div>
 							</div>
 
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>Drugs/Dosing&nbsp;<span id="drugIndicator" class="indicator"></span></h3>
 							</div>
 							<div class="content">
-								Drug variable name(s) <i class="blue question circle icon" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i><br>
-								<select class="js-example-basic-multiple" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
-								<?
-									$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
-									$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-										$drugname = $rowA['drug_name'];
-										$selected = "";
-										if (is_array($a['drugname']))
-											if (in_array($drugname, $a['drugname']))
-												$selected = "selected";
-										if (trim($drugname) == trim($a['drugname']))
-											$selected = "selected";
-										?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
-									}
-								?>
-								</select>
-								<br>
-								<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drug/dosing variables
-								<br>
-								<input type="checkbox" name="includedrugdetails" id="includedrugdetails" value="1" <? if ($a['includedrugdetails']) echo "checked"; ?>>Include drug/dose extended details
-								<br>
-								<br>
-								<div style="border: 1px solid #ccc; padding: 5px; border-radius: 4px">
-									<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">Include <b>time since dose</b> <i class="blue question circle icon" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"></i><br>
-									Dose variable(s)
-									<select class="js-example-basic-multiple" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
+								<div class="ui field">
+									<label>Drug variable name(s) <i class="small blue question circle outline icon" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i></label>
+									<select class="ui dropdown" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
 										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$drugname = $rowA['drug_name'];
 											$selected = "";
-											if (is_array($a['dosevariable']))
-												if (in_array($drugname, $a['dosevariable']))
+											if (is_array($a['drugname']))
+												if (in_array($drugname, $a['drugname']))
 													$selected = "selected";
-											if (trim($drugname) == trim($a['dosevariable']))
+											if (trim($drugname) == trim($a['drugname']))
 												$selected = "selected";
 											?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
 										}
 									?>
 									</select>
-									<br>
-									Group dose time by 
-									<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()">
-										<!--<option value="hour">Hour-->
-										<option value="day" selected>Day
-										<!--<option value="week">Week
-										<option value="month">Month
-										<option value="year">Year-->
-									</select>
-									<br>
-									Display time since dose in 
-									<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()">
-										<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
-										<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
-										<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
-									</select>
+								</div>
+								<div class="ui checkbox">
+									<input type="checkbox" name="includealldrugs" id="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>
+									<label>Include all drug/dosing variables</label>
+								</div>
+								<br>
+								<div class="ui checkbox">
+									<input type="checkbox" name="includedrugdetails" id="includedrugdetails" value="1" <? if ($a['includedrugdetails']) echo "checked"; ?>>
+									<label>Include drug/dose extended details</label>
+								</div>
+								<div class="ui styled segment">
+									<div class="ui checkbox">
+										<input type="checkbox" name="includetimesincedose" id="includetimesincedose" value="1" <? if ($a['includetimesincedose']) echo "checked"; ?> onChange="CheckForDrugCriteria()">
+										<label>Include <b>time since dose</b> <i class="small blue question circle outline icon" title="Includes this dose as the first dose of the specified time period, and calculates 'time since dose' for all other events that happen within the specified timeframe"></i></label>
+									</div>
+
+									<div class="ui field">
+										<label>Dose variable(s)</label>
+										<select class="ui dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple">
+										<?
+											$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+											$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+												$drugname = $rowA['drug_name'];
+												$selected = "";
+												if (is_array($a['dosevariable']))
+													if (in_array($drugname, $a['dosevariable']))
+														$selected = "selected";
+												if (trim($drugname) == trim($a['dosevariable']))
+													$selected = "selected";
+												?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
+											}
+										?>
+										</select>
+									</div>
+
+									<div class="ui field">
+										<label>Group dose time by</label>
+										<select name="dosetimerange" id="dosetimerange" onChange="CheckForDrugCriteria()" class="ui dropdown">
+											<!--<option value="hour">Hour-->
+											<option value="day" selected>Day
+											<!--<option value="week">Week
+											<option value="month">Month
+											<option value="year">Year-->
+										</select>
+									</div>
+
+									<div class="ui field">
+										<label>Display time since dose in</label>
+										<select name="dosedisplaytime" id="dosedisplaytime" onChange="CheckForDrugCriteria()" class="ui dropdown">
+											<option value="sec" <? if ($a['dosedisplaytime'] == "sec") echo "selected"; ?> >Seconds
+											<option value="min" <? if ( ($a['dosedisplaytime'] == "min") || ($a['dosedisplaytime'] == "")) echo "selected"; ?> >Minutes
+											<option value="hour" <? if ($a['dosedisplaytime'] == "hour") echo "selected"; ?> >Hours
+										</select>
+									</div>
 								</div>
 								
 							</div>
@@ -707,30 +823,74 @@
 						<br>
 						<b>Grouping Options</b>
 						<br>
-						<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>Group by event DATE <i class="blue question circle icon" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."></i><br>
-						<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>Collapse variables <i class="blue question circle icon" title="Expression to match a grouping, <i>by day</i>. For example, to collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i> <input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>" placeholder="Matching expression...">
+						<div class="ui checkbox">
+							<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>
+							<label>Group by event DATE <i class="small blue question circle outline icon" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."></i></label>
+						</div>
+						<div class="ui inline fields">
+							<div class="ui checkbox">
+								<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>
+								<label>Collapse variables <i class="small blue question circle outline icon" title="Expression to match a grouping, <i>by day</i>. For example, to collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i></label>
+							</div>
+							<input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>" placeholder="Collapse by expression...">
+						</div>
 						<br>
 						<b>Output Options</b>
 						<br>
-						<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data <i class="blue question circle icon" title="Includes subjects which are part of this project, but have none of the selected data"></i><br>
-						Blank value string <input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required> <i class="blue question circle icon" title="If a value exists, but the value is blank, display this string instead"></i><br>
-						Missing value string <i class="blue question circle icon" title="If a value is missing, display this string instead"></i> <input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder..."><br>
-						<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>Include event duration <i class="blue question circle icon" title="If an event has a start and stop time, include the duration in the output"></i><br>
-						<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>Include end datetime <i class="blue question circle icon" title="If an event has a end date, include the end date in the output"></i><br>
-						<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>Include subject heigh/weight <i class="blue question circle icon" title="Include the subject's height and weight in the output"></i><br>
-						<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>Include subject date of birth <i class="blue question circle icon" title="Include the subject's date of birth in the output"></i><br>
+						<div class="ui checkbox">
+							<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>
+							<label>Include subjects without data <i class="small blue question circle outline icon" title="Includes subjects which are part of this project, but have none of the selected data"></i></label>
+						</div>
+						<br>
+						<div class="ui field">
+							<label>Blank value string <i class="small blue question circle outline icon" title="If a value exists, but the value is blank, display this string instead"></i></label>
+							<input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required>
+						</div>
+						<div class="ui field">
+							<label>Missing value string <i class="small blue question circle outline icon" title="If a value is missing, display this string instead"></i></label>
+							<input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder...">
+						</div>
+						<div class="ui checkbox">
+							<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>
+							<label>Include event duration <i class="small blue question circle outline icon" title="If an event has a start and stop time, include the duration in the output"></i></label>
+						</div>
+						<br>
+						<div class="ui checkbox">
+							<input type="checkbox" name="includeenddate" value="1" <? if ($a['includeenddate']) echo "checked"; ?>>
+							<label>Include end datetime <i class="small blue question circle outline icon" title="If an event has a end date, include the end date in the output"></i></label>
+						</div>
+						<br>
+						<div class="ui checkbox">
+							<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>
+							<label>Include subject heigh/weight <i class="small blue question circle outline icon" title="Include the subject's height and weight in the output"></i></label>
+						</div>
+						<br>
+						<div class="ui checkbox">
+							<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>
+							<label>Include subject date of birth <i class="small blue question circle outline icon" title="Include the subject's date of birth in the output"></i></label>
+						</div>
 						<br>
 						<table>
 							<tr>
 								<td width="50%">
 									Reporting format<br>
-									<input type="radio" name="reportformat" value="long" <? if (($a['reportformat'] == "long") || ($a['reportformat'] == "")) echo "checked"; ?>>Long<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="reportformat" value="long" <? if (($a['reportformat'] == "long") || ($a['reportformat'] == "")) echo "checked"; ?>>
+										<label>Long</label>
+									</div>
 									<!--<input type="radio" name="reportformat" value="wide" <? if ($a['reportformat'] == "wide") echo "checked"; ?>>Wide-->
 								</td>
 								<td style="padding-left: 20px">
 									Output format<br>
-									<input type="radio" name="outputformat" value="table" <? if (($a['outputformat'] == "table") || ($a['outputformat'] == "")) echo "checked"; ?>>Table (screen)<br>
-									<input type="radio" name="outputformat" value="csv" <? if ($a['outputformat'] == "csv") echo "checked"; ?>>.csv
+									<div class="ui radio checkbox">
+										<input type="radio" name="outputformat" value="table" <? if (($a['outputformat'] == "table") || ($a['outputformat'] == "")) echo "checked"; ?>>
+										<label>Table (screen)</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="outputformat" value="csv" <? if ($a['outputformat'] == "csv") echo "checked"; ?>>
+										<label>.csv</label>
+									</div>
 								</td>
 							</tr>
 						</table>
@@ -738,15 +898,15 @@
 						<button class="ui fluid primary button" onClick="document.analysisbuilder.action.value='viewanalysissummary'; return;"><i class="search icon"></i>Update Summary</button>
 						<br><br>
 						<div class="ui fluid action input">
-							<input type="text" name="savedsearchname" placeholder="Saved search name...">
+							<input type="text" name="savedsearchname" placeholder="Saved search name..." value="<?=$a['savedsearchname']?>">
 							<button class="ui basic compact button" onClick="document.analysisbuilder.action.value='savesearch'; return;"><i class="save icon"></i> Save search</button>
 						</div>
 						</form>
 					</div>
-				</td>
+				</div>
 				
 				<!-- ************** right side results table ************** -->
-				<td width="80%" style="vertical-align: top; overflow: auto">
+				<div class="ui twelve wide column" style="overflow: auto; padding:0px" id="resultsTable">
 					<?
 						if ($a['reportformat'] == "long") {
 							list($h, $t, $n) = CreateLongReport($projectid, $a);
@@ -774,9 +934,7 @@
 							PrintCSV($h, $t, $a);
 						}
 					?>
-				</td>
-			</tr>
-		</table>
+				</div>
 		<?
 	}
 

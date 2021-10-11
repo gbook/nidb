@@ -372,7 +372,7 @@
 		if (array_key_exists($sat_hol_date, $holidays)) { $sat_holidays = implode("<br>", $holidays[$sat_hol_date]); }
 	
 		?>
-			<div class="ui grid">
+			<div class="ui compact grid">
 				<!-- main day/date row -->
 				<div class="row">
 					<div class="one wide center aligned column">
@@ -905,7 +905,7 @@
 		$holidays[observed_day($year, 7, 4)][] = "Independence Day (observed)";
 		$holidays["$year-08-04"][] = "Greg's Birthday";
 		$holidays[get_holiday($year, 9, 1, 1)][] = "Labor Day";
-		$holidays[get_holiday($year, 10, 1, 2)][] = "Columbus Day";
+		$holidays[get_holiday($year, 10, 1, 2)][] = "Indigenous People's Day";
 		$holidays["$year-10-31"][] = "Halloween";
 		$holidays[get_holiday($year, 11, 4, 4)][] = "Thanksgiving";
 		$holidays["$year-12-24"][] = "Christmas Eve";

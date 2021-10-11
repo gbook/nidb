@@ -245,7 +245,7 @@
 		.tiny { font-size: 8pt; color: gray; }
 		.fieldhover { white-space: nowrap; }
 		.fieldhover:hover { font-weight: bold; }
-		.fieldlabel { color: #444; text-align: right; vertical-align: middle; }
+		.fieldlabel { color: #444; text-align: right; vertical-align: top; }
 		.importantfield { background-color: lightyellow; }
 		input.hasdata { font-weight: bold; box-shadow: 0px 0px 0px 2px #3B5998; }
 		.slabel { font-size: 12pt; }
@@ -877,45 +877,56 @@
 
 						<div class="ui bottom attached active tab segment" data-tab="first">
 							<div class="ui grouped fields">
-								<div class="field">
-									<div class="ui radio checkbox">
-										<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>>
-										<label>Group by study</label>
-									</div>
+								<div class="ui radio checkbox">
+									<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
+									<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>>
+									<label>Group by study</label>
 								</div>
-								<div class="field">
-									<div class="ui radio checkbox">
-										<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>>
-										<label>Display all series (use for "Select All")</label>
-									</div>
+								<br>
+								<div class="ui radio checkbox">
+									<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
+									<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>>
+									<label>Display all series (use for "Select All")</label>
 								</div>
-								<div class="field">
-									<div class="ui radio checkbox">
-										<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
-										<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>>
-										<label>Longitudinal</label>
-									</div>
+								<br>
+								<div class="ui radio checkbox">
+									<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
+									<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>>
+									<label>Longitudinal</label>
 								</div>
 							</div>
 						</div>
 						
 						<div class="ui bottom attached tab segment" data-tab="second">
-							<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>> Table<br>
-							
-							<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>> Spreadsheet <span class="tiny">.csv</span><br>
-							
-							<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>> Enrollment List<br>
-							
-							<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>> Subject List<br>
-							
-							<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>> Thumbnails<br>
+							<div class="ui radio checkbox">
+								<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
+								<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>>
+								<label>Table</label>
+							</div>
+							<br>
+							<div class="ui radio checkbox">
+								<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
+								<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>>
+								<label>Spreadsheet <span class="tiny">.csv</span></label>
+							</div>
+							<br>
+							<div class="ui radio checkbox">
+								<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
+								<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>>
+								<label>Enrollment List</label>
+							</div>
+							<br>
+							<div class="ui radio checkbox">
+								<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
+								<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>>
+								<label>Subject List</label>
+							</div>
+							<br>
+							<div class="ui radio checkbox">
+								<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
+								<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>>
+								<label>Thumbnails</label>
+							</div>
 						</div>
 						
 						<div class="ui bottom attached tab segment" data-tab="third">
@@ -950,29 +961,56 @@
 								<tr>
 									<td class="fieldlabel" width="150px">Result type</td>
 									<td>
-										<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == '') { echo "checked"; } ?>>None<br>
-										<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>Value<br>
-										<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>Image<br>
-										<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>File<br>
-										<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>HTML<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="s_pipelineresulttype" value="" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == '') { echo "checked"; } ?>>
+											<label>None</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="s_pipelineresulttype" value="v" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'v') { echo "checked"; } ?>>
+											<label>Value</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="s_pipelineresulttype" value="i" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'i') { echo "checked"; } ?>>
+											<label>Image</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="s_pipelineresulttype" value="f" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'f') { echo "checked"; } ?>>
+											<label>File</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="s_pipelineresulttype" value="h" onClick="SwitchOption('viewpipeline')" <? if ($s['s_pipelineresulttype'] == 'h') { echo "checked"; } ?>>
+											<label>HTML</label>
+										</div>
 									</td>
 								</tr>
 								<tr>
-									<td class="fieldlabel" width="150px">Result value</td>
+									<td class="fieldlabel" width="150px" valign="top">Result value</td>
 									<td valign="top">
-										<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
-											<option value="=" <? if ($s['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
-											<option value=">" <? if ($s['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
-											<option value=">=" <? if ($s['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
-											<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
-											<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
-										</select>
-										<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox"><br>
-										<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span>
+										<div class="ui inline field">
+											<select name="s_pipelineresultcompare" onClick="SwitchOption('viewpipeline')">
+												<option value="=" <? if ($s['s_pipelineresultcompare'] == '=') { echo "selected"; } ?>>=
+												<option value=">" <? if ($s['s_pipelineresultcompare'] == '>') { echo "selected"; } ?>>&gt;
+												<option value=">=" <? if ($s['s_pipelineresultcompare'] == '>=') { echo "selected"; } ?>>&gt;=
+												<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
+												<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
+											</select>
+											<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox">
+										</div>
+										<div class="ui checkbox">
+											<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>
+											<label>Colorize <span class="tiny">low <img src="images/colorbar.png"> high</span></label>
+										</div>
 										<br>
 										<!--<input type="checkbox" name="s_pipelinecormatrix" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecormatrix'] == 1) { echo "checked"; } ?>>Display correlation matrix <span class="tiny">Slow for large result sets</span>
 										<br>-->
-										<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>Display result statistics
+										<div class="ui checkbox">
+											<input type="checkbox" name="s_pipelineresultstats" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelineresultstats'] == 1) { echo "checked"; } ?>>
+											<label>Display result statistics</label>
+										</div>
 									</td>
 								</tr>
 							</table>
