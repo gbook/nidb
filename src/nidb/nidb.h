@@ -25,7 +25,7 @@
 
 #define VERSION_MAJ "2021"
 #define VERSION_MIN "10"
-#define BUILD_NUM "697"
+#define BUILD_NUM "699"
 
 #include <QFile>
 #include <QString>
