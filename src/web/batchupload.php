@@ -197,7 +197,7 @@
 							<td>
 								<span class="tiny">
 								<?
-									list($datapath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+									list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 									if (strtolower($modality) == "mr")
 										$datapath = "$datapath/beh";
 									$filelist = array_diff(scandir($datapath), array('..', '.'));
@@ -248,10 +248,10 @@
 			return 0;
 		}
 		
-		list($outpath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+		list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 		
 		if ($modality == "mr")
-			$outpath = "$outpath/beh";
+			$outpath = "$seriespath/beh";
 
 		/* go through all the files and save them */
 		mkdir($outpath, 0777, true);

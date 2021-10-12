@@ -255,13 +255,13 @@
 									}
 								?>
 								</td>
-								<form action="managefiles.php">
+								<form action="managefiles.php" class="ui form">
 									<input type="hidden" name="action" value="rename">
 									<input type="hidden" name="seriesid" value="<?=$seriesid?>">
 									<input type="hidden" name="modality" value="<?=$modality?>">
 									<input type="hidden" name="datatype" value="<?=$datatype?>">
 									<input type="hidden" name="filename" value="<?=$file?>">
-									<td><input type="text" size="50" maxlength="255" name="newfilename" value="<?=$file?>"></td>
+									<td><div class="ui fluid input"><input type="text" maxlength="255" name="newfilename" value="<?=$file?>"></div></td>
 									<input type="submit" style="display:none">
 								</form>
 								<td><?=$filetype?></td>
@@ -269,7 +269,7 @@
 								<td><?=$ctime?></td>
 								<td><?=$atime?></td>
 								<td><?=$mtime?></td>
-								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>" style="color: white; background-color: darkred; padding: 1px 5px; font-weight: bold"><i class="trash icon"></i></a></td>
+								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>"><i class="ui large red trash alternate icon"></i></a></td>
 							</tr>
 							<?
 						}

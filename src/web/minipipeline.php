@@ -221,7 +221,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			$logs = str_replace("<", "&lt;", $logs);
 			$logs = str_replace(">", "&gt;", $logs);
 			
-			list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality)
+			list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality)
 			?>
 			<div class="ui scrolling modal" id="modal<?=$i?>">
 				<i class="close icon"></i>

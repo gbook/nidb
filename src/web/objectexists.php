@@ -39,7 +39,7 @@
 	if (contains($ref, $_SERVER["SERVER_NAME"] . "/studies.php") || contains($ref, $_SERVER["SERVER_ADDR"] . "/studies.php")) {
 		
 		if ($action == "") {
-			list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+			list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 			
 			if ($datatype == "dicom") {
 				$dicoms = glob("$path/*.dcm");
@@ -65,7 +65,7 @@
 			}
 		}
 		elseif ($action == "thumbnail") {
-			list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+			list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 			$thumbpath = "$path/../thumb.png";
 			if (file_exists($thumbpath)) {
 				?>

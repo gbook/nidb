@@ -333,7 +333,7 @@
 				//echo "$sqlstring<br>";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* CALULATE&POPULATE GROUP ID */
-				if ($groupid == "") {
+				if ($groupid != "") {
 					$groupid = mysqli_insert_id($GLOBALS['linki']);
 					$sqlstring = "update calendar_appointments set appt_groupid = $groupid where appt_id = $groupid";
 					//echo "$sqlstring<br>";
@@ -342,10 +342,12 @@
 				
 			}
 			else {
-				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 1) {
-					$repeats = true;
+				if ($groupid != "") {
+					$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 1) {
+						$repeats = true;
+					}
 				}
 				
 				if ($editall) {

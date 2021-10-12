@@ -595,7 +595,11 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of EEG protocols from this project */
-										$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										if ($projectid == "")
+											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										else
+											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+											
 										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
@@ -625,7 +629,11 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of ET protocols from this project */
-										$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										if ($projectid == "")
+											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										else
+											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+											
 										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
@@ -651,7 +659,11 @@
 								<div class="ui field">
 									Pipeline
 									<select class="ui dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
+										if ($projectid == "")
+											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id group by a.pipeline_id) order by pipeline_name";
+										else
+											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
+											
 										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
 										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 											$pipelineid = $row2['pipeline_id'];
@@ -687,7 +699,11 @@
 								<div class="ui field">
 									Measure name(s)
 									<select class="ui dropdown" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
+										if ($projectid == "")
+											$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id order by c.measure_name";
+										else
+											$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid order by c.measure_name";
+											
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$measurename = $rowA['measure_name'];
@@ -717,7 +733,10 @@
 								<div class="ui field">
 									<label>Vital name(s)</label>
 									<select class="ui dropdown" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
-										$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
+										if ($projectid == "")
+											$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id order by c.vital_name";
+										else
+											$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$vitalname = $rowA['vital_name'];
@@ -746,7 +765,11 @@
 									<label>Drug variable name(s) <i class="small blue question circle outline icon" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i></label>
 									<select class="ui dropdown" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
-										$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+										if ($projectid == "")
+											$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id order by c.drug_name";
+										else
+											$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+											
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$drugname = $rowA['drug_name'];
@@ -780,7 +803,10 @@
 										<label>Dose variable(s)</label>
 										<select class="ui dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple">
 										<?
-											$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
+											if ($projectid == "")
+												$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id order by c.drug_name";
+											else
+												$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid order by c.drug_name";
 											$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$drugname = $rowA['drug_name'];

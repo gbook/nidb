@@ -426,8 +426,8 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$seriesid = $row[$modality."series_id"];
 				
-					list($seriespath, $qpath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $seriespath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
+					list($datapath, $seriespath, $qpath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $datapath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
 					echo "<li>Moving data [<tt style='color:darkred'>$systemstring</tt>]";
 					echo "<pre>" . shell_exec($systemstring) . "</pre>";
 
@@ -700,49 +700,52 @@
 		$modality = strtolower($modality);
 
 		?>
-		<form method="post" action="studies.php">
-		<input type="hidden" name="action" value="updateseriesnotes">
-		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<table class="ui very compact celled collapsing grey table">
-			<thead>
-				<tr>
-					<th>Series</th>
-					<th>Description</th>
-					<th>Note</th>
-				</tr>
-			</thead>
-			<tbody>
-			<?
-			foreach ($seriesids as $seriesid) {
-				if ((is_numeric($seriesid)) && ($seriesid != "")) {
-					$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$seriesnum = $row['series_num'];
-					$seriesdesc = $row['series_desc'];
-					$seriesnote = $row['series_notes'];
-					?>
+		<div class="ui text container">
+			<form method="post" action="studies.php" class="ui form">
+			<input type="hidden" name="action" value="updateseriesnotes">
+			<input type="hidden" name="studyid" value="<?=$studyid?>">
+			<table class="ui celled top attached grey table">
+				<thead>
 					<tr>
-						<td><?=$seriesnum?></td>
-						<td class="tt"><?=$seriesdesc?></td>
-						<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=$seriesnote?>" style="font-family: monospace;"></td>
+						<th>Series</th>
+						<th>Description</th>
+						<th>Note</th>
 					</tr>
-					<?
+				</thead>
+				<tbody>
+				<?
+				foreach ($seriesids as $seriesid) {
+					if ((is_numeric($seriesid)) && ($seriesid != "")) {
+						$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						$seriesnum = $row['series_num'];
+						$seriesdesc = $row['series_desc'];
+						$seriesnote = $row['series_notes'];
+						?>
+						<tr>
+							<td><?=$seriesnum?></td>
+							<td class="tt"><?=$seriesdesc?></td>
+							<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=$seriesnote?>" style="font-family: monospace;"></td>
+						</tr>
+						<?
+					}
+					else {
+						?>
+						<tr>
+							<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
+						</tr>
+						<?
+					}
 				}
-				else {
-					?>
-					<tr>
-						<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
-					</tr>
-					<?
-				}
-			}
-		?>
-			<tr>
-				<td colspan="5" align="right"><input type="submit" value="Save notes" class="ui primary button"></td>
-			</tr>
-		</table>
-		</form>
+			?>
+			</table>
+				<div class="ui bottom attached segment">
+					<a href="studies.php?id=<?=$studyid?>" class="ui button">Cancel</a>
+					<input type="submit" value="Save notes" class="ui primary button">
+				</div>
+			</form>
+		</div>
 		<?
 	}
 
@@ -2299,7 +2302,7 @@
 				<h3>With Selected Series...</h3>
 				<button class="ui fluid button" name="renameseriesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i></i>Rename</button>
 				<br>
-				<button class="ui fluid button" name="updateseriesnotesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Update notes</button>
+				<button class="ui fluid button" name="updateseriesnotesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Edit notes</button>
 				<br>
 				<button class="ui fluid button" name="moveseriestonewstudy" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</button>
 				<br>

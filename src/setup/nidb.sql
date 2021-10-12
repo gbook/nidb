@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 27, 2021 at 08:05 PM
+-- Generation Time: Oct 12, 2021 at 08:09 PM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -814,6 +814,28 @@ CREATE TABLE `data_requests` (
   `req_results` text DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Deprecated' ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `doc_series`
+--
+
+CREATE TABLE `doc_series` (
+  `docseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
+  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -3565,6 +3587,13 @@ ALTER TABLE `data_requests`
   ADD KEY `req_status` (`req_status`);
 
 --
+-- Indexes for table `doc_series`
+--
+ALTER TABLE `doc_series`
+  ADD PRIMARY KEY (`docseries_id`),
+  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE;
+
+--
 -- Indexes for table `drugnames`
 --
 ALTER TABLE `drugnames`
@@ -4633,6 +4662,12 @@ ALTER TABLE `data_dictionary`
 --
 ALTER TABLE `data_requests`
   MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `doc_series`
+--
+ALTER TABLE `doc_series`
+  MODIFY `docseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `drugnames`

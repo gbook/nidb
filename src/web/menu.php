@@ -117,14 +117,24 @@
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="measures.php") {
+		elseif ($page == "studies.php" || $page=="measures.php" || $page == "managefiles.php") {
 			$studyid = GetVariable("id");
+			$seriesid = GetVariable("seriesid");
+			$modality = GetVariable("modality");
 			$enrollmentid = GetVariable("enrollmentid");
 			
 			if ($studyid == "") {
 				$studyid = GetVariable("studyid");
 			}
-			if ($studyid != "") {
+			if (($seriesid != "") && ($modality != "")) {
+				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+				?>
+				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
+				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
+				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
+				<?
+			}
+			elseif ($studyid != "") {
 				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>

@@ -2489,7 +2489,7 @@
 		</div>
 	</div>
 	
-	<table class="ui small celled selectable grey very compact table">
+	<table class="ui celled selectable grey compact top attached table">
 		<thead>
 			<tr>
 				<th align="left">&nbsp;</th>
@@ -2516,19 +2516,45 @@
 		});
 		</script>
 		<tbody>
-			<form method="post" action="subjects.php">
+			<form method="post" action="subjects.php" name="subjectlist" class="ui form">
 			<input type="hidden" name="action" value="search">
 			<tr>
 				<td>&nbsp;</td>
-				<td align="left"><input type="text" placeholder="UID" name="searchuid" id="searchuid" value="<?=$searchuid?>" size="15" autofocus="autofocus"></td>
-				<td align="left"><input type="text" placeholder="Alternate UID" name="searchaltuid" value="<?=$searchaltuid?>" size="20"></td>
-				<td align="left"><input type="text" placeholder="Name" name="searchname" value="<?=$searchname?>" size="40"></td>
-				<td align="left"><input type="text" placeholder="Sex" name="searchgender" value="<?=$searchgender?>" size="2" maxlength="2"></td>
-				<td align="left"><input type="text" placeholder="YYYY-MM-DD" name="searchdob" value="<?=$searchdob?>" size="10"></td>
+				<td>
+					<div class="ui input">
+						<input type="text" placeholder="UID" name="searchuid" id="searchuid" value="<?=$searchuid?>" autofocus="autofocus">
+					</div>
+				</td>
+				<td>
+					<div class="ui input">
+						<input type="text" placeholder="Alternate UID" name="searchaltuid" value="<?=$searchaltuid?>">
+					</div>
+				</td>
+				<td>
+					<div class="ui input">
+						<input type="text" placeholder="Name" name="searchname" value="<?=$searchname?>">
+					</div>
+				</td>
+				<td>
+					<div class="ui input">
+						<input type="text" placeholder="Sex" name="searchgender" value="<?=$searchgender?>" size="2" maxlength="2">
+					</div>
+				</td>
+				<td>
+					<div class="ui input">
+						<input type="text" placeholder="YYYY-MM-DD" name="searchdob" value="<?=$searchdob?>">
+					</div>
+				</td>
 				<td> - </td>
-				<td align="left"><input type="checkbox" name="searchactive" <? if ($searchactive == '1') { echo "checked"; } ?> value="1"></td>
+				<td>
+					<div class="ui checkbox">
+						<input type="checkbox" name="searchactive" <? if ($searchactive == '1') { echo "checked"; } ?> value="1">
+					</div>
+				</td>
 				<td> - </td>
-				<td align="left"><input type="submit" value="Search"></td>
+				<td>
+					<input type="submit" value="Search" class="ui primary button">
+				</td>
 			</tr>
 			</form>
 			
@@ -2640,44 +2666,43 @@
 								<? } ?>
 								<td></td>
 								<? if ($GLOBALS['issiteadmin']) { ?>
-								<td class="rightcheck"><input type="checkbox" name="ids[]" value="<?=$id?>"></td>
+								<td style="background-color: Lavender">
+									<input type="checkbox" name="ids[]" value="<?=$id?>">
+								</td>
 								<? } ?>
 							</tr>
 							<? 
 						}
 						$subjectsfound = 1;
 					}
-				?>
-				<tr>
-					<td colspan="8">
-						<br><br>
-						<select name="subjectgroupid">
-							<?
-								$userid = $_SESSION['userid'];
-							
-								$sqlstring = "select * from groups where group_type = 'subject' and group_owner = '$userid'";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$groupid = $row['group_id'];
-									$groupname = $row['group_name'];
-									?>
-									<option value="<?=$groupid?>"><?=$groupname?>
-									<?
-								}
-							?>
-						</select>
-						<input type="submit" name="addtogroup" value="Add to group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
-					</td>
-					<td colspan="3" align="right">
-						<? if ($GLOBALS['issiteadmin']) {?>
-						<input type="submit" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" name="obliterate" value="Obliterate subjects" title="Remove all database entries for the subject and move their data to a /deleted directory" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='obliterate'"><br>
-						<? } ?>
-					</td>
-				</tr>
-				<?
 				}
 				?>
 			</table>
+			<div class="ui bottom attached menu">
+				<div class="small item">
+					<select name="subjectgroupid" class="ui dropdown">
+						<?
+							$userid = $_SESSION['userid'];
+						
+							$sqlstring = "select * from groups where group_type = 'subject' and group_owner = '$userid'";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$groupid = $row['group_id'];
+								$groupname = $row['group_name'];
+								?>
+								<option value="<?=$groupid?>"><?=$groupname?>
+								<?
+							}
+						?>
+					</select>
+					<input type="submit" class="button" name="addtogroup" value="Add to group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
+				</div>
+				<div class="right menu">
+					<? if ($GLOBALS['issiteadmin']) {?>
+					<a class="item" style="background-color: Lavender" title="Remove all database entries for the subject and move their data to a /deleted directory" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='obliterate'">Obliterate Subjects</a>
+					<? } ?>
+				</div>
+			</div>
 			</form>
 		</tbody>
 	</table>

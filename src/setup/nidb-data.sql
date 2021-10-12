@@ -22,6 +22,7 @@ INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`
 (18, 'CONSENT', 'Consent form', 1),
 (19, 'TMS', 'Transcranial magnetic stimulation', 1),
 (20, 'GSR', 'Galvanic skin response', 1),
+(20, 'DOC', 'Documents', 1),
 (21, 'TASK', 'Task', 1);
 
 delete from modules;
