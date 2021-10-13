@@ -40,12 +40,13 @@ phpMyAdmin is not required to use NiDB, but is extremely useful to maintain the 
 
 ### Changing Passwords
 The default usernames and passwords are as follows, change them using the method listed. Changed MariaDB passwords must also be updated in the config file (Edit `/nidb/nidb.cfg` or use **Admin** --> **Settings**)
+
 |Username|Default password|How to change password|
 |---:|---|---|
-(Linux)	`nidb`|`password`|(as root) `passwd nidb`<br>(as nidb) `passwd`
-(MariaDB)	`root`|`password`|Login to http://localhost/phpMyAdmin using the root MySQL account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the root account that has a `‘%’` as the hostname. Then click **Change password** button at the top of the page. Enter a new password and click **Go**|
-(MariaDB)	`nidb`|`password`|See above|
-(NiDB) `admin`|`password`|When logged in as `admin`, go to **My Account**. Enter a new password in the password field(s). Click **Save** to change the password.
+|(Linux)	`nidb`|`password`|(as root) `passwd nidb`<br>(as nidb) `passwd`|
+|(MariaDB)	`root`|`password`|Login to http://localhost/phpMyAdmin using the root MySQL account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the root account that has a `‘%’` as the hostname. Then click **Change password** button at the top of the page. Enter a new password and click **Go**|
+|(MariaDB)	`nidb`|`password`|See above|
+|(NiDB) `admin`|`password`|When logged in as `admin`, go to **My Account**. Enter a new password in the password field(s). Click **Save** to change the password.|
 
 
 ## Upgrade Existing Installation
@@ -54,6 +55,8 @@ The default usernames and passwords are as follows, change them using the method
 3. Make sure your IP address is set in the `[setupips]` variable in the config file. This can be done manually by editing `/nidb/nidb.cfg` or by going to **Admin** &#8594; **Settings**
 4. Within NiDB, go to **Admin** &#8594; **Settings** &#8594; **Setup/upgrade**
 5. Follow the instructions on the webpages to complete the upgrade
+
+![image](https://user-images.githubusercontent.com/8302215/137183747-51e2eeee-c97f-496f-bf4d-f2456be054d7.png)
 
 ## Migrate Existing Installation to New Server
 1. On the *old server*, export the SQL database
