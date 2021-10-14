@@ -1,6 +1,7 @@
 # NeuroInformatics Database
 ![Image](http://neuroinfodb.org/wp-content/uploads/2021/05/NIDB_logo-300x115.png)
 
+<a href="usage.html">Usage</a>
 ## New Installation
 
 ### Pre-requisities
