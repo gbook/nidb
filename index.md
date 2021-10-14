@@ -6,9 +6,9 @@
 
 ### Pre-requisities
 
-1. **Hardware** - More RAM, faster hard drive(s), and more CPU cores are all beneficial when querying data or performing analysis. There are no minimum specifications. If the hardware can run CentOS 8, then it should be able to run NiDB.
-2. **CentOS 8** - NiDB currently runs only on CentOS8 (or CentOS 8 Stream). Some package dependences may have different names between stream and regular CentOS.
-3. **FSL** - Follow installation instructions from https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation After installation, note the location of FSL, usually `/usr/local/fsl/bin`. Or try these commands to install FSL.
+1. **Hardware** - There are no minimum specifications. If the hardware can run CentOS 8, then it should be able to run NiDB.
+2. **CentOS 8** - NiDB runs only on CentOS8 (or CentOS 8 Stream).
+3. **FSL** - Install FSL from https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation After installation, note the location of FSL, usually `/usr/local/fsl/bin`. Or try these commands to install FSL.
     * `wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py # this may work`
     * `yum install python2`
     * `python2 fslinstaller.py`
