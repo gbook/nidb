@@ -28,14 +28,12 @@ Get the most recent .rpm from github. The latest version may be different than t
 Visit http://localhost/setup.php and follow the pages.
 
 **Entry page** - Turning off access to the website and disabling all modules can help prevent errors during the upgrade. Always remember to backup the database! Click **Next** to continue.
-|![image](https://user-images.githubusercontent.com/8302215/137331276-17cd180c-91ec-4220-9c5f-fc55888dfebb.png)|
-|---|
+<kbd>![image](https://user-images.githubusercontent.com/8302215/137331276-17cd180c-91ec-4220-9c5f-fc55888dfebb.png)</kbd>
 
 <br>
 
 **Pre-requisites** - This page will check for CentOS packages and display an error if a package is missing or the wrong version. If missing any packages, check the output from the NiDB rpm installation or manually install the missing packages. After packages are installed, then refresh this page. Once all pre-requisities are met, click **Next** to continue.
-|![image](https://user-images.githubusercontent.com/8302215/137331530-3d1f31f3-8f96-480f-a5d7-42be7f382adc.png)|
-|---|
+> ![image](https://user-images.githubusercontent.com/8302215/137331530-3d1f31f3-8f96-480f-a5d7-42be7f382adc.png)
 
 <br>
 
