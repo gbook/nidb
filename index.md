@@ -54,7 +54,7 @@ Quick upgrade instructions below. See <a href="upgrade.html">detailed upgrade</a
 1. Download latest NiDB release.
 2. `yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm`
 3. Make sure your IP address is set in the `[setupips]` variable in the config file. This can be done manually by editing `/nidb/nidb.cfg` or by going to **Admin** &#8594; **Settings**
-4. Within NiDB, go to **Admin** &#8594; **Settings** &#8594; **Setup/upgrade**
+4. Go to http://localhost/setup.php (Or within NiDB, go to **Admin** &#8594; **Setup/upgrade**)
 5. Follow the instructions on the webpages to complete the upgrade
 
 ## Migrate Existing Installation to New Server
