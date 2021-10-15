@@ -54,3 +54,14 @@ Visit http://localhost/setup.php and follow the pages.
 
 All finished! Click **Done** to complete the upgrade.
 > ![image](https://user-images.githubusercontent.com/8302215/137332036-d85cc1e9-c669-4777-bb84-47cf0081be12.png)
+
+# Upgrade issues
+
+## Schema upgrade errors
+The database schema upgrade may not display a SQL error if it occurs, but the errors are stored in the `error_log` table in the database. Find the latest error(s) and the description will help diagnose the issue.
+
+### Row length errors
+In phpMyAdmin, select the table in question. Under the **operations** tab, check the table type. If it is `Innodb`, change this to `Aria`, and click **Go**.
+
+### Primary key errors
+If the primary key error references a TEXT column, in other words if a TEXT column has a primary key, then delete the key for that column. This can be done in phpMyAdmin.
