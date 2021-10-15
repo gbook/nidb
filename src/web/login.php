@@ -341,13 +341,19 @@ window.onload = AreCookiesEnabled;
 						?>
 						<div class="ui two column grid">
 							<div class="right aligned column">
-								<span style="font-size: larger">Username</span><br><span class="tiny"> or email address</span>
+								<div class="ui header">
+									Username
+									<div class="sub header">or email address</div>
+								</div>
 							</div>
 							<div class="column">
 								<input type="text" name="username" maxlength="50" autofocus="autofocus">
 							</div>
 							<div class="right aligned column">
-								<span style="font-size: larger">Password</span><br><span class="tiny">Case sensitive</span>
+								<div class="ui header">
+									Password
+									<div class="sub header">case sensitive</div>
+								</div>
 							</div>
 							<div class="column">
 								<input type="password" name="password" maxlength="50">
@@ -359,7 +365,7 @@ window.onload = AreCookiesEnabled;
 								Forgot password? <a href="signup.php?a=r">Reset it</a>.
 								<? } ?>
 							</div>
-							<div class="column">
+							<div class="right aligned column">
 								<input class="ui primary button" type="submit" value="Login">
 							</div>
 						</div>

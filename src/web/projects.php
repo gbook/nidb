@@ -2496,31 +2496,6 @@
 								<td><?=$numstudies?></td>
 							</tr>
 							<tr>
-								<td class="right aligned top aligned"><h4 class="ui header">Age (years)</h4></td>
-								<td>
-									<table class="ui small very basic table">
-										<? list($n,$min,$max,$mean,$stdev) = arraystats($ages); ?>
-										<tr>
-											<td align="right" style="padding-right: 10px"><b>All</b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
-										</tr>
-										<?
-											foreach ($genders as $sex => $a) {
-												list($n,$min,$max,$mean,$stdev) = arraystats($a['ages']);
-												?>
-												<tr>
-													<td align="right" style="padding-right: 10px"><b><?=$sex?></b> (n=<?=$n?>)</td><td><?=number_format($mean,1)?><span class="tiny">yr</span> &plusmn;<?=number_format($stdev,1)?><span class="tiny">yr</span> (range: <?=number_format($min,1)?><span class="tiny">yr</span> to <?=number_format($max,1)?><span class="tiny">yr</span>)</td>
-												</tr>
-												<?
-											}
-										?>
-									</table>
-								</td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="ui header">Study date range</h4></td>
-								<td><?=$lowdate?> to <?=$highdate?></td>
-							</tr>
-							<tr>
 								<td class="right aligned"><h4 class="ui header">Remote connection params</h4></td>
 								<td>
 									Project ID: <?=$id?><br>

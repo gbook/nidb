@@ -354,13 +354,7 @@
 		<script>
 			$(document).ready(function(){
 				$('#pageloading').hide();
-				
 				document.getElementById("resultsTable").style.height = screen.availHeight * 0.75;
-				
-			});
-		
-			$(document).ready(function() {
-				$('.js-example-basic-multiple').select2();
 			});
 
 			window.onload = function exampleFunction() { 
@@ -504,7 +498,7 @@
 					<form method="post" action="analysisbuilder.php" class="ui form">
 						<input type="hidden" name="action" value="viewanalysissummary">
 						<div class="ui fluid action input">
-							<select name="projectid" class="ui fluid dropdown" required>
+							<select name="projectid" class="ui fluid search dropdown" required>
 								<option value="">Select Project...</option>
 								<option value="0">All Projects</option>
 								<?
@@ -624,7 +618,7 @@
 							<div class="content">
 								<div class="ui field">
 									<label>ET Protocol</label>
-									<select name="et_protocols[]" id="et_protocols" multiple onChange="CheckForETCriteria()" class="ui dropdown">
+									<select name="et_protocols[]" id="et_protocols" multiple onChange="CheckForETCriteria()" class="ui search dropdown">
 										<option value="" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>Select ET protocol(s)...
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
@@ -658,7 +652,7 @@
 							<div class="content">
 								<div class="ui field">
 									Pipeline
-									<select class="ui dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
+									<select class="ui search dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
 										if ($projectid == "")
 											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id group by a.pipeline_id) order by pipeline_name";
 										else
@@ -698,7 +692,7 @@
 							<div class="content">
 								<div class="ui field">
 									Measure name(s)
-									<select class="ui dropdown" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
+									<select class="ui search dropdown" name="measurename[]" id="measurename" onChange="CheckForMeasureCriteria()" multiple="multiple" style="width: 100%"><?
 										if ($projectid == "")
 											$sqlstringA = "SELECT distinct(c.measure_name) FROM measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id order by c.measure_name";
 										else
@@ -732,7 +726,7 @@
 							<div class="content">
 								<div class="ui field">
 									<label>Vital name(s)</label>
-									<select class="ui dropdown" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
+									<select class="ui search dropdown" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
 										if ($projectid == "")
 											$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id order by c.vital_name";
 										else
@@ -763,7 +757,7 @@
 							<div class="content">
 								<div class="ui field">
 									<label>Drug variable name(s) <i class="small blue question circle outline icon" title="Find all of the following drugs and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i></label>
-									<select class="ui dropdown" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
+									<select class="ui search dropdown" name="drugname[]" id="drugname" onChange="CheckForDrugCriteria()" multiple="multiple" style="width: 100%">
 									<?
 										if ($projectid == "")
 											$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id order by c.drug_name";
@@ -801,7 +795,7 @@
 
 									<div class="ui field">
 										<label>Dose variable(s)</label>
-										<select class="ui dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple">
+										<select class="ui search dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForDrugCriteria()" multiple="multiple">
 										<?
 											if ($projectid == "")
 												$sqlstringA = "SELECT distinct(c.drug_name) FROM drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id order by c.drug_name";

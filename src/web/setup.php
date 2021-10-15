@@ -275,6 +275,9 @@
 		<div class="ui bottom fixed inverted huge menu">
 			<div class="ui inverted huge right menu">
 				<div class="item">
+					<div class="ui huge right pointing orange label">
+						Click Next to continue
+					</div>
 					<a class="ui inverted huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
@@ -768,7 +771,7 @@
 			<? if ($step == "welcome") { ?>
 				<div class="active item">Welcome to NiDB Setup</div>
 			<? } else if (in_array($step, array("systemcheck","database1","database2","config","setupcomplete"))) { ?>
-				<div class="item"><i class="check circle icon"></i> Welcome to NiDB Setup</div>
+				<div class="item"><i class="inverted check circle icon"></i> Welcome to NiDB Setup</div>
 			<? } else { ?>
 				<div class="item">Welcome to NiDB Setup</div>
 			<? } ?>
@@ -776,7 +779,7 @@
 			<? if ($step == "systemcheck") { ?>
 				<div class="active item">System Check</div>
 			<? } else if (in_array($step, array("database1","database2","config","setupcomplete"))) { ?>
-				<div class="item"><i class="check circle icon"></i> System Check</div>
+				<div class="item"><i class="inverted check circle icon"></i> System Check</div>
 			<? } else { ?>
 				<div class="item">System Check</div>
 			<? } ?>
@@ -784,7 +787,7 @@
 			<? if ($step == "database") { ?>
 				<div class="active item">Database</div>
 			<? } else if (in_array($step, array("config","setupcomplete"))) { ?>
-				<div class="item"><i class="check circle icon"></i> Database</div>
+				<div class="item"><i class="inverted check circle icon"></i> Database</div>
 			<? } else { ?>
 				<div class="item">Database</div>
 			<? } ?>
@@ -792,13 +795,13 @@
 			<? if ($step == "config") { ?>
 				<div class="active item">Settings</div>
 			<? } else if (in_array($step, array("setupcomplete"))) { ?>
-				<div class="item"><i class="check circle icon"></i> Settings</div>
+				<div class="item"><i class="inverted check circle icon"></i> Settings</div>
 			<? } else { ?>
 				<div class="item">Settings</div>
 			<? } ?>
 
 			<? if ($step == "setupcomplete") { ?>
-				<div class="active item"><i class="check circle icon"></i> Setup Complete</div>
+				<div class="active item"><i class="inverted check circle icon"></i> Setup Complete</div>
 			<? } else { ?>
 				<div class="item">Setup Complete</div>
 			<? } ?>

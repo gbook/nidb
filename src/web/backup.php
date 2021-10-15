@@ -171,20 +171,20 @@
 						<?
 							if ($action == "marktapeAinserted") {
 								?>
-								<b>Step 1)</b> Insert tape labeled <tt>A<?=$tapenumber?></tt> into tape drive<br>
-								<b>Step 2)</b> <a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>A<?=$tapenumber?></tt> into tape drive<br>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeBinserted") {
 								?>
-								<b>Step 1)</b> Insert tape labeled <tt>B<?=$tapenumber?></tt> into tape drive<br>
-								<b>Step 2)</b> <a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>B<?=$tapenumber?></tt> into tape drive<br>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeCinserted") {
 								?>
-								<b>Step 1)</b> Insert tape labeled <tt>C<?=$tapenumber?></tt> into tape drive<br>
-								<b>Step 2)</b> <a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>C<?=$tapenumber?></tt> into tape drive<br>
+								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
 								<?
 							}
 						?>
@@ -308,7 +308,7 @@
 		}
 		
 		?>
-		<div class="ui small fluid steps">
+		<div class="ui mini fluid steps">
 			<div class="<?=$step1_state?> step">
 				<div class="content">
 					<div class="title"><?=$step1_title?></div>

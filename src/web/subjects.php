@@ -1392,7 +1392,7 @@
 					$sqlstringA = "select a.project_id 'projectid', a.*, b.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
 					//PrintVariable($sqlstringA);
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$numenrollments = mysqli_num_rows($result);
+					$numenrollments = mysqli_num_rows($resultA);
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 						$enrollmentid = $rowA['enrollment_id'];
 						$enroll_startdate = $rowA['enroll_startdate'];

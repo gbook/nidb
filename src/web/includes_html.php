@@ -37,10 +37,6 @@
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <script type="text/javascript" src="scripts/stupidtable.min.js"></script>
 
-<!-- select2 input element -->
-<link href="scripts/select2/css/select2.css" rel="stylesheet" />
-<script src="scripts/select2/js/select2.min.js"></script>
-
 <!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 

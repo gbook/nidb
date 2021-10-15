@@ -96,8 +96,8 @@
 <br><br><br><br>
 <!-- footer -->
 <div class="ui mini inverted menu" style="!important; overflow: auto; position:absolute; bottom:0; left:0;" id="footer">
-	<div class="item">
-		<a href="about.php"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
+	<div class="item" style="font-size: larger">
+		<a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
 	</div>
 	<div class="item">
 		Page generated: <? echo date("D M j, Y g:i a T"); ?>
@@ -113,8 +113,10 @@
 		<div class="ui mini <?=$moduleinfo['export']['color']?> label" title="Status: <?=$moduleinfo['export']['status']?>">export</div>
 		<div class="ui mini <?=$moduleinfo['mriqa']['color']?> label" title="Status: <?=$moduleinfo['mriqa']['status']?>">mriqa</div>
 	</div>
-	<div class="item">
-		Problem, bug, or comment? <a href="https://github.com/gbook/nidb/issues" style="color:white; text-decoration:underline">Report it</a>
+	<div class="right menu">
+		<div class="item">
+			Problem, bug, or comment? &nbsp;<a href="https://github.com/gbook/nidb/issues"><i class="github icon"></i> Report it</a>
+		</div>
 	</div>
 </div>
 
