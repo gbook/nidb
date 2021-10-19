@@ -1,3 +1,5 @@
+<a href="index.html">&larr; Home</a>
+
 # Upgrade NiDB steps
 
 ## Install NiDB .rpm
