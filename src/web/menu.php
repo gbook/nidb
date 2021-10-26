@@ -284,12 +284,8 @@
 	</div>
 	<? }?>
 
-<div class="ui grid">
+<div class="ui grid" id="mainPageGrid">
 	<div class="sixteen wide column" style="margin: 15px; overflow-x: auto">
-<!--
-<table width="100%" cellpadding="5">
-	<tr>
-		<td width="100%">-->
 			<!--  begin main page content -->
 <?			
 	if (count($_POST, COUNT_RECURSIVE) >= ini_get("max_input_vars")) {

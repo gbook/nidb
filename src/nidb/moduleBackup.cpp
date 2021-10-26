@@ -79,14 +79,23 @@ int moduleBackup::Run() {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* ----- step 1 ----- backup the database (Always done) */
-    n->WriteLog(BackupDatabase());
+    n->WriteLog("Step 1 - Backup Database");
+    QString m;
+    if (BackupDatabase(m))
+        n->WriteLog("Backed up database with message [" + m + "]");
+
+    n->ModuleRunningCheckIn();
+    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
 
     /* possible statuses: 'idle','waitingfortape','readytowrite','writing','filelisting','rewinding','staging','ejecting','complete' */
 
+    n->WriteLog("Step 2 - Check if any backups are already occuring");
+    bool otherTapesRunning = false;
     /* check if there are any backups already occuring: ie, any status other than 'idle' or 'complete' */
     q.prepare("select * from backups where backup_tapestatus not in ('idle', 'complete')");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
+        n->WriteLog(QString("Found [%1] rows that were not 'idle' or 'complete'").arg(q.size()));
         while (q.next()) {
             //int backup_id = q.value("backup_id").toInt();
             int backup_tapenumber = q.value("backup_tapenumber").toInt();
@@ -104,15 +113,29 @@ int moduleBackup::Run() {
             qint64 backup_tapesizeC = q.value("backup_tapesizeC").toLongLong();
             //backup_tapecontentsC
 
+            if (backup_tapestatus.contains("writingTape") || backup_tapestatus.contains("errorTape"))
+                otherTapesRunning = true;
+
             n->WriteLog(QString("Tape [%1] has status of [%2]. Startdate(s) [%3,%4,%5]  sizes [%6,%7,%8]  enddates [%9,%10,%11]").arg(backup_tapenumber).arg(backup_tapestatus).arg(backup_startdateA.toString()).arg(backup_startdateB.toString()).arg(backup_startdateC.toString()).arg(backup_tapesizeA).arg(backup_tapesizeB).arg(backup_tapesizeC).arg(backup_enddateA.toString()).arg(backup_enddateB.toString()).arg(backup_enddateC.toString()));
         }
     }
 
-    /* ----- step 2 ----- copy to backup staging */
-    qint64 backupStageSize = MoveToBackupStaging();
-    n->WriteLog(QString("[%1] size is [%2] bytes").arg(backupStagingDir).arg(backupStageSize));
+    if (otherTapesRunning) {
+        n->WriteLog("Other tapes are writing, or there is an error. Stopping the module"); return 0;
+    }
 
-    /* ----- step 3 ----- check if we have enough data to write to a tape */
+    n->ModuleRunningCheckIn();
+    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
+    /* ----- step 3 ----- move to backup staging */
+    n->WriteLog("Step 3 - Moving data to backup staging");
+    qint64 backupStageSize = MoveToBackupStaging();
+    n->WriteLog(QString("After moving, [%1] size is [%2] bytes").arg(backupStagingDir).arg(backupStageSize));
+
+    n->ModuleRunningCheckIn();
+    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+
+    /* ----- step 4 ----- check if we have enough data to write to a tape */
     if (backupStageSize > backupTapeSize) {
         /* possible statuses:
          * 'idle', 'waitingForTapeA', 'readyToWriteTapeA', 'writingTapeA', 'completeTapeA', 'waitingForTapeB', 'readyToWriteTapeB', 'writingTapeB', 'completeTapeB', 'waitingForTapeC', 'readyToWriteTapeC', 'writingTapeC', 'completeTapeC', 'complete' */
@@ -125,15 +148,26 @@ int moduleBackup::Run() {
         QString status = q.value("backup_tapestatus").toString();
         int tapeNum = q.value("backup_tapenumber").toInt();
 
+        n->WriteLog(QString("Current status is [%1]. backupStageSize is [%2] bytes, which is greater than [%3]").arg(status).arg(backupStageSize).arg(backupTapeSize));
+
         /* if there are, then write the tape */
         if (status == "readyToWriteTapeA") {
-            WriteTape(tapeNum, 'A', backupid);
+            if (WriteTape(tapeNum, 'A', backupid))
+                n->WriteLog("Successfully wrote tape A");
+            else
+                n->WriteLog("Error writing tape A");
         }
         else if (status == "readyToWriteTapeB") {
-            WriteTape(tapeNum, 'B', backupid);
+            if (WriteTape(tapeNum, 'B', backupid))
+                n->WriteLog("Successfully wrote tape B");
+            else
+                n->WriteLog("Error writing tape B");
         }
         else if (status == "readyToWriteTapeC") {
-            WriteTape(tapeNum, 'C', backupid);
+            if (WriteTape(tapeNum, 'C', backupid))
+                n->WriteLog("Successfully wrote tape C");
+            else
+                n->WriteLog("Error writing tape C");
         }
         else if ((status == "idle") || (status == "complete")) {
             /* create new row with status of waitingForTapeA, and maxTapeNum+1. Also get the backup_id */
@@ -161,11 +195,13 @@ int moduleBackup::Run() {
         }
     }
     else {
+        n->WriteLog("backupStageSize is less than tape size. Setting the status of tape 0 to idle");
         q.prepare("update backups set backup_tapestatus = 'idle', backup_enddateA = now(), backup_tapesizeA = :stagesize where backup_tapenumber = 0");
         q.bindValue(":stagesize", backupStageSize);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
     }
 
+    n->WriteLog("backup module done");
     return 1;
 }
 
@@ -221,7 +257,7 @@ qint64 moduleBackup::MoveToBackupStaging() {
     backupStagingSize += bytesMoved;
 
     QLocale locale = QLocale::system();
-    n->WriteLog(QString("Moved [%1] files of size [%2] bytes [%3]").arg(filesMoved).arg(bytesMoved).arg(locale.formattedDataSize(bytesMoved)));
+    n->WriteLog(QString("MoveToBackupStaging() moved [%1] files of size [%2] bytes [%3]").arg(filesMoved).arg(bytesMoved).arg(locale.formattedDataSize(bytesMoved)));
 
     return backupStagingSize;
 }
@@ -230,45 +266,25 @@ qint64 moduleBackup::MoveToBackupStaging() {
 /* ---------------------------------------------------------- */
 /* --------- BackupDatabase --------------------------------- */
 /* ---------------------------------------------------------- */
-QString moduleBackup::BackupDatabase() {
+bool moduleBackup::BackupDatabase(QString &m) {
 
     QDateTime d = QDateTime::currentDateTime();
     QString date = d.toString("yyyy-MM-dd");
 
-    QString systemstring = QString("mysqldump --single-transaction --compact -u%1 -p%2 %3 > %4/NiDB-backup-%5.sql").arg(n->cfg["mysqluser"]).arg(n->cfg["mysqlpassword"]).arg(n->cfg["mysqldatabase"]).arg(n->cfg["backupdir"]).arg(date);
-    QString output = n->SystemCommand(systemstring);
+    /* only write out one backup per day, so check if this backup exists */
+    QString file = QString("%1/NiDB-backup-%2.sql").arg(n->cfg["backupdir"]).arg(date);
+    if (!QFile::exists(file)) {
+        n->WriteLog(QString("Database backup [%1] does not exist. Backing up database.").arg(file));
 
-    return output;
+        QString systemstring = QString("mysqldump --single-transaction --compact -u%1 -p%2 %3 > %4/NiDB-backup-%5.sql").arg(n->cfg["mysqluser"]).arg(n->cfg["mysqlpassword"]).arg(n->cfg["mysqldatabase"]).arg(n->cfg["backupdir"]).arg(date);
+        m = n->SystemCommand(systemstring);
+        return true;
+    }
+    else
+        n->WriteLog(QString("Database backup [%1] already exists").arg(file));
+
+    return false;
 }
-
-
-/* ---------------------------------------------------------- */
-/* --------- WriteTapeSet ----------------------------------- */
-/* ---------------------------------------------------------- */
-//bool moduleBackup::WriteTapeSet() {
-
-//    /* get next tape number, and letter */
-//    int tapeNum = 1;
-//    QSqlQuery q;
-//    q.prepare("select max(backup_tapenumber) 'maxtapenumber' from backup");
-//    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-//    if (q.size() > 0) {
-//        q.first();
-//        tapeNum = q.value("maxtapenumber").toInt() + 1;
-//    }
-
-//    /* start writing the data from backup staging to tape, one tape at a time */
-//    if (WriteTape(tapeNum, 'A')) { n->WriteLog("Wrote tape A%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-//    else { n->WriteLog("Error writing tape A%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-
-//    if (WriteTape(tapeNum, 'B')) { n->WriteLog("Wrote tape B%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-//    else { n->WriteLog("Error writing tape B%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-
-//    if (WriteTape(tapeNum, 'C')) { n->WriteLog("Wrote tape C%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-//    else { n->WriteLog("Error writing tape C%1").arg(tapeNum, 4, 10, QLatin1Char('0')); }
-
-//    return true;
-//}
 
 
 /* ---------------------------------------------------------- */
@@ -278,6 +294,9 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
     n->WriteLog(QString("Writing tape %1%2").arg(tapeLetter).arg(tapeNum, 4, 10, QLatin1Char('0')));
 
     QSqlQuery q;
+    QString output;
+    bool error = false;
+    QStringList errorMsgs;
 
     /* set startdate (if A, B, or C) */
     switch (tapeLetter) {
@@ -296,63 +315,130 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
 
     /* write the tape (load, write, read contents, rewind, eject */
     QString systemstring;
-    /* load the tape */
-    n->WriteLog("Loading tape");
-    if (backupServer == "")
-        systemstring = QString("mt -f %1 load").arg(backupDevice);
-    else
-        systemstring = QString("ssh %1 \"mt -f %2 load\"").arg(backupServer).arg(backupDevice);
-    n->WriteLog(n->SystemCommand(systemstring));
 
-    /* write the data from backupstaging */
-    n->WriteLog("Writing data from backupstaging");
-    if (backupServer == "")
-        systemstring = QString("cd %1; tar -cW --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
-    else
-        systemstring = QString("ssh %1 \"cd %2; tar -cW --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
-    n->WriteLog(n->SystemCommand(systemstring));
-
-    /* get tape listing */
-    n->WriteLog("Getting tape contents listing");
-    if (backupServer == "")
-        systemstring = QString("tar -tf %1").arg(backupDevice);
-    else
-        systemstring = QString("ssh %1 \"tar -tf %2\"").arg(backupServer).arg(backupDevice);
-    QString tapeListing = n->SystemCommand(systemstring,false);
-
-    /* rewind tape */
-    n->WriteLog("Rewinding tape");
-    if (backupServer == "")
-        systemstring = QString("mt -f %1 rewind").arg(backupDevice);
-    else
-        systemstring = QString("ssh %1 \"mt -f %2 rewind\"").arg(backupServer).arg(backupDevice);
-    n->WriteLog(n->SystemCommand(systemstring));
-
-    /* eject tape */
-    n->WriteLog("Ejecting tape");
-    if (backupServer == "")
-        systemstring = QString("mt -f %1 offline").arg(backupDevice);
-    else
-        systemstring = QString("ssh %1 \"mt -f %2 offline\"").arg(backupServer).arg(backupDevice);
-    n->WriteLog(n->SystemCommand(systemstring));
-
-    /* set enddate (A, B, C) and status to 'completeTapeX' */
-    switch (tapeLetter) {
-        case 'A':
-            q.prepare("update backups set backup_enddateA = now(), backup_tapestatus = 'completeTapeA', backup_tapecontentsA = :contents where backup_id = :backupid");
-            break;
-        case 'B':
-            q.prepare("update backups set backup_enddateB = now(), backup_tapestatus = 'completeTapeB', backup_tapecontentsB = :contents where backup_id = :backupid");
-            break;
-        case 'C':
-            q.prepare("update backups set backup_enddateC = now(), backup_tapestatus = 'completeTapeC', backup_tapecontentsC = :contents where backup_id = :backupid");
-            break;
+    /* --- load the tape --- */
+    if (!error) {
+        n->WriteLog("Loading tape");
+        if (backupServer == "")
+            systemstring = QString("mt -f %1 load").arg(backupDevice);
+        else
+            systemstring = QString("ssh %1 \"mt -f %2 load\"").arg(backupServer).arg(backupDevice);
+        output = n->SystemCommand(systemstring);
+        n->WriteLog(output);
+        if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
+            errorMsgs << "[" + systemstring + "]" + output;
+            n->WriteLog("Error while writing data from backupstaging");
+            error = true;
+        }
     }
-    q.bindValue(":backupid", backupid);
-    q.bindValue(":contents", tapeListing);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    else
+        n->WriteLog("Not running [mt -f  load] because there is an error");
 
-    return true;
+    /* --- write the data from backupstaging --- */
+    if (!error) {
+        n->WriteLog("Writing data from backupstaging");
+        if (backupServer == "")
+            systemstring = QString("cd %1; tar -cW --checkpoint=100000 --checkpoint-action=echo=\"#%u: %T\" --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
+        else
+            systemstring = QString("ssh %1 \"cd %2; tar -cW --checkpoint=100000 --checkpoint-action=echo=\"#%u: %T\" --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
+        output = n->SystemCommand(systemstring, false, false, true);
+        n->WriteLog(output);
+        if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
+            errorMsgs << "Error running [" + systemstring + "]. Skipping entire output because it might be huge. Here's the last 10000 bytes [" + output.right(10000) + "]";
+            n->WriteLog("Error while writing data from backupstaging");
+            error = true;
+        }
+    }
+    else
+        n->WriteLog("Not running [tar -cW --totals -f] because there is an error");
+
+    /* --- get tape listing --- */
+    QString tapeListing;
+    if (!error) {
+        n->WriteLog("Getting tape contents listing");
+        if (backupServer == "")
+            systemstring = QString("tar -tf %1").arg(backupDevice);
+        else
+            systemstring = QString("ssh %1 \"tar -tf %2\"").arg(backupServer).arg(backupDevice);
+        tapeListing = n->SystemCommand(systemstring,false);
+    }
+    else
+        n->WriteLog("Not running [tar -tf] because there is an error");
+
+    /* --- rewind tape --- */
+    if (!error) {
+        n->WriteLog("Rewinding tape");
+        if (backupServer == "")
+            systemstring = QString("mt -f %1 rewind").arg(backupDevice);
+        else
+            systemstring = QString("ssh %1 \"mt -f %2 rewind\"").arg(backupServer).arg(backupDevice);
+        output = n->SystemCommand(systemstring);
+        n->WriteLog(output);
+        if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
+            errorMsgs << "[" + systemstring + "]" + output;
+            n->WriteLog("Error while writing data from backupstaging");
+            error = true;
+        }
+    }
+    else
+        n->WriteLog("Not running [mt -f rewind] because there is an error");
+
+    /* --- eject tape --- */
+    if (!error) {
+        n->WriteLog("Ejecting tape");
+        if (backupServer == "")
+            systemstring = QString("mt -f %1 offline").arg(backupDevice);
+        else
+            systemstring = QString("ssh %1 \"mt -f %2 offline\"").arg(backupServer).arg(backupDevice);
+        output = n->SystemCommand(systemstring);
+        n->WriteLog(output);
+        if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
+            errorMsgs << "[" + systemstring + "]" + output;
+            n->WriteLog("Error while writing data from backupstaging");
+            error = true;
+        }
+    }
+    else
+        n->WriteLog("Not running [mt -f offline] because there is an error");
+
+    /* finish up and set the status if tape writing was successful */
+    if (error) {
+        n->WriteLog("An error occured, tape not written");
+        /* set enddate (A, B, C) and status to 'errorTapeX' */
+        switch (tapeLetter) {
+            case 'A':
+                q.prepare("update backups set backup_enddateA = now(), backup_tapestatus = 'errorTapeA', backup_errormsg = :msg where backup_id = :backupid");
+                break;
+            case 'B':
+                q.prepare("update backups set backup_enddateB = now(), backup_tapestatus = 'errorTapeB', backup_errormsg = :msg where backup_id = :backupid");
+                break;
+            case 'C':
+                q.prepare("update backups set backup_enddateC = now(), backup_tapestatus = 'errorTapeC', backup_errormsg = :msg where backup_id = :backupid");
+                break;
+        }
+        q.bindValue(":backupid", backupid);
+        q.bindValue(":msg", errorMsgs.join("\n"));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        return false;
+    }
+    else {
+        /* set enddate (A, B, C) and status to 'completeTapeX' */
+        switch (tapeLetter) {
+            case 'A':
+                q.prepare("update backups set backup_enddateA = now(), backup_tapestatus = 'completeTapeA', backup_tapecontentsA = :contents where backup_id = :backupid");
+                break;
+            case 'B':
+                q.prepare("update backups set backup_enddateB = now(), backup_tapestatus = 'completeTapeB', backup_tapecontentsB = :contents where backup_id = :backupid");
+                break;
+            case 'C':
+                q.prepare("update backups set backup_enddateC = now(), backup_tapestatus = 'completeTapeC', backup_tapecontentsC = :contents where backup_id = :backupid");
+                break;
+        }
+        q.bindValue(":backupid", backupid);
+        q.bindValue(":contents", tapeListing);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        return true;
+    }
 }
 
 

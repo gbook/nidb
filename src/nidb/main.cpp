@@ -182,15 +182,15 @@ int main(int argc, char *argv[])
                 n->Print(QString(n->GetBuildString()));
 
             if (reset)
-                n->ClearLockFiles();
+                n->ModuleClearLockFiles();
 
             /* check if this module should be running now or not */
             if (n->ModuleCheckIfActive()) {
-                int numlock = n->CheckNumLockFiles();
-                if (numlock < n->GetNumThreads()) {
-                    if (n->CreateLockFile()) {
+                int numlock = n->ModuleGetNumLockFiles();
+                if (numlock < n->ModuleGetNumThreads()) {
+                    if (n->ModuleCreateLockFile()) {
 
-                        n->CreateLogFile();
+                        n->ModuleCreateLogFile();
 
                         /* let the database know this module is running, and if the DB says it should be in debug mode */
                         n->ModuleDBCheckIn();
@@ -258,14 +258,14 @@ int main(int argc, char *argv[])
                         if ((n->cfg["debug"].toInt()) || (keepLog))
                             keepLog = true;
 
-                        n->RemoveLogFile(keepLog);
+                        n->ModuleRemoveLogFile(keepLog);
 
                         /* let the database know this module has stopped running */
                         n->ModuleDBCheckOut();
                     }
 
                     /* delete the lock file */
-                    n->DeleteLockFile();
+                    n->ModuleDeleteLockFile();
                 }
                 else
                     n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));

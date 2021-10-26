@@ -200,54 +200,54 @@ void nidb::FatalError(QString err) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetNumThreads ---------------------------------- */
+/* --------- ModuleGetNumThreads ---------------------------- */
 /* ---------------------------------------------------------- */
-int nidb::GetNumThreads() {
+int nidb::ModuleGetNumThreads() {
+    int numThreads = 0;
 
     if (module == "fileio") {
-        if (cfg["modulefileiothreads"] == "") return 1;
-        else return cfg["modulefileiothreads"].toInt();
+        if (cfg["modulefileiothreads"] == "") numThreads = 1;
+        else numThreads = cfg["modulefileiothreads"].toInt();
     }
     else if (module == "export") {
-        if (cfg["moduleexportthreads"] == "") return 1;
-        else return cfg["moduleexportthreads"].toInt();
+        if (cfg["moduleexportthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleexportthreads"].toInt();
     }
     else if ((module == "parsedicom") || (module == "import")) {
-        return 1;
+        numThreads = 1;
     }
     else if (module == "mriqa") {
-        if (cfg["modulemriqathreads"] == "") return 1;
-        else return cfg["modulemriqathreads"].toInt();
+        if (cfg["modulemriqathreads"] == "") numThreads = 1;
+        else numThreads = cfg["modulemriqathreads"].toInt();
     }
     else if (module == "pipeline") {
-        if (cfg["modulepipelinethreads"] == "") return 1;
-        else return cfg["modulepipelinethreads"].toInt();
+        if (cfg["modulepipelinethreads"] == "") numThreads = 1;
+        else numThreads = cfg["modulepipelinethreads"].toInt();
     }
     else if (module == "importuploaded") {
-        return 1;
+        numThreads = 1;
     }
     else if (module == "qc") {
-        if (cfg["moduleqcthreads"] == "") return 1;
-        else return cfg["moduleqcthreads"].toInt();
+        if (cfg["moduleqcthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleqcthreads"].toInt();
     }
     else if (module == "upload") {
-        if (cfg["moduleuploadthreads"] == "") return 1;
-        else return cfg["moduleuploadthreads"].toInt();
+        if (cfg["moduleuploadthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleuploadthreads"].toInt();
     }
     else if (module == "backup") {
-        return 1;
+        numThreads = 1;
     }
 
-    return 1;
+    WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
+    return numThreads;
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- CheckNumLockFiles ------------------------------ */
+/* --------- ModuleGetNumLockFiles -------------------------- */
 /* ---------------------------------------------------------- */
-int nidb::CheckNumLockFiles() {
-    QStringList lockfiles;
-
+int nidb::ModuleGetNumLockFiles() {
     QDir dir;
     dir.setPath(cfg["lockdir"]);
 
@@ -258,14 +258,17 @@ int nidb::CheckNumLockFiles() {
     QStringList files = dir.entryList(filters);
     int numlocks = files.size();
 
+    Print(QString("Found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
+    WriteLog(QString("ModuleGetNumLockFiles() found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
+
     return numlocks;
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- CreateLockFile --------------------------------- */
+/* --------- ModuleCreateLockFile --------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::CreateLockFile() {
+bool nidb::ModuleCreateLockFile() {
     qint64 pid = 0;
     pid = QCoreApplication::applicationPid();
 
@@ -289,9 +292,9 @@ bool nidb::CreateLockFile() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- ClearLockFiles --------------------------------- */
+/* --------- ModuleClearLockFiles --------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::ClearLockFiles() {
+bool nidb::ModuleClearLockFiles() {
 
     Print("Clearing lock files [" + lockFilepath + "]",false, true);
     QString s = QString("rm -v %1/%2*").arg(cfg["lockdir"]).arg(module);
@@ -303,9 +306,9 @@ bool nidb::ClearLockFiles() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- CreateLogFile ---------------------------------- */
+/* --------- ModuleCreateLogFile ---------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::CreateLogFile () {
+bool nidb::ModuleCreateLogFile () {
     logFilepath = QString("%1/%2%3.log").arg(cfg["logdir"]).arg(module).arg(CreateLogDate());
     log.setFileName(logFilepath);
 
@@ -327,24 +330,28 @@ bool nidb::CreateLogFile () {
 
 
 /* ---------------------------------------------------------- */
-/* --------- DeleteLockFile --------------------------------- */
+/* --------- ModuleDeleteLockFile --------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::DeleteLockFile() {
+void nidb::ModuleDeleteLockFile() {
 
     Print("Deleting lock file [" + lockFilepath + "]",false, true);
 
     QFile f(lockFilepath);
-    if (f.remove())
+    if (f.remove()) {
         Print("[\033[0;32mOk\033[0m]");
-    else
+        WriteLog("Successfully removed lock file [" + lockFilepath + "]");
+    }
+    else {
         Print("[\033[0;31mError\033[0m]");
+        WriteLog("Error removing lock file [" + lockFilepath + "]");
+    }
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- RemoveLogFile ---------------------------------- */
+/* --------- ModuleRemoveLogFile ---------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::RemoveLogFile(bool keepLog) {
+void nidb::ModuleRemoveLogFile(bool keepLog) {
 
     if (!keepLog) {
         Print("Deleting log file [" + logFilepath + "]",false, true);
@@ -454,10 +461,14 @@ bool nidb::ModuleCheckIfActive() {
     q.bindValue(":module", module);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    if (q.size() < 1)
+    if (q.size() < 1) {
+        WriteLog("ModuleCheckIfActive() returned false");
         return false;
-    else
+    }
+    else {
+        WriteLog("ModuleCheckIfActive() returned true");
         return true;
+    }
 }
 
 
@@ -541,8 +552,6 @@ void nidb::ModuleRunningCheckIn() {
 /* --------- InsertAnalysisEvent ---------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
-    QString hostname = QHostInfo::localHostName();
-
     QSqlQuery q;
     q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :message)");
     q.bindValue(":analysisid", analysisid);
@@ -561,7 +570,7 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
+QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool progress) {
 
     double starttime = QDateTime::currentMSecsSinceEpoch();
     QString ret;
@@ -574,7 +583,12 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate) {
     /* Get the output */
     if (process.waitForStarted(-1)) {
         while(process.waitForReadyRead(-1)) {
-            output += process.readAll();
+            QString buffer = process.readAll();
+            output += buffer;
+            if (progress) {
+                buffer = buffer.trimmed();
+                WriteLog(buffer);
+            }
         }
     }
     process.waitForFinished();
@@ -681,7 +695,7 @@ QString nidb::WriteLog(QString msg, int wrap) {
                 Print("Unable to write to log file!");
         }
         else {
-            Print("Log file is not writeable! Tried to write [" + msg + "] to [" + log.fileName() + "]");
+            Print("Unable to write to log file. Maybe the logfile hasn't been created yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
         }
     }
 
@@ -709,7 +723,7 @@ bool nidb::MakePath(QString p, QString &msg, bool perm777) {
         msg = "MakePath() Path already exists or was created successfuly [" + p + "]";
 
     if (perm777)
-        SystemCommand("chmod -R 777 " + p);
+        SystemCommand("chmod 777 " + p);
 
     return true;
 }

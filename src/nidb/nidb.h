@@ -44,12 +44,6 @@
 typedef QHash <int, QHash<QString, QString>> indexedHash;
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
-//namespace nidb {
-//    enum subjectMatchCriteria { PatientID, NameSexDOB };
-//    enum studyMatchCriteria { ModalityStudyDate, StudyUID };
-//    enum seriesMatchCriteria { SeriesNum, SeriesDate, SeriesUID };
-//}
-
 class nidb
 {
 public:
@@ -63,17 +57,17 @@ public:
     QString GetBuildString();
 
     /* module housekeeping functions */
-    int CheckNumLockFiles();
-    bool CreateLockFile();
-    bool CreateLogFile();
-    bool ClearLockFiles();
-    void DeleteLockFile();
-    void RemoveLogFile(bool keepLog);
+    int ModuleGetNumLockFiles();
+    bool ModuleCreateLockFile();
+    bool ModuleCreateLogFile();
+    bool ModuleClearLockFiles();
+    void ModuleDeleteLockFile();
+    void ModuleRemoveLogFile(bool keepLog);
     bool ModuleCheckIfActive();
     void ModuleDBCheckIn();
     void ModuleDBCheckOut();
     void ModuleRunningCheckIn();
-    int GetNumThreads();
+    int ModuleGetNumThreads();
     bool IsRunningFromCluster();
 
     /* logging */
@@ -92,7 +86,7 @@ public:
     QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
     QString WriteLog(QString msg, int wrap=0);
     void AppendCustomLog(QString f, QString msg);
-    QString SystemCommand(QString s, bool detail=true, bool truncate=false);
+    QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool progress=false);
     bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
     QString GenerateRandomString(int n);
     void SortQStringListNaturally(QStringList &s);
@@ -126,7 +120,7 @@ public:
     bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
     bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
     bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
-	bool MoveFile(QString f, QString dir, QString &m);
+    bool MoveFile(QString f, QString dir, QString &m);
     void GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse=false);
     //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
     QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);

@@ -147,12 +147,17 @@
 	function DisplayIDMapperForm() {
 	
 		?>
-		<div align="center">
-		<form action="import.php" method="post">
+		<div class="ui container">
+		<form action="import.php" method="post" class="ui form">
 		<input type="hidden" name="action" value="mapids">
 		<table width="90%" height="90%">
 			<tr>
-				<td><span style="font-weight: bold; color: #444">Enter list of IDs</span><br><span class="tiny">Acceptable delimeters: space tab comma period semicolon colon newline</span></td>
+				<td>
+					<div class="ui header">
+						Enter list of IDs
+						<div class="sub header">Acceptable delimeters: space tab comma period semicolon colon newline</div>
+					</div>
+				</td>
 			</tr>
 			<tr>
 				<td>
@@ -162,7 +167,7 @@
 			<tr>
 				<td>
 					<span style="font-weight: bold; color: #444">Search only this project</span><br>
-					<select name="projectid">
+					<select name="projectid" class="ui dropdown">
 						<option value="all">All Projects</option>
 						<?
 							$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
@@ -182,11 +187,22 @@
 			</tr>
 			<tr>
 				<td>
-					<input type="checkbox" value="1" name="searchthisinstance">Search only this instance (<?=$_SESSION['instancename']?>)<br>
-					<input type="checkbox" value="1" name="displayonlymatches">Show only matches<br>
-					<input type="checkbox" value="1" name="ignoredeleted">Do not show deleted subjects
+					<div class="ui checkbox">
+						<input type="checkbox" value="1" name="searchthisinstance">
+						<label>Search only this instance (<?=$_SESSION['instancename']?>)</label>
+					</div>
+					<br>
+					<div class="ui checkbox">
+						<input type="checkbox" value="1" name="displayonlymatches">
+						<label>Show only matches</label>
+					</div>
+					<br>
+					<div class="ui checkbox">
+						<input type="checkbox" value="1" name="ignoredeleted">
+						<label>Do not show deleted subjects</label>
+					</div>
 					<br><br>
-					<input type="submit" value="Map IDs">
+					<input type="submit" value="Map IDs" class="ui primary button">
 				</td>
 			</tr>
 		</table>

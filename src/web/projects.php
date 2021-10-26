@@ -2511,10 +2511,10 @@
 				<div class="ui three wide column">
 					<h2 class="ui header">Data Views</h2>
 					<br>
-					<a class="ui fluid vertical big primary button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="black users icon"></i> Subjects</a><br>
-					<a class="ui fluid vertical big primary button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="black sitemap icon"></i> Studies</a><br>
-					<a class="ui fluid vertical big primary button" href="projectchecklist.php?projectid=<?=$id?>"><i class="black clipboard list icon"></i> Checklist</a><br>
-					<a class="ui fluid vertical big primary button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="black clipboard list icon"></i> MR scan QC</a>
+					<a class="ui fluid vertical big primary button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a><br>
+					<a class="ui fluid vertical big primary button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a><br>
+					<a class="ui fluid vertical big primary button" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a><br>
+					<a class="ui fluid vertical big primary button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
 				</div>
 				<div class="ui one wide column">
 				</div>
@@ -2524,13 +2524,11 @@
 					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>"> Data Dictionary</a><br><br>
 					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>"> Analysis Builder</a><br><br>
 					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>"> Study Templates</a><br><br>
-					<!--<i class="clipboard check icon"></i><a href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"> Edit Scan Criteria</a><br><br>
-					<i class="clipboard list icon"></i><a href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"> Edit QC Criteria</a><br><br>-->
 					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>"> BIDS Protocol Mapping</a><br><br>
 					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>"> NDA Mapping</a><br><br>
-					<i class="list ol icon"></i><a href="minipipeline.php?projectid=<?=$id?>"> Behavioral mini-pipelines</a><br><br>
-					<i class="cloud download icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap settings</a><br><br>
-					<i class="cloud download icon"></i><a href="redcaptonidb.php?action=default&projectid=<?=$id?>"> Redcap <i class="right arrow icon"></i> NiDB Transfer</a><br><br>
+					<i class="cogs icon"></i><a href="minipipeline.php?projectid=<?=$id?>"> Behavioral mini-pipelines</a><br><br>
+					<i class="red redhat icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap settings</a><br><br>
+					<i class="red redhat icon"></i><a href="redcaptonidb.php?action=default&projectid=<?=$id?>"> Redcap <i class="right arrow icon"></i> NiDB Transfer</a><br><br>
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>

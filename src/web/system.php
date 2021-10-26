@@ -259,10 +259,13 @@
 		$currentnidb = trim(GetNiDBVersion());
 		if ($currentnidb != $latestnidb) {
 		?>
-			<div class="ui inverted orange segment">
-				<h3 class="ui header">New NiDB version available</h3>
-				Current NiDB version [<?=GetNiDBVersion();?>]<br>
-				Latest NiDB version [<?=$latestnidb;?>]
+			<div class="ui text container">
+				<div class="ui warning message">
+					<i class="close icon"></i>
+					<div class="header">New NiDB version available</div>
+					Current NiDB version [<?=GetNiDBVersion();?>]<br>
+					Latest NiDB version [<?=$latestnidb;?>]
+				</div>
 			</div>
 		<? } ?>
 		

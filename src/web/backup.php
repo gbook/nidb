@@ -131,7 +131,7 @@
 								<td><?=$startdateA?></td>
 								<td><?=$status?></td>
 								<td></td>
-								<td>Backup staging size <?=$tapesizeA?></td>
+								<td>Backup staging size<br><?=$tapesizeA?></td>
 								<td><?=$enddate?></td>
 							</tr>
 							<?
@@ -140,7 +140,7 @@
 				?>
 			</tr>
 		<?
-		$sqlstring = "select backup_id, backup_id, backup_tapenumber, backup_tapestatus, backup_startdateA, backup_enddateA, backup_tapesizeA, backup_startdateB, backup_enddateB, backup_tapesizeB, backup_startdateC, backup_enddateC, backup_tapesizeC from backups where backup_tapenumber > 0 order by backup_tapenumber desc";
+		$sqlstring = "select backup_id, backup_errormsg, backup_tapenumber, backup_tapestatus, backup_startdateA, backup_enddateA, backup_tapesizeA, backup_startdateB, backup_enddateB, backup_tapesizeB, backup_startdateC, backup_enddateC, backup_tapesizeC from backups where backup_tapenumber > 0 order by backup_tapenumber desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -150,6 +150,7 @@
 				$tapenumber = sprintf('%04d', $row['backup_tapenumber']);
 				$tapeletter = $row['backup_tapeletter'];
 				$status = $row['backup_tapestatus'];
+				$errormsg = $row['backup_errormsg'];
 				$startdateA = $row['backup_startdateA'];
 				$enddateA = $row['backup_enddateA'];
 				$tapesizeA = $row['backup_tapesizeA'];
@@ -162,35 +163,47 @@
 
 				?>
 				<tr>
-					<td><?=$tapenum?></td>
-					<td><?=$startdateA?></td>
-					<td>
-						<? $action = DisplayStatus($status, $tapenumber); ?>
+					<td class="top aligned"><?=$tapenum?></td>
+					<td class="top aligned"><?=$startdateA?></td>
+					<td class="top aligned">
+						<? $action = DisplayStatus($status, $tapenumber, $errormsg); ?>
 					</td>
-					<td>
+					<td class="top aligned">
 						<?
 							if ($action == "marktapeAinserted") {
 								?>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>A<?=$tapenumber?></tt> into tape drive<br>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeBinserted") {
 								?>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>B<?=$tapenumber?></tt> into tape drive<br>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeCinserted") {
 								?>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 1</div> Insert tape labeled <tt>C<?=$tapenumber?></tt> into tape drive<br>
-								<div class="ui yellow label"><i class="check circle outline icon"></i> Step 2</div> <a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
+								<?
+							}
+							elseif ($status == "errorTapeA") {
+								?>
+								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape A<?=$tapenumber?>">Reset Tape A<?=$tapenumber?></a>
+								<?
+							}
+							elseif ($status == "errorTapeB") {
+								?>
+								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape B<?=$tapenumber?>">Reset Tape B<?=$tapenumber?></a>
+								<?
+							}
+							elseif ($status == "errorTapeC") {
+								?>
+								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape C<?=$tapenumber?>">Reset Tape C<?=$tapenumber?></a>
 								<?
 							}
 						?>
 					</td>
-					<td><?=$tapesizeA?></td>
-					<td><?=$enddateC?></td>
+					<td class="top aligned"><?=$tapesizeA?></td>
+					<td class="top aligned"><?=$enddateC?></td>
 				</tr>
 				<?
 			}
@@ -204,8 +217,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStatus ---------------------- */
 	/* -------------------------------------------- */
-	function DisplayStatus($status, $t) {
+	function DisplayStatus($status, $t, $error) {
 		$action = "";
+		$color = "";
 		
 		/* possible statuses: 'idle'
 		   'waitingForTapeA','readyToWriteTapeA','writingTapeA','completeTapeA'
@@ -216,147 +230,234 @@
 		
 		switch ($status) {
 			case 'idle':
-				$step1_state = "active"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "disabled"; $step2_title = "Insert A$t"; $step2_desc = "Manually insert tape A";
-				$step3_state = "disabled"; $step3_title = "Writing A$t"; $step3_desc = "Tape A is being written";
-				$step4_state = "disabled"; $step4_title = "Insert B$t"; $step4_desc = "Manually insert tape B";
-				$step5_state = "disabled"; $step5_title = "Writing B$t"; $step5_desc = "Tape B is being written";
-				$step6_state = "disabled"; $step6_title = "Insert C$t"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing C$t"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "active"; $step1_title = "Idle";
+				$step2_state = "disabled"; $step2_title = "Insert A";
+				$step3_state = "disabled"; $step3_title = "Writing A";
+				$step4_state = "disabled"; $step4_title = "Insert B";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Idle";
+				$desc = "Nothing to do";
 				break;
 			case 'waitingForTapeA':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "active"; $step2_title = "Insert tape A$t"; $step2_desc = "Manually insert tape A";
-				$step3_state = "disabled"; $step3_title = "Writing A"; $step3_desc = "Tape A is being written";
-				$step4_state = "disabled"; $step4_title = "Insert B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "disabled"; $step5_title = "Writing B"; $step5_desc = "Tape B is being written";
-				$step6_state = "disabled"; $step6_title = "Insert C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "active"; $step2_title = "Insert A$t";
+				$step3_state = "disabled"; $step3_title = "Writing A";
+				$step4_state = "disabled"; $step4_title = "Insert B";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
 				$action = "marktapeAinserted";
+				$desc_header = "Waiting for tape A";
+				$desc = "Insert tape <tt>A$t</tt> and click button to mark as inserted";
+				$color = "warning";
 				break;
 			case 'readyToWriteTapeA':
 			case 'writingTapeA':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "active"; $step3_title = "Writing A$t";
+				$step4_state = "disabled"; $step4_title = "Insert B";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Writing Tape A";
+				$desc = "Tape <tt>A$t</tt> is being written";
+				break;
 			case 'completeTapeA':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "active"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "disabled"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "disabled"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "disabled"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "active"; $step3_title = "Writing A$t";
+				$step4_state = "disabled"; $step4_title = "Insert B";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Tape A is complete";
+				$desc = "Insert tape <tt>A$t</tt> and click button to mark as inserted";
+				break;
+			case 'errorTapeA':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "active"; $step3_title = "Writing A$t";
+				$step4_state = "disabled"; $step4_title = "Insert B";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Error writing Tape A";
+				$desc = "An error [$error] occured writing tape <tt>A$t</tt>. Fix the error, and click button to reset this backup";
+				$color = "error";
 				break;
 			case 'waitingForTapeB':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "complete"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "active"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "disabled"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "disabled"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "active"; $step4_title = "Insert B$t";
+				$step5_state = "disabled"; $step5_title = "Writing B";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
 				$action = "marktapeBinserted";
+				$desc_header = "Waiting for tape B";
+				$desc = "Insert tape <tt>B$t</tt> and click button to mark as inserted";
+				$color = "warning";
 				break;
 			case 'readyToWriteTapeB':
 			case 'writingTapeB':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "active"; $step5_title = "Writing B$t";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Writing Tape B";
+				$desc = "Writing tape <tt>B$t</tt>";
+				break;
 			case 'completeTapeB':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "complete"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "complete"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "active"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "disabled"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "active"; $step5_title = "Writing B$t";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Tape B is complete";
+				$desc = "Insert tape <tt>B$t</tt> and click button to mark as inserted";
+				break;
+			case 'errorTapeB':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "active"; $step5_title = "Writing B$t";
+				$step6_state = "disabled"; $step6_title = "Insert C";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Error writing Tape B";
+				$desc = "An error [$error] occured writing tape <tt>B$t</tt>. Fix the error, and click button to reset this backup";
+				$color = "error";
 				break;
 			case 'waitingForTapeC':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "complete"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "complete"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "complete"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "active"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "disabled"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "complete"; $step5_title = "Writing B";
+				$step6_state = "active"; $step6_title = "Insert C$t";
+				$step7_state = "disabled"; $step7_title = "Writing C";
+				$step8_state = "disabled"; $step8_title = "Complete";
 				$action = "marktapeCinserted";
+				$desc_header = "Waiting for tape C";
+				$desc = "Insert tape <tt>C$t</tt> and click button to mark as inserted";
+				$color = "warning";
 				break;
 			case 'readyToWriteTapeC':
 			case 'writingTapeC':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "complete"; $step5_title = "Writing B";
+				$step6_state = "complete"; $step6_title = "Insert C";
+				$step7_state = "active"; $step7_title = "Writing C$t";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Writing Tape C";
+				$desc = "Tape <tt>C$t</tt> is being written";
+				break;
 			case 'completeTapeC':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "complete"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "complete"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "complete"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "complete"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "active"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "disabled"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
-				//$action = "marktapeAinserted";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "complete"; $step5_title = "Writing B";
+				$step6_state = "complete"; $step6_title = "Insert C";
+				$step7_state = "active"; $step7_title = "Writing C$t";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Tape C is complete";
+				$desc = "Insert tape <tt>C$t</tt> and click button to mark as inserted";
+				break;
+			case 'errorTapeC':
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "complete"; $step5_title = "Writing B";
+				$step6_state = "complete"; $step6_title = "Insert C";
+				$step7_state = "active"; $step7_title = "Writing C$t";
+				$step8_state = "disabled"; $step8_title = "Complete";
+				$desc_header = "Error writing Tape C";
+				$desc = "An error [$error] occured writing tape <tt>C$t</tt>. Fix the error, and click button to reset this backup";
+				$color = "error";
 				break;
 			case 'complete':
-				$step1_state = "complete"; $step1_title = "Idle"; $step1_desc = "Tape drive is idle";
-				$step2_state = "complete"; $step2_title = "Insert tape A"; $step2_desc = "Manually insert tape A";
-				$step3_state = "complete"; $step3_title = "Writing tape A"; $step3_desc = "Tape A is being written";
-				$step4_state = "complete"; $step4_title = "Insert tape B"; $step4_desc = "Manually insert tape B";
-				$step5_state = "complete"; $step5_title = "Writing tape B"; $step5_desc = "Tape B is being written";
-				$step6_state = "complete"; $step6_title = "Insert tape C"; $step6_desc = "Manually insert tape C";
-				$step7_state = "complete"; $step7_title = "Writing tape C"; $step7_desc = "Tape C is being written";
-				$step8_state = "active"; $step8_title = "Complete"; $step8_desc = "Tape set is complete";
+				$step1_state = "complete"; $step1_title = "Idle";
+				$step2_state = "complete"; $step2_title = "Insert A";
+				$step3_state = "complete"; $step3_title = "Writing A";
+				$step4_state = "complete"; $step4_title = "Insert B";
+				$step5_state = "complete"; $step5_title = "Writing B";
+				$step6_state = "complete"; $step6_title = "Insert C";
+				$step7_state = "complete"; $step7_title = "Writing C";
+				$step8_state = "active"; $step8_title = "Complete";
+				$desc_header = "Tape set <tt>$t</tt> complete";
+				$desc = "Tape set is complete. Remove tape <tt>C$t</tt> from drive";
+				$color = "success";
 				break;
 		}
 		
 		?>
-		<div class="ui mini fluid steps">
-			<div class="<?=$step1_state?> step">
+		<div class="ui top attached fluid steps">
+			<div class="<?=$step1_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step1_title?></div>
-					<!--<div class="description"><?=$step1_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step2_state?> step">
+			<div class="<?=$step2_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step2_title?></div>
-					<!--<div class="description"><?=$step2_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step3_state?> step">
+			<div class="<?=$step3_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step3_title?></div>
-					<!--<div class="description"><?=$step3_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step4_state?> step">
+			<div class="<?=$step4_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step4_title?></div>
-					<!--<div class="description"><?=$step4_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step5_state?> step">
+			<div class="<?=$step5_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step5_title?></div>
-					<!--<div class="description"><?=$step5_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step6_state?> step">
+			<div class="<?=$step6_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step6_title?></div>
-					<!--<div class="description"><?=$step6_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step7_state?> step">
+			<div class="<?=$step7_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step7_title?></div>
-					<!--<div class="description"><?=$step7_desc?></div>-->
 				</div>
 			</div>
-			<div class="<?=$step8_state?> step">
+			<div class="<?=$step8_state?> step" style="padding: 10px">
 				<div class="content">
 					<div class="title"><?=$step8_title?></div>
-					<!--<div class="description"><?=$step8_desc?></div>-->
 				</div>
 			</div>
+		</div>
+		<div class="ui small bottom attached <?=$color?> message">
+			<div class="header"><?=$desc_header?></div>
+			<?=$desc?>
 		</div>
 		<?
 		

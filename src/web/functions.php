@@ -2953,11 +2953,18 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'],$GLOBALS['cfg']['mysqldevuser'],$GLOBALS['cfg']['mysqldevpassword'],$GLOBALS['cfg']['mysqldevdatabase']) or $devdbconnect = false;
 		
 		?>
-		<div class="ui top attached grey inverted segment">
-			<h2>NiDB Settings</h2>
+		<div class="ui top attached yellow inverted teriary segment">
+			<div class="ui two column grid">
+				<div class="column">
+					<h2>NiDB Settings</h2>
+				</div>
+				<div class="right aligned column" style="color: #000">
+					Reading from config file <div class="ui large label"><tt><?=$GLOBALS['cfg']['cfgpath']?></tt></div>
+				</div>
+			</div>
 		</div>
-		<div class="ui bottom attached segment">
-			<div align="center">Reading from config file <code style="background-color: #ddd; padding:5px; border-radius: 4px">&nbsp;<?=$GLOBALS['cfg']['cfgpath']?>&nbsp;</code></div>
+		<div class="ui bottom attached yellow inverted tertiary segment">
+			
 		<? if ($returnpage == "settings") { ?>
 		<form name="configform" method="post" action="system.php" class="ui form">
 		<? } elseif ($returnpage == "setup") { ?>
@@ -2965,7 +2972,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		<input type="hidden" name="step" value="setupcomplete">
 		<? } ?>
 		<input type="hidden" name="action" value="updateconfig">
-		<table class="ui very compact top attached celled grey table">
+		<table class="ui very compact top attached celled table">
 			<thead>
 				<tr>
 					<th class="ui inverted attached header"><h3 class="header">Variable</h3></th>
@@ -3210,7 +3217,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 			<tr>
 				<td class="right aligned tt">uploadsizelimit</td>
-				<td><input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>"></td>
+				<td>
+					<div class="ui right labeled fluid input">
+						<input type="text" name="uploadsizelimit" value="<?=$GLOBALS['cfg']['uploadsizelimit']?>">
+						<div class="ui label">MB</div>
+					</div>
+				</td>
 				<td></td>
 				<td>Upload size limit in megabytes (MB). Current PHP upload filesize limit [upload_max_filesize] is <?=get_cfg_var('upload_max_filesize')?> and max POST size [post_max_size] is <?=get_cfg_var('post_max_size')?></td>
 			</tr>
@@ -3288,9 +3300,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 			<tr>
 				<td class="right aligned tt">backupsize</td>
-				<td><input type="text" name="backupsize" value="<?=$GLOBALS['cfg']['backupsize']?>"></td>
+				<td>
+					<div class="ui right labeled fluid input">
+						<input type="text" name="backupsize" value="<?=$GLOBALS['cfg']['backupsize']?>">
+						<div class="ui label">GB</div>
+					</div>
+				</td>
 				<td></td>
-				<td>(Tape size) Number of GB in the backup directory before a tape is written. 1 GB = 1,000,000,000 bytes</td>
+				<td>
+					Number of GB in the backup directory before a tape is written. This should be relative to the tape size. [1 GB = 1,000,000,000 bytes]
+					<div class="ui green label" title="LTO-10 36000<br>LTO-9 18000<br>LTO-8 12000<br>LTO-7 6000<br>LTO-6 2500<br>LTO-5 1500<br>LTO-4 800<br>LTO-3 400<br>LTO-2 200<br>LTO-1 100"><i class="search icon"></i> LTO tape capacity (in GB)</div>
+				</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">backupstagingdir</td>
@@ -3639,8 +3659,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
 			</tr>
 		</table>
+		
 		<? if ($returnpage == "settings") { ?>
-		<div class="ui bottom attached primary button" onClick="document.configform.submit();">Save Settings</div>
+		<div class="ui bottom attached center aligned segment">
+			<div class="ui huge primary button" onClick="document.configform.submit();">Save Settings</div>
+		</div>
 		<? } ?>
 		</form>
 		</div>

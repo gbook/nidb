@@ -32,9 +32,8 @@ public:
 
     int Run();
 
-    QString BackupDatabase();
+    bool BackupDatabase(QString &m);
     qint64 MoveToBackupStaging();
-    //bool WriteTapeSet();
     bool WriteTape(int tapeNum, char tapeLetter, int backupid);
     void SetBackupStatus(int backupid, QString status);
 

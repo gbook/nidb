@@ -116,31 +116,80 @@
 	/* -------------------------------------------- */
 	function ViewLogs($modulename) {
 
-		chdir($GLOBALS['cfg']['logdir']);
-		$files = glob("$modulename"."2*.log");
-		usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
-		foreach ($files as $filename) {
-			$filesize = filesize($filename);
-			$filedate = date ("F d Y H:i:s", filemtime($filename));
-			?>
-			<details>
-			<summary><?=$filename?> <span class="tiny"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</span></summary>
-			<? if ($filesize < 1000000) {?>
-			<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
-			<? } else { ?>
-				File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
+		$sqlstring = "select * from modules where module_name = '$modulename'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$id = $row['module_id'];
+		$module_name = $row['module_name'];
+		$module_status = $row['module_status'];
+		$module_numrunning = $row['module_numrunning'];
+		$module_laststart = $row['module_laststart'];
+		$module_laststop = $row['module_laststop'];
+		$module_isactive = $row['module_isactive'];
+		$module_debug = $row['module_debug'];
+		
+		?>
+		<div class="ui text container">
+			<h2 class="ui header">
+				<i class="puzzle piece icon"></i>
+				<div class="content">
+					<?=$modulename?>
+					<div class="sub header">
+					<? if ($module_isactive) {?>
+					<a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Module is currently enabled.</b> Click to disable">Disable</a>
+					<? } else { ?>
+					<a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Module is currently disabled.</b> Click to enable">Enable</a>
+					<? } ?>
+					</div>
+				</div>
+			</h2>
+		</div>
+		<br><br>
+		<div class="ui grid">
+			<div class="sixteen wide column">
+				<div class="ui styled segment">
+					<div class="ui accordion">
+						<?
+						chdir($GLOBALS['cfg']['logdir']);
+						$files = glob("$modulename"."2*.log");
+						usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
+						foreach ($files as $filename) {
+							$filesize = filesize($filename);
+							$filedate = date ("F d Y H:i:s", filemtime($filename));
+							?>
+							<div class="ui title">
+								<div class="ui header">
+									<div class="content">
+										<i class="dropdown icon"></i>
+										<?=$filename?>
+										<div class="sub header"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</div>
+									</div>
+								</div>
+							</div>
+							<div class="content">
+							<? if ($filesize < 1000000) {?>
+							<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
+							<? } else { ?>
+								File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
 <?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
-				
-				
-				... ... ...
-				
-				
+								
+								
+		... ... ...
+								
+								
 <?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
-			</pre>
-			<? } ?>
-			</details>
-			<?
-		}
+							</pre>
+							<? } ?>
+							</div>
+							<br>
+							<?
+						}
+						?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?
 	}
 
 
@@ -229,7 +278,7 @@
 	
 	<div class="ui container">
 		<h2 class="ui header">Modules</h2>
-		<table class="ui small celled selectable grey very compact table">
+		<table class="ui celled selectable compact table">
 			<thead>
 				<tr>
 					<th>Name</th>
@@ -238,7 +287,7 @@
 					<th>Instances</th>
 					<th>Last finish</th>
 					<th>Run time</th>
-					<th>Enabled</th>
+					<th>Enable</th>
 					<th title="Enable debugging will always save the log file, and will output all SQL statements to the log file" style="text-decoration: underline; text-decoration-style: dotted">Debug</th>
 				</tr>
 			</thead>
@@ -283,32 +332,34 @@
 						
 						$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
 						
-						if (!$module_isactive) { $rowclass = "disabled"; } else { $rowclass = ""; }
+						if (!$module_isactive) { $rowclass = ""; } else { $rowclass = "positive"; }
 				?>
-				<tr class="">
-					<td><b><?=$module_name?></b></td>
-					<td><i class="file alternate outline icon"></i> <a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a></td>
-					<td style="color: <?=$color?>"><?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?><small>(<a href="adminmodules.php?action=reset&id=<?=$id?>">reset</a>)</small> <? } ?></td>
+				<tr>
+					<td class="<?=$rowclass?>"><h3 class="header"><?=$module_name?></h3></td>
+					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
+					<td style="color: <?=$color?>">
+						<?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
+					</td>
 					<td><?=$module_numrunning?></td>
 					<td><?=$module_laststop?></td>
 					<td><?=$runtime?></td>
 					<td>
 						<?
 							if ($module_isactive) {
-								?><a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+								?><a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 							}
 						?>
 					</td>
 					<td>
 						<?
 							if ($module_debug) {
-								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 							}
 						?>
 					</td>
