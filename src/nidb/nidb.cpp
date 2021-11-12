@@ -585,10 +585,8 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool progress
         while(process.waitForReadyRead(-1)) {
             QString buffer = process.readAll();
             output += buffer;
-            if (progress) {
-                buffer = buffer.trimmed();
-                WriteLog(buffer);
-            }
+            if (progress)
+                WriteLog(buffer,0,false);
         }
     }
     process.waitForFinished();
@@ -686,12 +684,18 @@ bool nidb::SandboxedSystemCommand(QString s, QString dir, QString &output, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteLog --------------------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::WriteLog(QString msg, int wrap) {
+QString nidb::WriteLog(QString msg, int wrap, bool timeStamp) {
     if (msg.trimmed() != "") {
         if (wrap > 0)
             msg = WrapText(msg, wrap);
         if (log.isWritable()) {
-            if (!log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1()))
+            bool success;
+            if (timeStamp)
+                success = log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1());
+            else
+                success = log.write(QString("%3").toLatin1());
+
+            if (!success)
                 Print("Unable to write to log file!");
         }
         else {

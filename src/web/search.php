@@ -1017,16 +1017,32 @@
 							<br><br>
 						
 							<? if ($s['s_resultoutput'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>> Pipeline results<br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>>
+								<label>Pipeline results</label>
+							</div>
+							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>> Pipeline results <span class="tiny">.csv</span><br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>>
+								<label>Pipeline results <span class="tiny">.csv</span></label>
+							</div>
+							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>> Longitudinal results <span class="tiny">bin by month</span><br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>>
+								<label>Longitudinal results <span class="tiny">bin by month</span></label>
+							</div>
+							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>> Longitudinal results <span class="tiny">bin by year</span><br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>>
+								<label>Longitudinal results <span class="tiny">bin by year</span></label>
+							</div>
+							<br>
 						</div>
 								
 						<div class="ui bottom attached tab segment" data-tab="fourth">
@@ -1059,24 +1075,42 @@
 							</select>
 							<br><br>
 							<? if ($s['s_resultoutput'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>> Chart<br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>>
+								<label>Chart</label>
+							</div>
+							<br>
 							
 							<? if ($s['s_resultoutput'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>> Table<br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>>
+								<label>Table</label>
+							</div>
+							<br>
 						</div>
 								
 						<div class="ui bottom attached tab segment" data-tab="fifth">
 							<? if ($s['s_resultoutput'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>> Debug <span class="tiny">SQL</span><br>
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>>
+								<label>Debug <span class="tiny">SQL</span></label>
+							</div>
+							<br>
 							
 							<? if ($GLOBALS['isadmin']) { ?>
 							<? if ($s['s_resultoutput'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>> File operations
+							<div class="ui radio checkbox">
+								<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>>
+								<label>File operations</label>
+							</div>
 							<? } ?>
 							<br>
 							
 							<? if ($s['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
-							<input type="checkbox" name="s_audit" value="1" <?=$checked?>> Audit <span class="tiny">files</span>
+							<div class="ui checkbox">
+								<input type="checkbox" name="s_audit" value="1" <?=$checked?>>
+								<label>Audit <span class="tiny">files</span></label>
+							</div>
 						</div>
 					
 					</div>
@@ -1748,7 +1782,7 @@
 		<? if ($s_resultoutput == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
-		<table width="100%" class="searchresults">
+		<table width="100%" class="ui small very compact very basic selectable table">
 		<? } ?>
 			<script type="text/javascript">
 			$(document).ready(function() {
@@ -2000,9 +2034,9 @@
 				$maxpvsnrcolor = $colors[100-$pvindex];
 				$maxiosnrcolor = $colors[100-$ioindex];
 				$maxmotioncolor = $colors[100-$motionindex];
-				if ($pvsnr <= 0.0001) { $pvsnr = "-"; $maxpvsnrcolor = "#FFFFFF"; }
+				if ($pvsnr <= 0.0001) { $pvsnr = "-"; $maxpvsnrcolor = ""; }
 				else { $pvsnr = number_format($pvsnr,2); }
-				if ($iosnr <= 0.0001) { $iosnr = "-"; $maxiosnrcolor = "#FFFFFF"; }
+				if ($iosnr <= 0.0001) { $iosnr = "-"; $maxiosnrcolor = ""; }
 				else { $iosnr = number_format($iosnr,2); }
 				if ($motion_rsq <= 0.0001) { $motion_rsq = "-"; $maxmotioncolor = ""; }
 				else { $motion_rsq = number_format($motion_rsq,5); }
@@ -2011,11 +2045,11 @@
 				$maxxcolor = $colors[$xindex];
 				$maxycolor = $colors[$yindex];
 				$maxzcolor = $colors[$zindex];
-				if ($rangex <= 0.0001) { $rangex = "-"; $maxxcolor = "#FFFFFF"; }
+				if ($rangex <= 0.0001) { $rangex = "-"; $maxxcolor = ""; }
 				else { $rangex = number_format($rangex,2); }
-				if ($rangey <= 0.0001) { $rangey = "-"; $maxycolor = "#FFFFFF"; }
+				if ($rangey <= 0.0001) { $rangey = "-"; $maxycolor = ""; }
 				else { $rangey = number_format($rangey,2); }
-				if ($rangez <= 0.0001) { $rangez = "-"; $maxzcolor = "#FFFFFF"; }
+				if ($rangez <= 0.0001) { $rangez = "-"; $maxzcolor = ""; }
 				else { $rangez = number_format($rangez,2); }
 				
 				/* check if this is real data, or unusable data based on the ratings, and get rating counts */
@@ -2083,13 +2117,17 @@
 					});
 					</script>
 					<tr>
-						<td colspan="19">
+						<td colspan="19" style="padding: 0px; background-color: #fff;">
 							<br>
-							<table width="100%" class="searchresultstudy">
+							<table class="ui very compact yellow celled selectable table" width="100%">
 								<tr>
-									<td class="header1"><?=$name?></td>
-									<td class="header1 tt"><a href="subjects.php?id=<?=$subject_id?>" class="header1" style="color: <?=$displayidcolor?>;"><?=$displayid?></a></td>
-									<td class="header3 tt">
+									<td class="one wide tertiary yellow segment">
+										<h4 class="header" style="color: #222"><?=$name?></h4>
+									</td>
+									<td class="two wide tertiary yellow segment middle aligned tt">
+										<a href="subjects.php?id=<?=$subject_id?>" style="color: <?=$displayidcolor?>; font-weight: bold" class="ui compact blue button"><?=$displayid?> &nbsp; <i class="external alternate icon"></i></a>
+									</td>
+									<td class="two wide yellow"><h4 class="header tt" style="color: #222">
 										<?
 										if (strlen($altuidlist) > 60) {
 											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,60)?>...</span><?
@@ -2097,16 +2135,18 @@
 										else {
 											echo "$altuidlist";
 										}
-									?></td>
-									<td class="header2"><a href="studies.php?id=<?=$study_id?>">Study <?=$study_num?></a> <?=$study_type?></td>
-									<td class="header2"><?=$project_name?> (<?=$project_costcenter?>)</td>
-									<td class="header2"><?=$study_datetime?></td>
-									<td class="header3"><?=$enrollsubgroup?></td>
-									<td class="header3"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</td>
-									<td class="header3"><?=$gender?></td>
-									<td class="header3 tt"><?=$study_alternateid?></td>
-									<td class="header3"><?=$study_type?></td>
-									<td class="header3"><?=$study_site?></td>
+									?></h4></td>
+									<td class="two wide tertiary yellow segment">
+										<a href="studies.php?id=<?=$study_id?>" class="ui large image blue label"><?=$uid?><div class="detail"><?=$study_num?></div></a>
+									</td>
+									<td class="two wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$project_name?> (<?=$project_costcenter?>)</h4></td>
+									<td class="one wide tertiary yellow segment"><span style="color: #222; font-weight: bold"><?=$study_datetime?></span></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$enrollsubgroup?></h4></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</h4></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$gender?></h4></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header tt" style="color: #222"><?=$study_alternateid?></h4></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$study_type?></h4></td>
+									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$study_site?></h4></td>
 								</tr>
 							</table>
 						</td>
@@ -2191,14 +2231,15 @@
 				?>
 					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
 						<? if ($s_resultoutput != "table") { ?>
-							<td class="<?=$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<?=$series_id?>"></td>
+							<td class="<?=$rowstyle?>">
+								<input type="checkbox" name="seriesid[]" value="<?=$series_id?>">
+							</td>
 						<? } ?>
 						<td class="<?=$rowstyle?>"><b><?=$series_num?></b><? if ($downloadmsg != "") { ?>&nbsp;&nbsp;<img src="images/downloaded.png" title="<?=$downloadmsg?>"><?} ?>
 						</td>
 						<td class="<?=$rowstyle?>">
 							<span><? if ($s_usealtseriesdesc) { echo $series_altdesc; } else { echo $series_desc; } ?></span></a>
-							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
-							&nbsp;<a href="preview.php?image=<?=$gifthumbpath?>" class="preview"><img src="images/movie.png" border="0"></a>
+							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a>
 						</td>
 						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
@@ -2220,18 +2261,23 @@
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td>
 						<? if ($s_resultoutput != "table") { ?>
 						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
-							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><img src="images/chart.gif" border="0" title="View QA results, including movement correction"></a>
+							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><i class="chart line icon"></i></a>
 						</td>
 						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
 							<a href="JavaScript:newPopup('ratings.php?id=<?=$series_id?>&type=series&modality=mr');">
-							<? if ($hasratings) { $image = "rating2.png"; } else { $image = "rating.png"; } ?>
-							<img src="images/<?=$image?>" border="0" title="View/edit ratings">
+							<?
+								if ($hasratings) {
+									?><i class="red file outline icon" title="View/edit ratings"></i><?
+								} else {
+									?><i class="grey file outline icon" title="View/edit ratings"></i><?
+								}
+							?>
 							</a>
 							<span style="font-size:7pt" title="Scale of 1 to 5, where<br>1 = good<br>5 = bad"><?=$ratingavg;?></span>
 						</td>
 						<td class="<?=$rowstyle?>">
 							<? if (trim($series_notes) != "") { ?>
-							<span title="<?=$series_notes?>" style="font-size:12pt">&#9998;</span>
+							<i class="pencil alternate icon" title="<?=$series_notes?>"></i>
 							<? } ?>
 						</td>
 						<? } ?>
@@ -3551,7 +3597,7 @@
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
 		<input type="hidden" name="action" value="submit">
-		<table class="graydisplaytable" width="100%">
+		<table class="ui very compact small celled selectable table" width="100%">
 			<thead>
 				<tr>
 					<!--<th>&nbsp;</th>-->
@@ -4353,68 +4399,6 @@
 						}
 					});
 					
-					/* click events */
-					$('input[name=destination]').click(function() {
-						/* export */
-						if ($('#destination:checked').val() == 'export') {
-							$('.export').show("highlight",{},1000);
-							$('.format').hide();
-							$('.dirstructure').hide();
-						}
-						else if (($('#destination:checked').val() == 'ndar') || ($('#destination:checked').val() == 'ndarcsv')) {
-							$('.export').hide();
-							$('.format').hide();
-							$('.dirstructure').hide();
-							$('.datatoexport').hide();
-						}
-						else {
-							$('.export').hide();
-							$('.format').show("highlight",{},1000);
-							$('.dirstructure').show("highlight",{},1000);
-							$('.datatoexport').show("highlight",{},1000);
-						}
-						
-						/* remote ftp */
-						if ($('#destination:checked').val() == 'remoteftp') {
-							$('.remoteftp').show("highlight",{},1000);
-						}
-						else {
-							$('.remoteftp').hide();
-						}
-						
-						/* remote nidb */
-						if ($('#destination:checked').val() == 'remotenidb') {
-							$('.remotenidb').show("highlight",{},1000);
-							$('.export').hide();
-							$('.dirstructure').hide();
-							$('.format').hide();
-							$('.datatoexport').hide();
-						}
-						else {
-							$('.remotenidb').hide();
-						}
-						
-						/* BIDS */
-						if ($('#destination:checked').val() == 'bids') {
-							$('.bids').show("highlight",{},1000);
-							$('.export').hide();
-							$('.dirstructure').hide();
-							$('.format').hide();
-							$('.datatoexport').hide();
-						}
-						else {
-							$('.bids').hide();
-						}
-						
-						/* public download */
-						if ($('#destination:checked').val() == 'publicdownload') {
-							$('.publicdownload').show("highlight",{},1000);
-						}
-						else {
-							$('.publicdownload').hide();
-						}
-					});
-					
 					/* types of information to download */
 					$('input[name=downloadimaging]').click(function() {
 						/* hide all ... */
@@ -4432,31 +4416,177 @@
 						}
 					});
 					
-					$('input[name=downloadbeh]').click(function() {
-						/* hide all ... */
-						$('#sectionformat').hide();
-						$('#sectiondirstructure').hide();
-						$('.beh').hide();
-						/* ... then show the appropriate sections */
-						if ($('#downloadimaging:checked').val() == '1') {
-							$('#sectionformat').show();
-							$('#sectiondirstructure').show();
-						}
-						if ($('#downloadbeh:checked').val() == '1') {
-							$('.beh').show();
-							$('#sectiondirstructure').show();
-						}
-					});
 				});
+				
+				
+				function HighlightStudyDir() {
+					var dirformat = $("[name='dirformat']:checked").val();
+					
+					if (dirformat == "shortid") {
+						document.getElementById("label_shortid").classList.add('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.remove('red');
+					}
+					else if (dirformat == "shortstudyid") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.add('red');
+						document.getElementById("label_altuid").classList.remove('red');
+					}
+					else if (dirformat == "altuid") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.add('red');
+					}
+				}
+
+				function HighlightSeriesDir() {
+					var dirformat = $("[name='preserveseries']:checked").val();
+					
+					if (dirformat == "1") {
+						document.getElementById("label_preserveseries1").classList.add('red');
+						document.getElementById("label_preserveseries0").classList.remove('red');
+						document.getElementById("label_preserveseries2").classList.remove('red');
+						document.getElementById("label_preserveseries3").classList.remove('red');
+					}
+					else if (dirformat == "0") {
+						document.getElementById("label_preserveseries1").classList.remove('red');
+						document.getElementById("label_preserveseries0").classList.add('red');
+						document.getElementById("label_preserveseries2").classList.remove('red');
+						document.getElementById("label_preserveseries3").classList.remove('red');
+					}
+					else if (dirformat == "2") {
+						document.getElementById("label_preserveseries1").classList.remove('red');
+						document.getElementById("label_preserveseries0").classList.remove('red');
+						document.getElementById("label_preserveseries2").classList.add('red');
+						document.getElementById("label_preserveseries3").classList.remove('red');
+					}
+					else if (dirformat == "3") {
+						document.getElementById("label_preserveseries1").classList.remove('red');
+						document.getElementById("label_preserveseries0").classList.remove('red');
+						document.getElementById("label_preserveseries2").classList.remove('red');
+						document.getElementById("label_preserveseries3").classList.add('red');
+					}
+				}
+
+				function HighlightBehDir() {
+					var dirformat = $("[name='behformat']:checked").val();
+					
+					if (dirformat == "behroot") {
+						document.getElementById("label_behroot").classList.add('red');
+						document.getElementById("label_behrootdir").classList.remove('red');
+						document.getElementById("label_behseries").classList.remove('red');
+						document.getElementById("label_behseriesdir").classList.remove('red');
+					}
+					else if (dirformat == "behrootdir") {
+						document.getElementById("label_behroot").classList.remove('red');
+						document.getElementById("label_behrootdir").classList.add('red');
+						document.getElementById("label_behseries").classList.remove('red');
+						document.getElementById("label_behseriesdir").classList.remove('red');
+					}
+					else if (dirformat == "behseries") {
+						document.getElementById("label_behroot").classList.remove('red');
+						document.getElementById("label_behrootdir").classList.remove('red');
+						document.getElementById("label_behseries").classList.add('red');
+						document.getElementById("label_behseriesdir").classList.remove('red');
+					}
+					else if (dirformat == "behseriesdir") {
+						document.getElementById("label_behroot").classList.remove('red');
+						document.getElementById("label_behrootdir").classList.remove('red');
+						document.getElementById("label_behseries").classList.remove('red');
+						document.getElementById("label_behseriesdir").classList.add('red');
+					}
+				}
+				
+				function CheckDestination() {
+					
+					var dest = $("[name='destination']:checked").val();
+					console.log(dest);
+					
+					/* export */
+					if (dest == 'export') {
+						$('.export').show("highlight",{},1000);
+						$('.format').hide();
+						$('.dirstructure').hide();
+					}
+					else if ((dest == 'ndar') || (dest == 'ndarcsv')) {
+						$('.export').hide();
+						$('.format').hide();
+						$('.dirstructure').hide();
+						$('.datatoexport').hide();
+					}
+					else {
+						$('.export').hide();
+						$('.format').show("highlight",{},1000);
+						$('.dirstructure').show("highlight",{},1000);
+						$('.datatoexport').show("highlight",{},1000);
+					}
+					
+					/* remote ftp */
+					if (dest == 'remoteftp') {
+						$('.remoteftp').show("highlight",{},1000);
+					}
+					else {
+						$('.remoteftp').hide();
+					}
+					
+					/* remote nidb */
+					if (dest == 'remotenidb') {
+						$('.remotenidb').show("highlight",{},1000);
+						$('.export').hide();
+						$('.dirstructure').hide();
+						$('.format').hide();
+						$('.datatoexport').hide();
+					}
+					else {
+						$('.remotenidb').hide();
+					}
+					
+					/* BIDS */
+					if (dest == 'bids') {
+						$('.bids').show("highlight",{},1000);
+						$('.export').hide();
+						$('.dirstructure').hide();
+						$('.format').hide();
+						$('.datatoexport').hide();
+					}
+					else {
+						$('.bids').hide();
+					}
+					
+					/* public download */
+					if (dest == 'publicdownload') {
+						$('.publicdownload').show("highlight",{},1000);
+					}
+					else {
+						$('.publicdownload').hide();
+					}
+					
+					//if ($('#downloadbeh:checked').val() == '1') {
+					//	/* hide all ... */
+					//	$('#sectionformat').hide();
+					//	$('#sectiondirstructure').hide();
+					//	$('.beh').hide();
+					//	/* ... then show the appropriate sections */
+					//	if ($('#downloadimaging:checked').val() == '1') {
+					//		$('#sectionformat').show();
+					//		$('#sectiondirstructure').show();
+					//	}
+					//	if ($('#downloadbeh:checked').val() == '1') {
+					//		$('.beh').show();
+					//		$('#sectiondirstructure').show();
+					//	}
+					//});
+					
+				}
 			</script>
 			
-			<div class="ui text container">
+			<div class="ui container">
 				<h3 class="ui top attached header secondary inverted black segment">
 					Operations
 				</h3>
 				<div class="ui bottom attached segment">
 					<h4 class="ui header">With Selected Studies:</h4>
-					<div class="ui horizontal divider">Add to group</div>
+					<div class="ui left aligned horizontal divider">Add to group</div>
 					<div class="ui labeled action input">
 						<label for="subjectgroupid" class="ui label" style="width: 150px">Subject Group</label>
 						<select name="subjectgroupid" id="subjectgroupid" class="ui selection dropdown">
@@ -4510,7 +4640,7 @@
 						</select>
 						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup';document.subjectlist.submit();">Add</div>
 					</div>
-					<div class="ui horizontal divider">Mini-pipelines</div>
+					<div class="ui horizontal left aligned divider">Mini-pipelines</div>
 					<div class="ui action input">
 						<?
 							if (count($projectids) > 0) {
@@ -4533,14 +4663,480 @@
 						<?=$mpselectbox?>
 						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines';document.subjectlist.submit();">Run</div>
 					</div>
-					<div class="ui horizontal divider">Batch Upload Data</div>
+					<div class="ui horizontal left aligned divider">Batch Upload Data</div>
 					<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist';document.subjectlist.submit();">Upload</div>
+				</div>
+			
+				<br><br>
+			
+				<h3 class="ui top attached header secondary inverted black segment">
+					Transfer & Export Data
+				</h3>
+				<div class="ui bottom attached segment">
+					<div class="ui horizontal left aligned divider header">Destination</div>
+					<div class="ui grid">
+						<div class="two wide column">&nbsp;</div>
+						<div class="seven wide column">
+							<h4 class="ui header">This server</h4>
+							<div class="ui vertically fitted basic segment">
+								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
+								<div class="ui radio checkbox" onChange="CheckDestination()">
+									<input type="radio" name="destination" id="radio_web" value="web">
+									<label>Web <span class="tiny">http download</span></label>
+								</div>
+								<br>
+								<? } ?>
+								<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
+								<div class="ui radio checkbox" onChange="CheckDestination()">
+									<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">
+									<label>Public Download</label>
+								</div>
+								<br>
+								<div class="ui segment publicdownload">
+									<div class="field">
+										Short description
+										<input type="text" name="publicdownloaddesc" maxlength="255">
+										<span class="tiny">Max 255 chars</span>
+									</div>
+
+									<div class="field">
+										Release notes
+										<textarea name="publicdownloadreleasenotes"></textarea>
+									</div>
+
+									<div class="field">
+										Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password">
+										<input type="password" name="publicdownloadpassword">
+									</div>
+
+									<div class="field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="publicdownloadshareinternal" value="1">
+											<label>Share download within this system <i class="small blue question circle outline icon" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></i></label>
+										</div>
+									</div>
+
+									<div class="field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="publicdownloadregisterrequired" value="1" checked>
+											<label>Require registration <i class="small blue question circle outline icon" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></i></label>
+										</div>
+									</div>
+
+									<div class="field">
+										Expiration Date <i class="small blue question circle outline icon" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></i>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="publicdownloadexpire" value="7" checked>
+											<label>7 days</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="publicdownloadexpire" value="30">
+											<label>30 days</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="publicdownloadexpire" value="90">
+											<label>90 days</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="publicdownloadexpire" value="0">
+											<label>No expiration</label>
+										</div>
+										<br>
+									</div>
+								</div>
+							<?
+							}
+							if ($s_resultoutput != 'subject') {
+								if (!$GLOBALS['cfg']['ispublic']) {
+									?>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>
+										<label>Local FTP/scp</label>
+									</div>
+									<br><?
+								}
+
+								if ($GLOBALS['cfg']['enablerdoc']) {
+									?>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_ndar" value="ndar">
+										<label>NDAR/RDoC submission</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv">
+										<label>NDAR/RDoC submission <span class="tiny">.csv</span></label>
+									</div>
+									<br>
+									<?
+								}
+							}
+							?>
+							</div>
+							
+						</div>
+						<div class="seven wide column">
+							<h4 class="ui header">Remote server</h4>
+							<div class="ui vertically fitted basic segment">
+								<?
+								if ($s_resultoutput != 'subject') {
+									?>
+									<script>
+										function CheckNFSPath() {
+											var xhttp = new XMLHttpRequest();
+											xhttp.onreadystatechange = function() {
+												if (this.readyState == 4 && this.status == 200) {
+													document.getElementById("pathcheckresult").innerHTML = this.responseText;
+												}
+											};
+											var nfsdir = document.getElementById("nfsdir").value;
+											//alert(nfsdir);
+											xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
+											xhttp.send();
+										}
+									</script>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_nfs" value="nfs" checked>
+										<label>Linux NFS Mount</label>
+									</div>
+									<div class="ui fluid input">
+										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path...">
+									</div>
+									<span id="pathcheckresult"></span>
+									<br>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
+										<label>Remote FTP site</label>
+									</div>
+									<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
+										<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
+										<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
+										<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
+										<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
+										<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
+									</table>
+									<br>
+									<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb">
+										<label>Remote NiDB site</label>
+									</div>
+									<select name="remoteconnid" class="remotenidb">
+										<option value="">(Select connection)</option>
+										<?
+											$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$connid = $row['remoteconn_id'];
+												$connname = $row['conn_name'];
+												$remoteserver = $row['remote_server'];
+												$remoteusername = $row['remote_username'];
+												$remotepassword = $row['remote_password'];
+												$remoteinstanceid = $row['remote_instanceid'];
+												$remoteprojectid = $row['remote_projectid'];
+												$remotesiteid = $row['remote_siteid'];
+												?>
+												<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
+												<?
+											}
+										?>
+									</select>
+									<?
+									}
+								}
+								?>
+							</div>
+						</div>
+					</div>
+					<div class="ui horizontal left aligned divider header">Data</div>
+					<div class="ui grid">
+						<div class="two wide column">&nbsp;</div>
+						<div class="fourteen wide column">
+
+							<div class="ui basic vertically fitted segment datatoexport" id="sectiondatatype">
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>
+									<label>Imaging</label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>
+									<label>Behavioral</label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadqc" id="downloadqc" value="1">
+									<label>QC <i class="small blue question circle outline icon" title="Includes all QC metrics computed on the data"></i></label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadqc" id="downloaddemo" value="1">
+									<label>Demographics <i class="small blue question circle outline icon" title="Includes age at scan, sex, and other demographics. This is places in a demographics.txt file in the root of the download directory"></i></label>
+								</div>
+							</div>
+
+						</div>
+					</div>
+					
+					<div class="ui horizontal left aligned divider header">Format</div>
+					<div class="ui grid">
+						<div class="two wide column">&nbsp;</div>
+						<div class="fourteen wide column">
+							<? if (strtolower($s_studymodality) == "mr") { ?>
+							<div class="ui basic vertically fitted segment format" id="sectionformat">
+
+								<!--<span class="tiny">Conversion to other formats only available if native data in DICOM format</span><br>-->
+
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_nifti3d" value="nifti3d" checked>
+									<label>Nifti 3D</label>
+								</div>
+								<br>
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_nifti4d" value="nifti4d">
+									<label>Nifti 4D</label>
+								</div>
+								<br>
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_dicom" value="dicom">
+									<label>DICOM</label>
+								</div>
+								<br>
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_bids" value="bids">
+									<label>BIDS</label>
+								</div>
+								<br>
+								<div class="bids">
+									<div class="field">
+										README
+										<textarea name="bidsreadme" class="bids"></textarea>
+									</div>
+									<br>
+									<div class="field">BIDS options
+										<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
+										<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
+									</div>
+								</div>
+								<div class="dicom" style="padding-left: 15px;">
+									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+									<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
+									<? } ?>
+									<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
+									<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
+
+									<input type="checkbox" name="gzip" value="1">Gzip files
+
+									<details>
+										<summary><b>Anonymization Notes</b><br><span class="tiny">click to expand</span></summary>
+										<span class="sublabel">
+										<ul>
+										<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+										<li>No DICOM anonymization - not recommended
+										<? } ?>
+										<li>DICOM anonymization <u>light</u> removes:
+											<ul>
+												<li style="white-space: nowrap">(0008,0090) ReferringPhysiciansName
+												<li style="white-space: nowrap">(0008,1050) PerformingPhysiciansName
+												<li style="white-space: nowrap">(0008,1070) OperatorsName
+												<li style="white-space: nowrap">(0010,0010) PatientName
+												<li style="white-space: nowrap">(0010,0030) PatientBirthDate
+											</ul>
+										<li>DICOM anonymization <u>complete</u> removes all of the above and the following:
+											<ul>
+												<li style="white-space: nowrap">(0008,0080) InstitutionName
+												<li style="white-space: nowrap">(0008,0081) InstitutionAddress
+												<li style="white-space: nowrap">(0008,1010) StationName
+												<li style="white-space: nowrap">(0008,1030) StudyDescription
+												<li style="white-space: nowrap">(0008,0020) StudyDate
+												<li style="white-space: nowrap">(0008,0021) SeriesDate
+												<li style="white-space: nowrap">(0008,0022) AcquisitionDate
+												<li style="white-space: nowrap">(0008,0023) ContentDate
+												<li style="white-space: nowrap">(0008,0030) StudyTime
+												<li style="white-space: nowrap">(0008,0031) SeriesTime
+												<li style="white-space: nowrap">(0008,0032) AcquisitionTime
+												<li style="white-space: nowrap">(0008,0033) ContentTime
+												<li style="white-space: nowrap">(0010,0020) PatientID
+												<li style="white-space: nowrap">(0010,1030) PatientWeight
+											</ul>
+										</span>
+										</ul>
+										</span>
+									</details>
+								</div>
+							</div>
+							<? } ?>
+						</div>
+					</div>
+
+					<div class="ui horizontal left aligned divider header">Directory Structure</div>
+					<div class="ui grid">
+						<div class="two wide column">&nbsp;</div>
+						<div class="fourteen wide column">
+
+							<div class="ui segment">
+								<span class="ui blue text"><b>Study Directory Format</b></span>
+								<br><br>
+								<div class="ui very compact grid">
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_shortid" value="shortid" checked>
+												<label>Study ID</label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui red left pointing label" id="label_shortid">
+											<tt>S1234ABC1</tt>
+										</div>
+									</div>
+									
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_shortstudyid" value="shortstudyid">
+												<label>UID w/subdir</label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_shortstudyid">
+											<tt>S1234ABC/1</tt>
+										</div>
+									</div>
+
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_altuid" value="altuid">
+												<label>Primary alternate subject ID<br><span class="tiny">With incremental study numbers</span></label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_altuid">
+											<tt>23505/1<br>23505/2</tt>
+										</div>
+									</div>
+
+									<? if ($s_resultoutput == 'long') { ?>
+										<input type="radio" name="dirformat" value="longitudinal">Longitudinal
+										<tt>S1234ABC<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time1<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time2</tt>
+									<? } ?>
+								</div>
+							</div>
+
+							<div class="ui segment">
+								<span class="ui blue text"><b>Series Directory Format</b></span>
+								<br><br>
+								<div class="field">
+									<div class="ui radio checkbox" onChange="HighlightSeriesDir()">
+										<input type="radio" name="preserveseries" value="1" checked>
+										<label>Preserve series number</label>
+									</div>
+									<div class="ui red left pointing label" id="label_preserveseries1">
+										<tt>8 9 10 &rarr; 8 9 10</tt>
+									</div>
+								</div>
+									
+								<div class="field">
+									<div class="ui radio checkbox" onChange="HighlightSeriesDir()">
+										<input type="radio" name="preserveseries" value="0">
+										<label>Renumber series</label>
+									</div>
+									<div class="ui left pointing label" id="label_preserveseries0">
+										<tt>8 9 10 &rarr; 1 2 3</tt>
+									</div>
+								</div>
+									
+								<div class="field">
+									<div class="ui radio checkbox" onChange="HighlightSeriesDir()">
+										<input type="radio" name="preserveseries" value="2">
+										<label>Use protocol name <i class="small blue question circle outline icon" title="Characters other than numbers and letters are replaced with underscores"></i></label>
+									</div>
+									<div class="ui left pointing label" id="label_preserveseries2">
+										<tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;Localizer &nbsp;Resting &nbsp;Task_A</tt>
+									</div>
+								</div>
+									
+								<div class="field">
+									<div class="ui radio checkbox" onChange="HighlightSeriesDir()">
+										<input type="radio" name="preserveseries" value="3">
+										<label>ABIDE format</label>
+									</div>
+									<div class="ui left pointing label" id="label_preserveseries3">
+										<tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;anat_1 &nbsp;anat_2 &nbsp;anat_3</tt>
+									</div>
+								</div>
+							</div>
+							
+							<div class="ui segment">
+								<? if ($s_studymodality == "mr") { ?>
+								<span class="beh">
+									<span class="ui blue text"><b>Behavioral Data</b></span>
+									<br><br>
+									<div class="field">
+										<div class="ui radio checkbox" onChange="HighlightBehDir()">
+											<input type="radio" name="behformat" value="behroot">
+											<label>Place in in root</label>
+										</div>
+										<div class="ui left pointing label" id="label_behroot">
+											<tt>S1234ABC/file.log</tt>
+										</div>
+									</div>
+
+									<div class="field">
+										<div class="ui radio checkbox" onChange="HighlightBehDir()">
+											<input type="radio" name="behformat" value="behrootdir" checked>
+											<label>Place in root directory</label>
+										</div>
+										<input type="text" name="behdirnameroot" value="beh" style="width: 90px; padding: 2px; vertical-align: middle">
+										<div class="ui left pointing label" id="label_behrootdir">
+											<tt>S1234ABC/beh/file.log</tt>
+										</div>
+									</div>
+
+									<div class="field">
+										<div class="ui radio checkbox" onChange="HighlightBehDir()">
+											<input type="radio" name="behformat" value="behseries" checked>
+											<label>Place in series directory</label>
+										</div>
+										<div class="ui left pointing label" id="label_behseries">
+											<tt>S1234ABC/2/file.log</tt>
+										</div>
+									</div>
+									
+									<div class="field">
+										<div class="ui radio checkbox" onChange="HighlightBehDir()">
+											<input type="radio" name="behformat" value="behseriesdir" checked>
+											<label>Place in root directory</label>
+										</div>
+										<input type="text" name="behdirnameseries" value="beh" style="width: 90px; padding: 2px; vertical-align: middle">
+										<div class="ui red left pointing label" id="label_behseriesdir">
+											<tt>S1234ABC/2/beh/file.log</tt>
+										</div>
+									</div>
+								</span>
+								<? } ?>
+							</div>
+						</div>
+					</div>
+					<div class="segment">
+						<input class="ui primary button" type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'">
+					</div>
 				</div>
 			</div>
 			
-			<br><br>
+
+<!--			
+			<h1> ----- OLD ----- </h1>
 			
-			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="0" cellspacing="0" width="60%">
+			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="0" cellspacing="0" width="100%">
 				<tr>
 					<td>
 						<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Transfer/Export Data</div>
@@ -4560,10 +5156,10 @@
 											<td valign="top" align="right"><b>This</b> server</td>
 											<td valign="top">
 												<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-												<input type="radio" name="destination" id="destination" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web (http download)<br>
+												<input type="radio" name="destination" id="radio_web" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web (http download)<br>
 												<? } ?>
 												<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
-												<input type="radio" name="destination" id="destination" value="publicdownload">Public Download
+												<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">Public Download
 												<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
 													<tr>
 														<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
@@ -4600,13 +5196,13 @@
 												}
 												if ($s_resultoutput != 'subject') {
 													if (!$GLOBALS['cfg']['ispublic']) {
-														?><input type="radio" name="destination" id="destination" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br><?
+														?><input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br><?
 													}
 
 													if ($GLOBALS['cfg']['enablerdoc']) {
 														?>
-														<input type="radio" name="destination" id="destination" value="ndar">NDAR/RDoC submission<br>
-														<input type="radio" name="destination" id="destination" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
+														<input type="radio" name="destination" id="radio_ndar" value="ndar">NDAR/RDoC submission<br>
+														<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
 														<?
 													}
 												}
@@ -4634,9 +5230,9 @@
 														xhttp.send();
 													}
 												</script>
-												<input type="radio" name="destination" id="destination" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
+												<input type="radio" name="destination" id="radio_nfs" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
 												<br>
-												<input type="radio" name="destination" id="destination" value="remoteftp">Remote FTP site
+												<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">Remote FTP site
 												<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
 													<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
 													<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
@@ -4646,7 +5242,7 @@
 												</table>
 												<br>
 												<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-												<input type="radio" name="destination" id="destination" value="remotenidb">Remote NiDB site
+												<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb">Remote NiDB site
 												<select name="remoteconnid" class="remotenidb">
 													<option value="">(Select connection)</option>
 													<?
@@ -4917,6 +5513,8 @@
 				</tr>
 			</table>
 			</form>
+			</div>
+			-->
 		<?
 	}
 	

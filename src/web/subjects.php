@@ -421,9 +421,15 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$itemprotocols[] = $row['item_protocol'];
 			$templatemodality = strtolower($row['template_modality']);
+			$templatename = $row['template_name'];
+			$templatevisit = $row['template_visitlabel'];
 		}
 		
 		$modality = $templatemodality;
+		if ($templatevisit == "")
+			$templatevisit = $templatename;
+		
+		$templatevisit = mysqli_real_escape_string($GLOBALS['linki'], $templatevisit);
 
 		/* insert a new row into the studies table. parsedicom or the user will populate the info later */
 		/* get the newest study # first */
@@ -438,7 +444,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$project_id = $row['project_id'];
 		
-		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_status) values ($enrollmentid, $study_num, upper('$modality'), now(),'' , '', '', '', 'pending')";
+		$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_status, study_type) values ($enrollmentid, $study_num, upper('$modality'), now(),'' , '', '', '', 'pending', '$templatevisit')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$studyRowID = mysqli_insert_id($GLOBALS['linki']);
 		

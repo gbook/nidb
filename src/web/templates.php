@@ -132,8 +132,10 @@
 
 			<div class="ui grid">
 				<div class="six wide column">
-					<h2 class="ui header">Study Templates</h2>
-					<span class="tiny">Creates <b>single</b> studies</span>
+					<h2 class="ui header">
+						Study Templates
+						<div class="sub header">Creates <b>single</b> studies</div>
+					</h2>
 				</div>
 				<div class="ten wide column" align="right">
 					<form action="templates.php" method="post" name="theform" id="theform">
@@ -156,7 +158,7 @@
 				</div>
 			</div>
 
-			<table class="ui small celled selectable grey compact table">
+			<table class="ui celled selectable grey table">
 				<thead>
 					<th>Name</th>
 					<th>Modality</th>
@@ -204,8 +206,10 @@
 		<div class="ui container">
 			<div class="ui two column grid">
 				<div class="column">
-					<h2 class="ui header">Project Study Templates</h2>
-					<span class="tiny">Creates <b>groups</b> of studies</span>
+					<h2 class="ui header">
+						Project Study Templates
+						<div class="sub header">Creates <b>groups</b> of studies</div>
+					</h2>
 				</div>
 				<div class="column" align="right">
 					<form action="templates.php" method="post" name="theform" id="theform">
@@ -218,7 +222,7 @@
 					</form>
 				</div>
 			</div>
-			<table class="ui small celled selectable grey compact table">
+			<table class="ui celled selectable grey table">
 				<thead>
 					<tr>
 						<th></th>
@@ -290,7 +294,7 @@
 		
 		if (($templateid == "") || ($templateid == 0)) {
 			/* check if this item name already exists */
-			$sqlstring = "select * from study_template where template_name = '$newtemplatename'";
+			$sqlstring = "select * from study_template where template_name = '$newtemplatename' and project_id = $projectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 1) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -402,7 +406,7 @@
 		?>
 		
 		<div class="ui container">
-			<div class="ui attached visible message">
+			<div class="ui top attached visible message">
 			  <div class="header"><?=$templatename?></div>
 			</div>
 
@@ -513,6 +517,7 @@
 				</div>
 			</div>
 		</form>
+		</div>
 		<?
 	}
 

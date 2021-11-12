@@ -338,9 +338,9 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
     if (!error) {
         n->WriteLog("Writing data from backupstaging");
         if (backupServer == "")
-            systemstring = QString("cd %1; tar -cW --checkpoint=100000 --checkpoint-action=echo=\"#%u: %T\" --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
+            systemstring = QString("cd %1; tar -cW --checkpoint=1000000 --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
         else
-            systemstring = QString("ssh %1 \"cd %2; tar -cW --checkpoint=100000 --checkpoint-action=echo=\"#%u: %T\" --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
+            systemstring = QString("ssh %1 \"cd %2; tar -cW --checkpoint=1000000 --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
         output = n->SystemCommand(systemstring, false, false, true);
         n->WriteLog(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {

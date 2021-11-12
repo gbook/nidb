@@ -25,6 +25,21 @@
 	
 	session_start();
 ?>
+<html>
+	<head>
+		<link rel="icon" type="image/png" href="images/squirrel.png">
+		<title>NiDB - MRI quality control</title>
+	</head>
+	<script language="javascript" type="text/javascript" src="scripts/flot/jquery.js"></script>
+	<!--<script language="javascript" type="text/javascript" src="scripts/flot/jquery.canvaswrapper.js"></script>-->
+	<script language="javascript" type="text/javascript" src="scripts/flot/jquery.colorhelpers.js"></script>
+	<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.js"></script>
+	<!--<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.saturated.js"></script>-->
+	<!--<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.browser.js"></script>-->
+	<!--<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.drawSeries.js"></script>-->
+	<!--<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.uiConstants.js"></script>-->
+
+<body style="padding: 20px">
 
 <?
 	//require "config.php";
@@ -47,33 +62,10 @@
 	$thumbinfo = getimagesize("$qapath/thumb_lut.png");
 	$thumbheight = $thumbinfo[1];
 ?>
-	<html>
-	<head>
-		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>QA for <?=$uid?> study <?=$study_num?> series <?=$series_num?></title>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.canvaswrapper.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.colorhelpers.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.saturated.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.browser.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.drawSeries.js"></script>
-		<script language="javascript" type="text/javascript" src="scripts/flot/jquery.flot.uiConstants.js"></script>
-	</head>
+	<h3 class="ui orange horizontal divider header"><i class="grey puzzle piece icon"></i> QC Modules</h3>
+	<br>
 	
-	<body style="font-family: arial, helvetica, sans serif">
-	
-	<style>
-		/* 2 column table (small table with 2 columns: variable, value)*/
-		.twocoltable { border-spacing: 0px; padding: 0px; border: 1px solid #666666; }
-		.twocoltable th { text-align: center; font-weight: bold; color: black; font-size: 12pt; padding: 4px; background-color: #DDD; }
-		.twocoltable td.name { text-align: right; vertical-align: top; font-weight: bold; color: darkblue; font-size: 10pt; padding: 4px; border-top: 1px solid #DDD; border-right: 1px solid #ddd; }
-		.twocoltable td.value { text-align: left; vertical-align: top; font-weight: normal; color: #333333; font-size: 10pt; padding: 4px; border-top: 1px solid #ddd; white-space: nowrap; }
-		
-		.tiny { font-size:8pt; color:gray}
-	</style>
-
-	<table class="twocoltable">
+	<table class="ui collapsing celled compact table">
 		<thead>
 			<tr>
 				<th>QC Module</th>
@@ -147,6 +139,7 @@
 			$lastmoduleid = $moduleid;
 		}
 	?>
+	</table>
 	
 	<?
 	$motionfile = "$qapath/MotionCorrection.txt";
@@ -204,8 +197,10 @@
 		$rangeroll = abs($minroll) + abs($maxroll);
 		$rangeyaw = abs($minyaw) + abs($maxyaw);
 	?>
-	</table>
-	
+	<br>
+	<h3 class="ui orange horizontal divider header"><i class="grey random icon"></i> Motion Correction</h3>
+	<br>
+
 	<table>
 		<tr>
 			<td align="center">
@@ -238,6 +233,7 @@
 			</td>
 		</tr>
 	</table>
+	
 	<table>
 		<tr>
 			<td align="center">
@@ -413,7 +409,6 @@
 		</tr>
 	</table>
 
-
 	<?
 		$cogmmfile = "$qapath/centerOfGravityOverTimeMM.txt";
 		//echo "$accelfile";
@@ -486,150 +481,205 @@
 	<?
 	}
 	?>
-	<br><br>
-	<table>
-		<tr>
-			<td align="right"><b>Middle slice</b></td>
-			<td align="left">
-				<? if (file_exists($thumbpath)) { ?>
-				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>">
-				<? } else { ?>
-				<span class="tiny">Thumbnail does not exist</span>
-				<? } ?>
-			</td>
-		</tr>
-		<tr>
-			<td align="right"><b>FFT (single slice)</b></td>
-			<td align="left">
-				<? if (file_exists("$qapath/thumb_fft.png")) { ?>
-				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>"><br>
-				<? } else { ?>
-				<span class="tiny">Thumbnail does not exist</span>
-				<? } ?>
-			</td>
-		</tr>
-		<tr>
-			<td align="right"><b>Radial average of FFT</b></td>
-			<td align="left">
-				<? if (file_exists("$qapath/histogram.png")) { ?>
-				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/histogram.png"))?>"><br>
-				(all slices)
-				<? } ?>
-				<? if (file_exists("$qapath/thumb_fft_1d.png")) { ?>
-				<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft_1d.png"))?>"><br>
-				(single slice)
-				<? } else { ?>
-				<span class="tiny">Thumbnail does not exist</span>
-				<? } ?>
-			</td>
-		</tr>
+
+	<br>
+	<h3 class="ui orange horizontal divider header"><i class="grey image icon"></i> Thumbnails</h3>
+	<br>
+	
+	<div class="ui four column grid">
+		<div class="column">
+			<!-- Thumbnail -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists($thumbpath)) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">Middle slice</div>
+					<div class="meta">
+						<?=$thumbpath?>
+					</div>
+					<div class="description">
+						<? if (!file_exists($thumbpath)) { ?>
+						Thumbnail does not exist
+						<? } ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<!-- FFT -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/thumb_fft.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">FFT (single slice)</div>
+					<div class="meta">
+						<?="$qapath/thumb_fft.png"?>
+					</div>
+					<div class="description">
+						<? if (!file_exists("$qapath/thumb_fft.png")) { ?>
+						Thumbnail does not exist
+						<? } ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<!-- Radial average -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/histogram.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/histogram.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">Radial average of FFT</div>
+					<div class="meta">
+						<?="$qapath/histogram.png"?>
+					</div>
+					<div class="description">
+						<? if (!file_exists("$qapath/histogram.png")) { ?>
+						Thumbnail does not exist
+						<? } ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="column">
+			<!-- FFT 1D -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/thumb_fft_1d.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft_1d.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">FFT 1D</div>
+					<div class="meta">
+						<?="$qapath/thumb_fft_1d.png"?>
+					</div>
+					<div class="description">
+						<? if (!file_exists("$qapath/thumb_fft_1d.png")) { ?>
+						Thumbnail does not exist
+						<? } ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<br>
+	<h3 class="ui orange horizontal divider header"><i class="grey images icon"></i> Timeseries Thumbnails</h3>
+	<br>
+	<div class="ui four column grid">
 		<?
 			$minMaxMeanFile = "$qapath/minMaxMean.txt";
-			//echo "$minMaxMeanFile";
 			if (file_exists($minMaxMeanFile)) {
 				$parts = explode(' ', file_get_contents($minMaxMeanFile));
 				$minMean = $parts[0];
 				$maxMean = $parts[1];
-				//echo "$minMean - $maxMean";
 			}
 			
 			$minMaxSigmaFile = "$qapath/minMaxSigma.txt";
-			//echo "$minMaxSigmaFile";
 			if (file_exists($minMaxSigmaFile)) {
 				$parts = explode(' ', file_get_contents($minMaxSigmaFile));
 				$minSigma = $parts[0];
 				$maxSigma = $parts[1];
-				//echo "$minSigma - $maxSigma";
 			}
 			
 			$minMaxVarianceFile = "$qapath/minMaxVariance.txt";
-			//echo "$minMaxVarianceFile";
 			if (file_exists($minMaxVarianceFile)) {
 				$parts = explode(' ', file_get_contents($minMaxVarianceFile));
 				$minVariance = $parts[0];
 				$maxVariance = $parts[1];
-				//echo "$minVariance - $maxVariance";
 			}
 		?>
+		
 		<? if (file_exists("$qapath/Tmean.png")) { ?>
-		<tr>
-			<td align="right"><b>Mean image (timeseries)</b></td>
-			<td align="left">
-				<table>
-					<tr>
-						<td>
-							<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tmean.png"))?>">
-						</td>
-						<td style="font-size:9pt">
-							<table style="font-size:10pt">
-								<tr style="font-weight: bold">
-									<td align="center"></td>
-									<td align="center">Voxel Intensity</td>
-								</tr>
-								<tr>
-									<td><b>min max</b></td>
-									<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minMean,2)?> &emsp;<?=number_format($maxMean,2)?></td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
+		<div class="column">
+			<!-- Timeseries mean -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/Tmean.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tmean.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">Mean</div>
+					<div class="meta">
+						<?="$qapath/Tmean.png"?>
+					</div>
+					<div class="description">
+						Voxel intensity: <?=number_format($minMean,1)?> to <?=number_format($maxMean,1)?>
+					</div>
+				</div>
+			</div>
+		</div>
 		<? } ?>
+		
 		<? if (file_exists("$qapath/Tsigma.png")) { ?>
-		<tr>
-			<td align="right"><b>Stddev image (timeseries)</b></td>
-			<td align="left">
-				<table>
-					<tr>
-						<td>
-							<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tsigma.png"))?>">
-						</td>
-						<td style="font-size:9pt">
-							<table style="font-size:10pt">
-								<tr style="font-weight: bold">
-									<td align="center"></td>
-									<td align="center">Voxel Intensity</td>
-								</tr>
-								<tr>
-									<td><b>min max</b></td>
-									<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minSigma,2)?> &emsp;<?=number_format($maxSigma,2)?></td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
+		<div class="column">
+			<!-- Timeseries stddev -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/Tsigma.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tsigma.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">Stddev</div>
+					<div class="meta">
+						<?="$qapath/Tsigma.png"?>
+					</div>
+					<div class="description">
+						Voxel intensity: <?=number_format($minSigma,1)?> to <?=number_format($maxSigma,1)?>
+					</div>
+				</div>
+			</div>
+		</div>
 		<? } ?>
+		
 		<? if (file_exists("$qapath/Tvariance.png")) { ?>
-		<tr>
-			<td align="right"><b>Variance image (timeseries)</b></td>
-			<td align="left">
-				<table>
-					<tr>
-						<td>
-							<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tvariance.png"))?>">
-						</td>
-						<td style="font-size:9pt">
-							<table style="font-size:10pt">
-								<tr style="font-weight: bold">
-									<td align="center"></td>
-									<td align="center">Voxel Intensity</td>
-								</tr>
-								<tr>
-									<td><b>min max</b></td>
-									<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minVariance,2)?> &emsp;<?=number_format($maxVariance,2)?></td>
-								</tr>
-							</table>
-						</td>
-					</tr>
-				</table>
-			</td>
-		</tr>
+		<div class="column">
+			<!-- Timeseries mean -->
+			<div class="ui card">
+				<div class="image">
+					<? if (file_exists("$qapath/Tvariance.png")) { ?>
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tvariance.png"))?>">
+					<? } else { ?>
+					<i class="ui huge disabled grey image icon"></i>
+					<? } ?>
+				</div>
+				<div class="content">
+					<div class="header">Variance</div>
+					<div class="meta">
+						<?="$qapath/Tvariance.png"?>
+					</div>
+					<div class="description">
+						Voxel intensity: <?=number_format($minVariance,1)?> to <?=number_format($maxVariance,1)?>
+					</div>
+				</div>
+			</div>
+		</div>
 		<? } ?>
-	</table>	
+	</div>	
 	</body>
 	</html>
 	<?

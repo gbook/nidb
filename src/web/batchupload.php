@@ -87,8 +87,10 @@
 		}
 
 		?>
-		<link rel="stylesheet" href="scripts/dropzone.css">
-		<script src="scripts/dropzone.js"></script>
+		<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+		<!--<link rel="stylesheet" href="scripts/dropzone.css">
+		<script src="scripts/dropzone.js"></script>-->
 		<style>
 			table .batchupload { border: 2px solid #444; border-radius: 8px; border-spacing: 0px; width: 90%; }
 			table .batchupload thead:last-of-type th { border-bottom: 2px solid #444; }
@@ -96,8 +98,31 @@
 			table .batchupload td { padding: 7px; border-top: 1px solid #ddd; border-right: 1px solid #ddd; vertical-align: middle; }
 			table .batchupload tr:hover td { background-color: lightyellow; border-top: 1px solid gold; }
 			table .batchupload tr.newuid td { border-top: 2px solid #444; }
+			
+			.dropzone {
+				min-height: 40px;
+				border: 2px dashed #888;
+				border-radius: 6px;
+				padding: 10px 10px;
+				margin: 1px;
+			}
+			.dropzone:hover {
+				background-color: lavender;
+			}
+			.dz-default {
+				margin: 1px !important;
+			}
+			.dz-message {
+				margin: 1px !important;
+			}
+			.dz-preview {
+				margin: 1px !important;
+			}
+			.dz-details {
+				margin: 1px !important;
+			}
 		</style>
-		<div align="center">
+		<div class="ui container">
 		<form action="batchupload.php" method="post">
 			<input name="action" type="hidden" value="displayseries">
 			<?
@@ -112,7 +137,7 @@
 		</form>
 		<br>
 		<? if ($modality == "mr") { echo "Data for MRI series will be uploaded as <u>behavioral</u> data<br><br>"; } ?>
-		<table class="batchupload">
+		<table class="ui celled table">
 			<thead>
 				<th style="text-align: center; border-right: 1px solid #ddd">&nbsp;</th>
 				<th colspan="3" style="text-align: center; border-right: 1px solid #ddd">Subject</th>
@@ -176,12 +201,42 @@
 						?>
 						<tr class="<?=$tdclass?>">
 							<td>
-								<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>" style="margin-block-end: 0px">
+								<script>
+								// Note that the name "myDropzone" is the camelized
+								// id of the form.
+								Dropzone.options.dropzone<?=$seriesid?> = {
+									// Note: using "function()" here to bind `this` to
+									// the Dropzone instance.
+									parallelUploads:10,
+									uploadMultiple:true,
+									init: function() {
+										this.on("addedfile", file => {
+											console.log("A file has been added");
+										});
+										this.on("sendingmultiple", function() {
+											console.log("sending multiple files");
+										});
+										this.on("successmultiple", function(files, response) {
+											console.log("successmultiple [" + response + "]");
+										});
+										this.on("errormultiple", function(files, response) {
+											console.log("errormultiple [" + response + "]");
+										});										
+										this.on("success", function(files, response) {
+											console.log("success [" + response + "]");
+										});
+										this.on("error", function(files, response) {
+											console.log("error [" + response + "]");
+										});										
+									}
+								};
+								</script>
+								<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>">
 									<input name="action" type="hidden" value="upload">
 									<input name="seriesid" type="hidden" value="<?=$seriesid?>">
 									<input name="modality" type="hidden" value="<?=$modality?>">
 									<div class="fallback">
-										<input name="file" type="file" multiple />
+										<input name="file[]" type="file" multiple />
 									</div>
 								</form>
 							</td>
@@ -199,7 +254,8 @@
 								<?
 									list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 									if (strtolower($modality) == "mr")
-										$datapath = "$datapath/beh";
+										$datapath = "$seriespath/beh";
+									echo "$datapath<br>";
 									$filelist = array_diff(scandir($datapath), array('..', '.'));
 
 									$numfiles = count($filelist);
@@ -243,44 +299,71 @@
 		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 
-		if (!IsNiDBModality($modality)) {
-			echo "Invalid modality [$modality]<br>";
-			return 0;
-		}
-		
-		list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-		
-		if ($modality == "mr")
-			$outpath = "$seriespath/beh";
+		$output = "";
+		$success = false;
 
-		/* go through all the files and save them */
-		mkdir($outpath, 0777, true);
-		chmod($outpath, 0777);
-		foreach ($_FILES['file']['name'] as $i => $name) {
-			$filesize = 0;
-			error_reporting(E_ALL);
-			if (move_uploaded_file($_FILES['file']['tmp_name'][$i], "$outpath/$name")) {
-				$filesize = filesize("$outpath/$name");
-				chmod("$outpath/$name", 0777);
-				$success = 1;
-				echo "SUCCESS: File [$name] written to [$outpath]<br>";
+		//header("HTTP/1.0 400 Bad Request");
+
+		if (!IsNiDBModality($modality)) {
+			$output = "Invalid modality [$modality]";
+			$success = false;
+		}
+		else {
+			list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+			
+			if ($modality == "mr")
+				$outpath = "$seriespath/beh";
+
+			//echo $outpath;
+			
+			//print_r($_FILES);
+			
+			/* go through all the files and save them */
+			mkdir($outpath, 0777, true);
+			chmod($outpath, 0777);
+			foreach ($_FILES['file']['name'] as $i => $name) {
+				echo "Working on file [$name]\n";
+				$filesize = 0;
+				error_reporting(E_ALL);
+				if (move_uploaded_file($_FILES['file']['tmp_name'][$i], "$outpath/$name")) {
+					$filesize = filesize("$outpath/$name");
+					chmod("$outpath/$name", 0777);
+					$success = true;
+					echo "SUCCESS: File [$name] written to [$outpath]";
+				}
+				else {
+					echo "ERROR moving [" . $_FILES['file']['tmp_name'][$i] . "] to [$outpath/$name]";
+					$success = false;
+				}
 			}
-			else {
-				echo "ERROR moving [" . $_FILES['file']['tmp_name'][$i] . "] to [$outpath/$name]<br>";
-				$success = 0;
-			}
+			
+			$filecount = count(glob("$outpath/*"));
+			$filesize = GetDirectorySize($outpath);
+			
+			/* update the database to reflect the number of size of the files */
+			if ($modality == "mr")
+				$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
+			else
+				$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+			
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 		
-		$filecount = count(glob("$outpath/*"));
-		$filesize = GetDirectorySize($outpath);
+		if ($success) {
+			http_response_code (200);
+		}
+		else {
+			http_response_code (400);
+		}
+		echo "Hello";
+		//echo "Ups error message";
+		//set Content-Type to JSON
+		header( 'Content-Type: application/json; charset=utf-8' );
 		
-		/* update the database to reflect the number of size of the files */
-		if ($modality == "mr")
-			$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
-		else
-			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+		//echo error message as JSON
+		echo json_encode( $output );
 		
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//echo $output;
 	}
 	
 	/* -------------------------------------------- */
