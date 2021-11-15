@@ -1,6 +1,6 @@
-# Users
+<a href="index.html" style="font-size: larger;">&larr; Home</a>
 
-<a href="index.html" style="font-size: smaller;">Documentation Home</a>
+# Users
 
 | ![image](https://user-images.githubusercontent.com/8302215/141825695-e9636040-0080-45dd-9c44-7ac8f1950b8c.png) |
 |---|
