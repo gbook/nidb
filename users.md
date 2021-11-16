@@ -2,8 +2,8 @@
 
 # Users
 
-##Accessing the users page
-Admin page is only accessible if you are logged in as an administrator
+## Accessing the users page
+Access the user administration page from the **Admin** page. **Admin** page is only accessible if you are logged in as an administrator
 > ![image](https://user-images.githubusercontent.com/8302215/141825695-e9636040-0080-45dd-9c44-7ac8f1950b8c.png)
 
 ## Creating Users
@@ -19,9 +19,9 @@ On public servers, or systems where users are allowed to register themselves, th
 _**Note:** be careful allowing users to self-register, for obvious reasons._
 
 ## Managing Users
-|![image](https://user-images.githubusercontent.com/8302215/142014954-37b7a2e7-31cf-4cd6-9ce2-7eb6af559ee2.png)|
-|---|
-|**There are 3 options of where to find users** A) users in the current instance (switch instance by clicking the instance list in the upper left menu) B) users not in the current instance C) deleted users|
+**There are 3 options of where to find users** A) users in the current instance (switch instance by clicking the instance list in the upper left menu) B) users not in the current instance C) deleted users
+
+> ![image](https://user-images.githubusercontent.com/8302215/142014954-37b7a2e7-31cf-4cd6-9ce2-7eb6af559ee2.png)
 
 To manage project permissions for users, go to **Admin** &rarr; **Users** and click on the username you want to manage. The page can change the name, password, email, admin status, if the account is enabled/disabled, and the projects to which the user has permissions. After changing any information on the page, click the **Save** button at the bottom of the page.
 See list of user options and settings below.
