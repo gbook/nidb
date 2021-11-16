@@ -149,8 +149,8 @@ table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing
 .graydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
 
 .movementsubtable { border-spacing: 0px; padding: 0px; margin: 0px; border: none; width: 100%; height: 100%; border-radius:0px; }
-.movementsubtable td.mainval { border: none; text-align: right; padding:8px; border-radius:0px; }
-.movementsubtable td.subval { border: none; font-size:8pt; color: #555555;text-align: right; border-radius:0px; }
+.movementsubtable td.mainval { border: none; margin: 0px; text-align: right; padding:8px; border-radius:0px; }
+.movementsubtable td.subval { border: none; margin: 0px; font-size:8pt; color: #555555; text-align: right; border-radius:0px; }
 
 /* review table (single entity such as a subject or project)*/
 .reviewtable { border-spacing: 0px; padding: 0px; }

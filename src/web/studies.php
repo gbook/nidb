@@ -2167,15 +2167,7 @@
 								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
-									<?
-									if ($data_type == "dicom") {
-										?><a href="series.php?action=scanparams&file=<?=$dcmfile?>"><?=$series_desc?></a><?
-									}
-									elseif ($data_type == "parrec") {
-										?><a href="series.php?action=scanparams&file=<?=$parfile?>"><?=$series_desc?></a><?
-										echo $series_desc;
-									}
-									?>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
@@ -2191,19 +2183,19 @@
 									<? if ($hasratings) { $image = "red"; } else { $image = "grey"; } ?>
 									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><i class="<?=$image?> comment dots icon" title="View ratings"></i></a>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px">
-									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable" style="border-radius:0px">
+								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
+									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total X displacement" class="mainval" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td></tr>
 										<tr><td title="Total X velocity" class="subval" style="background-color: <?=$maxxcolor2?>;"><?=$rangex2;?></td></tr>
 									</table>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px;margin:0px;height:100%">
-									<table cellspacing="0" cellpadding="0" height="100%" width="100%" class="movementsubtable">
-										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;height:100%"><?=$rangey;?></td></tr>
-										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;height:100%"><?=$rangey2;?></td></tr>
+								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
+									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
+										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;"><?=$rangey;?></td></tr>
+										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;"><?=$rangey2;?></td></tr>
 									</table>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px">
+								<td class="seriesrow" align="right" style="padding:0px; margin:0px;">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total Z displacement" class="mainval" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td></tr>
 										<tr><td title="Total Z velocity" class="subval" style="background-color: <?=$maxzcolor2?>;"><?=$rangez2;?></td></tr>

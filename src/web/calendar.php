@@ -149,7 +149,7 @@
 							Today
 							<div class="ui detail"><?=date('D M j, Y')?></div>
 						</div>
-						<br><br>
+						&nbsp; &nbsp; &nbsp; &nbsp; 
 						<div class="ui image label">
 							<i class="calendar alternate outline icon"></i>
 							Calendar date
@@ -646,6 +646,34 @@
 		$datestart = "$year-$month-1 00:00:00";
 		$dateend = "$year-$month-$days_in_month 23:59:59";
 		?>
+		<div class="ui center aligned secondary inverted segment">
+			<h2 class="ui inverted header">Month Year</h2>
+		</div>
+		<div class="ui seven column very compact grid">
+			<div class="column">
+				<div class="ui center aligned segment">Sunday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Monday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Tuesday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Wednesday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Thursday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Friday</div>
+			</div>
+			<div class="column">
+				<div class="ui center aligned segment">Saturday</div>
+			</div>
+		</div>
+		<br>
+		
 		<table class="calendar" cellpadding="0" cellspacing="0" width="100%" style=" background-color: snow; border: 1px solid #555">
 			<tr>
 				<td colspan=7 class="heading" style="background-color: #555; padding-top: 10px; padding-bottom: 10px">

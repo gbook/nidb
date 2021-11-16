@@ -369,10 +369,10 @@
 		?>
 		<div align="center">
 		<?
-			if ($method == "add") { echo "Appointment added"; } else { echo "Appointment updated"; }
+			if ($method == "add") { Notice("Appointment added"); } else { echo Notice("Appointment updated"); }
 		?>
 		<br>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="ui button">Back</a> to calendar</td></tr></table><br>
+		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
 		</div>
 		<?
 	}	
@@ -400,18 +400,17 @@
 	/* --------- Delete ------------------------------ */
 	/* ----------------------------------------------- */
 	function Delete($id, $currentcal, $deleteall) {
-		//echo "Called Delete($id, $currentcal, $deleteall)<br>";
 		if ($deleteall) {
 			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid in (select appt_groupid from calendar_appointments where appt_id = '$id')";
 		}
 		else {
 			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = '$id'";
 		}
-		//echo $sqlstring;
+
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		Notice("Appointment deleted");
 		?>
-		Appointment deleted<br><br>
-		<a href="calendar.php" class="ui button">Back</a> to calendar
+		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
 		<?
 	}	
 
@@ -548,7 +547,7 @@
 		}
 		
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar.php" class="ui button">Back</a> to calendar</td></tr></table><br>
+		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
 		
 		<form action="calendar_appointments.php" method="post" id="form1" name="form1">
 		<input type="hidden" name="action" value="<?=$type?>">
@@ -773,10 +772,10 @@
 		</table>
 		<p>
 		<?	if ($repeats) { ?>
-			<input type="submit" value="Update this only" name="submit" onClick="document.form1.action.value = 'edit';">
-			<input type="submit" value="Update series" name="submit" onClick="document.form1.action.value = 'editall';">
+			<input type="submit" value="Update this only" name="submit" onClick="document.form1.action.value = 'edit';" class="ui primary button">
+			<input type="submit" value="Update series" name="submit" onClick="document.form1.action.value = 'editall';" class="ui primary button">
 		<?	} else { ?>
-			<input type="submit" value="<?=$submitbutton?>" name="submit">
+			<input type="submit" value="<?=$submitbutton?>" name="submit" class="ui primary button">
 		<?	} ?>
 		</p>
 		</form>
@@ -800,7 +799,7 @@
 					<input type="hidden" name="action" value="cancel">
 					<input type="hidden" name="id" value="<?=$id?>">
 					<td>
-						<input type="submit" value="Cancel this only" onClick="return confirm('You\'re sure you want to cancel this appointment?');">
+						<input type="submit" value="Cancel this only" onClick="return confirm('You\'re sure you want to cancel this appointment?');" class="ui red button">
 					</td>
 					</form>
 					
@@ -809,7 +808,7 @@
 					<input type="hidden" name="action" value="cancelall">
 					<input type="hidden" name="id" value="<?=$id?>">
 					<td>
-						<input type="submit" value="Cancel series" onClick="return confirm('You\'re sure you want to cancel this recurring appointment?');">
+						<input type="submit" value="Cancel series" onClick="return confirm('You\'re sure you want to cancel this recurring appointment?');" class="ui red button">
 					</td>
 					</form>
 					<? } ?>
@@ -825,7 +824,7 @@
 					<input type="hidden" name="action" value="delete">
 					<input type="hidden" name="id" value="<?=$id?>">
 					<td class="rightvalue">
-						<input type="submit" value="Delete this only" onClick="return confirm('You\'re for serious. You want to delete this appointment?');">
+						<input type="submit" value="Delete this only" onClick="return confirm('You\'re for serious. You want to delete this appointment?');" class="ui red button">
 					</td>
 					</form>
 					
@@ -834,7 +833,7 @@
 					<input type="hidden" name="action" value="deleteall">
 					<input type="hidden" name="groupid" value="<?=$id?>">
 					<td class="rightvalue">
-						<input type="submit" value="Delete series" onClick="return confirm('You\'re for serious. You want to delete this recurring appointment?');">
+						<input type="submit" value="Delete series" onClick="return confirm('You\'re for serious. You want to delete this recurring appointment?');" class="ui red button">
 					</td>
 					</form>
 					<? } ?>

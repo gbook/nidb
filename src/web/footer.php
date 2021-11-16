@@ -97,7 +97,7 @@
 <!-- footer -->
 <div class="ui mini inverted menu" style="!important; overflow: auto; position:absolute; bottom:0; left:0;" id="footer">
 	<div class="item" style="font-size: larger">
-		<a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
+		<em data-emoji=":chipmunk:"></em>&nbsp; <a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
 	</div>
 	<div class="item">
 		Page generated: <? echo date("D M j, Y g:i a T"); ?>

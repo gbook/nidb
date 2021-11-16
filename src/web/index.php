@@ -117,7 +117,32 @@
 	}
 	
 ?>
-
+<!--
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;800&display=swap');
+		
+		.nidb1 {
+			font-family: 'M PLUS Rounded 1c', sans-serif;
+			font-weight: 800;
+			color: #35486D;
+		}
+		.nidb2 {
+			font-weight: 400;
+			font-size: 75%;
+			color: #4A6498;
+		}
+		.nidb3 {
+			font-size: 40%;
+			font-family: times new roman;
+			color: #555;
+		}
+	</style>
+	
+	<div class="ui segment" style="font-size: xx-large">
+		<span class="nidb1">Ni</span><span class="nidb2">DB</span><br>
+		<span class="nidb3">Neuroinformatics Database</span>
+	</div>
+-->
 	<div class="ui two column grid">
 		<div class="column">
 			<div class="ui two column grid">

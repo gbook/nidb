@@ -46,7 +46,7 @@
 		/* search */
 		?><a href="search.php" class="<? if ($page=="search.php" || $page=="requeststatus.php" || $page=="analysisbuilder.php" || $page=="batchupload.php") { echo "active"; } ?> item">Search</a><?
 		/* subjects */
-		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php") { echo "active"; } ?> item">Subjects</a><?
+		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
 		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
@@ -117,7 +117,7 @@
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="measures.php" || $page == "managefiles.php") {
+		elseif ($page == "studies.php" || $page=="measures.php" || $page == "managefiles.php" || $page == "series.php") {
 			$studyid = GetVariable("id");
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");
