@@ -19,3 +19,15 @@ You can import data into a particular NiDB project. To import data into a NiDb p
 
 * Fill the information you gathered at the Pre-import steps and press update button.
 * Click "Show Project Info" button to established RedCap to NiDB connection. If information providedis correct then you will land to the following screen
+
+<!-- wp:image {"id":300,"sizeSlug":"full","linkDestination":"none"} -->
+<figure class="wp-block-image size-full"><img src="http://neuroinfodb.org/wp-content/uploads/2021/11/RedCap2NiDBConnEstablished-1024x332-1.png" alt="" class="wp-image-300"/></figure>
+<!-- /wp:image -->
+
+<!-- wp:image {"id":272,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnEstablished-1024x332.png" alt="" class="wp-image-272"/></figure>
+<!-- /wp:image -->
+
+It will show lists of RedCap arms, events, and instruments related to the project that you connected. Please check the contents to make sure that the connected project is correct. In case the information is not correct then update the correct RedCap server and RedCap token information above. If the information is correct then:
+
+* Click "Map The Project" button to start Mapping the Project
