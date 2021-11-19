@@ -31,3 +31,20 @@ You can import data into a particular NiDB project. To import data into a NiDb p
 It will show lists of RedCap arms, events, and instruments related to the project that you connected. Please check the contents to make sure that the connected project is correct. In case the information is not correct then update the correct RedCap server and RedCap token information above. If the information is correct then:
 
 * Click "Map The Project" button to start Mapping the Project
+
+## Mapping
+Mapping the data structures in the RedCap to NiDB is the most important step before importing the data into NiDB. Integrity and accuracy of mapping defines how accurate the data is being imported to the desired format. Map each Redcap form separately that is desired to import into NiDB.  Also define mapping for each field of RedCap form to a variable in NiDB instrument. The following is the mapping guide.
+
+* Select a RedCap form to map from the dropdown menu and hit submit button. A new section to define the mapping of the fields of the selected form will appear. 
+* The mapping section has two main parts, RedCap and NiDB. The RedCap part includes event, form, fields and field type. The NiDB side consists of type of instrument, variable name corresponding to the filed of the RedCap form and Instrument name.
+* Select event, field, and define the field type (date, value, notes, rater) in the RedCap side.
+* On NiDB side, select the type of NiDB data (Measure, Vital, Drug/dose), define variable name, and instrument name in the next boxes and hit add.
+* Repeat the above two steps to define all the fields required to import.
+* All the mapping will be saved and can be deleted later.
+* If required an extra field item can be added later.
+* Mapping structure need to define only once. If mapping structure is already define, go to the next step to transfer the data
+
+<!-- wp:image {"id":266,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" alt="" class="wp-image-266"/></figure>
+<!-- /wp:image -->
+
