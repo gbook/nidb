@@ -54,6 +54,5 @@ Once the mapping data structure is defined for all the RedCap forms, start impor
 
 Note: The mapping step is required only once. However any defined mapping structure can be update accordingly. The data transfer can be performed anytime it is required.
 
-<!-- wp:image {"id":268,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Transfer-1024x451.png" alt="" class="wp-image-268"/></figure>
-<!-- /wp:image -->
+![image](https://user-images.githubusercontent.com/24811295/142661201-65df6319-cf6d-4a1c-9007-d5b51e794d18.png)
+
