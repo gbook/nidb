@@ -3,8 +3,8 @@
 
 [Install](#new-installation)<br>
 [Quick Upgrade](#upgrade-existing-installation)<br>
-<a href="upgrade.html">Detailed Upgrade</a><br>
-<a href="usage.html">Usage</a><br>
+<a href="upgrade.md">Detailed Upgrade</a><br>
+<a href="usage.md">Usage</a><br>
 
 ## New Installation
 
