@@ -7,6 +7,12 @@ To start the import data process
 ## Connecting to RedCap
 You can import data into a particular NiDB project. To import data into a NiDb project, follow the steps below:
 * Go to the project main page as shown below by selecting a project from the project list.
+
 <!-- wp:image {"id":270,"sizeSlug":"large","linkDestination":"none"} -->
 <figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/ProjectScreen-1024x478.png" alt="" class="wp-image-270"/></figure>
+<!-- /wp:image -->
+
+* Click on to "RedCap to NiDB Transfer" link encircle in red-oval as above. This will take you to the following page:
+<!-- wp:image {"id":271,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnectScreen-1024x498.png" alt="" class="wp-image-271"/></figure>
 <!-- /wp:image -->
