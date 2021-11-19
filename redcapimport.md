@@ -48,3 +48,12 @@ Mapping the data structures in the RedCap to NiDB is the most important step bef
 <figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" alt="" class="wp-image-266"/></figure>
 <!-- /wp:image -->
 
+## Transfer
+
+Once the mapping data structure is defined for all the RedCap forms, start importing the data form-wise. TO start the transfer process, a unique identifier that is common in RedCap and NiDB is required. After entering the unique identifier RedCap field name, hit the "Start Transfer" button. The data will be transferred. Check the imported data for the accuracy. 
+
+Note: The mapping step is required only once. However any defined mapping structure can be update accordingly. The data transfer can be performed anytime it is required.
+
+<!-- wp:image {"id":268,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Transfer-1024x451.png" alt="" class="wp-image-268"/></figure>
+<!-- /wp:image -->
