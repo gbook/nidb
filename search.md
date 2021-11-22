@@ -1,7 +1,7 @@
 # Searching in NiDB
-To search data based on subjects, projects, studies or modality NiDB has a very friendly interface. The search page can be acccessed from the top menue by clicking the menue "Search".
+To search data based on subjects, projects, studies, modality, etc.: NiDB has a very friendly interface. The search screen can be accessed from the top menu by clicking the “Search" menu.
 The following is the search page:
 
-![image](https://user-images.githubusercontent.com/24811295/142923777-8f2103a3-b6e6-493c-9502-1453aedcd5c8.png)
+![image](https://user-images.githubusercontent.com/24811295/142928062-44900295-ce52-43fd-b401-3ded78fb34d1.png)
 
 ## Subject-wise Search
