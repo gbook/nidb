@@ -1,11 +1,16 @@
 # NeuroInformatics Database
 ![Image](http://neuroinfodb.org/wp-content/uploads/2021/05/NIDB_logo-300x115.png)
 
-[Install](#new-installation)<br>
-[Quick Upgrade](#upgrade-existing-installation)<br>
-<a href="upgrade.md">Detailed Upgrade</a><br>
-<a href="administration.md">Administration</a><br>
-<a href="usage.md">Usage</a><br>
+Installation & Upgrade
+- [Install](#new-installation)<br>
+- [Quick Upgrade](#upgrade-existing-installation)<br>
+- <a href="upgrade.md">Detailed Upgrade</a><br>
+
+NiDB Usage
+- <a href="administration.md">Administration</a><br>
+- <a href="usage.md">Users Manual</a><br>
+
+<br>
 
 ## New Installation
 
