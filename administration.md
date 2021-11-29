@@ -2,7 +2,7 @@
 
 The admin modules can be accessed by clicking on the Admin menu item. Your account must have administration permissions to see this menu.
 
-<image src="https://user-images.githubusercontent.com/8302215/142905700-30426e75-c966-4bff-8dc9-79ba09111d52.png" width="50%">
+> <image src="https://user-images.githubusercontent.com/8302215/142905700-30426e75-c966-4bff-8dc9-79ba09111d52.png" width="50%">
 
 ## Data (Front-end) Administration
 Settings that the end-user _will_ see.
