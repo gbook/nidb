@@ -8,7 +8,7 @@ Installation & Upgrade
 
 NiDB Usage
 - <a href="administration.html">Administration</a><br>
-- <a href="usage.html">Users Manual</a><br>
+- <a href="user-manual.html">Users Manual</a><br>
 
 <br>
 
