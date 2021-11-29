@@ -4,11 +4,11 @@
 Installation & Upgrade
 - [Install](#new-installation)<br>
 - [Quick Upgrade](#upgrade-existing-installation)<br>
-- <a href="upgrade.md">Detailed Upgrade</a><br>
+- <a href="upgrade.html">Detailed Upgrade</a><br>
 
 NiDB Usage
-- <a href="administration.md">Administration</a><br>
-- <a href="usage.md">Users Manual</a><br>
+- <a href="administration.html">Administration</a><br>
+- <a href="usage.html">Users Manual</a><br>
 
 <br>
 
