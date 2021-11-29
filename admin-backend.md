@@ -22,7 +22,7 @@ Depending on the size or importance of your data, you may want to backup your da
 > ![image](https://user-images.githubusercontent.com/8302215/143921079-9b6e4a0c-d833-4a87-9076-7e78a5ff69d4.png)
 
 ## Backup process
-Backup directory paths are specified in the config file. See the [Config variables] section.
+Backup directory paths are specified in the config file. See the [Config variables](#config-variables) section.
 > ![image](https://user-images.githubusercontent.com/8302215/143923934-46c02b3e-3d5a-4110-a7c2-7259cb507ed1.png)
 Data is automatically copied to the `backupdir` when it is written to the `archivedir`. Data older than 24 hours is moved from `backupdir` to `backupstagingdir`. When `backupstagingdir` is at least the size of `backupsize`, then a tape is ready to be written.
 
