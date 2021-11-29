@@ -1,4 +1,5 @@
-<a href="index.html" style="font-size: larger;">&larr; Home</a>
+- <a href="index.html" style="font-size: larger">Home</a><br>
+  - <a href="administration.html">Administration</a>
 
 # Users
 
