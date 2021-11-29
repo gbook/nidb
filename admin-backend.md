@@ -45,12 +45,15 @@ Each module has lock file(s) stored in `/nidb/lock` and log files in `/nidb/logs
 The module manager monitors modules to see if they have crashed, and restarts them if they have. If a module does not checkin within 2 hours (except for the backup module) it is assumed that it has crashed, and the module manager will reset the module by deleting the lock file and removing the database entry.
 
 # Modalities
-
+Each modality requires it's own SQL table. Details of the SQL tables, including number of rows and table size, can be viewed on the modalities page.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/143938656-75c0d9d4-875f-41da-a2c1-daff83ba1d8b.png" width="75%"></div>
 
 # Sites
+Sites are used in various places within NiDB. This section is used when data is collected at multiple sites and stores details about each site.
 
 # Instances
+NiDB has the ability to separate projects into different instances, basically creating project groups, to which access permissions can be applied. For example, a user can be part of certain instances, giving them the opporttunity to view projects within that instance if they have permissions. This can be a good way to group projects from a multi-site project.
 
 # Mass email
-
+This will attempt to send an email to every registered email address within the system. It's spam, so use it sparingly.
 # DICOM receiver
