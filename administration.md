@@ -1,3 +1,5 @@
+<a href="index.html" style="font-size: larger">Home</a>
+
 # Administering NiDB
 
 The admin modules can be accessed by clicking on the Admin menu item. Your account must have administration permissions to see this menu.
