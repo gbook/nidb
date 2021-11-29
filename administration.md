@@ -6,8 +6,8 @@ The admin modules can be accessed by clicking on the Admin menu item. Your accou
 
 ## Data (Front-end) Administration
 Settings that the end-user _will_ see.
-- <a href="users.html" style="font-size: larger;">Users</a> - Create and manage users
-- <a href="projects.html" style="font-size: larger;">Projects</a> - Create and manage projects
+- <a href="users.html">Users</a> - Create and manage users
+- <a href="projects.html">Projects</a> - Create and manage projects
 
 ## System (Back end) Administration
 Settings that the end-user _will not_ see
