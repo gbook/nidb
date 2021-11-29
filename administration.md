@@ -11,7 +11,7 @@ Settings that the end-user _will_ see.
 
 ## System (Back end) Administration
 Settings that the end-user _will not_ see
-- NiDB Settings
+  - <a href="admin-backend.html#settings">NiDB Settings</a>
 - Informational Links
 - Backup
 - Modules
