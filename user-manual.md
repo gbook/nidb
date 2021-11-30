@@ -1,6 +1,6 @@
 # NiDB Usage
 
-- Importing Data
+- <a href="importing-data.html">Importing Data</a>
   - Create Subject
     - Enroll in Project
   - Create Imaging Study
@@ -8,7 +8,7 @@
   - Bulk Import of Large Datasets
   - Automatic Import via DICOM reciver
   - Bulk Upload of non-MRI data
-- Working with Data
+- <a href="working-with-data.html">Working with Data</a>
   - Managing Subjects
     - Editing IDs & Demographics
     - Project Enrollments
@@ -25,7 +25,7 @@
     - Managing non-MRI Data
     - Moving Series to New Study
   - Groups
-- Finding and Exporting Data
+- <a href="finding-data.html">Finding and Exporting Data</a>
   - Search
     - Finding Imaging Data
     - Other Data Queries
@@ -39,11 +39,11 @@
   - Analysis Builder
   - Public Downloads
   - Request a Dataset
-- Pipelines
+- <a href="pipelines.html">Pipelines</a>
   - Creating a Pipeline
     - Debugging
   - Managing Pipelines
   - Working with Analyses
-- Calendar
+- <a href="calendar.html">Calendar</a>
 
 <a href="redcapimport.md" style="font-size: larger;">RedCap Import</a> - Import data from Redcap into NiDB
