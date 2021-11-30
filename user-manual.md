@@ -24,11 +24,26 @@
     - Managing MRI Behavioral Data
     - Managing non-MRI Data
     - Moving Series to New Study
-- Exporting Data
+  - Groups
+- Finding and Exporting Data
   - Search
-    - Export
-      - Export status
+    - Finding Imaging Data
+    - Other Data Queries
+    - ID Mapping
+  - Export
+    - Export to NFS
+    - Export for Web Download
+    - Export to NDAR/RDoCdb/NDA
+    - Export to Remote NiDB Site
+  - Export status
   - Analysis Builder
+  - Public Downloads
+  - Request a Dataset
 - Pipelines
+  - Creating a Pipeline
+    - Debugging
+  - Managing Pipelines
+  - Working with Analyses
+- Calendar
 
 <a href="redcapimport.md" style="font-size: larger;">RedCap Import</a> - Import data from Redcap into NiDB
