@@ -69,74 +69,80 @@
 	function DisplayMenu() {
 	
 		?>
-		<table width="100%">
-			<tr>
-				<td><b>By year</b><br><br></td>
-				<td><b>By site/equipment</b><br><br></td>
-			</tr>
-			<tr>
-				<td width="50%" valign="top">
-					<table class="reporttable">
-					<?
-					/* get a list of modalities */
-					$sqlstring = "select distinct(study_modality) 'modality' from studies";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$modality = $row['modality'];
-						
-						?>
-						<tr>
-							<td align="right" class="left"><?=$modality?></td>
-						<?
-						$years = array();
-						/* get the range of years that studies have occured */
-						$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_modality = '$modality' order by year(study_datetime) desc";
-						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-							array_push($years, $row2['theyear']);
-						}
-						foreach ($years as $year) {
-						?>
-							<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&modality=<?=$modality?>"><?=$year?></a></td>
-						<? } ?>
-						</tr>
-						<?
-					}
+		<div class="ui two column grid">
+			<div class="column">
+				<h2 class="ui header">
+					Reports by Year
+					<div class="sub header">
+						View modality & year
+					</div>
+				</h2>
+				<table class="ui very compact celled collapsing striped selectable small table">
+				<?
+				/* get a list of modalities */
+				$sqlstring = "select distinct(study_modality) 'modality' from studies";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$modality = $row['modality'];
+					
 					?>
-					</table>
-				</td>
-				<td width="50%" valign="top">
-					<table class="reporttable">
+					<tr>
+						<td align="right" class="left"><?=$modality?></td>
 					<?
-					/* get a list of modalities */
-					$sqlstring = "select distinct(study_site) 'study_site' from studies";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$studysite = mysqli_real_escape_string($GLOBALS['linki'], $row['study_site']);
-						
-						?>
-						<tr>
-							<td align="right" class="left"><?=$studysite?></td>
-						<?
-						$years = array();
-						/* get the range of years that studies have occured */
-						$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_site = '$studysite' order by year(study_datetime) desc";
-						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-							array_push($years, $row2['theyear']);
-						}
-						foreach ($years as $year) {
-						?>
-							<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&studysite=<?=$studysite?>"><?=$year?></a></td>
-						<? } ?>
-						</tr>
-						<?
+					$years = array();
+					/* get the range of years that studies have occured */
+					$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_modality = '$modality' order by year(study_datetime) desc";
+					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+						array_push($years, $row2['theyear']);
 					}
+					foreach ($years as $year) {
 					?>
-					</table>
-				</td>
-			</tr>
-		</table>
+						<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&modality=<?=$modality?>"><?=$year?></a></td>
+					<? } ?>
+					</tr>
+					<?
+				}
+				?>
+				</table>
+			</div>
+			<div class="column">
+				<h2 class="ui header">
+					Reports by Site/Equipment
+					<div class="sub header">
+						View site & year
+					</div>
+				</h2>
+				<table class="ui very compact celled collapsing striped selectable small table">
+				<?
+				/* get a list of modalities */
+				$sqlstring = "select distinct(study_site) 'study_site' from studies";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$studysite = mysqli_real_escape_string($GLOBALS['linki'], $row['study_site']);
+					
+					?>
+					<tr>
+						<td align="right" class="left"><?=$studysite?></td>
+					<?
+					$years = array();
+					/* get the range of years that studies have occured */
+					$sqlstring2 = "select distinct year(study_datetime) theyear from studies where study_datetime > '0000-00-01 00:00:00' and study_site = '$studysite' order by year(study_datetime) desc";
+					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+						array_push($years, $row2['theyear']);
+					}
+					foreach ($years as $year) {
+					?>
+						<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&studysite=<?=$studysite?>"><?=$year?></a></td>
+					<? } ?>
+					</tr>
+					<?
+				}
+				?>
+				</table>
+			</div>
+		</div>
 		<?
 	}
 	
@@ -188,49 +194,44 @@
 			$colors[$i+50] = $color;
 		}
 		?>
-		<table width="100%" cellpadding="10">
-			<tr>
-				<td colspan="2">
-					<?=$type?> per day for <b><?=$year?></b>
-				</td>
-				<td colspan="2">
-					<table cellspacing="0">
-						<tr>
-							<td><b>Key:</b> &nbsp;</td>
-							<td>few&nbsp;</td>
-							<?
-							for ($i=0; $i<40; $i++) {
-								$percent = round(($i/40)*100);
-								$color = $colors[$percent];
-								?>
-								<td bgcolor="<?=$color?>" style="font-size: 8pt">&nbsp;</td>
-								<?
-							}
-							?>
-							<td>&nbsp;a lot</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(1, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(2, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(3, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(4, $year, $colors, $type, $modality, $studysite); ?></td>
-			</tr>
-			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(5, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(6, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(7, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(8, $year, $colors, $type, $modality, $studysite); ?></td>
-			</tr>
-			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(9, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(10, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(11, $year, $colors, $type, $modality, $studysite); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(12, $year, $colors, $type, $modality, $studysite); ?></td>
-			</tr>
-		</table>
+		<br><br>
+		<h2 class="ui header">
+			Select Report for <?=$year?>
+			<div class="sub header">
+				View by month or day
+			</div>
+		</h2>
+
+		<div class="ui fitted top attached segment">
+			<div class="ui basic horizontal segments">
+				<div class="ui basic compact segment" style="padding: 2px"><b style="font-size: larger">Key</b></div>
+				<div class="ui basic compact segment" style="padding:2px 10px 2px 30px"><div class="ui green label">Few</div></div>
+				<div class="segment" style="background: linear-gradient(90deg, lime 0%, yellow 50%, red 100%); padding: 2px; border-left: none"></div>
+				<div class="ui compact segment" style="padding:2px 15px"><div class="ui red label">Many</div></div>
+			</div>
+		</div>
+		<div class="ui bottom attached segment">
+			<table width="100%" cellpadding="10">
+				<tr>
+					<td width="25%" valign="top"><? DisplayMonth(1, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(2, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(3, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(4, $year, $colors, $type, $modality, $studysite); ?></td>
+				</tr>
+				<tr>
+					<td width="25%" valign="top"><? DisplayMonth(5, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(6, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(7, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(8, $year, $colors, $type, $modality, $studysite); ?></td>
+				</tr>
+				<tr>
+					<td width="25%" valign="top"><? DisplayMonth(9, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(10, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(11, $year, $colors, $type, $modality, $studysite); ?></td>
+					<td width="25%" valign="top"><? DisplayMonth(12, $year, $colors, $type, $modality, $studysite); ?></td>
+				</tr>
+			</table>
+		</div>
 		<?
 	}
 	
@@ -368,56 +369,60 @@
 		else {
 			$sqlstring = "select c.uid, c.subject_id, c.gender, c.birthdate, d.*, a.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_modality = '$modality' and a.study_datetime > '$datestart' and a.study_datetime < '$dateend' order by study_datetime";
 		}
-		//echo $sqlstring;
 		?>
-		<b>Imaging studies from <?=$datestart?> to <?=$dateend?></b>
-		<br>
-		<br>
-		<table class="ui very compact celled grey table">
-			<tr>
-				<th>UID</th>
-				<th>Study</th>
-				<th>Sex</th>
-				<th>BirthDate</th>
-				<th>Study Description</th>
-				<th>Project</th>
-				<th>Study date</th>
-				<th>Radiological Read?</th>
-				<th>Read date</th>
-				<th>Read findings</th>
-			</tr>
-		<?
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$uid = $row['uid'];
-			$gender = $row['gender'];
-			$subjectid = $row['subject_id'];
-			$subjectdob = $row['birthdate'];
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$studydesc = $row['study_desc'];
-			$studydatetime = $row['study_datetime'];
-			$studyradreaddone = $row['study_doradread'];
-			$studyradreaddate = $row['study_radreaddate'];
-			$studyradreadfindings = $row['studyradreadfindings'];
-			$project = $row['project_name'] . " (" . $row['project_costcenter'] . ")";
-			?>
-			<tr>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-				<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-				<td><?=$gender?></td>
-				<td><?=$subjectdob?></td>
-				<td><?=$studydesc?></td>
-				<td><?=$project?></td>
-				<td><?=$studydatetime?></td>
-				<td><?=$studyradreaddone?></td>
-				<td><?=$studyradreaddate?></td>
-				<td><?=$studyradreadfindings?></td>
-			</tr>
+		<div class="ui container">
+			<h3 class="ui header">
+				<?=$modality?> studies collected on <?=$studysite?>
+				<div class="sub header">
+					Collected between <?=$datestart?> to <?=$dateend?>
+				</div>
+			</h3>
+			<table class="ui very compact celled grey table">
+				<thead>
+					<th>UID</th>
+					<th>Study</th>
+					<th>Sex</th>
+					<th>BirthDate</th>
+					<th>Study Description</th>
+					<th>Project</th>
+					<th>Study date</th>
+					<th>Radiological Read?</th>
+					<th>Read date</th>
+					<th>Read findings</th>
+				</thead>
 			<?
-		}
-		?>
-		</table>
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$uid = $row['uid'];
+				$gender = $row['gender'];
+				$subjectid = $row['subject_id'];
+				$subjectdob = $row['birthdate'];
+				$studyid = $row['study_id'];
+				$studynum = $row['study_num'];
+				$studydesc = $row['study_desc'];
+				$studydatetime = $row['study_datetime'];
+				$studyradreaddone = $row['study_doradread'];
+				$studyradreaddate = $row['study_radreaddate'];
+				$studyradreadfindings = $row['studyradreadfindings'];
+				$project = $row['project_name'] . " (" . $row['project_costcenter'] . ")";
+				?>
+				<tr>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+					<td><?=$gender?></td>
+					<td><?=$subjectdob?></td>
+					<td><?=$studydesc?></td>
+					<td><?=$project?></td>
+					<td><?=$studydatetime?></td>
+					<td><?=$studyradreaddone?></td>
+					<td><?=$studyradreaddate?></td>
+					<td><?=$studyradreadfindings?></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
+		</div>
 		<?
 	}
 

@@ -647,7 +647,17 @@
 		$dateend = "$year-$month-$days_in_month 23:59:59";
 		?>
 		<div class="ui center aligned secondary inverted segment">
-			<h2 class="ui inverted header">Month Year</h2>
+			<div class="ui three column grid">
+				<div class="left aligned column">
+					<a href="calendar.php?action=month&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big inverted arrow alternate circle left icon"></i></a>
+				</div>
+				<div class="column">
+					<h2 class="ui inverted header"><?=$title?> <?=$year?></h2>
+				</div>
+				<div class="right aligned column">
+					<a href="calendar.php?action=month&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big inverted arrow alternate circle right icon"></i></a>
+				</div>
+			</div>
 		</div>
 		<div class="ui seven column very compact grid">
 			<div class="column">
@@ -733,19 +743,17 @@
 			
 			?>
 			<td class="day" style="background-color: <?=$bgcolor?>">
-				<table width="100%" cellpadding="0" cellspacing="0">
-					<tr>
-						<td style="background-image: -webkit-gradient(linear, 0% 100%, 100% 100%, from(#454545), to(#CCCCCC)); background-image: -moz-linear-gradient(0% 0% 0deg,#454545, #FFFFFF)">
-						<span style="color: white; background-color: #555555; font-weight: bold">&nbsp;<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day_num?>" style="color: white; font-size:10pt; text-decoration: none"><?=$day_num?></a>&nbsp;</span>
-						<? if ($holidaystr != "") { ?>
-						<div class="ui blue small label"><?=$holidaystr?></div>
-						<? } ?>
-						</td>
-					</tr>
-				</table>
-				<table width="100%" height="100%">
-					<tr>
-						<td align="left" height="100%">&nbsp;<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><i class="orange plus square icon" title="Create appointment"></i></a>
+				<div class="ui styled blue segment" style="padding: 3px">
+
+					<h3 class="ui header">
+						<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><i class="small grey calendar plus icon" title="Create appointment"></i></a>
+						<div class="content">
+							<a href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day_num?>" title="View day"><?=$day_num?></a>
+							<? if ($holidaystr != "") { ?>
+							<div class="sub header"><?=$holidaystr?></div>
+							<? } ?>
+						</div>
+					</h3>
 							<br><br>
 							<?
 							if ($currentcal == 0) {
@@ -767,7 +775,7 @@
 								$isrequest = $row['appt_istimerequest'];
 								?>
 								<?if (!$isallday) { ?>
-									<span class="time">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span><br>
+									<div class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</div><br>
 								<? } ?>
 								<? if ($isrequest) { ?>
 									<span class="timerequest">&nbsp;Time request&nbsp;</span>
@@ -778,9 +786,6 @@
 								<?
 							}
 							?>
-						</td>
-					</tr>
-				</table>
 			</td>
 			<?
 			$day_num++;
