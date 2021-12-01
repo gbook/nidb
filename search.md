@@ -1,3 +1,5 @@
+<a href="index.html">Home</a>
+
 # Searching in NiDB
 To search data based on subjects, projects, studies, modality, etc.: NiDB has a very friendly interface. The search screen can be accessed from the top menu by clicking the “Search" menu.
 The following is the search page:
@@ -14,3 +16,10 @@ There are various subsections on the search screen, those are self-explanatory. 
 6.	Subject group
 
 ![image](https://user-images.githubusercontent.com/24811295/142931787-0de7d637-488c-4b89-a67c-be0a5ef42f55.png)
+
+## Enrollment
+The next section is enrollment where a search can be restricted based on projects. One can choose a single project or a list of projects from the drop down menu. Also a sub-group if defined can be specified.
+ 
+ ![image](https://user-images.githubusercontent.com/24811295/144314373-e815bb68-e6ab-4914-b15f-40902b128ebe.png)
+
+## Study
