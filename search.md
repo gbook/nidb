@@ -20,6 +20,6 @@ There are various subsections on the search screen, those are self-explanatory. 
 ## Enrollment
 The next section is enrollment where a search can be restricted based on projects. One can choose a single project or a list of projects from the drop down menu. Also a sub-group if defined can be specified.
  
- ![image](https://user-images.githubusercontent.com/24811295/144314373-e815bb68-e6ab-4914-b15f-40902b128ebe.png)
+ ![image](https://user-images.githubusercontent.com/24811295/144314598-2895ff2f-a6aa-419e-90b0-bfa6957eda0c.png)
 
 ## Study
