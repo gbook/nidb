@@ -1,6 +1,7 @@
 # NiDB Usage
 
 - <a href="importing-data.html">Importing Data</a>
+  - <a href="importing-data.html#data-heirarchy">Data Heirarchy</a>
   - Create Subject
     - Enroll in Project
   - Create Imaging Study
