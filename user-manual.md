@@ -5,7 +5,7 @@
   - <a href="importing-data.html#create-subject">Create Subject</a>
   - <a href="importing-data.html#enroll-in-project">Enroll in Project</a>
   - <a href="importing-data.html#create-imaging-study">Create Imaging Study</a>
-  - <a href="importing-data.html#create-single-series-upload-data">Create Single Series/Upload data</a>
+  - <a href="importing-data.html#create-single-seriesupload-data">Create Single Series/Upload data</a>
   - Bulk Import of Large Datasets
   - Automatic Import via DICOM reciver
   - Bulk Upload of non-MRI data
