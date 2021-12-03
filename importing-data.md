@@ -13,10 +13,15 @@ Data within NiDB is stored in a heirarchy.
 ||Brains & Behavior Part 2||Enrolled 2021-11-30||S1234ABC||S1234ABC4 (ET)||1 - AntiSaccade|
 
 ## Create Subject
-On the main menu, find the **Subjects** tab. A page will be displayed in which you can search for existing subjects, and a button to create a new subject. 1) Subjects page 2) <b>Create Subject</b> button 3) Olibterate subjects: an intimidating button that only appears for NiDB admins
+On the main menu, find the **Subjects** tab. A page will be displayed in which you can search for existing subjects, and a button to create a new subject
+
+1. **Subjects** page menu item
+2. **Create Subject** button
+3. **Olibterate subjects** button: an intimidating sounding button that only appears for NiDB admins
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/144305883-6007dc32-2284-4223-978f-975842bb0250.png" width="50%"></div>
 
-Fill out as much information as you can. Many fields are optional, but Name, Sex, DOB are required to ensure a unique subject.
+Fill out as much information as you need. Name, Sex, DOB are required to ensure a unique subject. Most other information is optional. While fields for contact information are available, be mindful and consider whether you really need to fill those out. Chances are that contact information for research participants is already stored in a more temporary location and does not need to exist for as long as the imaging data does.
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/144306665-afec15f7-bd67-41e3-b68c-665d3d5ea3fc.png" width="50%"></div>
 
 The subject will now be assigned a UID, but will not be enrolled in any projects. Enroll the subject in the next section.
@@ -40,9 +45,18 @@ Once the study is created, it will appear in the list of imaging studies. Studie
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/144616105-237e31c5-d909-4679-bf24-50379b41cdad.png" width="50%"></div>
 
 ## Create Single Series/Upload data
+MRI and non-MRI data are handled differently, because of the substantial amount of information contained in MRI headers. MRI series are created automatically during import, while all other imaging data can be imported automatically or manually.
+### MRI
+MRI series cannot be created manually, they must be imported as part of a dataset. See [Bulk Import of Large Datasets](#bulk-import-of-large-datasets) or [Automatic Import via DICOM receiver](#automatic-import-via-dicom-receiver). MRI series can be managed individually after automatic importing has occured.
+### Non-MRI
+Non-MRI data be imported automatically or manually. To manually import non-MRI data, first go into the imaging study. Then fill out the series number, protocol, date, notes. Series number and date are automatically filled, so change these if you need to. When done filling out the fields, click **Create Series**.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144630122-41f9489b-9dde-41a0-b8a5-ff77e11ccf87.png" width="50%"></div>
+
+The series will be created, with an option to create another series below it. Upload files by clicking the **Upload** button, or by dragging and dropping onto the **Upload** button. If you need to delete or rename files, click the **Manage files** button. This will display a list of files in that series, and you can rename the file by typing in the filename box.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144631332-5f49c4ca-6c7f-472b-ae22-a3f977cc610c.png" width="50%"></div>
 
 ## Bulk Import of Large Datasets
 
-## Automatic Import via DICOM reciver
+## Automatic Import via DICOM receiver
 
 ## Bulk Upload of non-MRI data
