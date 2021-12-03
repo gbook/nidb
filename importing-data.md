@@ -84,7 +84,15 @@ This will bring up the new import page.
 |Study|Default is to match studies by the DICOM fields Modality/StudyDate/StudyTime. Sometimes anonymized DICOM files have these fields blank, so StudyInstanceUID or StudyID must be used instead. If data is not importing as expected, check your DICOM tags and see if these study tags are valid|
 |Series|The default is to match series by the DICOM field SeriesNumber. But sometimes this field is blank, and SeriesDate/SeriesTime or SeriesUID must be used instead. If data is not importing as expected, check your DICOM tags to see if these series tags are valid|
 
-After all of the import information is filled out, click Upload. You can view the import by clicking on it.
+After all of the import information is filled out, click Upload. You can view the import by clicking on it. The import has 5 stages, described below.
+
+|Stage|Possible Status & Description|
+|---|---|
+|Started|The upload has been submitted. You will likely see this status if you are importing data via NFS, rather than through local web upload|
+|Upload|**Uploading** - The data is being uploaded<br>**Uploaded** - Data has finished uploading|
+|Parsing|**Parsing** - The data is being parsed. Depending on the size of the dataset, this could be minutes, hours, or days<br>**Parsed** - The data has been parsed, meaning the IDs, series, and other information have been read and the data organized into a Subject&rarr;Study&rarr;Series heirarchy. Once parsing is complete, you must select the data to be archived|
+|Archive|**Archiving** - The data is being archived. Depending on the size of the dataset, this could be minutes, hours, or days<br>**Archived** - The data is finished archiving|
+|Complete|The entire import process has finished|
 
 ## Automatic Import via DICOM receiver
 
