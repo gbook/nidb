@@ -56,6 +56,35 @@ The series will be created, with an option to create another series below it. Up
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/144631332-5f49c4ca-6c7f-472b-ae22-a3f977cc610c.png" width="50%"></div>
 
 ## Bulk Import of Large Datasets
+The imaging import page can be accessed by the Data &rarr; Import Imaging menu. Because datasets can be large and take hours to days to completely import and archive, they are queued in import jobs. To import a dataset, click the **New Import** button.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144643208-f19f16df-883b-428e-aed0-d94345b17341.png" width="50%"></div>
+
+This will bring up the new import page.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144643700-babe8612-1a14-429a-95bd-65c4ec32c1b6.png" width="50%"></div>
+
+**Data Location**
+|Field|Notes|
+|---|---|
+|Local computer|Upload files via the web browser. 'Local computer' is basically the computer from which the browser is being run, so this may be a Windows PC, Mac, or other browser based computer|
+|NFS path|This is a path accessible from NiDB. The NiDB admin will need to configure access to NFS shares|
+
+**Data Modality**
+|Field|Notes|
+|---|---|
+|Automatically detect|This option will detect data modality based on the DICOM header. If you are importing DICOM data, use this option|
+|Specific modality|If you definitely know the data being imported is all of one modality, chose this. Non-DICOM files are not guaranteed to have any identifying information, so the imported files must be named to encode the information in the name.|
+|Unknown|This is a last ditch option to attempt to figure out the modality of the data by filename extension. It probably won't work|
+
+**Destination Project** - Data must be imported into an existing project.
+
+**Matching Criteria** - DICOM data only
+|Field|Notes|
+|---|---|
+|Subject|**PatientID** - match the DICOM PatientID field to an existing UID or alternate UID<br>**Specific PatientID** - this ID will be applied to all imported data, ex `S0001` will be the ID used for all data in the entire import<br>**PatientID from directory name** - get the subject ID from the parent directory of the DICOM file. This will be the highest level directory name, ex for `12345/1/data/MRI` the subject ID will be `12345`<br>|
+|Study|Default is to match studies by the DICOM fields Modality/StudyDate/StudyTime. Sometimes anonymized DICOM files have these fields blank, so StudyInstanceUID or StudyID must be used instead. If data is not importing as expected, check your DICOM tags and see if these study tags are valid|
+|Series|The default is to match series by the DICOM field SeriesNumber. But sometimes this field is blank, and SeriesDate/SeriesTime or SeriesUID must be used instead. If data is not importing as expected, check your DICOM tags to see if these series tags are valid|
+
+After all of the import information is filled out, click Upload. You can view the import by clicking on it.
 
 ## Automatic Import via DICOM receiver
 
