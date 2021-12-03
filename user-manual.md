@@ -6,9 +6,9 @@
   - <a href="importing-data.html#enroll-in-project">Enroll in Project</a>
   - <a href="importing-data.html#create-imaging-study">Create Imaging Study</a>
   - <a href="importing-data.html#create-single-seriesupload-data">Create Single Series/Upload data</a>
-  - Bulk Import of Large Datasets
-  - Automatic Import via DICOM reciver
-  - Bulk Upload of non-MRI data
+  - <a href="importing-data.html#bulk-import-of-large-datasets">Bulk Import of Large Datasets</a>
+  - <a href="importing-data.html#automatic-import-via-dicom-receiver">Automatic Import via DICOM reciver</a>
+  - <a href="importing-data.html#bulk-upload-of-non-mri-data">Bulk Upload of non-MRI data</a>
 - <a href="working-with-data.html">Working with Data</a>
   - Managing Subjects
     - Editing IDs & Demographics
