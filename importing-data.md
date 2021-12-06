@@ -97,6 +97,17 @@ After all of the import information is filled out, click Upload. You can view th
 |Archive|**Archiving** - The data is being archived. Depending on the size of the dataset, this could be minutes, hours, or days<br>**Archived** - The data is finished archiving|
 |Complete|The entire import process has finished|
 
+Once the parsing stage is complete, you will need to select which series you want to import. This step gives you the opportunity to see exactly what datasets were identified in the import. If you were expecting a dataset to be in the import, but it wasn't found, this is a chance to find out why. Parsing issues such as missing data or duplicate datasets are often related to the matching criteria options. Sometimes the uniquely identifying information is not contained in the DICOM field it is supposed to be. That can lead to all series being put into one subject, or a new subject/study created for each series. There are so many ways in which data is organized and uniquely identified, so careful inspection of your data headers is important to select the right options. If you find that none of the available matching options work for your data, contact the NiDB development team because we want to cover all import formats!
+
+After you've selected the series you want to archive, click the Archive button. This will move the import to the next stage and queue the data to be archived.
+
+At the end of archiving, the import should have a complete status. If there are any errors, the import will be marked error and you can view the error messages.
+
 ## Automatic Import via DICOM receiver
+NiDB was originally designed to automatically import MRI data as it is collected on the scanner, so this method of import is the most robust. After each series is reconstructed on the MRI, it is automatically sent to a DICOM node (DICOM receiver running on NiDB). From there, NiDB parses incoming data and will automatically create the subject/enrollment/study/series for each DICOM file it receives.
+
+### Making DICOM Import More Efficient
+**Write mosaic images** - Depending on the MRI scanner, the option to write one DICOM file per slice or per volume may be available. On Siemens MRIs, there should be an option for EPI data to write mosaic images. For example, if your EPI volume has 36 slices, the scanner would normally write out 36 separate files, each with an entire DICOM header. If you select write mosaic images, it will write one DICOM file with one header for all 36 slices. If you have 1000 BOLD reps in a timeseries, this time savings can be significant.
+**Ignore phase encoding direction** - To read the phase encoding direction information from a Siemens DICOM file can require 3 passes to read the file, using 3 different parsers. Siemens contain a special section called the CSA header which contains information about phase encoding direction, and an ASCII text section which includes another phase encoding element, and the regular DICOM header information. Disabling the parsing of phase encoding direction can significantly speed up the archiving of DICOM files.
 
 ## Bulk Upload of non-MRI data
