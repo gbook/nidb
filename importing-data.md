@@ -63,12 +63,14 @@ This will bring up the new import page.
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/144643700-babe8612-1a14-429a-95bd-65c4ec32c1b6.png" width="50%"></div>
 
 **Data Location**
+
 |Field|Notes|
 |---|---|
 |Local computer|Upload files via the web browser. 'Local computer' is basically the computer from which the browser is being run, so this may be a Windows PC, Mac, or other browser based computer|
 |NFS path|This is a path accessible from NiDB. The NiDB admin will need to configure access to NFS shares|
 
 **Data Modality**
+
 |Field|Notes|
 |---|---|
 |Automatically detect|This option will detect data modality based on the DICOM header. If you are importing DICOM data, use this option|
@@ -78,6 +80,7 @@ This will bring up the new import page.
 **Destination Project** - Data must be imported into an existing project.
 
 **Matching Criteria** - DICOM data only
+
 |Field|Notes|
 |---|---|
 |Subject|**PatientID** - match the DICOM PatientID field to an existing UID or alternate UID<br>**Specific PatientID** - this ID will be applied to all imported data, ex `S0001` will be the ID used for all data in the entire import<br>**PatientID from directory name** - get the subject ID from the parent directory of the DICOM file. This will be the highest level directory name, ex for `12345/1/data/MRI` the subject ID will be `12345`<br>|
