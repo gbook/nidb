@@ -12,6 +12,8 @@ NiDB Usage
 
 <br>
 
+<hr>
+
 ## New Installation
 
 ### Pre-requisities
@@ -58,6 +60,8 @@ The default usernames and passwords are as follows, change them using the method
 |(MariaDB)	`nidb`|`password`|See above|
 |(NiDB) `admin`|`password`|When logged in as `admin`, go to **My Account**. Enter a new password in the password field(s). Click **Save** to change the password.|
 
+<hr>
+
 ## Upgrade Existing Installation
 Quick upgrade instructions below. See <a href="upgrade.html">detailed upgrade</a> instructions for a more in-depth explanation of the upgrade.
 1. Download latest NiDB release.
@@ -65,6 +69,8 @@ Quick upgrade instructions below. See <a href="upgrade.html">detailed upgrade</a
 3. Make sure your IP address is set in the `[setupips]` variable in the config file. This can be done manually by editing `/nidb/nidb.cfg` or by going to **Admin** &#8594; **Settings**
 4. Go to http://localhost/setup.php (Or within NiDB, go to **Admin** &#8594; **Setup/upgrade**)
 5. Follow the instructions on the webpages to complete the upgrade
+
+<hr>
 
 ## Migrate Existing Installation to New Server
 1. On the *old server*, export the SQL database
