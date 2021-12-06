@@ -108,6 +108,20 @@ NiDB was originally designed to automatically import MRI data as it is collected
 
 ### Making DICOM Import More Efficient
 **Write mosaic images** - Depending on the MRI scanner, the option to write one DICOM file per slice or per volume may be available. On Siemens MRIs, there should be an option for EPI data to write mosaic images. For example, if your EPI volume has 36 slices, the scanner would normally write out 36 separate files, each with an entire DICOM header. If you select write mosaic images, it will write one DICOM file with one header for all 36 slices. If you have 1000 BOLD reps in a timeseries, this time savings can be significant.
+
 **Ignore phase encoding direction** - To read the phase encoding direction information from a Siemens DICOM file can require 3 passes to read the file, using 3 different parsers. Siemens contain a special section called the CSA header which contains information about phase encoding direction, and an ASCII text section which includes another phase encoding element, and the regular DICOM header information. Disabling the parsing of phase encoding direction can significantly speed up the archiving of DICOM files.
 
 ## Bulk Upload of non-MRI data
+For non-MRI data, you can upload data in bulk to existing series. For example, if you have a directory full of task files, but each file belongs to a different subject. Rather than go into each subject/study and upload the file individually, you can upload the files as a batch. This method is best when used in conjunction with study templates.
+
+This upload method assumes that you have already created all of the subjects, studies, and series. The series can be empty, or not. To create empty studies by template, see the [Create Imaging Study](#create-imaging-study) section on use of templates.
+
+Start by searching on the Search page for the series you are interested in uploading data into. For example, search for all 'GoNoGo' TASKs in a particular project. This will show a list of just the series from that project, from the TASK modality, and for existing GoNoGo series. Select the series you want, and go toward the bottom of the page, in the **Operations** section, click the Batch **Upload** button.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144894494-f1395f9d-3b9f-4cf9-9f42-db80f287bfde.png" width="50%"></div>
+
+This will display a list of just those series, with an area to drag&drop files onto. Existing files for each series are displayed on the right side of the page.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/144895427-1832eb02-efe9-4f8e-92fa-fc33b65a2215.png" width="50%"></div>
+
+Drag and drop files onto those series, and click **Refresh Page** to view the newly uploaded files.
