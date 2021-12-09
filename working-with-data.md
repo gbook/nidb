@@ -5,11 +5,11 @@
 ## Managing Subjects
 
 ### Editing IDs & Demographics
-Find your subject by UID or other methods. On the subject's page, you'll see a demographic summary on the left, and the subject's enrollments and studies on the right. On the lefthand side of the page, click the Edit subject button (#2 on the image below). This will show the form to edit demographics. If the edit button is missing, you can check your permissions for the subject by expanding the permissions listing (#1 on the image below).
+Find your subject by UID or other methods. On the subject's page, you'll see a demographic summary on the left, and the subject's enrollments and studies on the right. The demographics list may show a red box around the DOB if it appears to be a placeholder date like 1900-01-01 or 1776-07-04. On the lefthand side of the page, click the Edit subject button (#2 on the image below). This will show the form to edit demographics. If the edit button is missing, you can check your permissions for the subject by expanding the permissions listing (#1 on the image below).
 
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/145464187-dd99504a-034c-4676-8164-6ef0f1afb75e.png" width="60%"></div>
 
-When editing subject information, required fields are highlighted. Most fields are optional. You can edit IDs on this page, which are reflected for the subject in all projects. The primary alternate ID should have an asterisk in front of it. The primary alternate ID will now be with the main ID for this subject in the specified project. See the ID note below.
+When editing subject demographic information, required fields are highlighted. Most fields are optional. You can edit IDs on this page, which are reflected for the subject in all projects. The primary alternate ID should have an asterisk in front of it. The primary alternate ID will now be with the main ID for this subject in the specified project. See the ID note below. Click **Update** to save the demographic information. Confirm on the following page.
 
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/145464775-bdd0ba5e-65d4-4483-b223-07a731664dc1.png" width="60%"></div>
 
@@ -25,6 +25,21 @@ When editing subject information, required fields are highlighted. Most fields a
 |Alternate StudyID|Sometimes an individual imaging session (study) has it's own unique ID. For example, some imaging centers will give a subject a new ID every time they go into the scanner. This is a place to store that ID|
 
 ### Project Enrollments
+On the subject's main page, you'll see a list of enrollments on the right hand side. To enroll the subject in a new project, select the project and click Enroll. This will create a new enrollment.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/145472119-7a257061-0d56-40b1-8038-94bc00f093d9.png" width="60%"></div>
+
+You can edit an existing enrollment by clicking the Edit Enrollment button. There isn't a whole of information available on this page, but enrollment checklists can be useful to check if a subject has completed all of the items for the project. Subjects can be marked as excluded, complete. Enrollment group can also be specified, such as CONTROL or PATIENT.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/145472727-b6794944-2bfd-4069-a317-5617f395255c.png" width="60%"></div>
+
+#### Timelines
+For projects with a chronological component, you can view a timeline of series for this enrollment. Click the **View Timeline** button on the subject's page, for the enrollment. It will display a timeline of series. Bottom axis displays the date/time. You can change the parameters of the timeline by selecting date range or series.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/145473238-51a10881-d5d1-4a91-896b-2e726e332122.png" width="60%"></div>
+
+#### Enroll in Different Project
+If your subject is enrolled in a project, but you need to move the enrollment (and all of the imaging studies, enrollment info, assessments, measures, drugs, and vitals) into a different project, you can do that by expanding the **Enroll in different project** section. Select the new project, and click **Move**. You must be an admin to do this.
 
 ### Merging
 
