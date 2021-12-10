@@ -48,10 +48,16 @@ Other than imaging data can also be quried using the similar way as mentioned ab
 
 
 ### ID Mapping
-The Ids can be mapped using the "Data" menu from the main menu. One can go to the Id-maper page by clicking on the "ID mapper" link as shown below or by selection the ID mapper submenue.
+The Ids can be mapped using the "Data" menu from the main menu. One can go to the Id-maper page by clicking on the "ID mapper" link as shown below or by selection the ID mapper sub-menu.
 
 ![image](https://user-images.githubusercontent.com/24811295/145585529-ca7b6a76-8dfe-4567-96d8-c3aa0260697f.png)
 
+The following page will appear that is used to map various Ids.
+
+![image](https://user-images.githubusercontent.com/24811295/145586351-09223fb0-fffe-4f3d-b1bf-bc21d3b5061e.png)
+
+A list of Ids to be mapped separated by space, tab, period, semicolon, colon, comma and newline can be typed in the box above.
+the mapping can be restricted to a certain project by selecting the project name from the dropdown menu. The search can only be restricted to the current instance, undeleted subjects and exact matches  by selecting the approprriate selection box shown above. 
 
 - Export
   - Export to NFS
