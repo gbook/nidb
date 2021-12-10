@@ -30,7 +30,7 @@
   - <a href="finding-data.html#search">Search</a>
     - <a href="finding-data.html#finding-imaging-date">Finding Imaging Data</a>
     - <a href="finding-data.html#other-data-queries">Other Data Queries</a>
-    - ID Mapping
+    - <a href="finding-data.html#id-mapping">ID Mapping</a>
   - Export
     - Export to NFS
     - Export for Web Download
