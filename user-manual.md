@@ -31,12 +31,12 @@
     - <a href="finding-data.html#finding-imaging-date">Finding Imaging Data</a>
     - <a href="finding-data.html#other-data-queries">Other Data Queries</a>
     - <a href="finding-data.html#id-mapping">ID Mapping</a>
-  - Export
+  - <a href="finding-data.html#export">Export</a>
     - Export to NFS
     - Export for Web Download
     - Export to NDAR/RDoCdb/NDA
     - Export to Remote NiDB Site
-  - Export status
+  - <a href="finding-data.html#export-status">Export Status</a>
   - Analysis Builder
   - Public Downloads
   - Request a Dataset
