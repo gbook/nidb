@@ -40,12 +40,19 @@ In this section, the structure of the search output can be defined. The output c
 
 ![image](https://user-images.githubusercontent.com/24811295/145580133-d64c64ac-1022-4a52-900f-421bcbeb506b.png)
 
+### Other Data Queries
+
+Other than imaging data can also be quried using the similar way as mentioned above for the imaging data above. However the required non-imaging data modality can be selected from the modality dropdown menu in the study section as shown below
+
+![image](https://user-images.githubusercontent.com/24811295/145583549-1aed8be2-5c93-4523-9709-a35ac05af262.png)
 
 
+### ID Mapping
+The Ids can be mapped using the "Data" menu from the main menu. One can go to the Id-maper page by clicking on the "ID mapper" link as shown below or by selection the ID mapper submenue.
+
+![image](https://user-images.githubusercontent.com/24811295/145585529-ca7b6a76-8dfe-4567-96d8-c3aa0260697f.png)
 
 
-  - Other Data Queries
-  - ID Mapping
 - Export
   - Export to NFS
   - Export for Web Download
