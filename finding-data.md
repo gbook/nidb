@@ -59,12 +59,27 @@ The following page will appear that is used to map various Ids.
 A list of Ids to be mapped separated by space, tab, period, semicolon, colon, comma and newline can be typed in the box above.
 the mapping can be restricted to a certain project by selecting the project name from the dropdown menu. The search can only be restricted to the current instance, undeleted subjects and exact matches  by selecting the approprriate selection box shown above. 
 
-- Export
+## Export
+
+After searching the required data, it can be exported various destinations. Following are some destinations that can be selected:
+
   - Export to NFS
   - Export for Web Download
   - Export to NDAR/RDoCdb/NDA
   - Export to Remote NiDB Site
-  - Export status
+
+For this purpose a section named "Transfer & Export Data" will appear at the end of a search as shown in a fiigure below.
+
+![image](https://user-images.githubusercontent.com/24811295/145590743-93e211ed-6b21-4ead-8f1a-69c29633228d.png)
+
+
+
+ ### Export status
+ After starting the transfer by clicking the transfer button at the end of the search, a transfer request will be send to NiDB. The status of a request can be seen via Search-->Export Status page as shown below. The status of 30 most recent serches will be shown by default. All the previoius searches can be seen by clicking on the "Show all" button on the left corner of the screen as shown below.
+ 
+ ![image](https://user-images.githubusercontent.com/24811295/145592630-d61eeeb0-308d-4811-8f2c-0ad7c546522d.png)
+
+ 
 - Analysis Builder
 - Public Downloads
 - Request a Dataset
