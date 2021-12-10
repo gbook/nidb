@@ -27,9 +27,9 @@
     - Moving Series to New Study
   - Groups
 - <a href="finding-data.html">Finding and Exporting Data</a>
-  - Search
-    - Finding Imaging Data
-    - Other Data Queries
+  - <a href="finding-data.html#search">Search</a>
+    - <a href="finding-data.html#finding-imaging-date">Finding Imaging Data</a>
+    - <a href="finding-data.html#other-data-queries">Other Data Queries</a>
     - ID Mapping
   - Export
     - Export to NFS
