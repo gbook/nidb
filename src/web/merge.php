@@ -140,25 +140,48 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uids[] = $row['uid'];
 		}
-		
+
 		?>
-		<table cellpadding="5">
-			<tr>
-				<td>Merging UID(s) &nbsp;</td>
-				<td style="border: 1px solid #aaa; border-radius: 5px"><?=implode2("<br>", $uids)?></td>
-				<td>&nbsp; into &rarr; </td>
-				<td><span style="border: 1px solid #aaa; padding: 5px; border-radius: 5px"><?=$finaluid?></span></td>
-			</tr>
-		</table>
-		<br>
-		<br>
-		<b>Merge queued</b>
+		<div class="ui text container">
+			<div class="ui grid">
+				<div class="middle aligned right aligned three wide column">
+					<h2 class="header">Merging</h2>
+				</div>
+				<div class="center aligned middle aligned five wide column">
+					<div class="ui segment">
+						<?
+						foreach ($uids as $uid) {
+							echo "<span style='font-size: x-large'>$uid</span><br>";
+						}
+						?>
+					</div>
+				</div>
+				<div class="center aligned middle aligned one wide column">
+					<i class="big arrow alternate circle right icon"></i>
+				</div>
+				<div class="left aligned middle aligned seven wide column">
+					<div class="ui segment">
+						<div class="ui item">
+							<div class="content">
+								<h2 class="header">
+									<i class="user icon"></i> <?=$finaluid?>
+								</h2>
+								<div class="meta">
+									<?=$name?><br><?=$dob?><br><?=$gender?>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="ui message">Merge queued</div>
+		</div>
 		<?
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- SubmitMergeStuidies ---------------- */
+	/* ------- SubmitMergeStudies ----------------- */
 	/* -------------------------------------------- */
 	function SubmitMergeStudies($studyids, $selectedstudyid, $mergemethod) {
 		
@@ -200,7 +223,7 @@
 		?>
 		Select studies that you <i>want to merge</i> (only <?=$modality?> modality for this enrollment are displayed). Then <i>select the final study</i> they will be merged into
 		<br><br>
-		<form action="merge.php" method="post">
+		<form action="merge.php" method="post" class="ui form">
 		<input type="hidden" name="action" value="submitmergestudies">
 		<input type="hidden" name="returnpage" value="<?=$returnpage?>">
 		<table class="ui very compact celled collapsing grey table">
@@ -284,7 +307,7 @@
 			?>
 			No subjects selected for merge. Add a UID below.
 			<br><br>
-			<form action="merge.php" method="post">
+			<form action="merge.php" method="post" class="ui form">
 			<input type="hidden" name="action" value="merge">
 			<input type="text" name="subjectuid" placeholder="UID"><br>
 			<input type="submit" class="ui primary button" value="Add UID">
@@ -324,228 +347,299 @@
 			}
 		}
 
+		$numsubjects = count($subjects);
+		$numcols = $numsubjects + 2;
+		switch ($numcols) {
+			case 1: $numcolstr = "one"; break;
+			case 2: $numcolstr = "two"; break;
+			case 3: $numcolstr = "three"; break;
+			case 4: $numcolstr = "four"; break;
+			case 5: $numcolstr = "five"; break;
+			case 6: $numcolstr = "six"; break;
+			case 7: $numcolstr = "seven"; break;
+			case 8: $numcolstr = "eight"; break;
+			case 9: $numcolstr = "nine"; break;
+			case 10: $numcolstr = "ten"; break;
+			default: $numcolstr = "";
+		}
+		
 		/* display one column for each subject with a radio button to "merge all studies into this subject" */
 		?>
 		<style>
-			.radio-toolbar2 input[type="radio"]:checked ~ * {
+			/* .radio-toolbar2 input[type="radio"]:checked ~ * {
 				background:yellow !important;
 				padding: 5px;
-			}
+			} */
 		</style>
+
+		<script>
+			function highlight(label) {
+				var dirformat = $("[name='dirformat']:checked").val();
+				var elements = document.getElementsByName('labeldiv');
+
+				var elementList = Array.prototype.slice.call(elements);
+				//alert(elementList.length);
+				elementList.forEach(clearHighlight);
+
+				document.getElementById(label).classList.remove('secondary');
+				document.getElementById(label).classList.add('yellow');
+			}
+
+			function clearHighlight(element) {
+				element.classList.remove('yellow');
+				element.classList.add('secondary');
+			}
+		</script>
 		
-		<table>
-			<tr>
-				<td colspan="2" style="padding: 15px;">
-					<b>Merge subjects</b>
-					<ul>
-					<li>Select the UID you want to merge into and edit information in that column. <b>Leftmost UID is selected by default</b>
-					<li>Only the information in the selected column will be saved, and all other projects will be merged into that UID. All other UIDs will be deleted.
-					</ul>
-				</td>
-			</tr>
-			<tr>
-				<td>
-				<form action="merge.php" method="post">
-				<input type="hidden" name="action" value="submitmerge">
-				<input type="hidden" name="returnpage" value="<?=$returnpage?>">
-				<?
-				for ($i=0;$i<count($subjects);$i++) {
-					echo "<input type='hidden' name='subjectids[" . $i . "]' value='" . $subjects[$i]['id'] . "'>\n";
-				}
-				?>
-				<table cellspacing="0" cellpadding="1" class="merge">
-					<tr class="radio-toolbar2">
-						<td class="label">UID</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								?>
-									<td align="center" class="uid"><label><input type="radio" id="uid<?=$i?>" name="selectedid" value="<?=$subjects[$i]['id']?>" <? if ($i == 0) { echo "checked"; } ?> ><span><?=$subjects[$i]['uid']?></span></label> &nbsp; <input type="button" name="removeid" value="Remove UID" style="width: 100px; margin:4px" onclick="document.removeidform.idtoremove.value='<?=$subjects[$i]['id']?>';document.removeidform.submit();">
-									</td>
-								<?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Name</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['name'] != $subjects[0]['name']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?>
-									<td class="<?=$class?>"><input type="text" name="name[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['name']?>"></td>
-								<?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">DOB</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['dob'] != $subjects[0]['dob']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?>
-									<td class="<?=$class?>"><input type="text" name="dob[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['dob'];?>"></td>
-								<?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Sex</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['gender'] != $subjects[0]['gender']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?>
-									<td class="<?=$class?>"><input type="text" name="gender[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['gender'];?>"></td>
-								<?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Ethnicity 1</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['ethnicity1'] != $subjects[0]['ethnicity1']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?><td class="<?=$class?>"><input type="text" name="ethnicity1[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity1'];?>"></td><?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Ethnicity 2</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['ethnicity2'] != $subjects[0]['ethnicity2']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?><td class="<?=$class?>"><input type="text" name="ethnicity2[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity2'];?>"></td><?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">GUID</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['guid'] != $subjects[0]['guid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?><td class="<?=$class?>"><input type="text" name="guid[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['guid'];?>"></td><?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Alternate subject IDs</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-								if ($subjects[$i]['altuid'] != $subjects[0]['altuid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-								?><td class="<?=$class?>"><input type="text" name="altuids[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>"></td><?
-							}
-						?>
-					</tr>
-					<tr>
-						<td class="label">Studies (with enrollment group)</td>
-						<?
-							for ($i=0;$i<count($subjects);$i++) {
-							?>
-								<td valign="top" style="border-right: 1px solid gray">
-									<table cellspacing="0" cellpadding="0">
-										<?
-											$sqlstring = "select a.*, b.*, date(enroll_startdate) 'enroll_startdate', date(enroll_enddate) 'enroll_enddate' from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = " . $subjects[$i]['id'];
-											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$enrollmentid = $row['enrollment_id'];
-												$enrollgroup = $row['enroll_subgroup'];
-												$project_name = $row['project_name'];
-												$costcenter = $row['project_costcenter'];
-												
-												$altuids = GetAlternateUIDs($subjects[$i]['id'], $enrollmentid);
-												$altuidlist = implode2(', ',$altuids);
-												
-										?>
-										<tr>
-											<td colspan="4" style="font-size:9pt; background-color:#eee; padding: 4px">
-												<table cellpadding="0" cellspacing="0" width="100%">
-													<tr>
-														<td><b><?=$project_name?></b> (<?=$costcenter?>)
-														<br>
-														<input type="text" name="enrollgroup[<?=$enrollmentid?>]" value="<?=$enrollgroup?>" placeholder="Enrollment group">
-														</td>
-													</tr>
-												</table>
-											</td>
-										</tr>
-											<?
-											$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
-											$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-											if (mysqli_num_rows($result2) > 0) {
-												while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-													$study_id = $row2['study_id'];
-													$study_num = $row2['study_num'];
-													$study_modality = $row2['study_modality'];
-													$study_datetime = $row2['study_datetime'];
-													$study_operator = $row2['study_operator'];
-													$study_performingphysician = $row2['study_performingphysician'];
-													$study_site = $row2['study_site'];
-													$study_status = $row2['study_status'];
-													
-													?>
-													<tr style="font-size: 8pt">
-														<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_num?></td>
-														<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_modality?></td>
-														<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_datetime?></td>
-														<td style="border-right: 1px solid #AAAAAA; border-bottom: 1px solid #AAAAAA; padding: 1px 5px"><?=$study_site?></td>
-													</tr>
-													<?
-												}
-											}
-											else {
-												?>
-												<tr>
-													<td align="center">
-														None
-													</td>
-												</tr>
-												<?
-											}
-										}
-										?>
-									</table>
-								</td>
-							<?
-							}
-						?>
-					</tr>
-					<tr>
-						<td colspan="<?=count($subjects)+1?>" align="center" style="border-top: 2px solid gray; border-bottom: 2px solid gray">
-							<br>
-							<input type="submit" value="Merge">
-							<br><br>
-						</td>
-					</tr>
-				</table>
-				</form>
-			</td>
-			<td align="center" valign="top" style="padding: 10px">
-				<?
-					if ($numsubjects < 4) {
-				?>
-				<form action="merge.php" method="post">
+		<div class="ui container">
+			<div class="ui segment">
+				<h2 class="ui header">
+					<i class="copy icon"></i>
+					<div class="content">
+						Merge Subjects
+						<div class="sub header">Merge all data from subjects into selected subject</div>
+					</div>
+				</h2>
+				<p>Select the UID you want to merge into and edit information in that column. <b>Leftmost UID is selected by default</b> Only the information in the selected column will be saved, and all other projects will be merged into that UID. All other UIDs will be deleted.</p>
+			</div>
+		</div>
+		
+		<div class="ui center aligned basic segment">
+			<?
+				if ($numsubjects < 4) {
+			?>
+			<form action="merge.php" method="post" class="ui form">
 				<input type="hidden" name="action" value="merge">
 				<?
 				for ($i=0;$i<count($subjects);$i++) {
 					echo "<input type='hidden' name='subjectids[" . $i . "]' value='" . $subjects[$i]['id'] . "'>\n";
 				}
 				?>
-				<input type="text" name="subjectuid" placeholder="UID"><br>
-				<input type="submit" class="ui primary button" value="Add UID">
-				</form>
-				<? } else { ?>
-				Only 4 IDs allowed at a time
-				<? } ?>
-			</td>
-		</tr>
-		</table>
+				<div class="ui action input">
+					<input type="text" name="subjectuid" placeholder="UID">
+					<button type="submit" class="ui primary button" value="Add UID">
+					<i class="user plus icon"></i> Add UID</button>
+				</div>
+			</form>
+			<? } else { ?>
+			Only 4 IDs allowed at a time
+			<? } ?>		
+		</div>
 		
-		<form action="merge.php" method="post" name="removeidform">
-		<input type="hidden" name="action" value="merge">
-		<?
-		for ($j=0;$j<count($subjects);$j++) {
-			echo "<input type='hidden' name='subjectids[" . $j . "]' value='" . $subjects[$j]['id'] . "'>\n";
-		}
+		<form action="merge.php" method="post" class="ui form">
+			<input type="hidden" name="action" value="submitmerge">
+			<input type="hidden" name="returnpage" value="<?=$returnpage?>">
+			<?
+			for ($i=0;$i<count($subjects);$i++) {
+				echo "<input type='hidden' name='subjectids[" . $i . "]' value='" . $subjects[$i]['id'] . "'>\n";
+			}
 		?>
-		<input type="hidden" name="idtoremove" value="">
+		
+		<div class="ui compact grid">
+			<div class="radio-toolbar2 <?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">UID</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						?>
+							<div class="ui column uid">
+								<div class="ui fitted inverted <? if ($i == 0) { echo "yellow"; } else { echo "secondary"; } ?> segment" id="label<?=$i?>" name="labeldiv">
+									<div class="ui two column compact grid">
+										<div class="column">
+											<div class="ui radio checkbox" style="padding: 10px;">
+												<input type="radio" id="uid<?=$i?>" name="selectedid" value="<?=$subjects[$i]['id']?>" <? if ($i == 0) { echo "checked"; } ?> onChange="highlight('label<?=$i?>');">
+												<label style="font-size: x-large; font-weight: bold"><?=$subjects[$i]['uid']?></label>
+											</div>
+										</div>
+										<div class=" right aligned column">
+											<a name="removeid" class="ui small inverted button" style="margin-right: 10px;" onclick="document.removeidform.idtoremove.value='<?=$subjects[$i]['id']?>';document.removeidform.submit();"><i class="trash alternate icon"></i> Remove UID</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						<?
+					}
+				?>
+				<div class="column">
+				</div>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Name</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['name'] != $subjects[0]['name']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?>
+							<div class="column <?=$class?>">
+								<input type="text" name="name[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['name']?>">
+							</div>
+						<?
+					}
+				?>
+				<div class="column">
+				</div>
+			</div>
+
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">DOB</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['dob'] != $subjects[0]['dob']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?>
+							<div class="column <?=$class?>"><input type="text" name="dob[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['dob'];?>"></div>
+						<?
+					}
+				?>
+			</div>
+
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Sex</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['gender'] != $subjects[0]['gender']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?>
+							<div class="column <?=$class?>"><input type="text" name="gender[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['gender'];?>"></div>
+						<?
+					}
+				?>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Ethnicity 1</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['ethnicity1'] != $subjects[0]['ethnicity1']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?><div class="column <?=$class?>"><input type="text" name="ethnicity1[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity1'];?>"></div><?
+					}
+				?>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Ethnicity 2</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['ethnicity2'] != $subjects[0]['ethnicity2']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?><div class="column <?=$class?>"><input type="text" name="ethnicity2[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity2'];?>"></div><?
+					}
+				?>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">GUID</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['guid'] != $subjects[0]['guid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?><div class="column <?=$class?>"><input type="text" name="guid[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['guid'];?>"></div><?
+					}
+				?>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Alternate Subject IDs</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+						if ($subjects[$i]['altuid'] != $subjects[0]['altuid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
+						?><div class="column <?=$class?>"><input type="text" name="altuids[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>"></div><?
+					}
+				?>
+			</div>
+			<div class="<?=$numcolstr?> column row">
+				<div class="right aligned column">
+					<h3 class="header">Studies (w/enrollment group)</h3>
+				</div>
+				<?
+					for ($i=0;$i<count($subjects);$i++) {
+					?>
+						<div class="top aligned column">
+							<table class="ui small celled very compact table">
+								<?
+									$sqlstring = "select a.*, b.*, date(enroll_startdate) 'enroll_startdate', date(enroll_enddate) 'enroll_enddate' from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = " . $subjects[$i]['id'];
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$enrollmentid = $row['enrollment_id'];
+										$enrollgroup = $row['enroll_subgroup'];
+										$project_name = $row['project_name'];
+										$costcenter = $row['project_costcenter'];
+										
+										$altuids = GetAlternateUIDs($subjects[$i]['id'], $enrollmentid);
+										$altuidlist = implode2(', ',$altuids);
+										
+								?>
+								<tr>
+									<td colspan="4" style="font-size:9pt; background-color:#eee; padding: 4px">
+										<table cellpadding="0" cellspacing="0" width="100%">
+											<tr>
+												<td><b><?=$project_name?></b> (<?=$costcenter?>)
+												<br>
+												<input type="text" name="enrollgroup[<?=$enrollmentid?>]" value="<?=$enrollgroup?>" placeholder="Enrollment group">
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+									<?
+									$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
+									$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									if (mysqli_num_rows($result2) > 0) {
+										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+											$study_id = $row2['study_id'];
+											$study_num = $row2['study_num'];
+											$study_modality = $row2['study_modality'];
+											$study_datetime = $row2['study_datetime'];
+											$study_operator = $row2['study_operator'];
+											$study_performingphysician = $row2['study_performingphysician'];
+											$study_site = $row2['study_site'];
+											$study_status = $row2['study_status'];
+											
+											?>
+											<tr>
+												<td><?=$study_num?></td>
+												<td><?=$study_modality?></td>
+												<td><?=$study_datetime?></td>
+												<td><?=$study_site?></td>
+											</tr>
+											<?
+										}
+									}
+									else {
+										?>
+										<tr>
+											<td align="center">
+												None
+											</td>
+										</tr>
+										<?
+									}
+								}
+								?>
+							</table>
+						</div>
+					<?
+					}
+				?>
+			</div>
+		</div>
+			<input type="submit" value="Merge">
+		</form>
+
+		<form action="merge.php" method="post" name="removeidform">
+			<input type="hidden" name="action" value="merge">
+			<?
+			for ($j=0;$j<count($subjects);$j++) {
+				echo "<input type='hidden' name='subjectids[" . $j . "]' value='" . $subjects[$j]['id'] . "'>\n";
+			}
+			?>
+			<input type="hidden" name="idtoremove" value="">
 		</form>
 		
 	<?

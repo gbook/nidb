@@ -2275,7 +2275,7 @@
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
 		else {
-			Error("Error", "Invalid project ID [$projectid]");
+			Error("Invalid project ID [$projectid]");
 			return;
 		}
 		//PrintVariable($modalities);
@@ -2409,7 +2409,7 @@
 		
 		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
 		else {
-			Error("Error", "Invalid project ID [$projectid]");
+			Error("Invalid project ID [$projectid]");
 			return;
 		}
 		

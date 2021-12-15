@@ -268,7 +268,7 @@
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		if (trim($id) == "") {
-			Error("Error", "ID blank");
+			Error("ID blank");
 			return;
 		}
 

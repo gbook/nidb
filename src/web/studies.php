@@ -1379,12 +1379,12 @@
 			$study_heightft = "$ft1' $in\"";
 		}
 		else {
-			Error("Error", "Invalid study ID. Unable to display this study");
+			Error("Invalid study ID. Unable to display this study");
 			return;
 		}
 		
 		if (($subjectid == 0) || ($subjectid == "")) {
-			Error("Error", "Invalid subject ID. Unable to display this study because the subject could not be found");
+			Error("Invalid subject ID. Unable to display this study because the subject could not be found");
 			return;
 		}
 

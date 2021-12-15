@@ -335,7 +335,7 @@
 		if ($GLOBALS['cfg']['uploaddir'] == "") {
 			AppendUploadLog($uploadid, "NiDB upload directory [uploaddir] is not set");
 			
-			Error("NiDB Configuration Error", "Variable [uploaddir] is not set. Contact NiDB system administrator.");
+			Error("NiDB Configuration Error - Variable [uploaddir] is not set. Contact NiDB system administrator.");
 			return;
 		}
 		$savepath = $GLOBALS['cfg']['uploaddir'] . "/" . date("YmdHisv") . "_$uploadid";
@@ -646,7 +646,7 @@
 			$sqlstring = "update uploads set upload_status = 'archiveerror' where upload_id = $uploadid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			Error("Error", "No series found for this upload");
+			Error("No series found for this upload");
 		}		
 	}
 	

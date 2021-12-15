@@ -2538,8 +2538,8 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     tags["PatientAge"] = QString("%1").arg(GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
 
     /* remove any non-printable ASCII control characters */
-    tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
-    tags["PatientSex"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"");
+    tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"").replace("\\xFFFD","");
+    tags["PatientSex"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"").replace("\\xFFFD","");
 
     if (tags["PatientID"] == "")
         tags["PatientID"] = "(empty)";

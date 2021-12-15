@@ -665,7 +665,7 @@
 			Notice("Project Template deleted");
 		}
 		else {
-			Error("Error", "Invalid project template ID");
+			Error("Invalid project template ID");
 		}
 	}
 	

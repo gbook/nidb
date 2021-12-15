@@ -69,7 +69,7 @@
 				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog icon"></i>Admin</a><?
 			}
 			/* user options */
-			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account</a><?
+			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><?=$GLOBALS['username']?></div></a><?
 		?>
 		<a href="login.php?action=logout" class="item">Logout <i class="sign out alternate icon inverted"></i></a>
 	</div>	
@@ -289,12 +289,12 @@
 			<!--  begin main page content -->
 <?			
 	if (count($_POST, COUNT_RECURSIVE) >= ini_get("max_input_vars")) {
-		Error("Error", "You POSTed " . count($_POST, COUNT_RECURSIVE). " variables, but your server's PHP limit is " . ini_get("max_input_vars") . ". Truncation of the submitted form may have occured.<br>
+		Error("You POSTed " . count($_POST, COUNT_RECURSIVE). " variables, but your server's PHP limit is " . ini_get("max_input_vars") . ". Truncation of the submitted form may have occured.<br>
 		Contact your server administrator or increase the <code>max_input_vars</code> PHP variable.");
 	}
 	
 	if ($_SESSION['username'] == "") {
-		Error("Error", "Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
+		Error("Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
 	}
 	
 ?>

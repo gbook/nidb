@@ -235,7 +235,7 @@
 	function ResetModule($id) {
 		
 		if (($id <= 0) || ($id == "")) {
-			Error("Error", "ID was not valid [$id]");
+			Error("ID was not valid [$id]");
 		}
 		
 		/* get module name */
