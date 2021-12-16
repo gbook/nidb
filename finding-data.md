@@ -72,16 +72,20 @@ Following are some destinations where the searched data can be exported:
   ### Export to NFS
   To export the data to a NFS location, you can select the "Linux NFS Mount" option and type the NFS path where you want to download the data.
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146384128-f6216f12-1cb1-44ed-b2cf-59feb3137e78.png width="80%"></div>
+  
  ### Export to Remote FTP Site
   To export the data to a remote FTP location, you can select the "Remote FTP Site" option and type the FTP information where you want to download the data.
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146385080-19df7d53-20c9-43e9-957c-ba9733bfaf4d.png width="80%"></div>
-### Export to Remote NiDB Site
+  
+ ### Export to Remote NiDB Site
   To export the data to a remote NiDB site, you can select the "Remote NiDB Site" option and select the NiDB site from a drop down menue where you want to download the data.
  <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146385394-22b524db-b3b3-462f-a69e-ce111adf2d82.png width="80%"></div>
-### Export for Web Download
+ 
+ ### Export for Web Download
   You can select the data to be downloased to the local http location. you can select "Web http download" option for this purpose as shown below.
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146386455-eeba0c02-6f96-46de-aa41-822a3d94f740.png width="80%"></div>
-### Export to NDAR/ RDoCdb/NDA
+  
+ ### Export to NDAR/ RDoCdb/NDA
   NiDB has a unique ability to download the data that is required to submit to NDAR/RDoC/NDA. It automatically prepares the data according to the NDAR submission requirnments. Also one can download the data inforamation in terms of .csv that is required to submit NDAR data. The following the the two options to download the data accordigly. 
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146388142-7a8f8c02-a6a9-4d36-a74e-efbcd337fa3b.png width="80%"></div>
 
