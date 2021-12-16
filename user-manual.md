@@ -9,6 +9,7 @@
   - <a href="importing-data.html#bulk-import-of-large-datasets">Bulk Import of Large Datasets</a>
   - <a href="importing-data.html#automatic-import-via-dicom-receiver">Automatic Import via DICOM reciver</a>
   - <a href="importing-data.html#bulk-upload-of-non-mri-data">Bulk Upload of non-MRI data</a>
+  - <a href="redcapimport.md" style="font-size: larger;">RedCap Import (Import data from Redcap into NiDB)</a> 
 - <a href="working-with-data.html">Working with Data</a>
   - Managing Subjects
     - Editing IDs & Demographics
@@ -47,4 +48,3 @@
   - Working with Analyses
 - <a href="calendar.html">Calendar</a>
 
-<a href="redcapimport.md" style="font-size: larger;">RedCap Import</a> - Import data from Redcap into NiDB
