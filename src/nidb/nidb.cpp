@@ -224,6 +224,10 @@ int nidb::ModuleGetNumThreads() {
         if (cfg["modulepipelinethreads"] == "") numThreads = 1;
         else numThreads = cfg["modulepipelinethreads"].toInt();
     }
+    else if (module == "minipipeline") {
+        if (cfg["moduleminipipelinethreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleminipipelinethreads"].toInt();
+    }
     else if (module == "importuploaded") {
         numThreads = 1;
     }

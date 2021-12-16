@@ -3118,6 +3118,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td></td>
 				<td><b>backup</b> module. Not multi-threaded</td>
 			</tr>
+			<tr>
+				<td class="right aligned tt">moduleminipipelinethreads</td>
+				<td><input type="number" name="moduleminipipelinethreads" value="<?=$GLOBALS['cfg']['moduleminipipelinethreads']?>"></td>
+				<td></td>
+				<td><b>minipipeline</b> module. Recommended is 4</td>
+			</tr>
 
 			<tr>
 				<td colspan="4" class="active"><h3>Email &nbsp; &nbsp;<a href="system.php?action=testemail" class="ui compact yellow button">Send test email</a></h3></td>
@@ -3779,6 +3785,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [moduleimportthreads] = $moduleimportthreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
+[moduleminipipelinethreads] = $moduleminipipelinethreads
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
 [moduleuploadthreads] = $moduleuploadthreads
