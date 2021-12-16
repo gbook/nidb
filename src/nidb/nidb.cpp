@@ -242,6 +242,9 @@ int nidb::ModuleGetNumThreads() {
     else if (module == "backup") {
         numThreads = 1;
     }
+    else if (module == "modulemanager") {
+        numThreads = 1;
+    }
 
     WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
     return numThreads;

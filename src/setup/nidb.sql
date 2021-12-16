@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 12, 2021 at 08:09 PM
+-- Generation Time: Dec 16, 2021 at 04:52 PM
 -- Server version: 10.3.27-MariaDB
 -- PHP Version: 7.2.24
 
@@ -34,18 +34,18 @@ CREATE TABLE `analysis` (
   `pipeline_dependency` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `analysis_qsubid` bigint(20) UNSIGNED DEFAULT NULL,
-  `analysis_status` enum('complete','pending','processing','error','submitted','started','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','') DEFAULT NULL,
+  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
-  `analysis_notes` text DEFAULT NULL,
+  `analysis_notes` mediumtext DEFAULT NULL,
   `analysis_iscomplete` tinyint(1) DEFAULT NULL,
   `analysis_isbad` tinyint(1) DEFAULT NULL,
-  `analysis_datalog` mediumtext DEFAULT NULL,
-  `analysis_datatable` text DEFAULT NULL,
+  `analysis_datalog` longtext DEFAULT NULL,
+  `analysis_datatable` mediumtext DEFAULT NULL,
   `analysis_rerunresults` tinyint(1) DEFAULT NULL,
   `analysis_runsupplement` tinyint(1) DEFAULT NULL,
   `analysis_result` varchar(50) DEFAULT NULL,
-  `analysis_resultmessage` text DEFAULT NULL,
+  `analysis_resultmessage` mediumtext DEFAULT NULL,
   `analysis_numseries` int(11) DEFAULT NULL,
   `analysis_swversion` varchar(255) DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE `analysis` (
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysis_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -77,7 +77,7 @@ CREATE TABLE `analysis_data` (
   `data_numboldreps` varchar(20) DEFAULT NULL,
   `data_found` tinyint(1) DEFAULT NULL,
   `data_path` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -95,13 +95,13 @@ CREATE TABLE `analysis_group` (
   `analysisgroup_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysisgroup_iscomplete` tinyint(1) DEFAULT NULL,
   `analysisgroup_result` varchar(50) DEFAULT NULL,
-  `analysisgroup_resultmessage` text DEFAULT NULL,
+  `analysisgroup_resultmessage` mediumtext DEFAULT NULL,
   `analysisgroup_numstudies` int(11) DEFAULT NULL,
   `analysisgroup_startdate` timestamp NULL DEFAULT NULL,
   `analysisgroup_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysisgroup_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysisgroup_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -117,9 +117,9 @@ CREATE TABLE `analysis_history` (
   `study_id` int(11) DEFAULT NULL,
   `analysis_event` enum('','analysiscopy','analysiscopydata','analysiscopydataend','analysiscreated','analysiscreatelink','analysisdeleted','analysisdeleteerror','analysisdependencyid','analysismessage','analysispending','analysisrecheck','analysissetuperror','analysissubmiterror','analysissubmitted','complete','completesupplement','processing','started','startedsupplement') DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
-  `event_message` text DEFAULT NULL,
+  `event_message` mediumtext DEFAULT NULL,
   `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=latin1;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -130,7 +130,7 @@ CREATE TABLE `analysis_history` (
 CREATE TABLE `analysis_parent` (
   `analysis_id` int(11) NOT NULL,
   `analysisparent_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -140,8 +140,8 @@ CREATE TABLE `analysis_parent` (
 
 CREATE TABLE `analysis_resultnames` (
   `resultname_id` int(11) NOT NULL,
-  `result_name` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+  `result_name` varchar(250) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -154,13 +154,13 @@ CREATE TABLE `analysis_results` (
   `analysis_id` bigint(20) DEFAULT NULL,
   `result_type` char(1) DEFAULT NULL COMMENT 'image, file, text, value',
   `result_nameid` int(11) DEFAULT NULL,
-  `result_text` text DEFAULT NULL,
+  `result_text` mediumtext DEFAULT NULL,
   `result_value` double DEFAULT NULL,
   `result_unitid` int(11) DEFAULT NULL,
-  `result_filename` text DEFAULT NULL,
+  `result_filename` mediumtext DEFAULT NULL,
   `result_isimportant` tinyint(1) DEFAULT NULL,
   `result_count` smallint(5) UNSIGNED DEFAULT 0
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -171,7 +171,7 @@ CREATE TABLE `analysis_results` (
 CREATE TABLE `analysis_resultunit` (
   `resultunit_id` int(11) NOT NULL,
   `result_unit` varchar(25) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -188,10 +188,10 @@ CREATE TABLE `assessments` (
   `experimentor` varchar(45) DEFAULT NULL COMMENT 'Just a name... anyone could adminisister the experiment, so they need not be registered in the system',
   `rater_username` varchar(25) DEFAULT NULL,
   `label` varchar(255) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
+  `notes` mediumtext DEFAULT NULL,
   `iscomplete` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -203,14 +203,14 @@ CREATE TABLE `assessment_data` (
   `formdata_id` int(11) NOT NULL,
   `formfield_id` int(11) DEFAULT NULL,
   `experiment_id` int(11) DEFAULT NULL,
-  `value_text` text DEFAULT NULL,
+  `value_text` mediumtext DEFAULT NULL,
   `value_number` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL,
   `value_binary` blob DEFAULT NULL,
   `value_date` date DEFAULT NULL,
   `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -221,15 +221,15 @@ CREATE TABLE `assessment_data` (
 CREATE TABLE `assessment_formfields` (
   `formfield_id` int(11) NOT NULL,
   `form_id` int(11) DEFAULT NULL,
-  `formfield_desc` text DEFAULT NULL COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
-  `formfield_values` text DEFAULT NULL COMMENT 'a list of possible values',
+  `formfield_desc` mediumtext DEFAULT NULL COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
+  `formfield_values` mediumtext DEFAULT NULL COMMENT 'a list of possible values',
   `formfield_datatype` enum('multichoice','singlechoice','string','text','number','date','header','binary','calculation') DEFAULT NULL COMMENT 'multichoice, singlechoice, string, text, number, date, header, binary',
   `formfield_calculation` varchar(255) DEFAULT NULL COMMENT '(q1+q4)/5',
-  `formfield_calculationconversion` text DEFAULT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
+  `formfield_calculationconversion` mediumtext DEFAULT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
   `formfield_haslinebreak` tinyint(1) DEFAULT 0,
   `formfield_scored` tinyint(1) DEFAULT 0,
   `formfield_order` varchar(45) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -241,12 +241,12 @@ CREATE TABLE `assessment_forms` (
   `form_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL DEFAULT 0,
   `form_title` varchar(100) DEFAULT NULL,
-  `form_desc` text DEFAULT NULL,
+  `form_desc` mediumtext DEFAULT NULL,
   `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
   `form_createdate` datetime DEFAULT NULL,
   `form_ispublished` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -263,12 +263,12 @@ CREATE TABLE `assessment_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -286,13 +286,13 @@ CREATE TABLE `audio_series` (
   `series_size` double DEFAULT NULL,
   `series_notes` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL,
-  `audio_desc` text DEFAULT NULL,
+  `audio_desc` mediumtext DEFAULT NULL,
   `audio_cputime` double DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -304,12 +304,12 @@ CREATE TABLE `audit_enrollment` (
   `auditenrollment_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text DEFAULT NULL,
+  `audit_message` mediumtext DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -339,7 +339,7 @@ CREATE TABLE `audit_results` (
   `file_string` varchar(255) DEFAULT NULL,
   `db_string` varchar(255) DEFAULT NULL,
   `audit_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -352,12 +352,12 @@ CREATE TABLE `audit_series` (
   `series_id` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text DEFAULT NULL,
+  `audit_message` mediumtext DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=latin1;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -369,12 +369,12 @@ CREATE TABLE `audit_study` (
   `auditstudy_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text DEFAULT NULL,
+  `audit_message` mediumtext DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -386,12 +386,12 @@ CREATE TABLE `audit_subject` (
   `auditsubject_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` text DEFAULT NULL,
+  `audit_message` mediumtext DEFAULT NULL,
   `audit_number` int(11) DEFAULT NULL,
   `audit_fixed` tinyint(1) DEFAULT NULL,
   `audit_fixeddate` datetime DEFAULT NULL,
   `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -402,7 +402,8 @@ CREATE TABLE `audit_subject` (
 CREATE TABLE `backups` (
   `backup_id` int(11) NOT NULL,
   `backup_tapenumber` int(11) NOT NULL,
-  `backup_tapestatus` enum('idle','waitingForTapeA','readyToWriteTapeA','writingTapeA','completeTapeA','waitingForTapeB','readyToWriteTapeB','writingTapeB','completeTapeB','waitingForTapeC','readyToWriteTapeC','writingTapeC','completeTapeC','complete') NOT NULL DEFAULT 'idle',
+  `backup_tapestatus` enum('idle','waitingForTapeA','readyToWriteTapeA','writingTapeA','completeTapeA','waitingForTapeB','readyToWriteTapeB','writingTapeB','completeTapeB','waitingForTapeC','readyToWriteTapeC','writingTapeC','completeTapeC','complete','errorTapeA','errorTapeB','errorTapeC') NOT NULL DEFAULT 'idle',
+  `backup_errormsg` mediumtext DEFAULT NULL,
   `backup_startdateA` datetime DEFAULT NULL,
   `backup_enddateA` datetime DEFAULT NULL,
   `backup_tapesizeA` bigint(20) NOT NULL DEFAULT 0,
@@ -415,7 +416,7 @@ CREATE TABLE `backups` (
   `backup_enddateC` datetime DEFAULT NULL,
   `backup_tapesizeC` bigint(20) NOT NULL DEFAULT 0,
   `backup_tapecontentsC` longtext DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -429,7 +430,7 @@ CREATE TABLE `bids_mapping` (
   `protocolname` varchar(255) NOT NULL,
   `shortname` varchar(255) NOT NULL,
   `modality` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
 
@@ -450,7 +451,7 @@ CREATE TABLE `binary_series` (
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -465,7 +466,7 @@ CREATE TABLE `calendars` (
   `calendar_location` varchar(255) DEFAULT NULL COMMENT 'room #, etc',
   `calendar_createdate` datetime DEFAULT NULL,
   `calendar_deletedate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -479,7 +480,7 @@ CREATE TABLE `calendar_allocations` (
   `alloc_calendarid` int(11) DEFAULT NULL,
   `alloc_projectid` int(11) DEFAULT NULL,
   `alloc_amount` int(11) DEFAULT NULL COMMENT 'number of allocations per time period'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -494,7 +495,7 @@ CREATE TABLE `calendar_appointments` (
   `appt_calendarid` int(11) DEFAULT NULL,
   `appt_projectid` int(11) DEFAULT NULL,
   `appt_title` varchar(250) DEFAULT NULL,
-  `appt_details` text DEFAULT NULL,
+  `appt_details` mediumtext DEFAULT NULL,
   `appt_startdate` datetime DEFAULT NULL,
   `appt_enddate` datetime DEFAULT NULL,
   `appt_isalldayevent` tinyint(1) DEFAULT NULL,
@@ -502,7 +503,7 @@ CREATE TABLE `calendar_appointments` (
   `appt_repeats` tinyint(1) DEFAULT NULL,
   `appt_deletedate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00',
   `appt_canceldate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -514,7 +515,7 @@ CREATE TABLE `calendar_notifications` (
   `not_id` int(11) NOT NULL,
   `not_userid` int(11) DEFAULT NULL,
   `not_calendarid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -526,7 +527,7 @@ CREATE TABLE `calendar_projectnotifications` (
   `not_id` int(11) NOT NULL,
   `not_userid` int(11) DEFAULT NULL,
   `not_projectid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -541,7 +542,7 @@ CREATE TABLE `calendar_projects` (
   `project_description` varchar(255) DEFAULT NULL,
   `project_startdate` datetime DEFAULT NULL,
   `project_enddate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -570,8 +571,8 @@ CREATE TABLE `changelog` (
   `affected_seriesid2` int(11) DEFAULT NULL,
   `change_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `change_event` varchar(255) DEFAULT NULL,
-  `change_desc` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+  `change_desc` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -586,8 +587,8 @@ CREATE TABLE `changelog_subject` (
   `changetype` enum('','delete','obliterate','move') NOT NULL,
   `uid` varchar(10) NOT NULL,
   `newuid` varchar(10) NOT NULL,
-  `log` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+  `log` mediumtext NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -600,12 +601,12 @@ CREATE TABLE `common` (
   `common_type` enum('number','file','text') NOT NULL,
   `common_group` varchar(100) DEFAULT NULL,
   `common_name` varchar(100) DEFAULT NULL,
-  `common_desc` text DEFAULT NULL,
+  `common_desc` mediumtext DEFAULT NULL,
   `common_number` double DEFAULT NULL,
-  `common_text` text DEFAULT NULL,
+  `common_text` mediumtext DEFAULT NULL,
   `common_file` varchar(255) DEFAULT NULL,
   `common_size` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -627,7 +628,7 @@ CREATE TABLE `consent_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `ishidden` tinyint(1) DEFAULT NULL,
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -655,7 +656,7 @@ CREATE TABLE `contacts` (
   `contact_website` varchar(255) DEFAULT NULL,
   `contact_company` varchar(255) DEFAULT NULL,
   `contact_department` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -672,13 +673,13 @@ CREATE TABLE `cr_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -716,12 +717,12 @@ CREATE TABLE `ct_series` (
   `series_status` varchar(50) DEFAULT NULL,
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_numfiles` int(11) DEFAULT NULL,
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -736,15 +737,15 @@ CREATE TABLE `dataset_requests` (
   `institution` varchar(255) DEFAULT NULL,
   `shortname` varchar(255) NOT NULL,
   `idlist` longtext NOT NULL,
-  `dataformat` text NOT NULL,
-  `deliverymethod` text NOT NULL,
-  `notes` text NOT NULL,
+  `dataformat` mediumtext NOT NULL,
+  `deliverymethod` mediumtext NOT NULL,
+  `notes` mediumtext NOT NULL,
   `request_submitdate` datetime NOT NULL,
   `request_startdate` datetime DEFAULT NULL,
   `request_completedate` datetime DEFAULT NULL,
   `request_status` enum('submitted','processing','complete','error','assigned','cancelled','') NOT NULL,
   `admin_username` varchar(255) DEFAULT NULL COMMENT 'username of the admin who will be responsible for fulfilling this request'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -762,7 +763,7 @@ CREATE TABLE `data_dictionary` (
   `datadict_expectedtimepoints` int(11) DEFAULT NULL,
   `datadict_rangelow` double DEFAULT NULL,
   `datadict_rangehigh` double DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -795,7 +796,7 @@ CREATE TABLE `data_requests` (
   `req_ftpserver` varchar(100) DEFAULT NULL,
   `req_ftpport` int(11) NOT NULL DEFAULT 21,
   `req_ftppath` varchar(255) DEFAULT NULL,
-  `req_ftplog` text DEFAULT NULL,
+  `req_ftplog` mediumtext DEFAULT NULL,
   `req_nidbusername` varchar(255) DEFAULT NULL,
   `req_nidbpassword` varchar(255) DEFAULT NULL,
   `req_nidbserver` varchar(255) DEFAULT NULL,
@@ -811,9 +812,9 @@ CREATE TABLE `data_requests` (
   `req_completedate` timestamp NULL DEFAULT NULL,
   `req_cputime` double DEFAULT NULL,
   `req_status` varchar(25) DEFAULT NULL,
-  `req_results` text DEFAULT NULL,
+  `req_results` mediumtext DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Deprecated' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Deprecated' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -835,7 +836,7 @@ CREATE TABLE `doc_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -847,7 +848,7 @@ CREATE TABLE `drugnames` (
   `drugname_id` int(11) NOT NULL,
   `drug_name` varchar(255) NOT NULL,
   `drug_group` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -876,7 +877,7 @@ CREATE TABLE `drugs` (
   `drug_entrydate` datetime DEFAULT NULL,
   `drug_recordcreatedate` datetime DEFAULT NULL,
   `drug_recordmodifydate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -888,18 +889,18 @@ CREATE TABLE `ecg_series` (
   `ecgseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
-  `series_status` varchar(255) DEFAULT NULL,
+  `series_status` varchar(250) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -911,19 +912,19 @@ CREATE TABLE `eeg_series` (
   `eegseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL,
+  `series_altdesc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
-  `series_status` varchar(255) DEFAULT NULL,
+  `series_status` varchar(250) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -941,7 +942,7 @@ CREATE TABLE `enrollment` (
   `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob DEFAULT NULL COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -953,10 +954,10 @@ CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `projectchecklist_id` int(11) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
+  `notes` mediumtext DEFAULT NULL,
   `date_completed` datetime DEFAULT NULL,
   `completedby` varchar(255) DEFAULT NULL COMMENT 'username, not ID, in case the user_id is deleted'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -970,7 +971,7 @@ CREATE TABLE `enrollment_missingdata` (
   `projectchecklist_id` int(11) DEFAULT NULL,
   `missing_reason` varchar(255) DEFAULT NULL,
   `missingreason_date` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -985,8 +986,8 @@ CREATE TABLE `error_log` (
   `error_source` enum('web','backend') DEFAULT NULL,
   `error_module` varchar(255) DEFAULT NULL,
   `error_date` datetime DEFAULT NULL,
-  `error_message` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+  `error_message` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -998,18 +999,18 @@ CREATE TABLE `et_series` (
   `etseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL,
+  `series_altdesc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1032,33 +1033,33 @@ CREATE TABLE `exports` (
   `dirformat` varchar(50) DEFAULT NULL,
   `beh_format` varchar(35) DEFAULT NULL,
   `beh_dirrootname` varchar(50) DEFAULT NULL,
-  `beh_dirseriesname` varchar(255) DEFAULT NULL,
-  `nfsdir` varchar(255) DEFAULT NULL,
+  `beh_dirseriesname` varchar(250) DEFAULT NULL,
+  `nfsdir` varchar(250) DEFAULT NULL,
   `remoteftp_username` varchar(50) DEFAULT NULL,
   `remoteftp_password` varchar(50) DEFAULT NULL,
   `remoteftp_server` varchar(100) DEFAULT NULL,
   `remoteftp_port` int(11) NOT NULL DEFAULT 21,
-  `remoteftp_path` varchar(255) DEFAULT NULL,
-  `remoteftp_log` text DEFAULT NULL,
-  `remotenidb_username` varchar(255) DEFAULT NULL,
-  `remotenidb_password` varchar(255) DEFAULT NULL,
-  `remotenidb_server` varchar(255) DEFAULT NULL,
+  `remoteftp_path` varchar(250) DEFAULT NULL,
+  `remoteftp_log` mediumtext DEFAULT NULL,
+  `remotenidb_username` varchar(250) DEFAULT NULL,
+  `remotenidb_password` varchar(250) DEFAULT NULL,
+  `remotenidb_server` varchar(250) DEFAULT NULL,
   `remotenidb_instanceid` int(11) DEFAULT 0,
   `remotenidb_siteid` int(11) DEFAULT 0,
   `remotenidb_projectid` int(11) DEFAULT 0,
   `remotenidb_connectionid` int(11) DEFAULT NULL,
   `remotenidb_transactionid` int(11) DEFAULT NULL,
   `publicdownloadid` int(11) DEFAULT NULL,
-  `bidsreadme` text DEFAULT NULL,
+  `bidsreadme` mediumtext DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `completedate` datetime DEFAULT NULL,
   `cputime` double DEFAULT NULL,
   `status` enum('submitted','pending','processing','complete','error','cancelled','') NOT NULL DEFAULT '',
-  `log` text DEFAULT NULL,
+  `log` mediumtext DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1076,7 +1077,7 @@ CREATE TABLE `exportseries` (
   `timepoint_label` varchar(100) DEFAULT NULL,
   `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT '',
   `statusmessage` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1091,7 +1092,7 @@ CREATE TABLE `families` (
   `family_name` varchar(255) DEFAULT NULL,
   `family_isactive` tinyint(1) NOT NULL DEFAULT 1,
   `family_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1104,7 +1105,7 @@ CREATE TABLE `family_members` (
   `family_id` int(11) DEFAULT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `fm_createdate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1120,7 +1121,7 @@ CREATE TABLE `fileio_requests` (
   `data_destination` varchar(255) DEFAULT NULL,
   `rearchiveprojectid` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
-  `anonymize_fields` text DEFAULT NULL,
+  `anonymize_fields` mediumtext DEFAULT NULL,
   `request_status` enum('pending','complete','error','cancelled') NOT NULL DEFAULT 'pending',
   `request_message` varchar(255) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
@@ -1136,9 +1137,9 @@ CREATE TABLE `fileio_requests` (
   `merge_ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
   `merge_ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
   `merge_guid` varchar(50) DEFAULT NULL,
-  `merge_enrollgroup` text DEFAULT NULL,
-  `merge_altuids` text DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+  `merge_enrollgroup` mediumtext DEFAULT NULL,
+  `merge_altuids` mediumtext DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1152,7 +1153,7 @@ CREATE TABLE `groups` (
   `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series',
   `group_owner` int(11) DEFAULT NULL COMMENT 'user_id of the group owner',
   `instance_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1166,7 +1167,7 @@ CREATE TABLE `group_data` (
   `data_id` int(11) DEFAULT NULL,
   `modality` varchar(10) DEFAULT NULL,
   `date_added` date DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1183,12 +1184,12 @@ CREATE TABLE `gsr_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1198,11 +1199,11 @@ CREATE TABLE `gsr_series` (
 
 CREATE TABLE `importlogs` (
   `importlog_id` bigint(20) NOT NULL,
-  `filename_orig` text DEFAULT NULL,
+  `filename_orig` mediumtext DEFAULT NULL,
   `filename_new` varchar(255) DEFAULT NULL,
   `fileformat` varchar(255) DEFAULT NULL,
   `importstartdate` datetime DEFAULT NULL,
-  `result` text DEFAULT NULL,
+  `result` mediumtext DEFAULT NULL,
   `importid` int(11) DEFAULT NULL,
   `importgroupid` int(11) DEFAULT NULL,
   `importsiteid` int(11) DEFAULT NULL,
@@ -1255,7 +1256,7 @@ CREATE TABLE `importlogs` (
   `family_created` tinyint(1) DEFAULT NULL,
   `enrollment_created` tinyint(1) DEFAULT NULL,
   `overwrote_existing` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPRESSED;
 
 -- --------------------------------------------------------
 
@@ -1268,7 +1269,7 @@ CREATE TABLE `import_requestdirs` (
   `importrequest_id` int(11) DEFAULT NULL,
   `dir_num` int(11) DEFAULT NULL,
   `dir_type` enum('modality','seriesdesc','seriesnum','studydesc','studydatetime','thefiles','beh','subjectid') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1296,8 +1297,8 @@ CREATE TABLE `import_requests` (
   `import_permanent` tinyint(1) DEFAULT NULL,
   `import_matchidonly` tinyint(1) DEFAULT NULL,
   `import_filename` varchar(255) DEFAULT NULL,
-  `import_seriesnotes` text DEFAULT NULL,
-  `import_altuids` text DEFAULT NULL,
+  `import_seriesnotes` mediumtext DEFAULT NULL,
+  `import_altuids` mediumtext DEFAULT NULL,
   `import_userid` int(11) DEFAULT NULL,
   `import_fileisseries` tinyint(1) DEFAULT NULL COMMENT 'if each file should be its own series',
   `numfilestotal` int(11) DEFAULT NULL,
@@ -1306,12 +1307,12 @@ CREATE TABLE `import_requests` (
   `numbehtotal` int(11) DEFAULT NULL,
   `numbehsuccess` int(11) DEFAULT NULL,
   `numbehfail` int(11) DEFAULT NULL,
-  `uploadreport` mediumtext DEFAULT NULL,
-  `archivereport` mediumtext DEFAULT NULL,
+  `uploadreport` longtext DEFAULT NULL,
+  `archivereport` longtext DEFAULT NULL,
   `import_dob` date DEFAULT NULL,
   `import_sex` char(1) DEFAULT NULL,
   `import_age` double DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1326,7 +1327,7 @@ CREATE TABLE `import_transactions` (
   `transaction_status` varchar(20) DEFAULT NULL,
   `transaction_source` varchar(255) DEFAULT NULL,
   `transaction_username` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1340,7 +1341,7 @@ CREATE TABLE `instance` (
   `instance_name` varchar(255) NOT NULL,
   `instance_ownerid` int(11) NOT NULL,
   `instance_default` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1356,8 +1357,8 @@ CREATE TABLE `instance_billing` (
   `quantity` double NOT NULL,
   `bill_datestart` datetime NOT NULL,
   `bill_dateend` datetime NOT NULL,
-  `bill_notes` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `bill_notes` mediumtext NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1369,7 +1370,7 @@ CREATE TABLE `instance_contact` (
   `instancecontact_id` int(11) NOT NULL,
   `instance_id` int(11) NOT NULL,
   `contact_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1385,7 +1386,7 @@ CREATE TABLE `instance_invoice` (
   `invoice_paid` tinyint(1) NOT NULL,
   `invoice_paiddate` datetime NOT NULL,
   `invoice_paymethod` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1400,9 +1401,9 @@ CREATE TABLE `instance_pricing` (
   `pricing_itemname` varchar(255) NOT NULL,
   `pricing_unit` varchar(255) NOT NULL,
   `pricing_price` double NOT NULL,
-  `pricing_comments` text NOT NULL,
+  `pricing_comments` mediumtext NOT NULL,
   `pricing_internal` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1416,7 +1417,7 @@ CREATE TABLE `instance_usage` (
   `usage_date` date NOT NULL,
   `pricing_id` int(11) NOT NULL,
   `usage_amount` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1427,9 +1428,9 @@ CREATE TABLE `instance_usage` (
 CREATE TABLE `links` (
   `link_id` int(11) NOT NULL,
   `link_text` varchar(255) NOT NULL,
-  `link_url` text NOT NULL,
-  `link_desc` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `link_url` mediumtext NOT NULL,
+  `link_desc` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1443,7 +1444,7 @@ CREATE TABLE `manual_qa` (
   `modality` varchar(10) NOT NULL,
   `rater_id` int(11) NOT NULL,
   `value` int(11) NOT NULL COMMENT '0,1, or 2'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1455,8 +1456,8 @@ CREATE TABLE `measureinstruments` (
   `measureinstrument_id` int(11) NOT NULL,
   `instrument_name` varchar(255) NOT NULL,
   `instrument_group` varchar(255) NOT NULL,
-  `instrument_notes` text NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+  `instrument_notes` mediumtext NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1469,8 +1470,8 @@ CREATE TABLE `measurenames` (
   `measure_name` varchar(255) DEFAULT NULL,
   `measure_group` varchar(255) DEFAULT NULL,
   `measure_multiple` tinyint(1) DEFAULT NULL COMMENT 'Indicates if a measure can have more than one entry',
-  `measure_notes` text DEFAULT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+  `measure_notes` mediumtext DEFAULT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1485,24 +1486,24 @@ CREATE TABLE `measures` (
   `instrumentname_id` int(11) DEFAULT NULL,
   `measurename_id` int(11) NOT NULL,
   `measure_type` enum('s','n') DEFAULT NULL,
-  `measure_valuestring` varchar(255) DEFAULT NULL,
+  `measure_valuestring` varchar(250) DEFAULT NULL,
   `measure_valuenum` double DEFAULT NULL,
   `measure_notes` text DEFAULT NULL,
-  `measure_instrument` varchar(255) DEFAULT NULL,
-  `measure_desc` varchar(255) DEFAULT NULL,
+  `measure_instrument` varchar(250) DEFAULT NULL,
+  `measure_desc` varchar(250) DEFAULT NULL,
   `measure_rater` varchar(50) DEFAULT NULL,
   `measure_datecomplete` timestamp NULL DEFAULT NULL,
   `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `study_id` int(11) DEFAULT NULL,
   `series_id` int(11) DEFAULT NULL,
-  `measure_value` varchar(255) NOT NULL,
+  `measure_value` varchar(245) NOT NULL,
   `measure_startdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `measure_enddate` datetime DEFAULT NULL,
   `measure_duration` int(11) DEFAULT NULL,
   `measure_entrydate` datetime DEFAULT NULL,
   `measure_createdate` datetime DEFAULT NULL,
   `measure_modifydate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1514,19 +1515,19 @@ CREATE TABLE `meg_series` (
   `megseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL,
+  `series_altdesc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
-  `series_status` varchar(255) DEFAULT NULL,
+  `series_status` varchar(250) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1538,10 +1539,10 @@ CREATE TABLE `minipipelines` (
   `minipipeline_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL DEFAULT -1,
   `mp_version` int(11) NOT NULL DEFAULT 0,
-  `mp_name` varchar(255) DEFAULT NULL,
+  `mp_name` varchar(250) DEFAULT NULL,
   `mp_modifydate` datetime DEFAULT NULL,
   `mp_createdate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1560,7 +1561,7 @@ CREATE TABLE `minipipeline_jobs` (
   `mp_queuedate` datetime DEFAULT NULL,
   `mp_startdate` datetime DEFAULT NULL,
   `mp_enddate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1577,10 +1578,10 @@ CREATE TABLE `minipipeline_scripts` (
   `mp_scriptname` varchar(255) DEFAULT NULL,
   `mp_script` longblob DEFAULT NULL,
   `mp_scriptsize` int(10) UNSIGNED DEFAULT NULL,
-  `mp_parameterlist` text DEFAULT NULL,
+  `mp_parameterlist` mediumtext DEFAULT NULL,
   `mp_scriptmodifydate` datetime DEFAULT NULL,
   `mp_scriptcreatedate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1593,7 +1594,7 @@ CREATE TABLE `modalities` (
   `mod_code` varchar(15) NOT NULL,
   `mod_desc` varchar(255) NOT NULL,
   `mod_enabled` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1604,7 +1605,7 @@ CREATE TABLE `modalities` (
 CREATE TABLE `modality_protocol` (
   `modality` varchar(10) NOT NULL,
   `protocol` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1621,7 +1622,7 @@ CREATE TABLE `modules` (
   `module_laststop` datetime NOT NULL,
   `module_isactive` tinyint(1) NOT NULL,
   `module_debug` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1634,7 +1635,7 @@ CREATE TABLE `module_prefs` (
   `mp_module` varchar(50) NOT NULL,
   `mp_pref` varchar(255) NOT NULL,
   `mp_value` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1647,7 +1648,7 @@ CREATE TABLE `module_procs` (
   `module_name` varchar(255) NOT NULL,
   `process_id` int(11) NOT NULL,
   `last_checkin` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1663,7 +1664,7 @@ CREATE TABLE `mostrecent` (
   `project_id` int(11) DEFAULT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `mostrecent_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1704,7 +1705,7 @@ CREATE TABLE `mr_qa` (
   `cputime` double DEFAULT NULL,
   `status` varchar(25) NOT NULL DEFAULT '',
   `lastupdate` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1723,7 +1724,7 @@ CREATE TABLE `mr_qcparams` (
   `max_iosnr` int(11) NOT NULL,
   `min_pvsnr` int(11) NOT NULL,
   `max_pvsnr` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1758,7 +1759,7 @@ CREATE TABLE `mr_scanparams` (
   `slicespacing_max` double NOT NULL,
   `bandwidth_min` double NOT NULL,
   `bandwidth_max` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1770,9 +1771,9 @@ CREATE TABLE `mr_series` (
   `mrseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
-  `series_desc` varchar(255) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
-  `series_altdesc` varchar(255) DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
+  `series_altdesc` varchar(250) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
@@ -1800,8 +1801,8 @@ CREATE TABLE `mr_series` (
   `dimZ` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim3',
   `dimT` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim4',
   `bandwidth` double NOT NULL DEFAULT 0,
-  `image_type` varchar(255) DEFAULT NULL,
-  `image_comments` varchar(255) DEFAULT NULL,
+  `image_type` varchar(250) DEFAULT NULL,
+  `image_comments` varchar(250) DEFAULT NULL,
   `bold_reps` int(11) NOT NULL DEFAULT 0,
   `numfiles` int(11) DEFAULT NULL,
   `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
@@ -1809,14 +1810,14 @@ CREATE TABLE `mr_series` (
   `is_derived` tinyint(1) NOT NULL DEFAULT 0,
   `numfiles_beh` int(11) NOT NULL DEFAULT 0,
   `beh_size` double NOT NULL DEFAULT 0,
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_createdate` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1828,14 +1829,14 @@ CREATE TABLE `mr_studyqa` (
   `mrstudyqa_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `t1_numcompared` int(11) NOT NULL,
-  `t1_comparedseriesids` text NOT NULL,
+  `t1_comparedseriesids` mediumtext NOT NULL,
   `t1_derivedseriesid` int(11) NOT NULL,
-  `t1_comparisonmatrix` text NOT NULL,
+  `t1_comparisonmatrix` mediumtext NOT NULL,
   `t1_matrixremovethreshold` double NOT NULL,
   `t1_snrremovethreshold` double NOT NULL,
   `cputime` double DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1849,7 +1850,7 @@ CREATE TABLE `nda_mapping` (
   `protocolname` varchar(255) NOT NULL,
   `experiment_id` int(11) NOT NULL,
   `modality` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='this table maps long protocol name(s) to short names';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
 
@@ -1864,7 +1865,7 @@ CREATE TABLE `nidb_sites` (
   `site_name` varchar(255) NOT NULL,
   `site_address` varchar(255) DEFAULT NULL,
   `site_contact` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1881,12 +1882,12 @@ CREATE TABLE `nm_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1897,9 +1898,9 @@ CREATE TABLE `nm_series` (
 CREATE TABLE `notifications` (
   `notiftype_id` int(11) NOT NULL,
   `notiftype_name` varchar(255) NOT NULL,
-  `notiftype_desc` text NOT NULL,
+  `notiftype_desc` mediumtext NOT NULL,
   `notiftype_needproject` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
@@ -1913,7 +1914,7 @@ CREATE TABLE `notification_user` (
   `project_id` int(11) NOT NULL,
   `notiftype_id` int(11) NOT NULL,
   `notif_frequency` enum('daily','weekly','monthly','yearly') NOT NULL DEFAULT 'weekly'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1946,7 +1947,7 @@ CREATE TABLE `ot_series` (
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1965,15 +1966,15 @@ CREATE TABLE `pipelines` (
   `pipeline_directory` varchar(255) DEFAULT NULL,
   `pipeline_dirstructure` char(1) DEFAULT NULL,
   `pipeline_usetmpdir` tinyint(1) DEFAULT NULL,
-  `pipeline_tmpdir` text DEFAULT NULL,
-  `pipeline_dependency` text DEFAULT NULL,
+  `pipeline_tmpdir` mediumtext DEFAULT NULL,
+  `pipeline_dependency` mediumtext DEFAULT NULL,
   `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
   `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
-  `pipeline_groupid` text DEFAULT NULL,
+  `pipeline_groupid` mediumtext DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
-  `pipeline_projectid` text DEFAULT NULL,
+  `pipeline_projectid` mediumtext DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
@@ -1981,7 +1982,7 @@ CREATE TABLE `pipelines` (
   `pipeline_laststart` datetime DEFAULT NULL,
   `pipeline_lastfinish` datetime DEFAULT NULL,
   `pipeline_lastcheck` datetime DEFAULT NULL,
-  `pipeline_completefiles` text DEFAULT NULL COMMENT 'comma separated list of files to check to assume the analysis is complete',
+  `pipeline_completefiles` mediumtext DEFAULT NULL COMMENT 'comma separated list of files to check to assume the analysis is complete',
   `pipeline_numproc` int(11) DEFAULT NULL COMMENT 'number of concurrent jobs allowed to run',
   `pipeline_queue` varchar(255) DEFAULT NULL,
   `pipeline_submithost` varchar(255) DEFAULT NULL,
@@ -1990,17 +1991,17 @@ CREATE TABLE `pipelines` (
   `pipeline_maxwalltime` bigint(20) DEFAULT NULL COMMENT 'maximum wall execution time in minutes',
   `pipeline_submitdelay` int(11) DEFAULT NULL COMMENT 'delay after studydatetime in hours',
   `pipeline_datacopymethod` varchar(50) DEFAULT NULL,
-  `pipeline_notes` text DEFAULT NULL,
+  `pipeline_notes` mediumtext DEFAULT NULL,
   `pipeline_useprofile` tinyint(1) DEFAULT NULL,
   `pipeline_removedata` tinyint(1) DEFAULT NULL,
-  `pipeline_resultsscript` text DEFAULT NULL,
+  `pipeline_resultsscript` mediumtext DEFAULT NULL,
   `pipeline_enabled` tinyint(1) DEFAULT 0,
   `pipeline_testing` tinyint(1) DEFAULT NULL,
   `pipeline_isprivate` tinyint(1) DEFAULT NULL,
   `pipeline_ishidden` tinyint(1) DEFAULT NULL,
   `pipeline_version` int(11) DEFAULT 1,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2015,10 +2016,10 @@ CREATE TABLE `pipeline_data` (
   `pd_checked` tinyint(1) DEFAULT NULL,
   `pd_found` tinyint(1) DEFAULT NULL,
   `pd_seriesid` int(11) DEFAULT NULL,
-  `pd_downloadpath` text DEFAULT NULL,
+  `pd_downloadpath` mediumtext DEFAULT NULL,
   `pd_step` int(11) DEFAULT NULL,
-  `pd_msg` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+  `pd_msg` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2035,7 +2036,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
   `pdd_level` enum('study','subject') NOT NULL,
   `pdd_assoctype` enum('nearesttime','samestudytype','nearestintime','') NOT NULL,
-  `pdd_protocol` text NOT NULL,
+  `pdd_protocol` mediumtext NOT NULL,
   `pdd_imagetype` varchar(255) NOT NULL,
   `pdd_modality` varchar(255) NOT NULL,
   `pdd_dataformat` varchar(30) NOT NULL,
@@ -2050,7 +2051,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_optional` tinyint(1) NOT NULL,
   `pdd_numboldreps` varchar(255) NOT NULL,
   `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2062,7 +2063,7 @@ CREATE TABLE `pipeline_dependencies` (
   `pipelinedep_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `parent_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2076,7 +2077,7 @@ CREATE TABLE `pipeline_download` (
   `pd_admin` int(11) NOT NULL,
   `pd_protocol` varchar(255) NOT NULL,
   `pd_dirformat` varchar(50) NOT NULL,
-  `pd_nfsdir` text NOT NULL,
+  `pd_nfsdir` mediumtext NOT NULL,
   `pd_anonymize` tinyint(1) NOT NULL,
   `pd_gzip` tinyint(1) NOT NULL,
   `pd_preserveseries` tinyint(1) NOT NULL,
@@ -2089,7 +2090,7 @@ CREATE TABLE `pipeline_download` (
   `pd_createdate` datetime NOT NULL,
   `pd_status` varchar(25) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2101,7 +2102,7 @@ CREATE TABLE `pipeline_groups` (
   `pipelinegroup_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `group_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2117,8 +2118,8 @@ CREATE TABLE `pipeline_history` (
   `analysis_event` varchar(100) NOT NULL,
   `analysis_datetime` timestamp NULL DEFAULT NULL,
   `analysis_hostname` varchar(100) NOT NULL,
-  `event_message` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+  `event_message` mediumtext NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2130,19 +2131,19 @@ CREATE TABLE `pipeline_options` (
   `pipelineoptions_id` int(11) NOT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT 0,
-  `pipeline_dependency` text DEFAULT NULL,
+  `pipeline_dependency` mediumtext DEFAULT NULL,
   `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
   `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
-  `pipeline_groupid` text DEFAULT NULL,
+  `pipeline_groupid` mediumtext DEFAULT NULL,
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) DEFAULT NULL,
-  `pipeline_projectid` text DEFAULT NULL,
+  `pipeline_projectid` mediumtext DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
-  `pipeline_completefiles` text DEFAULT NULL,
-  `pipeline_resultsscript` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+  `pipeline_completefiles` mediumtext DEFAULT NULL,
+  `pipeline_resultsscript` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2158,7 +2159,7 @@ CREATE TABLE `pipeline_procs` (
   `pp_currentpipeline` int(11) NOT NULL,
   `pp_currentsubject` int(11) NOT NULL,
   `pp_currentstudy` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2175,9 +2176,9 @@ CREATE TABLE `pipeline_status` (
   `pipelinestatus_stoptime` datetime NOT NULL,
   `pipelinestatus_order` int(11) NOT NULL,
   `pipelinestatus_status` enum('pending','complete','running') NOT NULL,
-  `pipelinestatus_result` text NOT NULL,
+  `pipelinestatus_result` mediumtext NOT NULL,
   `pipelinestatus_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2190,13 +2191,13 @@ CREATE TABLE `pipeline_steps` (
   `pipeline_id` int(11) DEFAULT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT 1,
   `ps_supplement` tinyint(1) NOT NULL,
-  `ps_command` text DEFAULT NULL,
-  `ps_workingdir` text DEFAULT NULL,
+  `ps_command` mediumtext DEFAULT NULL,
+  `ps_workingdir` mediumtext DEFAULT NULL,
   `ps_order` int(11) DEFAULT NULL,
   `ps_description` varchar(255) DEFAULT NULL,
   `ps_enabled` tinyint(1) NOT NULL,
   `ps_logged` tinyint(1) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2210,7 +2211,7 @@ CREATE TABLE `pipeline_version` (
   `version` int(11) NOT NULL,
   `version_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `version_notes` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2232,7 +2233,7 @@ CREATE TABLE `ppi_series` (
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2257,7 +2258,7 @@ CREATE TABLE `projects` (
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `redcap_token` varchar(255) DEFAULT NULL,
   `redcap_server` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2269,15 +2270,15 @@ CREATE TABLE `project_checklist` (
   `projectchecklist_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   `item_name` varchar(50) NOT NULL,
-  `item_desc` text NOT NULL,
+  `item_desc` mediumtext NOT NULL,
   `item_order` int(11) NOT NULL,
   `modality` varchar(25) NOT NULL COMMENT 'MR, CT, assessment, measure, etc',
-  `protocol_name` text NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
+  `protocol_name` mediumtext NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
   `count` int(11) NOT NULL COMMENT 'total number of this item',
   `frequency` int(11) NOT NULL COMMENT 'spacing between the items',
   `frequency_unit` enum('hour','day','week','month','year') NOT NULL,
   `rdocexperiment_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2292,7 +2293,7 @@ CREATE TABLE `project_protocol` (
   `pp_criteria` enum('required','recommended','conditional','') NOT NULL,
   `pp_perstudyquantity` int(11) NOT NULL,
   `pp_perprojectquantity` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2306,7 +2307,7 @@ CREATE TABLE `project_template` (
   `template_name` varchar(255) DEFAULT NULL,
   `template_createdate` datetime DEFAULT NULL,
   `template_modifydate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2325,7 +2326,7 @@ CREATE TABLE `project_templatestudies` (
   `pts_physician` varchar(255) DEFAULT NULL,
   `pts_site` varchar(255) DEFAULT NULL,
   `pts_notes` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2338,7 +2339,7 @@ CREATE TABLE `project_templatestudyitems` (
   `pts_id` int(11) DEFAULT NULL,
   `ptsitem_order` int(11) DEFAULT NULL,
   `ptsitem_protocol` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2349,8 +2350,8 @@ CREATE TABLE `project_templatestudyitems` (
 CREATE TABLE `protocolgroup_items` (
   `pgitem_id` int(11) NOT NULL,
   `protocolgroup_id` int(11) NOT NULL,
-  `pgitem_protocol` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+  `pgitem_protocol` varchar(250) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2362,7 +2363,7 @@ CREATE TABLE `protocol_group` (
   `protocolgroup_id` int(11) NOT NULL,
   `protocolgroup_name` varchar(50) NOT NULL,
   `protocolgroup_modality` varchar(40) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='specifies the protocol group name and modality' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='specifies the protocol group name and modality' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2379,12 +2380,12 @@ CREATE TABLE `pr_series` (
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
+  `series_notes` mediumtext NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2402,7 +2403,7 @@ CREATE TABLE `public_downloads` (
   `pd_unzippedsize` double DEFAULT 0,
   `pd_filename` varchar(255) DEFAULT NULL,
   `pd_desc` varchar(255) DEFAULT NULL,
-  `pd_notes` text DEFAULT NULL,
+  `pd_notes` mediumtext DEFAULT NULL,
   `pd_filecontents` longtext DEFAULT NULL,
   `pd_shareinternal` tinyint(1) DEFAULT NULL,
   `pd_ispublic` tinyint(1) DEFAULT NULL,
@@ -2411,7 +2412,7 @@ CREATE TABLE `public_downloads` (
   `pd_status` varchar(50) DEFAULT NULL,
   `pd_key` varchar(255) DEFAULT NULL,
   `pd_numdownloads` bigint(20) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2422,9 +2423,9 @@ CREATE TABLE `public_downloads` (
 CREATE TABLE `qc_modules` (
   `qcmodule_id` int(11) NOT NULL,
   `qcm_modality` varchar(20) NOT NULL,
-  `qcm_name` varchar(255) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
+  `qcm_name` varchar(250) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
   `qcm_isenabled` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2438,7 +2439,7 @@ CREATE TABLE `qc_moduleseries` (
   `series_id` int(11) NOT NULL,
   `modality` varchar(25) NOT NULL,
   `cpu_time` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2452,7 +2453,7 @@ CREATE TABLE `qc_resultnames` (
   `qcresult_type` enum('graph','image','histogram','minmax','number','textfile') NOT NULL DEFAULT 'number',
   `qcresult_units` varchar(255) NOT NULL DEFAULT 'unitless',
   `qcresult_labels` varchar(255) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2469,7 +2470,7 @@ CREATE TABLE `qc_results` (
   `qcresults_valuefile` varchar(255) DEFAULT NULL,
   `qcresults_datetime` datetime DEFAULT NULL,
   `qcresults_cputime` double NOT NULL DEFAULT 0
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2484,9 +2485,9 @@ CREATE TABLE `ratings` (
   `data_modality` varchar(50) NOT NULL,
   `rating_type` varchar(50) NOT NULL COMMENT 'subject, study, series, analysis',
   `rating_value` int(11) NOT NULL,
-  `rating_notes` text NOT NULL,
+  `rating_notes` mediumtext NOT NULL,
   `rating_date` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2502,7 +2503,7 @@ CREATE TABLE `rdoc_uploads` (
   `dateuploaded` datetime NOT NULL,
   `label` varchar(255) NOT NULL,
   `iscomplete` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2513,7 +2514,7 @@ CREATE TABLE `rdoc_uploads` (
 CREATE TABLE `redcap_import_fields` (
   `redcap_fieldgroupid` int(11) NOT NULL,
   `redcap_fieldname` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2524,15 +2525,15 @@ CREATE TABLE `redcap_import_fields` (
 CREATE TABLE `redcap_import_mapping` (
   `formmap_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
-  `redcap_event` varchar(255) DEFAULT NULL,
-  `redcap_form` varchar(255) DEFAULT NULL,
-  `redcap_fields` text DEFAULT NULL,
-  `redcap_fieldtype` varchar(255) DEFAULT NULL,
+  `redcap_event` varchar(250) CHARACTER SET utf8 DEFAULT NULL,
+  `redcap_form` varchar(250) CHARACTER SET utf8 DEFAULT NULL,
+  `redcap_fields` text CHARACTER SET utf8 DEFAULT NULL,
+  `redcap_fieldtype` varchar(250) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
   `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
-  `nidb_variablename` varchar(255) DEFAULT NULL,
-  `nidb_instrumentname` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPACT;
+  `nidb_variablename` varchar(250) DEFAULT NULL,
+  `nidb_instrumentname` varchar(250) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
@@ -2543,14 +2544,14 @@ CREATE TABLE `redcap_import_mapping` (
 CREATE TABLE `remote_connections` (
   `remoteconn_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `conn_name` varchar(255) NOT NULL,
-  `remote_server` varchar(255) NOT NULL,
-  `remote_username` varchar(255) NOT NULL,
-  `remote_password` varchar(255) NOT NULL,
+  `conn_name` varchar(250) NOT NULL,
+  `remote_server` varchar(250) NOT NULL,
+  `remote_username` varchar(250) NOT NULL,
+  `remote_password` varchar(250) NOT NULL,
   `remote_instanceid` int(11) NOT NULL,
   `remote_projectid` int(11) NOT NULL,
   `remote_siteid` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2564,7 +2565,7 @@ CREATE TABLE `remote_logins` (
   `ip` varchar(100) NOT NULL,
   `login_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `login_result` enum('success','failure') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2576,41 +2577,41 @@ CREATE TABLE `saved_search` (
   `savedsearch_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `saved_datetime` datetime NOT NULL DEFAULT current_timestamp(),
-  `saved_name` varchar(255) NOT NULL,
+  `saved_name` varchar(250) NOT NULL,
   `search_projectid` int(11) DEFAULT NULL,
   `search_mrincludeprotocolparams` tinyint(1) DEFAULT NULL,
   `search_mrincludeqa` tinyint(1) DEFAULT NULL,
   `search_groupmrbyvisittype` tinyint(1) DEFAULT NULL,
-  `search_mrprotocol` text DEFAULT NULL,
-  `search_eegprotocol` text DEFAULT NULL,
-  `search_etprotocol` text DEFAULT NULL,
+  `search_mrprotocol` mediumtext DEFAULT NULL,
+  `search_eegprotocol` mediumtext DEFAULT NULL,
+  `search_etprotocol` mediumtext DEFAULT NULL,
   `search_pipelineid` int(11) DEFAULT NULL,
-  `search_pipelineresultname` text DEFAULT NULL,
-  `search_pipelineseries` text DEFAULT NULL,
-  `search_measurename` text DEFAULT NULL,
+  `search_pipelineresultname` mediumtext DEFAULT NULL,
+  `search_pipelineseries` mediumtext DEFAULT NULL,
+  `search_measurename` mediumtext DEFAULT NULL,
   `search_includeallmeasures` tinyint(1) DEFAULT NULL,
-  `search_vitalname` text DEFAULT NULL,
+  `search_vitalname` mediumtext DEFAULT NULL,
   `search_includeallvitals` tinyint(1) DEFAULT NULL,
-  `search_drugname` text DEFAULT NULL,
+  `search_drugname` mediumtext DEFAULT NULL,
   `search_includealldrugs` tinyint(1) DEFAULT NULL,
   `search_includedrugdetails` tinyint(1) DEFAULT NULL,
   `search_includetimesincedose` tinyint(1) DEFAULT NULL,
-  `search_dosevariable` text DEFAULT NULL,
+  `search_dosevariable` mediumtext DEFAULT NULL,
   `search_groupdosetime` varchar(25) DEFAULT NULL,
   `search_displaytime` varchar(25) DEFAULT NULL,
   `search_groupbyeventdate` tinyint(1) DEFAULT NULL,
   `search_collapsevariables` tinyint(1) DEFAULT NULL,
-  `search_collapseexpression` varchar(255) DEFAULT NULL,
+  `search_collapseexpression` varchar(250) DEFAULT NULL,
   `search_includeemptysubjects` tinyint(1) DEFAULT NULL,
-  `search_blankvalue` varchar(255) DEFAULT NULL,
-  `search_missingvalue` varchar(255) DEFAULT NULL,
+  `search_blankvalue` varchar(250) DEFAULT NULL,
+  `search_missingvalue` varchar(250) DEFAULT NULL,
   `search_includeeventduration` tinyint(1) DEFAULT NULL,
   `search_includeendate` tinyint(1) DEFAULT NULL,
   `search_includeheightweight` tinyint(1) DEFAULT NULL,
   `search_includedob` tinyint(1) DEFAULT NULL,
   `search_reportformat` varchar(50) DEFAULT NULL,
   `search_outputformat` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2622,59 +2623,59 @@ CREATE TABLE `search_history` (
   `searchhistory_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `date_added` timestamp NOT NULL DEFAULT current_timestamp(),
-  `saved_name` varchar(255) NOT NULL DEFAULT '',
-  `subjectuid` text DEFAULT NULL,
-  `subjectaltuid` text DEFAULT NULL,
-  `subjectname` varchar(255) DEFAULT NULL,
+  `saved_name` varchar(250) NOT NULL DEFAULT '',
+  `subjectuid` mediumtext DEFAULT NULL,
+  `subjectaltuid` mediumtext DEFAULT NULL,
+  `subjectname` varchar(250) DEFAULT NULL,
   `subjectdobstart` date DEFAULT NULL,
   `subjectdobend` date DEFAULT NULL,
   `ageatscanmin` double DEFAULT NULL,
   `ageatscanmax` double DEFAULT NULL,
   `subjectgender` char(1) DEFAULT NULL,
   `subjectgroupid` int(11) DEFAULT NULL,
-  `projectids` text DEFAULT NULL,
-  `enrollsubgroup` varchar(255) DEFAULT NULL,
-  `measuresearch` text DEFAULT NULL,
-  `measurelist` text DEFAULT NULL,
-  `studyinstitution` varchar(255) DEFAULT NULL,
-  `studyequipment` varchar(255) DEFAULT NULL,
-  `studyid` text DEFAULT NULL,
-  `studyaltscanid` text DEFAULT NULL,
+  `projectids` mediumtext DEFAULT NULL,
+  `enrollsubgroup` varchar(250) DEFAULT NULL,
+  `measuresearch` mediumtext DEFAULT NULL,
+  `measurelist` mediumtext DEFAULT NULL,
+  `studyinstitution` varchar(250) DEFAULT NULL,
+  `studyequipment` varchar(250) DEFAULT NULL,
+  `studyid` mediumtext DEFAULT NULL,
+  `studyaltscanid` mediumtext DEFAULT NULL,
   `studydatestart` date DEFAULT NULL,
   `studydateend` date DEFAULT NULL,
-  `studydesc` text DEFAULT NULL,
-  `studyphysician` varchar(255) DEFAULT NULL,
-  `studyoperator` varchar(255) DEFAULT NULL,
-  `studytype` varchar(255) DEFAULT NULL,
-  `studymodality` varchar(255) DEFAULT NULL,
+  `studydesc` mediumtext DEFAULT NULL,
+  `studyphysician` varchar(250) DEFAULT NULL,
+  `studyoperator` varchar(250) DEFAULT NULL,
+  `studytype` varchar(250) DEFAULT NULL,
+  `studymodality` varchar(250) DEFAULT NULL,
   `studygroupid` int(11) DEFAULT NULL,
-  `seriesdesc` text DEFAULT NULL,
+  `seriesdesc` mediumtext DEFAULT NULL,
   `usealtseriesdesc` tinyint(1) DEFAULT NULL,
-  `seriessequence` text DEFAULT NULL,
-  `seriesimagetype` text DEFAULT NULL,
-  `seriestr` varchar(255) DEFAULT NULL,
-  `seriesimagecomments` text DEFAULT NULL,
-  `seriesnum` varchar(255) DEFAULT NULL,
-  `seriesnumfiles` varchar(255) DEFAULT NULL,
+  `seriessequence` mediumtext DEFAULT NULL,
+  `seriesimagetype` mediumtext DEFAULT NULL,
+  `seriestr` varchar(250) DEFAULT NULL,
+  `seriesimagecomments` mediumtext DEFAULT NULL,
+  `seriesnum` varchar(250) DEFAULT NULL,
+  `seriesnumfiles` varchar(250) DEFAULT NULL,
   `seriesgroupid` int(11) DEFAULT NULL,
   `pipelineid` int(11) DEFAULT NULL,
-  `pipelineresultname` text DEFAULT NULL,
-  `pipelineresultunit` text DEFAULT NULL,
-  `pipelineresultvalue` text DEFAULT NULL,
-  `pipelineresultcompare` text DEFAULT NULL,
+  `pipelineresultname` mediumtext DEFAULT NULL,
+  `pipelineresultunit` mediumtext DEFAULT NULL,
+  `pipelineresultvalue` mediumtext DEFAULT NULL,
+  `pipelineresultcompare` mediumtext DEFAULT NULL,
   `pipelineresulttype` char(1) DEFAULT NULL,
   `pipelinecolorize` tinyint(1) DEFAULT NULL,
   `pipelinecormatrix` tinyint(1) DEFAULT NULL,
   `pipelineresultstats` tinyint(1) DEFAULT NULL,
-  `resultorder` varchar(255) DEFAULT NULL,
+  `resultorder` varchar(250) DEFAULT NULL,
   `formid` int(11) DEFAULT NULL,
   `formfieldid` int(11) DEFAULT NULL,
-  `formcriteria` text DEFAULT NULL,
-  `formvalue` text DEFAULT NULL,
+  `formcriteria` mediumtext DEFAULT NULL,
+  `formvalue` mediumtext DEFAULT NULL,
   `audit` tinyint(1) DEFAULT NULL,
-  `qcbuiltinvariable` text DEFAULT NULL,
+  `qcbuiltinvariable` mediumtext DEFAULT NULL,
   `qcvariableid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2689,7 +2690,7 @@ CREATE TABLE `snps` (
   `chromosome` tinyint(3) UNSIGNED NOT NULL,
   `reference_allele` char(2) NOT NULL,
   `genetic_distance` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2702,7 +2703,7 @@ CREATE TABLE `snp_alleles` (
   `snp_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `allele` char(2) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2719,11 +2720,11 @@ CREATE TABLE `snp_series` (
   `series_datetime` datetime NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
+  `series_notes` mediumtext NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2740,12 +2741,12 @@ CREATE TABLE `sr_series` (
   `series_protocol` varchar(255) NOT NULL,
   `numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
+  `series_notes` mediumtext NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2757,8 +2758,8 @@ CREATE TABLE `studies` (
   `study_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `study_num` int(11) NOT NULL,
-  `study_desc` varchar(255) NOT NULL,
-  `study_type` varchar(255) DEFAULT NULL,
+  `study_desc` varchar(250) NOT NULL,
+  `study_type` varchar(250) DEFAULT NULL,
   `study_daynum` int(11) DEFAULT NULL,
   `study_timepoint` int(11) DEFAULT NULL,
   `study_alternateid` varchar(100) DEFAULT NULL COMMENT 'original ADO id',
@@ -2769,27 +2770,27 @@ CREATE TABLE `studies` (
   `study_weight` double DEFAULT NULL,
   `study_bmi` double DEFAULT NULL,
   `study_operator` varchar(45) DEFAULT NULL,
-  `study_experimenter` varchar(255) DEFAULT NULL,
+  `study_experimenter` varchar(250) DEFAULT NULL,
   `study_performingphysician` varchar(100) DEFAULT NULL COMMENT 'may be necessary for an offsite exam, such as CT or PET at the hospital which was ordered and performed by a physician other than the PI',
   `study_site` varchar(45) DEFAULT NULL,
-  `study_uid` varchar(255) DEFAULT NULL,
+  `study_uid` varchar(250) DEFAULT NULL,
   `study_nidbsite` int(11) DEFAULT NULL,
-  `study_institution` varchar(255) DEFAULT NULL,
-  `study_notes` varchar(255) DEFAULT NULL,
+  `study_institution` varchar(250) DEFAULT NULL,
+  `study_notes` varchar(250) DEFAULT NULL,
   `study_doradread` tinyint(1) DEFAULT NULL,
   `study_radreaddate` datetime DEFAULT NULL,
-  `study_radreadfindings` text DEFAULT NULL,
+  `study_radreadfindings` mediumtext DEFAULT NULL,
   `study_subjectage` double DEFAULT NULL,
   `study_etsnellenchart` int(11) DEFAULT NULL,
-  `study_etvergence` varchar(255) DEFAULT NULL,
-  `study_ettracking` varchar(255) DEFAULT NULL,
-  `study_snpchip` varchar(255) DEFAULT NULL,
+  `study_etvergence` varchar(250) DEFAULT NULL,
+  `study_ettracking` varchar(250) DEFAULT NULL,
+  `study_snpchip` varchar(250) DEFAULT NULL,
   `study_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
   `study_isactive` tinyint(1) DEFAULT 1,
   `study_createdby` varchar(50) DEFAULT NULL,
   `study_createdate` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2803,7 +2804,7 @@ CREATE TABLE `study_template` (
   `template_name` varchar(255) NOT NULL,
   `template_modality` varchar(50) NOT NULL,
   `template_visitlabel` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2816,7 +2817,7 @@ CREATE TABLE `study_templateitems` (
   `studytemplate_id` int(11) NOT NULL,
   `item_order` int(11) NOT NULL,
   `item_protocol` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2826,29 +2827,29 @@ CREATE TABLE `study_templateitems` (
 
 CREATE TABLE `subjects` (
   `subject_id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `birthdate` date DEFAULT NULL,
-  `gender` char(1) DEFAULT NULL,
-  `ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
-  `ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
+  `gender` char(1) CHARACTER SET utf8 DEFAULT NULL,
+  `ethnicity1` enum('hispanic','nothispanic','') CHARACTER SET utf8 DEFAULT NULL,
+  `ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') CHARACTER SET utf8 DEFAULT NULL,
   `height` double DEFAULT NULL COMMENT 'stored in cm',
   `weight` double DEFAULT NULL COMMENT 'stored in kg',
-  `handedness` char(1) DEFAULT NULL,
-  `education` varchar(45) DEFAULT NULL,
-  `phone1` varchar(45) DEFAULT NULL,
-  `email` varchar(45) DEFAULT NULL,
-  `marital_status` enum('unknown','','married','single','divorced','separated','civilunion','cohabitating','widowed') DEFAULT 'unknown',
-  `smoking_status` enum('unknown','never','current','past','') DEFAULT 'unknown',
-  `uid` varchar(10) DEFAULT NULL,
-  `uuid` varchar(255) DEFAULT NULL,
-  `uuid2` varchar(255) DEFAULT NULL,
-  `guid` varchar(255) DEFAULT NULL,
+  `handedness` char(1) CHARACTER SET utf8 DEFAULT NULL,
+  `education` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `phone1` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `email` varchar(45) CHARACTER SET utf8 DEFAULT NULL,
+  `marital_status` enum('unknown','','married','single','divorced','separated','civilunion','cohabitating','widowed') CHARACTER SET utf8 DEFAULT 'unknown',
+  `smoking_status` enum('unknown','never','current','past','') CHARACTER SET utf8 DEFAULT 'unknown',
+  `uid` varchar(10) CHARACTER SET utf8 DEFAULT NULL,
+  `uuid` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `uuid2` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `guid` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `cancontact` tinyint(1) DEFAULT NULL,
   `isactive` tinyint(1) DEFAULT 1,
   `isimported` tinyint(1) DEFAULT NULL,
-  `importeduuid` varchar(255) DEFAULT NULL,
+  `importeduuid` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2859,10 +2860,10 @@ CREATE TABLE `subjects` (
 CREATE TABLE `subject_altuid` (
   `subjectaltuid_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
-  `altuid` varchar(255) NOT NULL,
+  `altuid` varchar(245) NOT NULL,
   `isprimary` tinyint(1) NOT NULL,
   `enrollment_id` int(11) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2875,7 +2876,7 @@ CREATE TABLE `subject_relation` (
   `subjectid1` int(11) NOT NULL,
   `subjectid2` int(11) NOT NULL,
   `relation` varchar(10) NOT NULL COMMENT 'siblingm, siblingf, sibling, child, parent [subject1 is the ''relation'' of subject2]'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2892,12 +2893,12 @@ CREATE TABLE `surgery_series` (
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` text NOT NULL,
+  `series_notes` mediumtext NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2907,10 +2908,10 @@ CREATE TABLE `surgery_series` (
 
 CREATE TABLE `system_messages` (
   `message_id` int(11) NOT NULL,
-  `message` text NOT NULL,
+  `message` mediumtext NOT NULL,
   `message_date` datetime NOT NULL,
   `message_status` enum('active','deleted','pending') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2922,9 +2923,9 @@ CREATE TABLE `system_status` (
   `systemstatus_id` int(11) NOT NULL,
   `status_variable` varchar(255) NOT NULL,
   `status_value` varchar(255) NOT NULL,
-  `status_desc` text NOT NULL,
+  `status_desc` mediumtext NOT NULL,
   `status_datetime` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2943,7 +2944,7 @@ CREATE TABLE `tags` (
   `pipeline_id` int(11) DEFAULT NULL,
   `modality` varchar(20) DEFAULT NULL,
   `tag` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2954,10 +2955,10 @@ CREATE TABLE `tags` (
 CREATE TABLE `task_series` (
   `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) DEFAULT NULL COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_notes` varchar(255) DEFAULT NULL,
@@ -2965,7 +2966,7 @@ CREATE TABLE `task_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -2977,20 +2978,20 @@ CREATE TABLE `tms_series` (
   `tmsseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_desc` varchar(250) DEFAULT NULL,
+  `series_altdesc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `series_status` varchar(255) DEFAULT NULL,
+  `series_notes` text CHARACTER SET utf8 DEFAULT NULL,
+  `series_createdby` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `series_status` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `eegseries_id` int(11) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3002,21 +3003,21 @@ CREATE TABLE `uploads` (
   `upload_id` int(11) NOT NULL,
   `upload_startdate` datetime DEFAULT NULL,
   `upload_enddate` datetime DEFAULT NULL,
-  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse','cancelled') DEFAULT NULL,
+  `upload_status` enum('uploading','uploadcomplete','uploaderror','parsing','parsingcomplete','parsingerror','archiving','archivecomplete','archiveerror','queueforarchive','reparse','cancelled') CHARACTER SET latin1 DEFAULT NULL,
   `upload_statuspercent` double DEFAULT NULL,
-  `upload_log` text DEFAULT NULL,
-  `upload_originalfilelist` longtext DEFAULT NULL,
-  `upload_source` enum('web','api','nfs','') DEFAULT NULL,
-  `upload_datapath` text DEFAULT NULL,
-  `upload_stagingpath` varchar(255) DEFAULT NULL,
+  `upload_log` text CHARACTER SET latin1 DEFAULT NULL,
+  `upload_originalfilelist` longtext CHARACTER SET latin1 DEFAULT NULL,
+  `upload_source` enum('web','api','nfs','') CHARACTER SET latin1 DEFAULT NULL,
+  `upload_datapath` text CHARACTER SET latin1 DEFAULT NULL,
+  `upload_stagingpath` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
-  `upload_patientid` varchar(255) DEFAULT NULL,
-  `upload_modality` varchar(255) DEFAULT NULL,
+  `upload_patientid` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
+  `upload_modality` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
   `upload_guessmodality` tinyint(1) DEFAULT NULL,
-  `upload_subjectcriteria` enum('patientid','namesexdob','specificpatientid','patientidfromdir','') DEFAULT NULL,
-  `upload_studycriteria` enum('modalitystudydate','studyuid','') DEFAULT NULL,
-  `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `upload_subjectcriteria` enum('patientid','namesexdob','specificpatientid','patientidfromdir','') CHARACTER SET latin1 DEFAULT NULL,
+  `upload_studycriteria` enum('modalitystudydate','studyuid','') CHARACTER SET latin1 DEFAULT NULL,
+  `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') CHARACTER SET latin1 DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3028,8 +3029,8 @@ CREATE TABLE `upload_logs` (
   `uploadlog_id` bigint(20) NOT NULL,
   `upload_id` int(11) NOT NULL,
   `log_date` timestamp NOT NULL DEFAULT current_timestamp(),
-  `log_msg` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `log_msg` mediumtext NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3055,7 +3056,7 @@ CREATE TABLE `upload_series` (
   `uploadseries_cols` int(11) DEFAULT NULL,
   `uploadseries_filelist` longtext DEFAULT NULL,
   `matchingseriesid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3074,7 +3075,7 @@ CREATE TABLE `upload_studies` (
   `uploadstudy_equipment` varchar(255) DEFAULT NULL COMMENT 'aka, site',
   `uploadstudy_operator` varchar(255) DEFAULT NULL,
   `matchingstudyid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3085,12 +3086,12 @@ CREATE TABLE `upload_studies` (
 CREATE TABLE `upload_subjects` (
   `uploadsubject_id` int(11) NOT NULL,
   `upload_id` int(11) NOT NULL,
-  `uploadsubject_patientid` varchar(255) DEFAULT NULL,
-  `uploadsubject_name` varchar(255) DEFAULT NULL,
+  `uploadsubject_patientid` varchar(250) DEFAULT NULL,
+  `uploadsubject_name` varchar(250) DEFAULT NULL,
   `uploadsubject_sex` varchar(1) DEFAULT NULL,
   `uploadsubject_dob` date DEFAULT NULL,
   `matchingsubjectid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3131,7 +3132,7 @@ CREATE TABLE `users` (
   `user_enablebeta` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `user_deleted` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3153,7 +3154,7 @@ CREATE TABLE `users_pending` (
   `user_firstname` varchar(255) NOT NULL,
   `user_midname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3166,7 +3167,7 @@ CREATE TABLE `user_favorites` (
   `favorite_type` set('project','subject') NOT NULL,
   `favorite_objectid` int(11) NOT NULL,
   `favorite_user` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3180,7 +3181,7 @@ CREATE TABLE `user_instance` (
   `instance_id` int(11) NOT NULL,
   `isdefaultinstance` tinyint(1) DEFAULT NULL,
   `instance_joinrequest` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3198,7 +3199,7 @@ CREATE TABLE `user_project` (
   `write_data` tinyint(1) NOT NULL DEFAULT 0,
   `write_phi` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3215,12 +3216,12 @@ CREATE TABLE `us_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3238,13 +3239,13 @@ CREATE TABLE `video_series` (
   `series_size` double NOT NULL,
   `series_notes` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL,
-  `video_desc` text NOT NULL,
+  `video_desc` mediumtext NOT NULL,
   `video_cputime` double NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3254,9 +3255,9 @@ CREATE TABLE `video_series` (
 
 CREATE TABLE `vitalnames` (
   `vitalname_id` int(11) NOT NULL,
-  `vital_name` varchar(255) NOT NULL,
+  `vital_name` varchar(250) NOT NULL,
   `normal_range` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3280,7 +3281,7 @@ CREATE TABLE `vitals` (
   `vital_entrydate` datetime DEFAULT NULL,
   `vital_recordcreatedate` datetime DEFAULT NULL,
   `vital_recordmodifydate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -3295,7 +3296,7 @@ CREATE TABLE `weather` (
   `obsv_type` enum('','clouds','presentweather','temp','dewpoint','humidity','windspeed','winddirection','windgust','pressure','pressuretendency','precip','dailysunrise','dailysunset') NOT NULL,
   `obsv_value` double NOT NULL,
   `presentweather` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3312,12 +3313,12 @@ CREATE TABLE `xa_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` text DEFAULT NULL,
+  `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8;
+) ENGINE=Aria DEFAULT CHARSET=utf8mb4;
 
 --
 -- Indexes for dumped tables
@@ -4315,7 +4316,8 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   ADD PRIMARY KEY (`taskseries_id`),
-  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE;
+  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE,
+  ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
 -- Indexes for table `tms_series`
