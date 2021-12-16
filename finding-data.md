@@ -23,28 +23,28 @@ There are various subsections on the search screen, those are self-explanatory. 
 
 The next section is enrollment where a search can be restricted based on projects. One can choose a single project or a list of projects from the drop down menu. Also a sub-group if defined can be specified.
 
-![image](https://user-images.githubusercontent.com/24811295/145578915-0f5981c9-3de6-4cab-b3ba-2b1a92ab5b42.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/145578915-0f5981c9-3de6-4cab-b3ba-2b1a92ab5b42.png width="80%"></div>
 
 #### Study
 In this part search parameters / variables in a project / study can be defined to refine the search. A search can be restricted based on, study Ids, Alternative study IDs, range of study date, modality (MRI,EEG, etc.), Institution (In case of multiple institutions), equipment, Physician name, Operator name, visit type, and study group
 
-![image](https://user-images.githubusercontent.com/24811295/145579800-50d85d4c-b5e3-4ee3-9e9d-0ea4ac157a68.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/145579800-50d85d4c-b5e3-4ee3-9e9d-0ea4ac157a68.png width="80%"></div>
 
 #### Series
 A more specific search based on protocol, MR sequence, image type. MR TR value, series number (if a specific series of images is needed) and series group can be defined. 
 
-![image](https://user-images.githubusercontent.com/24811295/145579904-3d617111-53f7-44d3-840a-318ca6bd9568.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/145579904-3d617111-53f7-44d3-840a-318ca6bd9568.png width="80%"></div>
 
 #### Output
 In this section, the structure of the search output can be defined. The output can be grouped based on study or all the series together. The output can be stored in “.csv” file using the summary tab. The Analysis tab is used to structure the pipeline analysis results. 
 
-![image](https://user-images.githubusercontent.com/24811295/145580133-d64c64ac-1022-4a52-900f-421bcbeb506b.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/145580133-d64c64ac-1022-4a52-900f-421bcbeb506b.png width="80%"></div>
 
 ### Other Data Queries
 
 Other than imaging data can also be quried using the similar way as mentioned above for the imaging data above. However the required non-imaging data modality can be selected from the modality dropdown menu in the study section as shown below
 
-![image](https://user-images.githubusercontent.com/24811295/145583549-1aed8be2-5c93-4523-9709-a35ac05af262.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/145583549-1aed8be2-5c93-4523-9709-a35ac05af262.png width="80%"></div>
 
 
 ### ID Mapping
