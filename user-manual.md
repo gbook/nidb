@@ -9,13 +9,15 @@
   - <a href="importing-data.html#bulk-import-of-large-datasets">Bulk Import of Large Datasets</a>
   - <a href="importing-data.html#automatic-import-via-dicom-receiver">Automatic Import via DICOM reciver</a>
   - <a href="importing-data.html#bulk-upload-of-non-mri-data">Bulk Upload of non-MRI data</a>
-  - <a href="redcapimport.md" style="font-size: larger;">RedCap Import (Import data from Redcap into NiDB)</a> 
+  - <a href="redcapimport.html">Import from RedCap</a> 
 - <a href="working-with-data.html">Working with Data</a>
-  - Managing Subjects
-    - Editing IDs & Demographics
-    - Project Enrollments
-    - Merging
-    - Deleting
+  - <a href="working-data.html#managing-subjects">Managing Subjects</a>
+    - <a href="working-data.html#editing-ids-demographics">Editing IDs & Demographics</a>
+    - <a href="working-data.html#project-enrollments">Project Enrollments</a>
+      - <a href="working-data.html#timelines">Timelines</a>
+      - <a href="working-data.html#enroll-in-different-project">Enroll in Different Project</a>
+    - <a href="working-data.html#merging">Merging</a>
+    - <a href="working-data.html#deleting">Deleting</a>
   - Managing Studies
     - MRI vs non-MRI Studies
     - Editing Study Information
