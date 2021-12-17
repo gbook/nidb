@@ -11,13 +11,13 @@
   - <a href="importing-data.html#bulk-upload-of-non-mri-data">Bulk Upload of non-MRI data</a>
   - <a href="redcapimport.html">Import from RedCap</a> 
 - <a href="working-with-data.html">Working with Data</a>
-  - <a href="working-data.html#managing-subjects">Managing Subjects</a>
-    - <a href="working-data.html#editing-ids-demographics">Editing IDs & Demographics</a>
-    - <a href="working-data.html#project-enrollments">Project Enrollments</a>
-      - <a href="working-data.html#timelines">Timelines</a>
-      - <a href="working-data.html#enroll-in-different-project">Enroll in Different Project</a>
-    - <a href="working-data.html#merging">Merging</a>
-    - <a href="working-data.html#deleting">Deleting</a>
+  - <a href="working-with-data.html#managing-subjects">Managing Subjects</a>
+    - <a href="working-with-data.html#editing-ids-demographics">Editing IDs & Demographics</a>
+    - <a href="working-with-data.html#project-enrollments">Project Enrollments</a>
+      - <a href="working-with-data.html#timelines">Timelines</a>
+      - <a href="working-with-data.html#enroll-in-different-project">Enroll in Different Project</a>
+    - <a href="working-with-data.html#merging">Merging</a>
+    - <a href="working-with-data.html#deleting">Deleting</a>
   - Managing Studies
     - MRI vs non-MRI Studies
     - Editing Study Information
