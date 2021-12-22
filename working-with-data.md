@@ -5,7 +5,7 @@
 ## Managing Subjects
 
 ### Editing IDs & Demographics
-Find your subject by UID or other methods. On the subject's page, you'll see a demographic summary on the left, and the subject's enrollments and studies on the right. The demographics list may show a red box around the DOB if it appears to be a placeholder date like 1900-01-01 or 1776-07-04. On the lefthand side of the page, click the Edit subject button (#2 on the image below). This will show the form to edit demographics. If the edit button is missing, you can check your permissions for the subject by expanding the permissions listing (#1 on the image below).
+Find your subject by UID or other methods. On the subject's page, you'll see a demographic summary on the left, and the subject's enrollments and studies on the right. The demographics list may show a red box around the DOB if it appears to be a placeholder date like `1900-01-01` or `1776-07-04`. On the lefthand side of the page, click the Edit subject button (#2 on the image below). This will show the form to edit demographics. If the edit button is missing, you can check your permissions for the subject by expanding the permissions listing (#1 on the image below).
 
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/145464187-dd99504a-034c-4676-8164-6ef0f1afb75e.png" width="60%"></div>
 
@@ -19,9 +19,9 @@ When editing subject demographic information, required fields are highlighted. M
 |---|---|
 |UID|Unique ID, assigned by the system. This ID is unique to this installation of NiDB. If this subject is transferred to another NiDB installation, this ID will change|
 |Alternate IDs|Comma separated list of IDs that are associated with this subject|
-|Primary alternate ID|this alternate ID should be unique within the project. For example, the project uses IDs in the format 2xxx, if this is subject 2382, then their ID should be labeled as \*2382|
+|Primary alternate ID|this alternate ID should be unique within the project. For example, if the project uses IDs in the format `2xxx` and the subject ID is `2382`, then their ID should be labeled as `*2382`|
 |Study Num|The unique number assigned by the system for each of a subject's studies. This number is unique within a subject, regardless of enrollment. For example, if a subject is enrolled in mulitple projects, they may have studies 1,2,3 in project A and studies 5,6 in project B|
-|StudyID|This ID basically concatenates the UID and the study num: for example S1234ABC8|
+|StudyID|This ID basically concatenates the UID and the study num: for example `S1234ABC8`|
 |Alternate StudyID|Sometimes an individual imaging session (study) has it's own unique ID. For example, some imaging centers will give a subject a new ID every time they go into the scanner. This is a place to store that ID|
 
 ### Project Enrollments
@@ -46,14 +46,23 @@ If your subject is enrolled in a project, but you need to move the enrollment (a
 ### Deleting
 Only admins can delete subjects.
 
-- Managing Studies
-  - MRI vs non-MRI Studies
-  - Editing Study Information
-  - Merging Studies
-  - Moving Studies
-- Managing Series
-  - Editing series information
-  - Managing MRI Behavioral Data
-  - Managing non-MRI Data
-  - Moving Series to New Study
-- Groups
+## Managing Studies
+### MRI/DICOM vs non-MRI/DICOM Studies
+
+**DICOM Derived** - Studies derived from DICOM data are displayed differently than other modalities because they contain detailed header files which are imported automatically. Because of the complex ways in which subject/study/series heirarchy are stored in DICOM files, archiving is done completely automatically.
+
+**MRI** - MRI studies allow for storage of behavioral data associated with fMRI tasks. Other data such as eye tracking, simultaneous EEG, or other series specific data can be stored in the behavioral data section of MRI series.
+
+**All Other Modalities** - Series information is less detailed, series can be created manually, and there is no option to store behavioral data for each series.
+
+### Editing Study Information
+
+### Merging Studies
+### Moving Studies
+
+## Managing Series
+### Editing series information
+### Managing MRI Behavioral Data
+### Managing non-MRI Data
+### Moving Series to New Study
+## Groups
