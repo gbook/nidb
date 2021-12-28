@@ -176,8 +176,8 @@
 			?>
 			<div class="ui header">
 				<div class="content">
-					New Studies
-					<div class="sub header">Collected in past <?=$numrecentdays?> days</div>
+					<i class="clock outline icon"></i> New Studies
+					<div class="sub header">Imaging studies collected in past <?=$numrecentdays?> days</div>
 				</div>
 			</div>
 			<table class="ui small celled selectable grey very compact table">
@@ -246,9 +246,42 @@
 			?>
 		</div>
 		<div class="column">
+
+			<div class="ui segment">
+			<h1 class="ui header">Recent...</h1>
+			
 			<div class="ui header">
 				<div class="content">
-					Recently viewed subjects
+					Projects
+				</div>
+			</div>
+			<table class="ui grey selectable very compact table">
+				<thead>
+					<th>Project</th>
+					<th>Date Accessed</th>
+				</thead>
+				<?
+				$sqlstring = "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '$username') and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') order by a.mostrecent_date desc";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$projectid = $row['project_id'];
+						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
+						$projectname = $row['project_name'];
+						?>
+						<tr>
+							<td><a href="subjects.php?id=<?=$projectid?>"><b><?=$projectname?></b></a></td>
+							<td><?=$date?></td>
+						</tr>
+						<?
+					}
+				}
+				?>
+			</table>
+
+			<div class="ui header">
+				<div class="content">
+					Subjects
 				</div>
 			</div>
 
@@ -281,10 +314,10 @@
 				}
 				?>
 			</table>
-			<br>
+			
 			<div class="ui header">
 				<div class="content">
-					Recently viewed studies
+					Studies
 				</div>
 			</div>
 
@@ -325,6 +358,7 @@
 				}
 				?>
 			</table>
+			</div>
 		</div>
 	</div>
 

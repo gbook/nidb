@@ -36,6 +36,7 @@
 	$detail = GetVariable("detail");
 	$total = GetVariable("total");
 	$jobid = GetVariable("jobid");
+	$uid = GetVariable("uid");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -59,6 +60,9 @@
 		case 'pipelinetestsearch':
 			PipelineTestSearch($s);
 			break;
+		case 'searchsubject':
+			SearchSubject($uid);
+			break;
 		case 'validatepath':
 			ValidatePath($nfspath);
 			break;
@@ -72,6 +76,33 @@
 	
 
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchSubject ---------------------- */
+	/* -------------------------------------------- */
+	function SearchSubject($searchuid) {
+		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], trim($searchuid));
+		
+		$sqlstring = "select uid, subject_id, gender, year(birthdate) 'dobyear' from subjects where uid like '%$searchuid%'";
+		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$uid = $row['uid'];
+			$id = $row['subject_id'];
+			$gender = $row['gender'];
+			$dobyear = $row['dobyear'];
+			
+			$age = date("Y") - $dobyear;
+			
+			$u['title'] = $uid;
+			$u['url'] = "subjects.php?subjectid=$id";
+			$u['description'] = "$gender - $age" . "yr";
+			
+			$a['results'][] = $u;
+		}
+		
+		echo json_encode($a, JSON_FORCE_OBJECT);
+	}
 
 	
 	/* -------------------------------------------- */

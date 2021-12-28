@@ -444,7 +444,7 @@
 			input { padding: 3px; }
 		</style>		
 
-		<div class="ui grey secondary inverted top attached segment">
+		<div class="ui grey secondary inverted segment">
 			<div class="ui very compact grid">
 				<div class="ui four wide column">
 					<h2 class="ui inverted header">Analysis Builder</h2>
@@ -494,8 +494,8 @@
 		<div class="ui grid">
 			<div class="ui four wide column">
 
-				<div class="ui attached segment">
-					<form method="post" action="analysisbuilder.php" class="ui form">
+				<div class="ui top attached segment">
+					<form method="post" action="analysisbuilder.php" class="ui form" style="margin-bottom: 0px">
 						<input type="hidden" name="action" value="viewanalysissummary">
 						<div class="ui fluid action input">
 							<select name="projectid" class="ui fluid search dropdown" required>
@@ -980,6 +980,11 @@
 		
 		/* create the table */
 		$t;
+		
+		if ($projectid == "") {
+			Error("Project is blank. Select a project to generate a report");
+			return;
+		}
 		
 		/* get all of the subject information */
 		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";

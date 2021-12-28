@@ -1099,7 +1099,7 @@
 		DisplayPermissions($perms);
 
 		/* update the mostrecent table */
-		UpdateMostRecent($userid, $id,'');
+		UpdateMostRecent($id, '', '');
 
 		/* check if they have enrollments for a valid project */
 		$sqlstring = "select a.* from enrollment a right join projects b on a.project_id = b.project_id where a.subject_id = $id";
@@ -1190,7 +1190,17 @@
 
 		/* display a message if this subject has been deleted */
 		if (!$isactive) {
-			?><div class="staticmessage">This subject is marked as inactive (DELETED)</div><?
+			?>
+				<div class="ui text container">
+					<div class="ui negative message">
+						<div class="header">
+						Subject Inactive
+						</div>
+						<p>This subject has been deleted and marked inactive</p>
+					</div>
+				</div>
+				<br>
+			<?
 		}
 		
 		?>

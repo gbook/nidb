@@ -999,13 +999,21 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateMostRecent ------------------- */
 	/* -------------------------------------------- */
-	function UpdateMostRecent($userid, $subjectid, $studyid) {
+	function UpdateMostRecent($subjectid, $studyid, $projectid) {
 
 		if ((trim($subjectid) == '') || ($subjectid == 0)) { $subjectid = 'NULL'; }
 		if ((trim($studyid) == '') || ($studyid == 0)) { $studyid = 'NULL'; }
+		if ((trim($projectid) == '') || ($projectid == 0)) { $projectid = 'NULL'; }
+		
+		/* get userid */
+		$username = $_SESSION['username'];
+		$sqlstring = "select user_id from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
 		
 		/* insert the new most recent entry */
-		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, mostrecent_date) values ($userid, $subjectid, $studyid, now())";
+		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, project_id, mostrecent_date) values ($userid, $subjectid, $studyid, $projectid, now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete rows other than the most recent 15 items */

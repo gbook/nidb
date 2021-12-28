@@ -2432,6 +2432,9 @@
 	/* -------------------------------------------- */
 	function DisplayProjectInfo($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+
+		/* update the mostrecent table */
+		UpdateMostRecent('', '', $id);
 		
 		$sqlstring = "select * from projects where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

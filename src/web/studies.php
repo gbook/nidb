@@ -1421,7 +1421,7 @@
 		}
 		
 		/* update the mostrecent table */
-		UpdateMostRecent($userid, '', $studyid);
+		UpdateMostRecent('', $studyid, '');
 
 		?>
 		

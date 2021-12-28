@@ -248,17 +248,47 @@
 			?><a href="filesio.php" class="<? if ($page=="filesio.php") { echo "active"; } ?> item">File IO</a><?
 		}
 	?>
+	<script>
+	$(document).ready(function() {
+		$('.ui.search')
+		  .search({
+			apiSettings: {
+			  url: 'ajaxapi.php?action=searchsubject&uid={query}'
+			},
+			fields: {
+			  results : 'results',
+			  title   : 'title',
+			  url     : 'url'
+			},
+			minCharacters : 2
+		  })
+		;
+	});
+	</script>
+	
 	<div class="right menu">
+		<div class="vertically fitted item">
+			<div class="ui search">
+				<div class="ui left icon input">
+					<input class="prompt" type="text" placeholder="Search by UID">
+					<i class="search icon"></i>
+				</div>
+			</div>
+		</div>
+		<!--
 		<div class="vertically fitted item">
 			<form action="subjects.php" method="post" style="margin: 0px;">
 			<input type="hidden" name="action" value="search">
 			<input type="hidden" name="searchactive" value="1">
-			<div class="ui small action input">
-				<input name="searchuid" type="text" placeholder="Search by UID...">
-				<button class="ui icon button"><i class="search icon"></i></button>
+			<div class="ui search">
+				<div class="ui small action input">
+					<input name="searchuid" type="text" placeholder="Search by UID...">
+					<button class="ui icon button"><i class="search icon"></i></button>
+				</div>
 			</div>
 			</form>
 		</div>
+		-->
 	</div>
 </div>
 <?=RunSystemChecks()?>
