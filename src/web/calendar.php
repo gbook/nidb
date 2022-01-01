@@ -372,7 +372,7 @@
 		if (array_key_exists($sat_hol_date, $holidays)) { $sat_holidays = implode("<br>", $holidays[$sat_hol_date]); }
 	
 		?>
-			<div class="ui compact grid">
+			<div class="ui very compact grid">
 				<!-- main day/date row -->
 				<div class="row">
 					<div class="one wide center aligned column">
@@ -681,10 +681,10 @@
 			<div class="column">
 				<div class="ui center aligned segment">Saturday</div>
 			</div>
-		</div>
-		<br>
+		<!--</div>
+		<br>-->
 		
-		<table class="calendar" cellpadding="0" cellspacing="0" width="100%" style=" background-color: snow; border: 1px solid #555">
+		<!--<table class="calendar" cellpadding="0" cellspacing="0" width="100%" style=" background-color: snow; border: 1px solid #555">
 			<tr>
 				<td colspan=7 class="heading" style="background-color: #555; padding-top: 10px; padding-bottom: 10px">
 					<a href="calendar.php?action=month&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>" style="text-decoration: none; color: white; font-size:16pt">&#9664;</a>
@@ -702,15 +702,15 @@
 				<td width="14.28%" class="days">Thu</td>
 				<td width="14.28%" class="days">Fri</td>
 				<td width="14.28%" class="days">Sat</td>
-			</tr>
+			</tr>-->
 		<?
 		//This counts the days in the week, up to 7
 		$day_count = 1;
 
-		echo "<tr>";
+		//echo "<tr>";
 		//first we take care of those blank days
 		while ($blank > 0) {
-			echo "<td class='day'>&nbsp;</td>";
+			echo "<div class='column'>&nbsp;</div>";
 			$blank = $blank-1;
 			$day_count++;
 		}
@@ -742,8 +742,9 @@
 			$enddatetime = "$year-$month-$day_num 23:59:59";
 			
 			?>
-			<td class="day" style="background-color: <?=$bgcolor?>">
-				<div class="ui styled blue segment" style="padding: 3px">
+			<div class="column">
+			<!--<td class="day" style="background-color: <?=$bgcolor?>">-->
+				<div class="ui styled blue segment" style="padding: 3px; height:100%; background-color: <?=$bgcolor?>">
 
 					<h3 class="ui header">
 						<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', $thedate)?>"><i class="small grey calendar plus icon" title="Create appointment"></i></a>
@@ -754,7 +755,7 @@
 							<? } ?>
 						</div>
 					</h3>
-							<br><br>
+							<br>
 							<?
 							if ($currentcal == 0) {
 								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
@@ -786,24 +787,25 @@
 								<?
 							}
 							?>
-			</td>
+				</div>
+			</div>
 			<?
 			$day_num++;
 			$day_count++;
 
 			//Make sure we start a new row every week
 			if ($day_count > 7) {
-				echo "</tr><tr>";
+				//echo "</tr><tr>";
 				$day_count = 1;
 			}
 		} 		
 		//Finaly we finish out the table with some blank details if needed
 		while ( $day_count > 1 && $day_count <= 7 ) {
-			echo "<td class='day'>&nbsp;</td>";
+			echo "<div class=\"column\">&nbsp;</div>";
 			$day_count++;
 		}
 
-		echo "</tr></table>"; 		
+		echo "</div>";
 	}
 
 	/* US Holiday Calculations in PHP

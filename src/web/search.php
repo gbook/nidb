@@ -299,13 +299,13 @@
 	<input type="hidden" name="action" value="search">
 	
 	<div class="ui grid">
-		<div class="two wide column">&nbsp;</div>
-		<div class="twelve wide column">
+		<div class="one wide column">&nbsp;</div>
+		<div class="fourteen wide column">
 			
 			<div class="ui grey secondary inverted top attached segment">
 				<div class="ui three column grid">
 					<div class="left aligned column">
-						<button class="ui inverted large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i> New Search</button>
+						<button class="ui yellow large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i> New Search</button>
 					</div>
 					<div class="column">
 						<? if ($action == "search") { ?>
@@ -1121,7 +1121,7 @@
 			</div>
 			
 		</div>
-		<div class="two wide column">&nbsp;</div>
+		<div class="one wide column">&nbsp;</div>
 	</div>
 	
 	
