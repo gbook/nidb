@@ -1,6 +1,7 @@
 <a href="index.html">Home</a>
 
 # Working with Data
+This section describes how to manage meta data and imaging data files for subjects enrolled in projects.
 
 ## Managing Subjects
 
@@ -87,6 +88,7 @@ To move to an existing subject, enter the the UID and click **Move**. To move th
 ## Managing Series
 ### Viewing series information
 For DICOM derived series, most information will be displayed on the main study page. To view a thumbnail of the series, click the icon below the protocol name. To view DICOM header information, click the protocol name. To view detailed QA information, click the chart icon. To view or edit ratings, click the speech bubble icon. To download this series as a zip file, click the download icon under the **Files** column. To download the behavior data (if MR series) click the download icon under the **Beh** column. To view a list of files associated with the series, click **View file list** button.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/147879105-385cbeec-d8e5-4cdd-a9d0-072edc5f340e.png" width="60%"></div>
 
 ### Editing series information
@@ -101,7 +103,8 @@ If the study is an MR modality, you can upload behavioral data by dragging and d
 For non-DICOM series, you can delete series by selecting the series using the checkbox in the rightmost column and clicking the **Delete** button.
 
 For DICOM-derived series, more operations are available. Select the series you want to perform an operation on and click **With Selected...**. A menu will pop up with options
-![image](https://user-images.githubusercontent.com/8302215/147882772-1242ef96-3583-4953-8691-a4ba1fc2ec7e.png)
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147882772-1242ef96-3583-4953-8691-a4ba1fc2ec7e.png" width="60%"></div>
 
 |Operation|Description|
 |---|---|
@@ -114,3 +117,11 @@ For DICOM-derived series, more operations are available. Select the series you w
 |Delete|Deletes the series. Completely remove the series from the database. The series files will not be deleted from disk, instead the series directory will be renamed on disk|
 
 ## Groups
+Groups can be created of existing items, such as subjects, studies, or series. This is useful if you need to group subjects together that are in different projects, or if you want to group a subset of studies from one or more projects. Groups can only contain one type of data, ie they can only contain subjects, studies, or series. It is a similar concept to a SQL database View. Groups can be used in the Search page, and pipelines.
+
+### Create new group
+Under the **Subjects** menu item, click the **Groups** menu item. A list of existing groups will be displayed, and a small form to create a new group. To create a new group, enter a group name, select the group type (subject, study, series) and click **Create Group**.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147883324-bf098e63-14a8-4cb6-b81c-b5e1dc083ae1.png" width="60%"></div>
+
+Click on a group name to edit the group members, or add or delete group members.
