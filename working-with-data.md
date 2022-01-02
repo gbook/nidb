@@ -44,11 +44,11 @@ If your subject is enrolled in a project, but you need to move the enrollment (a
 ### Merging
 You must have admin permissions to merge subjects. To merge subjects, first go into one of the subject's main pages. On the lefthand side of the page, expand the **Operations** section. Click **Merge with...** and it will bring up the merge page. On the top of the page, you can add other UIDs you want to merge. Once all subjects are added (up to 4), they will be displayed side-by-side.
 
-![image](https://user-images.githubusercontent.com/8302215/147863156-ecebe13c-5ae9-46c2-b048-632a91cfcc61.png)
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147863156-ecebe13c-5ae9-46c2-b048-632a91cfcc61.png" width="60%"></div>
 
 Select the UID to be the final merged UID. Enter all demographic information that will be in the final UID into that column. Once merged, only the information in that column will be saved for the final subject. All other subjects will be marked inactive. All of the imaging studies will be moved from the other subjects to the final subject. When all information is complete, click Merge. The merge will be queued and will be run in the background. Check the status of the merge under **My Account** &rarr; **File IO**.
 
-![image](https://user-images.githubusercontent.com/8302215/147863207-3c54999e-0d71-4ddc-af8b-0f6354e9b0b5.png)
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147863207-3c54999e-0d71-4ddc-af8b-0f6354e9b0b5.png" width="60%"></div>
 
 ### Deleting
 Only admins can delete subjects.
