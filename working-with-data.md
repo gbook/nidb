@@ -73,13 +73,25 @@ For non-MRI modalities, the Study date/time (and all series date/times), visit t
 ### Merging Studies
 Occasionally, weird things can happen when importing data such as each series of an MRI study being inserted into it's own study. If the single study had 15 series, it might create 15 seperate studies, each with one series. This can be fixed by merging all of the series into one study. To merge studies (of the same subject/enrollment/modality) together, go into the study page and click the **Operations** button. A sub-menu will pop up with a **Merge Study with...** button. A list of available studies will be displayed.
 
-![image](https://user-images.githubusercontent.com/8302215/147864158-68fcf73c-e99f-42fd-bb5d-3a2724fd0c82.png)
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147864158-68fcf73c-e99f-42fd-bb5d-3a2724fd0c82.png" width="60%"></div>
 
-It will display a list of studies of the same modality that can be merged.
+It will display a list of studies of the same modality that can be merged. Choose the study **number** you want as the final study, and the merge method. CLick Merge, and your merge will be queued. Check the status of the merge by going to **My Account** &rarr; **File IO**.
+
 ### Moving Studies
+Studies can be moved into different projects (different enrollment) or to different subjects. To move studies, click the Operations button on the bottom left of the study page which will display options for moving the study.
+
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147878625-9e269049-99b2-4fd2-a183-105fe62616a6.png" width="60%"></div>
+
+To move to an existing subject, enter the the UID and click **Move**. To move the study to an existing enrollment (a project the subject is already enrolled in) select the project and click **Move**.
 
 ## Managing Series
+### Viewing series information
+For DICOM derived series, most information will be displayed on the main study page. To view a thumbnail of the series, click the icon below the protocol name. To view DICOM header information, click the protocol name. To view detailed QA information, click the chart icon. To view or edit ratings, click the speech bubble icon. To download this series as a zip file, click the download icon under the **Files** column. To download the behavior data (if MR series) click the download icon under the **Beh** column. To view a list of files associated with the series, click **View file list** button.
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147879105-385cbeec-d8e5-4cdd-a9d0-072edc5f340e.png" width="60%"></div>
+
 ### Editing series information
+Series information can only be edited for non-DICOM derived series.
+
 ### Managing MRI Behavioral Data
 ### Managing non-MRI Data
 ### Moving Series to New Study
