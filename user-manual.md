@@ -18,17 +18,17 @@
       - <a href="working-with-data.html#enroll-in-different-project">Enroll in Different Project</a>
     - <a href="working-with-data.html#merging">Merging</a>
     - <a href="working-with-data.html#deleting">Deleting</a>
-  - Managing Studies
-    - MRI vs non-MRI Studies
-    - Editing Study Information
-    - Merging Studies
-    - Moving Studies
-  - Managing Series
-    - Editing series information
-    - Managing MRI Behavioral Data
-    - Managing non-MRI Data
-    - Moving Series to New Study
-  - Groups
+  - <a href="working-with-data.html#managing-studies">Managing Studies</a>
+    - <a href="working-with-data.html#mridicom-vs-non-mridicom-studies">MRI/DICOM vs non-MRI/DICOM Studies</a>
+    - <a href="working-with-data.html#editing-study-information">Editing Study Information</a>
+    - <a href="working-with-data.html#merging-studies">Merging Studies</a>
+    - <a href="working-with-data.html#moving-studies">Moving Studies</a>
+  - <a href="working-with-data.html#managing-series">Managing Series</a>
+    - <a href="working-with-data.html#viewing-series-information">Viewing series information</a>
+    - <a href="working-with-data.html#editing-series-information">Editing series information</a>
+    - <a href="working-with-data.html#series-operations">Series Operations</a>
+  - <a href="working-with-data.html#groups">Groups</a>
+    - <a href="working-with-data.html#create-new-groups">Create New Group</a>
 - <a href="finding-data.html">Finding and Exporting Data</a>
   - <a href="finding-data.html#search">Search</a>
     - <a href="finding-data.html#finding-imaging-date">Finding Imaging Data</a>
