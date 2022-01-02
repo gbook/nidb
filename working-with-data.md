@@ -51,7 +51,10 @@ Select the UID to be the final merged UID. Enter all demographic information tha
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/147863207-3c54999e-0d71-4ddc-af8b-0f6354e9b0b5.png" width="60%"></div>
 
 ### Deleting
-Only admins can delete subjects.
+Only admins can delete subjects. To delete a subject, go to the subject's page. On the lefthand side, expand the **Operations** section and click the **Delete** button. It will confirm that you want to delete this subject. Confirm on the next page. Subjects are not actually removed from the NiDB system, but are instead marked as _inactive_. _Inactive_ subjects do not appear in search results or summaries, but will show up in certain sections of the project page and if searching by UID directly. A subject can be undeleted if necessary.
+
+### Undeleting
+Subjects can be undeleted by following the same process as deleting a subject, except the Undelete button will appear under the Operations section of the subject's page.
 
 ## Managing Studies
 ### MRI/DICOM vs non-MRI/DICOM Studies
@@ -63,8 +66,16 @@ Only admins can delete subjects.
 **All Other Modalities** - Series information is less detailed, series can be created manually, and there is no option to store behavioral data for each series.
 
 ### Editing Study Information
+For any modality, edit a study by viewing the study page and clicking the **Edit Study** button on the lower left of the page. Depending on the modality, different study information may be available.
+
+For non-MRI modalities, the Study date/time (and all series date/times), visit type, visit number, and visit timepoint can be edited directly on the study page without clicking the **Edit Study** button.
 
 ### Merging Studies
+Occasionally, weird things can happen when importing data such as each series of an MRI study being inserted into it's own study. If the single study had 15 series, it might create 15 seperate studies, each with one series. This can be fixed by merging all of the series into one study. To merge studies (of the same subject/enrollment/modality) together, go into the study page and click the **Operations** button. A sub-menu will pop up with a **Merge Study with...** button. A list of available studies will be displayed.
+
+![image](https://user-images.githubusercontent.com/8302215/147864158-68fcf73c-e99f-42fd-bb5d-3a2724fd0c82.png)
+
+It will display a list of studies of the same modality that can be merged.
 ### Moving Studies
 
 ## Managing Series
