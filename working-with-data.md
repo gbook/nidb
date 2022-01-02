@@ -90,9 +90,27 @@ For DICOM derived series, most information will be displayed on the main study p
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/147879105-385cbeec-d8e5-4cdd-a9d0-072edc5f340e.png" width="60%"></div>
 
 ### Editing series information
-Series information can only be edited for non-DICOM derived series.
+Series information can only be edited for non-DICOM derived series. To edit the series information (protocol, datetime, notes) click the series number, edit the information, and click **Update**. To upload new files to the series, drag and drop them onto the **Upload** button. To manage the existing files, click the **Manage _n_ files** button. This will display a list of the files associated with this series. Clicking the file name will download the file. Editing the filename in the Rename column will allow you to rename the file (press enter to finalize the rename). Delete the file by clicking the trash icon.
+Download the entire series as a .zip file by clicking the **Download** button.
 
-### Managing MRI Behavioral Data
-### Managing non-MRI Data
-### Moving Series to New Study
+<div align="center"><img src="https://user-images.githubusercontent.com/8302215/147882288-cc8f47be-57fd-46cc-bc37-190a327aab7e.png" width="60%"></div>
+
+If the study is an MR modality, you can upload behavioral data by dragging and dropping files onto the **Upload** button. Behavioral files can be edited by clicking on the number under the Beh column.
+
+### Series Operations
+For non-DICOM series, you can delete series by selecting the series using the checkbox in the rightmost column and clicking the **Delete** button.
+
+For DICOM-derived series, more operations are available. Select the series you want to perform an operation on and click **With Selected...**. A menu will pop up with options
+![image](https://user-images.githubusercontent.com/8302215/147882772-1242ef96-3583-4953-8691-a4ba1fc2ec7e.png)
+
+|Operation|Description|
+|---|---|
+|Rename|Renames the protocol name of the series|
+|Edit Notes|Edits the notes displayed on the study page for that series|
+|Move to new study|This is useful if you need to move series out of this study into a new study. For example if multiple series were grouped as a single study, but some of those series should actually be separate, this is a good option to use to separate them. This is basically the opposite of merging studies|
+|Hide|Hides the series from searches and summary displays. The series will still be visible in the study page|
+|Un-hide|Does the opposite of hiding the series|
+|Reset QC|This will delete all of the QC information and will requeue the series to have QC information calculated|
+|Delete|Deletes the series. Completely remove the series from the database. The series files will not be deleted from disk, instead the series directory will be renamed on disk|
+
 ## Groups
