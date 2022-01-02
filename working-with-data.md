@@ -42,6 +42,7 @@ For projects with a chronological component, you can view a timeline of series f
 If your subject is enrolled in a project, but you need to move the enrollment (and all of the imaging studies, enrollment info, assessments, measures, drugs, and vitals) into a different project, you can do that by expanding the **Enroll in different project** section. Select the new project, and click **Move**. You must be an admin to do this.
 
 ### Merging
+You must have admin permissions to merge subjects. To merge subjects, first go into one of the subject's main pages. On the lefthand side of the page, expand the **Operations** section. Click **Merge with...**
 
 ### Deleting
 Only admins can delete subjects.
