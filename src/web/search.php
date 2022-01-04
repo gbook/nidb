@@ -1527,12 +1527,14 @@
 			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
 			/* get list of UIDs from the list of alternate UIDs */
-			$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
-			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$altuids[] = $rowX['altuid'];
+			if (count($subjectids) > 0) {
+				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
+				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					$altuids[] = $rowX['altuid'];
+				}
+				$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
 			}
-			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
 		}
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
