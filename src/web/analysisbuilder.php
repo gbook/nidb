@@ -494,10 +494,15 @@
 		<div class="ui grid">
 			<div class="ui four wide column">
 
-				<div class="ui top attached segment">
-					<form method="post" action="analysisbuilder.php" class="ui form" style="margin-bottom: 0px">
+					<div class="ui styled segment">
+						<form method="post" name="analysisbuilder" action="analysisbuilder.php" class="ui small form">
 						<input type="hidden" name="action" value="viewanalysissummary">
-						<div class="ui fluid action input">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+
+						<div class="ui fluid labeled input">
+							<div class="ui label">
+							Project
+							</div>
 							<select name="projectid" class="ui fluid search dropdown" required>
 								<option value="">Select Project...</option>
 								<option value="0">All Projects</option>
@@ -519,16 +524,10 @@
 									}
 								?>
 							</select>
-							<button class="ui primary button">Select project</button>
 						</div>
-					</form>
-				</div>
-
-					<div class="ui bottom attached styled segment">
-						<form method="post" name="analysisbuilder" action="analysisbuilder.php" class="ui small form">
-						<input type="hidden" name="action" value="viewanalysissummary">
-						<input type="hidden" name="projectid" value="<?=$projectid?>">
-					
+						
+						<br><br>
+						
 						<div class="ui top attached styled accordion">
 							<div class="title" style="padding:5px;">
 								<h3 class="ui black header"><i class="dropdown icon"></i>MR&nbsp;<span id="mriIndicator" class="indicator"></span></h3>

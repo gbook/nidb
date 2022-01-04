@@ -261,7 +261,7 @@
 					<th>Date Accessed</th>
 				</thead>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '$username') and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') order by a.mostrecent_date desc";
+				$sqlstring = "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '$username') and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.project_name order by a.mostrecent_date desc";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
