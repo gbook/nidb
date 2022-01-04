@@ -1,58 +1,43 @@
-
 # NeuroInformatics Database
-
-## Install
-### Pre-requisites
-1. Install FSL (required for MRI qc module) https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation
-2. Install firejail (required for minipipeline module) https://firejail.wordpress.com/
-3. Enable ImageMagick repository
-   1. `sudo yum install epel-release`
-### NiDB
-1. Download most recent .rpm: https://github.com/gbook/nidb/releases
-2. Install .rpm
-   1. `sudo yum --nogpgcheck localinstall nidb-xxxx.x.xx-1.el8.x86_64.rpm`
-3. Prepare MariaDB, using the following responses
-```bash$ sudo mysql_secure_installation
-Enter current password for root (enter for none):
-Change the root password? [Y/n] n
-Remove anonymous users? [Y/n] Y
-Disallow root login remotely? [Y/n] Y
-Remove test database and access to it? [Y/n] Y
-Reload privilege tables now? [Y/n] Y
-```
-4. Launch firefox from the server on which you’ve installed nidb. Go to http://localhost/setup.php and follow the instructions.
 
 ## Overview
 The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics, family relationships, and data imported from RedCap can be stored and queried in the database.
 
-Visit http://neuroinfodb.org for more support and information about NiDB.
+### Features
+* .rpm based installation for CentOS 8 and CentOS 8 Stream
+* Store any neuroimaging data, including MR, CT, EEG, ET, Video, Task, GSR, Consent, MEG, TMS, and more
+* Store any assessment data (paper-based tasks)
+* Store clinical trial information (manage data across multiple days & dose times, etc)
+* Built-in DICOM receiver. Send DICOM data from PACS or MRI directly to NiDB
+* Bulk import of imaging data
+* User and project based permissions, with project admin roles
+* Search and manipulate data from subjects across projects
+* Automated imaging analysis pipeline system
+* "Mini-pipeline" module to process behavioral data files (extract timings)
+* All stored data is searchable. Combine results from pipelines, QC output, behavioral data, and more in one searchable
+* Export data to NFS, FTP, Web download, NDA (NIMH Data Archive format), or export to a remote NiDB server
+* Project level checklists for imaging data
+* Automated motion correction and other QC for MRI data
+* Calendar for scheduling equipment and rooms
+* Usage reports, audits, tape backup module
+* Intuitive, modern UI. Easy to use
 
-Watch an overview of the main features of NiDB (Recorded 2015): <a href="https://youtu.be/tOX7VamHGvM">Part 1</a> | <a href="https://youtu.be/dX11HRj_kEs">Part 2</a> | <a href="https://youtu.be/aovrq-oKO-M">Part 3</a>
+## Download and Install
+Current release is here: https://github.com/gbook/nidb/releases
+Follow installation instructions here: http://gbook.github.io/nidb/#new-installation
 
-The git repository is composed of the following sections:
+## Users Manual
+http://gbook.github.io/nidb/user-manual.html
 
-* `doc` - Documentation, Word documents (out-of-date)
-* `src` - Source code
-* `tools` - Various tools, binary helper programs, and scripts
-
-## Fix for MySQL driver not loading
-In version 2020.6.508, the nidb executable may not launch because it could not load the MySQL driver. This is fixed in the newest version, but to fix this minor issue without upgrading, perform the following
-
-`mkdir /nidb/bin/sqldrivers; cp /usr/lib/libqsqlmysql.so /nidb/bin/sqldrivers`
-
-## Current version of NiDB
-NiDB was re-written in 2019-2020 using C++ instead of Perl. This allowed for much more reliable code and an opporunity for more people to contribute to development. All Perl files have been moved to the <i>src/old</i> directory for historical reference. As part of the rewrite, a new installer using .rpm was created. See the *Releases* section to download the current .rpm.
-
-Further changes include:
- * Only CentOS 8 is supported (CentOS 7 is still somewhat supported)
- * Only MariaDB 10.0+ supported
- * Only PHP7+ is supported
-
-## Install
-Follow the NiDB-Install.pdf directions included with the current release.
-
-## Building NiDB from Source
-Follow the NiDB-Build.pdf directions included with the current release.
+## Admin Manual
+http://gbook.github.io/nidb/administration.html
 
 ## Support
 Visit the NiDB's github <a href="https://github.com/gbook/nidb/issues">issues</a> page for more support.
+
+## Publications
+* Book GA, Anderson BM, Stevens MC, Glahn DC, Assaf M, Pearlson GD. Neuroinformatics Database (NiDB)--a modular, portable database for the storage, analysis, and sharing of neuroimaging data. Neuroinformatics. 2013 Oct;11(4):495-505. doi: 10.1007/s12021-013-9194-1. PMID: 23912507; PMCID: PMC3864015. https://pubmed.ncbi.nlm.nih.gov/23912507/
+* Book GA, Stevens MC, Assaf M, Glahn DC, Pearlson GD. Neuroimaging data sharing on the neuroinformatics database platform. Neuroimage. 2016 Jan 1;124(Pt B):1089-1092. doi: 10.1016/j.neuroimage.2015.04.022. Epub 2015 Apr 16. PMID: 25888923; PMCID: PMC4608854. https://pubmed.ncbi.nlm.nih.gov/25888923/
+
+**Outdated information**
+Watch an overview of the main features of NiDB (recorded 2015, so it's a little outdated): <a href="https://youtu.be/tOX7VamHGvM">Part 1</a> | <a href="https://youtu.be/dX11HRj_kEs">Part 2</a> | <a href="https://youtu.be/aovrq-oKO-M">Part 3</a>
