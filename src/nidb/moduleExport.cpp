@@ -372,7 +372,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
         exportstatus = "complete";
-        int laststudynum = 0;
+        int laststudyid = 0;
         QString newseriesnum = "1";
 
         /* iterate through the UIDs */
@@ -398,7 +398,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                     //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                     //QString projectname = s[uid][studynum][seriesnum]["projectname"];
-                    //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+                    int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
                     //QString studytype = s[uid][studynum][seriesnum]["studytype"];
                     //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                     QString modality = s[uid][studynum][seriesnum]["modality"];
@@ -433,7 +433,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     /* format the series number part of the output path */
                     switch (preserveseries) {
                     case 0:
-                            if (laststudynum != studynum)
+                            if (laststudyid != studyid)
                                 newseriesnum = "1";
                             else
                                 newseriesnum = QString("%1").arg(newseriesnum.toInt() + 1);
@@ -652,7 +652,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
-                    laststudynum = studynum;
+                    //laststudynum = studynum;
+                    laststudyid = studyid;
                 }
             }
         }
