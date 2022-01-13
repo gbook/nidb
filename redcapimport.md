@@ -42,7 +42,7 @@ Mapping the data structures in the RedCap to NiDB is the most important step bef
 * Repeat the above two steps to define all the fields required to import.
 * All the mapping will be saved and can be deleted later.
 * If required an extra field item can be added later.
-* Mapping structure need to define only once. If mapping structure is already define, go to the next step to transfer the data
+* Mapping structure need to define only once. If mapping structure is already define, go to the next step to transfer the data.
 
 <!-- wp:image {"id":266,"sizeSlug":"large","linkDestination":"none"} -->
 <figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" alt="" class="wp-image-266"/></figure>
