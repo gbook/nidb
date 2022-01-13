@@ -35,10 +35,11 @@
     - <a href="finding-data.html#other-data-queries">Other Data Queries</a>
     - <a href="finding-data.html#id-mapping">ID Mapping</a>
   - <a href="finding-data.html#export">Export</a>
-    - Export to NFS
-    - Export for Web Download
-    - Export to NDAR/RDoCdb/NDA
-    - Export to Remote NiDB Site
+    - <a href="finding-data.html#export-to-nfs">Export to NFS</a>
+    - <a href="finding-data.html#export-to-remote-ftp-site">Export to Remote FTP Site</a>
+    - <a href="finding-data.html#export-to-remote-nidb-site">Export to Remote NiDB Site</a>
+    - <a href="finding-data.html#export-via-web-download">Export via Web Download</a>
+    - <a href="finding-data.html#export-to-ndar-rdocdbnda">Export to NDAR/RDoCdb/NDA</a>
   - <a href="finding-data.html#export-status">Export Status</a>
   - Analysis Builder
   - Public Downloads
