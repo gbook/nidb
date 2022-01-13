@@ -81,7 +81,7 @@ Following are some destinations where the searched data can be exported:
   To export the data to a remote NiDB site, you can select the "Remote NiDB Site" option and select the NiDB site from a drop down menue where you want to download the data.
  <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146385394-22b524db-b3b3-462f-a69e-ce111adf2d82.png width="80%"></div>
  
- ### Export for Web Download
+ ### Export via Web Download
   You can select the data to be downloased to the local http location. you can select "Web http download" option for this purpose as shown below.
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146386455-eeba0c02-6f96-46de-aa41-822a3d94f740.png width="80%"></div>
   
