@@ -95,6 +95,28 @@ Following are some destinations where the searched data can be exported:
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/145592630-d61eeeb0-308d-4811-8f2c-0ad7c546522d.png width="80%"></div>
 
  
-- Analysis Builder
+## Analysis Builder
+Analysis builder is a report generating tool that can be used to generate various types of reports using the stored data in NiDB. This report generating tool builds on the base of various types of data variables that is being stored in the NiDB. This is different than the search tool where you can search different types of data and download it. In this tool you can search the variables those are generated and stored / imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data, but not the actual EEG and MRI data).
+Analysis builder can be reached via "ado2/analysisbuilder.php" or you can go to a specific project front page and select the option (Analysis Builder) on the right from "Project tool and settings" and you will land on the following screen.
+
+<!-- wp:image {"id":286,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/10/AnalysisBuilderMain-1024x497.png" alt="" class="wp-image-286"/></figure>
+<!-- /wp:image -->
+
+
+### Usage 
+Analysis builder is designed to create reports based on various types of parameters from different types of measures. It has been categorized in the various types of measures like MR, EEG, ET, etc. as shown below.
+
+<!-- wp:image {"id":287,"sizeSlug":"full","linkDestination":"none"} -->
+<figure class="wp-block-image size-full"><img src="http://neuroinfodb.org/wp-content/uploads/2021/10/AnalysisBuilderFrontEnd.png" alt="" class="wp-image-287"/></figure>
+<!-- /wp:image -->
+
+After selecting the project from the drop down menu "Select Project", click "Use Project" button. Now the project  just selected will be the current project for data retrieval.
+
+<!-- wp:image {"id":302,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/11/ReportLongData-1024x881.png" alt="" class="wp-image-302"/></figure>
+<!-- /wp:image -->
+
+
 - Public Downloads
 - Request a Dataset
