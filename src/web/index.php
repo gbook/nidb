@@ -81,19 +81,19 @@
 	
 	
 	$sqlstring = "select count(*) count from subjects where isactive = 1";
-	$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$numsubjects = $row['count'];
 
 	$sqlstring = "select count(*) count from studies";
-	$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$numstudies = $row['count'];
 
 	$totalseries = 0;
 	$totalsize = 0;
 	$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '%\_series'";
-	$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 		$tablename = $row['Tables_in_' . $GLOBALS['cfg']['mysqldatabase'] . ' (%\_series)'];
 		$parts = explode("_", $tablename);
@@ -101,7 +101,7 @@
 		
 		if (($modality != 'audit') && ($modality != 'upload')) {
 			$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
-			$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
 			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 			$totalseries += $row2['count'];
 			$totalsize += $row2['size'];
@@ -109,7 +109,7 @@
 			//$seriessize[$modality] = HumanReadableFilesize($row2['size']);
 
 			//$sqlstring2 = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id";
-			//$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+			//$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
 			//$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 			//$seriesreqsize[$modality] = HumanReadableFilesize($row2['totalbytes']);
 			//$totalreqbytes += $row2['totalbytes'];

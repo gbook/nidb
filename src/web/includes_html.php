@@ -94,7 +94,7 @@
 		$('.ui.checkbox').checkbox();
 		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
 		//$('table').tablesort();
-		
+
 		/* below are the table sorting functions */
 		// Helper function to convert a string of the form "Mar 15, 1987" into a Date object.
         var date_from_string = function(str) {

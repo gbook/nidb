@@ -980,6 +980,62 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflag
 
 
 /* ---------------------------------------------------------- */
+/* --------- ExportSquirrel --------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &outdir, QString &msg) {
+    n->WriteLog("Entering ExportSquirrel()...");
+
+    exportstatus = "complete";
+
+    /* get list of seriesids/modalities */
+    QStringList modalities;
+    QList<int> seriesids;
+    QSqlQuery q;
+    q.prepare("select * from exportseries where export_id = :exportid");
+    q.bindValue(":exportid",exportid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        n->WriteLog(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
+        while (q.next()) {
+            seriesids.append(q.value("series_id").toInt());
+            modalities.append(q.value("modality").toString().toLower());
+            //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
+        }
+        n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
+
+        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + n->CreateLogDate();
+        outdir = rootoutdir;
+
+        QString m;
+        if (n->MakePath(rootoutdir, m)) {
+            n->WriteLog("Created rootoutdir (A) [" + rootoutdir + "]");
+        }
+        else {
+            exportstatus = "error";
+            msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+            return false;
+        }
+
+        n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
+        if (io->WriteSquirrel(seriesids, modalities, rootoutdir, m))
+            n->WriteLog("WriteSquirrel() returned true");
+        else
+            n->WriteLog("WriteSquirrel() returned false");
+    }
+    else {
+        n->WriteLog("No series found");
+        return false;
+    }
+
+    QStringList msgs;
+
+    msg = msgs.join("\n");
+    n->WriteLog("Leaving WriteSquirrel()...");
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- ExportToRemoteNiDB ----------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg) {

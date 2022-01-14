@@ -1391,17 +1391,14 @@
 		</table>
 		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
 		<script>
-			//$(document).ready(function() {
-				function ConvertToCSV() {
-					$("#table1").table2csv( {
-						callback: function (csv) {
-							document.getElementById("studytable").value = csv;
-							//alert('Hi');
-							document.getElementById('savetableform').submit();
-						}
-					});
-				}
-			//});
+			function ConvertToCSV() {
+				$("#table1").table2csv( {
+					callback: function (csv) {
+						document.getElementById("studytable").value = csv;
+						document.getElementById('savetableform').submit();
+					}
+				});
+			}
 		</script>
 		
 		<br>
@@ -1409,80 +1406,88 @@
 		<table width="100%">
 			<tr>
 				<? if ($GLOBALS['issiteadmin']) { ?>
-				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px; font-size: 10pt" width="70%">
-					<table cellpadding="5">
-						<tr>
-							<td colspan="2"><b style="font-size: 14pt">Powerful Tools</b><br>Perform the following operations on the selected studies...<br><br></td>
-						</tr>
-						<tr>
-							<td style="text-align: right; color: #555; font-weight: bold">
-								Apply enrollment tag(s)
-							</td>
-							<td>
-								<input type="text" name="tags" id="tags" list="taglist" multiple> <span class="tiny">comma separated</span>
-								<datalist id="taglist">
-								<?
-									$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$tag = $row['tag'];
-										?>
-										<option value="<?=$tag?>">
-										<?
-									}
-								?>
-								</datalist>
-								<input type="submit" value="Apply tag(s)" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()" style="font-size:10pt">
-							<td>
-						</tr>
-						<tr>
-							<td style="text-align: right; color: #555; font-weight: bold">
-								Move studies to new project
-							</td>
-							<td>
-								<select name="newprojectid" id="newprojectid">
-								<?
-									$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$project_id = $row['project_id'];
-										$project_name = $row['project_name'];
-										$project_costcenter = $row['project_costcenter'];
-										$project_enddate = $row['project_enddate'];
-										$user_fullname = $row['user_fullname'];
-										
-										if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-										?>
-										<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-										<?
-									}
-								?>
-								</select>
-								<input type="submit" value="Move Studies" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()" style="font-size:10pt">
-							<td>
-						</tr>
-						<tr>
-							<td style="text-align: right; color: #555; font-weight: bold">
-								Re-archive
-							</td>
-							<td>
-								<span title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects"><input type="checkbox" name="matchidonly" value="1" checked>Match ID only</span>
-								&nbsp;&nbsp;
-								<input type="submit" value="Re-archive DICOM studies" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()" style="color: red; font-size:10pt">
-								&nbsp;&nbsp;&nbsp;&nbsp;
-								<input type="submit" value="Re-archive Subjects" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()" style="color: red; font-size:10pt">
-							</td>
-						</tr>
-						<tr>
-							<td style="text-align: right; color: #555; font-weight: bold">
-								Obliterate
-							</td>
-							<td>
-								<input type="submit" value="Obliterate Subjects &#128163;" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()" style="color: red; font-size:10pt"> &nbsp; &nbsp;
-								<input type="submit" value="Obliterate Studies &#128163;" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()" style="color: red; font-size:10pt">
-							</td>
-						</tr>
-					</table>
+				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px;" width="70%">
+
+					<h2 class="ui header">
+						<i class="tools icon"></i>
+						<div class="content">
+							Powerful Tools
+							<div class="sub header">Perform operations on the selected studies</div>
+						</div>
+					</h2>
+
+					<div class="ui segment">
+						<h3 class="ui header">
+							Apply enrollment tag(s)
+							<div class="sub header">Comma separated list</div>
+						</h3>
+						<div class="ui action input">
+							<input type="text" name="tags" id="tags" list="taglist" multiple>
+							<datalist id="taglist">
+							<?
+								$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$tag = $row['tag'];
+									?>
+									<option value="<?=$tag?>">
+									<?
+								}
+							?>
+							</datalist>
+							<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
+						</div>
+					</div>
+
+					<div class="ui segment">
+						<h3 class="ui header">
+							Move studies to new project
+						</h3>
+						<div class="ui action input">
+							<select name="newprojectid" id="newprojectid" class="ui dropdown">
+							<?
+								$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$project_id = $row['project_id'];
+									$project_name = $row['project_name'];
+									$project_costcenter = $row['project_costcenter'];
+									$project_enddate = $row['project_enddate'];
+									$user_fullname = $row['user_fullname'];
+									
+									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
+									?>
+									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<?
+								}
+							?>
+							</select>
+							<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
+						</div>
+					</div>
+					
+					<div class="ui segment">
+						<h3 class="ui header">
+							Rearchive
+						</h3>
+
+						<div class="ui checkbox" title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects">
+							<input type="checkbox" name="matchidonly" value="1" checked>
+							<label>Match by ID only</label>
+						</div>
+						&nbsp; &nbsp;
+						<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
+						&nbsp; &nbsp;
+						<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
+					</div>
+					
+					<div class="ui segment">
+						<h3 class="ui header">
+							Obliterate
+						</h3>
+						<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
+						<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
+					</div>
 				</td>
 				<? } ?>
 			</form>
@@ -1701,9 +1706,9 @@
 		<link rel="stylesheet" href="scripts/editablegrid/editablegrid.css" type="text/css" media="screen">
 		<link rel="stylesheet" href="scripts/editablegrid/extensions/autocomplete/autocomplete.css" type="text/css" media="screen">
 		<style>
-			table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
+			/* table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
 			table.testgrid td, table.testgrid th { padding: 5px; }
-			table.testgrid th { background: #E5E5E5; text-align: left; }
+			table.testgrid th { background: #E5E5E5; text-align: left; } */
 			input.invalid { background: red; color: #FDFDFD; }
 			.editable { font-family: monospace; background-color: lightyellow; border: 1px solid skyblue }
 			.deleted { color: #aaa; }
@@ -1741,21 +1746,21 @@
 				editableGrid.renderGrid();
 			} 
 		</script>
-		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
+		<!--<a href="projects.php?action=displaydemographics&id=<?=$id?>" class="ui button">View table</a>-->
 		<?
 			/* get all subjects, and their enrollment info, associated with the project */
 			$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$i=0;
 		?>
-		<br><br>
-		<div align="center">
-		<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
-		<br>
-		Displaying <?=mysqli_num_rows($result)?> enrollments
+		<div class="ui message">
+			<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
+			<br>
+			Displaying <?=mysqli_num_rows($result)?> enrollments
 		</div>
-		<br>
-		<table class="testgrid ui small celled selectable grey very compact table" id='table1'>
+
+		<form class="ui form">
+		<table class="ui small celled selectable grey very compact table" id="table1">
 			<thead>
 				<th></th>
 				<th>UID</th>
@@ -1846,6 +1851,7 @@
 		}
 		?>
 		</table>
+		</form>
 		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
 		<script>
 			//$(document).ready(function() {
@@ -2488,7 +2494,7 @@
 			<div class="ui grid">
 				<div class="ui seven wide column">
 					<h2 class="ui top attached inverted header"><?=$name?></h2>
-					<table class="ui basic bottom attached compact collapsing celled table">
+					<table class="ui basic bottom attached compact celled table">
 						<tbody>
 							<tr>
 								<td class="right aligned"><h4 class="ui header">Subjects</h4></td>

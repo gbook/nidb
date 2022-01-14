@@ -530,9 +530,9 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* copy the file to the archive, update db info */
     AppendUploadLog(__FUNCTION__ , QString("SeriesRowID: [%1]").arg(seriesRowID));
 
-	study *s = nullptr;
+    study *s = nullptr;
     s = new study(studyRowID, n);
-	if ((s == nullptr) || (!s->valid())) {
+    if ((s == nullptr) || (!s->valid())) {
         AppendUploadLog(__FUNCTION__ , QString("Error getting study information. StudyRowID [%1] not valid").arg(studyRowID));
         return false;
     }
@@ -1289,14 +1289,14 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     QString outdir = QString("%1/%2/%3/%4/parrec").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     AppendUploadLog(__FUNCTION__, "Outdir [" + outdir + "]");
     QString m;
-	if (!n->MakePath(outdir, m)) {
+    if (!n->MakePath(outdir, m)) {
         AppendUploadLog(__FUNCTION__, "Error creating outdir ["+outdir+"] because of error ["+m+"]");
-	}
+    }
 
     /* move the files into the outdir */
-	//QString m;
-	n->MoveFile(parfile, outdir, m);
-	n->MoveFile(recfile, outdir, m);
+    //QString m;
+    n->MoveFile(parfile, outdir, m);
+    n->MoveFile(recfile, outdir, m);
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize(0);
@@ -1629,8 +1629,8 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
-	if (!n->MoveFile(file, outdir, m))
-		n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(outdir).arg(m));
+    if (!n->MoveFile(file, outdir, m))
+        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(outdir).arg(m));
 
     /* get the size of the files and update the DB */
     qint64 dirsize(0);
@@ -1876,7 +1876,7 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
 bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID) {
     subjectMatchCriteria = subjectMatchCriteria.toLower();
 
-	subject *s = nullptr;
+    subject *s = nullptr;
 
     if (existingSubjectID >= 0) {
         s = new subject(existingSubjectID, n);
@@ -1988,7 +1988,7 @@ bool archiveIO::GetStudy(QString studyMatchCriteria, int existingStudyID, int en
 
     studyMatchCriteria = studyMatchCriteria.toLower();
 
-	study *s = nullptr;
+    study *s = nullptr;
 
     if (existingStudyID >= 0)
         s = new study(existingStudyID, n);
@@ -2304,6 +2304,220 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
 
 
 /* ---------------------------------------------------------- */
+/* --------- WriteSquirrel ------------------------------------- */
+/* ---------------------------------------------------------- */
+bool archiveIO::WriteSquirrel(QList<int> seriesids, QStringList modalities, QString odir, QString &msg) {
+    n->WriteLog("Entering WriteSquirrel()...");
+
+    QString exportstatus = "complete";
+    subjectStudySeriesContainer s;
+
+    //QStringList flags = bidsflags.split(",");
+
+    QStringList msgs;
+    if (!GetSeriesListDetails(seriesids, modalities, s)) {
+        msg = "Unable to get a series list";
+        return false;
+    }
+
+    /* create the output directory */
+    QString outdir = odir;
+    QString m;
+    if (n->MakePath(outdir, m)) {
+        n->WriteLog("Created outdir [" + outdir + "]");
+    }
+    else {
+        exportstatus = "error";
+        msg = n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
+        return false;
+    }
+
+    /* create dataset description */
+    QJsonObject root;
+    //root["BIDSVersion"] = bidsver;
+    root["License"] = "This dataset was written by the Neuroinformatics Database. Licensing should be included with this dataset";
+    root["Date"] = n->CreateLogDate();
+    //root["README"] = bidsreadme;
+    QByteArray j = QJsonDocument(root).toJson();
+    QFile fout("dataset_description.json");
+    fout.open(QIODevice::WriteOnly);
+    fout.write(j);
+
+    /* write the participants.csv file */
+    QString pfile = outdir + "/participants.tsv";
+    if (!n->WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->WriteLog("Error writing " + pfile);
+
+    int i = 1; /* the subject counter */
+    /* iterate through the UIDs */
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+        QString uid = a.key();
+        int j = 1; /* the session (study) counter */
+
+        n->WriteLog("Working on [" + uid + "]");
+        QString subjectSex = s[uid][0][0]["subjectsex"];
+        double subjectAge = s[uid][0][0]["subjectage"].toDouble();
+
+        /* write subject to participants file */
+        if (!n->WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->WriteLog("Error writing " + pfile);
+
+        /* iterate through the studynums */
+        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+            int studynum = b.key();
+
+            if (studynum == 0)
+                continue;
+
+            n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
+
+            /* iterate through the seriesnums */
+            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+                int seriesnum = c.key();
+
+                /* skip the series that contained only a placeholder for the subject/study info */
+                if (seriesnum == 0)
+                    continue;
+
+                n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
+
+                //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+                //SetExportSeriesStatus(exportseriesid, "processing");
+
+                QString seriesstatus = "complete";
+                QString statusmessage;
+
+                int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+                //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                //QString altuids = s[uid][studynum][seriesnum]["altuids"];
+                //QString projectname = s[uid][studynum][seriesnum]["projectname"];
+                //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                QString modality = s[uid][studynum][seriesnum]["modality"];
+                //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
+                QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
+                QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
+                QString datatype = s[uid][studynum][seriesnum]["datatype"];
+                QString datadir = s[uid][studynum][seriesnum]["datadir"];
+                QString behindir = s[uid][studynum][seriesnum]["behdir"];
+                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+                bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
+                bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
+                //bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
+                bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
+                //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
+                //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+                /* create the subject identifier */
+                QString subjectdir;
+                //if (flags.contains("BIDS_USEUID",Qt::CaseInsensitive))
+                    subjectdir = uid;
+                //else
+                //    subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
+
+                /* create the session (study) identifier */
+                QString sessiondir;
+                //if (flags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
+                    sessiondir = QString("%1").arg(studynum);
+                //else
+                //    sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
+
+                /* determine the datatype (what BIDS calls the 'modality') */
+                QString seriesdir;
+                if (seriesaltdesc == "") {
+                    seriesdir = seriesdesc;
+                }
+                else {
+                    seriesdir = seriesaltdesc;
+                }
+                /* remove any non-alphanumeric characters */
+                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
+
+                QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+
+                QString m;
+                if (n->MakePath(seriesoutdir, m)) {
+                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
+                }
+                else {
+                    exportstatus = "error";
+                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
+                    msg = "Unable to create output directory [" + seriesoutdir + "]";
+                    return false;
+                }
+
+                if (datadirexists) {
+                    if (!datadirempty) {
+                        QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+                        QString m;
+                        if (n->MakePath(tmpdir, m)) {
+
+                            int numfilesconv(0), numfilesrenamed(0);
+                            if (!n->ConvertDicom("nifti4d", datadir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+                                msgs << "Error converting files [" + m + "]";
+
+                            n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
+                            QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
+                            n->WriteLog(n->SystemCommand(systemstring));
+                            n->WriteLog("Done copying files...");
+                            n->RemoveDir(tmpdir,m);
+                        }
+                        else {
+                            n->WriteLog("Unable to create directory");
+                        }
+                    }
+                    else {
+                        seriesstatus = "error";
+                        exportstatus = "error";
+                        n->WriteLog("ERROR [" + datadir + "] is empty");
+                        msgs << "Directory [" + datadir + "] is empty";
+                    }
+                }
+                else {
+                    seriesstatus = "error";
+                    exportstatus = "error";
+                    n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
+                    msgs << "Directory [" + datadir + "] does not exist";
+                }
+
+                /* copy the beh data */
+                if (behdirexists) {
+                    QString systemstring;
+                    systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
+                    n->WriteLog(n->SystemCommand(systemstring, true));
+                    systemstring = "chmod -Rf 777 " + seriesoutdir;
+                    n->WriteLog(n->SystemCommand(systemstring, true));
+                }
+
+                n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
+
+                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
+                //SetExportSeriesStatus(exportseriesid, seriesstatus);
+
+                QSqlQuery q2;
+                q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
+                q2.bindValue(":id", seriesid);
+                q2.bindValue(":status", seriesstatus);
+                q2.bindValue(":modality", modality);
+                n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
+
+            }
+            j++;
+        }
+        i++;
+    }
+
+    /* write the readme file */
+    //if (!n->WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
+
+    msg = msgs.join("\n");
+    n->WriteLog("Leaving WriteSquirrel()...");
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetSeriesListDetails --------------------------- */
 /* ---------------------------------------------------------- */
 /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
@@ -2373,7 +2587,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
                 s[uid][studynum][seriesnum]["projectid"] = QString("%1").arg(projectid);
                 s[uid][studynum][seriesnum]["subjectsex"] = subjectsex;
-				s[uid][studynum][seriesnum]["subjectage"] = QString("%1").arg(subjectAge);
+                s[uid][studynum][seriesnum]["subjectage"] = QString("%1").arg(subjectAge);
                 s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                 s[uid][studynum][seriesnum]["modality"] = modality;
                 s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);

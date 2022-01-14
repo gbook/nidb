@@ -65,20 +65,20 @@
 		$currentyear = date("Y");
 		
 		$sqlstring = "select count(*) count from subjects where isactive = 1";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numsubjects = number_format($row['count']);
 		$numtotalsubjects = $row['count'];
 
 		$sqlstring = "select count(*) count from studies";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numstudies = $row['count'];
 
 		$totalseries = 0;
 		$totalsize = 0;
 		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '%\_series'";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			//print_r($row);
 			$tablename = $row['Tables_in_' . $GLOBALS['cfg']['mysqldatabase'] . ' (%\_series)'];
@@ -88,7 +88,7 @@
 			
 			if (($modality != 'audit') && ($modality != 'upload')) {
 				$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
-				$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+				$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
 				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 				$totalseries += $row2['count'];
 				$totalsize += $row2['size'];
@@ -97,7 +97,7 @@
 
 				$sqlstring2 = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id";
 				//PrintSQL($sqlstring);
-				$result2 = MySQLiQuery($sqlstring2,__LINE__,__FILE__);
+				$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
 				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 				$seriesreqsize[$modality] = HumanReadableFilesize($row2['totalbytes']);
 				$totalreqbytes += $row2['totalbytes'];
@@ -107,40 +107,40 @@
 		
 		/* total series qa time */
 		$sqlstring = "select sum(cputime) totalcpu from mr_qa";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$diff = $row['totalcpu'];
 		$totalseriesqacpu = FormatCountdown($diff);
 
 		/* total study qa time */
 		$sqlstring = "select sum(cputime) totalcpu from mr_studyqa";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$diff = $row['totalcpu'];
 		$totalstudyqacpu = FormatCountdown($diff);
 		
 		/* total request processing time */
 		$sqlstring = "select sum(req_cputime) totalrequestcpu from data_requests";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$diff = $row['totalrequestcpu'];
 		$totalrequestcpu = FormatCountdown($diff);
 		
 		/* mean request time */
 		$sqlstring = "SELECT avg(time_to_sec(timediff(req_completedate, req_date))) avgtime FROM `data_requests` where req_completedate > '000-00-00 00:00:00'";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$diff = $row['avgtime'];
 		$avgrequesttime = FormatCountdown($diff);
 
 		/* median request time */
 		$sqlstring = "SELECT * FROM `data_requests` where req_completedate > '0000-00-00 00:00:00'";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numrows = mysqli_num_rows($result);
 		$med = round($numrows/2);
 		
 		$sqlstring = "SELECT time_to_sec(timediff(req_completedate, req_date)) avgtime FROM `data_requests` where req_completedate > '0000-00-00 00:00:00' order by avgtime limit $med,1";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$diff = $row['avgtime'];
 		$medianrequesttime = FormatCountdown($diff);
@@ -149,7 +149,7 @@
 		
 		/* subject demographics */
 		$sqlstring = "select (select count(*) from subjects where gender = 'F') 'numfemales', (select count(*) from subjects where gender = 'M') 'nummales', (select count(*) from subjects where gender = 'O') 'numother', (select count(*) from subjects where gender = 'U') 'numunknown', (select count(*) from subjects where gender not in ('F','M','O','U')) 'numnotspec'";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numfemales = $row['numfemales'];
 		$nummales = $row['nummales'];
@@ -305,7 +305,7 @@
 									// for ($hour=0;$hour<24;$hour++) {
 										// $sqlstring = "select count(*) count from studies where hour(study_datetime) = $hour and study_modality = 'MR'";
 										// #echo "$sqlstring<br>";
-										// $result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+										// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 										// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 										// $count = $row['count'];
 										// $percent = round(($count/$numstudies)*100);
@@ -353,7 +353,7 @@
 								<?
 								
 									//$sqlstring = "select year(min(study_datetime)) firstyear from studies where study_datetime > '0000-00-00 00:00:01' and study_modality = 'MR'";
-									//$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 									//$firstyear = $row['firstyear'];
 									
@@ -369,7 +369,7 @@
 										//for ($month=1;$month<=12;$month++) {
 										//	$sqlstring = "select count(*) count from studies where year(study_datetime) = $year and month(study_datetime) = $month and study_modality = 'MR'";
 										//	#echo "$sqlstring<br>";
-										//	$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+										//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 										//	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 										//	$count = $row['count'];
 										//	echo "<td align=right>$count &nbsp;</td>";
@@ -388,7 +388,7 @@
 							<td class="body">
 							<?
 								// $sqlstring = "SELECT (move_maxx-move_minx + move_maxy-move_miny + move_maxz-move_minz) 'totalmovement', datediff(c.study_datetime, e.birthdate) 'ageatscan', e.gender FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where datediff(c.study_datetime, e.birthdate) < 45656 and e.gender in ('M','F')";
-								// $result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+								// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 								// $i=0;
 								// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									// if (($row['totalmovement'] > 0) && ($row['totalmovement'] < 50)) {
@@ -440,7 +440,7 @@
 									/* get the list of possible study sites (equipments) */
 									//$sqlstring = "select distinct(study_site) 'site' from studies";
 									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$sites[] = $row['site'];
 									}
@@ -461,7 +461,7 @@
 												label: "<?=$site?>",
 												data: [<?
 											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where a.study_site = '$site' GROUP BY DATE(a.study_datetime) order by Date";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 												$date = $row['Date']*1000;
@@ -536,7 +536,7 @@
 									/* get the list of possible study sites (equipments) */
 									//$sqlstring = "select distinct(study_site) 'site' from studies";
 									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$sites[] = $row['site'];
 									}
@@ -557,7 +557,7 @@
 												label: "Studies",
 												data: [<?
 											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where (a.study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01') or a.study_modality in ('eeg', 'et', 'task', 'video', 'gsr', 'assessment')) GROUP BY DATE(a.study_datetime) order by Date";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 												$date = $row['Date']*1000;
@@ -634,7 +634,7 @@
 									unset($sites);
 									/* get the list of possible study sites (equipments) */
 									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$sites[] = $row['site'];
 									}
@@ -654,7 +654,7 @@
 												label: "<?=$site?>",
 												data: [<?
 											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where a.study_site = '$site' GROUP BY DATE(a.study_datetime) order by Date";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 												$date = $row['Date']*1000;
@@ -730,7 +730,7 @@
 									unset($sites);
 									/* get the list of possible study sites (equipments) */
 									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$sites[] = $row['site'];
 									}
@@ -750,7 +750,7 @@
 												label: "<?=$site?>",
 												data: [<?
 											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where a.study_site = '$site' GROUP BY DATE(a.study_datetime) order by Date";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 												$date = $row['Date']*1000;
@@ -824,7 +824,7 @@
 									unset($sites);
 									/* get the list of possible study sites (equipments) */
 									$sqlstring = "select distinct(study_site) 'site' from studies where study_site in ('hhntMRC20107','AWP45351','WHSKYRA-01')";
-									$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$sites[] = $row['site'];
 									}
@@ -844,7 +844,7 @@
 												label: "<?=$site?>",
 												data: [<?
 											$sqlstring = "SELECT unix_timestamp(DATE(a.study_datetime)) Date, a.study_site, COUNT(DISTINCT a.study_datetime) totalCount, sum(b.series_size) 'totalsize' FROM studies a left join mr_series b on a.study_id = b.study_id where a.study_site = '$site' GROUP BY DATE(a.study_datetime) order by Date";
-											$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 												$date = $row['Date']*1000;

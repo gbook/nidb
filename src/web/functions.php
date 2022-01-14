@@ -389,7 +389,7 @@
 	/* -------------------------------------------- */
 	/* ------- MySQLiQuery ------------------------ */
 	/* -------------------------------------------- */
-	function MySQLiQuery($sqlstring,$file,$line,$error="") {
+	function MySQLiQuery($sqlstring, $file, $line, $continue=true) {
 
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 		$result = mysqli_query($GLOBALS['linki'], $sqlstring);
@@ -423,7 +423,7 @@
 			$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
 			$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 			
-			if ($GLOBALS['cfg']['hideerrors']) {
+			if (($GLOBALS['cfg']['hideerrors']) && ($continue == false)) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
 			}
 			else {
@@ -482,6 +482,9 @@
 				</div>
 				<?
 			}
+			$ret['error'] = 1;
+			$ret['errormsg'] = $errormsg;
+			$ret['sql'] = $sqlstring;
 		}
 		else {
 			return $result;
@@ -2333,17 +2336,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		
 		/* check if import, export, or fileio modules are disabled */
 		$sqlstring = "select * from modules where module_name = 'import' and module_isactive = 0";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0)
 			array_push($warnings, "<tt>import</tt> module is disabled. New images will not archived");
 		
 		$sqlstring = "select * from modules where module_name = 'export' and module_isactive = 0";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0)
 			array_push($warnings, "<tt>export</tt> module is disabled. Requested exports will not be processed");
 		
 		$sqlstring = "select * from modules where module_name = 'fileio' and module_isactive = 0";
-		$result = MySQLiQuery($sqlstring,__LINE__,__FILE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0)
 			array_push($warnings, "<tt>fileio</tt> module is disabled. Any back-end changes will not be performed");
 		
@@ -3074,9 +3077,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 			<tr>
 				<td class="right aligned tt">modulefileiothreads</td>
-				<td><input type="number" name="modulefileiothreads" value="<?=$GLOBALS['cfg']['modulefileiothreads']?>"></td>
+				<td><input type="number" name="modulefileiothreads" value="1" disabled></td>
 				<td></td>
-				<td><b>fileio</b> module. Recommended is 2</td>
+				<td><b>fileio</b> module. Not multi-threaded</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">moduleexportthreads</td>
@@ -3088,7 +3091,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<td class="right aligned tt">moduleimportthreads</td>
 				<td><input type="number" name="moduleimportthreads" value="1" disabled></td>
 				<td></td>
-				<td><b>import</b> module. Not multi-threaded.</td>
+				<td><b>import</b> module. Not multi-threaded</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">modulemriqathreads</td>

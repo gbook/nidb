@@ -616,7 +616,35 @@
 								?>
 								<div class="ui success message"><i class="check circle icon"></i> Existing tables found in '<?=$database?>' database. Upgrading SQL schema</div>
 								<?
-								$ignoredtables = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
+								list($ignoredtables, $errors) = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
+								
+								if (count($errors) > 0) {
+									?>
+									<script>
+										$(document).ready(function() {
+											$('body').toast({
+												displayTime: 0,
+												class: 'error',
+												position: 'bottom right',
+												message: "Upgrade encountered errors. Scroll to bottom of this page to see errors. (Click this message to close it)"
+											});
+										});
+									</script>
+									
+									<div class="ui error message">
+										<div class="header"><i class="exclamation circle icon"></i>Upgrade Errors</div>
+										Fix these errors then refresh this page
+										
+										<ul>
+											<?
+												foreach ($errors as $err) {
+													echo "<li>$err\n";
+												}
+											?>
+										</ul>
+									</div>
+									<?
+								}
 								
 								if (file_exists($sqldatafile)) {
 									$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
@@ -811,6 +839,25 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SQLQuery --------------------------- */
+	/* -------------------------------------------- */
+	function SQLQuery($sqlstring, $debug, $file, $line) {
+		$ret = "";
+		
+		if ($debug)
+			echo "<code>$sqlstring</code><br>";
+		else {
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+			if ($result['error'] == 1) {
+				$ret = $result['errormsg'] . " (" . $result['sql'] . ")";
+			}
+		}
+		
+		return $ret;
+	}
+	
+
+	/* -------------------------------------------- */
 	/* ------- UpgradeDatabase -------------------- */
 	/* -------------------------------------------- */
 	function UpgradeDatabase($linki, $database, $sqlfile, $rowlimit, $debug) {
@@ -833,10 +880,11 @@
 		}
 		
 		$ignoredtables = array();
+		$err = array();
 		
 		/* disable strict mode to prevent truncation errors */
 		$sqlstring = "SET @@global.sql_mode= ''";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 
 		/* load the file, loop through the lines */
 		$lines = file($sqlfile);
@@ -867,13 +915,13 @@
 				
 				/* check if this table exists */
 				$sqlstring = "show tables like '$table'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 				
 				if (mysqli_num_rows($result) > 0) {
 					$tableexists = true;
 					/* get the table row count */
 					$sqlstring = "select count(*) 'count' from $table";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 					$tablerowcount = intval($row['count']);
 				}
@@ -911,10 +959,11 @@
 						
 						/* create the table */
 						$sqlstring = $createtable;
-						if ($debug)
-							echo "<code>$sqlstring</code><br>";
-						else
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						//if ($debug)
+						//	echo "<code>$sqlstring</code><br>";
+						//else
+						//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+						$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 					}
 				}
 				
@@ -964,7 +1013,7 @@
 					
 					/* check if the column exists */
 					$sqlstringA = "show columns from `$table` where Field = '$column'";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__, true);
 					if (mysqli_num_rows($resultA) > 0) {
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$type = $rowA['Type'];
@@ -1007,11 +1056,12 @@
 								$sqlstring .= " after `$previouscol`";
 							}
 							/* if there is an issue with this column, it will be an error, so no need to check warnings */
-							if ($debug)
-								echo "<code>$sqlstring</code><br>";
-							else
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							
+							//if ($debug)
+							//	echo "<code>$sqlstring</code><br>";
+							//else
+							//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+							$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
+
 							echo " &nbsp; <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> modified.<br>";
 						}
 					}
@@ -1021,10 +1071,11 @@
 						if ($previouscol != "") {
 							$sqlstring .= " after `$previouscol`";
 						}
-						if ($debug)
-							echo "<code>$sqlstring</code><br>";
-						else
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						//if ($debug)
+						//	echo "<code>$sqlstring</code><br>";
+						//else
+						//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+						$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 
 						echo " &nbsp; Column <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> added.<br>";
 					}
@@ -1048,10 +1099,11 @@
 					
 					/* run the create index */
 					echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-					if ($debug)
-						echo "<code>$sqlstring</code><br>";
-					else
-						$result = MySQLiQuery($createindex, __FILE__, __LINE__);
+					//if ($debug)
+					//	echo "<code>$sqlstring</code><br>";
+					//else
+					//	$result = MySQLiQuery($createindex, __FILE__, __LINE__, true);
+					$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 				}
 				
 				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
@@ -1069,10 +1121,11 @@
 			if (($lastline) && ($createtable != "")) {
 				echo "Table [$table] did not exist, creating";
 				echo "<tt span style='font-size: smaller;'><pre>$createtable</pre></tt>";
-				if ($debug)
-					echo "<code>$sqlstring</code><br>";
-				else
-					$result = MySQLiQuery($createtable, __FILE__, __LINE__);
+				//if ($debug)
+				//	echo "<code>$sqlstring</code><br>";
+				//else
+				//	$result = MySQLiQuery($createtable, __FILE__, __LINE__, true);
+				$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 			}
 			
 			/* this is the end of the file. If there are any indexes/autoincrements to create, create them now */
@@ -1083,10 +1136,11 @@
 				$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
 				
 				echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-				if ($debug)
-					echo "<code>$sqlstring</code><br>";
-				else
-					$result = MySQLiQuery($createindex, __FILE__, __LINE__);
+				//if ($debug)
+				//	echo "<code>$sqlstring</code><br>";
+				//else
+				//	$result = MySQLiQuery($createindex, __FILE__, __LINE__, true);
+				$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 			}
 		}
 		
@@ -1094,6 +1148,6 @@
 		</div>
 		<?
 		
-		return array_unique($ignoredtables);
+		return array(array_unique($ignoredtables), array_filter($err));
 	}
 ?>
