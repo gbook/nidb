@@ -41,48 +41,52 @@
 	require "menu.php";
 
 	//PrintVariable($_POST,'POST');
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$formtitle = GetVariable("formtitle");
-	$formdesc = GetVariable("formdesc");
-
-	$datatype = GetVariable("datatype");
-	$field = GetVariable("field");
-	$order = GetVariable("order");
-	$values = GetVariable("values");
-	$linebreaks = GetVariable("linebreaks");
-	$scored = GetVariable("scored");
-	
-	/* determine action */
-	switch ($action) {
-		case 'editform': DisplayFormForm("edit", $id); break;
-		case 'viewform': DisplayForm($id); break;
-		case 'addform': DisplayFormForm("add", ""); break;
-		case 'updatefields':
-			UpdateFields($id, $datatype, $field, $order, $values, $linebreaks, $scored);
-			DisplayFormForm("edit", $id);
-			break;
-		case 'update':
-			UpdateForm($id, $formtitle, $formdesc, $username);
-			DisplayFormList();
-			break;
-		case 'add':
-			AddForm($formtitle, $formdesc, $username);
-			DisplayFormList();
-			break;
-		case 'delete':
-			DeleteForm($id);
-			DisplayFormList();
-			break;
-		case 'publish':
-			PublishForm($id);
-			DisplayFormList();
-			break;
-		default:
-			DisplayFormList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$formtitle = GetVariable("formtitle");
+		$formdesc = GetVariable("formdesc");
+
+		$datatype = GetVariable("datatype");
+		$field = GetVariable("field");
+		$order = GetVariable("order");
+		$values = GetVariable("values");
+		$linebreaks = GetVariable("linebreaks");
+		$scored = GetVariable("scored");
+		
+		/* determine action */
+		switch ($action) {
+			case 'editform': DisplayFormForm("edit", $id); break;
+			case 'viewform': DisplayForm($id); break;
+			case 'addform': DisplayFormForm("add", ""); break;
+			case 'updatefields':
+				UpdateFields($id, $datatype, $field, $order, $values, $linebreaks, $scored);
+				DisplayFormForm("edit", $id);
+				break;
+			case 'update':
+				UpdateForm($id, $formtitle, $formdesc, $username);
+				DisplayFormList();
+				break;
+			case 'add':
+				AddForm($formtitle, $formdesc, $username);
+				DisplayFormList();
+				break;
+			case 'delete':
+				DeleteForm($id);
+				DisplayFormList();
+				break;
+			case 'publish':
+				PublishForm($id);
+				DisplayFormList();
+				break;
+			default:
+				DisplayFormList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

@@ -75,7 +75,7 @@
 				$valid = true;
 		}
 		if (!$valid) {
-			Notice("You are not allowed to access this page. Setup/upgrade functionality is only available to specified IP addresses.<br>Your IP is " . $_SERVER['REMOTE_ADDR']);
+			Notice("<b>You are not allowed to access this page.</b> Setup/upgrade functionality is only available to localhost and specified IP addresses.<br>Your IP is " . $_SERVER['REMOTE_ADDR']);
 			exit(0);
 		}
 	}
@@ -212,10 +212,10 @@
 			DisplayConfigPage();
 			break;
 		case 'updateconfig':
-			WriteConfig($c, "setup");
 			DisplaySetupCompletePage();
 			break;
 		case 'setupcomplete':
+			WriteConfig($c, "setup");
 			DisplaySetupCompletePage();
 			break;
 		default:
@@ -246,6 +246,21 @@
 	/* -------------------------------------------- */
 	function DisplayWelcomePage() {
 		
+		$disabled = "";
+		$backupfile = "/nidb/data/nidb-backup-" . date('Y-m-d') . ".sql";
+		
+		$color1 = "warning";
+			
+		if (file_exists($backupfile)) {
+			$color2 = "success";
+			$icon2 = "check circle";
+		}
+		else {
+			$disabled = "disabled";
+			$color2 = "error";
+			$icon2 = "exclamation circle";
+		}
+		
 		?>
 		<?=DisplaySetupMenu("welcome")?>
 		<br><br><br><br>
@@ -259,14 +274,15 @@
 				<div class="ui message">
 					<h3>Perform the following before continuing with the setup</h3>
 					
-					<div class="ui yellow message">
+					<div class="ui <?=$color1?> message">
 						<i class="large exclamation circle icon"></i> <b>Disable access to NiDB during the upgrade</b>
 						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
 					</div>
 						
-					<div class="ui red message">
-						<i class="large exclamation circle icon"></i> <b>Backup your database</b>
-						<p style="color: black">Use the following command <code style="color: black">mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; NiDB-backup-<?=date('Y-m-d')?>.sql</code>. Use the nidb account password.</p>
+					<div class="ui <?=$color2?> message">
+						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
+						<p style="color: black">Use the following command to backup your database. Use the <tt>nidb</tt> account password.</p>
+						<blockquote><code style="color: #000; padding: 5px 15px">mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?></code></blockquote>
 					</div>
 				</div>
 			</div>
@@ -278,7 +294,7 @@
 					<div class="ui huge right pointing orange label">
 						Click Next to continue
 					</div>
-					<a class="ui inverted huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
+					<a class="ui inverted <?=$disabled?> huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
 		</div>
@@ -617,6 +633,7 @@
 								<div class="ui success message"><i class="check circle icon"></i> Existing tables found in '<?=$database?>' database. Upgrading SQL schema</div>
 								<?
 								list($ignoredtables, $errors) = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
+								//PrintVariable($errors);
 								
 								if (count($errors) > 0) {
 									?>
@@ -631,7 +648,7 @@
 										});
 									</script>
 									
-									<div class="ui error message">
+									<div class="ui error message" style="text-align: left !important;">
 										<div class="header"><i class="exclamation circle icon"></i>Upgrade Errors</div>
 										Fix these errors then refresh this page
 										
@@ -644,6 +661,9 @@
 										</ul>
 									</div>
 									<?
+								}
+								else {
+									
 								}
 								
 								if (file_exists($sqldatafile)) {
@@ -847,7 +867,7 @@
 		if ($debug)
 			echo "<code>$sqlstring</code><br>";
 		else {
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+			$result = MySQLiQuery($sqlstring, $file, $line, true);
 			if ($result['error'] == 1) {
 				$ret = $result['errormsg'] . " (" . $result['sql'] . ")";
 			}
@@ -959,10 +979,6 @@
 						
 						/* create the table */
 						$sqlstring = $createtable;
-						//if ($debug)
-						//	echo "<code>$sqlstring</code><br>";
-						//else
-						//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 						$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 					}
 				}
@@ -1056,10 +1072,6 @@
 								$sqlstring .= " after `$previouscol`";
 							}
 							/* if there is an issue with this column, it will be an error, so no need to check warnings */
-							//if ($debug)
-							//	echo "<code>$sqlstring</code><br>";
-							//else
-							//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 							$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 
 							echo " &nbsp; <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> modified.<br>";
@@ -1071,10 +1083,6 @@
 						if ($previouscol != "") {
 							$sqlstring .= " after `$previouscol`";
 						}
-						//if ($debug)
-						//	echo "<code>$sqlstring</code><br>";
-						//else
-						//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 						$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
 
 						echo " &nbsp; Column <tt style='font-size: smaller;'><i class='green check circle icon'></i> $column</tt> added.<br>";
@@ -1098,16 +1106,12 @@
 					$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
 					
 					/* run the create index */
-					echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-					//if ($debug)
-					//	echo "<code>$sqlstring</code><br>";
-					//else
-					//	$result = MySQLiQuery($createindex, __FILE__, __LINE__, true);
-					$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
+					//echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
+					$err[] = SQLQuery($createindex, $debug, __FILE__, __LINE__);
 				}
 				
 				$indextable = str_replace("`", "", preg_split('/\s+/', $line)[2]);
-				echo "<br>Index/autoincrement for table <span class='e'>$indextable</span><br>";
+				echo "<br>Index/autoincrement for table <span class='e'>$indextable</span>";
 				$createindex = "$line\n";
 			}
 			else {
@@ -1121,11 +1125,7 @@
 			if (($lastline) && ($createtable != "")) {
 				echo "Table [$table] did not exist, creating";
 				echo "<tt span style='font-size: smaller;'><pre>$createtable</pre></tt>";
-				//if ($debug)
-				//	echo "<code>$sqlstring</code><br>";
-				//else
-				//	$result = MySQLiQuery($createtable, __FILE__, __LINE__, true);
-				$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
+				$err[] = SQLQuery($createtable, $debug, __FILE__, __LINE__);
 			}
 			
 			/* this is the end of the file. If there are any indexes/autoincrements to create, create them now */
@@ -1135,12 +1135,8 @@
 				$createindex = str_replace("ADD PRIMARY KEY", "ADD PRIMARY KEY IF NOT EXISTS", $createindex);
 				$createindex = str_replace("ADD KEY", "ADD KEY IF NOT EXISTS", $createindex);
 				
-				echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
-				//if ($debug)
-				//	echo "<code>$sqlstring</code><br>";
-				//else
-				//	$result = MySQLiQuery($createindex, __FILE__, __LINE__, true);
-				$err[] = SQLQuery($sqlstring, $debug, __FILE__, __LINE__);
+				//echo "<tt span style='font-size: smaller;'><pre>$createindex</pre></tt>";
+				$err[] = SQLQuery($createindex, $debug, __FILE__, __LINE__);
 			}
 		}
 		

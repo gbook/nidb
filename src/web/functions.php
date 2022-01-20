@@ -391,6 +391,8 @@
 	/* -------------------------------------------- */
 	function MySQLiQuery($sqlstring, $file, $line, $continue=true) {
 
+		$origsql = $sqlstring;
+		
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 		$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 		if ($result == false) {
@@ -484,11 +486,13 @@
 			}
 			$ret['error'] = 1;
 			$ret['errormsg'] = $errormsg;
-			$ret['sql'] = $sqlstring;
+			$ret['sql'] = $origsql;
 		}
 		else {
-			return $result;
+			$ret = $result;
 		}
+		
+		return $ret;
 	}
 
 
@@ -540,6 +544,36 @@
 	}
 	
 	
+	/* -------------------------------------------- */
+	/* ------- isAdmin ---------------------------- */
+	/* -------------------------------------------- */
+	function isAdmin() {
+		$username = $GLOBALS['username'];
+		$sqlstring = "select user_isadmin from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		if ($row['user_isadmin'] == "1")
+			return true;
+		else
+			return false;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- isSiteAdmin ------------------------ */
+	/* -------------------------------------------- */
+	function isSiteAdmin() {
+		$username = $GLOBALS['username'];
+		$sqlstring = "select user_issiteadmin from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		if ($row['user_issiteadmin'] == "1")
+			return true;
+		else
+			return false;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- GetInstanceID ---------------------- */
 	/* -------------------------------------------- */
@@ -2564,7 +2598,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function Error($msg, $close=true) {
 		?>
-		<div class="ui container">
+		<div class="ui text container">
 			<div class="ui message red">
 				<? if ($close) { ?><i class="close icon"></i> <? } ?>
 				<div class="header">Error</div>
@@ -2580,7 +2614,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function Notice($msg) {
 		?>
-		<div class="ui container">
+		<div class="ui text container">
 			<div class="ui message yellow">
 				<i class="close icon"></i>
 				<div class="header">Notice</div>
@@ -3734,7 +3768,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function WriteConfig($c) {
 		
-		?><div class="ui message"><?
+		?>
+		<br><br>
+		<div class="ui message"><?
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($c as $key => $value) {

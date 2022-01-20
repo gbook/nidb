@@ -40,29 +40,33 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$linkid = GetVariable("linkid");
-	$linkurl = GetVariable("linkurl");
-	$linktext = GetVariable("linktext");
-	$linkdesc = GetVariable("linkdesc");
-
-	/* determine action */
-	if ($action == "") {
-		DisplayAdminList();
-	}
-	elseif ($action == "addlink") {
-		AddLink($linkurl, $linktext, $linkdesc);
-		DisplayAdminList();
-	}
-	elseif ($action == "deletelink") {
-		DeleteLink($linkid);
-		DisplayAdminList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
 	else {
-		DisplayAdminList();
-	}
-	
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$linkid = GetVariable("linkid");
+		$linkurl = GetVariable("linkurl");
+		$linktext = GetVariable("linktext");
+		$linkdesc = GetVariable("linkdesc");
+
+		/* determine action */
+		if ($action == "") {
+			DisplayAdminList();
+		}
+		elseif ($action == "addlink") {
+			AddLink($linkurl, $linktext, $linkdesc);
+			DisplayAdminList();
+		}
+		elseif ($action == "deletelink") {
+			DeleteLink($linkid);
+			DisplayAdminList();
+		}
+		else {
+			DisplayAdminList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
@@ -71,34 +75,70 @@
 	/* ------- DisplayAdminList ------------------- */
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
+		
+		$systemstring = "curl --silent \"https://api.github.com/repos/gbook/nidb/releases/latest\" | grep '\"tag_name\":'";
+		$latestnidb = shell_exec($systemstring);
+		$latestnidb = str_replace("\"tag_name\": \"","", $latestnidb);
+		$latestnidb = str_replace("\",","", $latestnidb);
+		$latestnidb = trim(str_replace("v","", $latestnidb));
+		
+		$currentnidb = trim(GetNiDBVersion());
+		if ($currentnidb != $latestnidb) {
+		?>
+			<div class="ui text container">
+				<div class="ui warning icon message">
+					<i class="cloud download alternate icon"></i>
+					<div class="content">
+						<div class="header">Update available</div>
+						Current version [v<?=GetNiDBVersion();?>]<br>
+						Latest version [v<?=$latestnidb;?>]<br>
+						<a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+					</div>
+				</div>
+			</div>
+		<? }
+		else {
+		?>
+			<div class="ui text container">
+				<div class="ui positive icon message">
+					<i class="check circle icon"></i>
+					<div class="content">
+						<div class="header">NiDB is up to date</div>
+						Current NiDB version <b>v<?=GetNiDBVersion();?></b><br>
+						<a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+					</div>
+				</div>
+			</div>
+			<br>
+			<?
+		}
 		?>
 		<div class="ui text container grid">
 			<div class="ui eight wide column">
-				<div class="ui vertical basic big buttons">
-					<a href="adminusers.php" class="ui button"><i class="black users icon"></i> Users</a>
-					<a href="adminprojects.php" class="ui button"><i class="black clipboard list icon"></i> Projects</a>
-					<a href="reports.php" class="ui button"><i class="black clipboard icon"></i> Reports</a>
-					<a href="adminaudits.php" class="ui button"><i class="black clipboard check icon"></i> Audits</a>
-					<a href="cleanup.php" class="ui button"><i class="black eraser icon"></i> Clean-up data</a>
-					<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>
-					<a href="stats.php" class="ui button"><i class="black thermometer half icon"></i> System Usage Statistics</a>
-					<a href="backup.php" class="ui button"><i class="black archive icon"></i> Backup</a>
-				</div>
+				<div class="ui header">Front end</div>
+
+				<a href="adminusers.php" class="ui big basic fluid button"><i class="black users icon"></i> Users</a>
+				<a href="adminprojects.php" class="ui big basic fluid button"><i class="black clipboard list icon"></i> Projects</a>
+				<a href="reports.php" class="ui big basic fluid button"><i class="black clipboard icon"></i> Reports</a>
+				<a href="adminaudits.php" class="ui big basic fluid button"><i class="black clipboard check icon"></i> Audits</a>
+				<a href="cleanup.php" class="ui big basic fluid button"><i class="black eraser icon"></i> Clean-up data</a>
+				<!--<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>-->
+				<a href="adminmodalities.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modalities</a>
+				<a href="adminsites.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Sites</a>
+				<a href="admininstances.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Instances</a>
 			</div>
 			<div class="ui eight wide column">
-				<i class="large info circle icon"></i><a href="status.php"><b>System status</b></a>
-				<br><br>
-				<li><i class="list alternate icon"></i> <a href="adminmodules.php">Modules</a>
-				<li><i class="list alternate icon"></i> <a href="adminmodalities.php">Modalities</a>
-				<li><i class="list alternate icon"></i> <a href="adminsites.php">Sites</a>
-				<li><i class="list alternate icon"></i> <a href="adminqc.php">QC Modules</a>
+				<a href="system.php" class="ui big button"><i class="cog icon"></i> System settings...</a>
+
+				<div class="ui header">Back end</div>
+
+				<a href="status.php" class="ui big basic fluid button"><i class="black info circle icon"></i> System status</a>
+				<a href="adminmodules.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modules</a>
+				<a href="adminqc.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> QC Modules</a>
 				<!--<li><a href="importlog.php">Import Logs</a>-->
-				<li><i class="list alternate icon"></i> <a href="admininstances.php">Instances</a>
-				<li><i class="envelope icon"></i> <a href="adminemail.php">Mass email</a>
-				<br><br><br>
-				<i class="large cog icon"></i><a href="system.php"><b>NiDB Settings</b></a>
-				<br><br>
-				<i class="large wrench icon"></i><a href="setup.php"><b>Setup/Upgrade</b></a>
+				<a href="adminemail.php" class="ui big basic fluid button"><i class="black envelope icon"></i> Mass email</a>
+				<a href="stats.php" class="ui big basic fluid button"><i class="black thermometer half icon"></i> System Usage</a>
+				<a href="backup.php" class="ui big basic fluid button"><i class="black archive icon"></i> Backup</a>
 			</div>
 		</div>
 		<br><br>

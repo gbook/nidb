@@ -40,46 +40,50 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$protocols = GetVariable("protocols");
-	$thegroup = GetVariable("thegroup");
-	$modality = GetVariable("modality");
-	$pgitemid = GetVariable("pgitemid");
-	
-	/* determine action */
-	switch ($action) {
-		case 'disable':
-			DisableModality($id);
-			DisplayModalityList();
-			break;
-		case 'enable':
-			EnableModality($id);
-			DisplayModalityList();
-			break;
-		case 'editprotocolgroups':
-			EditProtocolGroups($id,'');
-			break;
-		case 'updateprotocolgroup':
-			UpdateProtocolGroup($protocols, $thegroup, $modality);
-			EditProtocolGroups($id,$modality);
-			break;
-		case 'deleteprotocolgroupitem':
-			DeleteProtocolGroupItem($pgitemid);
-			EditProtocolGroups($id,$modality);
-			break;
-		case 'edit':
-			EditModality($id);
-			break;
-		case 'reset':
-			ResetModality($id);
-			DisplayModalityList();
-			break;
-		default:
-			DisplayModalityList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$protocols = GetVariable("protocols");
+		$thegroup = GetVariable("thegroup");
+		$modality = GetVariable("modality");
+		$pgitemid = GetVariable("pgitemid");
+		
+		/* determine action */
+		switch ($action) {
+			case 'disable':
+				DisableModality($id);
+				DisplayModalityList();
+				break;
+			case 'enable':
+				EnableModality($id);
+				DisplayModalityList();
+				break;
+			case 'editprotocolgroups':
+				EditProtocolGroups($id,'');
+				break;
+			case 'updateprotocolgroup':
+				UpdateProtocolGroup($protocols, $thegroup, $modality);
+				EditProtocolGroups($id,$modality);
+				break;
+			case 'deleteprotocolgroupitem':
+				DeleteProtocolGroupItem($pgitemid);
+				EditProtocolGroups($id,$modality);
+				break;
+			case 'edit':
+				EditModality($id);
+				break;
+			case 'reset':
+				ResetModality($id);
+				DisplayModalityList();
+				break;
+			default:
+				DisplayModalityList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

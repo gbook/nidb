@@ -50,55 +50,58 @@
 		$selfcall = false;
 
 	//PrintVariable($_POST,'post');
-	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$username = GetVariable("username");
-	$password = GetVariable("password");
-	$fullname = GetVariable("fullname");
-	$email = GetVariable("email");
-	$enabled = GetVariable("enabled");
-	$isadmin = GetVariable("isadmin");
-	$instanceid = GetVariable("instanceid");
-	$projectadmin = GetVariable("projectadmin");
-	$modifydata = GetVariable("modifydata");
-	$viewdata = GetVariable("viewdata");
-	$modifyphi = GetVariable("modifyphi");
-	$viewphi = GetVariable("viewphi");
-	
-	/* determine action */
-	switch ($action) {
-		case 'editform':
-			DisplayUserForm("edit", $id);
-			break;
-		case 'addform':
-			DisplayUserForm("add", "");
-			break;
-		case 'enable':
-			EnableUser($id);
-			DisplayUserList();
-			break;
-		case 'disable':
-			DisableUser($id);
-			DisplayUserList();
-			break;
-		case 'update':
-			UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
-			DisplayUserList();
-			break;
-		case 'add':
-			AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid);
-			DisplayUserList();
-			break;
-		case 'delete':
-			DeleteUser($id);
-			DisplayUserList();
-			break;
-		default:
-			DisplayUserList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$username = GetVariable("username");
+		$password = GetVariable("password");
+		$fullname = GetVariable("fullname");
+		$email = GetVariable("email");
+		$enabled = GetVariable("enabled");
+		$isadmin = GetVariable("isadmin");
+		$instanceid = GetVariable("instanceid");
+		$projectadmin = GetVariable("projectadmin");
+		$modifydata = GetVariable("modifydata");
+		$viewdata = GetVariable("viewdata");
+		$modifyphi = GetVariable("modifyphi");
+		$viewphi = GetVariable("viewphi");
+		
+		/* determine action */
+		switch ($action) {
+			case 'editform':
+				DisplayUserForm("edit", $id);
+				break;
+			case 'addform':
+				DisplayUserForm("add", "");
+				break;
+			case 'enable':
+				EnableUser($id);
+				DisplayUserList();
+				break;
+			case 'disable':
+				DisableUser($id);
+				DisplayUserList();
+				break;
+			case 'update':
+				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
+				DisplayUserList();
+				break;
+			case 'add':
+				AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid);
+				DisplayUserList();
+				break;
+			case 'delete':
+				DeleteUser($id);
+				DisplayUserList();
+				break;
+			default:
+				DisplayUserList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

@@ -41,34 +41,38 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$modulename = GetVariable("modulename");
-	$modality = GetVariable("modality");
-	
-	/* determine action */
-	switch ($action) {
-		case 'addmodule':
-			AddQCModule($modulename,$modality);
-			DisplayQCModuleList();
-			break;
-		case 'disable':
-			DisableQCModule($id);
-			DisplayQCModuleList();
-			break;
-		case 'enable':
-			EnableQCModule($id);
-			DisplayQCModuleList();
-			break;
-		case 'reset':
-			ResetQCModule($id);
-			DisplayQCModuleList();
-			break;
-		default:
-			DisplayQCModuleList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$modulename = GetVariable("modulename");
+		$modality = GetVariable("modality");
+		
+		/* determine action */
+		switch ($action) {
+			case 'addmodule':
+				AddQCModule($modulename,$modality);
+				DisplayQCModuleList();
+				break;
+			case 'disable':
+				DisableQCModule($id);
+				DisplayQCModuleList();
+				break;
+			case 'enable':
+				EnableQCModule($id);
+				DisplayQCModuleList();
+				break;
+			case 'reset':
+				ResetQCModule($id);
+				DisplayQCModuleList();
+				break;
+			default:
+				DisplayQCModuleList();
+		}
+	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

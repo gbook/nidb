@@ -42,50 +42,54 @@
 	require "menu.php";
 
 	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
-	$copyfromprojectid = GetVariable("copyfromprojectid");
-	$projectname = GetVariable("projectname");
-	$admin = GetVariable("admin");
-	$pi = GetVariable("pi");
-	$instanceid = GetVariable("instanceid");
-	$sharing = GetVariable("sharing");
-	$costcenter = GetVariable("costcenter");
-	$startdate = GetVariable("startdate");
-	$enddate = GetVariable("enddate");
-	$datausers = GetVariable("datausers");
-	$phiusers = GetVariable("phiusers");
-	$usecustomid = GetVariable("usecustomid");
-	
-	/* determine action */
-	switch ($action) {
-		case 'editform':
-			DisplayProjectForm("edit", $id);
-			break;
-		case 'addform':
-			DisplayProjectForm("add", "$username");
-			break;
-		case 'update':
-			UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
-			DisplayProjectList();
-			break;
-		case 'add':
-			AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
-			DisplayProjectList();
-			break;
-		case 'delete':
-			DeleteProject($id);
-			break;
-		case 'copysettings':
-			CopyProjectSettings($projectid, $copyfromprojectid);
-			DisplayProjectForm("edit", $projectid);
-			break;
-		default:
-			DisplayProjectList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$projectid = GetVariable("projectid");
+		$copyfromprojectid = GetVariable("copyfromprojectid");
+		$projectname = GetVariable("projectname");
+		$admin = GetVariable("admin");
+		$pi = GetVariable("pi");
+		$instanceid = GetVariable("instanceid");
+		$sharing = GetVariable("sharing");
+		$costcenter = GetVariable("costcenter");
+		$startdate = GetVariable("startdate");
+		$enddate = GetVariable("enddate");
+		$datausers = GetVariable("datausers");
+		$phiusers = GetVariable("phiusers");
+		$usecustomid = GetVariable("usecustomid");
+		
+		/* determine action */
+		switch ($action) {
+			case 'editform':
+				DisplayProjectForm("edit", $id);
+				break;
+			case 'addform':
+				DisplayProjectForm("add", "$username");
+				break;
+			case 'update':
+				UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+				DisplayProjectList();
+				break;
+			case 'add':
+				AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+				DisplayProjectList();
+				break;
+			case 'delete':
+				DeleteProject($id);
+				break;
+			case 'copysettings':
+				CopyProjectSettings($projectid, $copyfromprojectid);
+				DisplayProjectForm("edit", $projectid);
+				break;
+			default:
+				DisplayProjectList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

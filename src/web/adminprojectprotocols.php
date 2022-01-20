@@ -40,32 +40,34 @@
 	require "includes_html.php";
 	require "nidbapi.php";
 
-	
-	//PrintVariable($_POST,'POST');
-	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$protocolgroupid = GetVariable("protocolgroupid");
-	$projectprotocolid = GetVariable("projectprotocolid");
-	$criteria = GetVariable("criteria");
-	$numpersession = GetVariable("numpersession");
-	$numtotal = GetVariable("numtotal");
-	
-	/* determine action */
-	switch ($action) {
-		case 'addprotocol':
-			AddProjectProtocol($projectid, $protocolgroupid, $criteria, $numpersession, $numtotal);
-			DisplayProjectProtocolList($projectid);
-			break;
-		case 'deleteprotocol':
-			DeleteProjectProtocol($projectprotocolid);
-			DisplayProjectProtocolList($projectid);
-			break;
-		default:
-			DisplayProjectProtocolList($projectid);
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$projectid = GetVariable("projectid");
+		$protocolgroupid = GetVariable("protocolgroupid");
+		$projectprotocolid = GetVariable("projectprotocolid");
+		$criteria = GetVariable("criteria");
+		$numpersession = GetVariable("numpersession");
+		$numtotal = GetVariable("numtotal");
+		
+		/* determine action */
+		switch ($action) {
+			case 'addprotocol':
+				AddProjectProtocol($projectid, $protocolgroupid, $criteria, $numpersession, $numtotal);
+				DisplayProjectProtocolList($projectid);
+				break;
+			case 'deleteprotocol':
+				DeleteProjectProtocol($projectprotocolid);
+				DisplayProjectProtocolList($projectid);
+				break;
+			default:
+				DisplayProjectProtocolList($projectid);
+		}
+	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

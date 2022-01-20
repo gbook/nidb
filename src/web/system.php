@@ -250,24 +250,7 @@
 	/* -------------------------------------------- */
 	function DisplayConfig() {
 
-		$systemstring = "curl --silent \"https://api.github.com/repos/gbook/nidb/releases/latest\" | grep '\"tag_name\":'";
-		$latestnidb = shell_exec($systemstring);
-		$latestnidb = str_replace("\"tag_name\": \"","", $latestnidb);
-		$latestnidb = str_replace("\",","", $latestnidb);
-		$latestnidb = trim(str_replace("v","", $latestnidb));
-		
-		$currentnidb = trim(GetNiDBVersion());
-		if ($currentnidb != $latestnidb) {
 		?>
-			<div class="ui text container">
-				<div class="ui warning message">
-					<i class="close icon"></i>
-					<div class="header">New NiDB version available</div>
-					Current NiDB version [<?=GetNiDBVersion();?>]<br>
-					Latest NiDB version [<?=$latestnidb;?>]
-				</div>
-			</div>
-		<? } ?>
 		
 		<div class="ui top attached grey inverted segment">
 			<h2>System status messages</h2>

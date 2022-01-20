@@ -2453,6 +2453,10 @@
 				<th class="ui inverted attached header">Sex</th>
 				<th class="ui inverted attached header">StudyAge</th>
 				<th class="ui inverted attached header">CalcStudyAge</th>
+				<th class="ui inverted attached header">Project</th>
+				<th class="ui inverted attached header">StudyDesc</th>
+				<th class="ui inverted attached header">Height (cm)</th>
+				<th class="ui inverted attached header">Weight (kg)</th>
 				<th class="ui inverted attached header">AltUIDs</th>
 				<th class="ui inverted attached header">StudyID</th>
 				<th class="ui inverted attached header">AltStudyID</th>
@@ -2479,7 +2483,7 @@
 			</thead>
 		<?
 		}
-		$csv = "SeriesNum,Protocol,UID,Sex,StudyAge,CalcStudyAge,AltUIDs,StudyID,AltStudyID,StudyNum,Site,Visit,StudyDate,SeriesTime,MotionX,MotionY,MotionZ,Rating,PV_SNR,IO_SNR,MotionR^2,SizeX,SizeY,NumFiles,Size,Sequence,TR,NumBeh,BehSize\n";
+		$csv = "SeriesNum,Protocol,UID,Sex,StudyAge,CalcStudyAge,Project,StudyDesc,Height_cm,Weight_kg,AltUIDs,StudyID,AltStudyID,StudyNum,Site,Visit,StudyDate,SeriesTime,MotionX,MotionY,MotionZ,Rating,PV_SNR,IO_SNR,MotionR^2,SizeX,SizeY,NumFiles,Size,Sequence,TR,NumBeh,BehSize\n";
 		
 		/* create some variables to store info about the restuls */
 		$foundprojectids = array();
@@ -2664,6 +2668,10 @@
 				<td><?=$gender?></td>
 				<td><?=$studyAge?></td>
 				<td><?=$calcStudyAge?></td>
+				<td><?=$project_name?></td>
+				<td><?=$study_desc?></td>
+				<td><?=$study_height?></td>
+				<td><?=$study_weight?></td>
 				<td><? echo implode2('|',$altuids);?></td>
 				<td><?=$uid?><?=$studynum?></td>
 				<td><?=$study_alternateid?></td>
@@ -2693,8 +2701,8 @@
 			
 			//if ($study_modality == "mr") {
 				if ($s_resultoutput == "csv") {
-					
-					$csv .= "$series_num,$series_desc,$uid,$gender,$studyAge,$calcStudyAge," . implode2('|',$altuids) . ",$uid$studynum,$study_alternateid,$studynum,$study_site,$study_type,$study_datetime,$series_datetime," . $range['x'] . "," . $range['y'] . "," . $range['z'] . ",$ratingavg,$pvsnr,$iosnr,$motion_rsq,$img_cols,$img_rows,$numfiles,$series_size,$sequence,$series_tr,$numfiles_beh,$beh_size";
+
+					$csv .= "$series_num,$series_desc,$uid,$gender,$studyAge,$calcStudyAge,$project_name,$study_desc,$study_height,$study_weight," . implode2('|',$altuids) . ",$uid$studynum,$study_alternateid,$studynum,$study_site,$study_type,$study_datetime,$series_datetime," . $range['x'] . "," . $range['y'] . "," . $range['z'] . ",$ratingavg,$pvsnr,$iosnr,$motion_rsq,$img_cols,$img_rows,$numfiles,$series_size,$sequence,$series_tr,$numfiles_beh,$beh_size";
 					
 					//if ($s_usealtseriesdesc) {
 					//	$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";

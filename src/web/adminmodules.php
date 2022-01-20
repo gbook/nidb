@@ -40,41 +40,44 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$modulename = GetVariable("modulename");
-	
-	
-	/* determine action */
-	switch ($action) {
-		case 'disable':
-			DisableModule($id);
-			DisplayModuleList();
-			break;
-		case 'enable':
-			EnableModule($id);
-			DisplayModuleList();
-			break;
-		case 'debug':
-			DebugModule($id);
-			DisplayModuleList();
-			break;
-		case 'nodebug':
-			NoDebugModule($id);
-			DisplayModuleList();
-			break;
-		case 'reset':
-			ResetModule($id);
-			DisplayModuleList();
-			break;
-		case 'viewlogs':
-			ViewLogs($modulename);
-			break;
-		default:
-			DisplayModuleList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$modulename = GetVariable("modulename");
+		
+		/* determine action */
+		switch ($action) {
+			case 'disable':
+				DisableModule($id);
+				DisplayModuleList();
+				break;
+			case 'enable':
+				EnableModule($id);
+				DisplayModuleList();
+				break;
+			case 'debug':
+				DebugModule($id);
+				DisplayModuleList();
+				break;
+			case 'nodebug':
+				NoDebugModule($id);
+				DisplayModuleList();
+				break;
+			case 'reset':
+				ResetModule($id);
+				DisplayModuleList();
+				break;
+			case 'viewlogs':
+				ViewLogs($modulename);
+				break;
+			default:
+				DisplayModuleList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

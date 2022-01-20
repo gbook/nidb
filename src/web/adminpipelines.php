@@ -40,36 +40,40 @@
 	require "includes_html.php";
 	require "menu.php";
 	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$pipelinename = GetVariable("pipelinename");
-	$pipelinedesc = GetVariable("pipelinedesc");
-	$admin = GetVariable("admin");
-	
-	
-	/* determine action */
-	if ($action == "editform") {
-		DisplayPipelineForm("edit", $id);
-	}
-	elseif ($action == "addform") {
-		DisplayPipelineForm("add", "");
-	}
-	elseif ($action == "update") {
-		UpdatePipeline($id, $pipelinename, $pipelinedesc, $admin);
-		DisplayPipelineList();
-	}
-	elseif ($action == "add") {
-		AddPipeline($pipelinename, $pipelinedesc, $admin);
-		DisplayPipelineList();
-	}
-	elseif ($action == "delete") {
-		DeletePipeline($id);
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
 	else {
-		DisplayPipelineList();
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$pipelinename = GetVariable("pipelinename");
+		$pipelinedesc = GetVariable("pipelinedesc");
+		$admin = GetVariable("admin");
+		
+		
+		/* determine action */
+		if ($action == "editform") {
+			DisplayPipelineForm("edit", $id);
+		}
+		elseif ($action == "addform") {
+			DisplayPipelineForm("add", "");
+		}
+		elseif ($action == "update") {
+			UpdatePipeline($id, $pipelinename, $pipelinedesc, $admin);
+			DisplayPipelineList();
+		}
+		elseif ($action == "add") {
+			AddPipeline($pipelinename, $pipelinedesc, $admin);
+			DisplayPipelineList();
+		}
+		elseif ($action == "delete") {
+			DeletePipeline($id);
+		}
+		else {
+			DisplayPipelineList();
+		}
 	}
-	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

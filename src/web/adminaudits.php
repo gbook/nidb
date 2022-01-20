@@ -41,22 +41,26 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$orderby = GetVariable("orderby");
-	$problemtype = GetVariable("problemtype");
-	
-	/* determine action */
-	switch ($action) {
-		case 'displaylog':
-			DisplayMenu($problemtype);
-			DisplayAudit($orderby, $problemtype);
-			break;
-		default:
-			DisplayMenu($problemtype);
-			DisplayAudit($orderby, $problemtype);
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$orderby = GetVariable("orderby");
+		$problemtype = GetVariable("problemtype");
+		
+		/* determine action */
+		switch ($action) {
+			case 'displaylog':
+				DisplayMenu($problemtype);
+				DisplayAudit($orderby, $problemtype);
+				break;
+			default:
+				DisplayMenu($problemtype);
+				DisplayAudit($orderby, $problemtype);
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

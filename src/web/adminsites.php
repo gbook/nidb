@@ -41,35 +41,39 @@
 	require "menu.php";
 	require "nidbapi.php";
 	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$sitename = GetVariable("sitename");
-	$siteaddress = GetVariable("siteaddress");
-	$sitecontact = GetVariable("sitecontact");
-	
-	/* determine action */
-	if ($action == "editform") {
-		DisplaySiteForm("edit", $id);
-	}
-	elseif ($action == "addform") {
-		DisplaySiteForm("add", "");
-	}
-	elseif ($action == "update") {
-		UpdateSite($id, $sitename, $siteaddress, $sitecontact);
-		DisplaySiteList();
-	}
-	elseif ($action == "add") {
-		AddSite($sitename, $siteaddress, $sitecontact);
-		DisplaySiteList();
-	}
-	elseif ($action == "delete") {
-		DeleteSite($id);
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
 	else {
-		DisplaySiteList();
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$sitename = GetVariable("sitename");
+		$siteaddress = GetVariable("siteaddress");
+		$sitecontact = GetVariable("sitecontact");
+		
+		/* determine action */
+		if ($action == "editform") {
+			DisplaySiteForm("edit", $id);
+		}
+		elseif ($action == "addform") {
+			DisplaySiteForm("add", "");
+		}
+		elseif ($action == "update") {
+			UpdateSite($id, $sitename, $siteaddress, $sitecontact);
+			DisplaySiteList();
+		}
+		elseif ($action == "add") {
+			AddSite($sitename, $siteaddress, $sitecontact);
+			DisplaySiteList();
+		}
+		elseif ($action == "delete") {
+			DeleteSite($id);
+		}
+		else {
+			DisplaySiteList();
+		}
 	}
-	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

@@ -41,51 +41,55 @@
 	require "nidbapi.php";
 	require "menu.php";
 	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$defaultinstanceid = GetVariable("defaultinstanceid");
-	$instancename = GetVariable("instancename");
-	$users = GetVariable("users");
-	$userinstanceid = GetVariable("userinstanceid");
-	
-	//print_r($_POST);
-	
-	/* determine action */
-	switch ($action) {
-		case 'editform':
-			DisplayInstanceForm("edit", $id);
-			break;
-		case 'addform':
-			DisplayInstanceForm("add", "");
-			break;
-		case 'update':
-			UpdateInstance($id, $instancename, $users);
-			DisplayInstanceList();
-			break;
-		case 'add':
-			AddInstance($instancename);
-			DisplayInstanceList();
-			break;
-		case 'setdefaultinstance':
-			SetDefaultInstance($defaultinstanceid);
-			DisplayInstanceList();
-			break;
-		case 'acceptjoin':
-			AcceptJoin($userinstanceid);
-			DisplayInstanceList();
-			break;
-		case 'rejectjoin':
-			RejectJoin($userinstanceid);
-			DisplayInstanceList();
-			break;
-		case 'delete':
-			DeleteInstance($id);
-			break;
-		default:
-			DisplayInstanceList();
+	if (!isAdmin()) {
+		Error("This account does not have permissions to view this page");
 	}
-	
+	else {
+		/* ----- setup variables ----- */
+		$action = GetVariable("action");
+		$id = GetVariable("id");
+		$defaultinstanceid = GetVariable("defaultinstanceid");
+		$instancename = GetVariable("instancename");
+		$users = GetVariable("users");
+		$userinstanceid = GetVariable("userinstanceid");
+		
+		//print_r($_POST);
+		
+		/* determine action */
+		switch ($action) {
+			case 'editform':
+				DisplayInstanceForm("edit", $id);
+				break;
+			case 'addform':
+				DisplayInstanceForm("add", "");
+				break;
+			case 'update':
+				UpdateInstance($id, $instancename, $users);
+				DisplayInstanceList();
+				break;
+			case 'add':
+				AddInstance($instancename);
+				DisplayInstanceList();
+				break;
+			case 'setdefaultinstance':
+				SetDefaultInstance($defaultinstanceid);
+				DisplayInstanceList();
+				break;
+			case 'acceptjoin':
+				AcceptJoin($userinstanceid);
+				DisplayInstanceList();
+				break;
+			case 'rejectjoin':
+				RejectJoin($userinstanceid);
+				DisplayInstanceList();
+				break;
+			case 'delete':
+				DeleteInstance($id);
+				break;
+			default:
+				DisplayInstanceList();
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
