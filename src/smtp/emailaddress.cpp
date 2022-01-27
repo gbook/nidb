@@ -20,6 +20,10 @@
 
 /* [1] Constructors and Destructors */
 
+EmailAddress::EmailAddress()
+{
+}
+
 EmailAddress::EmailAddress(const QString & address, const QString & name)
 {
     this->address = address;
