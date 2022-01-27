@@ -291,10 +291,11 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":FlipAngle", FlipAngle);
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
-            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QVariant::Double)); /* for null values */
+            //QVariant nullDouble = QMetaType::Double;
+            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
-            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QVariant::Int)); /* for null values */
+            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant::Int); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
 
             q3.bindValue(":pixelX", pixelX);

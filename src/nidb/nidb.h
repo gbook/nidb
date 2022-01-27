@@ -34,6 +34,8 @@
 #include <QtSql>
 #include <QHostInfo>
 #include <QDirIterator>
+#include <QMetaType>
+#include <QVariant>
 #include "SmtpMime"
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
