@@ -928,7 +928,7 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
         foreach (QString id, ids) {
 
             /* make sure the target subjectid is not in the list of merge ids */
-            if (id == subjectid)
+            if (id.toInt() == subjectid)
                 continue;
 
             /* get list of studies for this subject */

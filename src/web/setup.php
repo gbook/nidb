@@ -264,6 +264,24 @@
 		?>
 		<?=DisplaySetupMenu("welcome")?>
 		<br><br><br><br>
+		<script>
+			function CopyToClipboard(id) {
+				/* Get the text field */
+				var copyText = document.getElementById(id);
+
+				//alert(copyText.value);
+				
+				/* Select the text field */
+				copyText.select();
+				copyText.setSelectionRange(0, 99999); /* For mobile devices */
+
+				/* Copy the text inside the text field */
+				navigator.clipboard.writeText(copyText.value);
+
+				/* Alert the copied text */
+				alert("Copied the text: " + copyText.value);
+			}
+		</script>
 		<div class="ui container">
 			<div class="ui segment" style="border: 2px solid #222">
 				<h1>Welcome to the NiDB setup</h1>
@@ -279,10 +297,14 @@
 						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
 					</div>
 						
-					<div class="ui <?=$color2?> message">
+					<div class="ui <?=$color2?> message" style="text-align: left">
 						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
-						<p style="color: black">Use the following command to backup your database. Use the <tt>nidb</tt> account password.</p>
-						<blockquote><code style="color: #000; padding: 5px 15px">mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pYOURPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?></code></blockquote>
+						<p style="color: black"> Upgrade cannot continue until the backup <code><?=$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
+						<div class="ui fluid action input">
+							<input type="text" value="mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
+							<button class="ui button" onClick="CopyToClipboard('backuptxt')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
+						</div>
+						<p style="color: black">Run the above command, then come back to this page and refresh.</p>
 					</div>
 				</div>
 			</div>
@@ -292,7 +314,11 @@
 			<div class="ui inverted huge right menu">
 				<div class="item">
 					<div class="ui huge right pointing orange label">
+						<? if ($disabled == "disabled") { ?>
+						Cannot continue upgrade until database is backed up
+						<? } else { ?>
 						Click Next to continue
+						<? } ?>
 					</div>
 					<a class="ui inverted <?=$disabled?> huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>

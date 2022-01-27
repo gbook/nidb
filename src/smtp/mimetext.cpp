@@ -53,7 +53,7 @@ const QString & MimeText::getText() const
 void MimeText::prepare()
 {
     this->content.clear();
-    this->content.append(text);
+    this->content.append(text.toUtf8());
 
     /* !!! IMPORTANT !!! */
     MimePart::prepare();

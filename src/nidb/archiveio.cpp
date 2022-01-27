@@ -570,7 +570,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             QString fname = f.fileName();
             QStringList parts = fname.split("_");
             if (parts.size() == 8) {
-                if ((subjectUID == parts[0]) && (studynum == parts[1]) && (SeriesNumber == parts[2])) {
+                if ((subjectUID == parts[0]) && (studynum == parts[1].toInt()) && (SeriesNumber == parts[2].toInt())) {
                     logmsg += "-";
                     continue;
                 }
@@ -859,7 +859,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             }
             if (line.contains("Examination date/time")) {
                 QString datetime = line;
-                datetime.replace(QRegExp("\\.\\s+Examination date/time\\s+:"),"");
+                datetime.replace(QRegularExpression("\\.\\s+Examination date/time\\s+:"),"");
                 QStringList p = datetime.split("/");
                 if (p.size() > 1) {
                     QString date = p[0].trimmed();
@@ -904,7 +904,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
                 QStringList p = line.split(":");
                 if (p.size() > 1) {
                     QString resolution = p[1].trimmed();
-                    QStringList p2 = resolution.split(QRegExp("\\s+"));
+                    QStringList p2 = resolution.split(QRegularExpression("\\s+"));
                     if (p.size() > 1) {
                         Columns = p2[0].trimmed().toInt();
                         Rows = p2[1].trimmed().toInt();
@@ -918,7 +918,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             }
             /* get the first line of the image list... it should contain the flip angle */
             if (!line.startsWith(".") && !line.startsWith("#") && (line != "")) {
-                QStringList p = line.split(QRegExp("\\s+"));
+                QStringList p = line.split(QRegularExpression("\\s+"));
 
                 if (p.size() > 9) pixelX = p[9].trimmed().toInt(); /* 10 - xsize */
                 if (p.size() > 10) pixelY = p[10].trimmed().toInt(); /* 11 - ysize */

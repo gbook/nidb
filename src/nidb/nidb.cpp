@@ -420,12 +420,12 @@ QString nidb::CreateLogDate() {
 QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
 
     /* get the SQL string that will be run */
-    QString sql = q.lastQuery();
-    QMapIterator<QString, QVariant> it(q.boundValues());
-    while (it.hasNext()) {
-        it.next();
-        sql.replace(it.key(),it.value().toString());
-    }
+    QString sql = q.executedQuery();
+    //QMapIterator<QString, QVariant> it(q.boundValues());
+    //while (it.hasNext()) {
+    //    it.next();
+    //    sql.replace(it.key(),it.value().toString());
+    //}
 
     /* debugging */
     if (cfg["debug"].toInt() || d) {
@@ -1271,7 +1271,7 @@ QString nidb::CreateUID(QString prefix, int numletters) {
 /* --------- RemoveNonAlphaNumericChars --------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::RemoveNonAlphaNumericChars(QString s) {
-    return s.remove(QRegExp("[^a-zA-Z\\d\\s]"));
+    return s.remove(QRegularExpression("[^a-zA-Z\\d\\s]"));
 }
 
 
@@ -1967,7 +1967,7 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QStringList &columns, QStri
                 QChar c = line.at(i);
 
                 /* determine if we're in quotes or not */
-                if (c == """") {
+                if (c == '"') {
                     if (inQuotes)
                         inQuotes = false;
                     else
@@ -1975,7 +1975,7 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QStringList &columns, QStri
                 }
 
                 /* check if we've hit the next comma, and therefor should end the previous variable */
-                if ((c == ",") && (!inQuotes)) {
+                if ((c == ',') && (!inQuotes)) {
                     table[row][cols[col]] = buffer.trimmed();
 
                     buffer = "";
@@ -2415,7 +2415,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                         if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
                             int idx = line.indexOf(".dInPlaneRot");
                             line = line.mid(idx,23);
-                            QStringList vals = line.split(QRegExp("\\s+"));
+                            QStringList vals = line.split(QRegularExpression("\\s+"));
                             if (vals.size() > 0)
                                 tags["PhaseEncodeAngle"] = vals.last().trimmed();
                             break;
@@ -2527,10 +2527,10 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
     //int mat3(0);
     //int mat4(0);
     if (amat.size() == 4) {
-        tags["mat1"] = amat[0].toInt();
+        tags["mat1"] = amat[0];
         //mat2 = amat[1].toInt();
         //mat3 = amat[2].toInt();
-        tags["mat4"] = amat[3].toInt();
+        tags["mat4"] = amat[3];
     }
     //if (SeriesNumber == 0) {
     //    QString timestamp = SeriesTime;

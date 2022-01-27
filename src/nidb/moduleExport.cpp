@@ -734,7 +734,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.split(QRegExp("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+                QStringList parts = lastline.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
                 int unzippedsize(0);
                 int zippedsize(0);
                 if (parts.size() >= 2) {
@@ -1110,7 +1110,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
                 /* remove any non-alphanumeric characters */
-                seriesnotes.replace(QRegExp("[^a-zA-Z0-9 _-]", Qt::CaseInsensitive), "");
+                seriesnotes.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
 
                 msgs << QString("uid [%1] indir [%2] datadirexists [%3]").arg(uid).arg(indir).arg(datadirexists);
                 if (datadirexists) {

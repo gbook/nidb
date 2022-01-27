@@ -477,7 +477,7 @@ bool moduleMRIQA::GetQAStats(QString f, double &pvsnr, double &iosnr, QString &m
         QTextStream in(&df);
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
-            QStringList parts = line.split(QRegExp("\\t"));
+            QStringList parts = line.split(QRegularExpression("\\t"));
             bool ok1(false), ok2(false);
             if (parts.size() > 1)
                 pvsnr = parts[1].toDouble(&ok1);
@@ -520,7 +520,7 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
             if (line.size() == 0)
                 continue;
 
-            QStringList p = line.split(QRegExp("\\s+"));
+            QStringList p = line.split(QRegularExpression("\\s+"));
             if (p.size() == 6) {
                 rotx.append(p[0].toDouble());
                 roty.append(p[1].toDouble());

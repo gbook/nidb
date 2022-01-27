@@ -2185,7 +2185,7 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
         if (seriesid == -1) q.bindValue(":seriesid", QVariant(QVariant::Int)); else q.bindValue(":seriesid", seriesid);
         if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QVariant::String)); else q.bindValue(":downloadpath", downloadpath);
         if (step == -1) q.bindValue(":step", QVariant(QVariant::Int)); else q.bindValue(":step", step);
-        if (msg == -1) q.bindValue(":msg", QVariant(QVariant::String)); else q.bindValue(":msg", msg);
+        if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QVariant::String)); else q.bindValue(":msg", msg);
 
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return q.lastInsertId().toInt();
