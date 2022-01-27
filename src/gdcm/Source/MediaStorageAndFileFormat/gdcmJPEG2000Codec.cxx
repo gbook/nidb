@@ -470,13 +470,6 @@ void JPEG2000Codec::SetReversible(bool res)
   Internals->coder_param.irreversible = !res;
 }
 
-void JPEG2000Codec::SetMCT(unsigned int mct)
-{
-    // Set the Multiple Component Transformation value (COD -> SGcod)
-    // 0 for none, 1 to apply to components 0, 1, 2
-    Internals->coder_param.tcp_mct = mct;
-}
-
 JPEG2000Codec::JPEG2000Codec()
 {
   Internals = new JPEG2000Internals;
@@ -1718,7 +1711,7 @@ bool JPEG2000Codec::DecodeExtent(
     if( pf.GetSamplesPerPixel() != pf2.GetSamplesPerPixel()
      || pf.GetBitsAllocated() != pf2.GetBitsAllocated()
 /*
-     || pf.GetPixelRepresentation() != pf2.GetPixelRepresentation() // TODO, we are a bit too aggressive here
+     || pf.GetPixelRepresentation() != pf2.GetPixelRepresentation() // TODO, we are a bit too agressive here
 */
     )
       {

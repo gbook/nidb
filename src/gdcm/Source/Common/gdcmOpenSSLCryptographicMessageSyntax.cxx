@@ -115,7 +115,7 @@ bool OpenSSLCryptographicMessageSyntax::Encrypt(char *output, size_t &outlen, co
   cms = CMS_encrypt(recips, in, internalCipherType, flags);
   if (!cms)
     {
-    gdcmErrorMacro( "Error at creating the CMS structure." );
+    gdcmErrorMacro( "Error at creating the CMS strucutre." );
     goto err;
     }
 

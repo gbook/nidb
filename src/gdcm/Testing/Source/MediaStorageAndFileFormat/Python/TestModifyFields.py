@@ -69,7 +69,7 @@ if __name__ == "__main__":
   success = 0
   try:
     filename = os.sys.argv[1]
-    success += TestModifyFields( filename )
+    success += TestModifyFields( filename, True )
   except:
     # loop over all files:
     t = gdcm.Testing()

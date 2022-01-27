@@ -22,7 +22,7 @@ namespace gdcm
 {
 /**
  * \brief Class to manipulate file name's
- * \note OS independent representation of a filename (to query path, name and extension from a filename)
+ * \note OS independant representation of a filename (to query path, name and extension from a filename)
  */
 class GDCM_EXPORT Filename
 {
@@ -55,9 +55,9 @@ public:
   operator const char * () const { return GetFileName(); }
 
   // FIXME: I don't like this function
-  // It hides the realpath call (maybe useful)
+  // It hides the realpath call (maybe usefull)
   // and it forces file to exist on the disk whereas Filename
-  // should be independent from file existence.
+  // should be independant from file existence.
   bool IsIdentical(Filename const &fn) const;
 
   /// Does the filename ends with a particular string ?

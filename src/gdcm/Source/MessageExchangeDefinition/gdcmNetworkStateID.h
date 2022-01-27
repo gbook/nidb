@@ -48,7 +48,7 @@ namespace gdcm {
 
     const int cMaxStateID = 13;
 
-    //the transition table is built on state indices
+    //the transition table is built on state indeces
     //this function will produce the index from the power-of-two EStateID
     inline int GetStateIndex(EStateID inState){
       switch (inState){

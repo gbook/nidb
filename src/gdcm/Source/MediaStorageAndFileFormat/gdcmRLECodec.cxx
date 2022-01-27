@@ -316,7 +316,7 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
   SmartPointer<SequenceOfFragments> sq = new SequenceOfFragments;
   const Tag itemStart(0xfffe, 0xe000);
   //sq->GetTable().SetTag( itemStart );
-  // FIXME  ? Is this compulsory ?
+  // FIXME  ? Is this compulsary ?
   //const char dummy[4] = {};
   //sq->GetTable().SetByteValue( dummy, sizeof(dummy) );
 
@@ -396,18 +396,11 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
         {
         DoInvertPlanarConfiguration<char>(bufferrgb, ptr_img, (uint32_t)(image_len / sizeof(char)));
         }
-      else if ( GetPixelFormat().GetBitsAllocated() == 16 )
+      else /* ( GetPixelFormat().GetBitsAllocated() == 16 ) */
         {
+        assert( GetPixelFormat().GetBitsAllocated() == 16 );
+        // should not happen right ?
         DoInvertPlanarConfiguration<short>((short*)(void*)bufferrgb, (const short*)(const void*)ptr_img, (uint32_t)(image_len / sizeof(short)));
-        }
-      else /* ( GetPixelFormat().GetBitsAllocated() == 32 ) */
-        {
-        assert( GetPixelFormat().GetBitsAllocated() == 32 );
-        DoInvertPlanarConfiguration<int32_t>(
-          (int32_t*)(void*)bufferrgb,
-          (const int32_t*)(const void*)ptr_img,
-          (uint32_t)(image_len / sizeof(int32_t))
-        );
         }
       ptr_img = bufferrgb;
       }
@@ -788,7 +781,7 @@ bool RLECodec::DecodeByStreams(std::istream &is, std::ostream &os)
   // A footnote:
   // RLE *by definition* with more than one component will have applied the
   // Planar Configuration because it simply does not make sense to do it
-  // otherwise. So implicitly RLE is indeed PlanarConfiguration == 1. However
+  // otherwise. So implicitely RLE is indeed PlanarConfiguration == 1. However
   // when the image says: "hey I am PlanarConfiguration = 0 AND RLE", then
   // apply the PlanarConfiguration internally so that people don't get lost
   // Because GDCM internally set PlanarConfiguration == 0 by default, even if

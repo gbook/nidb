@@ -61,7 +61,6 @@ public:
   void SetNumberOfThreadsForDecompression(int nThreads);
 
   void SetReversible(bool res);
-  void SetMCT(unsigned int mct);
 
 protected:
   bool DecodeExtent(
